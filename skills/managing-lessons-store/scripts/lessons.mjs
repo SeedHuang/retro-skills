@@ -1,11 +1,28 @@
 #!/usr/bin/env node
 // 错题集 KB 生命周期脚本（spec §4.1 / §4.5）
 // 只用 Node 内置模块；导出纯函数便于 node:test 直测；底部有 CLI 入口守卫。
-import { existsSync, readFileSync, statSync, accessSync, constants, mkdirSync, readdirSync, copyFileSync, writeFileSync, renameSync, rmSync } from 'node:fs'
+import { existsSync, readFileSync, statSync, accessSync, constants, mkdirSync, readdirSync, copyFileSync, writeFileSync, renameSync, rmSync, realpathSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join, resolve, dirname, relative, sep } from 'node:path'
 import { createHash } from 'node:crypto'
-import { pathToFileURL } from 'node:url'
+import { fileURLToPath } from 'node:url'
+
+/**
+ * 是否"被直接执行"（而不是被 import 进来）。
+ *
+ * 用 realpath 归一后再比：技能是**以 junction / 符号链接**装进运行时的，
+ * 从安装目录启动时"入口路径"与"模块真实路径"字符串不同 —— 直接比字符串会误判成
+ * "被 import 了"，于是整个 CLI **静默不执行**（一个字都不打印，退出码还是 0）。
+ * 已踩过：在 `~\.trae-cn\skills\managing-lessons-store` 下跑 `resolve` / `deferred` 全是空的。
+ */
+export function isDirectRun(entry, moduleUrl) {
+  if (!entry) return false
+  try {
+    return realpathSync(entry) === realpathSync(fileURLToPath(moduleUrl))
+  } catch {
+    return false
+  }
+}
 
 export const SCHEMA_VERSION = 1
 
@@ -212,7 +229,7 @@ export function countLedger(root) {
 }
 
 // ── CLI 入口守卫：仅当被直接执行时运行 ────────────────────────────
-const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href
+const isMain = isDirectRun(process.argv[1], import.meta.url)
 if (isMain) {
   const cmd = process.argv[2]
   if (cmd === 'resolve') {

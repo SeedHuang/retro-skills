@@ -106,7 +106,7 @@ L4 仓库与安装层（东西放哪、怎么生效）——✅ 已通（见 §8
 | C1 | **my-rules 仓库** | ✅ 已建（见 §8.1） |
 | C2 | **evolving-skills** | retro-skills 第 6 个技能：协议的家 + skill 差异卡（【缺】待建） |
 | C3 | **KB 的 skills\ 区** | B1 的落地（【缺】待建） |
-| C4 | **同步 / 体检脚本** | ✅ 已建，**只有一份** `retro-skills\scripts\sync.mjs`，同时管 rules 与 skills。（原计划"各仓库写两份"，实际证明**一份足够**——脚本里就是一张"源 → 目标"映射表） |
+| C4 | **同步 / 体检脚本** | ✅ 已建，**只有一份**，同时管 rules 与 skills。（原计划"各仓库写两份"，实际证明**一份足够**——它就是一张"源 → 目标"映射表）。**2026-09-28 已抽成独立项目 `agent-assets-sync`** 并改成配置驱动（`sync.config.json`），见 §8.1 |
 
 ### 不动（防过度重构）
 
@@ -116,7 +116,8 @@ L4 仓库与安装层（东西放哪、怎么生效）——✅ 已通（见 §8
 
 | 仓库 | 状态 | 放什么 |
 |---|---|---|
-| `retro-skills` | ✅ 已建（GitHub 远程） | 复盘技能套件 + 同步脚本 + 本文档；将来放 evolving-skills |
+| `retro-skills` | ✅ 已建（GitHub 远程） | 复盘技能套件 + 本文档；将来放 evolving-skills。**同步脚本已于 2026-09-28 搬出**（见下） |
+| **`agent-assets-sync`** | ✅ 已建（git + GitHub 远程） | **同步 / 体检脚本**（独立项目、配置驱动：`sync.config.json` + `src\sync.mjs` + `test\`）；设计缘由见其 `docs\design.md` |
 | **`my-rules`** | ✅ 已建（git + GitHub 远程） | 全局 rule 的源（在**中立目录** `rules\` —— 目录名不含工具名，为"换编辑器"解耦；见 §8.1） |
 | 项目仓库（lpm 等） | ✅ 已有 | 项目 rule 跟项目走，**不建新仓库** |
 | **KB（`D:\Seed\lessons`）** | ⛔ **特意不建 git** | 数据层、含个人记录，不跟任何仓库走；备份挂账 |
@@ -127,28 +128,31 @@ L4 仓库与安装层（东西放哪、怎么生效）——✅ 已通（见 §8
 ```
 ✅ 0. ais 实测 → 已实测完成：ais 不可用（见 §9.1），最后一公里自建
 ✅ 1. C1 my-rules bootstrap + C4 同步/体检脚本 → 已完成（见 §8.1）
+✅ 1.5. C4 抽成独立项目 agent-assets-sync + 配置驱动 → 已完成（2026-09-28，见 §8.1）
    2. C2 + A1（evolving-skills + 协议抽离 + institutionalize 加转发闸门）
    3. C3 + A2 + B1（KB skills 区 + multi-lens 迁移 + 三区合一）
    4. B3 + 轮询规则改版（收口时机 + 没事不出声）
 ```
 
-### 8.1 已完成：my-rules + 同步脚本 + 测试（2026-09-28）
+### 8.1 已完成：my-rules + 同步脚本 + 测试（2026-09-28；脚本当晚搬入独立项目）
 
 | 落地物 | 位置 |
 |---|---|
 | 全局规则源 | `D:\Seed\my-rules\rules\`（**中性名，不带工具名**；条数以脚本输出为准，见下） |
 | 源仓库说明 | `D:\Seed\my-rules\README.md` |
-| **同步 / 体检脚本** | `retro-skills\scripts\sync.mjs` |
-| **脚本的测试** | `retro-skills\scripts\sync.test.mjs`（14 用例，全绿；`node --test scripts/sync.test.mjs`） |
+| **同步 / 体检脚本（独立项目）** | `D:\Seed\agent-assets-sync\src\sync.mjs`（**配置驱动**：源 / 目标 / 命名规则在项目根的 `sync.config.json`；设计缘由见其 `docs\design.md`） |
+| **脚本的测试** | `D:\Seed\agent-assets-sync\test\sync.test.mjs`（`node --test test/sync.test.mjs`，全绿） |
 
-**用法**：
+**用法**（`cd D:\Seed\agent-assets-sync` 后跑）：
 
 ```
-node scripts/sync.mjs                    只体检（默认，绝不改动任何东西）
-node scripts/sync.mjs --apply            同步：只建"缺失的链接"，不删任何东西
-node scripts/sync.mjs --apply --replace  允许把"真实副本 / 指错的链接"换成链接（会删东西）
-node scripts/sync.mjs --apply --rm-old   允许清理残留：旧名文件 + 自家失效链接（会删东西）
-node --test scripts/sync.test.mjs        跑脚本自己的测试（临时目录里，不碰真实运行时）
+node src/sync.mjs                    只体检（默认，绝不改动任何东西）
+node src/sync.mjs --apply            同步：只建"缺失的链接"，不删任何东西
+node src/sync.mjs --apply --replace  允许把"真实副本 / 指错的链接"换成链接（会删东西）
+node src/sync.mjs --apply --rm-old   允许清理残留：旧名文件 + 自家失效链接（会删东西）
+node src/sync.mjs list               列出配置里各源有哪些条目（只读）
+node src/sync.mjs --config <路径>    用别的配置文件（默认 项目根的 sync.config.json）
+node --test test/sync.test.mjs       跑脚本自己的测试（临时目录里，不碰真实运行时）
 ```
 
 **安全默认（重要）**：`--apply` **只建缺失的链接**。一切会删东西的动作都要显式开口：
@@ -165,16 +169,17 @@ node --test scripts/sync.test.mjs        跑脚本自己的测试（临时目录
 
 1. **Windows 开发者模式**——**只有"规则"这一侧需要它**（规则是 file symlink，靠它）；**技能侧用的是 junction，不需要**。本机已开
 2. Node ≥ 18（用 `node:fs` / `node:test`；本机 v22.12.0 已验证）
-3. 源路径**已可配置，不用改代码**：默认 `D:\Seed\my-rules\rules` 与"本脚本所在仓库的 `skills\`"；换机器 / 别处 clone 时用环境变量覆盖 —— `MY_RULES_SRC` / `RETRO_SKILLS_DIR` / `TRAE_RULES_DST` / `TRAE_SKILLS_DST`
-   - **仓库搬家** → 设 `MY_RULES_SRC`（或改 `TARGETS` 的默认值）
-   - **添新的源仓库**（如将来收编 multi-lens、或换编辑器）→ 在 `TARGETS` **加一行**（脚本里就是一张"源 → 目标"映射表）
+3. 路径**全在配置里，不用改代码**：默认见 `D:\Seed\agent-assets-sync\sync.config.json`（源 `D:\Seed\my-rules\rules` ＋ `D:\Seed\retro-skills\skills`）；换机器 / 别处 clone 时用环境变量覆盖 —— `MY_RULES_SRC` / `RETRO_SKILLS_DIR` / `TRAE_RULES_DST` / `TRAE_SKILLS_DST`（变量名与路径的绑定也写在配置的 `env` 字段里，换编辑器可一并换名）
+   - **仓库搬家** → 改配置里的 `srcDir`（或设 `MY_RULES_SRC`）
+   - **换编辑器** → 改配置里那条 target 的 `dstDir` 与 `dstName`，**源文件一个字不用动**
+   - **添新的源仓库**（如将来收编 multi-lens）→ 在配置的 `targets` 里**加一条**
 4. 零第三方依赖（只用 Node 内置）
 
 **运行时的实际形态（已实测，条数取脚本输出）**：
 
 | 目标 | 形态 |
 |---|---|
-| `~\.trae-cn\user_rules\rule-<名字>.md` | 全部是 **SymbolicLink** → `my-rules\rules\<名字>.md`（取数：`node scripts/sync.mjs` 的"已就位"数；本条写作时 9 条） |
+| `~\.trae-cn\user_rules\rule-<名字>.md` | 全部是 **SymbolicLink** → `my-rules\rules\<名字>.md`（取数：在 `agent-assets-sync` 里跑 `node src/sync.mjs` 的"已就位"数；本条写作时 9 条） |
 | `~\.trae-cn\skills\<技能名>\` | 5 个 **Junction** → `retro-skills\skills\<技能名>\`（`ais`/`skills` 装的第三方技能不在本脚本管理面内，报告里列为"孤儿(不动)"） |
 
 **所以"改源即生效"**：改 `my-rules` 里的规则，下次对话就是新的；改 `retro-skills` 里的技能同理。**不要在运行时目录里改**（那会丢）。
@@ -189,8 +194,8 @@ node --test scripts/sync.test.mjs        跑脚本自己的测试（临时目录
 
 **如果误跑了 `npx skills add` / `skills update`（混用）怎么办**：
 
-1. **怎么发现**：跑 `node scripts/sync.mjs` —— 它会报"真实副本（内容已过时/一致）"，那就是链接被换成了副本
-2. **怎么修**：`node scripts/sync.mjs --apply --replace` 换回链接
+1. **怎么发现**：在 `agent-assets-sync` 里跑 `node src/sync.mjs` —— 它会报"真实副本（内容已过时/一致）"，那就是链接被换成了副本
+2. **怎么修**：`node src/sync.mjs --apply --replace` 换回链接
 3. 为什么禁止混用：见 §9 V3
 4. ⚠️ **混用的真实风险（2026-09-28 已实测，比原先的担心轻）**：
    - **实测结论**：`skills update` **只动它锁（`.skill-lock.json`）里的技能**。我们那 5 个是**手工 junction 接的、不在锁里** → 它**根本不碰**（实测：跑完 `Updated 18 skill(s)`，全是第三方远端技能；我们 5 个的**源聚合哈希未变**、junction 仍是 junction）
@@ -255,13 +260,13 @@ node --test scripts/sync.test.mjs        跑脚本自己的测试（临时目录
 |---|---|---|
 | R1 | **矛盾-1**：`--apply` 会静默删掉手工改动（不可逆） | 脚本改为"删东西必须显式开口"（安全默认）+ §8.1「安全默认」小节 |
 | R2 | **矛盾-2**：§3 L4 / §6 C4 与 §8.1 打架 | 已对齐（§3 L4 标 ✅、§6 C4 改为"一份脚本"） |
-| R3 | **盲点**：源目录不存在时静默无操作 | 脚本改为**报错退出**并提示改 `TARGETS` |
+| R3 | **盲点**：源目录不存在时静默无操作 | 脚本改为**报错退出**并提示改配置里那条的 `srcDir` |
 | R4 | **盲点**：自家残留链接被当"用户资产"保护 | 脚本新增 `staleSelf` 分类；报告显示，`--rm-old` 可清 |
 | R5 | **盲点**：缺前置条件清单 / 回滚做法 / 混用恢复 | §8.1 已补 |
-| R6 | **盲点**：脚本零测试 | 新增 `scripts/sync.test.mjs`（14 用例，全绿） |
+| R6 | **盲点**：脚本零测试 | 新增脚本测试（当时 14 个用例全绿；该测试现已随脚本搬入 `agent-assets-sync\test\sync.test.mjs`，跑法见 §8.1） |
 | R12 | 优化（第 2 轮）：头部注释里函数名写错（`removeLink` vs 实际 `removeLinkOrCopy`） | 已修（`sync.mjs` 头部） |
 | R14 | 优化（第 3 轮）：前置条件"开发者模式**必须**开"精度不对 | §8.1 改为"**只有规则侧需要**它；技能侧用 junction，不需要" |
-| R15 | 优化（第 3 轮）：**添新源仓库**（如收编 multi-lens）也要改 `TARGETS`，文档没写 | §8.1 前置条件第 3 条补两个场景（搬家 / 新源仓库） |
+| R15 | 优化（第 3 轮）：**添新源仓库**（如收编 multi-lens）也要改映射表，文档没写 | §8.1 前置条件第 3 条补两个场景（搬家 / 新源仓库） |
 | R16 | 优化（第 3 轮）："改源即生效"对**技能侧**超出已证范围 | §8.1 补「证据边界」+ §9 新增 V6 |
 | R17 | **盲点**（第 3 轮，归因**修复引入**）：技能从副本变成链接后，担心 `skills update` 会污染源仓库 | §8.1 加警示；**第 4 轮前已实测证伪**（只动锁里的技能，不碰我们的 junction）→ 已按实测改写为"残余风险：链接可能被换成总库链接，可检测、可恢复" |
 | R18 | 优化（第 3 轮）：**体检的触发点**没定（否则变摆设） | §8.1 新增「什么时候该跑这个脚本」 |
@@ -269,7 +274,9 @@ node --test scripts/sync.test.mjs        跑脚本自己的测试（临时目录
 | **R24** | 优化（第 4 轮）：架构文档三处数字写"7 条"而实际更多 | 已改：数字**只留在 §8.1 一处并附取数命令**，§3 L4 / §7 去掉数字（防漂移） |
 | **R25** | 优化（第 4 轮，归因**流程缺失**）：同类"声明滞后于落地"已复发两次 | **新建规则** `my-rules\rules\landing-sweep.md`：落地后必须回头扫四类地方，附扫描命令 |
 | **R26** | 优化（第 4 轮）：架构文档 R17 措辞写着"实测清楚前不要跑"（已实测清楚） | 已在本表 R17 行改写 |
-| **R29** | 设计变更（2026-09-28）：规则源目录从 `.trae\rules\` 改成**中立的 `rules\`** | 触发来自"**换编辑器是很基础的需求**"。原布局的两条理由都没兑现（`ais` 在本机不可用、已卸载；"多工具扩展位"不是白捡的）→ 源与工具**解耦**：换编辑器只改 `TARGETS` 的 `dstDir`/`dstName`，**源文件一个字不用动**（与技能侧 `retro-skills\skills\` 同形态）。落地：挪目录 ✓ + 改 `sync.mjs` 源路径 ✓ + 重跑同步（9 条链接被识别为"已断"后自动重建 ✓）+ 改 `my-rules\README.md`（含"为什么放弃 `.trae\`"的诚实记录） |
+| **R29** | 设计变更（2026-09-28）：规则源目录从 `.trae\rules\` 改成**中立的 `rules\`** | 触发来自"**换编辑器是很基础的需求**"。原布局的两条理由都没兑现（`ais` 在本机不可用、已卸载；"多工具扩展位"不是白捡的）→ 源与工具**解耦**：换编辑器只改那条映射的 `dstDir`/`dstName`（当时写在脚本的 `TARGETS` 里，**2026-09-28 起改在 `sync.config.json`**，见 §8.1），**源文件一个字不用动**（与技能侧 `retro-skills\skills\` 同形态）。落地：挪目录 ✓ + 改 `sync.mjs` 源路径 ✓ + 重跑同步（9 条链接被识别为"已断"后自动重建 ✓）+ 改 `my-rules\README.md`（含"为什么放弃 `.trae\`"的诚实记录） |
+| **R33** | 【测试】给 CLI 的参数解析（`list` / `--help` / flags）加测试 | ✅ **已结（2026-09-28）**：随脚本搬入 `agent-assets-sync` 时，把参数解析抽成纯函数 `parseArgs()` 并补了测试；配置解析（`loadConfig` / `buildTargets`）也一并补测 |
+| **R35** | 【结构】把同步脚本独立成一个项目 | ✅ **已结（2026-09-28）**：建仓 `agent-assets-sync`（git + GitHub 远程），改成**配置驱动**（`sync.config.json` + `--config`），产出 `docs\design.md`（含三条"为什么"与迁移五步）；运行时**零变化**（搬家后体检仍"全部一致"）。**取中性名**——它同时管 rules 与 skills。发 npm 另见 R31 |
 
 ### 已关闭（不做，理由在此）
 
@@ -280,6 +287,7 @@ node --test scripts/sync.test.mjs        跑脚本自己的测试（临时目录
 | R20 | 优化（第 3 轮）：三套编号并存（V / H / R）查找不便 | 各表都在同一份文档、章节清楚，重构收益 < 改动成本；**等编号总数超过 ~20 再说** |
 | **R21** | 优化（第 3 轮）：给脚本加"检测源被外部工具写穿"的能力 | 触发信号是"V5 证明真的会写穿"，而 **V5 已证伪**（不会写穿）→ 信号不会到来，关闭 |
 | **R28** | spec 里 multi-lens「待定」悬空（第 4 轮扫描抓到） | **已结清（2026-09-28）**：`§4.4` 那行改为"已定：multi-lens 自身教训改记 KB"；`§15 O3` 那行改为"已查证：其复盘回流**已实现**，体系不重造它"。三处引用中 `§14.2` 那处是**历史记录**，保持原样 |
+| **R11** | 脚本改从环境变量读仓库路径（替代硬编码） | **被取代（2026-09-28）**：R35 的落地方案比这更彻底——路径不再硬编码，整张"源 → 目标"映射表进 `sync.config.json`，环境变量降为**可选覆盖**（绑定写在配置的 `env` 字段） |
 
 ### 候选（等信号再评估）
 
@@ -288,14 +296,11 @@ node --test scripts/sync.test.mjs        跑脚本自己的测试（临时目录
 | R8 | 命名边界未验（中文名 / 大小写） | 真的要用中文名或改名时 |
 | R9 | 源里放子目录 / 非 .md 文件的处置未定义 | 真的发生一次 |
 | R10 | 两个会话同时跑 sync 未定义 | 真的发生一次（同 H4） |
-| R11 | 脚本改从环境变量读仓库路径（替代硬编码） | 仓库真搬一次家 |
 | R19 | 给脚本加断言：`dirLevel` 与源的形态（文件 / 目录）不符就报错 | 真的配错一次 |
 | R22 | 把"收口时跑体检"做成常驻规则 | 忘记跑、导致真的踩坑 ≥ 1 次 |
 | R27 | 补第 5 轮评审确认（严格"连续两轮零新增 P0/P1"未达成） | 下次动这套体系时顺手跑一轮 |
 | R30 | 【CLI】加 `add <名>`（只装指定几条）/ `import <名>`（把运行时已有规则收编进源）/ `remove` | 出现真实消费者，或第一次"在 Trae 里手建规则后想收编" |
 | R31 | 【发布】对外发布时**生成**一份 `.trae/rules/` 兼容产物（产物 gitignore） | 决定把规则仓库公开分享（届时 `ais` 一类工具才认得） |
 | R32 | 【规则规范】把"对外规则正文的 provenance 不写绝对路径"写成一条规则 | 下次要对外分享规则时（今天已修掉一处实例：`poll-deferred-at-start.md`） |
-| R33 | 【测试】给 CLI 的参数解析（`list` / `--help` / flags）加测试 | 参数逻辑再变一次（当前靠手工验证） |
 | R34 | 【跨平台】脚本硬编码 Windows 路径、也只在 Windows 验过 | 真有非 Windows 使用者 |
 | **R20（重开）** | 【可读性】三套编号（V / H / R）并存、查找不便 —— **原关闭理由写的信号"编号总数超过 ~20"已触发**（现 34 个） | 轻量对策已做（新候选带 `【主题】` 前缀）；**若下次仍觉得难查 → 按主题分组重构** |
-| R35 | 【结构】把同步脚本独立成一个项目 | ① 出现第二个使用者；② 决定把规则/技能仓库对外发布；③ 脚本要管第 3 个源仓库。**正名提示**：它同时管 rules 与 skills，叫 `my-rules-cli` 会名不副实 → 用中性名 |

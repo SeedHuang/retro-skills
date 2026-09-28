@@ -1,15 +1,18 @@
 # Session 交接：复盘体系 → 抽取独立同步 CLI（agent-assets-sync）（2026-09-28）
 
+> ✅ **本交接词已执行完毕（2026-09-28 当日）**：脚本已从 `retro-skills\scripts\` 搬进独立项目 `D:\Seed\agent-assets-sync`（配置驱动：`sync.config.json` + `src\sync.mjs` + `test\` + `docs\design.md`）。
+> 下文提到的 `scripts\sync.mjs` / `scripts\sync.test.mjs` 是**搬家前的旧路径**；正文保留原样作为当时的过程记录，**现在的跑法**见 `agent-assets-sync\README.md` 或 `retro-skills\docs\architecture.md` §8.1。
+
 ## 元信息
 
 | 键 | 值 |
 |---|---|
 | 交接时间 | 2026-09-28 15:48（Asia/Shanghai） |
-| 项目根 | `D:\Seed\retro-skills`（**新 session 的工作区也选它**）。参与仓库：`D:\Seed\my-rules`、`D:\Seed\lessons`（KB）、`local-pack-manager`（仅旁观，勿动） |
-| HEAD / 未提交面 | **以开工时实跑 `git -C <仓库> status --porcelain -uall` 为准**（本文档写完后又新建了本交接词，条数必然已变）。写作时（15:48）为：`retro-skills` = `fb439a0`（已提交）+ 3 条未提交（`architecture.md` / 旧交接词 / `sync.mjs`）；`my-rules` = **零提交**（10 条）；`local-pack-manager` = `cb1e0e0` + 21 条（其中 18 条是 **S8 在途，勿动**）。**新增：`D:\Seed\agent-assets-sync` = 零提交、空目录**（本次任务的目标仓库，用户 2026-09-28 已建好，远程 `SeedHuang/agent-assets-sync`） |
+| 项目根 | `D:\Seed\retro-skills`（**新 session 的工作区也选它**）。参与仓库：`D:\Seed\my-rules`、`D:\Seed\lessons`（KB）、`D:\Seed\agent-assets-sync`（本次任务的目标仓库）、`local-pack-manager`（仅旁观，勿动） |
+| HEAD / 未提交面 | **以开工时实跑 `git -C <仓库> status --porcelain -uall` 为准**（本文档会因自身被创建/修改而改变条数，别照抄这里的旧数字）。写作时（15:48）为：`retro-skills` = `fb439a0`（已提交）+ 3 条未提交（`architecture.md` / 旧交接词 / `sync.mjs`）；`my-rules` = **零提交**（10 条）；`local-pack-manager` = `cb1e0e0` + 21 条（其中 18 条是 **S8 在途，勿动**）；`agent-assets-sync` = **零提交、空目录** |
 | 验证基线 | **本仓库非代码库**，基线 = 脚本测试 **14/14**（`node --test scripts/sync.test.mjs`）+ 同步体检 **"全部一致"**（`node scripts/sync.mjs`：规则"已就位 9"、技能"已就位 5"）（**15:48 实跑**） |
 | 继任自 | `docs/handoffs/2026-09-28-evolving-skills.md`（那份把 `evolving-skills` 当本次任务；本条**改序**：先做 CLI 抽取） |
-| 状态 | 有 **1 个**开放问题（走轻量还是完整流程）—— 不阻塞开工 |
+| 状态 | **0 个开放问题**（走法已定：轻量 + 必须产出 `docs/design.md`）—— **可直开工** |
 
 ## 项目定位
 
@@ -34,9 +37,11 @@
 
 ## 本次任务
 
-**把同步脚本从 `retro-skills\scripts\` 抽成独立项目 `agent-assets-sync`（仓库已建好），并改造成"配置驱动"**。
-流程：写文件 → 跑测试 → **在新项目里跑真实同步，必须报"全部一致"** → 删 `retro-skills\scripts\` + 改文档指路 → 用户提交。
-起点：确认"开放问题"第 2 条（走轻量还是完整流程）。
+**把同步脚本从 `retro-skills\scripts\` 抽成独立项目 `agent-assets-sync`（仓库已建好），改造成"配置驱动"，并产出一份 `docs\design.md`**。
+流程：写文件（含 `design.md`）→ 跑测试 → **在新项目里跑真实同步，必须报"全部一致"** → 删 `retro-skills\scripts\` + 改文档指路 → 用户提交。
+起点：**直接开工**（开放问题已清空；名字与走法都已定）。
+
+**走法（用户 2026-09-28 拍板）**：**轻量**（不走完整 spec→plan→SDD）—— 依据：本次是"搬家 + 配置化"、**零新逻辑**，行为必须不变，而"新项目跑出全部一致 + 14 用例全绿"就是客观验收。**但轻量 ≠ 不做设计**：必须产出 `docs\design.md`（见下）。
 
 ## 范围依据
 
@@ -53,7 +58,7 @@ D:\Seed\agent-assets-sync\
 ├── sync.config.json      ← 默认配置（把现在硬编码在脚本里的两个 TARGET 移进来）
 ├── src\sync.mjs          ← 从 retro-skills 搬来 + 改成配置驱动
 ├── test\sync.test.mjs    ← 14 用例平移 + 补 CLI 参数解析测试（顺带结掉 R33）
-└── docs\design.md        ← 轻量设计记录
+└── docs\design.md        ← 必须产出（轻量设计记录，内容见下）
 ```
 
 `sync.config.json` 形状（`dstName` 用模板串，`{name}` 代源文件名）：
@@ -68,11 +73,20 @@ D:\Seed\agent-assets-sync\
 - **先不发布 npm**（`git clone` + `node` 即可用）；"发 npm 一键装"见 R31 / R35
 - **命名必须中性**：它同时管 rules 与 skills，叫 `my-rules-cli` 名不副实
 
+**`docs\design.md` 必须写清三条"为什么"**（否则新项目将来"换人接手"无法自解释）：
+
+1. **为什么把脚本独立出来** —— 含真实的决策过程：AI 曾以"无触发信号"反对，用户以"换编辑器是基础需求 + 它该有自己的项目"拍板
+2. **为什么命名必须中性** —— 它同时管 rules 与 skills，`my-rules-cli` 名不副实
+3. **为什么先不发布 npm** —— 零消费者；发布见 R31/R35
+   另加：**迁移五步 + 验收标准（新项目跑出"全部一致"）**，供将来复核。
+
 ## 开放问题
 
-1. **项目名 → 已定（2026-09-28）：`agent-assets-sync`** ✓ —— 用户已按此名建好仓库：`D:\Seed\agent-assets-sync`（git 已初始化、分支 `master`、远程 `git@github.com:SeedHuang/agent-assets-sync.git`、**零提交、空目录**）。**不必再问** ✓
-2. **走轻量走法，还是完整 spec → plan → SDD**？推断：**轻量**（依据：本次是"搬家 + 配置化"、**零新逻辑**，行为应保持不变——而"新项目跑出全部一致"就是它的验收）。请用户确认
-3. **（已定，不要再问）** 先 CLI 抽取、后 `evolving-skills` —— 用户 2026-09-28 拍板；理由：`scripts` 要搬家，先做 evolving-skills 会让文档改两次
+1. **项目名 → 已定：`agent-assets-sync`** ✓（用户已建仓：git 已初始化、分支 `master`、远程 `git@github.com:SeedHuang/agent-assets-sync.git`、零提交、空目录）
+2. **走法 → 已定（2026-09-28）：轻量 + 必须产出 `docs\design.md`** ✓（依据见「本次任务」节）
+3. **顺序 → 已定：先 CLI 抽取、后 `evolving-skills`** ✓ —— 理由：`scripts` 要搬家，先做 evolving-skills 会让文档改两次
+
+→ **无遗留开放问题，可直开工。**
 
 ## 既定约束（不要重新讨论、不要重新选型）
 
@@ -93,12 +107,12 @@ D:\Seed\agent-assets-sync\
 
 ## 开工前先做
 
-1. `git -C D:\Seed\retro-skills status --porcelain -uall`、`git -C D:\Seed\my-rules status --porcelain -uall`（确认未提交面，别照抄元信息表里的旧数字）；`cd D:\Seed\retro-skills` 跑 `node --test scripts/sync.test.mjs`（应 **14/14**）与 `node scripts/sync.mjs`（应"全部一致"）
+1. `git -C D:\Seed\retro-skills status --porcelain -uall`、`git -C D:\Seed\my-rules status --porcelain -uall`、`git -C D:\Seed\agent-assets-sync status --porcelain -uall`（**别照抄元信息表里的旧数字**）；`cd D:\Seed\retro-skills` 跑 `node --test scripts/sync.test.mjs`（应 **14/14**）与 `node scripts/sync.mjs`（应"全部一致"）
 2. 读 `D:\Seed\retro-skills\scripts\sync.mjs` **全文** + `scripts\sync.test.mjs` 全文（要搬的主体）
 3. 读 `D:\Seed\retro-skills\docs\architecture.md` 的 §8.1 与 §11（重点 R29 / R30 / R33 / R35 行）
 4. 读 `D:\Seed\my-rules\README.md`（搬完要改它的「安装与同步」一节里的脚本路径）
-5. 向用户确认"开放问题"第 2 条（走法），然后在 `D:\Seed\agent-assets-sync`（**已建好：git 已初始化、`master`、远程已配、零提交、空目录**）里直接写文件 —— 不必再建目录、不必再问名字
+5. 直接在 `D:\Seed\agent-assets-sync`（**已建好**）里写文件 —— 不必再建目录、不必再问名字与走法
 
 ## 开场话术
 
-读 D:\Seed\retro-skills\docs\handoffs\2026-09-28-agent-assets-sync.md，按交接词继续：把同步脚本抽成独立的 agent-assets-sync 项目并改成配置驱动。先按"开工前先做"第 1 项核基线，然后问我"开放问题"第 2 条（走轻量还是完整流程）。
+读 D:\Seed\retro-skills\docs\handoffs\2026-09-28-agent-assets-sync.md，按交接词继续：把同步脚本抽成独立的 agent-assets-sync 项目、改成配置驱动，并产出 docs/design.md。先按"开工前先做"第 1 项核基线，然后直接开工。

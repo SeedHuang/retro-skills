@@ -282,3 +282,25 @@ test('resolveStore：含 BOM 的合法指针 → 剥 BOM 后解析成功（不�
   assert.equal(r.ok, true)
   assert.equal(r.root, root)
 })
+
+import { isDirectRun } from './lessons.mjs'
+import { symlinkSync } from 'node:fs'
+import { pathToFileURL } from 'node:url'
+
+test('isDirectRun：经 junction 安装目录启动 → 仍判为"直接执行"（否则 CLI 静默不执行）', () => {
+  const real = mkdtempSync(join(tmpdir(), 'lessons-real-'))
+  const linkRoot = mkdtempSync(join(tmpdir(), 'lessons-link-'))
+  try {
+    const realFile = join(real, 'mod.mjs')
+    writeFileSync(realFile, '// x', 'utf8')
+    const linkDir = join(linkRoot, 'mod-link')
+    symlinkSync(real, linkDir, 'junction') // junction 不需要开发者模式
+    assert.equal(isDirectRun(join(linkDir, 'mod.mjs'), pathToFileURL(realFile).href), true, '经 junction 进入应算直接执行')
+    assert.equal(isDirectRun(realFile, pathToFileURL(realFile).href), true, '真实路径也应算')
+    assert.equal(isDirectRun(join(real, 'other.mjs'), pathToFileURL(realFile).href), false, '别的文件不算')
+    assert.equal(isDirectRun(undefined, pathToFileURL(realFile).href), false, '拿不到入口路径时不算')
+  } finally {
+    rmSync(real, { recursive: true, force: true })
+    rmSync(linkRoot, { recursive: true, force: true })
+  }
+})

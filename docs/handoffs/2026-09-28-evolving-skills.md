@@ -1,5 +1,8 @@
 # Session 交接：复盘体系 → evolving-skills（第 2 步 C2+A1）（2026-09-28）
 
+> ⚠️ **补注（2026-09-28 晚）**：本文提到的 `scripts\sync.mjs` / `scripts\sync.test.mjs` 是**当时的旧路径**；脚本已搬进独立项目 `D:\Seed\agent-assets-sync`（配置驱动）。
+> 正文保留原样作为当时的记录，**现在的跑法请改看** `agent-assets-sync\README.md` 或 `retro-skills\docs\architecture.md` §8.1。
+
 ## 元信息
 
 | 键 | 值 |
