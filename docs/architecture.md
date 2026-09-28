@@ -54,6 +54,8 @@ L4 仓库与安装层（东西放哪、怎么生效）——✅ 已通（见 §8
 ## 4. 单向数据流（体系公理）
 
 > **运行时目录全是只读的。唯一的编辑点是源仓库。更新 = 改源 → 跑同步 → 运行时被刷新。**
+>
+> **CLI 化修订（2026-09-28，`aas`）**：运行时目录**禁止人手改**这条不变；新增的"安装形态"（`aas add` 从远端仓库装）由**工具写入**运行时，且在 `~\.aas\installed.json` 留账——一切写入都经工具、有账可查，公理的精神不变。
 
 ```
 源仓库（唯一编辑点）                      运行时（只读，只被同步写入）
@@ -134,52 +136,44 @@ L4 仓库与安装层（东西放哪、怎么生效）——✅ 已通（见 §8
    4. B3 + 轮询规则改版（收口时机 + 没事不出声）
 ```
 
-### 8.1 已完成：my-rules + 同步脚本 + 测试（2026-09-28；脚本当晚搬入独立项目）
+### 8.1 已完成：my-rules + 同步脚本 + 测试（2026-09-28；脚本当晚搬入独立项目 `agent-assets-sync` 并 CLI 化为 `aas`）
 
 | 落地物 | 位置 |
 |---|---|
-| 全局规则源 | `D:\Seed\my-rules\rules\`（**中性名，不带工具名**；条数以脚本输出为准，见下） |
+| 全局规则源 | `D:\Seed\my-rules\rules\`（**中性名，不带工具名**；条数以体检输出为准，见下） |
 | 源仓库说明 | `D:\Seed\my-rules\README.md` |
-| **同步 / 体检脚本（独立项目）** | `D:\Seed\agent-assets-sync\src\sync.mjs`（**配置驱动**：源 / 目标 / 命名规则在项目根的 `sync.config.json`；设计缘由见其 `docs\design.md`） |
-| **脚本的测试** | `D:\Seed\agent-assets-sync\test\sync.test.mjs`（`node --test test/sync.test.mjs`，全绿） |
+| **同步 / 体检 / 安装 CLI（独立项目）** | `D:\Seed\agent-assets-sync`（命令 `aas`；**配置驱动**：源 / 目标 / 命名规则 / 编辑器适配器在项目根的 `sync.config.json`；安装账本在 `~\.aas\installed.json`；设计见其 `docs\design.md` 与 `docs\cli-design.md`） |
+| **CLI 的测试** | `D:\Seed\agent-assets-sync\test\`（`node --test` 全套 69 个，全绿） |
 
-**用法**（`cd D:\Seed\agent-assets-sync` 后跑）：
+**用法**（`npm link` 或 `npm run localg` 注册命令后，任意目录可跑；细节见 `agent-assets-sync\README.md`）：
 
 ```
-node src/sync.mjs                    只体检（默认，绝不改动任何东西）
-node src/sync.mjs --apply            同步：只建"缺失的链接"，不删任何东西
-node src/sync.mjs --apply --replace  允许把"真实副本 / 指错的链接"换成链接（会删东西）
-node src/sync.mjs --apply --rm-old   允许清理残留：旧名文件 + 自家失效链接（会删东西）
-node src/sync.mjs list               列出配置里各源有哪些条目（只读）
-node src/sync.mjs --config <路径>    用别的配置文件（默认 项目根的 sync.config.json）
-node --test test/sync.test.mjs       跑脚本自己的测试（临时目录里，不碰真实运行时）
+aas                        体检：链接形态 + aas 安装形态一起查（默认，绝不改动任何东西）
+aas sync [--replace] [--rm-old]   同步：只建"缺失的链接"；删类动作要显式 flag；账本条目受豁免不删
+aas add <源> [名...]        从远端/本地源安装规则/技能（多选标注已装；记录原名→运行时名映射）
+aas update [名] [--all]     按账本刷新已装条目（也是缓存漂移的修复入口）
+aas remove <名> [--purge]   按账本摘除并销账（非交互必须 --yes）
+aas import <名>             把编辑器里手建的条目收编进源仓库（接管需再跑 aas sync --replace）
+aas list / aas editors      只读：列条目 / 列编辑器
 ```
 
-**安全默认（重要）**：`--apply` **只建缺失的链接**。一切会删东西的动作都要显式开口：
-
-| 参数 | 允许删什么 |
-|---|---|
-| （无） | **什么都不删** |
-| `--replace` | 真实副本 / 指向别处的链接（换成规范链接） |
-| `--rm-old` | 旧名残留文件 + "自家残留链接"（指向源目录内已不存在文件的链接） |
-
-**其它约定**：退出码 0 = 一致 ／ 1 = 有差异 ／ 2 = 出错；**幂等**（重复跑无副作用）；**只碰源里有的那些**，其余一律归"孤儿(不动)"。
+**安全默认（重要）**：`aas sync` **只建缺失的链接**；`add/update` 静默执行但撞已存在条目时非交互默认跳过；`remove` 删东西必须显式（交互确认或 `--yes`）。退出码 0/1/2 全命令统一。
 
 **前置条件（换机器时照这个清单核）**：
 
 1. **Windows 开发者模式**——**只有"规则"这一侧需要它**（规则是 file symlink，靠它）；**技能侧用的是 junction，不需要**。本机已开
-2. Node ≥ 18（用 `node:fs` / `node:test`；本机 v22.12.0 已验证）
-3. 路径**全在配置里，不用改代码**：默认见 `D:\Seed\agent-assets-sync\sync.config.json`（源 `D:\Seed\my-rules\rules` ＋ `D:\Seed\retro-skills\skills`）；换机器 / 别处 clone 时用环境变量覆盖 —— `MY_RULES_SRC` / `RETRO_SKILLS_DIR` / `TRAE_RULES_DST` / `TRAE_SKILLS_DST`（变量名与路径的绑定也写在配置的 `env` 字段里，换编辑器可一并换名）
+2. Node ≥ 20（aas 的 engines 要求；本机 v22.12.0 已验证）+ git 在 PATH + npm（装命令用）
+3. 路径**全在配置里，不用改代码**：默认见 `D:\Seed\agent-assets-sync\sync.config.json`（源 `D:\Seed\my-rules\rules` ＋ `D:\Seed\retro-skills\skills`；编辑器适配器与源登记也在里面）；换机器 / 别处 clone 时用环境变量覆盖 —— `MY_RULES_SRC` / `RETRO_SKILLS_DIR` / `TRAE_RULES_DST` / `TRAE_SKILLS_DST`（变量名与路径的绑定写在配置的 `env` 字段里，换编辑器可一并换名）
    - **仓库搬家** → 改配置里的 `srcDir`（或设 `MY_RULES_SRC`）
-   - **换编辑器** → 改配置里那条 target 的 `dstDir` 与 `dstName`，**源文件一个字不用动**
-   - **添新的源仓库**（如将来收编 multi-lens）→ 在配置的 `targets` 里**加一条**
-4. 零第三方依赖（只用 Node 内置）
+   - **换编辑器** → 改/加配置里 `editors` 的适配条目（目录 + 命名模板），**源文件一个字不用动**
+   - **添新的源仓库**（如将来收编 multi-lens）→ 在配置的 `linkTargets` 里**加一条**
+4. 依赖（2026-09-28 放开零依赖，用户拍板）：Node 内置之外只引 **commander**（子命令）+ **@inquirer/prompts**（交互问询），另用系统 **git** 做远端 clone；`package.json` `private: true`（不发 npm 仓库，R31）
 
 **运行时的实际形态（已实测，条数取脚本输出）**：
 
 | 目标 | 形态 |
 |---|---|
-| `~\.trae-cn\user_rules\rule-<名字>.md` | 全部是 **SymbolicLink** → `my-rules\rules\<名字>.md`（取数：在 `agent-assets-sync` 里跑 `node src/sync.mjs` 的"已就位"数；本条写作时 9 条） |
+| `~\.trae-cn\user_rules\rule-<名字>.md` | 全部是 **SymbolicLink** → `my-rules\rules\<名字>.md`（取数：跑 `aas` 体检的"已就位"数；本条写作时 9 条。另有 **aas 安装**形态条目——经 `aas add` 从远端仓库装的，账本豁免不计入孤儿） |
 | `~\.trae-cn\skills\<技能名>\` | 5 个 **Junction** → `retro-skills\skills\<技能名>\`（`ais`/`skills` 装的第三方技能不在本脚本管理面内，报告里列为"孤儿(不动)"） |
 
 **所以"改源即生效"**：改 `my-rules` 里的规则，下次对话就是新的；改 `retro-skills` 里的技能同理。**不要在运行时目录里改**（那会丢）。
@@ -194,8 +188,8 @@ node --test test/sync.test.mjs       跑脚本自己的测试（临时目录里�
 
 **如果误跑了 `npx skills add` / `skills update`（混用）怎么办**：
 
-1. **怎么发现**：在 `agent-assets-sync` 里跑 `node src/sync.mjs` —— 它会报"真实副本（内容已过时/一致）"，那就是链接被换成了副本
-2. **怎么修**：`node src/sync.mjs --apply --replace` 换回链接
+1. **怎么发现**：跑 `aas` 体检 —— 它会报"真实副本（内容已过时/一致）"，那就是链接被换成了副本
+2. **怎么修**：`aas sync --replace` 换回链接
 3. 为什么禁止混用：见 §9 V3
 4. ⚠️ **混用的真实风险（2026-09-28 已实测，比原先的担心轻）**：
    - **实测结论**：`skills update` **只动它锁（`.skill-lock.json`）里的技能**。我们那 5 个是**手工 junction 接的、不在锁里** → 它**根本不碰**（实测：跑完 `Updated 18 skill(s)`，全是第三方远端技能；我们 5 个的**源聚合哈希未变**、junction 仍是 junction）
@@ -277,6 +271,7 @@ node --test test/sync.test.mjs       跑脚本自己的测试（临时目录里�
 | **R29** | 设计变更（2026-09-28）：规则源目录从 `.trae\rules\` 改成**中立的 `rules\`** | 触发来自"**换编辑器是很基础的需求**"。原布局的两条理由都没兑现（`ais` 在本机不可用、已卸载；"多工具扩展位"不是白捡的）→ 源与工具**解耦**：换编辑器只改那条映射的 `dstDir`/`dstName`（当时写在脚本的 `TARGETS` 里，**2026-09-28 起改在 `sync.config.json`**，见 §8.1），**源文件一个字不用动**（与技能侧 `retro-skills\skills\` 同形态）。落地：挪目录 ✓ + 改 `sync.mjs` 源路径 ✓ + 重跑同步（9 条链接被识别为"已断"后自动重建 ✓）+ 改 `my-rules\README.md`（含"为什么放弃 `.trae\`"的诚实记录） |
 | **R33** | 【测试】给 CLI 的参数解析（`list` / `--help` / flags）加测试 | ✅ **已结（2026-09-28）**：随脚本搬入 `agent-assets-sync` 时，把参数解析抽成纯函数 `parseArgs()` 并补了测试；配置解析（`loadConfig` / `buildTargets`）也一并补测 |
 | **R35** | 【结构】把同步脚本独立成一个项目 | ✅ **已结（2026-09-28）**：建仓 `agent-assets-sync`（git + GitHub 远程），改成**配置驱动**（`sync.config.json` + `--config`），产出 `docs\design.md`（含三条"为什么"与迁移五步）；运行时**零变化**（搬家后体检仍"全部一致"）。**取中性名**——它同时管 rules 与 skills。发 npm 另见 R31 |
+| **R30** | 【CLI】加 `add <名>`（只装指定几条）/ `import <名>`（把运行时已有规则收编进源）/ `remove` | ✅ **已结（2026-09-28）**：触发信号"出现真实消费者"命中（用户要装远端规则）→ 整个 CLI 落地（`aas add/update/remove/import/list/editors`），并升级为**安装形态**：远端 clone 进缓存 → 多选（标注已装）→ 装进编辑器 → 账本记账（`~\.aas\installed.json` 记原名↔运行时名映射）。设计全文见 `agent-assets-sync\docs\cli-design.md`（经 multi-lens-review 4 轮收敛） |
 
 ### 已关闭（不做，理由在此）
 
@@ -299,7 +294,7 @@ node --test test/sync.test.mjs       跑脚本自己的测试（临时目录里�
 | R19 | 给脚本加断言：`dirLevel` 与源的形态（文件 / 目录）不符就报错 | 真的配错一次 |
 | R22 | 把"收口时跑体检"做成常驻规则 | 忘记跑、导致真的踩坑 ≥ 1 次 |
 | R27 | 补第 5 轮评审确认（严格"连续两轮零新增 P0/P1"未达成） | 下次动这套体系时顺手跑一轮 |
-| R30 | 【CLI】加 `add <名>`（只装指定几条）/ `import <名>`（把运行时已有规则收编进源）/ `remove` | 出现真实消费者，或第一次"在 Trae 里手建规则后想收编" |
+| R30 | ✅ 已结（2026-09-28）——见"已采纳"表 |
 | R31 | 【发布】对外发布时**生成**一份 `.trae/rules/` 兼容产物（产物 gitignore） | 决定把规则仓库公开分享（届时 `ais` 一类工具才认得） |
 | R32 | 【规则规范】把"对外规则正文的 provenance 不写绝对路径"写成一条规则 | 下次要对外分享规则时（今天已修掉一处实例：`poll-deferred-at-start.md`） |
 | R34 | 【跨平台】脚本硬编码 Windows 路径、也只在 Windows 验过 | 真有非 Windows 使用者 |
