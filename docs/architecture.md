@@ -119,7 +119,7 @@ L4 仓库与安装层（东西放哪、怎么生效）——✅ 已通（见 §8
 | 仓库 | 状态 | 放什么 |
 |---|---|---|
 | `retro-skills` | ✅ 已建（GitHub 远程） | 复盘技能套件 + 本文档；将来放 evolving-skills。**同步脚本已于 2026-09-28 搬出**（见下） |
-| **`agent-assets-sync`** | ✅ 已建（git + GitHub 远程） | **同步 / 体检脚本**（独立项目、配置驱动：`sync.config.json` + `src\sync.mjs` + `test\`）；设计缘由见其 `docs\design.md` |
+| **`agent-assets-sync`** | ✅ 已建（git + GitHub 远程） | **同步 / 体检 / 安装 CLI `aas`**（独立项目、配置驱动：`sync.config.json` + 安装账本 `~\.aas\`；命令全集见 §8.1） |
 | **`my-rules`** | ✅ 已建（git + GitHub 远程） | 全局 rule 的源（在**中立目录** `rules\` —— 目录名不含工具名，为"换编辑器"解耦；见 §8.1） |
 | 项目仓库（lpm 等） | ✅ 已有 | 项目 rule 跟项目走，**不建新仓库** |
 | **KB（`D:\Seed\lessons`）** | ⛔ **特意不建 git** | 数据层、含个人记录，不跟任何仓库走；备份挂账 |
