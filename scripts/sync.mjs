@@ -44,20 +44,31 @@ const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..') // retr
 
 // ─────────────────────────────────────────────────────────────
 // 映射表：源 → 运行时目标
-// 加新仓库时在这里加一行即可（等有第 3 个仓库再抽成配置文件）
+//
+// 路径全部可用环境变量覆盖 —— **换机器 / 别人 clone 后不用改代码**：
+//   MY_RULES_SRC     规则源目录        （默认 D:\Seed\my-rules\rules）
+//   RETRO_SKILLS_DIR 技能源目录        （默认 本脚本所在仓库的 skills\）
+//   TRAE_RULES_DST   Trae CN 全局规则目录（默认 ~\.trae-cn\user_rules）
+//   TRAE_SKILLS_DST  Trae CN 技能目录   （默认 ~\.trae-cn\skills）
+// 加新仓库（如将来换编辑器 / 收编别的技能）时，在 TARGETS 里加一行即可。
 // ─────────────────────────────────────────────────────────────
+const RULES_SRC = process.env.MY_RULES_SRC || 'D:\\Seed\\my-rules\\rules'
+const SKILLS_SRC = process.env.RETRO_SKILLS_DIR || join(REPO_ROOT, 'skills')
+const TRAE_RULES_DST = process.env.TRAE_RULES_DST || join(HOME, '.trae-cn', 'user_rules')
+const TRAE_SKILLS_DST = process.env.TRAE_SKILLS_DST || join(HOME, '.trae-cn', 'skills')
+
 const TARGETS = [
   {
     label: '全局规则',
-    srcDir: 'D:\\Seed\\my-rules\\.trae\\rules',
-    dstDir: join(HOME, '.trae-cn', 'user_rules'),
+    srcDir: RULES_SRC,
+    dstDir: TRAE_RULES_DST,
     dstName: (srcName) => `rule-${srcName}`, // 已实测：这个形状才会被加载
     dirLevel: false,
   },
   {
     label: '技能',
-    srcDir: join(REPO_ROOT, 'skills'),
-    dstDir: join(HOME, '.trae-cn', 'skills'),
+    srcDir: SKILLS_SRC,
+    dstDir: TRAE_SKILLS_DST,
     dstName: (srcName) => srcName,
     dirLevel: true,
   },
@@ -134,7 +145,7 @@ function removeLinkOrCopy(p) {
 // ─────────────────────────────────────────────────────────────
 function inspect(t) {
   if (!existsSync(t.srcDir)) {
-    throw new Error(`源目录不存在：${t.srcDir}（仓库搬家了？请改 sync.mjs 里 TARGETS 的路径）`)
+    throw new Error(`源目录不存在：${t.srcDir}（用环境变量 MY_RULES_SRC / RETRO_SKILLS_DIR 覆盖，或改 sync.mjs 里 TARGETS 的默认值）`)
   }
 
   const srcNames = readdirSync(t.srcDir).filter((n) => !n.startsWith('.'))
@@ -259,10 +270,38 @@ function applyOne(r, opts = {}) {
 // 主流程（只有"直接执行"时才跑；被 import 时不跑，方便测试）
 // ─────────────────────────────────────────────────────────────
 function main() {
+  const argv = process.argv.slice(2)
   const flags = {
-    apply: process.argv.includes('--apply'),
-    replace: process.argv.includes('--replace'),
-    rmOld: process.argv.includes('--rm-old'),
+    apply: argv.includes('--apply'),
+    replace: argv.includes('--replace'),
+    rmOld: argv.includes('--rm-old'),
+  }
+
+  if (argv.includes('--help') || argv.includes('-h')) {
+    console.log(`用法：
+  node scripts/sync.mjs                    只体检（默认，绝不改动任何东西）
+  node scripts/sync.mjs --apply            同步：只建"缺失的链接"，不删任何东西
+  node scripts/sync.mjs --apply --replace  允许把"真实副本 / 指错的链接"换成链接（会删东西）
+  node scripts/sync.mjs --apply --rm-old   允许清理残留：旧名文件 + 自家失效链接（会删东西）
+  node scripts/sync.mjs list               列出源仓库里有哪些条目（只读）
+  node --test scripts/sync.test.mjs        跑脚本自己的测试（临时目录里，不碰真实运行时）
+
+路径可用环境变量覆盖（换机器 / 别人 clone 后不用改代码）：
+  MY_RULES_SRC / RETRO_SKILLS_DIR / TRAE_RULES_DST / TRAE_SKILLS_DST`)
+    return 0
+  }
+
+  if (argv[0] === 'list') {
+    for (const t of TARGETS) {
+      console.log(`\n[${t.label}]  ${t.dstDir}`)
+      console.log(`  源：${t.srcDir}`)
+      if (!existsSync(t.srcDir)) { console.log('  ✗ 源目录不存在'); continue }
+      for (const n of readdirSync(t.srcDir).filter((x) => !x.startsWith('.'))) {
+        console.log(`  ${t.dstName(n)}`)
+      }
+    }
+    console.log('')
+    return 0
   }
 
   console.log(`\n${flags.apply ? '== 执行同步（--apply）==' : '== 体检（只读，不改动任何东西）=='}`)

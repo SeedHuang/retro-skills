@@ -117,7 +117,7 @@ L4 仓库与安装层（东西放哪、怎么生效）——✅ 已通（见 §8
 | 仓库 | 状态 | 放什么 |
 |---|---|---|
 | `retro-skills` | ✅ 已建（GitHub 远程） | 复盘技能套件 + 同步脚本 + 本文档；将来放 evolving-skills |
-| **`my-rules`** | ✅ 已建（git + GitHub 远程） | 全局 rule 的源（在 `.trae\rules\`） |
+| **`my-rules`** | ✅ 已建（git + GitHub 远程） | 全局 rule 的源（在**中立目录** `rules\` —— 目录名不含工具名，为"换编辑器"解耦；见 §8.1） |
 | 项目仓库（lpm 等） | ✅ 已有 | 项目 rule 跟项目走，**不建新仓库** |
 | **KB（`D:\Seed\lessons`）** | ⛔ **特意不建 git** | 数据层、含个人记录，不跟任何仓库走；备份挂账 |
 | multi-lens / prd-to-specs 的收纳仓库 | ⏸ 挂账 | 待"首次要进化它们时"再定 |
@@ -136,7 +136,7 @@ L4 仓库与安装层（东西放哪、怎么生效）——✅ 已通（见 §8
 
 | 落地物 | 位置 |
 |---|---|
-| 全局规则源 | `D:\Seed\my-rules\.trae\rules\`（条数以脚本输出为准，见下） |
+| 全局规则源 | `D:\Seed\my-rules\rules\`（**中性名，不带工具名**；条数以脚本输出为准，见下） |
 | 源仓库说明 | `D:\Seed\my-rules\README.md` |
 | **同步 / 体检脚本** | `retro-skills\scripts\sync.mjs` |
 | **脚本的测试** | `retro-skills\scripts\sync.test.mjs`（14 用例，全绿；`node --test scripts/sync.test.mjs`） |
@@ -165,16 +165,16 @@ node --test scripts/sync.test.mjs        跑脚本自己的测试（临时目录
 
 1. **Windows 开发者模式**——**只有"规则"这一侧需要它**（规则是 file symlink，靠它）；**技能侧用的是 junction，不需要**。本机已开
 2. Node ≥ 18（用 `node:fs` / `node:test`；本机 v22.12.0 已验证）
-3. 两个源仓库在脚本里写的**固定路径**上：`D:\Seed\my-rules\.trae\rules`、`D:\Seed\retro-skills\skills`
-   - **仓库搬家** → 改 `TARGETS`（见 §11 R11）
-   - **添新的源仓库**（如将来收编 multi-lens）→ 也在 `TARGETS` **加一行**（脚本里就是一张"源 → 目标"映射表）
+3. 源路径**已可配置，不用改代码**：默认 `D:\Seed\my-rules\rules` 与"本脚本所在仓库的 `skills\`"；换机器 / 别处 clone 时用环境变量覆盖 —— `MY_RULES_SRC` / `RETRO_SKILLS_DIR` / `TRAE_RULES_DST` / `TRAE_SKILLS_DST`
+   - **仓库搬家** → 设 `MY_RULES_SRC`（或改 `TARGETS` 的默认值）
+   - **添新的源仓库**（如将来收编 multi-lens、或换编辑器）→ 在 `TARGETS` **加一行**（脚本里就是一张"源 → 目标"映射表）
 4. 零第三方依赖（只用 Node 内置）
 
 **运行时的实际形态（已实测，条数取脚本输出）**：
 
 | 目标 | 形态 |
 |---|---|
-| `~\.trae-cn\user_rules\rule-<名字>.md` | 全部是 **SymbolicLink** → `my-rules\.trae\rules\<名字>.md`（取数：`node scripts/sync.mjs` 的"已就位"数；本条写作时 9 条） |
+| `~\.trae-cn\user_rules\rule-<名字>.md` | 全部是 **SymbolicLink** → `my-rules\rules\<名字>.md`（取数：`node scripts/sync.mjs` 的"已就位"数；本条写作时 9 条） |
 | `~\.trae-cn\skills\<技能名>\` | 5 个 **Junction** → `retro-skills\skills\<技能名>\`（`ais`/`skills` 装的第三方技能不在本脚本管理面内，报告里列为"孤儿(不动)"） |
 
 **所以"改源即生效"**：改 `my-rules` 里的规则，下次对话就是新的；改 `retro-skills` 里的技能同理。**不要在运行时目录里改**（那会丢）。
@@ -267,8 +267,9 @@ node --test scripts/sync.test.mjs        跑脚本自己的测试（临时目录
 | R18 | 优化（第 3 轮）：**体检的触发点**没定（否则变摆设） | §8.1 新增「什么时候该跑这个脚本」 |
 | **R23** | **矛盾**（第 4 轮）：`my-rules\README.md` 仍写"同步脚本未做""命名未验证"，且表里路径还是旧布局 `rules\` | 已重写该 README（路径改 `.trae\rules\`、补第 8 条账目、待定节改为"现状与待办"） |
 | **R24** | 优化（第 4 轮）：架构文档三处数字写"7 条"而实际更多 | 已改：数字**只留在 §8.1 一处并附取数命令**，§3 L4 / §7 去掉数字（防漂移） |
-| **R25** | 优化（第 4 轮，归因**流程缺失**）：同类"声明滞后于落地"已复发两次 | **新建规则** `my-rules\.trae\rules\landing-sweep.md`：落地后必须回头扫四类地方，附扫描命令 |
+| **R25** | 优化（第 4 轮，归因**流程缺失**）：同类"声明滞后于落地"已复发两次 | **新建规则** `my-rules\rules\landing-sweep.md`：落地后必须回头扫四类地方，附扫描命令 |
 | **R26** | 优化（第 4 轮）：架构文档 R17 措辞写着"实测清楚前不要跑"（已实测清楚） | 已在本表 R17 行改写 |
+| **R29** | 设计变更（2026-09-28）：规则源目录从 `.trae\rules\` 改成**中立的 `rules\`** | 触发来自"**换编辑器是很基础的需求**"。原布局的两条理由都没兑现（`ais` 在本机不可用、已卸载；"多工具扩展位"不是白捡的）→ 源与工具**解耦**：换编辑器只改 `TARGETS` 的 `dstDir`/`dstName`，**源文件一个字不用动**（与技能侧 `retro-skills\skills\` 同形态）。落地：挪目录 ✓ + 改 `sync.mjs` 源路径 ✓ + 重跑同步（9 条链接被识别为"已断"后自动重建 ✓）+ 改 `my-rules\README.md`（含"为什么放弃 `.trae\`"的诚实记录） |
 
 ### 已关闭（不做，理由在此）
 
@@ -291,3 +292,10 @@ node --test scripts/sync.test.mjs        跑脚本自己的测试（临时目录
 | R19 | 给脚本加断言：`dirLevel` 与源的形态（文件 / 目录）不符就报错 | 真的配错一次 |
 | R22 | 把"收口时跑体检"做成常驻规则 | 忘记跑、导致真的踩坑 ≥ 1 次 |
 | R27 | 补第 5 轮评审确认（严格"连续两轮零新增 P0/P1"未达成） | 下次动这套体系时顺手跑一轮 |
+| R30 | 【CLI】加 `add <名>`（只装指定几条）/ `import <名>`（把运行时已有规则收编进源）/ `remove` | 出现真实消费者，或第一次"在 Trae 里手建规则后想收编" |
+| R31 | 【发布】对外发布时**生成**一份 `.trae/rules/` 兼容产物（产物 gitignore） | 决定把规则仓库公开分享（届时 `ais` 一类工具才认得） |
+| R32 | 【规则规范】把"对外规则正文的 provenance 不写绝对路径"写成一条规则 | 下次要对外分享规则时（今天已修掉一处实例：`poll-deferred-at-start.md`） |
+| R33 | 【测试】给 CLI 的参数解析（`list` / `--help` / flags）加测试 | 参数逻辑再变一次（当前靠手工验证） |
+| R34 | 【跨平台】脚本硬编码 Windows 路径、也只在 Windows 验过 | 真有非 Windows 使用者 |
+| **R20（重开）** | 【可读性】三套编号（V / H / R）并存、查找不便 —— **原关闭理由写的信号"编号总数超过 ~20"已触发**（现 34 个） | 轻量对策已做（新候选带 `【主题】` 前缀）；**若下次仍觉得难查 → 按主题分组重构** |
+| R35 | 【结构】把同步脚本独立成一个项目 | ① 出现第二个使用者；② 决定把规则/技能仓库对外发布；③ 脚本要管第 3 个源仓库。**正名提示**：它同时管 rules 与 skills，叫 `my-rules-cli` 会名不副实 → 用中性名 |
