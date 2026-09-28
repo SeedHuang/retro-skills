@@ -28,13 +28,17 @@
    ├─ 决策树 Step 0–5（定载体）
    ├─ ledger 先行（教训先入账再动手）
    ├─ 真冲突判定 / 防重复五处
-   └─ 转发闸门：载体 = 技能 → REQUIRED SUB-SKILL: evolving-skills
+   └─ 转发闸门：修订既有载体（rule / skill / 自动化）→ REQUIRED SUB-SKILL: evolving-skills
         │
    evolving-skills（施工方）
-   └─ 失败场景先行 → 按差异卡实施 → 验证
+   └─ 失败场景先行 → 按差异卡实施 → 验证 → 置账本 landed
 ```
 
-**边界**：新增规则的归置（决策树直接落 rule/memory/自动化）**不经过** evolving-skills——只有"载体本身要进化"（修订既有载体，或教训的固化建议就是改某技能）才走它。provenance 格式、防重复、冲突判定都留在 institutionalize（新增也用的公共件）。
+**边界（评审第 1 轮修正后的精确版）**：
+
+- **新增归置**（决策树直接落 rule / memory / 自动化，含新增 skill 走 Step 3 转发）——新增 rule / memory / 自动化由 institutionalize **就地实施**（落点表 + provenance 都在这，单一真相）；**新增 skill** 转发 evolving-skills（card-skill.md 覆盖新建）
+- **修订既有载体**（Step 1a 扩触发面 / 1b 修既有，不论 rule / skill / 自动化）——**一律转发** evolving-skills 读对应卡（修订手法只住在卡里，单一真相）
+- memory 修订例外：纯文本编辑无构建无生效问题，**留 institutionalize 就地**（D2 memory 不设卡的推论），卡缺席不是悬空
 
 ## 4. evolving-skills 规格
 
@@ -53,7 +57,7 @@ retro-skills\skills\evolving-skills\
 ### 4.2 SKILL.md 内容要求
 
 - frontmatter：`name: evolving-skills`；description 写清触发条件（Use when 复盘结论指向改某个载体本身 / institutionalize 转发过来；Do not use for 首次归置新增——那走 institutionalize 决策树）
-- 正文节：① 它是什么/不是什么（施工手册，非教训仓库）② 第一步：识别载体 → 读对应卡 ③ 六步速览表 ④ 转发自 institutionalize 时的衔接（教训已在 KB ledger，从账捞起）
+- 正文节：① 它是什么/不是什么（施工手册，非教训仓库）② 第一步：识别载体 → 读对应卡 ③ 六步速览表 ④ 转发自 institutionalize 时的衔接（教训已在 KB ledger，从账捞起；**直达触发而账里无记录时，先建账再动手**——ledger 先行是通则）
 - 不复制 references 的正文，只留速览 + 指针
 
 ### 4.3 protocol.md（施工手册正文）六步
@@ -64,9 +68,15 @@ retro-skills\skills\evolving-skills\
 | 1 先升级不新增 | 查五处既有承载；升级是默认，新增须举证 | institutionalize Step 1 |
 | 2 四归因 | 流程缺失 / 知识缺失 / 修复引入 / 假设未显式化——归因决定改哪 | multi-lens lessons.md 格式头 |
 | 3 攒批 | 教训先进 KB ledger（open），攒批时机由用户裁决（现在/收口），协议只强制"先进账再动手、动手时同类一起" | multi-lens lessons.md 流转头 |
-| 4 独立 agent 合并 | 动手术用 Task 起无偏见子代理：读教训 → 合并 → 返回变更摘要供确认 | multi-lens SKILL.md 飞轮第 3 步 |
+| 4 独立 agent 合并 | 动手术用 Task 起无偏见子代理：读教训 → 合并 → 返回变更摘要供确认；**中断恢复 = git 回退**（retro-skills 已提交可回退）后重跑 | multi-lens SKILL.md 飞轮第 3 步 |
 | 5 体积守卫 | skill SKILL.md < 500 行；rule 不设行数但须可证伪；自动化不拖慢执行点 | multi-lens 飞轮（<500 行） |
-| 6 验证 | 按差异卡各自的验证节 | 各卡 |
+| 6 验证 | 按差异卡各自的验证节；**验证通过后把 ledger 条目置 `landed(→载体)`**（状态流转的收口动作在 evolving-skills，institutionalize 结束动作只读校验） | 各卡 |
+
+**账本流转与本期落点（评审 P1-1 / P1-2 补）**：
+
+- 流转：转发前 institutionalize 写 `open`（ledger 先行）→ 合并验证通过后 evolving-skills 置 `landed(→载体)` → institutionalize 结束动作只读校验。中断（合并未完成）→ 留 open，重跑幂等。
+- **本期落点**：KB 的 `skills\` 区未建（C3 属第 3 步），本期技能教训记 `projects\<触发项目>\ledger.md`（载体列标 skill / rule）；C3 建成后随 A2/B1 迁移。
+- 转发携带物：教训 ID + 载体 + 归置结果行引用。
 
 ### 4.4 三张差异卡内容要点（统一小节结构：改前/改中/改后生效/验证/常见错误）
 
@@ -87,22 +97,23 @@ retro-skills\skills\evolving-skills\
 
 ### 5.2 新增（转发闸门）
 
-**闸门定义**：决策树中**实施对象是某个 skill 本体**的所有分支 → 转发。覆盖三处：
+**闸门定义（评审第 1 轮修正）**：**修订既有载体 → 一律转发**；新增按 §3 边界分工。转发覆盖：
 
-- **Step 1a 扩既有触发面**（当既有是 skill：扩它的 description/触发条件 = 改技能本体）
-- **Step 1b 修既有**（当既有是 skill：修它的约束/流程）
-- **Step 3 落 skill**（新增或重写一个技能）
+- **Step 1a 扩既有触发面**（既有 = rule / skill / 自动化：扩 description / globs / 触发条件 = 改载体本体）
+- **Step 1b 修既有**（改既有载体的约束 / 流程 / 判据）
+- **Step 3 落 skill**（新增或重写一个技能——card-skill.md 覆盖新建）
 
-转发语义：REQUIRED SUB-SKILL: evolving-skills，按 card-skill.md 实施，教训先入 ledger（精确文案在 plan 定稿）。
+转发语义：REQUIRED SUB-SKILL: evolving-skills + 携带教训 ID / 载体 / 归置结果行（精确文案在 plan 定稿）。memory 修订不转发（§3 例外）。
 
 ### 5.3 保留（不动）
 
-前置检查（复盘文件/迁移锁）、决策树 Step 0–5、ledger 写入顺序、真冲突判定、防重复五处、provenance 格式定义、结束动作（含"开新对话生效"提醒）。
+前置检查（复盘文件/迁移锁）、决策树 Step 0–5、**新增归置的落点实施**（四载体落点表、provenance 格式定义、防重复五处）、ledger 写入顺序、真冲突判定、结束动作（含"开新对话生效"提醒 + 转发回来的 landed 只读校验）。
 
 ### 5.4 RED-GREEN（对 institutionalize 本身的改动）
 
-- RED：改前 SKILL.md 全文无 `evolving-skills` 字样；决策树走到 Step 3 无任何转发指令（失败场景：agent 会就地按 rule 手法改技能——无攒批、无体积守卫、无独立合并）
-- GREEN：Step 1a / 1b / 3 出现转发指令；瘦身后的节挪至 evolving-skills
+- RED：改前 SKILL.md 全文无 `evolving-skills` 字样；决策树走到修订分支无任何转发指令（失败场景：agent 会就地按搬空的旧手法改载体——无攒批、无体积守卫、无独立合并）
+- GREEN：修订分支出现转发指令；瘦身后的节挪至 evolving-skills
+- RED 证据落点：**KB ledger 教训行**（不落项目仓库——守"项目里不留过程记录"约束）
 
 ## 6. 生效与验收
 
@@ -123,9 +134,31 @@ retro-skills\skills\evolving-skills\
 
 - V6：本任务改技能内容后，新对话观察是否即时可见（交接词遗留裁决）
 - R27：下次动体系顺手补第 5 轮评审（本 spec 自审不算）
-- R28：下次编辑 architecture.md 顺手把 R28 从"候选"挪"已关闭"（本任务不改 architecture 的 backlog 表则顺延）
+- R28：**本任务落地扫必编辑 architecture.md**——顺手把 R28 在其所属 backlog 表中挪进"已关闭"并核实无残留悬空（评审第 1 轮修正：原"顺延"表述与事实矛盾）
 - 落地扫：完成后按规则扫 architecture.md / README（retro-skills 与 my-rules）/ 源码注释
 
 ## 9. 开放问题
 
 无（四条裁决见 §2；实施细节归 plan）。
+
+## 10. 评审 Backlog（multi-lens-review 第 1 轮 P2 处置沉淀）
+
+### 已采纳（已并入本文）
+
+| # | 项 | 落点 |
+|---|---|---|
+| O1 | 合并/编辑中断恢复 = git 回退后重跑 | §4.3 第 4 步 |
+| O2 | 非转发直达（无账）→ 先建账再动手 | §4.2 SKILL.md 衔接节要求 |
+| O3 | RED 证据落 KB ledger 教训行 | §5.4 |
+| O4 | R28 顺延表述修正 | §8 |
+| O5 | 转发携带物定义（教训 ID + 载体 + 归置结果行） | §4.3 / §5.2 |
+
+### 候选（等信号再评估）
+
+| # | 项 | 触发信号 |
+|---|---|---|
+| O6 | 账本跨会话并发锁（两个会话同时进化同一技能） | 真发生一次并发冲突（H4 同族） |
+
+### 已关闭（不做，理由在此）
+
+（第 1 轮无）

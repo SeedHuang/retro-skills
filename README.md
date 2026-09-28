@@ -13,14 +13,15 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 
 `-g` 为全局（跨项目）。安装默认使用 symlink 模式（单一事实源、便于更新）。
 
-## 五个技能
+## 六个技能
 
 | 技能 | 作用 |
 |---|---|
 | `using-retrospective` | 入口：判断时机、路由到对应环节 |
 | `retro-collect` | 采集事实包（纯事实、零判断） |
 | `retro-analyze` | 产出问题清单 / 根因 / 优先级 + KB 条目 |
-| `retro-institutionalize` | 归置落地（决策树 + provenance + 备份） |
+| `retro-institutionalize` | 归置落地分诊（决策树 + provenance + ledger 先行；skill/修订类转发 evolving-skills） |
+| `evolving-skills` | 载体进化（协议 + rule / skill / 自动化三张差异卡） |
 | `managing-lessons-store` | 错题集库的初始化 / 迁移 / 推迟项轮询 |
 
 ## 数据与仓库分离

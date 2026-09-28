@@ -38,11 +38,11 @@ L2 复盘层（怎么发现问题）——已建成
     retro-collect（纯事实）
     retro-analyze（问题/根因/维度/优先级）
 
-L3 载体进化层（怎么改它们）——半成品
+L3 载体进化层（怎么改它们）——✅ 已建成（2026-09-28）
     通用协议：先升级不新增 → 四归因 → 攒批 → 独立 agent 合并 → 体积守卫 → 验证
-    ├── retro-institutionalize：落 rule / memory / 自动化（已建成）
-    ├── evolving-skills：改 skill 本体（【缺】待建）
-    └── 每种载体的"差异卡"（【缺】待建）
+    ├── retro-institutionalize：落 rule / memory / 自动化（已建成；skill/修订类改动转发 evolving-skills）
+    ├── evolving-skills：改 skill 本体（✅ 已建成 2026-09-28）
+    └── 每种载体的"差异卡"（✅ 已建成 2026-09-28：card-rule / card-skill / card-automation）
 
 L4 仓库与安装层（东西放哪、怎么生效）——✅ 已通（见 §8.1）
     ├── 项目 rule：跟项目走（.trae\rules\）——零改动
@@ -106,7 +106,7 @@ L4 仓库与安装层（东西放哪、怎么生效）——✅ 已通（见 §8
 | # | 建什么 | 说明 |
 |---|---|---|
 | C1 | **my-rules 仓库** | ✅ 已建（见 §8.1） |
-| C2 | **evolving-skills** | retro-skills 第 6 个技能：协议的家 + skill 差异卡（【缺】待建） |
+| C2 | **evolving-skills** | retro-skills 第 6 个技能：协议的家 + skill 差异卡（✅ 已建成 2026-09-28；设计见 `docs\superpowers\specs\2026-09-28-evolving-skills-design.md`，实施见 `docs\superpowers\plans\2026-09-28-evolving-skills.md`） |
 | C3 | **KB 的 skills\ 区** | B1 的落地（【缺】待建） |
 | C4 | **同步 / 体检脚本** | ✅ 已建，**只有一份**，同时管 rules 与 skills。（原计划"各仓库写两份"，实际证明**一份足够**——它就是一张"源 → 目标"映射表）。**2026-09-28 已抽成独立项目 `agent-assets-sync`** 并改成配置驱动（`sync.config.json`），见 §8.1 |
 
@@ -118,7 +118,7 @@ L4 仓库与安装层（东西放哪、怎么生效）——✅ 已通（见 §8
 
 | 仓库 | 状态 | 放什么 |
 |---|---|---|
-| `retro-skills` | ✅ 已建（GitHub 远程） | 复盘技能套件 + 本文档；将来放 evolving-skills。**同步脚本已于 2026-09-28 搬出**（见下） |
+| `retro-skills` | ✅ 已建（GitHub 远程） | 复盘技能套件 + 本文档 + evolving-skills（2026-09-28 建成，见 §6 C2）。**同步脚本已于 2026-09-28 搬出**（见下） |
 | **`agent-assets-sync`** | ✅ 已建（git + GitHub 远程） | **同步 / 体检 / 安装 CLI `aas`**（独立项目、配置驱动：`sync.config.json` + 安装账本 `~\.aas\`；命令全集见 §8.1） |
 | **`my-rules`** | ✅ 已建（git + GitHub 远程） | 全局 rule 的源（在**中立目录** `rules\` —— 目录名不含工具名，为"换编辑器"解耦；见 §8.1） |
 | 项目仓库（lpm 等） | ✅ 已有 | 项目 rule 跟项目走，**不建新仓库** |
@@ -131,7 +131,7 @@ L4 仓库与安装层（东西放哪、怎么生效）——✅ 已通（见 §8
 ✅ 0. ais 实测 → 已实测完成：ais 不可用（见 §9.1），最后一公里自建
 ✅ 1. C1 my-rules bootstrap + C4 同步/体检脚本 → 已完成（见 §8.1）
 ✅ 1.5. C4 抽成独立项目 agent-assets-sync + 配置驱动 → 已完成（2026-09-28，见 §8.1）
-   2. C2 + A1（evolving-skills + 协议抽离 + institutionalize 加转发闸门）
+✅ 2. C2 + A1（evolving-skills + 协议抽离 + institutionalize 加转发闸门）→ 已完成（2026-09-28，见 §6 C2）
    3. C3 + A2 + B1（KB skills 区 + multi-lens 迁移 + 三区合一）
    4. B3 + 轮询规则改版（收口时机 + 没事不出声）
 ```
@@ -174,7 +174,7 @@ aas list / aas editors      只读：列条目 / 列编辑器
 | 目标 | 形态 |
 |---|---|
 | `~\.trae-cn\user_rules\rule-<名字>.md` | 全部是 **SymbolicLink** → `my-rules\rules\<名字>.md`（取数：跑 `aas` 体检的"已就位"数；本条写作时 9 条。另有 **aas 安装**形态条目——经 `aas add` 从远端仓库装的，账本豁免不计入孤儿） |
-| `~\.trae-cn\skills\<技能名>\` | 5 个 **Junction** → `retro-skills\skills\<技能名>\`（`ais`/`skills` 装的第三方技能不在本脚本管理面内，报告里列为"孤儿(不动)"） |
+| `~\.trae-cn\skills\<技能名>\` | 6 个 **Junction**（条数以 `aas` 体检输出为准）→ `retro-skills\skills\<技能名>\`（`ais`/`skills` 装的第三方技能不在本脚本管理面内，报告里列为"孤儿(不动)"） |
 
 **所以"改源即生效"**：改 `my-rules` 里的规则，下次对话就是新的；改 `retro-skills` 里的技能同理。**不要在运行时目录里改**（那会丢）。
 
@@ -192,7 +192,7 @@ aas list / aas editors      只读：列条目 / 列编辑器
 2. **怎么修**：`aas sync --replace` 换回链接
 3. 为什么禁止混用：见 §9 V3
 4. ⚠️ **混用的真实风险（2026-09-28 已实测，比原先的担心轻）**：
-   - **实测结论**：`skills update` **只动它锁（`.skill-lock.json`）里的技能**。我们那 5 个是**手工 junction 接的、不在锁里** → 它**根本不碰**（实测：跑完 `Updated 18 skill(s)`，全是第三方远端技能；我们 5 个的**源聚合哈希未变**、junction 仍是 junction）
+   - **实测结论**：`skills update` **只动它锁（`.skill-lock.json`）里的技能**。我们那 5 个是**手工 junction 接的、不在锁里** → 它**根本不碰**（实测：跑完 `Updated 18 skill(s)`，全是第三方远端技能；我们 5 个的**源聚合哈希未变**、junction 仍是 junction（当时 5 个）
    - **附带发现**：**本地路径**安装**不写锁**（所以那类安装也不被 `update` 管）；**远端**安装会写锁、且用 **junction**（指向 `~\.agents\skills\<名>` 这个"总库"）
    - **残余风险（精确版）**：将来你把 retro-skills 发到 GitHub、再用 `skills add` 装它 → 会产生锁条目 → 之后 `update` 可能把我们的 junction **换成"指向它总库"的链接**（= 不再指向你的源、失去即时同步）。**可检测**（`sync.mjs` 会报"链接指向别处"）**可恢复**（`--replace`）→ **不是不可逆**
    - **仍然建议**：别对同一批技能混用两套机制（两套都在管 = 第二份真相）
@@ -212,8 +212,8 @@ aas list / aas editors      只读：列条目 / 列编辑器
 | V1 | Trae 是否接受 `user_rules\` 里普通命名的规则文件 | ✅ 已实测：纯名字（`code-style.md`）**不认**；`rule-` 前缀 + 可读名 **认** → 运行时命名统一 `rule-<源文件名>`，无需映射表 |
 | V2 | `ais` 在本机能否用 | ✅ 已实测：装得上但**不可用**——它不认识 Trae CN 的 `.trae-cn` 路径（装到 `~\.trae\rules\` 去了）。详见 §9.1。**已卸载** |
 | V3 | `npx skills add` 与链接不能混用 | ✅ 已实测：会把链接**静默换成副本** → 禁止混用（误用后的恢复见 §8.1） |
-| **V4** | **Trae 是否跟随符号链接 / junction** | ✅ **已实测：跟随**。证据：两条只以链接形式存在的规则（代码风格规则、测试踩坑笔记）出现在新对话里；5 个技能（junction 目录）也全部可用 |
-| **V5** | **`npx skills update` 会不会写穿源仓库** | ✅ **已实测：不会**（2026-09-28）。它**只动 `.skill-lock.json` 里的技能**；我们 5 个不在锁里 → 不碰。实测：探针源与真技能源聚合哈希**均未变**、junction 未被替换。残余风险见 §8.1 第 4 点（可检测、可恢复） |
+| **V4** | **Trae 是否跟随符号链接 / junction** | ✅ **已实测：跟随**。证据：两条只以链接形式存在的规则（代码风格规则、测试踩坑笔记）出现在新对话里；5 个技能（junction 目录）也全部可用（当时 5 个） |
+| **V5** | **`npx skills update` 会不会写穿源仓库** | ✅ **已实测：不会**（2026-09-28）。它**只动 `.skill-lock.json` 里的技能**；我们 5 个（当时）不在锁里 → 不碰。实测：探针源与真技能源聚合哈希**均未变**、junction 未被替换。残余风险见 §8.1 第 4 点（可检测、可恢复） |
 | **V6** | 改了技能内容后，新对话是否**即时**可见 | ⏳ **待实测**（规则侧已证实即时——见 §8.1 证据边界；技能侧尚未单独验） |
 
 ### 9.1 V2 实测结果（2026-09-28）
