@@ -69,10 +69,6 @@ description: Split an existing PRD into independently developable specs with a r
 
 ## 复盘回流（进化飞轮）
 
-使用中发现**本技能应该覆盖但没覆盖**的问题时：
-
-1. **先记录不阻塞**：按复盘套件流程落错题集 KB——`retro-collect` / `retro-analyze`，条目进 `<KB>/skills/prd-to-specs/ledger.md`（教训落点 = 本技能的流程节 / 质量门 / 模板；**不写进本技能目录**，目录保持发布纯净）
-2. **提示用户**：「这暴露了拆分方法的盲区（归因 X），可固化进 skill。现在优化还是稍后批量？」
-3. 用户同意优化 → 走 `evolving-skills`（六步协议 + 差异卡）——**不在使用当场顺手改**
+使用中发现**本技能应该覆盖但没覆盖**的问题时：按 `evolving-skills` 的 `references/review-flywheel.md`（技能自我进化的复盘回流，通用三步）执行——先记录不阻塞（条目进 `<KB>/skills/prd-to-specs/ledger.md`，教训落点 = 本技能的流程节 / 质量门 / 模板）→ 提示用户 → 用户同意走 `evolving-skills`。**不在使用当场顺手改**。
 
 飞轮：拆分 → 使用 → 发现 → 归因 → 方法进化 → 更准的拆分。
