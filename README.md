@@ -39,11 +39,12 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 | 有事实包，要分析出问题 / 根因 / 优先级 | `retro-analyze` |
 | 复盘已有结论，要把教训写回规范 | `retro-institutionalize` |
 | 要改 rule / skill / 自动化本体（施工） | `evolving-skills` |
+| 要评审 PRD / spec / 技术方案文档，找逻辑漏洞、悖论、盲点 | `multi-lens-review` |
 | 库未初始化 / 库要搬家 / 会话开始轮询 / 看库的规模与薄弱面 | `managing-lessons-store` |
 
 典型闭环只有四步：**喊入口 → 采事实 → 复盘分析 → 归置落地**。落地的载体（规则 / 技能 / 自动化）在活链上，**改源即生效**——下次对话自动带着，不需要任何人记得"上次学到了什么"。
 
-## 六个技能：各自的作用与使用时机
+## 七个技能：各自的作用与使用时机
 
 ### 1. `using-retrospective` — 入口与路由
 
@@ -85,6 +86,12 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 | `node scripts/lessons.mjs deferred` | 轮询推迟项 + 命中判定（报告必须带总数） |
 | `node scripts/lessons.mjs stats` | 三区 × 维度分布快照（看薄弱面） |
 | `node scripts/lessons.mjs migrate --to <路径>` | 库迁移（带四条硬校验，迁移后旧库不自动删） |
+
+### 7. `multi-lens-review` — 多透镜评审（文档评审）
+
+- **什么时候用**：要评审 PRD / spec / 技术方案文档，找逻辑漏洞、悖论、盲点（套件自己的架构文档与 spec 也用它评审）。
+- **做什么**：六手法流程（操作序列推演 / 数据字段审计 / 跨章节一致性矩阵 / 输入空间枚举 / 假设显式化 / 可逆性核对）× 分场景角色面板；收敛判据 = 连续 2 轮零新增 P0/P1。评审中发现的盲区教训回流 KB（`<KB>/skills/multi-lens-review/ledger.md`）。
+- **不做什么**：代码审查、写新文档（那是别的工具的事）。
 
 ## 一个完整例子（真实闭环：2026-09-29 回显污染事故）
 
@@ -137,7 +144,7 @@ aas editors                 列出检测到的编辑器与各自目录、前置�
 
 ## 仓库结构
 
-- `skills/<六个技能>/` —— 技能源（`SKILL.md` + `references/`；**改源即生效**，运行时是只读链接）
+- `skills/<七个技能>/` —— 技能源（`SKILL.md` + `references/`；**改源即生效**，运行时是只读链接）
 - `docs/architecture.md` —— 体系总图与全部裁决（含执行顺序、待验证项、隐患挂账）
 - `docs/superpowers/` —— spec / plan（设计过程件）
 - `docs/handoffs/` —— 跨 session 交接词（每个 session 收口的交接事实）

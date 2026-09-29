@@ -132,7 +132,7 @@ L4 仓库与安装层（东西放哪、怎么生效）——✅ 已通（见 §8
 ✅ 1. C1 my-rules bootstrap + C4 同步/体检脚本 → 已完成（见 §8.1）
 ✅ 1.5. C4 抽成独立项目 agent-assets-sync + 配置驱动 → 已完成（2026-09-28，见 §8.1）
 ✅ 2. C2 + A1（evolving-skills + 协议抽离 + institutionalize 加转发闸门）→ 已完成（2026-09-28，见 §6 C2）
-✅ 3. C3 + A2 + B1（KB skills 区 + multi-lens 迁移 + 三区合一）→ 已完成（2026-09-28，spec：docs\superpowers\specs\2026-09-28-evolving-step3-design.md）；其中收编 multi-lens（反向建仓 + aas 接管 + SKILL.md 回流节替换为转发）推迟，用户单独处理（收编前不改 multi-lens 本体——上 session 裁决）
+✅ 3. C3 + A2 + B1（KB skills 区 + multi-lens 迁移 + 三区合一）→ 已完成（2026-09-28，spec：docs\superpowers\specs\2026-09-28-evolving-step3-design.md）；其中收编 multi-lens → ✅ 已完成（2026-09-29：反向建仓入本仓库 `skills/multi-lens-review/`（第 0 版 `7379a06`）+ SKILL.md 回流节替换为转发（`bb1e776`）+ aas 接管换 junction（体检已就位 7）+ 运行时 lessons.md 删除）
    4. B3 + 轮询规则改版（收口时机 + 没事不出声）
 ```
 
@@ -240,8 +240,8 @@ aas list / aas editors      只读：列条目 / 列编辑器
 
 | # | 隐患 | 状态 |
 |---|---|---|
-| H1 | `multi-lens-review`、`prd-to-specs` 无源仓库 → 改坏退回不去 | 挂账：收编（multi-lens 2026-09-28 推迟，用户单独处理；prd-to-specs 随首次要进化时） |
-| H2 | 技能目录里的 `lessons.md` → 发布时泄露项目内部细节（multi-lens 里现有 lpm、sound-control 的细节与一条 RCE 路径） | 半解决：11 条已迁 KB（2026-09-28）；运行时原文件待收编时删 |
+| H1 | `multi-lens-review`、`prd-to-specs` 无源仓库 → 改坏退回不去 | multi-lens ✅ 已收编（2026-09-29：反向建仓入本仓库 `skills/multi-lens-review/` + aas 接管）；`prd-to-specs` 挂账：随首次要进化时 |
+| H2 | 技能目录里的 `lessons.md` → 发布时泄露项目内部细节（multi-lens 里现有 lpm、sound-control 的细节与一条 RCE 路径） | ✅ 已解决：11 条迁 KB + 原文权威存档（2026-09-28）；运行时 lessons.md 已随收编删除（2026-09-29） |
 | H3 | KB 无备份（换机器即丢） | 挂账：信号 = 换机器 或 首次协作 |
 | H4 | KB 缺"两个 session 同时写"的保护 | 挂账；现状即有双 session 并行 |
 | ~~H5~~ | ~~装侧 5 个技能副本已过时（缺修复波改动、带 BOM bug）~~ | ✅ **已解决**：副本已换成 junction，永远跟源一致——顺带把装侧那份"缺剥 BOM 修复"的 bug 一并修好 |
