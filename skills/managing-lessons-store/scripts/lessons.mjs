@@ -214,9 +214,11 @@ function ledgerColumnMap(cells) {
   return map
 }
 
-/** 三区账本行扫描：onRow(region, 维度, 状态)。列位按表头解析，无表头退回旧下标；
- * 兼容 `区/ledger.md` 与 `区/<名>/ledger.md` 两种形态；moved(...) 原样上抛，由调用方决定是否计入 */
+/** 三区账本行扫描：onRow(region, 维度, 状态)。列位按表头解析，缺列名退回旧下标（?? 兜底）；
+ * 兼容 `区/ledger.md` 与 `区/<名>/ledger.md` 两种形态；moved(...) 原样上抛，由调用方决定是否计入；
+ * 返回各区账本文件数（存储数）；单条目探测带守卫——坏链接/不可读项跳过，不崩整个命令 */
 function scanLedgers(root, onRow) {
+  const ledgerCounts = { projects: 0, skills: 0, universal: 0 }
   for (const region of ['projects', 'skills', 'universal']) {
     const dir = join(root, region)
     if (!existsSync(dir)) continue
@@ -225,10 +227,13 @@ function scanLedgers(root, onRow) {
     if (existsSync(regionLedger)) ledgers.push(regionLedger)
     for (const name of readdirSync(dir)) {
       const p = join(dir, name)
-      if (!statSync(p).isDirectory()) continue
+      let isDir = false
+      try { isDir = statSync(p).isDirectory() } catch { continue }
+      if (!isDir) continue
       const ledger = join(p, 'ledger.md')
       if (existsSync(ledger)) ledgers.push(ledger)
     }
+    ledgerCounts[region] = ledgers.length
     for (const ledger of ledgers) {
       let col = null
       for (const line of readFileSync(ledger, 'utf8').split(/\r?\n/)) {
@@ -236,41 +241,38 @@ function scanLedgers(root, onRow) {
         if (cells.length < 11 || cells[1] === undefined || cells[1] === '') continue
         if (cells[1] === 'ID') { col = ledgerColumnMap(cells); continue }
         if (/^-+$/.test(cells[1])) continue
-        const dimCell = col ? cells[col['维度']] : cells[7]
-        const statusCell = col ? cells[col['状态']] : cells[cells.length - 2]
+        const dimCell = col ? (cells[col['维度']] ?? cells[7]) : cells[7]
+        const statusCell = col ? (cells[col['状态']] ?? cells[cells.length - 2]) : cells[cells.length - 2]
         onRow(region, dimCell, statusCell)
       }
     }
   }
+  return ledgerCounts
 }
 
-/** 统计 ledger 计数（供 deferred 的真实 counters）。moved(...) 是迁移墓碑，不计入 open / landed */
+/** 统计 ledger 计数（供 deferred 的真实 counters）。moved(...) 墓碑：不计入 open/landed，
+ * 也不计入 dims（与 statsLedger 同口径——墓碑行的维度不参与 L3-1 信号） */
 export function countLedger(root) {
   const dims = new Set()
-  let openCount = 0, landedCount = 0, projects = 0
-  scanLedgers(root, (_region, dim, status) => {
-    if (dim) dims.add(dim)
-    if (status === 'open') openCount++
-    else if (typeof status === 'string' && status.startsWith('landed')) landedCount++
-  })
-  const projDir = join(root, 'projects')
-  if (existsSync(projDir)) {
-    for (const name of readdirSync(projDir)) {
-      if (existsSync(join(projDir, name, 'ledger.md'))) projects++
-    }
-  }
-  return { openCount, dims: dims.size, projects, landedCount, totalCount: openCount + landedCount }
-}
-
-/** L3-1：三区 × 维度分布快照（moved 墓碑不计入；weakest = 条目最少的维度，并列全列） */
-export function statsLedger(root) {
-  const dims = {}
-  const regions = { projects: 0, skills: 0, universal: 0 }
   let openCount = 0, landedCount = 0
-  scanLedgers(root, (region, dim, status) => {
+  const ledgerCounts = scanLedgers(root, (_region, dim, status) => {
     const isLanded = typeof status === 'string' && status.startsWith('landed')
     if (status !== 'open' && !isLanded) return
-    regions[region]++
+    if (dim) dims.add(dim)
+    if (status === 'open') openCount++
+    else landedCount++
+  })
+  return { openCount, dims: dims.size, projects: ledgerCounts.projects, landedCount, totalCount: openCount + landedCount }
+}
+
+/** L3-1：三区 × 维度分布快照（moved 墓碑不计入；weakest = 条目最少的维度，并列全列；
+ * regions = 各区账本文件数（存储数，与 countLedger.projects 同口径——L4-1 前置"项目 ≥ 2"按此判） */
+export function statsLedger(root) {
+  const dims = {}
+  let openCount = 0, landedCount = 0
+  const ledgerCounts = scanLedgers(root, (region, dim, status) => {
+    const isLanded = typeof status === 'string' && status.startsWith('landed')
+    if (status !== 'open' && !isLanded) return
     if (status === 'open') openCount++; else landedCount++
     if (!dim) return
     const d = dims[dim] ?? (dims[dim] = { total: 0, open: 0, landed: 0 })
@@ -283,7 +285,7 @@ export function statsLedger(root) {
     if (d.total < min) { min = d.total; weakest = [name] }
     else if (d.total === min) weakest.push(name)
   }
-  return { totalCount: openCount + landedCount, openCount, landedCount, regions, dims, weakest }
+  return { totalCount: openCount + landedCount, openCount, landedCount, regions: ledgerCounts, dims, weakest }
 }
 
 // ── CLI 入口守卫：仅当被直接执行时运行 ────────────────────────────
