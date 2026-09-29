@@ -116,17 +116,20 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 | 全局规则源（如 `my-rules/rules/`） | `~/.trae-cn/user_rules/` | symlink |
 | 本仓库 `skills/` | `~/.trae-cn/skills/` | junction |
 
-同步 / 体检 / 安装由独立 CLI `aas`（agent-assets-sync）承担，常用命令：
+同步 / 体检 / 安装由独立 CLI `aas`（agent-assets-sync）承担，命令一览：
 
 ```
-aas                        体检（只读，绝不改动）
-aas sync [--replace] [--rm-old]   只建"缺失的链接"；删类动作必须显式 flag
-aas add <源> [名...]        从远端/本地源安装规则/技能（多选标注已装）
-aas update [名] [--all]     按账本刷新已装条目（也是缓存漂移的修复入口）
-aas remove <名> [--purge]   按账本摘除并销账（非交互必须 --yes）
-aas import <名>             把编辑器里手建的条目收编进源仓库
-aas list / aas editors      只读：列条目 / 列编辑器
+aas                        体检：链接形态 + 安装形态一起查（默认命令，绝不改动）
+aas sync [--replace] [--rm-old]   同步：把源链接进运行时（默认只建缺失的链接）
+aas add <源> [名...]        安装：从远端/本地源装规则或技能（源 = git URL / 配置短名 / 本地路径）
+aas update [名] [--all]     按账本刷新已装的资产（也是缓存漂移的修复入口）
+aas remove <名> [--purge]   摘除已装的资产并销账（交互确认；非交互必须 --yes）
+aas import <名>             把编辑器里手建的条目收编进源仓库（接管需再跑 aas sync --replace）
+aas list                    列出配置的源与各源条目
+aas editors                 列出检测到的编辑器与各自目录、前置条件
 ```
+
+退出码：`0` 一致 / `1` 有差异 / `2` 出错；**幂等**，重复跑无副作用。全参数与配置细节见 `agent-assets-sync` 的 README。
 
 ## 会话开始的固定动作
 
