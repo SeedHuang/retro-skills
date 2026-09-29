@@ -23,7 +23,7 @@ description: Use when 复盘结论已定，需要把教训写回能自动生效�
 Step 0  它的「修复方案」是什么？答不出 → 复盘未完成，回炉（禁止往下走）
 
 Step 1  既有承载里有相似的吗？
-        （查五处：user_rules/ + <项目>/.trae/rules/ + memory/*.md + 错题集 KB + 既有 skills）
+        （查五处：user_rules/ + <项目>/.trae/rules/ + memory/*.md + 错题集 KB（三区 projects/skills/universal 同表）+ 既有 skills）
         ┌ 有 → 【升级，不新增】为什么既有没拦住？
         │        a. 触发面未覆盖（新场景） → 扩既有触发面（globs/description/作用域）
         │           ⇒ 既有是 rule / skill / 自动化 → REQUIRED SUB-SKILL: evolving-skills（读对应卡；memory 就地改）
@@ -71,7 +71,7 @@ Step 5  归属（rule 与 memory 通用）
 ## 写入顺序（崩溃安全）
 
 ```
-① 先在 ledger 确保该条目的存在且为 open（含拟载体与拟落点）
+① 先在 ledger 确保该条目的存在且为 open（含拟载体与拟落点；rule/memory/automation 教训落 `projects\<项目>\` 或 `universal\`，技能教训由 evolving-skills 落 `skills\<技能名>\`）
 ② 再落规则 / 自动化 / skill 改动
 ③ 成功后把条目状态改为 landed(→载体)（转发项由 evolving-skills 置，本技能只校验）
 ```
@@ -103,7 +103,7 @@ Step 5  归属（rule 与 memory 通用）
 
 ## 防重复检查（写入前必做）
 
-查五处既有承载（`user_rules/` / `<项目>/.trae/rules/` / `memory/*.md` / 错题集 KB / 既有 skills），有同义规则 → **改既有，不新增**。
+查五处既有承载（`user_rules/` / `<项目>/.trae/rules/` / `memory/*.md` / 错题集 KB（三区 projects/skills/universal 同表） / 既有 skills），有同义规则 → **改既有，不新增**。
 
 ## 结束时的固定动作
 

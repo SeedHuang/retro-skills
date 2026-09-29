@@ -35,7 +35,10 @@
 
 - 教训**先进 KB ledger**（状态 open）——账先行，动手在后
 - 同类教训（同载体、同归因）攒一起改；动手时机由用户裁决（现在 / 阶段收口）
-- **本期落点**：`projects\<触发项目>\ledger.md`；KB 的 skills\ 区建成后迁入
+- **落点（三区同表同编号，规则见 KB `index.md` 维护约定）**：
+  - 项目教训 → `projects\<项目>\ledger.md`
+  - 技能教训 → `skills\<技能名>\ledger.md`
+  - 跨项目通用 → `universal\ledger.md`
 
 ## 步 4：独立 agent 合并
 
@@ -55,5 +58,5 @@
 
 ## 附：本协议的出处
 
-multi-lens-review 的 lessons.md（11 条，含"已合并"标记）是其私有形态；本协议是其通用化。
-multi-lens 本体的改造等它被收编进源仓库后进行（架构 §10 H1 / 第 3 步 A2）。
+multi-lens-review 的 lessons.md（11 条，含"已合并"标记）是其私有形态；本协议是其通用化（该 11 条已于 2026-09-28 迁入 KB `skills\multi-lens-review\`，原文权威存档在同目录）。
+multi-lens 本体的改造等它被收编进源仓库后进行（架构 §10 H1；收编 2026-09-28 推迟，用户单独处理）。

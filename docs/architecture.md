@@ -28,7 +28,7 @@ L1 错题集层（数据在哪）
     D:\Seed\lessons\
     ├── index.md              全局索引 + 候选与推迟表
     ├── projects\<项目名>\    项目教训（已建成）
-    ├── skills\<技能名>\      技能教训（【缺】待建）
+    ├── skills\<技能名>\      技能教训（✅ 已建成 2026-09-28；multi-lens 收编推迟，用户单独处理）
     └── universal\            跨项目通用（已建成）
     + 指针 ~\.agents\lessons.config.json
     + lessons.mjs（resolve / deferred / migrate）
@@ -89,7 +89,7 @@ L4 仓库与安装层（东西放哪、怎么生效）——✅ 已通（见 §8
 | # | 抽什么 | 从哪 → 到哪 |
 |---|---|---|
 | A1 | **通用进化协议** | multi-lens 的私有做法 + institutionalize 的骨架 → 住进 `evolving-skills` 的文件夹（协议的家）；institutionalize 只留决策树 + 转发 |
-| A2 | **multi-lens 的 lessons（11 条）** | 它目录里的 `lessons.md` → KB 的 `skills\multi-lens-review\`（挂账，随首次进化一起做） |
+| A2 | **multi-lens 的 lessons（11 条）** | 它目录里的 `lessons.md` → KB 的 `skills\multi-lens-review\`（✅ 已迁 2026-09-28；运行时原文件待收编时删） |
 
 > **为什么协议的家必须在技能文件夹里面**：安装的原子单位是 `skills\<名>\`，只有这个文件夹会跟着走。协议放仓库根的 `docs\` 会随安装丢失。所以别的技能用**技能名**引用它。
 
@@ -97,7 +97,7 @@ L4 仓库与安装层（东西放哪、怎么生效）——✅ 已通（见 §8
 
 | # | 合什么 | 成什么样 |
 |---|---|---|
-| B1 | KB 三个区（projects / skills / universal） | 同一张表、同一套编号、只多一列"对象"→ **一个巡检命令管全部** |
+| B1 | KB 三个区（projects / skills / universal） | 同一张表、同一套编号、只多一列"对象"→ **一个巡检命令管全部**（✅ 表口径已统一 2026-09-28；巡检命令属 KB 候选 C2，信号未到） |
 | B2 | multi-lens 的自记机制并入体系 | 它不再写自己的 `lessons.md`，改写 KB（其 SKILL.md 的指引随收编一起改） |
 | B3 | 装侧漂移检查合成一个模式 | skills 和 rules 用同一套"清单 + 哈希 + 检查" |
 
@@ -107,7 +107,7 @@ L4 仓库与安装层（东西放哪、怎么生效）——✅ 已通（见 §8
 |---|---|---|
 | C1 | **my-rules 仓库** | ✅ 已建（见 §8.1） |
 | C2 | **evolving-skills** | retro-skills 第 6 个技能：协议的家 + skill 差异卡（✅ 已建成 2026-09-28；设计见 `docs\superpowers\specs\2026-09-28-evolving-skills-design.md`，实施见 `docs\superpowers\plans\2026-09-28-evolving-skills.md`） |
-| C3 | **KB 的 skills\ 区** | B1 的落地（【缺】待建） |
+| C3 | **KB 的 skills\ 区** | B1 的落地（✅ 已建成 2026-09-28） |
 | C4 | **同步 / 体检脚本** | ✅ 已建，**只有一份**，同时管 rules 与 skills。（原计划"各仓库写两份"，实际证明**一份足够**——它就是一张"源 → 目标"映射表）。**2026-09-28 已抽成独立项目 `agent-assets-sync`** 并改成配置驱动（`sync.config.json`），见 §8.1 |
 
 ### 不动（防过度重构）
@@ -123,7 +123,7 @@ L4 仓库与安装层（东西放哪、怎么生效）——✅ 已通（见 §8
 | **`my-rules`** | ✅ 已建（git + GitHub 远程） | 全局 rule 的源（在**中立目录** `rules\` —— 目录名不含工具名，为"换编辑器"解耦；见 §8.1） |
 | 项目仓库（lpm 等） | ✅ 已有 | 项目 rule 跟项目走，**不建新仓库** |
 | **KB（`D:\Seed\lessons`）** | ⛔ **特意不建 git** | 数据层、含个人记录，不跟任何仓库走；备份挂账 |
-| multi-lens / prd-to-specs 的收纳仓库 | ⏸ 挂账 | 待"首次要进化它们时"再定 |
+| multi-lens / prd-to-specs 的收纳仓库 | ⏸ 挂账 | multi-lens 收编 2026-09-28 推迟（用户单独处理）；prd-to-specs 待首次要进化时再定 |
 
 ## 8. 执行顺序（按"哪个最疼"排）
 
@@ -132,7 +132,7 @@ L4 仓库与安装层（东西放哪、怎么生效）——✅ 已通（见 §8
 ✅ 1. C1 my-rules bootstrap + C4 同步/体检脚本 → 已完成（见 §8.1）
 ✅ 1.5. C4 抽成独立项目 agent-assets-sync + 配置驱动 → 已完成（2026-09-28，见 §8.1）
 ✅ 2. C2 + A1（evolving-skills + 协议抽离 + institutionalize 加转发闸门）→ 已完成（2026-09-28，见 §6 C2）
-   3. C3 + A2 + B1（KB skills 区 + multi-lens 迁移 + 三区合一）
+✅ 3. C3 + A2 + B1（KB skills 区 + multi-lens 迁移 + 三区合一）→ 已完成（2026-09-28，spec：docs\superpowers\specs\2026-09-28-evolving-step3-design.md）；其中收编 multi-lens（H1 解禁/D4 兑现 + SKILL.md 替换）推迟，用户单独处理
    4. B3 + 轮询规则改版（收口时机 + 没事不出声）
 ```
 
@@ -240,8 +240,8 @@ aas list / aas editors      只读：列条目 / 列编辑器
 
 | # | 隐患 | 状态 |
 |---|---|---|
-| H1 | `multi-lens-review`、`prd-to-specs` 无源仓库 → 改坏退回不去 | 挂账：收编（随首次要进化它们时） |
-| H2 | 技能目录里的 `lessons.md` → 发布时泄露项目内部细节（multi-lens 里现有 lpm、sound-control 的细节与一条 RCE 路径） | 挂账：改记 KB（第 3 步做） |
+| H1 | `multi-lens-review`、`prd-to-specs` 无源仓库 → 改坏退回不去 | 挂账：收编（multi-lens 2026-09-28 推迟，用户单独处理；prd-to-specs 随首次要进化时） |
+| H2 | 技能目录里的 `lessons.md` → 发布时泄露项目内部细节（multi-lens 里现有 lpm、sound-control 的细节与一条 RCE 路径） | 半解决：11 条已迁 KB（2026-09-28）；运行时原文件待收编时删 |
 | H3 | KB 无备份（换机器即丢） | 挂账：信号 = 换机器 或 首次协作 |
 | H4 | KB 缺"两个 session 同时写"的保护 | 挂账；现状即有双 session 并行 |
 | ~~H5~~ | ~~装侧 5 个技能副本已过时（缺修复波改动、带 BOM bug）~~ | ✅ **已解决**：副本已换成 junction，永远跟源一致——顺带把装侧那份"缺剥 BOM 修复"的 bug 一并修好 |
