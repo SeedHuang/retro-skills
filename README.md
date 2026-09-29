@@ -40,11 +40,12 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 | 复盘已有结论，要把教训写回规范 | `retro-institutionalize` |
 | 要改 rule / skill / 自动化本体（施工） | `evolving-skills` |
 | 要评审 PRD / spec / 技术方案文档，找逻辑漏洞、悖论、盲点 | `multi-lens-review` |
+| 已有定稿 PRD，要拆成可独立开发的 spec 与路线图 | `prd-to-specs` |
 | 库未初始化 / 库要搬家 / 会话开始轮询 / 看库的规模与薄弱面 | `managing-lessons-store` |
 
 典型闭环只有四步：**喊入口 → 采事实 → 复盘分析 → 归置落地**。落地的载体（规则 / 技能 / 自动化）在活链上，**改源即生效**——下次对话自动带着，不需要任何人记得"上次学到了什么"。
 
-## 七个技能：各自的作用与使用时机
+## 八个技能：各自的作用与使用时机
 
 ### 1. `using-retrospective` — 入口与路由
 
@@ -93,6 +94,12 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 - **做什么**：六手法流程（操作序列推演 / 数据字段审计 / 跨章节一致性矩阵 / 输入空间枚举 / 假设显式化 / 可逆性核对）× 分场景角色面板；收敛判据 = 连续 2 轮零新增 P0/P1。评审中发现的盲区教训回流 KB（`<KB>/skills/multi-lens-review/ledger.md`）。
 - **不做什么**：代码审查、写新文档（那是别的工具的事）。
 
+### 8. `prd-to-specs` — PRD 拆分（PRD → Specs）
+
+- **什么时候用**：已有定稿 PRD，要拆成可独立开发、可独立验收的 spec 与路线图（用户说「拆分PRD」「生成spec拆分方案」「规划spec路线图」）。
+- **做什么**：提取四件套（验收锚点 / 硬约束 / 非目标 / 待定决策）→ 六规则切分（垂直切片、依赖 DAG、变更半径不重叠、风险前置、规模上限、验收锚定）→ **JIT 门**（路线图只写骨架，字段级设计推迟到 spec 开工）→ **双份真相禁令**（PRD 已定内容只引用不抄写）。
+- **不做什么**：写实现计划、写代码、代码评审；不为路线图建任何新文件（README 索引、shared 文档默认都不建）。拆出的 spec 建议走 `multi-lens-review` 评审。
+
 ## 一个完整例子（真实闭环：2026-09-29 回显污染事故）
 
 这是本套件第一次完整跑通的真实案例，全过程可追溯（KB 错题集里有全部产物）：
@@ -130,7 +137,7 @@ aas                        体检：链接形态 + 安装形态一起查（默�
 aas sync [--replace] [--rm-old]   同步：把源链接进运行时（默认只建缺失的链接）
 aas add <源> [名...]        安装：从远端/本地源装规则或技能（源 = git URL / 配置短名 / 本地路径）
 aas update [名] [--all]     按账本刷新已装的资产（也是缓存漂移的修复入口）
-aas remove <名> [--purge]   摘除已装的资产并销账（交互确认；非交互必须 --yes）
+aas remove <名> [--purge]   按账本摘除并销账（交互确认；非交互必须 --yes）
 aas import <名>             把编辑器里手建的条目收编进源仓库（接管需再跑 aas sync --replace）
 aas list                    列出配置的源与各源条目
 aas editors                 列出检测到的编辑器与各自目录、前置条件
@@ -144,7 +151,7 @@ aas editors                 列出检测到的编辑器与各自目录、前置�
 
 ## 仓库结构
 
-- `skills/<七个技能>/` —— 技能源（`SKILL.md` + `references/`；**改源即生效**，运行时是只读链接）
+- `skills/<八个技能>/` —— 技能源（`SKILL.md` + `references/`；**改源即生效**，运行时是只读链接）
 - `docs/architecture.md` —— 体系总图与全部裁决（含执行顺序、待验证项、隐患挂账）
 - `docs/superpowers/` —— spec / plan（设计过程件）
 - `docs/handoffs/` —— 跨 session 交接词（每个 session 收口的交接事实）

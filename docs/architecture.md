@@ -240,7 +240,7 @@ aas list / aas editors      只读：列条目 / 列编辑器
 
 | # | 隐患 | 状态 |
 |---|---|---|
-| H1 | `multi-lens-review`、`prd-to-specs` 无源仓库 → 改坏退回不去 | multi-lens ✅ 已收编（2026-09-29：反向建仓入本仓库 `skills/multi-lens-review/` + aas 接管）；`prd-to-specs` 挂账：随首次要进化时 |
+| ~~H1~~ | ~~`multi-lens-review`、`prd-to-specs` 无源仓库 → 改坏退回不去~~ | ✅ **已解决**：multi-lens 收编 2026-09-29（入 `skills/multi-lens-review/` + junction，回流节指 KB）；prd-to-specs 收编 2026-09-29（入 `skills/prd-to-specs/` + junction，含回流节）——体检已就位 8 |
 | H2 | 技能目录里的 `lessons.md` → 发布时泄露项目内部细节（multi-lens 里现有 lpm、sound-control 的细节与一条 RCE 路径） | ✅ 已解决：11 条迁 KB + 原文权威存档（2026-09-28）；运行时 lessons.md 已随收编删除（2026-09-29） |
 | H3 | KB 无备份（换机器即丢） | 挂账：信号 = 换机器 或 首次协作 |
 | H4 | KB 缺"两个 session 同时写"的保护 | 挂账；现状即有双 session 并行 |
