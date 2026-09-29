@@ -1,6 +1,6 @@
 ---
 name: using-retrospective
-description: Use when 阶段/里程碑收口、session 即将结束、用户说「复盘/回顾/总结一下这个过程」「这段是不是可以沉淀一下」、或要判断一条教训该进全局还是项目规则时。Do not use for 代码审查（走 open-code-review）、bug 定位（走 systematic-debugging）、或仅要一份过程时间线（那是 retro-collect 单独可做）。
+description: Use when 阶段/里程碑收口、session 即将结束、用户说「复盘/回顾/总结一下这个过程」「这段是不是可以沉淀一下」「跨项目分析一下」「看看跨项目模式」、或要判断一条教训该进全局还是项目规则时。Do not use for 代码审查（走 open-code-review）、bug 定位（走 systematic-debugging）、或仅要一份过程时间线（那是 retro-collect 单独可做）。
 ---
 
 # 复盘套件入口（using-retrospective）
@@ -17,6 +17,10 @@ description: Use when 阶段/里程碑收口、session 即将结束、用户说�
 | ④ 库维护 | `managing-lessons-store` | 库未建 / 要迁移 / 要轮询推迟项 |
 
 **路由规则**：先看手上已有什么产物——无产物从 ①；有事实包从 ②；有复盘从 ③。**不得跳环**（没有事实包就做分析 = 凭印象，禁止）。
+
+## 跨项目分析（L4，独立于四环节）
+
+用户说「跨项目分析一下 / 看看跨项目模式」→ 按 `references/cross-project-analysis.md` 执行（Task 起独立子代理；报告落 KB `universal\`）。**前置**：`lessons stats` 显示 项目 ≥ 2 且 条目 ≥ 20；不满足 → 拒绝并告知差距。
 
 ## 产物关系图
 
@@ -57,6 +61,8 @@ description: Use when 阶段/里程碑收口、session 即将结束、用户说�
 ## 里程碑收口时主动建议
 
 当一次交付被提交、或一个 spec 阶段收口时，**建议**（不强制）用户复盘：「刚交付 X，要不要复盘一下？」——只建议，用户说不做就停。
+
+若跨项目分析信号已满足（`lessons stats`：项目 ≥ 2 且条目 ≥ 20），同场**建议**一次跨项目分析——同样只建议，用户说不做就停。
 
 ## 会话开始时的固定动作
 

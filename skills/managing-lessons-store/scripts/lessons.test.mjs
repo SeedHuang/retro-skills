@@ -203,6 +203,65 @@ test('countLedger：跳过表头与分隔行（dims 不被 |---| 污染）', () 
   assert.equal(c.dims, 1)
 })
 
+test('countLedger：新 11 列 schema（含"对象"列）计数正确——状态列不按旧下标找', () => {
+  const root = makeStore(tmp())
+  mk(join(root, 'projects', 'p1'), { recursive: true })
+  const header = '| ID | 日期 | 归属 | 来源 | 问题 | 根因 | 维度 | 修复 | 对象 | 载体 | 状态 |\n'
+  const sep = '|---|---|---|---|---|---|---|---|---|---|---|\n'
+  const row = (id, dim, status) => `| ${id} | 2026-09-28 | p1 | 复盘 | x | y | ${dim} | z | skill | skill | ${status} |\n`
+  wf(join(root, 'projects', 'p1', 'ledger.md'), header + sep
+    + row('L-001', '健壮度', 'open')
+    + row('L-002', '用户体验', 'landed(→skill)')
+    + row('L-003', '健壮度', 'moved(→skills\\evolving-skills)'), 'utf8')
+  const c = countLedger(root)
+  assert.equal(c.openCount, 1)
+  assert.equal(c.landedCount, 1)
+  assert.equal(c.totalCount, 2) // moved 是迁移墓碑，不计入
+  assert.equal(c.dims, 2)
+})
+
+test('countLedger：扫全三区——skills/<名>/ledger.md 与 universal/ledger.md 都计入', () => {
+  const root = makeStore(tmp())
+  mk(join(root, 'projects', 'p1'), { recursive: true })
+  mk(join(root, 'skills', 's1'), { recursive: true })
+  const header = '| ID | 日期 | 归属 | 来源 | 问题 | 根因 | 维度 | 修复 | 对象 | 载体 | 状态 |\n'
+  const sep = '|---|---|---|---|---|---|---|---|---|---|---|\n'
+  const row = (id, status) => `| ${id} | 2026-09-28 | x | 复盘 | x | y | 性能 | z | skill | skill | ${status} |\n`
+  wf(join(root, 'projects', 'p1', 'ledger.md'), header + sep + row('L-1', 'open'), 'utf8')
+  wf(join(root, 'skills', 's1', 'ledger.md'), header + sep + row('L-2', 'landed(→skill)'), 'utf8')
+  wf(join(root, 'universal', 'ledger.md'), header + sep + row('L-3', 'open'), 'utf8')
+  const c = countLedger(root)
+  assert.equal(c.projects, 1)
+  assert.equal(c.openCount, 2)
+  assert.equal(c.landedCount, 1)
+  assert.equal(c.totalCount, 3)
+})
+
+import { statsLedger } from './lessons.mjs'
+
+test('statsLedger：三区×维度分布、区域条目数、薄弱面（moved 不计）', () => {
+  const root = makeStore(tmp())
+  mk(join(root, 'projects', 'p1'), { recursive: true })
+  mk(join(root, 'skills', 's1'), { recursive: true })
+  const header = '| ID | 日期 | 归属 | 来源 | 问题 | 根因 | 维度 | 修复 | 对象 | 载体 | 状态 |\n'
+  const sep = '|---|---|---|---|---|---|---|---|---|---|---|\n'
+  const row = (id, dim, status) => `| ${id} | 2026-09-28 | x | 复盘 | x | y | ${dim} | z | skill | skill | ${status} |\n`
+  wf(join(root, 'projects', 'p1', 'ledger.md'), header + sep
+    + row('L-1', '健壮度', 'open') + row('L-2', '性能', 'landed(→rule(全局))'), 'utf8')
+  wf(join(root, 'skills', 's1', 'ledger.md'), header + sep
+    + row('L-3', '健壮度', 'open') + row('L-4', '健壮度', 'open')
+    + row('L-5', '健壮度', 'moved(→x)'), 'utf8')
+  wf(join(root, 'universal', 'ledger.md'), header + sep
+    + row('L-6', '用户体验', 'open') + row('L-7', '用户体验', 'landed(→skill)'), 'utf8')
+  const s = statsLedger(root)
+  assert.equal(s.totalCount, 6)
+  assert.deepEqual(s.regions, { projects: 2, skills: 2, universal: 2 })
+  assert.deepEqual(s.dims['健壮度'], { total: 3, open: 3, landed: 0 })
+  assert.deepEqual(s.dims['性能'], { total: 1, open: 0, landed: 1 })
+  assert.deepEqual(s.dims['用户体验'], { total: 2, open: 1, landed: 1 })
+  assert.deepEqual(s.weakest, ['性能'])
+})
+
 test('migrate：目标在仓库内 → 拒绝，且不写指针、源不变', () => {
   const root = makeStore(tmp())
   mk(join(root, 'projects', 'p1'), { recursive: true })

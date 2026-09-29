@@ -1,13 +1,13 @@
 ---
 name: managing-lessons-store
-description: Use when 需要初始化错题集库、迁移库到新位置、或轮询推迟项是否到复活时机时。用于「错题集放哪 / 库搬家 / 换盘 / 有什么推迟项该做了」这类请求。Do not use for 复盘本身（走 retro-collect / retro-analyze / retro-institutionalize）。
+description: Use when 需要初始化错题集库、迁移库到新位置、轮询推迟项是否到复活时机、或看库的统计与维度薄弱面（stats）时。用于「错题集放哪 / 库搬家 / 换盘 / 有什么推迟项该做了 / 库里哪个维度最薄弱」这类请求。Do not use for 复盘本身（走 retro-collect / retro-analyze / retro-institutionalize）。
 ---
 
 # 管理错题集库（managing-lessons-store）
 
 ## 职责边界
 
-本技能只做三件事：**初始化（bootstrap）、迁移、轮询推迟项**。它**不做**复盘、不写教训内容（那是 retro-* 三个技能的事）。
+本技能做四件事：**初始化（bootstrap）、迁移、轮询推迟项、统计（L3-1 维度分布快照）**。它**不做**复盘、不写教训内容（那是 retro-* 三个技能的事）。
 
 所有操作都通过脚本 `scripts/lessons.mjs` 完成——**技能里不硬编码 KB 路径**。
 
@@ -19,6 +19,7 @@ description: Use when 需要初始化错题集库、迁移库到新位置、或�
 |---|---|
 | `node scripts/lessons.mjs resolve` | 解析并**校验** KB 根；成功打印路径，失败打印原因 + 下一步 |
 | `node scripts/lessons.mjs deferred` | 打印推迟项清单 + 命中判定 + 总数报告 |
+| `node scripts/lessons.mjs stats` | 三区 × 维度分布快照（L3-1：看薄弱面；实时扫描三区账本） |
 | `node scripts/lessons.mjs migrate --to <path>` | 迁移（四条硬校验 + 复制 + 校验 + 切指针） |
 
 无 Node 时（`node -v` 失败）：**明确告知脚本不可用**，改为手工操作，且**不得假装成功**。

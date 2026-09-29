@@ -207,25 +207,83 @@ export function migrate({ from, to, deps }) {
   }
 }
 
-/** 统计 ledger 计数（供 deferred 的真实 counters） */
+/** 表头行（cells[1]==='ID'）→ 列名 → 下标映射。列位从表头解析，后续加列不再坏 */
+function ledgerColumnMap(cells) {
+  const map = {}
+  for (let i = 1; i < cells.length - 1; i++) if (cells[i]) map[cells[i]] = i
+  return map
+}
+
+/** 三区账本行扫描：onRow(region, 维度, 状态)。列位按表头解析，无表头退回旧下标；
+ * 兼容 `区/ledger.md` 与 `区/<名>/ledger.md` 两种形态；moved(...) 原样上抛，由调用方决定是否计入 */
+function scanLedgers(root, onRow) {
+  for (const region of ['projects', 'skills', 'universal']) {
+    const dir = join(root, region)
+    if (!existsSync(dir)) continue
+    const ledgers = []
+    const regionLedger = join(dir, 'ledger.md')
+    if (existsSync(regionLedger)) ledgers.push(regionLedger)
+    for (const name of readdirSync(dir)) {
+      const p = join(dir, name)
+      if (!statSync(p).isDirectory()) continue
+      const ledger = join(p, 'ledger.md')
+      if (existsSync(ledger)) ledgers.push(ledger)
+    }
+    for (const ledger of ledgers) {
+      let col = null
+      for (const line of readFileSync(ledger, 'utf8').split(/\r?\n/)) {
+        const cells = line.split(/(?<!\\)\|/).map(s => s.trim())
+        if (cells.length < 11 || cells[1] === undefined || cells[1] === '') continue
+        if (cells[1] === 'ID') { col = ledgerColumnMap(cells); continue }
+        if (/^-+$/.test(cells[1])) continue
+        const dimCell = col ? cells[col['维度']] : cells[7]
+        const statusCell = col ? cells[col['状态']] : cells[cells.length - 2]
+        onRow(region, dimCell, statusCell)
+      }
+    }
+  }
+}
+
+/** 统计 ledger 计数（供 deferred 的真实 counters）。moved(...) 是迁移墓碑，不计入 open / landed */
 export function countLedger(root) {
   const dims = new Set()
   let openCount = 0, landedCount = 0, projects = 0
+  scanLedgers(root, (_region, dim, status) => {
+    if (dim) dims.add(dim)
+    if (status === 'open') openCount++
+    else if (typeof status === 'string' && status.startsWith('landed')) landedCount++
+  })
   const projDir = join(root, 'projects')
-  if (!existsSync(projDir)) return { openCount, dims: dims.size, projects, landedCount, totalCount: 0 }
-  for (const proj of readdirSync(projDir)) {
-    const ledger = join(projDir, proj, 'ledger.md')
-    if (!existsSync(ledger)) continue
-    projects++
-    for (const line of readFileSync(ledger, 'utf8').split(/\r?\n/)) {
-      const cells = line.split(/(?<!\\)\|/).map(s => s.trim())
-      if (cells.length < 11 || cells[1] === 'ID' || /^-+$/.test(cells[1])) continue
-      if (cells[7]) dims.add(cells[7])
-      if (cells[10] === 'open') openCount++
-      if (cells[10].startsWith('landed')) landedCount++
+  if (existsSync(projDir)) {
+    for (const name of readdirSync(projDir)) {
+      if (existsSync(join(projDir, name, 'ledger.md'))) projects++
     }
   }
   return { openCount, dims: dims.size, projects, landedCount, totalCount: openCount + landedCount }
+}
+
+/** L3-1：三区 × 维度分布快照（moved 墓碑不计入；weakest = 条目最少的维度，并列全列） */
+export function statsLedger(root) {
+  const dims = {}
+  const regions = { projects: 0, skills: 0, universal: 0 }
+  let openCount = 0, landedCount = 0
+  scanLedgers(root, (region, dim, status) => {
+    const isLanded = typeof status === 'string' && status.startsWith('landed')
+    if (status !== 'open' && !isLanded) return
+    regions[region]++
+    if (status === 'open') openCount++; else landedCount++
+    if (!dim) return
+    const d = dims[dim] ?? (dims[dim] = { total: 0, open: 0, landed: 0 })
+    d.total++
+    if (status === 'open') d.open++; else d.landed++
+  })
+  let weakest = []
+  let min = Infinity
+  for (const [name, d] of Object.entries(dims)) {
+    if (d.total < min) { min = d.total; weakest = [name] }
+    else if (d.total === min) weakest.push(name)
+  }
+  return { totalCount: openCount + landedCount, openCount, landedCount, regions, dims, weakest }
 }
 
 // ── CLI 入口守卫：仅当被直接执行时运行 ────────────────────────────
@@ -247,6 +305,20 @@ if (isMain) {
     process.stdout.write(summary + '\n')
     process.exit(0)
   }
+  else if (cmd === 'stats') {
+    const r = resolveStore({ env: process.env, pointerPaths: pointerCandidates(), deps: { isInsideGitRepo } })
+    if (!r.ok) { process.stderr.write(`${r.reason}\n下一步：${r.hint}\n`); process.exit(1) }
+    const s = statsLedger(r.root)
+    const lines = [`KB 统计（${r.root}）`]
+    lines.push(`条目 ${s.totalCount}（open ${s.openCount} / landed ${s.landedCount}）｜项目 ${s.regions.projects} ｜技能 ${s.regions.skills} ｜通用 ${s.regions.universal}`)
+    lines.push('维度分布：')
+    for (const [name, d] of Object.entries(s.dims).sort((a, b) => b[1].total - a[1].total)) {
+      lines.push(`  ${name}  ${d.total}（open ${d.open} / landed ${d.landed}）`)
+    }
+    if (s.weakest.length) lines.push(`薄弱面：${s.weakest.join('、')}（条目最少）`)
+    process.stdout.write(lines.join('\n') + '\n')
+    process.exit(0)
+  }
   else if (cmd === 'migrate') {
     const toIdx = process.argv.indexOf('--to')
     const to = toIdx === -1 ? undefined : process.argv[toIdx + 1]
@@ -259,6 +331,6 @@ if (isMain) {
     process.stdout.write(`迁移完成：${r.hashCount} 个文件已校验一致；指针 → ${r.pointerPath}\n是否删除旧库由你决定（旧库仍完整可用）\n`)
     process.exit(0)
   }
-  process.stderr.write(`未知命令：${cmd}\n支持：resolve | deferred | migrate --to <path>\n`)
+  process.stderr.write(`未知命令：${cmd}\n支持：resolve | deferred | stats | migrate --to <path>\n`)
   process.exit(1)
 }

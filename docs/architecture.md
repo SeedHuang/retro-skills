@@ -132,7 +132,7 @@ L4 仓库与安装层（东西放哪、怎么生效）——✅ 已通（见 §8
 ✅ 1. C1 my-rules bootstrap + C4 同步/体检脚本 → 已完成（见 §8.1）
 ✅ 1.5. C4 抽成独立项目 agent-assets-sync + 配置驱动 → 已完成（2026-09-28，见 §8.1）
 ✅ 2. C2 + A1（evolving-skills + 协议抽离 + institutionalize 加转发闸门）→ 已完成（2026-09-28，见 §6 C2）
-✅ 3. C3 + A2 + B1（KB skills 区 + multi-lens 迁移 + 三区合一）→ 已完成（2026-09-28，spec：docs\superpowers\specs\2026-09-28-evolving-step3-design.md）；其中收编 multi-lens（H1 解禁/D4 兑现 + SKILL.md 替换）推迟，用户单独处理
+✅ 3. C3 + A2 + B1（KB skills 区 + multi-lens 迁移 + 三区合一）→ 已完成（2026-09-28，spec：docs\superpowers\specs\2026-09-28-evolving-step3-design.md）；其中收编 multi-lens（反向建仓 + aas 接管 + SKILL.md 回流节替换为转发）推迟，用户单独处理（收编前不改 multi-lens 本体——上 session 裁决）
    4. B3 + 轮询规则改版（收口时机 + 没事不出声）
 ```
 
