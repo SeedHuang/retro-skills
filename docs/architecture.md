@@ -175,7 +175,7 @@ aas list / aas editors      只读：列条目 / 列编辑器
 | 目标 | 形态 |
 |---|---|
 | `~\.trae-cn\user_rules\rule-<名字>.md` | 全部是 **SymbolicLink** → `my-rules\rules\<名字>.md`（取数：跑 `aas` 体检的"已就位"数；本条写作时 9 条。另有 **aas 安装**形态条目——经 `aas add` 从远端仓库装的，账本豁免不计入孤儿） |
-| `~\.trae-cn\skills\<技能名>\` | 8 个 **Junction**（条数以 `aas` 体检输出为准）→ `retro-skills\skills\<技能名>\`（`ais`/`skills` 装的第三方技能不在本脚本管理面内，报告里列为"孤儿(不动)"） |
+| `~\.trae-cn\skills\<技能名>\` | 本仓库 8 个 **Junction**（dry-refactor-newadd 已入源、未同步前不在此列；条数以 `aas` 体检输出为准）→ `retro-skills\skills\<技能名>\`（`ais`/`skills` 装的第三方技能不在本脚本管理面内，报告里列为"孤儿(不动)"） |
 
 **所以"改源即生效"**：改 `my-rules` 里的规则，下次对话就是新的；改 `retro-skills` 里的技能同理。**不要在运行时目录里改**（那会丢）。
 

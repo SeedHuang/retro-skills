@@ -11,3 +11,7 @@ lessons/
 node_modules/
 .DS_Store
 Thumbs.db
+
+# ── 安装副产物：npx skills 误装留下的（本仓库不装自己的技能）──────
+.trae/skills/
+skills-lock.json
