@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "skill": "retro-institutionalize",
+  "dependencies": {
+    "skills": [
+      { "name": "evolving-skills" },
+      { "name": "managing-lessons-store" }
+    ]
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "skill": "multi-lens-review",
+  "dependencies": {
+    "skills": [
+      { "name": "evolving-skills" },
+      { "name": "retro-collect" },
+      { "name": "retro-analyze" }
+    ]
+  }
+}

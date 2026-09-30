@@ -1,0 +1,5 @@
+{
+  "schemaVersion": 1,
+  "skill": "retro-analyze",
+  "dependencies": { "skills": [ { "name": "managing-lessons-store" } ] }
+}

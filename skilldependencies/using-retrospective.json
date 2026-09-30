@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "skill": "using-retrospective",
+  "dependencies": {
+    "skills": [
+      { "name": "managing-lessons-store" },
+      { "name": "retro-collect" },
+      { "name": "retro-analyze" },
+      { "name": "retro-institutionalize" }
+    ]
+  }
+}

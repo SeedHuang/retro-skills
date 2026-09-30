@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "skill": "prd-to-specs",
+  "dependencies": {
+    "skills": [
+      { "name": "evolving-skills" },
+      { "name": "multi-lens-review" },
+      { "name": "retro-collect" },
+      { "name": "retro-analyze" }
+    ]
+  }
+}
