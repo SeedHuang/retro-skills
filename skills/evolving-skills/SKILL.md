@@ -1,6 +1,6 @@
 ---
 name: evolving-skills
-description: Use when 复盘结论指向"改某个载体本身"（修订既有 rule / skill / 自动化，或新建技能），或由 retro-institutionalize 决策树转发过来；按差异卡安全地实施载体进化（失败场景先行→攒批→独立合并→体积守卫→验证）。Do not use for 首次归置新增 rule / memory / 自动化（那走 institutionalize 决策树就地落）。
+description: Use when 要"改某个载体本身"（修订既有 rule / skill / 自动化，或新建技能）——由**用户在 lessons 发起落地分析派工**，或经 retro-institutionalize 决策树转发；按差异卡安全地实施载体进化（失败场景先行→攒批→独立合并→体积守卫→验证）。Do not use for 首次归置新增 rule / memory / 自动化（那走 institutionalize 决策树就地落）。
 ---
 
 # evolving-skills（载体进化施工手册）
@@ -9,6 +9,17 @@ description: Use when 复盘结论指向"改某个载体本身"（修订既有 r
 
 - **是**：当教训的"修复方案"是**改载体本体**（改 rule 的表述、改 skill 的流程、给自动化加断言）时的标准施工手册——六步协议 + 三张差异卡。
 - **不是**：教训仓库（教训住 KB，本目录不放任何教训内容）；也不是归置决策者（定载体是 institutionalize 的事，首次新增 rule/memory/自动化走它就地落）。
+
+## 触发：由 lessons 落地分析派工
+
+本技能**不由复盘 session 自动衔接**。启动方式是：**用户在 lessons 发起一次落地分析**（一次一个技能 / 一类问题）→ 读账本 + 历史复盘 + moments（锚点） + 用户画像出方案 → 用户判断合理 → 才到本技能施工。
+
+技能复盘的「发现即记」由 `references/review-flywheel.md` 负责（**只记账、不追问**）；**「改」永远归用户发起**。
+
+## 技能账本（分层 + 体积守卫）
+
+技能教训落 `<KB>/skills/<技能名>/ledger.md`——**不写进技能目录**（目录保持发布纯净）。
+账本遵守分层：`open` 留主账、`landed` 过量后归档到 `ledger-archive-<年>.md`；主账超阈值（>100 行 或 open>20）时**提醒用户「尽早复盘收口」**——否则每次读它都白烧 token。
 
 ## 入口：三步
 

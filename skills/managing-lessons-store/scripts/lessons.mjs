@@ -288,10 +288,238 @@ export function statsLedger(root) {
   return { totalCount: openCount + landedCount, openCount, landedCount, regions: ledgerCounts, dims, weakest }
 }
 
+// ── moment（情绪记录）──────────────────────────────────────────
+export const POLARITIES = ['负向', '正向', '认知']
+
+/** 项目标识清洗（与 retro-collect 同规则）：去 |、换行、路径分隔符、控制字符；空白折为 - */
+export function sanitizeProjectId(id) {
+  return String(id ?? '')
+    .replace(/[|\r\n/\\]/g, '')
+    .replace(/[\u0000-\u001f\u007f]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+}
+
+/** 日期 → YYYY-MM-DD（本地时区） */
+function toDateStr(d) {
+  const p = n => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
+}
+
+/** 原子写：先写临时文件再改名（防中断截断）；无 BOM */
+function atomicWrite(file, content) {
+  mkdirSync(dirname(file), { recursive: true })
+  const tmp = `${file}.tmp-${Date.now()}-${Math.random().toString(36).slice(2)}`
+  writeFileSync(tmp, content, 'utf8')
+  renameSync(tmp, file)
+}
+
+/** 折掉换行（防注入行破块结构） */
+function foldOne(s) { return String(s ?? '').replace(/\r?\n/g, ' ') }
+
+/** 校验 moment 输入（返回错误字符串或 null） */
+export function validateMoment(o) {
+  if (!POLARITIES.includes(o.polarity)) return `极性必须为 负向 / 正向 / 认知（收到：${o.polarity ?? '空'}）`
+  if (!o.project) return '缺少 --project'
+  if (o.date && !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(o.date)) return `--date 必须是 YYYY-MM-DD（收到：${o.date}）`
+  if (!o.session) return '缺少 --session（情绪锚点，必填）'
+  if (o.polarity === '负向') {
+    if (!o.problem) return '负向必须提供 --problem'
+    if (!o.cause) return '负向必须提供 --cause'
+    if (!o.attitude) return '负向必须提供 --attitude'
+  } else {
+    if (!o.problem) return '正向/认知必须提供 --problem（认可 / 倾向）'
+    if (!o.evidence) return '正向/认知必须提供 --evidence（原话）'
+  }
+  return null
+}
+
+/** 构造一条 moment 的 markdown 块（逐字对齐 spec §4.6） */
+export function buildMoment({ id, project, session, message, date, polarity, problem, cause, attitude, evidence }) {
+  const one = (s) => String(s ?? '').replace(/\r?\n/g, ' ')   // 折掉换行，防注入行破块结构
+  const lines = [
+    `## ${id}`,
+    `- 极性：${polarity}｜项目：${one(project)}｜session：${one(session)}｜message：${one(message) || '—'}｜时间：${date}`,
+  ]
+  if (polarity === '负向') {
+    lines.push(`- 状态：未解决`)
+    lines.push(`- 问题：${one(problem)}`)
+    lines.push(`- 原因（推断）：${one(cause)}`)
+    lines.push(`- 态度：${one(attitude)}`)
+    if (evidence) lines.push(`- 证据：\n  > ${one(evidence)}`)
+    lines.push(`- 解法：（结案时补）｜代价：（结案时补：讨论轮数 / 时间）`)
+  } else {
+    lines.push(`- 认可 / 倾向：${one(problem)}`)
+    if (evidence) lines.push(`- 证据：\n  > ${one(evidence)}`)
+  }
+  return lines.join('\n')
+}
+
+/** 当天已有条目数 + 1 */
+function nextMomentSeq(text, date) {
+  const re = new RegExp(`^##\\s+M-${date}-(\\d+)\\s*$`, 'gm')
+  let max = 0, m
+  while ((m = re.exec(text))) max = Math.max(max, Number(m[1]))
+  return max + 1
+}
+
+/** 追加一条 moment；返回 {ok, id, file} 或 {ok:false, reason} */
+export function momentAdd(root, opts, deps = {}) {
+  if (existsSync(join(root, '.migrating'))) return { ok: false, reason: '错题集正在迁移中，请等迁移结束后重试' }
+  const bad = validateMoment(opts)
+  if (bad) return { ok: false, reason: bad }
+  const project = sanitizeProjectId(opts.project)
+  if (!project) return { ok: false, reason: '项目标识清洗后为空' }
+  const file = join(root, 'projects', project, 'moments.md')
+  const date = opts.date || toDateStr((deps.now ?? (() => new Date()))())
+  const text = existsSync(file) ? readFileSync(file, 'utf8').replace(/^\uFEFF/, '') : '# 情绪记录（moments）\n'
+  const id = `M-${date}-${nextMomentSeq(text, date)}`
+  const block = buildMoment({ id, project, session: opts.session, message: opts.message, date, polarity: opts.polarity, problem: opts.problem, cause: opts.cause, attitude: opts.attitude, evidence: opts.evidence })
+  atomicWrite(file, text.replace(/\s*$/, '') + '\n\n' + block + '\n')
+  return { ok: true, id, file }
+}
+
+/** 结案：只改指定条目的状态与解法/代价行，其余行原样保留 */
+export function momentResolve(root, opts) {
+  if (existsSync(join(root, '.migrating'))) return { ok: false, reason: '错题集正在迁移中，请等迁移结束后重试' }
+  if (!opts.project) return { ok: false, reason: '缺少 --project' }
+  if (!opts.id) return { ok: false, reason: '缺少 --id' }
+  if (!opts.solution) return { ok: false, reason: '缺少 --solution' }
+  const file = join(root, 'projects', sanitizeProjectId(opts.project), 'moments.md')
+  if (!existsSync(file)) return { ok: false, reason: `找不到 ${file}` }
+  const lines = readFileSync(file, 'utf8').replace(/^\uFEFF/, '').split('\n')
+  let start = -1
+  for (let i = 0; i < lines.length; i++) if (lines[i].trim() === `## ${opts.id}`) { start = i; break }
+  if (start === -1) return { ok: false, reason: `找不到条目 ${opts.id}（文件未改动）` }
+  let end = lines.length
+  for (let i = start + 1; i < lines.length; i++) if (/^##\s+/.test(lines[i])) { end = i; break }
+  let changed = 0
+  for (let i = start + 1; i < end; i++) {
+    if (/^- 状态：/.test(lines[i])) { lines[i] = '- 状态：已解决'; changed++ }
+    else if (/^- 解法：/.test(lines[i])) { lines[i] = `- 解法：${foldOne(opts.solution)}｜代价：${foldOne(opts.cost) || '—'}`; changed++ }
+  }
+  if (changed === 0) return { ok: false, reason: `条目 ${opts.id} 无可改字段（文件未改动）` }
+  atomicWrite(file, lines.join('\n'))
+  return { ok: true, id: opts.id }
+}
+
+/** 统计某项目 moments.md 的条数与未结案数 */
+export function momentsSummary(root, project) {
+  if (!project) return { total: 0, open: 0 }
+  const file = join(root, 'projects', sanitizeProjectId(project), 'moments.md')
+  if (!existsSync(file)) return { total: 0, open: 0 }
+  let total = 0, open = 0
+  for (const line of readFileSync(file, 'utf8').split(/\r?\n/)) {
+    if (/^##\s+M-/.test(line)) total++
+    if (/^- 状态：未解决/.test(line)) open++
+  }
+  return { total, open }
+}
+
+/** 画像文件年龄（天）；找不到返回 null */
+export function profileAgeDays(deps = {}) {
+  const p = join(deps.home ?? homedir(), '.trae-cn', 'memory', 'user_profile.md')
+  if (!existsSync(p)) return null
+  const now = (deps.now ?? (() => new Date()))()
+  return Math.floor((now.getTime() - statSync(p).mtimeMs) / 86400000)
+}
+
+// ── ledger 查询（show / find）───────────────────────────────────
+/** 列出三区账本每一行（含表头映射），供 show/find 用 */
+export function listLedgerRows(root) {
+  const rows = []
+  for (const region of ['projects', 'skills', 'universal']) {
+    const dir = join(root, region)
+    if (!existsSync(dir)) continue
+    const files = []
+    const rl = join(dir, 'ledger.md')
+    if (existsSync(rl)) files.push(rl)
+    for (const name of readdirSync(dir)) {
+      const p = join(dir, name)
+      let isDir = false
+      try { isDir = statSync(p).isDirectory() } catch { continue }
+      if (!isDir) continue
+      const l = join(p, 'ledger.md')
+      if (existsSync(l)) files.push(l)
+    }
+    for (const f of files) {
+      let col = null
+      for (const line of readFileSync(f, 'utf8').split(/\r?\n/)) {
+        const cells = line.split(/(?<!\\)\|/).map(s => s.trim())
+        if (cells.length < 11 || !cells[1]) continue
+        if (cells[1] === 'ID') { col = ledgerColumnMap(cells); continue }
+        if (/^-+$/.test(cells[1])) continue
+        rows.push({ region, file: f, id: cells[1], cells, col })
+      }
+    }
+  }
+  return rows
+}
+
+function pickCell(r, name, fallback) {
+  if (r.col && r.col[name] != null) return r.cells[r.col[name]] ?? ''
+  return fallback != null ? (r.cells[fallback] ?? '') : ''
+}
+
+export function showEntry(root, id) {
+  const hit = listLedgerRows(root).find(r => r.id === id)
+  if (!hit) return { ok: false, reason: `未找到条目 ${id}` }
+  return {
+    ok: true,
+    entry: {
+      id: hit.id, region: hit.region,
+      dim: pickCell(hit, '维度', 7),
+      carrier: pickCell(hit, '载体', hit.cells.length - 3),
+      status: pickCell(hit, '状态', hit.cells.length - 2),
+      problem: pickCell(hit, '问题', 5),
+    },
+  }
+}
+
+export function findEntries(root, kw) {
+  return listLedgerRows(root)
+    .filter(r => r.cells.some(c => c.includes(kw)))
+    .map(r => ({ id: r.id, region: r.region, dim: pickCell(r, '维度', 7), status: pickCell(r, '状态', r.cells.length - 2), problem: pickCell(r, '问题', 5) }))
+}
+
+// ── 体积守卫 ───────────────────────────────────────────────────
+/** 主账超阈值（默认 >100 行 或 open>20）→ 返回提醒项 */
+export function sizeGuard(root, { maxRows = 100, maxOpen = 20 } = {}) {
+  const out = []
+  for (const region of ['projects', 'skills', 'universal']) {
+    const dir = join(root, region)
+    if (!existsSync(dir)) continue
+    const files = []
+    const rl = join(dir, 'ledger.md')
+    if (existsSync(rl)) files.push({ name: `${region}/ledger.md`, file: rl })
+    for (const name of readdirSync(dir)) {
+      const p = join(dir, name)
+      let isDir = false
+      try { isDir = statSync(p).isDirectory() } catch { continue }
+      if (!isDir) continue
+      const l = join(p, 'ledger.md')
+      if (existsSync(l)) files.push({ name: `${region}/${name}`, file: l })
+    }
+    for (const { name, file } of files) {
+      let rows = 0, open = 0
+      for (const line of readFileSync(file, 'utf8').split(/\r?\n/)) {
+        const cells = line.split(/(?<!\\)\|/).map(s => s.trim())
+        if (cells.length < 11 || !cells[1]) continue
+        if (cells[1] === 'ID' || /^-+$/.test(cells[1])) continue
+        rows++
+        if (cells[cells.length - 2] === 'open') open++
+      }
+      if (rows > maxRows || open > maxOpen) out.push({ name, rows, open })
+    }
+  }
+  return out
+}
+
 // ── CLI 入口守卫：仅当被直接执行时运行 ────────────────────────────
 const isMain = isDirectRun(process.argv[1], import.meta.url)
 if (isMain) {
   const cmd = process.argv[2]
+  const argOf = (f) => { const i = process.argv.indexOf(f); return i === -1 ? undefined : process.argv[i + 1] }
   if (cmd === 'resolve') {
     const r = resolveStore({ env: process.env, pointerPaths: pointerCandidates(), deps: { isInsideGitRepo } })
     if (r.ok) { process.stdout.write(r.root + '\n'); process.exit(0) }
@@ -304,7 +532,14 @@ if (isMain) {
     const counters = countLedger(r.root)
     const { rows, summary } = runDeferred(r.root, counters)
     for (const row of rows) process.stdout.write(`- ${row.id} ${row.item}｜信号：${row.signal}｜${row.hits ? '命中' : '未命中'}（${row.evidence}）\n`)
-    process.stdout.write(summary + '\n')
+    const project = argOf('--project')
+    const ms = momentsSummary(r.root, project)
+    const age = profileAgeDays()
+    const parts = [summary]
+    if (project) parts.push(`未结案情绪 ${ms.open} 条`)
+    parts.push(`画像 ${age == null ? '未找到' : age + ' 天未更新'}`)
+    process.stdout.write(parts.join('；') + '\n')
+    for (const g of sizeGuard(r.root)) process.stdout.write(`提醒：${g.name} 主账 ${g.rows} 行 / ${g.open} 条 open，建议尽早复盘收口（否则每次读它都白烧 token）\n`)
     process.exit(0)
   }
   else if (cmd === 'stats') {
@@ -333,6 +568,41 @@ if (isMain) {
     process.stdout.write(`迁移完成：${r.hashCount} 个文件已校验一致；指针 → ${r.pointerPath}\n是否删除旧库由你决定（旧库仍完整可用）\n`)
     process.exit(0)
   }
-  process.stderr.write(`未知命令：${cmd}\n支持：resolve | deferred | stats | migrate --to <path>\n`)
+  else if (cmd === 'moment') {
+    const r = resolveStore({ env: process.env, pointerPaths: pointerCandidates(), deps: { isInsideGitRepo } })
+    if (!r.ok) { process.stderr.write(`${r.reason}\n下一步：${r.hint}\n`); process.exit(1) }
+    const sub = process.argv[3]
+    if (sub === 'add') {
+      const res = momentAdd(r.root, { project: argOf('--project'), session: argOf('--session'), message: argOf('--message'), date: argOf('--date'), polarity: argOf('--polarity'), problem: argOf('--problem'), cause: argOf('--cause'), attitude: argOf('--attitude'), evidence: argOf('--evidence') })
+      if (!res.ok) { process.stderr.write(`记账失败：${res.reason}\n`); process.exit(1) }
+      process.stdout.write(`已记入情绪档案：${res.id}\n`); process.exit(0)
+    } else if (sub === 'resolve') {
+      const res = momentResolve(r.root, { project: argOf('--project'), id: argOf('--id'), solution: argOf('--solution'), cost: argOf('--cost') })
+      if (!res.ok) { process.stderr.write(`结案失败：${res.reason}\n`); process.exit(1) }
+      process.stdout.write(`已结案：${res.id}\n`); process.exit(0)
+    }
+    process.stderr.write('用法：lessons moment add|resolve --project <标识> ...\n'); process.exit(1)
+  }
+  else if (cmd === 'show') {
+    const r = resolveStore({ env: process.env, pointerPaths: pointerCandidates(), deps: { isInsideGitRepo } })
+    if (!r.ok) { process.stderr.write(`${r.reason}\n下一步：${r.hint}\n`); process.exit(1) }
+    const id = process.argv[3]
+    if (!id) { process.stderr.write('用法：lessons show <ID>\n'); process.exit(1) }
+    const res = showEntry(r.root, id)
+    if (!res.ok) { process.stderr.write(`${res.reason}\n`); process.exit(1) }
+    const e = res.entry
+    process.stdout.write(`${e.id}｜${e.region}｜维度 ${e.dim}｜载体 ${e.carrier}｜状态 ${e.status}\n  ${e.problem}\n`); process.exit(0)
+  }
+  else if (cmd === 'find') {
+    const r = resolveStore({ env: process.env, pointerPaths: pointerCandidates(), deps: { isInsideGitRepo } })
+    if (!r.ok) { process.stderr.write(`${r.reason}\n下一步：${r.hint}\n`); process.exit(1) }
+    const kw = process.argv[3]
+    if (!kw) { process.stderr.write('用法：lessons find <关键词>\n'); process.exit(1) }
+    const list = findEntries(r.root, kw)
+    if (!list.length) { process.stdout.write('无匹配条目\n'); process.exit(0) }
+    for (const e of list) process.stdout.write(`${e.id}｜${e.region}｜${e.dim}｜${e.status}｜${e.problem}\n`)
+    process.exit(0)
+  }
+  process.stderr.write(`未知命令：${cmd}\n支持：resolve | deferred [--project <标识>] | stats | migrate --to <path> | moment add|resolve | show <ID> | find <关键词>\n`)
   process.exit(1)
 }

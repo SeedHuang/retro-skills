@@ -82,7 +82,7 @@ description: 多透镜评审引擎——六手法流程 + 分场景角色面板 
 
 ## 复盘回流（评审飞轮）
 
-后续阶段（开发/测试/使用）发现**本应评审期发现**的问题时：按 `evolving-skills` 的 `references/review-flywheel.md`（技能自我进化的复盘回流，通用三步）执行——先记录不阻塞（条目进 `<KB>/skills/multi-lens-review/ledger.md`，教训落点 = 本技能的手法条目 / 角色面板必问项）→ 提示用户 → 用户同意走 `evolving-skills`。**不在评审当场顺手改**。
+后续阶段（开发/测试/使用）发现**本应评审期发现**的问题时：按 `evolving-skills` 的 `references/review-flywheel.md`（技能自我进化的复盘回流）执行——先记录不阻塞（条目进 `<KB>/skills/multi-lens-review/ledger.md`，教训落点 = 本技能的手法条目 / 角色面板必问项）→ **只告知"已记账"，不追问"要不要改"** → 「改」由用户在 lessons 发起后走 `evolving-skills`。**不在评审当场改，也不在收口/巡检环节问「要不要改」。**
 
 飞轮：评审 → 发现 → 修复 → 归因 → 透镜进化 → 更强的评审。
 

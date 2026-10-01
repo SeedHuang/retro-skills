@@ -22,17 +22,19 @@
 
 **关键**：KB 是纯数据，不能承载"体系该怎么运转"（那是逻辑）→ 所以**体系架构文档的家在 retro-skills**，不在 KB。
 
+**两仓分工（2026-10-01）**：**lessons（KB）管「裁决」**——翻历史账、定频率与危害、决定"要不要落地、落成什么"；**retro-skills 管「施工」**——真正改 skill / 写 rule、过 git、可回滚。两仓只通过**条目 ID** 对接。**贯穿原则**：系统只"提醒收集 / 自动记账"，**「改」永远由用户在 lessons 发起**（详见 `docs/superpowers/specs/2026-10-01-retro-self-improvement-design.md`）。
+
 ## 3. 四层架构
 
 ```
 L1 错题集层（数据在哪）
     D:\Seed\lessons\
     ├── index.md              全局索引 + 候选与推迟表
-    ├── projects\<项目名>\    项目教训（已建成）
+    ├── projects\<项目名>\    项目教训 + moments.md（情绪记录）+ ledger.md / ledger-archive-<年>.md
     ├── skills\<技能名>\      技能教训（✅ 已建成 2026-09-28；multi-lens 已收编 2026-09-29）
     └── universal\            跨项目通用（已建成）
     + 指针 ~\.agents\lessons.config.json
-    + lessons.mjs（resolve / deferred / migrate）
+    + lessons.mjs（resolve / deferred / stats / migrate / moment add|resolve / show / find）
 
 L2 复盘层（怎么发现问题）——已建成
     using-retrospective（入口/路由）
@@ -51,6 +53,17 @@ L4 仓库与安装层（东西放哪、怎么生效）——✅ 已通（见 §8
     ├── 自有 skill：源 retro-skills → 运行时 ~\.trae-cn\skills\（junction）
     └── 第三方 skill：不进化，教训降级成 rule（【缺】闸门）
 ```
+
+### 3.1 飞轮新增机制（2026-10-01）
+
+| 机制 | 住哪 | 作用 |
+|---|---|---|
+| **情绪锚点（moment）** | `projects\<项目>\moments.md` | 当场自动记「用户不爽 / 认可 / 认知倾向」；带 session·message 锚点 + 自带快照（原话）；**只收集、不分析**；结案由用户触发 |
+| **用户画像** | `~\.trae-cn\memory\user_profile.md` | 从情绪点 + 提问/回答提炼「在意什么、怎么判断」；每条结论**引原话证据**；提炼在 lessons 落地分析时做 |
+| **体积治理** | 各区 ledger | 热冷分层（`open` 留主账 / `landed` 归档 `ledger-archive-<年>.md`）；主账超阈值（>100 行 或 open>20）时**提醒尽早复盘收口** |
+| **巡检扩展** | `lessons.mjs deferred [--project]` | 会话开始报「推迟项 / 未结案情绪 N 条 / 画像 X 天未更新」——**只报告收集侧，绝不追问落地** |
+
+> 情绪锚点与画像的详规见 `docs/superpowers/specs/2026-10-01-retro-self-improvement-design.md`；战略全图见 `docs/superpowers/specs/2026-10-01-retro-flywheel-blueprint.md`。
 
 ## 4. 单向数据流（体系公理）
 
@@ -98,7 +111,7 @@ L4 仓库与安装层（东西放哪、怎么生效）——✅ 已通（见 §8
 
 | # | 合什么 | 成什么样 |
 |---|---|---|
-| B1 | KB 三个区（projects / skills / universal） | 同一张表、同一套编号、只多一列"对象"→ **一个巡检命令管全部**（✅ 表口径已统一 2026-09-28；巡检命令属 KB 候选 C2，信号未到） |
+| B1 | KB 三个区（projects / skills / universal） | 同一张表、同一套编号 → **一个巡检命令管全部**（✅ 表口径已统一 2026-09-28；2026-10-01 删除冗余「对象」列；巡检命令属 KB 候选 C2，信号未到） |
 | B2 | multi-lens 的自记机制并入体系 | 它不再写自己的 `lessons.md`，改写 KB（其 SKILL.md 的指引随收编一起改） |
 | B3 | 装侧漂移检查合成一个模式 | skills 和 rules 用同一套"清单 + 哈希 + 检查" |
 
@@ -113,7 +126,7 @@ L4 仓库与安装层（东西放哪、怎么生效）——✅ 已通（见 §8
 
 ### 不动（防过度重构）
 
-项目 rule（跟项目走）、第三方 skill（教训降级成 rule）、retro 前三个技能、`lessons.mjs` 现有三个命令、**第三方技能内部的 `rules\` 素材**（如 Vercel 的 react-best-practices，是技能按需读的字典，收编会让每次对话都吃一整本字典）。
+项目 rule（跟项目走）、第三方 skill（教训降级成 rule）、retro 前三个技能、**第三方技能内部的 `rules\` 素材**（如 Vercel 的 react-best-practices，是技能按需读的字典，收编会让每次对话都吃一整本字典）。
 
 ## 7. 仓库清单
 

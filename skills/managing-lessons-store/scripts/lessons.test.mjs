@@ -377,3 +377,145 @@ test('isDirectRun：经 junction 安装目录启动 → 仍判为"直接执行"�
     rmSync(linkRoot, { recursive: true, force: true })
   }
 })
+
+import { momentAdd, momentResolve, sanitizeProjectId, momentsSummary, showEntry, findEntries, sizeGuard } from './lessons.mjs'
+
+const LEDGER_HEADER = '| ID | 日期 | 归属 | 来源 | 问题 | 根因 | 维度 | 修复 | 载体 | 状态 |\n'
+const LEDGER_SEP = '|---|---|---|---|---|---|---|---|---|---|\n'
+
+test('sanitizeProjectId：清洗路径穿越 / 分隔符 / 空白折 -', () => {
+  assert.equal(sanitizeProjectId('../..').includes('/'), false)
+  assert.equal(sanitizeProjectId('a|b/c\\d'), 'abcd')
+  assert.equal(sanitizeProjectId(' my project '), 'my-project')
+})
+
+test('moment add：缺 --polarity → 拒绝', () => {
+  const root = makeStore(tmp())
+  const r = momentAdd(root, { project: 'p', session: 's', problem: 'x' })
+  assert.equal(r.ok, false)
+  assert.match(r.reason, /极性/)
+})
+
+test('moment add：缺 --session → 拒绝', () => {
+  const root = makeStore(tmp())
+  const r = momentAdd(root, { project: 'p', polarity: '负向', problem: 'x', cause: 'y', attitude: 'z' })
+  assert.equal(r.ok, false)
+  assert.match(r.reason, /--session/)
+})
+
+test('moment add：负向缺 --cause → 拒绝', () => {
+  const root = makeStore(tmp())
+  const r = momentAdd(root, { project: 'p', session: 's', polarity: '负向', problem: 'x', attitude: 'y' })
+  assert.equal(r.ok, false)
+  assert.match(r.reason, /--cause/)
+})
+
+test('moment add：写入首条 + 目录自建 + 无 BOM', () => {
+  const root = makeStore(tmp())
+  const r = momentAdd(root, { project: 'p', session: 's1', polarity: '负向', problem: '连续三轮没听懂', cause: '用了术语', attitude: '打断', evidence: '像天书', date: '2026-10-01' })
+  assert.equal(r.ok, true)
+  assert.equal(r.id, 'M-2026-10-01-1')
+  const file = join(root, 'projects', 'p', 'moments.md')
+  assert.equal(existsSync(file), true)
+  const buf = readFileSync(file)
+  assert.notEqual(buf[0], 0xEF) // 无 BOM
+  assert.match(buf.toString('utf8'), /## M-2026-10-01-1/)
+})
+
+test('moment add：同日第二条 → ID 递增', () => {
+  const root = makeStore(tmp())
+  momentAdd(root, { project: 'p', session: 's', polarity: '负向', problem: 'a', cause: 'b', attitude: 'c', date: '2026-10-01' })
+  const r = momentAdd(root, { project: 'p', session: 's', polarity: '正向', problem: '认可', evidence: '不错', date: '2026-10-01' })
+  assert.equal(r.id, 'M-2026-10-01-2')
+})
+
+test('moment add：migrating 锁存在 → 拒绝', () => {
+  const root = makeStore(tmp())
+  writeFileSync(join(root, '.migrating'), 'x', 'utf8')
+  const r = momentAdd(root, { project: 'p', session: 's', polarity: '负向', problem: 'a', cause: 'b', attitude: 'c' })
+  assert.equal(r.ok, false)
+  assert.match(r.reason, /迁移中/)
+})
+
+test('moment add：--project 含路径分隔符 → 清洗后仍落在 projects/ 内（不穿越）', () => {
+  const root = makeStore(tmp())
+  const r = momentAdd(root, { project: '../../etc', session: 's', polarity: '负向', problem: 'a', cause: 'b', attitude: 'c', date: '2026-10-01' })
+  assert.equal(r.ok, true)
+  assert.equal(r.file, join(root, 'projects', '....etc', 'moments.md'))
+})
+
+test('moment resolve：找不到 ID → 报错且文件不变', () => {
+  const root = makeStore(tmp())
+  momentAdd(root, { project: 'p', session: 's', polarity: '负向', problem: 'a', cause: 'b', attitude: 'c', date: '2026-10-01' })
+  const file = join(root, 'projects', 'p', 'moments.md')
+  const before = readFileSync(file, 'utf8')
+  const r = momentResolve(root, { project: 'p', id: 'M-2026-10-01-9', solution: 'x' })
+  assert.equal(r.ok, false)
+  assert.equal(readFileSync(file, 'utf8'), before)
+})
+
+test('moment resolve：只改指定条目，其余字节不变', () => {
+  const root = makeStore(tmp())
+  momentAdd(root, { project: 'p', session: 's', polarity: '负向', problem: 'a', cause: 'b', attitude: 'c', date: '2026-10-01' })
+  momentAdd(root, { project: 'p', session: 's', polarity: '正向', problem: '认可', evidence: '好', date: '2026-10-01' })
+  const file = join(root, 'projects', 'p', 'moments.md')
+  const before = readFileSync(file, 'utf8')
+  const tail = before.slice(before.indexOf('## M-2026-10-01-2'))
+  const r = momentResolve(root, { project: 'p', id: 'M-2026-10-01-1', solution: '改用大白话', cost: '3 轮' })
+  assert.equal(r.ok, true)
+  const after = readFileSync(file, 'utf8')
+  assert.match(after, /- 状态：已解决/)
+  assert.match(after, /- 解法：改用大白话｜代价：3 轮/)
+  assert.equal(after.includes(tail), true) // 第二条一字未动
+})
+
+test('momentsSummary：统计条数与未结案数', () => {
+  const root = makeStore(tmp())
+  momentAdd(root, { project: 'p', session: 's', polarity: '负向', problem: 'a', cause: 'b', attitude: 'c', date: '2026-10-01' })
+  momentAdd(root, { project: 'p', session: 's', polarity: '负向', problem: 'd', cause: 'e', attitude: 'f', date: '2026-10-01' })
+  momentResolve(root, { project: 'p', id: 'M-2026-10-01-1', solution: 'x' })
+  const s = momentsSummary(root, 'p')
+  assert.equal(s.total, 2)
+  assert.equal(s.open, 1)
+})
+
+test('showEntry / findEntries：查单条与按关键词', () => {
+  const root = makeStore(tmp())
+  mkdirSync(join(root, 'projects', 'p1'), { recursive: true })
+  const row = '| L-1 | 2026-10-01 | p1 | 复盘 | 未核实就断言 | x | 健壮度 | z | rule | open |\n'
+  writeFileSync(join(root, 'projects', 'p1', 'ledger.md'), LEDGER_HEADER + LEDGER_SEP + row, 'utf8')
+  const s = showEntry(root, 'L-1')
+  assert.equal(s.ok, true)
+  assert.equal(s.entry.status, 'open')
+  assert.equal(s.entry.dim, '健壮度')
+  const f = findEntries(root, '未核实')
+  assert.equal(f.length, 1)
+  assert.equal(f[0].id, 'L-1')
+})
+
+test('sizeGuard：open 超阈值 → 提示', () => {
+  const root = makeStore(tmp())
+  mkdirSync(join(root, 'projects', 'p1'), { recursive: true })
+  let body = ''
+  for (let i = 1; i <= 25; i++) body += `| L-${i} | 2026-10-01 | p1 | 复盘 | x | y | 健壮度 | z | 未定 | open |\n`
+  writeFileSync(join(root, 'projects', 'p1', 'ledger.md'), LEDGER_HEADER + LEDGER_SEP + body, 'utf8')
+  const g = sizeGuard(root)
+  assert.equal(g.length, 1)
+  assert.equal(g[0].open, 25)
+})
+
+test('moment add：--date 非法格式 → 拒绝', () => {
+  const root = makeStore(tmp())
+  const r = momentAdd(root, { project: 'p', session: 's', polarity: '负向', problem: 'a', cause: 'b', attitude: 'c', date: 'foo' })
+  assert.equal(r.ok, false)
+  assert.match(r.reason, /YYYY-MM-DD/)
+})
+
+test('moment add：值内换行被折掉（不注入行 / 不破块）', () => {
+  const root = makeStore(tmp())
+  const r = momentAdd(root, { project: 'p', session: 's', polarity: '负向', problem: '第一行\n## 假块', cause: 'c', attitude: 'a', evidence: 'e1\ne2', date: '2026-10-01' })
+  assert.equal(r.ok, true)
+  const text = readFileSync(join(root, 'projects', 'p', 'moments.md'), 'utf8')
+  assert.equal(/^## 假块/m.test(text), false)            // 没注入出假块
+  assert.equal((text.match(/^## M-/gm) || []).length, 1) // 只有 1 个真块
+})

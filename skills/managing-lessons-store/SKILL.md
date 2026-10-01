@@ -1,13 +1,13 @@
 ---
 name: managing-lessons-store
-description: Use when 需要初始化错题集库、迁移库到新位置、轮询推迟项是否到复活时机、或看库的统计与维度薄弱面（stats）时。用于「错题集放哪 / 库搬家 / 换盘 / 有什么推迟项该做了 / 库里哪个维度最薄弱」这类请求。Do not use for 复盘本身（走 retro-collect / retro-analyze / retro-institutionalize）。
+description: Use when 需要初始化错题集库、迁移库到新位置、轮询推迟项是否到复活时机、记录或结案情绪点（moment）、查条目（show / find）、或看库的统计与维度薄弱面（stats）时。用于「错题集放哪 / 库搬家 / 换盘 / 有什么推迟项该做了 / 库里哪个维度最薄弱 / 记一条情绪 / 查某条目的状态」这类请求。Do not use for 复盘本身（走 retro-collect / retro-analyze / retro-institutionalize）。
 ---
 
 # 管理错题集库（managing-lessons-store）
 
 ## 职责边界
 
-本技能做四件事：**初始化（bootstrap）、迁移、轮询推迟项、统计（L3-1 维度分布快照）**。它**不做**复盘、不写教训内容（那是 retro-* 三个技能的事）。
+本技能做这些事：**初始化（bootstrap）、迁移、轮询推迟项、统计（维度分布快照）、情绪记录（moment）、条目查询（show / find）、体积治理**。它**不做**复盘、不写教训内容（那是 retro-* 三个技能的事）——**只收集与检索，不下结论**。
 
 所有操作都通过脚本 `scripts/lessons.mjs` 完成——**技能里不硬编码 KB 路径**。
 
@@ -18,8 +18,12 @@ description: Use when 需要初始化错题集库、迁移库到新位置、轮�
 | 命令 | 用途 |
 |---|---|
 | `node scripts/lessons.mjs resolve` | 解析并**校验** KB 根；成功打印路径，失败打印原因 + 下一步 |
-| `node scripts/lessons.mjs deferred` | 打印推迟项清单 + 命中判定 + 总数报告 |
-| `node scripts/lessons.mjs stats` | 三区 × 维度分布快照（L3-1：看薄弱面；实时扫描三区账本） |
+| `node scripts/lessons.mjs deferred [--project <标识>]` | 推迟项清单 + 命中判定 + 总数；带 `--project` 追加「未结案情绪 N 条；画像 X 天未更新」；主账超阈值时打印「尽早复盘收口」提醒 |
+| `node scripts/lessons.mjs stats` | 三区 × 维度分布快照（看薄弱面；实时扫描三区账本） |
+| `node scripts/lessons.mjs moment add --project <标识> --session <id> --polarity <负向\|正向\|认知> ...` | 追加一条情绪记录（负向必给 `--problem/--cause/--attitude`；正向/认知必给 `--problem/--evidence`） |
+| `node scripts/lessons.mjs moment resolve --project <标识> --id <M-...> --solution "..." [--cost "..."]` | 结案：只改该条目的状态与解法/代价 |
+| `node scripts/lessons.mjs show <ID>` | 查单条（状态 / 载体 / 维度） |
+| `node scripts/lessons.mjs find <关键词>` | 按关键词列相关条目及状态 |
 | `node scripts/lessons.mjs migrate --to <path>` | 迁移（四条硬校验 + 复制 + 校验 + 切指针） |
 
 无 Node 时（`node -v` 失败）：**明确告知脚本不可用**，改为手工操作，且**不得假装成功**。
@@ -46,8 +50,9 @@ description: Use when 需要初始化错题集库、迁移库到新位置、轮�
 
 跑 `deferred`，逐条核对信号：
 
-- **有命中** → 动手前先向用户提出：命中项编号 + 信号证据，并说明是否升格为独立 spec
+- **有命中** → 动手前先向用户提出：命中项编号 + 信号证据（**是否升格 → 指是否做一次更深的复盘/独立 spec，属收集侧**）
 - **无命中** → 一句话报告，**必须含计数**（如「推迟项 6 条，均未命中信号」）——防轮询退化成形式主义
+- **顺带报**（带 `--project <标识>`）：`未结案情绪 N 条；画像 X 天未更新`；主账超阈值时附「建议尽早复盘收口 <目标>」。**只报告收集侧，绝不追问落地**
 
 ## 常见错误
 
@@ -59,3 +64,5 @@ description: Use when 需要初始化错题集库、迁移库到新位置、轮�
 | 迁移后顺手删了旧库 | 不删。由用户决定 |
 | 报告没带计数 | 必须带「推迟项 N 条」 |
 | 信号写成 `KB ≥ 10 条`（全角 ≥ / 缺「条目」二字） | 脚本判为「不可自动判定 → 交人工」，轮询静默退化。改写为 `KB 条目 >= 10` |
+| 巡检报告里夹带「要不要落地」 | 巡检只报收集侧（推迟项 / 情绪 / 画像）；**落地由用户在 lessons 发起** |
+| `moment add` 忘给 `--session` | 情绪锚点必填——没有 session 就失去与过程配对的能力 |
