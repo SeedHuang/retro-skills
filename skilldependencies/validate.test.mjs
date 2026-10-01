@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { readFileSync, readdirSync } from 'node:fs'
+import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { readManifest } from 'file:///D:/Seed/agent-assets-sync/src/deps.mjs'
@@ -29,4 +29,14 @@ test('每个技能清单：跨技能依赖都在本套件内', () => {
     const man = readManifest(join(here, f))
     for (const d of man.skills) assert.equal(known.has(d.name), true, `${f} 依赖了套件外的 ${d.name}`)
   }
+})
+
+test('skills/ 目录与 manifest 一一对应（防新增技能漏登记）', () => {
+  const m = JSON.parse(readFileSync(join(here, 'manifest.json'), 'utf8'))
+  const skillsDir = join(here, '..', 'skills')
+  const dirs = readdirSync(skillsDir, { withFileTypes: true })
+    .filter((d) => d.isDirectory() && existsSync(join(skillsDir, d.name, 'SKILL.md')))
+    .map((d) => d.name)
+    .sort()
+  assert.deepEqual([...m.skills].sort(), dirs)
 })

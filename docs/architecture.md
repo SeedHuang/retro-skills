@@ -47,6 +47,10 @@ L3 载体进化层（怎么改它们）——✅ 已建成（2026-09-28）
     ├── evolving-skills：改 skill 本体（✅ 已建成 2026-09-28）
     └── 每种载体的"差异卡"（✅ 已建成 2026-09-28：card-rule / card-skill / card-automation）
 
+L3.5 验证层（怎么知道改对了）——🆕 2026-10-01
+    retro-verify：已落地载体的有效性（复发率 + 机会数 → 5 档；对账事前预期；无效 / 更差 → 回退 + 回炉，回退走用户确认）
+    算数：lessons.mjs 的 `verify score|trend|expect`（KB 解析唯一处）
+
 L4 仓库与安装层（东西放哪、怎么生效）——✅ 已通（见 §8.1）
     ├── 项目 rule：跟项目走（.trae\rules\）——零改动
     ├── 全局 rule：源 my-rules → 运行时 ~\.trae-cn\user_rules\（符号链接；条数见 §8.1）
@@ -62,6 +66,7 @@ L4 仓库与安装层（东西放哪、怎么生效）——✅ 已通（见 §8
 | **用户画像** | `~\.trae-cn\memory\user_profile.md` | 从情绪点 + 提问/回答提炼「在意什么、怎么判断」；每条结论**引原话证据**；提炼在 lessons 落地分析时做 |
 | **体积治理** | 各区 ledger | 热冷分层（`open` 留主账 / `landed` 归档 `ledger-archive-<年>.md`）；主账超阈值（>100 行 或 open>20）时**提醒尽早复盘收口** |
 | **巡检扩展** | `lessons.mjs deferred [--project]` | 会话开始报「推迟项 / 未结案情绪 N 条 / 画像 X 天未更新」——**只报告收集侧，绝不追问落地** |
+| **验证环（`retro-verify`，🆕 2026-10-01）** | `retro-skills\skills\retro-verify\` | 已落地载体**有没有效**：复发率 + 机会数 → 5 档；对账事前预期；无效 / 更差 → 回退 + 回炉 |
 
 > 情绪锚点与画像的详规见 `docs/superpowers/specs/2026-10-01-retro-self-improvement-design.md`；战略全图见 `docs/superpowers/specs/2026-10-01-retro-flywheel-blueprint.md`。
 
@@ -187,7 +192,7 @@ aas list / aas editors      只读：列条目 / 列编辑器
 
 | 目标 | 形态 |
 |---|---|
-| `~\.trae-cn\user_rules\rule-<名字>.md` | 全部是 **SymbolicLink** → `my-rules\rules\<名字>.md`（取数：跑 `aas` 体检的"已就位"数；本条写作时 9 条。另有 **aas 安装**形态条目——经 `aas add` 从远端仓库装的，账本豁免不计入孤儿） |
+| `~\.trae-cn\user_rules\rule-<名字>.md` | 全部是 **SymbolicLink** → `my-rules\rules\<名字>.md`（取数：跑 `aas` 体检的"已就位"数；本条写作时 10 条。另有 **aas 安装**形态条目——经 `aas add` 从远端仓库装的，账本豁免不计入孤儿） |
 | `~\.trae-cn\skills\<技能名>\` | 本仓库 8 个 **Junction**（dry-refactor-newadd 已入源、未同步前不在此列；条数以 `aas` 体检输出为准）→ `retro-skills\skills\<技能名>\`（`ais`/`skills` 装的第三方技能不在本脚本管理面内，报告里列为"孤儿(不动)"） |
 
 **所以"改源即生效"**：改 `my-rules` 里的规则，下次对话就是新的；改 `retro-skills` 里的技能同理。**不要在运行时目录里改**（那会丢）。

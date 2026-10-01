@@ -515,6 +515,142 @@ export function sizeGuard(root, { maxRows = 100, maxOpen = 20 } = {}) {
   return out
 }
 
+// ── verify（有效性验证：算分 / 趋势 / 对账）─────────────────────
+const VERIFY_HEADER = '| 期 | 日期 | 机会A | 复发B | 新问题N | 认可P | 预期复发率(%) | 复发信号 | 备注 |\n|---|---|---|---|---|---|---|---|---|'
+
+/** 目标（技能名 或 KB 条目 ID）→ 台账文件路径 */
+export function resolveVerifyFile(root, target) {
+  if (!target) return { ok: false, reason: '缺少目标（技能名，或 KB 条目 ID）' }
+  const skillDir = join(root, 'skills', target)
+  try { if (statSync(skillDir).isDirectory()) return { ok: true, kind: 'skill', file: join(skillDir, 'effectiveness.md') } } catch { /* 不是技能目录，继续按条目 ID 找 */ }
+  const hit = listLedgerRows(root).find(r => r.id === target)
+  if (hit) return { ok: true, kind: 'entry', file: join(dirname(hit.file), 'effectiveness.md') }
+  return { ok: false, reason: `未找到目标 ${target}（既不是 skills/ 下的技能名，也不是 KB 条目 ID）` }
+}
+
+/** 解析台账表 → 期行数组（表头/分隔行跳过，无法评分的期标记 unrated） */
+export function parseEffectiveness(text) {
+  const rows = []
+  for (const line of String(text ?? '').replace(/^\uFEFF/, '').split(/\r?\n/)) {
+    const c = line.split('|').map(s => s.trim())
+    if (c.length < 11) continue
+    const period = c[1]
+    if (!period || period === '期' || /^-+$/.test(period)) continue
+    const num = (x) => (x === '' || x === '—' || x === '-' ? null : (Number.isFinite(Number(x)) ? Number(x) : null))
+    const a = num(c[3])
+    if (a == null) { rows.push({ period, date: c[2], unrated: true }); continue }
+    rows.push({ period, date: c[2], a, b: num(c[4]) ?? 0, n: num(c[5]) ?? 0, p: num(c[6]) ?? 0, expect: c[7] || '—', signal: c[8] || '—', note: c[9] || '' })
+  }
+  return rows
+}
+
+/** 比率 → 百分比（一位小数）；分母 0 → null */
+function pct(b, a) { return a > 0 ? Math.round((b / a) * 1000) / 10 : null }
+
+/** 置信度（按机会数 A） */
+export function confidenceOf(a) {
+  if (a == null) return '无法评分（无机会数）'
+  if (a <= 1) return '样本不足（不打分）'
+  if (a <= 4) return '仅定性'
+  if (a <= 9) return '量级可参考'
+  return '趋势可信'
+}
+
+/** Δ 复发率（百分点）→ 5 档 */
+export function gradeFromDelta(delta) {
+  if (delta <= -30) return '明显变好'
+  if (delta <= -10) return '略微变好'
+  if (delta < 10) return '看不出差别'
+  if (delta < 30) return '有劣化趋势'
+  return '明显劣化趋势'
+}
+
+/** 预期区间 "20-35" → [20,35]；解析不出 → null */
+export function parseExpectRange(s) {
+  const m = String(s ?? '').match(/(\d+(?:\.\d+)?)\s*[-~–至]\s*(\d+(?:\.\d+)?)/)
+  return m ? [Number(m[1]), Number(m[2])] : null
+}
+
+/** 实测% vs 预期区间（+ 上期%）→ 对账结论 */
+export function compareExpect(actual, expectStr, prev) {
+  if (actual == null) return '无实测值（无法对账）'
+  const rg = parseExpectRange(expectStr)
+  if (!rg) return '未填预期区间 → 只做趋势，不做对账'
+  const [lo, hi] = rg
+  let v = actual <= lo ? '达到或超出预期' : (actual <= hi ? '达到预期（区间内）' : '未达到预期')
+  if (prev != null && actual > prev) v += '；且比上期回升，疑似劣化'
+  return v
+}
+
+/** 追加一期（台账不存在则建表头）；原子写 */
+export function verifyRecord(root, file, o) {
+  if (existsSync(join(root, '.migrating'))) return { ok: false, reason: '错题集正在迁移中，请等迁移结束后重试' }
+  if (!o.period) return { ok: false, reason: '缺少 --period（如 改前 / 改后1）' }
+  const a = Number(o.a)
+  if (!Number.isInteger(a) || a < 0) return { ok: false, reason: `--a 必须是非负整数（收到：${o.a ?? '空'}）` }
+  const numOr0 = (x, name) => {
+    if (x == null || x === '') return { v: 0 }
+    const n = Number(x)
+    if (!Number.isInteger(n) || n < 0) return { err: `--${name} 必须是非负整数（收到：${x}）` }
+    return { v: n }
+  }
+  const bb = numOr0(o.b, 'b'); if (bb.err) return { ok: false, reason: bb.err }
+  const nn = numOr0(o.n, 'n'); if (nn.err) return { ok: false, reason: nn.err }
+  const pp = numOr0(o.p, 'p'); if (pp.err) return { ok: false, reason: pp.err }
+  const date = o.date || toDateStr(new Date())
+  if (!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(date)) return { ok: false, reason: `--date 必须是 YYYY-MM-DD（收到：${date}）` }
+  const cell = (s) => foldOne(s ?? '') || '—'
+  const row = `| ${cell(o.period)} | ${date} | ${a} | ${bb.v} | ${nn.v} | ${pp.v} | ${cell(o.expect)} | ${cell(o.signal)} | ${cell(o.note)} |`
+  let base
+  if (!existsSync(file)) base = `# 有效性台账\n\n${VERIFY_HEADER}`
+  else {
+    const text = readFileSync(file, 'utf8').replace(/^\uFEFF/, '').replace(/\s*$/, '')
+    base = /^\|\s*期\s*\|/m.test(text) ? text : `${text}\n\n${VERIFY_HEADER}`
+  }
+  atomicWrite(file, base + '\n' + row + '\n')
+  return { ok: true, file, period: o.period }
+}
+
+function readRated(file) {
+  if (!existsSync(file)) return { ok: false, reason: '尚无台账，请先 verify record 记一期' }
+  const rows = parseEffectiveness(readFileSync(file, 'utf8')).filter(r => !r.unrated)
+  if (!rows.length) return { ok: false, reason: '台账里还没有可用的期（计数为空或标了「无法评分」）' }
+  return { ok: true, rows }
+}
+
+/** 末期水平 + 置信度 */
+export function verifyScore(file) {
+  const r = readRated(file)
+  if (!r.ok) return r
+  const last = r.rows[r.rows.length - 1]
+  return { ok: true, row: last, recurrence: pct(last.b, last.a), newProblem: pct(last.n, last.a), approval: pct(last.p, last.a), confidence: confidenceOf(last.a) }
+}
+
+/** 逐期 Δ → 5 档 */
+export function verifyTrend(file) {
+  const r = readRated(file)
+  if (!r.ok) return r
+  return {
+    ok: true,
+    points: r.rows.map((row, i) => {
+      const recur = pct(row.b, row.a)
+      const prev = i > 0 ? pct(r.rows[i - 1].b, r.rows[i - 1].a) : null
+      const delta = (prev != null && recur != null) ? Math.round((recur - prev) * 10) / 10 : null
+      return { period: row.period, date: row.date, a: row.a, recur, delta, grade: delta == null ? '基线' : gradeFromDelta(delta), confidence: confidenceOf(row.a) }
+    }),
+  }
+}
+
+/** 末期实测 vs 事前预期 */
+export function verifyExpect(file) {
+  const r = readRated(file)
+  if (!r.ok) return r
+  const last = r.rows[r.rows.length - 1]
+  const actual = pct(last.b, last.a)
+  const prev = r.rows.length > 1 ? pct(r.rows[r.rows.length - 2].b, r.rows[r.rows.length - 2].a) : null
+  return { ok: true, period: last.period, actual, expect: last.expect, prev, verdict: compareExpect(actual, last.expect, prev) }
+}
+
 // ── CLI 入口守卫：仅当被直接执行时运行 ────────────────────────────
 const isMain = isDirectRun(process.argv[1], import.meta.url)
 if (isMain) {
@@ -603,6 +739,42 @@ if (isMain) {
     for (const e of list) process.stdout.write(`${e.id}｜${e.region}｜${e.dim}｜${e.status}｜${e.problem}\n`)
     process.exit(0)
   }
-  process.stderr.write(`未知命令：${cmd}\n支持：resolve | deferred [--project <标识>] | stats | migrate --to <path> | moment add|resolve | show <ID> | find <关键词>\n`)
+  else if (cmd === 'verify') {
+    const r = resolveStore({ env: process.env, pointerPaths: pointerCandidates(), deps: { isInsideGitRepo } })
+    if (!r.ok) { process.stderr.write(`${r.reason}\n下一步：${r.hint}\n`); process.exit(1) }
+    const sub = process.argv[3]
+    const target = process.argv[4]
+    const t = resolveVerifyFile(r.root, target)
+    if (!t.ok) { process.stderr.write(`${t.reason}\n`); process.exit(1) }
+    const show = (x) => (x == null ? '—' : `${x}%`)
+    if (sub === 'record') {
+      const res = verifyRecord(r.root, t.file, { period: argOf('--period'), date: argOf('--date'), a: argOf('--a'), b: argOf('--b'), n: argOf('--n'), p: argOf('--p'), expect: argOf('--expect'), signal: argOf('--signal'), note: argOf('--note') })
+      if (!res.ok) { process.stderr.write(`记账失败：${res.reason}\n`); process.exit(1) }
+      process.stdout.write(`已记一期：${res.period}\n`); process.exit(0)
+    }
+    else if (sub === 'score') {
+      const res = verifyScore(t.file)
+      if (!res.ok) { process.stderr.write(`${res.reason}\n`); process.exit(1) }
+      process.stdout.write(`${res.row.period}（机会 ${res.row.a}）｜复发率 ${show(res.recurrence)}｜新问题率 ${show(res.newProblem)}｜认可率 ${show(res.approval)}｜置信：${res.confidence}\n`)
+      process.exit(0)
+    }
+    else if (sub === 'trend') {
+      const res = verifyTrend(t.file)
+      if (!res.ok) { process.stderr.write(`${res.reason}\n`); process.exit(1) }
+      for (const p of res.points) {
+        const d = p.delta == null ? '' : `（Δ ${p.delta > 0 ? '+' : ''}${p.delta}）`
+        process.stdout.write(`${p.period}｜机会 ${p.a}｜复发率 ${show(p.recur)}${d}｜${p.grade}｜${p.confidence}\n`)
+      }
+      process.exit(0)
+    }
+    else if (sub === 'expect') {
+      const res = verifyExpect(t.file)
+      if (!res.ok) { process.stderr.write(`${res.reason}\n`); process.exit(1) }
+      process.stdout.write(`${res.period}｜实测复发率 ${show(res.actual)}｜事前预期 ${res.expect}｜${res.verdict}\n`)
+      process.exit(0)
+    }
+    process.stderr.write('用法：lessons verify record|score|trend|expect <目标（技能名 或 KB 条目 ID）> ...\n'); process.exit(1)
+  }
+  process.stderr.write(`未知命令：${cmd}\n支持：resolve | deferred [--project <标识>] | stats | migrate --to <path> | moment add|resolve | show <ID> | find <关键词> | verify record|score|trend|expect <目标>\n`)
   process.exit(1)
 }

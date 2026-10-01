@@ -1,4 +1,4 @@
 {
   "schemaVersion": 1,
-  "skills": ["multi-lens-review", "prd-to-specs", "retro-collect", "retro-analyze", "retro-institutionalize", "evolving-skills", "using-retrospective", "managing-lessons-store", "dry-refactor-newadd"]
+  "skills": ["multi-lens-review", "prd-to-specs", "retro-collect", "retro-analyze", "retro-institutionalize", "retro-verify", "evolving-skills", "using-retrospective", "managing-lessons-store", "dry-refactor-newadd"]
 }

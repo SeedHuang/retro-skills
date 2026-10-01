@@ -24,6 +24,10 @@ description: Use when 需要初始化错题集库、迁移库到新位置、轮�
 | `node scripts/lessons.mjs moment resolve --project <标识> --id <M-...> --solution "..." [--cost "..."]` | 结案：只改该条目的状态与解法/代价 |
 | `node scripts/lessons.mjs show <ID>` | 查单条（状态 / 载体 / 维度） |
 | `node scripts/lessons.mjs find <关键词>` | 按关键词列相关条目及状态 |
+| `node scripts/lessons.mjs verify record <目标> --period <期> --a <机会数> [--b --n --p --date --expect --signal --note]` | 记一期有效性（台账不存在则建表头）；`<目标>` = 技能名 或 KB 条目 ID |
+| `node scripts/lessons.mjs verify score <目标>` | 末期水平：复发率 / 新问题率 / 认可率 + 置信度（按机会数） |
+| `node scripts/lessons.mjs verify trend <目标>` | 逐期 Δ → **5 档**（明显变好 … 明显劣化）+ 趋势 |
+| `node scripts/lessons.mjs verify expect <目标>` | 实测 vs **事前预期区间** → 对账结论（达到 / 未达 / 回升） |
 | `node scripts/lessons.mjs migrate --to <path>` | 迁移（四条硬校验 + 复制 + 校验 + 切指针） |
 
 无 Node 时（`node -v` 失败）：**明确告知脚本不可用**，改为手工操作，且**不得假装成功**。

@@ -1,6 +1,6 @@
 ---
 name: using-retrospective
-description: Use when 阶段/里程碑收口、session 即将结束、用户说「复盘/回顾/总结一下这个过程」「这段是不是可以沉淀一下」「跨项目分析一下」「看看跨项目模式」、或要判断一条教训该进全局还是项目规则时。Do not use for 代码审查（走 open-code-review）、bug 定位（走 systematic-debugging）、或仅要一份过程时间线（那是 retro-collect 单独可做）。
+description: Use when 阶段/里程碑收口、session 即将结束、用户说「复盘/回顾/总结一下这个过程」「这段是不是可以沉淀一下」「跨项目分析一下」「看看跨项目模式」「过一遍某个 skill/rule 的有效性 / 看分数趋势」、或要判断一条教训该进全局还是项目规则时。Do not use for 代码审查（走 open-code-review）、bug 定位（走 systematic-debugging）、或仅要一份过程时间线（那是 retro-collect 单独可做）。
 ---
 
 # 复盘套件入口（using-retrospective）
@@ -21,6 +21,14 @@ description: Use when 阶段/里程碑收口、session 即将结束、用户说�
 ## 跨项目分析（L4，独立于四环节）
 
 用户说「跨项目分析一下 / 看看跨项目模式」→ 按 `references/cross-project-analysis.md` 执行（Task 起独立子代理；报告落 KB `universal\`）。**前置**：`lessons stats` 显示 项目 ≥ 2 且 条目 ≥ 20；不满足 → 拒绝并告知差距。
+
+## 有效性验证（retro-verify，落地之后的验证环）
+
+用户说「过一遍 <目标> 的有效性 / 看 <目标的> 分数趋势」→ **转 `retro-verify`**。
+
+- **验的是"已落地"的载体**（skill / rule / 自动化）；**前置**：账本条目状态已 `landed(→载体)`，否则**拒绝**（先落地再验）。
+- **算数走脚本**（`lessons verify score|trend|expect <目标>`，KB 解析唯一处）；**判定与回退方案在 `retro-verify` 里做**；回退**先出方案、用户确认后才退**。
+- **它不属于四环节**——四环节做的是"产生教训并落地"；它管的是"**落地之后到底有没有用**"（飞轮 Ring 5.5）。
 
 ## 产物关系图
 
@@ -55,6 +63,7 @@ description: Use when 阶段/里程碑收口、session 即将结束、用户说�
 | 要归置但无复盘文件 | 拒绝；建议先跑 `retro-analyze` |
 | KB 未初始化 | 拒绝；转 `managing-lessons-store` 引导 bootstrap |
 | `resolve` 校验失败 | 拒绝；按提示引导重建/迁移 |
+| 要验证但目标未 landed | 拒绝；先走归置落地，再验 |
 
 **为什么拒绝而非降级**：降级会产出「看起来对但依据缺失」的产物，污染 KB——污染比中断贵得多。
 

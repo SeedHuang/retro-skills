@@ -39,19 +39,20 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 | 有事实包，要分析出问题 / 根因 / 优先级 | `retro-analyze` |
 | 复盘已有结论，要把教训写回规范 | `retro-institutionalize` |
 | 要改 rule / skill / 自动化本体（施工） | `evolving-skills` |
+| 要验证某个**已落地**的 skill / rule / 自动化有没有效 | `retro-verify` |
 | 要评审 PRD / spec / 技术方案文档，找逻辑漏洞、悖论、盲点 | `multi-lens-review` |
 | 已有定稿 PRD，要拆成可独立开发的 spec 与路线图 | `prd-to-specs` |
 | 库未初始化 / 库要搬家 / 会话开始轮询 / 看库的规模与薄弱面 | `managing-lessons-store` |
 | 审查最近一次提交引入的冗余代码，抽取合并、出审计报告 | `dry-refactor-newadd` |
 
-典型闭环只有四步：**喊入口 → 采事实 → 复盘分析 → 归置落地**。落地的载体（规则 / 技能 / 自动化）在活链上，**改源即生效**——下次对话自动带着，不需要任何人记得"上次学到了什么"。
+典型闭环：**喊入口 → 采事实 → 复盘分析 → 归置落地 → 验证（`retro-verify`）**。落地的载体（规则 / 技能 / 自动化）在活链上，**改源即生效**——下次对话自动带着，不需要任何人记得"上次学到了什么"；改完由 `retro-verify` 看**有没有真管用**。
 
-## 九个技能：各自的作用与使用时机
+## 十个技能：各自的作用与使用时机
 
 ### 1. `using-retrospective` — 入口与路由
 
 - **什么时候用**：阶段/里程碑收口、session 收尾；用户说「复盘一下」「总结一下这段」「跨项目分析一下」。
-- **做什么**：看你手上已有什么产物，路由到对应环节——没有事实包 → `retro-collect`；有事实包 → `retro-analyze`；有复盘 → `retro-institutionalize`。跨项目分析前先校验库规模信号。
+- **做什么**：看你手上已有什么产物，路由到对应环节——没有事实包 → `retro-collect`；有事实包 → `retro-analyze`；有复盘 → `retro-institutionalize`；**「过一遍 <目标> 的有效性」→ `retro-verify`**。跨项目分析前先校验库规模信号。
 - **不做什么**：自己不产出任何环节的产物（防越权产废）。
 
 ### 2. `retro-collect` — 采集事实包
@@ -69,7 +70,7 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 ### 4. `retro-institutionalize` — 归置落地（把教训变成"自动生效"）
 
 - **什么时候用**：复盘已有结论，要把教训写回规范。
-- **做什么**：按决策树给每条教训选载体——**先查重（升级既有优先，新增要举证）**；能机械判定 → 自动化（测试/lint）；多步过程 → skill；可证伪的约束 → rule；其余 → memory。写入顺序固定「先条目 → 后落地 → 再改状态」，规则必须带 provenance（来源 = KB 条目 ID）。
+- **做什么**：① **落地分析**（读账本 + 历史复盘 + moments + 画像 → 急性·慢性 + 痛感排序 + 归簇）→ ② **出落地方案交用户判断**（8 要素：治哪个问题 / 改哪个载体 / 怎么改 / 为什么 / **有效性判据** / **事前预期值** / 副作用·成本·作用域·冲突·可逆性 / 大白话 + 画像自检）→ ③ **判断合理后**才按决策树选载体实施：**先查重（升级既有优先，新增要举证）**；能机械判定 → 自动化（测试/lint）；多步过程 → skill；可证伪的约束 → rule；其余 → memory。写入顺序固定「先条目 → 后落地 → 再改状态」，规则必须带 provenance（来源 = KB 条目 ID）。
 - **转发**：要修订/新建 rule、skill 本体时，转发给 `evolving-skills` 施工。
 
 ### 5. `evolving-skills` — 载体进化施工
@@ -85,8 +86,11 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 | 命令 | 用途 |
 |---|---|
 | `node scripts/lessons.mjs resolve` | 解析并校验 KB 根 |
-| `node scripts/lessons.mjs deferred` | 轮询推迟项 + 命中判定（报告必须带总数） |
+| `node scripts/lessons.mjs deferred [--project <标识>]` | 轮询推迟项 + 命中判定（报告必须带总数）；`--project` 时附「未结案情绪 / 画像年龄」 |
 | `node scripts/lessons.mjs stats` | 三区 × 维度分布快照（看薄弱面） |
+| `node scripts/lessons.mjs moment add\|resolve ...` | 情绪记录：追加 / 结案 |
+| `node scripts/lessons.mjs show <ID>` / `find <关键词>` | 查条目 / 按关键词列条目 |
+| `node scripts/lessons.mjs verify score\|trend\|expect <目标>` | 有效性：算分 / 趋势（5 档）/ 对账事前预期 |
 | `node scripts/lessons.mjs migrate --to <路径>` | 库迁移（带四条硬校验，迁移后旧库不自动删） |
 
 ### 7. `multi-lens-review` — 多透镜评审（文档评审）
@@ -106,6 +110,12 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 - **什么时候用**：刚提交完一批改动，想清理掉**这次提交**新引入的"复制粘贴"重复，并看到一份改前改后对比的审计报告。**前提：工作区必须干净**（未提交的改动要先由你提交——提交既是对比基准的前提，也是出问题的回退点）。
 - **做什么**：按提交数选模式——≥2 个提交时用 jscpd v5（本机已装 5.3.x）的 `--baseline-from-ref HEAD~1`，只报**本次提交新增**的重复（旧债不碰）；只有 1 个提交则全量扫描（无"改动前"可比）。然后按五种策略（抽函数 / 参数化 / 抽模块或常量 / 基类 / 模板）抽取合并 → 复测 + 跑项目自身测试 → 输出三块审计报告（改了什么 / 跳过了什么及原因 / 重复行数 X→Y 及占比，数字附取数命令）。执行中踩的坑按 `retro-*` 体系回流错题集 KB（自进化走既有复盘套件，技能本身不带自改逻辑）。
 - **不做什么**：不做死代码检测（jscpd 的 `--dead-code` 是另一条线，本技能范围不含）；不清理基准里已有的历史重复；技能自身不做 git 写操作。
+
+### 10. `retro-verify` — 有效性验证（落地之后）
+
+- **什么时候用**：一个 skill / rule / 自动化**已落地**后，想知道它**到底有没有效**（「过一遍 <目标> 的有效性」「看分数趋势」）。
+- **做什么**：算数走脚本（`lessons verify score|trend|expect <目标>`）——复发率 + 机会数 → 5 档；**对账事前预期**；无效 / 更差 → 出**回退方案**（先方案 + 理由，**用户确认后才退**）。
+- **不做什么**：不采集事实（走 `retro-collect`）、不首次归置（走 `retro-institutionalize`）、不改载体本体（属 `evolving-skills`）。
 
 ## 一个完整例子（真实闭环：2026-09-29 回显污染事故）
 
@@ -145,7 +155,7 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 
 ## 仓库结构
 
-- `skills/<九个技能>/` —— 技能源（`SKILL.md` + `references/`；**改源即生效**，运行时是只读链接）
+- `skills/<十个技能>/` —— 技能源（`SKILL.md` + `references/`；**改源即生效**，运行时是只读链接）
 - `docs/architecture.md` —— 体系总图与全部裁决（含执行顺序、待验证项、隐患挂账）
 - `docs/superpowers/` —— spec / plan（设计过程件）
 - `docs/handoffs/` —— 跨 session 交接词（每个 session 收口的交接事实）

@@ -519,3 +519,110 @@ test('moment add：值内换行被折掉（不注入行 / 不破块）', () => {
   assert.equal(/^## 假块/m.test(text), false)            // 没注入出假块
   assert.equal((text.match(/^## M-/gm) || []).length, 1) // 只有 1 个真块
 })
+
+import {
+  resolveVerifyFile, confidenceOf, gradeFromDelta, compareExpect,
+  verifyRecord, verifyScore, verifyTrend, verifyExpect,
+} from './lessons.mjs'
+
+test('resolveVerifyFile：技能目标 → skills/<名>/effectiveness.md', () => {
+  const root = makeStore(tmp())
+  mkdirSync(join(root, 'skills', 'retro-verify'), { recursive: true })
+  const r = resolveVerifyFile(root, 'retro-verify')
+  assert.equal(r.ok, true)
+  assert.equal(r.kind, 'skill')
+  assert.equal(r.file, join(root, 'skills', 'retro-verify', 'effectiveness.md'))
+})
+
+test('resolveVerifyFile：条目 ID 目标 → 该条目所在目录', () => {
+  const root = makeStore(tmp())
+  mkdirSync(join(root, 'projects', 'demo'), { recursive: true })
+  writeFileSync(join(root, 'projects', 'demo', 'ledger.md'),
+    '| ID | 日期 | 归属 | 来源 | 问题 | 根因 | 维度 | 修复 | 对象 | 载体 | 状态 |\n|---|---|---|---|---|---|---|---|---|---|---|\n| L-1 | 2026-10-01 | demo | 复盘 | 问题X | 根因Y | 健壮度 | 修复Z | rule | rule | landed(→rule(全局)) |\n', 'utf8')
+  const r = resolveVerifyFile(root, 'L-1')
+  assert.equal(r.ok, true)
+  assert.equal(r.kind, 'entry')
+  assert.equal(r.file, join(root, 'projects', 'demo', 'effectiveness.md'))
+})
+
+test('resolveVerifyFile：目标不存在 → 报错', () => {
+  const root = makeStore(tmp())
+  const r = resolveVerifyFile(root, 'nope')
+  assert.equal(r.ok, false)
+  assert.match(r.reason, /未找到目标/)
+})
+
+test('gradeFromDelta：5 档边界', () => {
+  assert.equal(gradeFromDelta(-30), '明显变好')
+  assert.equal(gradeFromDelta(-10), '略微变好')
+  assert.equal(gradeFromDelta(0), '看不出差别')
+  assert.equal(gradeFromDelta(10), '有劣化趋势')
+  assert.equal(gradeFromDelta(30), '明显劣化趋势')
+})
+
+test('confidenceOf：按机会数的门槛', () => {
+  assert.match(confidenceOf(1), /样本不足/)
+  assert.match(confidenceOf(4), /仅定性/)
+  assert.match(confidenceOf(5), /量级可参考/)
+  assert.match(confidenceOf(10), /趋势可信/)
+})
+
+test('compareExpect：达到 / 未达 / 回升 / 无区间', () => {
+  assert.match(compareExpect(20, '20-35', null), /达到或超出预期/)
+  assert.match(compareExpect(30, '20-35', null), /区间内/)
+  assert.match(compareExpect(50, '20-35', null), /未达到预期/)
+  assert.match(compareExpect(50, '20-35', 40), /回升/)
+  assert.match(compareExpect(20, '—', null), /不做对账/)
+})
+
+test('verifyRecord：建表头 + 追加；非负整数校验；migrating 拒绝；无 BOM', () => {
+  const root = makeStore(tmp())
+  mkdirSync(join(root, 'skills', 'demo'), { recursive: true })
+  const file = join(root, 'skills', 'demo', 'effectiveness.md')
+  const r1 = verifyRecord(root, file, { period: '改前', date: '2026-10-01', a: '6', b: '4', n: '1', p: '0' })
+  assert.equal(r1.ok, true)
+  const text = readFileSync(file, 'utf8')
+  assert.match(text, /^\| 期 \| 日期 \| 机会A/m)
+  assert.equal(/^\uFEFF/.test(text), false)
+  assert.equal(verifyRecord(root, file, { period: 'x', a: '-1' }).ok, false)
+  assert.equal(verifyRecord(root, file, { period: '', a: '1' }).ok, false)
+  writeFileSync(join(root, '.migrating'), '', 'utf8')
+  assert.match(verifyRecord(root, file, { period: 'y', a: '1' }).reason, /迁移/)
+})
+
+test('verifyScore / verifyTrend / verifyExpect：两期端到端', () => {
+  const root = makeStore(tmp())
+  mkdirSync(join(root, 'skills', 'demo'), { recursive: true })
+  const file = join(root, 'skills', 'demo', 'effectiveness.md')
+  verifyRecord(root, file, { period: '改前', date: '2026-10-01', a: '6', b: '4', n: '1', p: '0' })
+  const r2 = verifyRecord(root, file, { period: '改后1', date: '2026-10-15', a: '5', b: '1', n: '0', p: '2', expect: '20-35' })
+  assert.equal(r2.ok, true)
+
+  const s = verifyScore(file)
+  assert.equal(s.ok, true)
+  assert.equal(s.recurrence, 20)          // 1/5 → 20%
+  assert.equal(s.newProblem, 0)
+  assert.equal(s.approval, 40)
+  assert.match(s.confidence, /量级可参考/)  // A=5
+
+  const t = verifyTrend(file)
+  assert.equal(t.ok, true)
+  assert.equal(t.points.length, 2)
+  assert.equal(t.points[0].grade, '基线')
+  assert.equal(t.points[0].recur, 66.7)   // 4/6
+  assert.equal(t.points[1].delta, -46.7)  // 20 - 66.7
+  assert.equal(t.points[1].grade, '明显变好')
+
+  const e = verifyExpect(file)
+  assert.equal(e.ok, true)
+  assert.equal(e.actual, 20)
+  assert.match(e.verdict, /达到或超出预期/)
+})
+
+test('verifyScore：无台账 → 报错提示先 record', () => {
+  const root = makeStore(tmp())
+  mkdirSync(join(root, 'skills', 'demo'), { recursive: true })
+  const s = verifyScore(join(root, 'skills', 'demo', 'effectiveness.md'))
+  assert.equal(s.ok, false)
+  assert.match(s.reason, /尚无台账/)
+})

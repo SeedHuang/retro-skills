@@ -1,0 +1,5 @@
+{
+  "schemaVersion": 1,
+  "skill": "retro-verify",
+  "dependencies": { "skills": [ { "name": "managing-lessons-store" } ] }
+}
