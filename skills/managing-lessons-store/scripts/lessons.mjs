@@ -523,7 +523,7 @@ export function momentDrop(root, opts) {
   // 定位本 session 目录（spec §4.1）；`--date` 转护栏——目录名日期与它不符就找不到（防找错目录）
   const loc = findSessionDir(root, project, opts.date, normText(opts.session))
   if (!loc.ok) return { ok: false, reason: loc.reason }
-  if (!loc.dir) return { ok: true, removed: 0, fileMissing: true, noDir: true }   // 该日期下还没有本 session 的目录（首次收集的正常态）
+  if (!loc.dir) return { ok: true, removed: 0, noDir: true }   // 该日期下还没有本 session 的目录（首次收集的正常态）。与 fileMissing **互斥**——fileMissing 只表示"目录在、没 moments.md"（spec §7 / §11-9）
   const file = join(root, 'projects', project, loc.dir, 'moments.md')
   if (!existsSync(file)) return { ok: true, removed: 0, fileMissing: true }      // 目录在，只是还没记过情绪
   const lines = readFileSync(file, 'utf8').replace(/^\uFEFF/, '').split('\n')
@@ -880,7 +880,7 @@ if (isMain) {
     } else if (sub === 'drop') {
       const res = momentDrop(r.root, { project: argOf('--project'), date: argOf('--date'), session: argOf('--session') })
       if (!res.ok) { process.stderr.write(`清除失败：${res.reason}\n`); process.exit(1) }
-      if (res.noDir) process.stdout.write(`该日期下还没有本 session 的目录——首次收集时属正常，接着 moment add 建目录即可；只有当你确信目录该存在时，才需要复核日期 / sid。本次未改动任何文件\n`)
+      if (res.noDir) process.stdout.write(`该日期下还没有本 session 的目录——首次收集时属正常，接着 moment add --summary "<≤20字主题>" 建目录即可（新建目录缺 --summary 会被拒）；只有当你确信目录该存在时，才需要复核日期 / sid。本次未改动任何文件\n`)
       else if (res.fileMissing) process.stdout.write(`目录在，但还没有 moments.md（尚未记过情绪）——属正常；本次未改动任何文件\n`)
       else if (res.removed === 0) process.stdout.write(`本 session 无条目，未改动\n`)
       else if (res.resolvedRemoved) process.stdout.write(`已清除本 session 旧条目 ${res.removed} 条——其中 ${res.resolvedRemoved} 条已结案：解法 / 代价是人写的判断，重扫造不回来，重扫完须重新结案\n`)

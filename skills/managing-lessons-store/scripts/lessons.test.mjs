@@ -826,12 +826,13 @@ test('moment drop：只清本 session 目录的条目区，其他 session 目录
   assert.equal(readFileSync(bFile, 'utf8'), bBefore)    // B 目录一字未动
 })
 
-test('moment drop：目录 / moments.md 不存在 → removed 0 + fileMissing（幂等）', () => {
+test('moment drop：目录不存在 → removed 0 + noDir（与 fileMissing 互斥，幂等）', () => {
   const root = makeStore(tmp())
   const r = momentDrop(root, { project: 'p', date: '2026-10-01', session: 'cccccccc' })
   assert.equal(r.ok, true)
   assert.equal(r.removed, 0)
-  assert.equal(r.fileMissing, true)
+  assert.equal(r.noDir, true)
+  assert.equal(r.fileMissing, undefined)   // **互斥**：noDir 时不置 fileMissing（spec §11-9）
   assert.equal(existsSync(join(root, 'projects', 'p', '2026-10-01-cccccccc-测试摘要')), false)
 })
 
@@ -857,8 +858,8 @@ test('集成：首次 collect 的 drop→add 序列（noDir 属正常 → add �
   const root = makeStore(tmp())
   const d1 = momentDrop(root, { project: 'p', date: '2026-10-01', session: 'aaaaaaaa' })
   assert.equal(d1.ok, true)
-  assert.equal(d1.fileMissing, true)
   assert.equal(d1.noDir, true)                       // 目录都还没有 → 首次收集的正常态，不该当错误报
+  assert.equal(d1.fileMissing, undefined)            // 与 noDir 互斥
   const a = momentAdd(root, { project: 'p', session: 'aaaaaaaa', date: '2026-10-01', summary: '首次收集', polarity: '负面', problem: 'x', evidence: 'y', reason: 'r' })
   assert.equal(a.ok, true)
   assert.equal(a.dir, '2026-10-01-aaaaaaaa-首次收集')
@@ -914,14 +915,15 @@ test('moment drop：相邻「## 备注」块不被误删（块边界与 momentRe
   assert.match(after, /手加的一句说明/)
 })
 
-test('moment drop：sid 在场却不匹配 → 不碰同日唯一目录（fileMissing，防清错 session）', () => {
+test('moment drop：sid 在场却不匹配 → 不碰同日唯一目录（noDir，防清错 session）', () => {
   const root = makeStore(tmp())
   momentAdd(root, { summary: '测试摘要', project: 'p', session: 'dddddddd', polarity: '正面', problem: 'b', evidence: 'y', date: '2026-10-01', reason: 'r' })
   const file = join(root, 'projects', 'p', '2026-10-01-dddddddd-测试摘要', 'moments.md')
   const before = readFileSync(file, 'utf8')
   const r = momentDrop(root, { project: 'p', date: '2026-10-01', session: 'cccccccc' })
   assert.equal(r.ok, true)
-  assert.equal(r.fileMissing, true)
+  assert.equal(r.noDir, true)                           // 没找到本 session 的目录 → noDir
+  assert.equal(r.fileMissing, undefined)                // 与 noDir 互斥
   assert.equal(readFileSync(file, 'utf8'), before)      // B 一字未动
 })
 
