@@ -1,6 +1,6 @@
 ---
 name: using-retrospective
-description: Use when 阶段/里程碑收口、session 即将结束、用户说「复盘/回顾/总结一下这个过程」「这段是不是可以沉淀一下」「跨项目分析一下」「看看跨项目模式」「过一遍某个 skill/rule 的有效性 / 看分数趋势」、或要判断一条教训该进全局还是项目规则时。Do not use for 代码审查（走 open-code-review）、bug 定位（走 systematic-debugging）、或仅要一份过程时间线（那是 retro-collect 单独可做）。
+description: Use when 阶段/里程碑收口、session 即将结束、用户说「复盘/回顾/总结一下这个过程」「这段是不是可以沉淀一下」「跨项目分析一下」「看看跨项目模式」「过一遍某个 skill/rule 的有效性 / 看分数趋势」、或要判断一条教训该进全局还是项目规则时。凡是用户提到「回顾一下这个项目/这段经历」「这段是不是踩坑了」「总结一下经验教训」「看看有什么可以沉淀的」，都先想到本技能。Do not use for 代码审查（走 open-code-review）、bug 定位（走 systematic-debugging）、或仅要一份过程时间线（那是 retro-collect 单独可做）。
 ---
 
 # 复盘套件入口（using-retrospective）

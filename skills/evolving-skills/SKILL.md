@@ -1,6 +1,6 @@
 ---
 name: evolving-skills
-description: Use when 要"改某个载体本身"（修订既有 rule / skill / 自动化，或新建技能）——由**用户在 lessons 发起落地分析派工**，或经 retro-institutionalize 决策树转发；按差异卡安全地实施载体进化（失败场景先行→攒批→独立合并→体积守卫→验证）。Do not use for 首次归置新增 rule / memory / 自动化（那走 institutionalize 决策树就地落）。
+description: Use when 要"改某个载体本身"（修订既有 rule / skill / 自动化，或新建技能）——由**用户在 lessons 发起落地分析派工**，或经 retro-institutionalize 决策树转发；用户说「改一下这条规则」「把这个技能改改」「更新 skill」「这条规则要修订」也算；按差异卡安全地实施载体进化（失败场景先行→攒批→独立合并→体积守卫→验证）。Do not use for 首次归置新增 rule / memory / 自动化（那走 institutionalize 决策树就地落）。
 ---
 
 # evolving-skills（载体进化施工手册）
@@ -23,9 +23,9 @@ description: Use when 要"改某个载体本身"（修订既有 rule / skill / �
 
 ## 入口：三步
 
-1. **识别载体**：这次改的是 rule / skill / 自动化？→ 读对应卡 `references/card-rule.md` / `card-skill.md` / `card-automation.md`，卡里有改前/改中/改后全流程
+1. **识别载体**：这次改的是 rule / skill / 自动化？→ 读对应卡 `references/card-rule.md` / `references/card-skill.md` / `references/card-automation.md`，卡里有改前/改中/改后全流程（差异卡是「agent 读的指引文档」，按官方语义属 references；`assets/` 放输出用模板）
 2. **对账**：教训应在 KB ledger 里（转发场景 institutionalize 已写入 `open`）。**直达触发而账里无记录 → 先建账再动手**（ledger 先行是通则）
-3. **走协议**：六步速览见下表；逐步细则读 `references/protocol.md`
+3. **走协议**：六步速览见下表；逐步细则读 `references/protocol.md`；**Trae 差异 / 仓库落地约定见 `references/trae-adapter.md`**
 
 ## 六步速览
 

@@ -289,7 +289,7 @@ export function statsLedger(root) {
 }
 
 // ── moment（情绪记录）──────────────────────────────────────────
-export const POLARITIES = ['负向', '正向', '认知']
+export const POLARITIES = ['负面', '正面', '认知']
 
 /** 项目标识清洗（与 retro-collect 同规则）：去 |、换行、路径分隔符、控制字符；空白折为 - */
 export function sanitizeProjectId(id) {
@@ -319,17 +319,16 @@ function foldOne(s) { return String(s ?? '').replace(/\r?\n/g, ' ') }
 
 /** 校验 moment 输入（返回错误字符串或 null） */
 export function validateMoment(o) {
-  if (!POLARITIES.includes(o.polarity)) return `极性必须为 负向 / 正向 / 认知（收到：${o.polarity ?? '空'}）`
+  if (!POLARITIES.includes(o.polarity)) return `极性必须为 负面 / 正面 / 认知（收到：${o.polarity ?? '空'}）`
   if (!o.project) return '缺少 --project'
   if (o.date && !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(o.date)) return `--date 必须是 YYYY-MM-DD（收到：${o.date}）`
   if (!o.session) return '缺少 --session（情绪锚点，必填）'
-  if (o.polarity === '负向') {
-    if (!o.problem) return '负向必须提供 --problem'
-    if (!o.cause) return '负向必须提供 --cause'
-    if (!o.attitude) return '负向必须提供 --attitude'
+  if (o.polarity === '负面') {
+    if (!o.problem) return '负面必须提供 --problem'
+    if (!o.evidence) return '负面必须提供 --evidence（原话，不猜原因）'
   } else {
-    if (!o.problem) return '正向/认知必须提供 --problem（认可 / 倾向）'
-    if (!o.evidence) return '正向/认知必须提供 --evidence（原话）'
+    if (!o.problem) return '正面/认知必须提供 --problem（认可 / 倾向）'
+    if (!o.evidence) return '正面/认知必须提供 --evidence（原话）'
   }
   return null
 }
@@ -341,16 +340,16 @@ export function buildMoment({ id, project, session, message, date, polarity, pro
     `## ${id}`,
     `- 极性：${polarity}｜项目：${one(project)}｜session：${one(session)}｜message：${one(message) || '—'}｜时间：${date}`,
   ]
-  if (polarity === '负向') {
+  if (polarity === '负面') {
     lines.push(`- 状态：未解决`)
     lines.push(`- 问题：${one(problem)}`)
-    lines.push(`- 原因（推断）：${one(cause)}`)
-    lines.push(`- 态度：${one(attitude)}`)
-    if (evidence) lines.push(`- 证据：\n  > ${one(evidence)}`)
+    lines.push(`- 证据（原话）：\n  > ${one(evidence ?? '')}`)
+    if (cause) lines.push(`- 原因（推断）：${one(cause)}`)
+    if (attitude) lines.push(`- 态度（推断）：${one(attitude)}`)
     lines.push(`- 解法：（结案时补）｜代价：（结案时补：讨论轮数 / 时间）`)
   } else {
     lines.push(`- 认可 / 倾向：${one(problem)}`)
-    if (evidence) lines.push(`- 证据：\n  > ${one(evidence)}`)
+    if (evidence) lines.push(`- 证据（原话）：\n  > ${one(evidence)}`)
   }
   return lines.join('\n')
 }
@@ -372,7 +371,8 @@ export function momentAdd(root, opts, deps = {}) {
   if (!project) return { ok: false, reason: '项目标识清洗后为空' }
   const file = join(root, 'projects', project, 'moments.md')
   const date = opts.date || toDateStr((deps.now ?? (() => new Date()))())
-  const text = existsSync(file) ? readFileSync(file, 'utf8').replace(/^\uFEFF/, '') : '# 情绪记录（moments）\n'
+  const text = existsSync(file) ? readFileSync(file, 'utf8').replace(/^\uFEFF/, '') : '# 情绪记录（moments）\n\n> 触发：agent 主动（察觉情绪即记）。极性：负面 / 正面 / 认知，全收。\n> 负面必填原话（evidence），原因/态度可选且须标推断。格式见 managing-lessons-store/assets/moments-template.md。\n'
+  if (!opts.message) process.stderr.write(`[warn] moment add：未提供 --message，事后无法定位到具体对话（仅 session 级可查）\n`)
   const id = `M-${date}-${nextMomentSeq(text, date)}`
   const block = buildMoment({ id, project, session: opts.session, message: opts.message, date, polarity: opts.polarity, problem: opts.problem, cause: opts.cause, attitude: opts.attitude, evidence: opts.evidence })
   atomicWrite(file, text.replace(/\s*$/, '') + '\n\n' + block + '\n')
@@ -394,10 +394,18 @@ export function momentResolve(root, opts) {
   let end = lines.length
   for (let i = start + 1; i < lines.length; i++) if (/^##\s+/.test(lines[i])) { end = i; break }
   let changed = 0
+  let polarity = ''
   for (let i = start + 1; i < end; i++) {
+    const m = lines[i].match(/^- 极性：([^｜\s]+)/)
+    if (m) polarity = m[1]
     if (/^- 状态：/.test(lines[i])) { lines[i] = '- 状态：已解决'; changed++ }
-    else if (/^- 解法：/.test(lines[i])) { lines[i] = `- 解法：${foldOne(opts.solution)}｜代价：${foldOne(opts.cost) || '—'}`; changed++ }
+    else if (/^- 解法：/.test(lines[i])) {
+      const esc = (s) => String(s ?? '').replace(/\\/g, '\\\\').replace(/\|/g, '\\|').replace(/\r?\n/g, ' ')
+      lines[i] = `- 解法：${esc(opts.solution)}｜代价：${esc(opts.cost) || '—'}`
+      changed++
+    }
   }
+  if (polarity && polarity !== '负面') return { ok: false, reason: `条目 ${opts.id} 极性为「${polarity}」，不结案（正面/认知走画像管线）` }
   if (changed === 0) return { ok: false, reason: `条目 ${opts.id} 无可改字段（文件未改动）` }
   atomicWrite(file, lines.join('\n'))
   return { ok: true, id: opts.id }

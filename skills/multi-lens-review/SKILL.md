@@ -1,6 +1,6 @@
 ---
 name: multi-lens-review
-description: 多透镜评审引擎——六手法流程 + 分场景角色面板 + 收敛协议 + 复盘回流，审查 PRD、spec、技术方案的逻辑完整性。Use when the user asks to review a PRD, spec, or design doc, 评审/审查文档、找逻辑漏洞、悖论、盲点. Do not use for code review or writing new docs.
+description: 多透镜评审引擎——六手法流程 + 分场景角色面板 + 收敛协议 + 复盘回流，审查 PRD、spec、技术方案的逻辑完整性。Use when the user asks to review a PRD, spec, or design doc, 评审/审查文档、找逻辑漏洞、悖论、盲点，或用户说「帮我看看这个方案有没有坑」「这个设计文档靠谱吗」「帮我审一下 PRD」「看看有没有漏洞/矛盾/盲点」时。Do not use for code review or writing new docs.
 ---
 
 # Multi-Lens Review（多透镜评审引擎）

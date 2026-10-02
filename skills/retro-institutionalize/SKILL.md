@@ -1,6 +1,6 @@
 ---
 name: retro-institutionalize
-description: Use when 复盘结论已定、**用户在 lessons 发起一次落地分析**——由本技能做「落地分析 + 出落地方案（含验收维度与事前预期值）交用户判断 → 决策树归置」；或用户说「把这套经验沉淀下去」「以后别犯这个错了」时。Do not use for 分析出结论（走 retro-analyze）、落地后验有效性（走 retro-verify）。
+description: Use when 复盘结论已定、**用户在 lessons 发起一次落地分析**——由本技能做「落地分析 + 出落地方案（含验收维度与事前预期值）交用户判断 → 决策树归置」；或用户说「把这套经验沉淀下去」「以后别犯这个错了」「这个教训要不要立成规矩」「把这个经验固化下来」「下次怎么避免再犯」「这条要不要落地」时。Do not use for 分析出结论（走 retro-analyze）、落地后验有效性（走 retro-verify）。
 ---
 
 # 归置落地（retro-institutionalize）

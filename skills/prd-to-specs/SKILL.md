@@ -1,6 +1,6 @@
 ---
 name: prd-to-specs
-description: Split an existing PRD into independently developable specs with a roadmap index, following bfm-verified conventions. Use when the user asks to 拆分PRD, 生成spec拆分方案, 规划spec路线图, or 优化PRD的里程碑拆分. Do not use for writing implementation plans, writing code, or code review.
+description: Split an existing PRD into independently developable specs with a roadmap index, following bfm-verified conventions. Use when the user asks to 拆分PRD, 生成spec拆分方案, 规划spec路线图, or 优化PRD的里程碑拆分，或用户说「这个 PRD 怎么拆」「拆成几个开发任务」「路线图怎么规划」「帮我拆一下需求」时. Do not use for writing implementation plans, writing code, or code review.
 ---
 
 # PRD → Specs 拆分

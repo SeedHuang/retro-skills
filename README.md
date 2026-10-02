@@ -58,7 +58,8 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 ### 2. `retro-collect` — 采集事实包
 
 - **什么时候用**：要复盘，但还没有事实包。
-- **产出**：`<KB>/projects/<项目标识>/<日期>-facts.md`——纯事实、每条带来源（命令原文 / 文件直读）、零判断。
+- **产出**：`<KB>/projects/<项目标识>/<日期>-facts.md`——纯事实、每条带来源（命令原文 / 文件直读）、零判断；**用户主动触发时**另落同目录 `userwords.md`（用户原话，逐字收、不筛选）。
+- **模板**：`skills/retro-collect/assets/facts-template.md`、`userwords-template.md`（逐字使用，权威定义在模板里）。
 - **不做什么**：不分析、不给根因、不排优先级（凭印象分析会污染 KB）。
 
 ### 3. `retro-analyze` — 复盘分析
