@@ -6,7 +6,7 @@
 
 ## 落点
 
-`<KB>/projects/<项目标识>/<日期>-<sid>[-<摘要>]/moments.md`（**一 session 一份**——文件即本 session；日期 / `sid` / 摘要的定法以 `retro-collect/SKILL.md`「第 0 步：定 session」为权威定义方）
+`<KB>/projects/<项目标识>/<日期>-<sid>-<摘要>/moments.md`（**一 session 一份**——文件即本 session；日期 / `sid` / 摘要的定法以 `retro-collect/SKILL.md`「第 0 步：定 session」为权威定义方）
 
 与同目录 `facts.md` / `userwords.md` 并列。
 
@@ -21,7 +21,7 @@
 
 ## 重扫与覆盖（`retro-collect` 跑时）
 
-collect 时按**当前**判定公式**重扫本 session 全对话** → `moment drop`（清本 session 的条目区）→ `moment add` 逐条重写。**直接覆盖，不留旧版**——对话还在，随时可再生成。
+collect 时按**当前**判定公式**重扫本 session 全对话** → `moment drop`（清本 session 的条目区）→ `moment add` 逐条重写。**直接覆盖，不留旧版**——但"随时可再生成"只对**情绪**成立：**已结案条目的解法 / 代价是人写的判断，会一并被清掉**（drop 会回报条数），重扫完须重新结案。
 
 **前提：本 session 对话仍完整可见。** 若已被压缩 / 截断（扫不全）→ **不要 drop**：残缺的新数据盖掉完整的旧数据 = 静默丢数据。此时只补新发现的，或先告诉用户「对话已不全，不覆盖」。
 

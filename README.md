@@ -58,7 +58,7 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 ### 2. `retro-collect` — 采集事实包
 
 - **什么时候用**：要复盘，但还没有事实包。
-- **产出（三样，一次 collect 全部刷新）**：**同目录** = `<KB>/projects/<项目标识>/<日期>-<sid>[-<摘要>]/`——① `facts.md`（事实包——纯事实、每条带来源、零判断）；② `userwords.md`（用户原话，逐字收、不筛选）；③ `moments.md`（情绪记录——**重扫覆盖本 session**）。
+- **产出（三样，一次 collect 全部刷新）**：**同目录** = `<KB>/projects/<项目标识>/<日期>-<sid>-<摘要>/`——① `facts.md`（事实包——纯事实、每条带来源、零判断）；② `userwords.md`（用户原话，逐字收、不筛选）；③ `moments.md`（情绪记录——**重扫覆盖本 session**）。
 - **session 定法**：日期一律取 **session 起始日期**（不是执行当天）；`sid` = 首句逐字原文的 sha256 前 8 位（`lessons sid "<首句>"`）——见技能「第 0 步：定 session」。
 - **模板**：`skills/retro-collect/assets/facts-template.md`、`userwords-template.md`、`skills/managing-lessons-store/assets/moments-template.md`（逐字使用，权威定义在模板里）。
 - **不做什么**：不分析、不给根因、不排优先级（凭印象分析会污染 KB）。

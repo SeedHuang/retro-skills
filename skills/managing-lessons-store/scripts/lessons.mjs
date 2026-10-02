@@ -375,7 +375,7 @@ export function sessionId(firstMessage) {
 /** session 目录名里"摘要"一段的清洗——比 sanitizeProjectId 严：含 Windows 保留字符与结尾点（spec §3） */
 export function sanitizeDirSegment(s, max = 20) {
   const cleaned = String(s ?? '')
-    .replace(/[<>:"/\\|?*\u0000-\u001f\u007f]/g, '')   // Windows 保留字符 + 控制字符
+    .replace(/[<>:"/\\|｜?*\u0000-\u001f\u007f]/g, '')   // Windows 保留字符 + 控制字符 + 全角竖线 ｜（与半角一样是字段分隔符）
     .replace(/\s+/g, '-')                              // 空白（含全角空格）折 -
     .replace(/-+/g, '-')
     .replace(/^[.\-]+|[.\-]+$/g, '')
@@ -446,8 +446,11 @@ export function momentAdd(root, opts, deps = {}) {
     if (!rec) process.stderr.write(`[warn] moment add：目录「${dirName}」已存在但 facts.md 头没记首句，碰撞护栏本次未生效\n`)
   }
   if (!dirName) {
+    // 新建目录时 `--summary` **必填**（spec §3）：目录名是人翻 KB 时唯一能认出"这是哪个 session"的东西，
+    // 缺了就只剩一串 hash。已存在的目录不需要（目录永不改名，摘要只在创建那一次用）。
     const seg = sanitizeDirSegment(opts.summary)
-    dirName = seg ? `${date}-${sid}-${seg}` : `${date}-${sid}`
+    if (!seg) return { ok: false, reason: '新建 session 目录必须提供 --summary（≤20 字主题短语，如 "dry-refactor-newadd"）——它是人翻 KB 时唯一能认出这个 session 的东西；清洗后为空也算缺失' }
+    dirName = `${date}-${sid}-${seg}`
   }
   const file = join(root, 'projects', project, dirName, 'moments.md')
   const text = existsSync(file) ? readFileSync(file, 'utf8').replace(/^\uFEFF/, '') : '# 情绪记录（moments）\n\n> 格式权威定义见 `managing-lessons-store/assets/moments-template.md`（本文件只放数据）。\n> 触发：agent 察觉情绪当场记（不问）；collect 时重扫覆盖本 session。极性：负面 / 正面 / 认知，全收。\n> 判定公式与 userwords 共用（对象主判据，情绪由对象+意图推出）。\n> 负面必填**原话**（不猜原因/态度）；原因/态度为可选，写则标「（推断）」。\n\n---\n'
@@ -520,9 +523,9 @@ export function momentDrop(root, opts) {
   // 定位本 session 目录（spec §4.1）；`--date` 转护栏——目录名日期与它不符就找不到（防找错目录）
   const loc = findSessionDir(root, project, opts.date, normText(opts.session))
   if (!loc.ok) return { ok: false, reason: loc.reason }
-  if (!loc.dir) return { ok: true, removed: 0, fileMissing: true }
+  if (!loc.dir) return { ok: true, removed: 0, fileMissing: true, noDir: true }   // 该日期下还没有本 session 的目录（首次收集的正常态）
   const file = join(root, 'projects', project, loc.dir, 'moments.md')
-  if (!existsSync(file)) return { ok: true, removed: 0, fileMissing: true }
+  if (!existsSync(file)) return { ok: true, removed: 0, fileMissing: true }      // 目录在，只是还没记过情绪
   const lines = readFileSync(file, 'utf8').replace(/^\uFEFF/, '').split('\n')
   const heads = []
   // 块边界用 `^##\s+`（与 momentResolve 同口径）：非 moment 标题（如手加的「## 备注」）独立成块，
@@ -531,17 +534,24 @@ export function momentDrop(root, opts) {
   if (!heads.length) return { ok: true, removed: 0 }
   const keep = []
   let removed = 0
+  let resolvedRemoved = 0
   for (let k = 0; k < heads.length; k++) {
     const s = heads[k]
     const e = k + 1 < heads.length ? heads[k + 1] : lines.length
-    if (/^##\s+M-/.test(lines[s])) { removed++; continue }   // moment 块 → 清掉（重扫会重写）
+    if (/^##\s+M-/.test(lines[s])) {
+      // 已结案条目也照清（重扫会重写）——但解法 / 代价是**人写的判断**，重扫造不回来：
+      // 单独计数回报，让 collect 能提示"这几条要重新结案"（2026-10-02 评审补，防静默丢数据）
+      if (lines.slice(s, e).some((l) => /^- 状态：已解决/.test(l))) resolvedRemoved++
+      removed++
+      continue
+    }
     keep.push([s, e])                                        // 非 moment 标题 → 保留
   }
-  if (removed === 0) return { ok: true, removed: 0 }
+  if (removed === 0) return { ok: true, removed: 0, resolvedRemoved: 0 }
   const out = lines.slice(0, heads[0])
   for (const [s, e] of keep) out.push(...lines.slice(s, e))
   atomicWrite(file, out.join('\n').replace(/\s*$/, '') + '\n')
-  return { ok: true, removed }
+  return { ok: true, removed, resolvedRemoved }
 }
 
 /** 统计某项目所有 session 目录里 moments.md 的总条数与未结案数 */
@@ -870,8 +880,10 @@ if (isMain) {
     } else if (sub === 'drop') {
       const res = momentDrop(r.root, { project: argOf('--project'), date: argOf('--date'), session: argOf('--session') })
       if (!res.ok) { process.stderr.write(`清除失败：${res.reason}\n`); process.exit(1) }
-      if (res.fileMissing) process.stdout.write(`未找到 ${argOf('--date')} 下该 session 的目录 / moments.md——日期或 sid 可能写错，请复核；本次未改动任何文件\n`)
+      if (res.noDir) process.stdout.write(`该日期下还没有本 session 的目录——首次收集时属正常，接着 moment add 建目录即可；只有当你确信目录该存在时，才需要复核日期 / sid。本次未改动任何文件\n`)
+      else if (res.fileMissing) process.stdout.write(`目录在，但还没有 moments.md（尚未记过情绪）——属正常；本次未改动任何文件\n`)
       else if (res.removed === 0) process.stdout.write(`本 session 无条目，未改动\n`)
+      else if (res.resolvedRemoved) process.stdout.write(`已清除本 session 旧条目 ${res.removed} 条——其中 ${res.resolvedRemoved} 条已结案：解法 / 代价是人写的判断，重扫造不回来，重扫完须重新结案\n`)
       else process.stdout.write(`已清除本 session 旧条目 ${res.removed} 条\n`)
       process.exit(0)
     }

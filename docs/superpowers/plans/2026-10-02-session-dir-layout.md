@@ -4,7 +4,7 @@
 
 **Goal:** 让 session 身份**自足**（首句 hash，不依赖滞后的 memory），并把 KB 落点从「按天文件」改为「一 session 一目录」，使同日多 session 不再互相干扰。
 
-**Architecture:** 标识层 `sid = sha256(normText(首句逐字原文)).slice(0,8)`；落点层 `projects/<项目>/<日期>-<sid>[-<摘要>]/{facts,userwords,moments,retro}.md`；moment id 改 `M-<sid>-<N>`；`momentResolve` 改为「扫项目下各 session 目录、按标题精确找」，从而**旧 id 不必重写**。
+**Architecture:** 标识层 `sid = sha256(normText(首句逐字原文)).slice(0,8)`；落点层 `projects/<项目>/<日期>-<sid>-<摘要>/{facts,userwords,moments,retro}.md`；moment id 改 `M-<sid>-<N>`；`momentResolve` 改为「扫项目下各 session 目录、按标题精确找」，从而**旧 id 不必重写**。
 
 **Tech Stack:** Node ≥ 20（内置 `node:test`、`node:crypto`）、无新增依赖。仅动 `d:\Seed\retro-skills` 仓库 + KB `D:\Seed\lessons`（KB 无 git）。
 
@@ -14,11 +14,11 @@
 
 | Task | 状态 | 证据 |
 |---|---|---|
-| 1 spec 定稿 | ✅ | spec 13 节 + 16 条验证项 |
-| 2 脚本改造 + 测试 | ✅ | `node --test` **81/81**；两个 spec↔实现偏差已纠正并回写 spec |
+| 1 spec 定稿 | ✅ | spec 13 节 + **18 条**验证项 |
+| 2 脚本改造 + 测试 | ✅ | `node --test skills/managing-lessons-store/scripts/lessons.test.mjs` → **92/92 全绿**（终态实测；日后加用例请同步本格） |
 | 3 `lessons sid` CLI | ✅ | `sid "我发现一个问题，…"` → `51e11408`（与 spec §2.1 例同值）；`sid "<9/30 首句>"` → `f42185fc` |
 | 4 迁移 3 个文件 | ✅ | 复制校验 3×OK → 复算 sid=`f42185fc` → 删原件；`deferred` 由「未结案情绪 **0** 条」变回 **5 条**；扁平 moments 文件数 **0**；`.migrating` 已释放；`index.md` 四处已改 |
-| 5 模板 / 技能 / 文档 | ✅ | 3 模板 + 6 技能 + `architecture.md` / `README.md` / spec-2026-10-01；全库 grep 旧形态 → **源文件零命中**（仅 plan 与 2026-10-02 spec 因"描述改动本身"而含旧形态） |
+| 5 模板 / 技能 / 文档 | ✅ | 3 模板 + 6 技能 + `architecture.md` / `README.md` / spec-2026-10-01；全库 grep 旧形态 → **源文件零命中**，仅**描述改动本身的文档**含旧形态（plan、本 spec、`2026-10-01` spec 的对照 / 迁移 / 候选段） |
 | 6 跑本次 collect | ⬜ 待做 | 需先定 session；本 session 前半段已被压缩（见 Task 6 前提） |
 
 > 下方各 Task 的 `- [ ]` 勾选框**未逐个勾**——执行在同一 session 内连续完成，以本表为准。
@@ -28,7 +28,7 @@
 - 目录名 = `<YYYY-MM-DD>-<sid>-<摘要≤20字>`；**永不改名**，此后一律按 `<日期>-<sid>` **段匹配**找回（spec §3/§4.1）。
 - **`sid` 在场却不匹配时不得复用同日目录**——只有 `sid` **缺失**且同日恰好一个目录才兜底（spec §4.1）。缺 sid 的正确修法是**从已有目录名读出 sid**。
 - 日期一律取 **session 起始日期**，**禁用系统当天**（spec §3）。
-- 目录名清洗：去 `< > : " / \ | ? *` 与控制字符、去结尾点、空白折 `-`、截 20 字、清洗后为空则省略该段（spec §3）。
+- 目录名清洗：去 `< > : " / \ | ｜ ? *` 与控制字符、去结尾点、空白折 `-`、截 20 字；**清洗后为空 → 视为缺失，新建目录时拒绝写入**（spec §3 硬校验）——**绝不退化成 `<日期>-<sid>`**（那就等于没名字）。清洗规则的权威定义方 = 脚本 `sanitizeDirSegment`。
 - `sid` 已存在目录但**记录的首句不同** → 报错，不静默合并（spec §2.2-3）。
 - moment id 形如 `M-<sid>-<N>`；旧形 `M-<日期>-<N>` **不改写**，由同一套「按标题找」兼容（spec §6.1）。
 - moments 的 `session` 字段**保留**、值填 `sid`（自描述锚点）；userwords 块键 `S-<session_id>` **删除**（spec §6.2）。
@@ -91,9 +91,11 @@ findSessionDir(root, project, date, sid)
   -> { ok: true, dir: string|null, fallback?: true } | { ok: false, reason: string }
 readRecordedFirstMessage(root, project, dir) -> string | null   // 读 facts 头的「首句」，已归一化
 momentAdd(root, opts) -> { ok, id, file, dir } | { ok: false, reason }
-  // opts 新增：summary（仅创建时用）、firstMessage（碰撞护栏）
+  // opts 新增：summary（**新建目录时必填**，2026-10-02 修订）、firstMessage（碰撞护栏；不传 = 护栏不生效）
 momentResolve(root, opts) -> { ok, id } | { ok: false, reason }
-momentDrop(root, opts) -> { ok, removed, fileMissing? } | { ok: false, reason }
+momentDrop(root, opts) -> { ok, removed, fileMissing?, noDir?, resolvedRemoved? } | { ok: false, reason }
+  // noDir = 该日期下还没有本 session 的目录（首次收集的正常态，与"目录在但无 moments.md"区分开，2026-10-02 修订）
+  // resolvedRemoved = 被清掉的**已结案**条目数（解法/代价是人写的判断，重扫造不回来 → 供 collect 提示"须重新结案"，2026-10-02 评审补）
 momentsSummary(root, project) -> { total, open }
 ```
 
@@ -124,11 +126,11 @@ export function findSessionDir(root, project, date, sid) {
 }
 ```
 
-- [x] **Step 2: 改测试**（路径/ id/ 语义全部对齐新布局；新增 9 条覆盖 `sid`、清洗、定位、护栏、摘要目录名、兜底）
+- [x] **Step 2: 改测试**（路径/ id/ 语义全部对齐新布局；新增用例覆盖 `sid`、清洗、定位、护栏、**摘要必给**、兜底；条数见下）
 - [x] **Step 3: 跑测试**
 
-Run: `node --test lessons.test.mjs`（cwd = `skills/managing-lessons-store/scripts`）
-Expected: **81 pass / 0 fail**
+Run: `node --test skills/managing-lessons-store/scripts/lessons.test.mjs`
+Expected: **全绿**（条数**只在执行进度表**那一格写，避免同一数字两处漂移）
 
 - [x] **Step 4: CLI 实测**
 
@@ -296,8 +298,8 @@ Expected: `0`
 
 - [ ] **Step 1: `retro-collect/SKILL.md`**
 
-- 「唯三产出」：三项落点改 `<日期>-<sid>[-<摘要>]/` 目录内（`facts.md` / `userwords.md` / `moments.md`）
-- 「第 0 步」扩成**「第 0 步：定 session」**：① 定日期（沿用现阶梯）② 算 sid（`lessons sid "<首句>"`；拿不到逐字首句 → **不硬算**，退回「读已有目录名里的 sid」或问用户）③ 摘要 ≤20 字（可省）④ 落笔前输出一行 `session = <日期>-<sid>｜首句 = …`
+- 「唯三产出」：三项落点改 `<日期>-<sid>-<摘要>/` 目录内（`facts.md` / `userwords.md` / `moments.md`）
+- 「第 0 步」扩成**「第 0 步：定 session」**：① 定日期（沿用现阶梯）② 算 sid（`lessons sid "<首句>"`；拿不到逐字首句 → **不硬算**，退回「读已有目录名里的 sid」或问用户）③ 摘要（**必给**，≤20 字主题短语；新建目录缺 / 清洗后为空 → 拒写；取不出来就问用户）④ 落笔前输出一行 `session = <日期>-<sid>-<摘要>｜首句 = <原文>`
 - 「重扫 moment」节：删「按天分文件」表述；先把 `moment drop --project <标识> --date <日期> --session <sid>` 改成新语义
 - 常见错误：删「同日多 session 用同一文件名」；新增「用系统当天当 session 日期」「sid 在场却复用同日唯一目录」「对话已压缩仍硬算 sid」
 - **删除**「读 jsonl 校验 session_id`」那条（spec §2.3）
@@ -326,11 +328,11 @@ Expected: `0`
 
 ```powershell
 $hits = Get-ChildItem 'd:\Seed\retro-skills' -Recurse -File -Include *.md,*.mjs |
-  Select-String -Pattern '<日期>-moments\.md|<日期>-userwords\.md|<sesshort>|S-<session_id>'
+  Select-String -Pattern '<日期>-moments\.md|<日期>-userwords\.md|<sesshort>|S-<session_id>|\[-<摘要>\]'
 $hits
 ```
 
-Expected：无输出。**例外**：`docs/handoffs/*` 与 `2026-09-27` 的 spec/plan 属历史记录，若命中则**保留不改**（spec §1）。
+Expected：**源文件零命中**——命中的只应是**描述改动本身的文档**（plan、spec、`2026-10-01` spec 的对照 / 迁移 / 候选段）。**扫描口径（形态串 + 按语义扫措辞 + 豁免范围）以 spec §11-15 为权威定义方**，此处不另列一遍。**2026-10-02 实测教训**：手列清单必漏——形态串漏过 `[-<摘要>]`、词表漏过「省略」、例外清单漏过 `2026-10-01` spec。
 
 ---
 
@@ -347,6 +349,8 @@ Expected：无输出。**例外**：`docs/handoffs/*` 与 `2026-09-27` 的 spec/
 ```powershell
 node skills\managing-lessons-store\scripts\lessons.mjs sid "<本 session 用户第一条消息逐字原文>"
 ```
+
+**分岔（本 session 正踩）**：首句**拿不到**（前半段已压缩）**且**当日**无既有目录**可读 `sid` → 按 spec §2.2 **问用户**拿一句话算 `sid`（用户给出原文，或授权用仍可见的第一条消息）——**别硬编**（编出来的是"摘要的 hash"，会漂）。摘要同理，见 spec §3「取不出来时」。
 
 - [ ] **Step 2: 产出三样**（`facts.md` / `userwords.md` / `moments.md` 落新目录）
 - [ ] **Step 3: 自查**：事实包七节齐、无评价词；`§2 计数 / §4 情绪点` 两栏都填

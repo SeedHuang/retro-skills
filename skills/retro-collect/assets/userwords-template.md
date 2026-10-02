@@ -5,7 +5,7 @@
 
 ## 落点
 
-`<KB>/projects/<项目标识>/<日期>-<sid>[-<摘要>]/userwords.md`（**一 session 一份**——文件即本 session；日期 / `sid` / 摘要的定法以 `retro-collect/SKILL.md`「第 0 步：定 session」为权威定义方，此处不复制）
+`<KB>/projects/<项目标识>/<日期>-<sid>-<摘要>/userwords.md`（**一 session 一份**——文件即本 session；日期 / `sid` / 摘要的定法以 `retro-collect/SKILL.md`「第 0 步：定 session」为权威定义方，此处不复制）
 
 与同目录 `facts.md` / `moments.md` 并列（`ledger.md` 在项目根，**不在** session 目录内）。
 

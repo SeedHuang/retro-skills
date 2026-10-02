@@ -5,7 +5,7 @@
 
 ## 落点
 
-1. 复盘文件：同 session 目录内的 `retro.md`（= `<KB>/projects/<项目标识>/<日期>-<sid>[-<摘要>]/retro.md`）
+1. 复盘文件：同 session 目录内的 `retro.md`（= `<KB>/projects/<项目标识>/<日期>-<sid>-<摘要>/retro.md`）
 2. 账本条目：**追加行**到**项目根**的 `ledger.md`（`<KB>/projects/<项目标识>/ledger.md`，**不在** session 目录内；状态**先写 `open`**，落地成功后由 `retro-institutionalize` 改为 `landed`）
 
 **写入顺序固定「先条目 → 后落地 → 再改状态」**（防中断后重跑重复落规则）。

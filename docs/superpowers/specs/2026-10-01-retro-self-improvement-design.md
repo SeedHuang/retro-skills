@@ -4,7 +4,7 @@
 > 战略图：本文是 `2026-10-01-retro-flywheel-blueprint.md` 的 **Phase 1 局部战术**。
 > 用户裁决（2026-10-01）：落地移到 lessons 发起、一次一个；情绪当场自动记、只收集不分析；收尾**由用户触发**；画像"能主动提醒、拍板归用户"；**系统只记账/提醒收集，"改"永远归用户**。
 
-> **2026-10-02 修订（落点与 session 标识）**：本文以下各节**已被 `2026-10-02-session-dir-layout-design.md` 覆盖**，以该 spec 为准——§4.1 存储 / §4.3 三钥匙 / §4.6 格式 / §5 表与文件结构 / §11 载体清单 / §11 的「测试」行 / §12 验证第 3 条 / §12 的「验证 12」 / §15 的 legacy 候选。核心变化：落点改「一 session 一目录」（`<日期>-<sid>[-<摘要>]/`，内含 facts/userwords/moments/retro），session 标识改**首句 hash8**（`sid`），moment id 改 `M-<sid>-<N>`，userwords 块键 `S-` 取消。
+> **2026-10-02 修订（落点与 session 标识）**：本文以下各节**已被 `2026-10-02-session-dir-layout-design.md` 覆盖**，以该 spec 为准——§4.1 存储 / §4.3 三钥匙 / §4.6 格式 / **§4.7 边界（含「重扫覆盖」那条口径）** / §5 表与文件结构 / §11 载体清单 / §11 的「测试」行 / §12 验证第 3 条 / §12 的「验证 12」 / §15 的 legacy 候选。核心变化：落点改「一 session 一目录」（`<日期>-<sid>-<摘要>/`，摘要**必给**，内含 facts/userwords/moments/retro），session 标识改**首句 hash8**（`sid`），moment id 改 `M-<sid>-<N>`，userwords 块键 `S-` 取消。
 
 ## 1 范围
 
@@ -81,8 +81,10 @@
 
 ### 4.1 形态
 
-- **存储**：`<KB>/projects/<项目标识>/<日期>-<sid>[-<摘要>]/moments.md`（**一 session 一份**；日期 = session 起始日期，`<sid>` = 首句 hash8）——**2026-10-02 改**，见 `2026-10-02-session-dir-layout-design.md`。
+- **存储**：`<KB>/projects/<项目标识>/<日期>-<sid>-<摘要>/moments.md`（**一 session 一份**；日期 = session 起始日期，`<sid>` = 首句 hash8）——**2026-10-02 改**，见 `2026-10-02-session-dir-layout-design.md`。
 - **脚本命令**：
+
+> ⚠️ **本块命令 2026-10-02 起作废**——`--session` 只收 **8 位小写 hex**（`lessons sid "<首句>"` 的输出，**不是** memory 的 `session_id`），且**新建目录必给 `--summary`**（缺则拒写）。以 `2026-10-02-session-dir-layout-design.md` 为准。
 
 ```
 node scripts/lessons.mjs moment add --project <标识> --session <session_id> \
@@ -189,7 +191,7 @@ node scripts/lessons.mjs moment drop --project <标识> --date <YYYY-MM-DD> --se
 
 ```
 D:\Seed\lessons\projects\<项目>\
-  ├─ <日期>-<sid>[-<摘要>]\   ← 一 session 一目录（2026-10-02 起；见 2026-10-02-session-dir-layout-design.md）
+  ├─ <日期>-<sid>-<摘要>\   ← 一 session 一目录（2026-10-02 起；见 2026-10-02-session-dir-layout-design.md）
   │     ├─ facts.md          ← collect 产物（纯事实、零判断）
   │     ├─ userwords.md      ← collect 产物（用户原话，逐字）
   │     ├─ moments.md        ← 记录器写；collect 重扫覆盖本 session

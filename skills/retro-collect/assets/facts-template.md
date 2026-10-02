@@ -5,7 +5,7 @@
 
 ## 落点
 
-`<KB>/projects/<项目标识>/<日期>-<sid>[-<摘要>]/facts.md`
+`<KB>/projects/<项目标识>/<日期>-<sid>-<摘要>/facts.md`
 
 （**一 session 一目录**——与同目录 `userwords.md` / `moments.md` 并列，analyze 后加 `retro.md`。项目标识取自仓库目录名，入库前须清洗：去 `|`、换行、路径分隔符、控制字符；空白折为 `-`。）
 
