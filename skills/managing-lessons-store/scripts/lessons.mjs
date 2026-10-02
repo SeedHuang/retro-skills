@@ -321,7 +321,8 @@ function foldOne(s) { return String(s ?? '').replace(/\r?\n/g, ' ') }
 export function validateMoment(o) {
   if (!POLARITIES.includes(o.polarity)) return `极性必须为 负面 / 正面 / 认知（收到：${o.polarity ?? '空'}）`
   if (!o.project) return '缺少 --project'
-  if (o.date && !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(o.date)) return `--date 必须是 YYYY-MM-DD（收到：${o.date}）`
+  if (!o.date) return '必须提供 --date（= session 日期，不是执行当天；防止按天文件静默落错天）'
+  if (!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(o.date)) return `--date 必须是 YYYY-MM-DD（收到：${o.date}）`
   if (!o.session) return '缺少 --session（情绪锚点，必填）'
   const probMsg = o.polarity === '负面' ? '负面必须提供 --problem' : '正面/认知必须提供 --problem（认可 / 倾向）'
   const evMsg = o.polarity === '负面' ? '负面必须提供 --evidence（原话，不猜原因）' : '正面/认知必须提供 --evidence（原话）'
@@ -369,7 +370,7 @@ export function momentAdd(root, opts, deps = {}) {
   if (bad) return { ok: false, reason: bad }
   const project = sanitizeProjectId(opts.project)
   if (!project) return { ok: false, reason: '项目标识清洗后为空' }
-  const date = opts.date || toDateStr((deps.now ?? (() => new Date()))())
+  const date = opts.date // 必填（validateMoment 已校验）= session 日期，不是执行当天
   const file = join(root, 'projects', project, `${date}-moments.md`)
   const text = existsSync(file) ? readFileSync(file, 'utf8').replace(/^\uFEFF/, '') : '# 情绪记录（moments）\n\n> 格式权威定义见 `managing-lessons-store/assets/moments-template.md`（本文件只放数据）。\n> 触发：agent 主动（察觉情绪即记，不问）。极性：负面 / 正面 / 认知，全收。\n> 判定公式与 userwords 共用（对象主判据，情绪由对象+意图推出）。\n> 负面必填**原话**（不猜原因/态度）；原因/态度为可选，写则标「（推断）」。\n\n---\n'
   if (!opts.message) process.stderr.write(`[warn] moment add：未提供 --message，事后无法定位到具体对话（仅 session 级可查）\n`)

@@ -318,7 +318,7 @@ node scripts/lessons.mjs find <关键词>     # 按关键词列相关条目及�
 
 ## 12 验证
 
-1. 【自动】`moment add` 缺 `--polarity` / 负面缺 `--evidence` / 缺 `--reason` / 非法 `--date` → 报错拒绝。
+1. 【自动】`moment add` 缺 `--polarity` / 负面缺 `--evidence` / 缺 `--reason` / **缺 `--date`（= session 日期，不回退执行当天）** / 非法 `--date` → 报错拒绝。
 2. 【自动】`moment add` 项目目录不存在时自建并写首条；同项目再写 ID 递增。
 3. 【自动】`--project ../..` 被清洗，`<日期>-moments.md` 不落到 `projects/` 之外。
 4. 【自动】`<KB>/.migrating` 存在时写 moment → 拒绝。

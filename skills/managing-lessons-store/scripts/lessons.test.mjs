@@ -398,14 +398,21 @@ test('moment add：缺 --polarity → 拒绝', () => {
 
 test('moment add：缺 --session → 拒绝', () => {
   const root = makeStore(tmp())
-  const r = momentAdd(root, { project: 'p', polarity: '负面', problem: 'x', cause: 'y', attitude: 'z' })
+  const r = momentAdd(root, { project: 'p', polarity: '负面', problem: 'x', cause: 'y', attitude: 'z', date: '2026-10-01' })
   assert.equal(r.ok, false)
   assert.match(r.reason, /--session/)
 })
 
+test('moment add：缺 --date → 拒绝（按天文件不能静默落错天）', () => {
+  const root = makeStore(tmp())
+  const r = momentAdd(root, { project: 'p', session: 's', polarity: '负面', problem: 'x', evidence: 'y', reason: 'r' })
+  assert.equal(r.ok, false)
+  assert.match(r.reason, /--date/)
+})
+
 test('moment add：负面缺 --evidence → 拒绝', () => {
   const root = makeStore(tmp())
-  const r = momentAdd(root, { project: 'p', session: 's', polarity: '负面', problem: 'x', cause: 'y', attitude: 'z' })
+  const r = momentAdd(root, { project: 'p', session: 's', polarity: '负面', problem: 'x', cause: 'y', attitude: 'z', date: '2026-10-01' })
   assert.equal(r.ok, false)
   assert.match(r.reason, /--evidence/)
 })
@@ -419,7 +426,10 @@ test('moment add：写入首条 + 目录自建 + 无 BOM', () => {
   assert.equal(existsSync(file), true)
   const buf = readFileSync(file)
   assert.notEqual(buf[0], 0xEF) // 无 BOM
-  assert.match(buf.toString('utf8'), /## M-2026-10-01-1/)
+  const text = buf.toString('utf8')
+  assert.match(text, /## M-2026-10-01-1/)
+  assert.match(text, /- 判据（思考过程）：判据：对象=人→贬→负面/) // 判据行在证据行之前输出
+  assert.ok(text.indexOf('- 判据（思考过程）：') < text.indexOf('- 证据（原话）：')) // 判据先于证据
 })
 
 test('moment add：同日第二条 → ID 递增', () => {
