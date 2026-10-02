@@ -719,10 +719,12 @@ test('守卫：模板里每个表头后面必须有分隔行（防生成物表�
   //   ——不是"整行有个 `-` 就行"：`| --- |  |` 整行有 `-`，但第二格是空的，GFM 照样不认；
   //   分隔行的列数还必须等于表头列数。
   // 取格以**未转义的 `|`** 为准（本仓库 retro-template 规定自由文本栏位内 `|` 写作 `\|`）。
-  // 围栏：先独立扫一遍算出区间（从第 0 行起、反引号 ≥3 且闭合要求同长）。
-  //   **带语言且非 markdown** 的围栏（如 ```powershell）里的 `|` 行不查（防管道续行被误判）；
-  //   **围栏外、以及 ```markdown 与裸围栏**里的表头照查——宁可误报，也不漏报（裸围栏里也可能摆真模板）。
-  // 已知边界：两张表之间没有空行时，第二张表的表头会被跳过（假阴性）；模板一律空行分隔，暂不处理。
+  // 围栏：先独立扫一遍算出区间（从第 0 行起、**缩进 ≤3**、反引号 ≥3、闭合要求同长且后面只能跟空白）。
+  //   **带语言且非 markdown / md / gfm** 的围栏（如 ```powershell）里的 `|` 行不查（防管道续行被误判）；
+  //   **围栏外、以及 markdown 类围栏与裸围栏**里的表头照查——宁可误报，也不漏报（裸围栏里也可能摆真模板）。
+  // 已知边界（本仓库模板一律不这么写，故不处理）：
+  //   ① 两张表之间没有空行时，第二张表的表头会被跳过（假阴性）；
+  //   ② 表头行必须以 `|` 开头才算入口——省略首尾竖线的表格（`a | b` + `- | -`）整块不进入校验。
   const skillsUrl = new URL('../../', import.meta.url)          // → skills/
   const files = []
   for (const e of readdirSync(skillsUrl, { withFileTypes: true })) {
@@ -732,15 +734,15 @@ test('守卫：模板里每个表头后面必须有分隔行（防生成物表�
     for (const f of readdirSync(assets)) if (/template.*\.md$/i.test(f)) files.push(new URL(f, assets))
   }
   assert.ok(files.length >= 4, `应扫到 ≥4 个模板（实际 ${files.length}）`)
-  const cells = (line) => line.trim().replace(/^\|/, '').replace(/(?<!\\)\|$/, '').split(/(?<!\\)\|/)
+  const cells = (line) => line.trim().replace(/^\|/, '').replace(/(?<!\\)(?:\\\\)*\|$/, '').split(/(?<!\\)(?:\\\\)*\|/)
   const isSepCell = (c) => /^\s*:?-+:?\s*$/.test(c)
   const fenceLangs = (lines) => {                                // 逐行的围栏语言（null = 不在围栏内）
     const out = new Array(lines.length).fill(null)
     let lang = null, ticks = 0
     for (let i = 0; i < lines.length; i++) {
-      const m = lines[i].match(/^\s*(`{3,})(.*)$/)
-      if (m && lang === null) { lang = m[2].trim(); ticks = m[1].length; continue }   // 开围栏
-      if (m && m[1].length >= ticks) { lang = null; ticks = 0; continue }             // 闭围栏（同长或更长）
+      const m = lines[i].match(/^ {0,3}(`{3,})(.*)$/)              // 缩进 ≥4 是缩进代码块，不是围栏
+      if (m && lang === null) { lang = m[2].trim(); ticks = m[1].length; continue }              // 开围栏
+      if (m && m[2].trim() === '' && m[1].length >= ticks) { lang = null; ticks = 0; continue }  // 闭围栏（后面只能跟空白）
       out[i] = lang
     }
     return out
@@ -750,7 +752,7 @@ test('守卫：模板里每个表头后面必须有分隔行（防生成物表�
     const fences = fenceLangs(lines)
     for (let i = 0; i < lines.length - 1; i++) {
       const lang = fences[i]
-      if (lang && !/^markdown$/i.test(lang)) continue             // 非 markdown 围栏不查
+      if (lang && !/^(markdown|md|gfm)$/i.test(lang)) continue    // 非 markdown（含 md / gfm 别名）围栏不查
       // 表头行 = 本行以 `|` 开头、且（首行除外）上一行不以 `|` 开头，即表格的起点
       if (!/^\|/.test(lines[i]) || (i > 0 && /^\|/.test(lines[i - 1]))) continue
       const head = cells(lines[i])
