@@ -427,18 +427,25 @@ export function momentDrop(root, opts) {
   if (!existsSync(file)) return { ok: true, removed: 0, unparsed: 0, fileMissing: true }
   const lines = readFileSync(file, 'utf8').replace(/^\uFEFF/, '').split('\n')
   const heads = []
-  for (let i = 0; i < lines.length; i++) if (/^##\s+M-/.test(lines[i])) heads.push(i)
+  // 块边界用 `^##\s+`（与 momentResolve 同口径）：非 moment 标题（如手加的「## 备注」）独立成块，
+  // 不会被并进前一个 moment 块的删除区间而遭误删
+  for (let i = 0; i < lines.length; i++) if (/^##\s+/.test(lines[i])) heads.push(i)
   if (!heads.length) return { ok: true, removed: 0, unparsed: 0 }
   const keep = []
+  const want = String(opts.session).trim()
   let removed = 0, unparsed = 0
   for (let k = 0; k < heads.length; k++) {
     const s = heads[k]
     const e = k + 1 < heads.length ? heads[k + 1] : lines.length
     const block = lines.slice(s, e)
     const polLine = block.find((l) => /^- 极性：/.test(l))
-    const ses = polLine && polLine.match(/session：([^｜]*)/)
-    if (ses && ses[1].trim() === opts.session) { removed++; continue }
-    if (polLine && !ses) unparsed++   // 有极性行却解析不出 session：格式异体，静默跳过会残留
+    // 按 `｜` 切格提取：混入半角 `|` 时整行只成一个格、取不到 session：格 → 计入 unparsed，不误抓
+    const sesCell = polLine ? polLine.split('｜').find((c) => c.trim().startsWith('session：')) : null
+    const ses = sesCell ? sesCell.trim().slice('session：'.length).trim() : null
+    if (ses && ses === want) { removed++; continue }
+    // 真是 moment 块（`## M-` 头）却解析不出 session：格式异体，静默跳过会残留
+    // （非 moment 标题不算——它本就无 session 行，属正常保留）
+    if (/^##\s+M-/.test(lines[s]) && !ses) unparsed++
     keep.push([s, e])
   }
   if (unparsed) process.stderr.write(`[warn] moment drop：${unparsed} 个条目没有可解析的 session 行（格式异体），已跳过未删——请人工复核\n`)

@@ -318,7 +318,7 @@ node scripts/lessons.mjs find <关键词>     # 按关键词列相关条目及�
 | 10 | `D:\Seed\lessons`（外部 KB） | `index.md`：删"对象"列、候选与推迟"处置完移归档"、登记新机制、Obsidian 约定 |
 | 11 | `skills/retro-verify/`（**新建技能**） | 验证流程 + 判定标准（方向读法 / 置信门槛 / 5 档 / 预期对账）+ 反例集 + `scripts/verify.mjs`（**调 `lessons.mjs` CLI 取数，不 import**，避"单装扑空"） |
 
-**测试**：`moment add/resolve/drop` 纯函数单测（新建/追加/结案/ID 递增/转义/极性必填/缺 `.migrating` 拒绝/路径穿越清洗/resolve 找不到报错/原子写/目录不存在自建/**drop 只清本 session、同日其他 session 原样保留**/**drop 幂等（文件不存在 → `removed 0` + `fileMissing` / 无匹配 → 0 且字节不变）**/**drop：项目标识清洗后为空 → 拒绝**/**drop：异体格式条目计入 `unparsed` 且保留不误删**）+ `show/find` 单测 + 现有测试全量回归。
+**测试**：`moment add/resolve/drop` 纯函数单测（新建/追加/结案/ID 递增/转义/极性必填/缺 `.migrating` 拒绝/路径穿越清洗/resolve 找不到报错/原子写/目录不存在自建/**drop 只清本 session、同日其他 session 原样保留**/**drop 幂等（文件不存在 → `removed 0` + `fileMissing` / 无匹配 → 0 且字节不变）**/**drop：项目标识清洗后为空 → 拒绝**/**drop：格式异体（缺 session 行 / 混入半角 `|`）计入 `unparsed` 且保留不误删**/**drop：块边界 `^##\s+`，`## 备注` 独立成块不被误删**）+ `show/find` 单测 + 现有测试全量回归。
 
 ## 12 验证
 
@@ -333,7 +333,7 @@ node scripts/lessons.mjs find <关键词>     # 按关键词列相关条目及�
 9. 【自动】巡检输出含"未结案情绪 N 条"（需 `--project`）"画像 X 天未更新"；主账超阈值时输出"尽早复盘 <目标>"。
 10. 【自动】`lessons show/find` 能按 ID / 关键词返回条目及状态。
 11. 【自动】现有 `lessons.mjs` 测试全量通过（含值内换行折叠、`--date` 校验）。
-12. 【自动】`moment drop` 只清指定 session 的条目，同日其他 session 的条目逐字节保留；文件不存在 → `removed 0` + `fileMissing`（CLI 提示「日期可能写错」）、不新建不改字节；项目标识清洗后为空 → 拒绝；异体格式条目（有极性行、无 session 行）→ 计入 `unparsed`、保留不误删、打 warning。
+12. 【自动】`moment drop` 只清指定 session 的条目，同日其他 session 的条目逐字节保留；文件不存在 → `removed 0` + `fileMissing`（CLI 提示「日期可能写错」）、不新建不改字节；项目标识清洗后为空 → 拒绝；格式异体（`## M-` 块缺 session 行 / 混入半角 `|`）→ 计入 `unparsed`、保留不误删、打 warning；**块边界 = `^##\s+`（与 `momentResolve` 同口径）→ 非 moment 标题（`## 备注`）独立成块、不被误删**。
 13. 【文档】`retro-collect` 有「第 0 步：确定 session 日期」（明写「系统今天禁用」+ 优先级阶梯）；「重扫 moment」节含 `moment drop` 命令且强调「只清本 session」。
 14. 【文档】`retro-collect` 标题为「唯三产出」且列 3 项（含 moments 重扫）；「重扫 moment」节含前提「对话不完整 → 不 drop」。
 

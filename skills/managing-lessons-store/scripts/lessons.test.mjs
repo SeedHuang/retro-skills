@@ -658,6 +658,38 @@ test('moment drop：异体格式条目（有极性行、无 session 行）→ �
   assert.equal(readFileSync(file, 'utf8'), before)  // 不误删
 })
 
+test('moment drop：混入半角 | 的条目 → 计入 unparsed（不再误抓）、不误删', () => {
+  const root = makeStore(tmp())
+  mkdirSync(join(root, 'projects', 'p'), { recursive: true })
+  const file = join(root, 'projects', 'p', '2026-10-01-moments.md')
+  writeFileSync(file,
+    '# 情绪记录（moments）\n\n## M-2026-10-01-1\n- 极性：负面|项目：p|session：A|message：—|时间：2026-10-01\n- 证据（原话）：\n  > 半角竖线\n',
+    'utf8')
+  const before = readFileSync(file, 'utf8')
+  const r = momentDrop(root, { project: 'p', date: '2026-10-01', session: 'A' })
+  assert.equal(r.ok, true)
+  assert.equal(r.removed, 0)
+  assert.equal(r.unparsed, 1)                       // 旧实现会把它误抓成非空值 → 静默 0 条且不计数
+  assert.equal(readFileSync(file, 'utf8'), before)
+})
+
+test('moment drop：相邻「## 备注」块不被误删（块边界与 momentResolve 同口径）', () => {
+  const root = makeStore(tmp())
+  mkdirSync(join(root, 'projects', 'p'), { recursive: true })
+  const file = join(root, 'projects', 'p', '2026-10-01-moments.md')
+  writeFileSync(file,
+    '# 情绪记录（moments）\n\n## M-2026-10-01-1\n- 极性：负面｜项目：p｜session：A｜message：—｜时间：2026-10-01\n- 证据（原话）：\n  > 原话一\n\n## 备注\n手加的一句说明\n',
+    'utf8')
+  const r = momentDrop(root, { project: 'p', date: '2026-10-01', session: 'A' })
+  assert.equal(r.ok, true)
+  assert.equal(r.removed, 1)
+  assert.equal(r.unparsed, 0)                              // 非 moment 标题不计入 unparsed
+  const after = readFileSync(file, 'utf8')
+  assert.equal(/^## M-2026-10-01-1/m.test(after), false)   // moment 块被删
+  assert.match(after, /## 备注/)                            // 备注保住
+  assert.match(after, /手加的一句说明/)
+})
+
 test('moment drop：本 session 无条目 → removed 0 且文件字节不变', () => {
   const root = makeStore(tmp())
   momentAdd(root, { project: 'p', session: 'B', polarity: '正面', problem: 'b', evidence: 'y', date: '2026-10-01', reason: 'r' })
