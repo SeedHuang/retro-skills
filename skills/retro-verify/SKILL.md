@@ -65,7 +65,7 @@ description: Use when 要检查一个**已落地**的 skill / rule / 自动化�
 
 - 每个目标一份 `effectiveness.md`，落**该目标在 KB 的归属目录**（技能 → `<KB>/skills/<技能名>/`；rule / automation 条目 → `<KB>/projects/<项目>/` 或 `<KB>/universal/`）；
 - **表结构与字段口径见 `assets/effectiveness-template.md`（逐字使用，权威定义方）**；判定口径（5 档 / 置信门槛）见本文件「判定标准」节，spec §14.8 只作设计留档；
-- **认可 P 的取数来源**（A/B/N/P 四个计数里唯一靠情绪文件的一列）：`moments.md` 极性=正面 / `userwords.md` 情绪=正面。数不出 → 该期标「无法评分」；
+- **认可 P 的取数来源**（A/B/N/P 四个计数里唯一靠情绪文件的一列）：`<日期>-moments.md` 极性=正面 / `<日期>-userwords.md` 情绪=正面。数不出 → 该期标「无法评分」；
 - **不落** retro-skills 的技能目录（那里要保持发布纯净、不放个人数据）。
 
 ## 何时跑

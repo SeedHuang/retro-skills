@@ -79,13 +79,13 @@
 
 ### 4.1 形态
 
-- **存储**：`<KB>/projects/<项目标识>/moments.md`，一直追加，不改动前面行。
+- **存储**：`<KB>/projects/<项目标识>/<YYYY-MM-DD>-moments.md`（**按天分文件**，日期 = session 日期），当天文件一直追加，不改动前面行。
 - **脚本命令**：
 
 ```
 node scripts/lessons.mjs moment add --project <标识> --session <session_id> \
   --message <message_id> --date <YYYY-MM-DD> --polarity <负面|正面|认知> \
-  --problem "..." --evidence "<原话，必填>" [--cause "..."] [--attitude "..."]
+  --problem "..." --evidence "<原话，必填>" --reason "<判据：对象→意图→脏字→结论>" [--cause "..."] [--attitude "..."]
 
 node scripts/lessons.mjs moment resolve --project <标识> --id <M-...> --solution "..." --cost "..."
 ```
@@ -121,7 +121,7 @@ node scripts/lessons.mjs moment resolve --project <标识> --id <M-...> --soluti
 
 ### 4.5 硬护栏
 
-1. 写库前查 `<KB>/.migrating`（存在即拒绝）；2. `--project` 沿用既有标识清洗（防路径穿越）；3. `resolve` 找不到 ID / 文件被改坏 → **报错、不改文件**；4. **原子写**（临时文件 + 改名）；5. 项目目录不存在 → 自动创建；6. **无 BOM**；7. 只追加、只改指定条目；8. `--polarity` 必填；负面必填 `--problem` 与 `--evidence`（原话，不猜原因），`--cause/--attitude` 可选且须标注推断；正面/认知必填 `--problem`（认可/倾向）与 `--evidence`（原话）。
+1. 写库前查 `<KB>/.migrating`（存在即拒绝）；2. `--project` 沿用既有标识清洗（防路径穿越）；3. `resolve` 找不到 ID / 文件被改坏 → **报错、不改文件**；4. **原子写**（临时文件 + 改名）；5. 项目目录不存在 → 自动创建；6. **无 BOM**；7. 只追加、只改指定条目；8. `--polarity` 必填；负面必填 `--problem` 与 `--evidence`（原话，不猜原因），`--cause/--attitude` 可选且须标注推断；正面/认知必填 `--problem`（认可/倾向）与 `--evidence`（原话）；**所有极性必填 `--reason`（判据：对象→意图→脏字→结论 的推导）**。
 
 ### 4.6 格式（按极性分支）
 
@@ -130,6 +130,7 @@ node scripts/lessons.mjs moment resolve --project <标识> --id <M-...> --soluti
 - 极性：负面｜项目：<标识>｜session：<id>｜message：<id 或 —>｜时间：…
 - 状态：未解决
 - 问题：<一句话>
+- 判据（思考过程）：<对象→意图→脏字→结论 的推导，如「对象=人（主语你+否定理解）→ 无脏字 → 核心意图=贬 → 负面」>
 - 证据（原话）：
   > <原话，必填>
 - 原因（推断）：<可选，须标注推断>
@@ -139,6 +140,7 @@ node scripts/lessons.mjs moment resolve --project <标识> --id <M-...> --soluti
 ## M-2026-10-01-2
 - 极性：正面｜项目｜session｜message｜时间
 - 认可 / 倾向：<做法 / 倾向>
+- 判据（思考过程）：<对象→意图→脏字→结论 的推导>
 - 证据（原话）：
   > <原话>
 ```
@@ -150,7 +152,7 @@ node scripts/lessons.mjs moment resolve --project <标识> --id <M-...> --soluti
 - **我检测到（负面/正面/认知）→ 当场轻标，不问、不打断**；**克制**：只记"有信息量的"，不是每句都记。
 - **分析/提炼不在收集时做**——并入 lessons 落地分析（§6）。
 - **收尾由用户触发**；不自动。
-- `retro-collect` 读 `moments.md`，只把**计数**写进事实包（纯计数、不评价）。
+- `retro-collect` 读 `<日期>-moments.md`，只把**计数**写进事实包（纯计数、不评价）。
 - **情绪必须当场抓**（工具不记情绪）；**提问/回答**工具记了 `intent`，可事后回捞，但**当场轻标最稳**（防摘要被清）。
 
 ## 5 事实包梳理（改 `retro-collect`）
@@ -159,11 +161,11 @@ node scripts/lessons.mjs moment resolve --project <标识> --id <M-...> --soluti
 
 | 动作 | 变化 |
 |---|---|
-| 多读一个文件 | `moments.md`（筛本 session 条目） |
+| 多读一个文件 | `<日期>-moments.md`（筛本 session 条目） |
 | 多读一个外部源（可选） | `memory\...\session_memory_*.jsonl`（拿 session_id/时间做锚点） |
 | 多写一栏 | facts.md 的 **§4 情绪点**；§2 计数加"情绪点数 / 未结案数" |
 | 多一条来源类型 | **对话原文**（原话）——情绪点没有命令输出 |
-| **不写** | moments.md（记录器的事）、retro.md、ledger.md |
+| **不写** | `<日期>-moments.md`（记录器的事）、retro.md、ledger.md |
 
 **数据结构**：
 
@@ -181,7 +183,8 @@ node scripts/lessons.mjs moment resolve --project <标识> --id <M-...> --soluti
 
 ```
 D:\Seed\lessons\projects\<项目>\
-  ├─ moments.md              ← 记录器写；collect 只读
+  ├─ <日期>-moments.md        ← 记录器写；collect 只读（按天，日期=session 日期）
+  ├─ <日期>-userwords.md     ← 用户触发写（按天）
   ├─ <日期>-<sesshort>-facts.md   ← collect 产物（加 session 短码，防同日撞名）
   ├─ <日期>-retro.md         ← analyze 产物
   ├─ ledger.md               ← 主账（热）
@@ -315,9 +318,9 @@ node scripts/lessons.mjs find <关键词>     # 按关键词列相关条目及�
 
 ## 12 验证
 
-1. 【自动】`moment add` 缺 `--polarity` / 负面缺 `--evidence` / 非法 `--date` → 报错拒绝。
+1. 【自动】`moment add` 缺 `--polarity` / 负面缺 `--evidence` / 缺 `--reason` / 非法 `--date` → 报错拒绝。
 2. 【自动】`moment add` 项目目录不存在时自建并写首条；同项目再写 ID 递增。
-3. 【自动】`--project ../..` 被清洗，`moments.md` 不落到 `projects/` 之外。
+3. 【自动】`--project ../..` 被清洗，`<日期>-moments.md` 不落到 `projects/` 之外。
 4. 【自动】`<KB>/.migrating` 存在时写 moment → 拒绝。
 5. 【自动】`moment resolve` 找不到 ID → 报错、字节不变；结案只改指定条目（diff 校验其余不变）。
 6. 【文档】`retro-collect` 事实包含 §4 情绪点与计数，且不含评价词（跑零判断自检）。
@@ -436,3 +439,6 @@ node scripts/lessons.mjs find <关键词>     # 按关键词列相关条目及�
 | 采纳 | `verify <目标>` 异常输入（本轮评审 P2-2） | 并入：目标 / 台账不存在、参数非法 → **报错退出、不改文件** |
 | 关闭 | `retro-verify` 以 spec §14 为权威（本轮评审 P2-3） | 关键规则已**内联**进 SKILL；spec 在同仓库，可接受 |
 | 关闭 | 新技能的运行时安装步骤未记（本轮评审 P2-4） | 触发已发生（2026-10-01 首次安装 `retro-verify`）：安装走**通用 `aas sync`**，无需专门说明 → 关闭 |
+| 候选 | legacy 单文件 `moments.md` 接管（2026-10-02 评审 P1-2） | resolve/summary/collect 均只认 `<日期>-moments.md`，单文件旧条目静默不可见。触发信号：任何 store 再现单文件 moments.md → 先迁移再启用（当前全库唯一实例 retro-skills 已手工迁移，exposure = 0） |
+| 关闭 | `buildMoment` 正面分支 `if (evidence)` 死容错（2026-10-02 评审 P2-3） | `validateMoment` 已必填 evidence 且先行；防御性写法无行为差异（与"合并校验"同族，主项已处理） |
+| 候选 | verify 台账表头与 effectiveness-template 漂移（2026-10-02 评审同族扫描） | 实测：`VERIFY_HEADER` 第 7 列「预期复发率(%)」（数值型）vs 模板「事前预期（区间）」（区间型）——**已漂移**。修复需先统一口径（数值 or 区间），触发信号：verify 首次真实使用时 |

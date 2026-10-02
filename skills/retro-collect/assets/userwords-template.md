@@ -1,11 +1,13 @@
 # 用户原话模板（逐字使用）
 
-> 本文件是**用户原话（userwords）结构的权威定义方**。`retro-collect/SKILL.md` 只指向这里，不复制；KB 里的 `userwords.md` **只放数据 + 一行指针**，不重复定义格式（双份真相禁令）。
+> 本文件是**用户原话（userwords）结构的权威定义方**。`retro-collect/SKILL.md` 只指向这里，不复制；KB 里的 `<日期>-userwords.md` **只放数据 + 一行指针**，不重复定义格式（双份真相禁令）。
 > **必须逐字使用**。
 
 ## 落点
 
-`<KB>/projects/<项目标识>/userwords.md`（**按项目分**，与同目录的 `facts.md` / `moments.md` / `ledger.md` 并列）
+`<KB>/projects/<项目标识>/<YYYY-MM-DD>-userwords.md`（**按天分文件**——每天一个，防单文件膨胀/覆盖；日期 = session 日期，不是执行当天，取数见 facts-template）
+
+与同目录 `<日期>-facts.md` / `<日期>-moments.md` / `<日期>-ledger.md` 并列。
 
 ## 触发（谁有权写）
 

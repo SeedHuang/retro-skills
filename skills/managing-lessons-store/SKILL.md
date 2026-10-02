@@ -20,7 +20,7 @@ description: Use when 需要初始化错题集库、迁移库到新位置、轮�
 | `node scripts/lessons.mjs resolve` | 解析并**校验** KB 根；成功打印路径，失败打印原因 + 下一步 |
 | `node scripts/lessons.mjs deferred [--project <标识>]` | 推迟项清单 + 命中判定 + 总数；带 `--project` 追加「未结案情绪 N 条；画像 X 天未更新」；主账超阈值时打印「尽早复盘收口」提醒 |
 | `node scripts/lessons.mjs stats` | 三区 × 维度分布快照（看薄弱面；实时扫描三区账本） |
-| `node scripts/lessons.mjs moment add --project <标识> --session <id> --polarity <负面\|正面\|认知> ...` | 追加一条情绪记录（负面必给 `--problem/--evidence`（原话）；正面/认知必给 `--problem/--evidence`；`--cause/--attitude` 可选且须标推断）。格式见 `assets/moments-template.md`，判定公式与 userwords 共用 |
+| `node scripts/lessons.mjs moment add --project <标识> --session <id> --polarity <负面\|正面\|认知> ...` | 追加一条情绪记录（必给 `--problem/--evidence`（原话）/**`--reason`（判据：对象→意图→脏字→结论）**；`--cause/--attitude` 可选且须标推断）。落 **`<日期>-moments.md`（按天，日期 = session 日期）**。格式见 `assets/moments-template.md`，判定公式与 userwords 共用 |
 | `node scripts/lessons.mjs moment resolve --project <标识> --id <M-...> --solution "..." [--cost "..."]` | 结案：只改该条目的状态与解法/代价 |
 | `node scripts/lessons.mjs show <ID>` | 查单条（状态 / 载体 / 维度） |
 | `node scripts/lessons.mjs find <关键词>` | 按关键词列相关条目及状态 |

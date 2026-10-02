@@ -8,7 +8,9 @@ description: Use when 需要采集一段开发过程的客观事实（时间线 
 ## 唯二产出
 
 1. **事实包**——落 `<KB>/projects/<项目标识>/<YYYY-MM-DD>-<sesshort>-facts.md`
-2. **用户原话**（仅当用户主动触发）——落同目录 `userwords.md`
+2. **用户原话**（仅当用户主动触发）——落同目录 `<YYYY-MM-DD>-userwords.md`
+
+**日期取 session 的日期，不是执行当天**——session 是 9/30 就写 2026-09-30，哪怕今天才 collect。取数：session 上下文锚点（`memory\projects\<项目>\<YYYYMMDD>\` 目录名 / session_id 关联），拿不到 → 问用户，不用系统时间。
 
 （`<sesshort>` = session 短码，**防同日多 session 撞名**。）
 KB 未初始化时：**REQUIRED SUB-SKILL:** 先用 `managing-lessons-store` 完成 bootstrap。
@@ -29,7 +31,7 @@ KB 未初始化时：**REQUIRED SUB-SKILL:** 先用 `managing-lessons-store` 完
 
 ## 读入 moment（本项目）
 
-收集事实时**多读一个文件**：`<KB>/projects/<项目标识>/moments.md`——按 **session 锚点/时间**筛出**本 session**的条目，把**计数**（情绪点数 / 未结案数）与每条「触发原话」写进事实包（见模板 §2 / §4）。**纯计数、不评价**——这里是零判断区，不是分析。
+收集事实时**多读一个文件**：`<KB>/projects/<项目标识>/<日期>-moments.md`——按 **session 锚点/时间**筛出**本 session**的条目，把**计数**（情绪点数 / 未结案数）与每条「触发原话」写进事实包（见模板 §2 / §4）。**纯计数、不评价**——这里是零判断区，不是分析。
 
 （可选）再读外部锚点 `~\.trae-cn\memory\projects\<项目>\<日期>\session_memory_*.jsonl`，**只用于校验 session_id / 时间，不作为正文事实或原话来源**——2026-10-02 实测该文件严重滞后（切换 session + 多轮对话后仍零新增）。
 

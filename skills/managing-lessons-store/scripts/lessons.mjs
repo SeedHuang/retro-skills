@@ -327,11 +327,12 @@ export function validateMoment(o) {
   const evMsg = o.polarity === '负面' ? '负面必须提供 --evidence（原话，不猜原因）' : '正面/认知必须提供 --evidence（原话）'
   if (!o.problem) return probMsg
   if (!o.evidence) return evMsg
+  if (!o.reason) return '必须提供 --reason（判据：对象→意图→脏字→结论 的推导）'
   return null
 }
 
 /** 构造一条 moment 的 markdown 块（逐字对齐 spec §4.6） */
-export function buildMoment({ id, project, session, message, date, polarity, problem, cause, attitude, evidence }) {
+export function buildMoment({ id, project, session, message, date, polarity, problem, cause, attitude, evidence, reason }) {
   const one = (s) => String(s ?? '').replace(/\r?\n/g, ' ')   // 折掉换行，防注入行破块结构
   const lines = [
     `## ${id}`,
@@ -340,12 +341,14 @@ export function buildMoment({ id, project, session, message, date, polarity, pro
   if (polarity === '负面') {
     lines.push(`- 状态：未解决`)
     lines.push(`- 问题：${one(problem)}`)
+    lines.push(`- 判据（思考过程）：${one(reason)}`)
     lines.push(`- 证据（原话）：\n  > ${one(evidence ?? '')}`)
     if (cause) lines.push(`- 原因（推断）：${one(cause)}`)
     if (attitude) lines.push(`- 态度（推断）：${one(attitude)}`)
     lines.push(`- 解法：（结案时补）｜代价：（结案时补：讨论轮数 / 时间）`)
   } else {
     lines.push(`- 认可 / 倾向：${one(problem)}`)
+    lines.push(`- 判据（思考过程）：${one(reason)}`)
     if (evidence) lines.push(`- 证据（原话）：\n  > ${one(evidence)}`)
   }
   return lines.join('\n')
@@ -366,12 +369,12 @@ export function momentAdd(root, opts, deps = {}) {
   if (bad) return { ok: false, reason: bad }
   const project = sanitizeProjectId(opts.project)
   if (!project) return { ok: false, reason: '项目标识清洗后为空' }
-  const file = join(root, 'projects', project, 'moments.md')
   const date = opts.date || toDateStr((deps.now ?? (() => new Date()))())
+  const file = join(root, 'projects', project, `${date}-moments.md`)
   const text = existsSync(file) ? readFileSync(file, 'utf8').replace(/^\uFEFF/, '') : '# 情绪记录（moments）\n\n> 格式权威定义见 `managing-lessons-store/assets/moments-template.md`（本文件只放数据）。\n> 触发：agent 主动（察觉情绪即记，不问）。极性：负面 / 正面 / 认知，全收。\n> 判定公式与 userwords 共用（对象主判据，情绪由对象+意图推出）。\n> 负面必填**原话**（不猜原因/态度）；原因/态度为可选，写则标「（推断）」。\n\n---\n'
   if (!opts.message) process.stderr.write(`[warn] moment add：未提供 --message，事后无法定位到具体对话（仅 session 级可查）\n`)
   const id = `M-${date}-${nextMomentSeq(text, date)}`
-  const block = buildMoment({ id, project, session: opts.session, message: opts.message, date, polarity: opts.polarity, problem: opts.problem, cause: opts.cause, attitude: opts.attitude, evidence: opts.evidence })
+  const block = buildMoment({ id, project, session: opts.session, message: opts.message, date, polarity: opts.polarity, problem: opts.problem, cause: opts.cause, attitude: opts.attitude, evidence: opts.evidence, reason: opts.reason })
   atomicWrite(file, text.replace(/\s*$/, '') + '\n\n' + block + '\n')
   return { ok: true, id, file }
 }
@@ -382,7 +385,9 @@ export function momentResolve(root, opts) {
   if (!opts.project) return { ok: false, reason: '缺少 --project' }
   if (!opts.id) return { ok: false, reason: '缺少 --id' }
   if (!opts.solution) return { ok: false, reason: '缺少 --solution' }
-  const file = join(root, 'projects', sanitizeProjectId(opts.project), 'moments.md')
+  const mDate = String(opts.id).match(/^M-(\d{4}-\d{2}-\d{2})-\d+$/)
+  if (!mDate) return { ok: false, reason: `--id 格式应为 M-YYYY-MM-DD-N（收到：${opts.id}）` }
+  const file = join(root, 'projects', sanitizeProjectId(opts.project), `${mDate[1]}-moments.md`)
   if (!existsSync(file)) return { ok: false, reason: `找不到 ${file}` }
   const lines = readFileSync(file, 'utf8').replace(/^\uFEFF/, '').split('\n')
   let start = -1
@@ -408,15 +413,18 @@ export function momentResolve(root, opts) {
   return { ok: true, id: opts.id }
 }
 
-/** 统计某项目 moments.md 的条数与未结案数 */
+/** 统计某项目所有按天 moments 文件的总条数与未结案数 */
 export function momentsSummary(root, project) {
   if (!project) return { total: 0, open: 0 }
-  const file = join(root, 'projects', sanitizeProjectId(project), 'moments.md')
-  if (!existsSync(file)) return { total: 0, open: 0 }
+  const dir = join(root, 'projects', sanitizeProjectId(project))
+  if (!existsSync(dir)) return { total: 0, open: 0 }
   let total = 0, open = 0
-  for (const line of readFileSync(file, 'utf8').split(/\r?\n/)) {
-    if (/^##\s+M-/.test(line)) total++
-    if (/^- 状态：未解决/.test(line)) open++
+  const files = readdirSync(dir).filter((f) => /^\d{4}-\d{2}-\d{2}-moments\.md$/.test(f))
+  for (const f of files) {
+    for (const line of readFileSync(join(dir, f), 'utf8').split(/\r?\n/)) {
+      if (/^##\s+M-/.test(line)) total++
+      if (/^- 状态：未解决/.test(line)) open++
+    }
   }
   return { total, open }
 }
@@ -714,7 +722,7 @@ if (isMain) {
     if (!r.ok) { process.stderr.write(`${r.reason}\n下一步：${r.hint}\n`); process.exit(1) }
     const sub = process.argv[3]
     if (sub === 'add') {
-      const res = momentAdd(r.root, { project: argOf('--project'), session: argOf('--session'), message: argOf('--message'), date: argOf('--date'), polarity: argOf('--polarity'), problem: argOf('--problem'), cause: argOf('--cause'), attitude: argOf('--attitude'), evidence: argOf('--evidence') })
+      const res = momentAdd(r.root, { project: argOf('--project'), session: argOf('--session'), message: argOf('--message'), date: argOf('--date'), polarity: argOf('--polarity'), problem: argOf('--problem'), cause: argOf('--cause'), attitude: argOf('--attitude'), evidence: argOf('--evidence'), reason: argOf('--reason') })
       if (!res.ok) { process.stderr.write(`记账失败：${res.reason}\n`); process.exit(1) }
       process.stdout.write(`已记入情绪档案：${res.id}\n`); process.exit(0)
     } else if (sub === 'resolve') {

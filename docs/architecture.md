@@ -30,7 +30,7 @@
 L1 错题集层（数据在哪）
     D:\Seed\lessons\
     ├── index.md              全局索引 + 候选与推迟表
-    ├── projects\<项目名>\    项目教训 + moments.md（情绪记录）+ ledger.md / ledger-archive-<年>.md
+    ├── projects\<项目名>\    项目教训 + `<日期>-moments.md`（情绪记录，按天）+ `<日期>-userwords.md`（用户原话，按天）+ ledger.md / ledger-archive-<年>.md
     ├── skills\<技能名>\      技能教训（✅ 已建成 2026-09-28；multi-lens 已收编 2026-09-29）
     └── universal\            跨项目通用（已建成）
     + 指针 ~\.agents\lessons.config.json
@@ -62,7 +62,7 @@ L4 仓库与安装层（东西放哪、怎么生效）——✅ 已通（见 §8
 
 | 机制 | 住哪 | 作用 |
 |---|---|---|
-| **情绪锚点（moment）** | `projects\<项目>\moments.md` | 当场自动记「用户不爽 / 认可 / 认知倾向」；带 session·message 锚点 + 自带快照（原话）；**只收集、不分析**；结案由用户触发 |
+| **情绪锚点（moment）** | `projects\<项目>\<日期>-moments.md` | 当场自动记「用户不爽 / 认可 / 认知倾向」；带 session·message 锚点 + 自带快照（原话）；**只收集、不分析**；结案由用户触发 |
 | **用户画像** | `~\.trae-cn\memory\user_profile.md` | 从情绪点 + 提问/回答提炼「在意什么、怎么判断」；每条结论**引原话证据**；提炼在 lessons 落地分析时做 |
 | **体积治理** | 各区 ledger | 热冷分层（`open` 留主账 / `landed` 归档 `ledger-archive-<年>.md`）；主账超阈值（>100 行 或 open>20）时**提醒尽早复盘收口** |
 | **巡检扩展** | `lessons.mjs deferred [--project]` | 会话开始报「推迟项 / 未结案情绪 N 条 / 画像 X 天未更新」——**只报告收集侧，绝不追问落地** |

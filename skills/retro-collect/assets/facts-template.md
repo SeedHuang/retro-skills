@@ -9,6 +9,8 @@
 
 （`<sesshort>` = session 短码，**防同日多 session 撞名**。项目标识取自仓库目录名，入库前须清洗：去 `|`、换行、路径分隔符、控制字符；空白折为 `-`。）
 
+**日期 = session 的日期，不是执行当天**：session 是 9/30 就写 2026-09-30，哪怕今天才 collect。取数 = session 上下文锚点（`memory\projects\<项目>\<YYYYMMDD>\` 目录名 / session_id 关联），拿不到 → 问用户，不用系统时间。
+
 ## 模板
 
 ```markdown
@@ -24,8 +26,8 @@
 ## 2 计数
 | 项 | 值 | 来源 |
 | … | … | … |
-| 本次 session 情绪点数 | N | moments.md ∩ 本 session |
-| 其中未结案 | M | moments.md |
+| 本次 session 情绪点数 | N | <日期>-moments.md ∩ 本 session |
+| 其中未结案 | M | <日期>-moments.md |
 
 ## 3 异常事件
 | # | 现象 | 证据 |
@@ -33,7 +35,7 @@
 ## 4 情绪点
 | # | moment ID | 极性 | 时间 | 触发原话（引用） | 状态 | 来源 |
 
-> 「触发原话」取 moments.md 里该条目的**证据（原话）**字段（`- 证据（原话）：` 下引用块）。极性取值：负面 / 正面 / 认知（见 `managing-lessons-store/assets/moments-template.md`）。
+> 「触发原话」取 `<日期>-moments.md` 里该条目的**证据（原话）**字段（`- 证据（原话）：` 下引用块）。极性取值：负面 / 正面 / 认知（见 `managing-lessons-store/assets/moments-template.md`）。
 
 ## 5 证据清单
 
