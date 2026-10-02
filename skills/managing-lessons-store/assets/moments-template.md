@@ -6,9 +6,9 @@
 
 ## 落点
 
-`<KB>/projects/<项目标识>/<YYYY-MM-DD>-moments.md`（**按天分文件**——每天一个，防单文件膨胀/覆盖；日期 = session 日期，不是执行当天——定法以 `retro-collect/SKILL.md`「第 0 步」为权威定义方）
+`<KB>/projects/<项目标识>/<日期>-<sid>[-<摘要>]/moments.md`（**一 session 一份**——文件即本 session；日期 / `sid` / 摘要的定法以 `retro-collect/SKILL.md`「第 0 步：定 session」为权威定义方）
 
-与同目录 `<日期>-facts.md` / `<日期>-userwords.md` 并列。
+与同目录 `facts.md` / `userwords.md` 并列。
 
 ## 触发（谁有权写）
 
@@ -21,11 +21,17 @@
 
 ## 重扫与覆盖（`retro-collect` 跑时）
 
-collect 时按**当前**判定公式**重扫本 session 全对话** → `moment drop`（清本 session 旧条目）→ `moment add` 逐条重写。**直接覆盖，不留旧版**——对话还在，随时可再生成。
+collect 时按**当前**判定公式**重扫本 session 全对话** → `moment drop`（清本 session 的条目区）→ `moment add` 逐条重写。**直接覆盖，不留旧版**——对话还在，随时可再生成。
 
 **前提：本 session 对话仍完整可见。** 若已被压缩 / 截断（扫不全）→ **不要 drop**：残缺的新数据盖掉完整的旧数据 = 静默丢数据。此时只补新发现的，或先告诉用户「对话已不全，不覆盖」。
 
-**只覆盖本 session 的条目**：按天文件里可能并存多个 session，`moment drop --session <S>` 只清这一个，其余原样保留。
+**文件即本 session**：drop 只清这个目录里的条目，天然不涉及别的 session。
+
+**条目区边界**（必须按这个来，否则会误删）：
+
+- 清的是 **`^##\s+M-` 块**；**文件头**（第一个 `^##\s+M-` 之前的内容）原样保留；
+- **非 moment 标题**（手加的 `## 备注` 等）**保留**；
+- 全文件无 `## M-` 头 → 不动（返回 0）。
 
 ## 记什么（三类极性，全收）
 
@@ -57,9 +63,9 @@ collect 时按**当前**判定公式**重扫本 session 全对话** → `moment 
 
 ---
 
-## M-<日期>-<N>
+## M-<sid>-<N>
 
-- 极性：<负面|正面|认知>｜项目：<标识>｜session：<session_id>｜message：<id 或 —>｜时间：<YYYY-MM-DD>
+- 极性：<负面|正面|认知>｜项目：<标识>｜session：<sid>｜message：<id 或 —>｜时间：<YYYY-MM-DD>
 - 状态：<未解决|已解决>（仅负面；正面/认知写「—」）
 - 问题 / 认可 / 倾向：<一句话>
 - 判据（思考过程）：<对象→意图→脏字→结论 的推导，如「对象=人（主语你+否定理解）→ 无脏字 → 核心意图=贬 → 负面」>

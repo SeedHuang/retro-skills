@@ -13,7 +13,7 @@ description: Use when 已有事实包，需要产出问题清单、根因、解�
 
 ## 唯一产出（两件）
 
-1. 复盘文件：`<KB>/projects/<项目标识>/<YYYY-MM-DD>-retro.md`
+1. 复盘文件：同 session 目录内的 `retro.md`（= `<KB>/projects/<项目标识>/<日期>-<sid>[-<摘要>]/retro.md`）
 2. KB 条目：向该项目的 `ledger.md` **追加行**（状态**先写 `open`**，落置成功后由 `retro-institutionalize` 改为 `landed`）
 
 写入顺序固定为「**先条目 → 后落地 → 再改状态**」（防止中断后重跑重复落规则）。

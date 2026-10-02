@@ -20,9 +20,10 @@ description: Use when 需要初始化错题集库、迁移库到新位置、轮�
 | `node scripts/lessons.mjs resolve` | 解析并**校验** KB 根；成功打印路径，失败打印原因 + 下一步 |
 | `node scripts/lessons.mjs deferred [--project <标识>]` | 推迟项清单 + 命中判定 + 总数；带 `--project` 追加「未结案情绪 N 条；画像 X 天未更新」；主账超阈值时打印「尽早复盘收口」提醒 |
 | `node scripts/lessons.mjs stats` | 三区 × 维度分布快照（看薄弱面；实时扫描三区账本） |
-| `node scripts/lessons.mjs moment add --project <标识> --session <id> --polarity <负面\|正面\|认知> ...` | 追加一条情绪记录（必给 `--problem/--evidence`（原话）/**`--reason`（判据：对象→意图→脏字→结论）**；`--cause/--attitude` 可选且须标推断）。落 **`<日期>-moments.md`（按天，日期 = session 日期）**。格式见 `assets/moments-template.md`，判定公式与 userwords 共用 |
-| `node scripts/lessons.mjs moment resolve --project <标识> --id <M-...> --solution "..." [--cost "..."]` | 结案：只改该条目的状态与解法/代价 |
-| `node scripts/lessons.mjs moment drop --project <标识> --date <日期> --session <id>` | 清掉本 session 在某天的全部条目（供 collect 重扫覆盖用）；**同日其他 session 的条目原样保留** |
+| `node scripts/lessons.mjs sid "<本 session 首句逐字原文>"` | 算 `sid`（sha256 前 8 位）——目录名与 `--session` 都用它。**`--session` 只收 8 位小写 hex**（= `sessionId()` 的输出）：拒非 hex（防误传 memory 的 `session_id` 之类）、拒 `-`（防段匹配混淆）、拒正则元字符（防注入）、定长（防目录名越界） |
+| `node scripts/lessons.mjs moment add --project <标识> --session <sid> --date <日期> [--summary "<≤20字>"] [--first-message "<首句原文>"] --polarity <负面\|正面\|认知> ...` | 追加一条情绪记录（必给 `--problem/--evidence`（原话）/**`--reason`（判据：对象→意图→脏字→结论）**；`--cause/--attitude` 可选且须标推断）。落 **`<日期>-<sid>[-<摘要>]/moments.md`（一 session 一份）**；`--summary` **只在建目录那一次用**（已有目录则忽略），`--first-message` 触发 `sid` 碰撞护栏（**不传 = 该护栏不生效**）。格式见 `assets/moments-template.md`，判定公式与 userwords 共用 |
+| `node scripts/lessons.mjs moment resolve --project <标识> --id <M-...> --solution "..." [--cost "..."]` | 结案：扫项目下各 session 目录**按标题找**该条目（**新旧 id 都认**）；只改该条目的状态与解法/代价 |
+| `node scripts/lessons.mjs moment drop --project <标识> --date <日期> --session <sid>` | 清空本 session 的 `moments.md` **条目区**（保留文件头与非 moment 标题）；供 collect 重扫覆盖用 |
 | `node scripts/lessons.mjs show <ID>` | 查单条（状态 / 载体 / 维度） |
 | `node scripts/lessons.mjs find <关键词>` | 按关键词列相关条目及状态 |
 | `node scripts/lessons.mjs verify record <目标> --period <期> --a <机会数> [--b --n --p --date --expect --signal --note]` | 记一期有效性（台账不存在则建表头）；`<目标>` = 技能名 或 KB 条目 ID |
@@ -71,3 +72,4 @@ description: Use when 需要初始化错题集库、迁移库到新位置、轮�
 | 信号写成 `KB ≥ 10 条`（全角 ≥ / 缺「条目」二字） | 脚本判为「不可自动判定 → 交人工」，轮询静默退化。改写为 `KB 条目 >= 10` |
 | 巡检报告里夹带「要不要落地」 | 巡检只报收集侧（推迟项 / 情绪 / 画像）；**落地由用户在 lessons 发起** |
 | `moment add` 忘给 `--session` | 情绪锚点必填——没有 session 就失去与过程配对的能力 |
+| **拿 memory 的 `session_id` 当 `--session`** | 必须用 `lessons sid "<首句>"` 算出的 **8 位小写 hex**——memory 的 `session_id` 是**另一套标识**（且严重滞后），会被脚本拒收 |

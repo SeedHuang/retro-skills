@@ -4,6 +4,8 @@
 > 战略图：本文是 `2026-10-01-retro-flywheel-blueprint.md` 的 **Phase 1 局部战术**。
 > 用户裁决（2026-10-01）：落地移到 lessons 发起、一次一个；情绪当场自动记、只收集不分析；收尾**由用户触发**；画像"能主动提醒、拍板归用户"；**系统只记账/提醒收集，"改"永远归用户**。
 
+> **2026-10-02 修订（落点与 session 标识）**：本文以下各节**已被 `2026-10-02-session-dir-layout-design.md` 覆盖**，以该 spec 为准——§4.1 存储 / §4.3 三钥匙 / §4.6 格式 / §5 表与文件结构 / §11 载体清单 / §11 的「测试」行 / §12 验证第 3 条 / §12 的「验证 12」 / §15 的 legacy 候选。核心变化：落点改「一 session 一目录」（`<日期>-<sid>[-<摘要>]/`，内含 facts/userwords/moments/retro），session 标识改**首句 hash8**（`sid`），moment id 改 `M-<sid>-<N>`，userwords 块键 `S-` 取消。
+
 ## 1 范围
 
 **做**（以改现有资产为主；**唯一新建：`retro-verify`**）：
@@ -79,7 +81,7 @@
 
 ### 4.1 形态
 
-- **存储**：`<KB>/projects/<项目标识>/<YYYY-MM-DD>-moments.md`（**按天分文件**，日期 = session 日期），当天文件一直追加，不改动前面行。
+- **存储**：`<KB>/projects/<项目标识>/<日期>-<sid>[-<摘要>]/moments.md`（**一 session 一份**；日期 = session 起始日期，`<sid>` = 首句 hash8）——**2026-10-02 改**，见 `2026-10-02-session-dir-layout-design.md`。
 - **脚本命令**：
 
 ```
@@ -92,7 +94,7 @@ node scripts/lessons.mjs moment resolve --project <标识> --id <M-...> --soluti
 node scripts/lessons.mjs moment drop --project <标识> --date <YYYY-MM-DD> --session <session_id>
 ```
 
-> `moment drop` = 清掉某 session 在某天的全部条目（供 collect 重扫覆盖用）；**按天文件里同日其他 session 的条目原样保留**。
+> `moment drop` = 清空本 session 的 `moments.md` **条目区**（保留文件头与非 moment 标题；供 collect 重扫覆盖用）——**2026-10-02 改**：文件即 session，不再按 `session` 字段过滤。
 
 ### 4.2 极性三态（本轮新增）
 
@@ -156,7 +158,7 @@ node scripts/lessons.mjs moment drop --project <标识> --date <YYYY-MM-DD> --se
 - **我检测到（负面/正面/认知）→ 当场轻标，不问、不打断**；**克制**：只记"有信息量的"，不是每句都记。
 - **分析/提炼不在收集时做**——并入 lessons 落地分析（§6）。
 - **收尾由用户触发**；不自动。
-- **`retro-collect` 重扫覆盖（2026-10-02 定）**：collect 跑时按**当前公式重扫本 session 全对话** → `moment drop`（清本 session 旧条目）→ `moment add` 逐条重写，**直接覆盖、不留旧版**。理由：判定规则会更新，旧条目会缺/不符合；moment 本是「兜底」（不是每个 session 都 collect），对话还在就能随时再生成。**只清本 session**——按天文件可能并存多个 session，其余原样保留。重扫结果写进事实包 **§2 计数 + §4 情绪点**（只记事实：条数与原话；不评价）。**前提：对话仍完整可见；已被压缩 / 扫不全 → 不 drop**（残缺新数据盖掉完整旧数据 = 静默丢数据）。
+- **`retro-collect` 重扫覆盖（2026-10-02 定）**：collect 跑时按**当前公式重扫本 session 全对话** → `moment drop`（清本 session 旧条目）→ `moment add` 逐条重写，**直接覆盖、不留旧版**。理由：判定规则会更新，旧条目会缺/不符合；moment 本是「兜底」（不是每个 session 都 collect），对话还在就能随时再生成。**只清本 session**——**文件即本 session**（2026-10-02 起一 session 一目录），drop 天然不涉及别的 session。重扫结果写进事实包 **§2 计数 + §4 情绪点**（只记事实：条数与原话；不评价）。**前提：对话仍完整可见；已被压缩 / 扫不全 → 不 drop**（残缺新数据盖掉完整旧数据 = 静默丢数据）。
 - **情绪必须当场抓**（工具不记情绪）；**提问/回答**工具记了 `intent`，可事后回捞，但**当场轻标最稳**（防摘要被清）。
 
 ## 5 事实包梳理（改 `retro-collect`）
@@ -165,7 +167,7 @@ node scripts/lessons.mjs moment drop --project <标识> --date <YYYY-MM-DD> --se
 
 | 动作 | 变化 |
 |---|---|
-| **重扫一个文件** | `<日期>-moments.md`：按当前公式**重扫本 session 全对话** → 覆盖本 session 条目（`moment drop` + `moment add`）；同日其他 session 原样保留 |
+| **重扫一个文件** | 同 session 目录内 `moments.md`：按当前公式**重扫本 session 全对话** → 覆盖本 session 条目（`moment drop` + `moment add`） |
 | 多读一个外部源（可选） | `memory\...\session_memory_*.jsonl`（拿 session_id/时间做锚点） |
 | 多写一栏 | facts.md 的 **§4 情绪点**；§2 计数加"情绪点数 / 未结案数" |
 | 多一条来源类型 | **对话原文**（原话）——情绪点没有命令输出 |
@@ -187,10 +189,11 @@ node scripts/lessons.mjs moment drop --project <标识> --date <YYYY-MM-DD> --se
 
 ```
 D:\Seed\lessons\projects\<项目>\
-  ├─ <日期>-moments.md        ← 记录器写；collect 重扫覆盖本 session（按天，日期=session 日期）
-  ├─ <日期>-userwords.md     ← 用户触发写（按天）
-  ├─ <日期>-<sesshort>-facts.md   ← collect 产物（加 session 短码，防同日撞名）
-  ├─ <日期>-retro.md         ← analyze 产物
+  ├─ <日期>-<sid>[-<摘要>]\   ← 一 session 一目录（2026-10-02 起；见 2026-10-02-session-dir-layout-design.md）
+  │     ├─ facts.md          ← collect 产物（纯事实、零判断）
+  │     ├─ userwords.md      ← collect 产物（用户原话，逐字）
+  │     ├─ moments.md        ← 记录器写；collect 重扫覆盖本 session
+  │     └─ retro.md          ← analyze 产物
   ├─ ledger.md               ← 主账（热）
   ├─ ledger-archive-<年>.md   ← 归档（冷，见 §8）
   └─ rules-history\
@@ -318,13 +321,13 @@ node scripts/lessons.mjs find <关键词>     # 按关键词列相关条目及�
 | 10 | `D:\Seed\lessons`（外部 KB） | `index.md`：删"对象"列、候选与推迟"处置完移归档"、登记新机制、Obsidian 约定 |
 | 11 | `skills/retro-verify/`（**新建技能**） | 验证流程 + 判定标准（方向读法 / 置信门槛 / 5 档 / 预期对账）+ 反例集 + `scripts/verify.mjs`（**调 `lessons.mjs` CLI 取数，不 import**，避"单装扑空"） |
 
-**测试**：`moment add/resolve/drop` 纯函数单测（新建/追加/结案/ID 递增/转义/极性必填/缺 `.migrating` 拒绝/路径穿越清洗/resolve 找不到报错/原子写/目录不存在自建/**drop 只清本 session、同日其他 session 原样保留**/**drop 幂等（文件不存在 → `removed 0` + `fileMissing` / 无匹配 → 0 且字节不变）**/**drop：项目标识清洗后为空 → 拒绝**/**drop：格式异体（缺 session 行 / 混入半角 `|`）计入 `unparsed` 且保留不误删**/**drop：块边界 `^##\s+`，`## 备注` 独立成块不被误删**）+ `show/find` 单测 + 现有测试全量回归。
+**测试**：`moment add/resolve/drop` 纯函数单测（新建/追加/结案/ID 递增/转义/极性必填/缺 `.migrating` 拒绝/路径穿越清洗/resolve 找不到报错/原子写/目录不存在自建/**drop 清空本 session 的 `moments.md` 条目区（文件头与非 moment 标题保留）**/**drop 幂等（文件不存在 → `removed 0` + `fileMissing` / 无匹配 → 0 且字节不变）**/**drop：项目标识清洗后为空 → 拒绝**/**drop：不再解析 `session` 字段**/**drop：块边界 `^##\s+`，`## 备注` 独立成块不被误删**）+ `show/find` 单测 + 现有测试全量回归。
 
 ## 12 验证
 
 1. 【自动】`moment add` 缺 `--polarity` / 负面缺 `--evidence` / 缺 `--reason` / **缺 `--date`（= session 日期，不回退执行当天）** / 非法 `--date` → 报错拒绝。
 2. 【自动】`moment add` 项目目录不存在时自建并写首条；同项目再写 ID 递增。
-3. 【自动】`--project ../..` 被清洗，`<日期>-moments.md` 不落到 `projects/` 之外。
+3. 【自动】`--project` 含路径分隔符（`../..`）被清洗、为 `.` / `..` 直接拒收——session 目录内的 `moments.md` **永不落到 `projects/` 之外**。
 4. 【自动】`<KB>/.migrating` 存在时写 moment → 拒绝。
 5. 【自动】`moment resolve` 找不到 ID → 报错、字节不变；结案只改指定条目（diff 校验其余不变）。
 6. 【文档】`retro-collect` 事实包含 §4 情绪点与计数，且不含评价词（跑零判断自检）。
@@ -333,8 +336,8 @@ node scripts/lessons.mjs find <关键词>     # 按关键词列相关条目及�
 9. 【自动】巡检输出含"未结案情绪 N 条"（需 `--project`）"画像 X 天未更新"；主账超阈值时输出"尽早复盘 <目标>"。
 10. 【自动】`lessons show/find` 能按 ID / 关键词返回条目及状态。
 11. 【自动】现有 `lessons.mjs` 测试全量通过（含值内换行折叠、`--date` 校验）。
-12. 【自动】`moment drop` 只清指定 session 的条目，同日其他 session 的条目逐字节保留；文件不存在 → `removed 0` + `fileMissing`（CLI 提示「日期可能写错」）、不新建不改字节；项目标识清洗后为空 → 拒绝；格式异体（`## M-` 块缺 session 行 / 混入半角 `|`）→ 计入 `unparsed`、保留不误删、打 warning；**块边界 = `^##\s+`（与 `momentResolve` 同口径）→ 非 moment 标题（`## 备注`）独立成块、不被误删**。
-13. 【文档】`retro-collect` 有「第 0 步：确定 session 日期」（明写「系统今天禁用」+ 优先级阶梯）；「重扫 moment」节含 `moment drop` 命令且强调「只清本 session」。
+12. 【自动】`moment drop` 清空本 session 的 `moments.md` **条目区**（保留文件头与非 moment 标题）；文件不存在 → `removed 0` + `fileMissing`（CLI 提示「日期或 sid 可能写错」）、不新建不改字节；项目标识清洗后为空 → 拒绝；**块边界 = `^##\s+`（与 `momentResolve` 同口径）→ 非 moment 标题（`## 备注`）独立成块、不被误删**。
+13. 【文档】`retro-collect` 有「第 0 步：定 session（日期 + sid + 摘要）」（明写「系统今天禁用」+ 日期阶梯 + `sid` 算法 + 「拿不到逐字首句」的处置）；「重扫 moment」节含 `moment drop` 命令且强调「文件即本 session」。
 14. 【文档】`retro-collect` 标题为「唯三产出」且列 3 项（含 moments 重扫）；「重扫 moment」节含前提「对话不完整 → 不 drop」。
 
 ## 13 落地节奏
@@ -446,6 +449,6 @@ node scripts/lessons.mjs find <关键词>     # 按关键词列相关条目及�
 | 采纳 | `verify <目标>` 异常输入（本轮评审 P2-2） | 并入：目标 / 台账不存在、参数非法 → **报错退出、不改文件** |
 | 关闭 | `retro-verify` 以 spec §14 为权威（本轮评审 P2-3） | 关键规则已**内联**进 SKILL；spec 在同仓库，可接受 |
 | 关闭 | 新技能的运行时安装步骤未记（本轮评审 P2-4） | 触发已发生（2026-10-01 首次安装 `retro-verify`）：安装走**通用 `aas sync`**，无需专门说明 → 关闭 |
-| 候选 | legacy 单文件 `moments.md` 接管（2026-10-02 评审 P1-2） | resolve/summary/collect 均只认 `<日期>-moments.md`，单文件旧条目静默不可见。触发信号：任何 store 再现单文件 moments.md → 先迁移再启用（当前全库唯一实例 retro-skills 已手工迁移，exposure = 0） |
+| 候选 | legacy 单文件 `moments.md` 接管（2026-10-02 评审 P1-2；**2026-10-02 复评恢复候选**） | **布局被目录制取代，但"扁平文件静默不可见"这个风险没被取代**：`resolve` / `drop` / `summary` 只扫 session 目录，遇扁平 `<日期>-moments.md` 一律静默忽略。触发信号：**任何 store 再现扁平 `<日期>-moments.md`** → 先迁移（或加兼容读取）再启用 |
 | 关闭 | `buildMoment` 正面分支 `if (evidence)` 死容错（2026-10-02 评审 P2-3） | `validateMoment` 已必填 evidence 且先行；防御性写法无行为差异（与"合并校验"同族，主项已处理） |
 | 候选 | verify 台账表头与 effectiveness-template 漂移（2026-10-02 评审同族扫描） | 实测：`VERIFY_HEADER` 第 7 列「预期复发率(%)」（数值型）vs 模板「事前预期（区间）」（区间型）——**已漂移**。修复需先统一口径（数值 or 区间），触发信号：verify 首次真实使用时 |

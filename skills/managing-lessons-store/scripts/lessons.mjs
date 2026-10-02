@@ -291,13 +291,20 @@ export function statsLedger(root) {
 // ── moment（情绪记录）──────────────────────────────────────────
 export const POLARITIES = ['负面', '正面', '认知']
 
+/** `sid` 唯一合法形态：**8 位小写 hex**（= `sessionId()` 的输出）。
+ *  与生成端同形，可验证：拒 `-`（防段匹配混淆）、拒正则元字符（防 `nextMomentSeq` 注入）、
+ *  固定长度（防目录名越界）、拒非 hex（防误传 memory 的 session_id 之类"形态合法但不是 sid"的值）。 */
+const SID_RE = /^[0-9a-f]{8}$/
+
 /** 项目标识清洗（与 retro-collect 同规则）：去 |、换行、路径分隔符、控制字符；空白折为 - */
 export function sanitizeProjectId(id) {
-  return String(id ?? '')
+  const s = String(id ?? '')
     .replace(/[|\r\n/\\]/g, '')
     .replace(/[\u0000-\u001f\u007f]/g, '')
     .trim()
     .replace(/\s+/g, '-')
+  // `.` / `..` 是路径穿越串（join 会归一化到 projects/ 之外）→ 清洗成空，交给调用方的空值校验拒绝
+  return (s === '.' || s === '..') ? '' : s
 }
 
 /** 日期 → YYYY-MM-DD（本地时区） */
@@ -321,9 +328,10 @@ function foldOne(s) { return String(s ?? '').replace(/\r?\n/g, ' ') }
 export function validateMoment(o) {
   if (!POLARITIES.includes(o.polarity)) return `极性必须为 负面 / 正面 / 认知（收到：${o.polarity ?? '空'}）`
   if (!o.project) return '缺少 --project'
-  if (!o.date) return '必须提供 --date（= session 日期，不是执行当天；防止按天文件静默落错天）'
+  if (!o.date) return '必须提供 --date（= session 日期，不是执行当天；防止 session 目录静默落错天）'
   if (!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(o.date)) return `--date 必须是 YYYY-MM-DD（收到：${o.date}）`
   if (!o.session) return '缺少 --session（情绪锚点，必填）'
+  if (!SID_RE.test(String(o.session))) return `--session 必须是 8 位小写 hex（= \`lessons sid "<首句>"\` 的输出；收到：${o.session}）`
   const probMsg = o.polarity === '负面' ? '负面必须提供 --problem' : '正面/认知必须提供 --problem（认可 / 倾向）'
   const evMsg = o.polarity === '负面' ? '负面必须提供 --evidence（原话，不猜原因）' : '正面/认知必须提供 --evidence（原话）'
   if (!o.problem) return probMsg
@@ -355,9 +363,59 @@ export function buildMoment({ id, project, session, message, date, polarity, pro
   return lines.join('\n')
 }
 
-/** 当天已有条目数 + 1 */
-function nextMomentSeq(text, date) {
-  const re = new RegExp(`^##\\s+M-${date}-(\\d+)\\s*$`, 'gm')
+/** 文本归一化：trim → 连续空白（含换行）折成单个空格 */
+function normText(s) { return String(s ?? '').replace(/\s+/g, ' ').trim() }
+
+/** session 标识（sid）：首句逐字原文 → sha256 前 8 位（小写 hex）。
+ *  归一化 = normText → UTF-8；与 PowerShell 侧同算法同值（spec §2.1）。 */
+export function sessionId(firstMessage) {
+  return createHash('sha256').update(normText(firstMessage), 'utf8').digest('hex').slice(0, 8)
+}
+
+/** session 目录名里"摘要"一段的清洗——比 sanitizeProjectId 严：含 Windows 保留字符与结尾点（spec §3） */
+export function sanitizeDirSegment(s, max = 20) {
+  const cleaned = String(s ?? '')
+    .replace(/[<>:"/\\|?*\u0000-\u001f\u007f]/g, '')   // Windows 保留字符 + 控制字符
+    .replace(/\s+/g, '-')                              // 空白（含全角空格）折 -
+    .replace(/-+/g, '-')
+    .replace(/^[.\-]+|[.\-]+$/g, '')
+  return cleaned.slice(0, max).replace(/[.\-]+$/, '')  // 截断后可能又露出结尾点/横线，再去一次
+}
+
+/** 列出项目下所有 session 目录名 */
+function listSessionDirs(root, project) {
+  const base = join(root, 'projects', project)
+  if (!existsSync(base)) return []
+  const dirs = []
+  for (const n of readdirSync(base)) {
+    try { if (statSync(join(base, n)).isDirectory()) dirs.push(n) } catch { /* 忽略不可读项 */ }
+  }
+  return dirs
+}
+
+/** 定位本 session 的目录（spec §4.1）：按 `<日期>-<sid>` 段匹配 → 复用；多个命中 → 报错；
+ *  **仅当 sid 缺失**而该日期下恰好只有一个 session 目录 → 兜底复用（读到目录名里的 sid 后就不再需要）。 */
+export function findSessionDir(root, project, date, sid) {
+  const dirs = listSessionDirs(root, project)
+  const dayDirs = dirs.filter((n) => n === date || n.startsWith(`${date}-`))
+  const hits = sid ? dayDirs.filter((n) => n === `${date}-${sid}` || n.startsWith(`${date}-${sid}-`)) : []
+  if (hits.length > 1) return { ok: false, reason: `同日同 sid 命中多个目录（${hits.join('、')}）——歧义，请人工处理` }
+  if (hits.length === 1) return { ok: true, dir: hits[0] }
+  if (!sid && dayDirs.length === 1) return { ok: true, dir: dayDirs[0], fallback: true }
+  return { ok: true, dir: null }
+}
+
+/** 读已有 session 目录里 facts.md 头记的首句原文（供碰撞护栏比对）；没记则 null */
+export function readRecordedFirstMessage(root, project, dir) {
+  const f = join(root, 'projects', project, dir, 'facts.md')
+  if (!existsSync(f)) return null
+  const m = readFileSync(f, 'utf8').replace(/^\uFEFF/, '').match(/^- session：.*?｜首句：(.*?)(?:｜memory id：.*)?$/m)
+  return m ? normText(m[1]) : null
+}
+
+/** 本 session 文件里已有条目数 + 1（按 sid 计数） */
+function nextMomentSeq(text, sid) {
+  const re = new RegExp(`^##\\s+M-${sid}-(\\d+)\\s*$`, 'gm')
   let max = 0, m
   while ((m = re.exec(text))) max = Math.max(max, Number(m[1]))
   return max + 1
@@ -371,13 +429,29 @@ export function momentAdd(root, opts, deps = {}) {
   const project = sanitizeProjectId(opts.project)
   if (!project) return { ok: false, reason: '项目标识清洗后为空' }
   const date = opts.date // 必填（validateMoment 已校验）= session 日期，不是执行当天
-  const file = join(root, 'projects', project, `${date}-moments.md`)
+  const sid = normText(opts.session)
+  // 定位本 session 目录（§4.1：段匹配 → 复用；同日唯一目录 → 兜底；都不行 → 新建）
+  const loc = findSessionDir(root, project, date, sid)
+  if (!loc.ok) return { ok: false, reason: loc.reason }
+  let dirName = loc.dir
+  if (dirName && opts.firstMessage) {   // 碰撞护栏（spec §2.2）：命中已有目录时核对首句
+    const rec = readRecordedFirstMessage(root, project, dirName)
+    if (rec && rec !== normText(opts.firstMessage)) {
+      return { ok: false, reason: `sid 命中已有目录「${dirName}」，但首句不一致——疑似碰撞，请人工核对；本次未写入` }
+    }
+    if (!rec) process.stderr.write(`[warn] moment add：目录「${dirName}」已存在但 facts.md 头没记首句，碰撞护栏本次未生效\n`)
+  }
+  if (!dirName) {
+    const seg = sanitizeDirSegment(opts.summary)
+    dirName = seg ? `${date}-${sid}-${seg}` : `${date}-${sid}`
+  }
+  const file = join(root, 'projects', project, dirName, 'moments.md')
   const text = existsSync(file) ? readFileSync(file, 'utf8').replace(/^\uFEFF/, '') : '# 情绪记录（moments）\n\n> 格式权威定义见 `managing-lessons-store/assets/moments-template.md`（本文件只放数据）。\n> 触发：agent 察觉情绪当场记（不问）；collect 时重扫覆盖本 session。极性：负面 / 正面 / 认知，全收。\n> 判定公式与 userwords 共用（对象主判据，情绪由对象+意图推出）。\n> 负面必填**原话**（不猜原因/态度）；原因/态度为可选，写则标「（推断）」。\n\n---\n'
   if (!opts.message) process.stderr.write(`[warn] moment add：未提供 --message，事后无法定位到具体对话（仅 session 级可查）\n`)
-  const id = `M-${date}-${nextMomentSeq(text, date)}`
+  const id = `M-${sid}-${nextMomentSeq(text, sid)}`
   const block = buildMoment({ id, project, session: opts.session, message: opts.message, date, polarity: opts.polarity, problem: opts.problem, cause: opts.cause, attitude: opts.attitude, evidence: opts.evidence, reason: opts.reason })
   atomicWrite(file, text.replace(/\s*$/, '') + '\n\n' + block + '\n')
-  return { ok: true, id, file }
+  return { ok: true, id, file, dir: dirName }
 }
 
 /** 结案：只改指定条目的状态与解法/代价行，其余行原样保留 */
@@ -386,11 +460,23 @@ export function momentResolve(root, opts) {
   if (!opts.project) return { ok: false, reason: '缺少 --project' }
   if (!opts.id) return { ok: false, reason: '缺少 --id' }
   if (!opts.solution) return { ok: false, reason: '缺少 --solution' }
-  const mDate = String(opts.id).match(/^M-(\d{4}-\d{2}-\d{2})-\d+$/)
-  if (!mDate) return { ok: false, reason: `--id 格式应为 M-YYYY-MM-DD-N（收到：${opts.id}）` }
-  const file = join(root, 'projects', sanitizeProjectId(opts.project), `${mDate[1]}-moments.md`)
-  if (!existsSync(file)) return { ok: false, reason: `找不到 ${file}` }
-  const lines = readFileSync(file, 'utf8').replace(/^\uFEFF/, '').split('\n')
+  if (!/^M-(?:[^\s-]+|\d{4}-\d{2}-\d{2})-\d+$/.test(String(opts.id))) {
+    return { ok: false, reason: `--id 格式应为 M-<sid>-N 或 M-YYYY-MM-DD-N（收到：${opts.id}）` }
+  }
+  const project = sanitizeProjectId(opts.project)
+  if (!project) return { ok: false, reason: '项目标识清洗后为空' }
+  // 定位（spec §6.1）：扫项目下各 session 目录的 moments.md，按标题精确找——新旧 id 同一套逻辑
+  const hits = []
+  for (const d of listSessionDirs(root, project)) {
+    const f = join(root, 'projects', project, d, 'moments.md')
+    if (!existsSync(f)) continue
+    const text = readFileSync(f, 'utf8').replace(/^\uFEFF/, '')
+    if (text.split('\n').some((l) => l.trim() === `## ${opts.id}`)) hits.push({ f, text })
+  }
+  if (!hits.length) return { ok: false, reason: `找不到条目 ${opts.id}（文件未改动）` }
+  if (hits.length > 1) return { ok: false, reason: `条目 ${opts.id} 在多处出现（${hits.length} 处）——歧义，请人工处理` }
+  const file = hits[0].f
+  const lines = hits[0].text.split('\n')
   let start = -1
   for (let i = 0; i < lines.length; i++) if (lines[i].trim() === `## ${opts.id}`) { start = i; break }
   if (start === -1) return { ok: false, reason: `找不到条目 ${opts.id}（文件未改动）` }
@@ -414,57 +500,55 @@ export function momentResolve(root, opts) {
   return { ok: true, id: opts.id }
 }
 
-/** 清掉某 session 在某天的全部条目（供 collect 重扫覆盖用）；同一天其他 session 的条目原样保留 */
+/** 清空本 session 的 moments.md 条目区（供 collect 重扫覆盖用）；文件头与非 moment 标题原样保留。
+ *  文件即本 session（spec §4.3）——故不再按 session 字段过滤。 */
 export function momentDrop(root, opts) {
   if (existsSync(join(root, '.migrating'))) return { ok: false, reason: '错题集正在迁移中，请等迁移结束后重试' }
   if (!opts.project) return { ok: false, reason: '缺少 --project' }
   if (!opts.date) return { ok: false, reason: '必须提供 --date（= session 日期，不是执行当天）' }
   if (!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(opts.date)) return { ok: false, reason: `--date 必须是 YYYY-MM-DD（收到：${opts.date}）` }
-  if (!opts.session) return { ok: false, reason: '缺少 --session（指定要清除哪个 session 的条目）' }
+  if (!opts.session) return { ok: false, reason: '缺少 --session（sid）' }
+  if (!SID_RE.test(String(opts.session))) return { ok: false, reason: `--session 必须是 8 位小写 hex（收到：${opts.session}）` }
   const project = sanitizeProjectId(opts.project)
   if (!project) return { ok: false, reason: '项目标识清洗后为空' }
-  const file = join(root, 'projects', project, `${opts.date}-moments.md`)
-  if (!existsSync(file)) return { ok: true, removed: 0, unparsed: 0, fileMissing: true }
+  // 定位本 session 目录（spec §4.1）；`--date` 转护栏——目录名日期与它不符就找不到（防找错目录）
+  const loc = findSessionDir(root, project, opts.date, normText(opts.session))
+  if (!loc.ok) return { ok: false, reason: loc.reason }
+  if (!loc.dir) return { ok: true, removed: 0, fileMissing: true }
+  const file = join(root, 'projects', project, loc.dir, 'moments.md')
+  if (!existsSync(file)) return { ok: true, removed: 0, fileMissing: true }
   const lines = readFileSync(file, 'utf8').replace(/^\uFEFF/, '').split('\n')
   const heads = []
   // 块边界用 `^##\s+`（与 momentResolve 同口径）：非 moment 标题（如手加的「## 备注」）独立成块，
   // 不会被并进前一个 moment 块的删除区间而遭误删
   for (let i = 0; i < lines.length; i++) if (/^##\s+/.test(lines[i])) heads.push(i)
-  if (!heads.length) return { ok: true, removed: 0, unparsed: 0 }
+  if (!heads.length) return { ok: true, removed: 0 }
   const keep = []
-  const want = String(opts.session).trim()
-  let removed = 0, unparsed = 0
+  let removed = 0
   for (let k = 0; k < heads.length; k++) {
     const s = heads[k]
     const e = k + 1 < heads.length ? heads[k + 1] : lines.length
-    const block = lines.slice(s, e)
-    const polLine = block.find((l) => /^- 极性：/.test(l))
-    // 按 `｜` 切格提取：混入半角 `|` 时整行只成一个格、取不到 session：格 → 计入 unparsed，不误抓
-    const sesCell = polLine ? polLine.split('｜').find((c) => c.trim().startsWith('session：')) : null
-    const ses = sesCell ? sesCell.trim().slice('session：'.length).trim() : null
-    if (ses && ses === want) { removed++; continue }
-    // 真是 moment 块（`## M-` 头）却解析不出 session：格式异体，静默跳过会残留
-    // （非 moment 标题不算——它本就无 session 行，属正常保留）
-    if (/^##\s+M-/.test(lines[s]) && !ses) unparsed++
-    keep.push([s, e])
+    if (/^##\s+M-/.test(lines[s])) { removed++; continue }   // moment 块 → 清掉（重扫会重写）
+    keep.push([s, e])                                        // 非 moment 标题 → 保留
   }
-  if (unparsed) process.stderr.write(`[warn] moment drop：${unparsed} 个条目没有可解析的 session 行（格式异体），已跳过未删——请人工复核\n`)
-  if (removed === 0) return { ok: true, removed: 0, unparsed }
+  if (removed === 0) return { ok: true, removed: 0 }
   const out = lines.slice(0, heads[0])
   for (const [s, e] of keep) out.push(...lines.slice(s, e))
   atomicWrite(file, out.join('\n').replace(/\s*$/, '') + '\n')
-  return { ok: true, removed, unparsed }
+  return { ok: true, removed }
 }
 
-/** 统计某项目所有按天 moments 文件的总条数与未结案数 */
+/** 统计某项目所有 session 目录里 moments.md 的总条数与未结案数 */
 export function momentsSummary(root, project) {
   if (!project) return { total: 0, open: 0 }
-  const dir = join(root, 'projects', sanitizeProjectId(project))
-  if (!existsSync(dir)) return { total: 0, open: 0 }
+  const pj = sanitizeProjectId(project)
+  const base = join(root, 'projects', pj)
+  if (!existsSync(base)) return { total: 0, open: 0 }
   let total = 0, open = 0
-  const files = readdirSync(dir).filter((f) => /^\d{4}-\d{2}-\d{2}-moments\.md$/.test(f))
-  for (const f of files) {
-    for (const line of readFileSync(join(dir, f), 'utf8').split(/\r?\n/)) {
+  for (const d of listSessionDirs(root, pj)) {
+    const f = join(base, d, 'moments.md')
+    if (!existsSync(f)) continue
+    for (const line of readFileSync(f, 'utf8').split(/\r?\n/)) {
       if (/^##\s+M-/.test(line)) total++
       if (/^- 状态：未解决/.test(line)) open++
     }
@@ -712,7 +796,12 @@ const isMain = isDirectRun(process.argv[1], import.meta.url)
 if (isMain) {
   const cmd = process.argv[2]
   const argOf = (f) => { const i = process.argv.indexOf(f); return i === -1 ? undefined : process.argv[i + 1] }
-  if (cmd === 'resolve') {
+  if (cmd === 'sid') {
+    const msg = process.argv.slice(3).join(' ')
+    if (!msg) { process.stderr.write('用法：lessons sid "<本 session 用户第一条消息的逐字原文>"\n'); process.exit(1) }
+    process.stdout.write(sessionId(msg) + '\n'); process.exit(0)
+  }
+  else if (cmd === 'resolve') {
     const r = resolveStore({ env: process.env, pointerPaths: pointerCandidates(), deps: { isInsideGitRepo } })
     if (r.ok) { process.stdout.write(r.root + '\n'); process.exit(0) }
     process.stderr.write(`${r.reason}\n下一步：${r.hint}\n`)
@@ -765,9 +854,9 @@ if (isMain) {
     if (!r.ok) { process.stderr.write(`${r.reason}\n下一步：${r.hint}\n`); process.exit(1) }
     const sub = process.argv[3]
     if (sub === 'add') {
-      const res = momentAdd(r.root, { project: argOf('--project'), session: argOf('--session'), message: argOf('--message'), date: argOf('--date'), polarity: argOf('--polarity'), problem: argOf('--problem'), cause: argOf('--cause'), attitude: argOf('--attitude'), evidence: argOf('--evidence'), reason: argOf('--reason') })
+      const res = momentAdd(r.root, { project: argOf('--project'), session: argOf('--session'), message: argOf('--message'), date: argOf('--date'), summary: argOf('--summary'), firstMessage: argOf('--first-message'), polarity: argOf('--polarity'), problem: argOf('--problem'), cause: argOf('--cause'), attitude: argOf('--attitude'), evidence: argOf('--evidence'), reason: argOf('--reason') })
       if (!res.ok) { process.stderr.write(`记账失败：${res.reason}\n`); process.exit(1) }
-      process.stdout.write(`已记入情绪档案：${res.id}\n`); process.exit(0)
+      process.stdout.write(`已记入情绪档案：${res.id}（目录 ${res.dir}）\n`); process.exit(0)
     } else if (sub === 'resolve') {
       const res = momentResolve(r.root, { project: argOf('--project'), id: argOf('--id'), solution: argOf('--solution'), cost: argOf('--cost') })
       if (!res.ok) { process.stderr.write(`结案失败：${res.reason}\n`); process.exit(1) }
@@ -775,9 +864,9 @@ if (isMain) {
     } else if (sub === 'drop') {
       const res = momentDrop(r.root, { project: argOf('--project'), date: argOf('--date'), session: argOf('--session') })
       if (!res.ok) { process.stderr.write(`清除失败：${res.reason}\n`); process.exit(1) }
-      if (res.fileMissing) process.stdout.write(`未找到 ${argOf('--date')}-moments.md——日期可能写错了，请复核；本次未改动任何文件\n`)
-      else if (res.removed === 0) process.stdout.write(`本 session 在该日无条目，未改动（未识别条目 ${res.unparsed} 个）\n`)
-      else process.stdout.write(`已清除本 session 旧条目 ${res.removed} 条（未识别条目 ${res.unparsed} 个）\n`)
+      if (res.fileMissing) process.stdout.write(`未找到 ${argOf('--date')} 下该 session 的目录 / moments.md——日期或 sid 可能写错，请复核；本次未改动任何文件\n`)
+      else if (res.removed === 0) process.stdout.write(`本 session 无条目，未改动\n`)
+      else process.stdout.write(`已清除本 session 旧条目 ${res.removed} 条\n`)
       process.exit(0)
     }
     process.stderr.write('用法：lessons moment add|resolve|drop --project <标识> ...\n'); process.exit(1)
@@ -838,6 +927,6 @@ if (isMain) {
     }
     process.stderr.write('用法：lessons verify record|score|trend|expect <目标（技能名 或 KB 条目 ID）> ...\n'); process.exit(1)
   }
-  process.stderr.write(`未知命令：${cmd}\n支持：resolve | deferred [--project <标识>] | stats | migrate --to <path> | moment add|resolve|drop | show <ID> | find <关键词> | verify record|score|trend|expect <目标>\n`)
+  process.stderr.write(`未知命令：${cmd}\n支持：sid "<首句>" | resolve | deferred [--project <标识>] | stats | migrate --to <path> | moment add|resolve|drop | show <ID> | find <关键词> | verify record|score|trend|expect <目标>\n`)
   process.exit(1)
 }

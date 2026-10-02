@@ -1,13 +1,13 @@
 # 用户原话模板（逐字使用）
 
-> 本文件是**用户原话（userwords）结构的权威定义方**。`retro-collect/SKILL.md` 只指向这里，不复制；KB 里的 `<日期>-userwords.md` **只放数据 + 一行指针**，不重复定义格式（双份真相禁令）。
+> 本文件是**用户原话（userwords）结构的权威定义方**。`retro-collect/SKILL.md` 只指向这里，不复制；KB 里的 `userwords.md` **只放数据 + 一行指针**，不重复定义格式（双份真相禁令）。
 > **必须逐字使用**。
 
 ## 落点
 
-`<KB>/projects/<项目标识>/<YYYY-MM-DD>-userwords.md`（**按天分文件**——每天一个，防单文件膨胀/覆盖；日期 = session 日期，不是执行当天——定法以 `retro-collect/SKILL.md`「第 0 步」为权威定义方）
+`<KB>/projects/<项目标识>/<日期>-<sid>[-<摘要>]/userwords.md`（**一 session 一份**——文件即本 session；日期 / `sid` / 摘要的定法以 `retro-collect/SKILL.md`「第 0 步：定 session」为权威定义方，此处不复制）
 
-与同目录 `<日期>-facts.md` / `<日期>-moments.md` / `<日期>-ledger.md` 并列。
+与同目录 `facts.md` / `moments.md` 并列（`ledger.md` 在项目根，**不在** session 目录内）。
 
 ## 触发（谁有权写）
 
@@ -22,12 +22,12 @@
 
 1. **整场收集，不筛**：用户本 session 说的每一句都收，**不判断哪句有价值**——价值由分析阶段判断，当场筛会漏掉最关键的那句
 2. **逐字抄录**：不改写、不概括、不省略（含「继续」「好了」这类短句）
-3. **原话只能来自当前对话**：**禁止**从 `~\.trae-cn\memory\**\session_memory_*.jsonl` 取原文（2026-10-02 实测：切换 session + 多轮对话后该文件仍零新增，滞后到不可用；它只能当 session 身份指针）
+3. **原话只能来自当前对话**：**禁止**从 `~\.trae-cn\memory\**\session_memory_*.jsonl` 取原文（2026-10-02 实测：切换 session + 多轮对话后该文件仍零新增，滞后到不可用；它只作 `memory id` 备注）
 4. 写库前查 `<KB>/.migrating`：存在 → 拒绝写入
 
 ## 块规则
 
-- 块键 = `session_id`（格式 `S-<session_id>`）；**同一 session 重新收集 → 覆盖同一块，不追加新块**（2026-10-02 实测：切走再切回 session_id 不变）
+- **无块键**——文件即本 session（身份由**目录名**表达）；**同一 session 重新收集 → 覆盖整个文件，不追加**
 - **不做内容去重**：同一句话在不同时刻说两次 = 两次表达，两次都留（重复本身是信号）
 
 ## 标签两栏（互相独立，不要合并）
@@ -56,12 +56,12 @@
 
 > 用途：画像提炼的唯一原话来源。每条只记「时间 / 对象 / 情绪 / 立场 / 判据 / 原话」，**不做提炼**。
 > 格式权威定义见 `retro-collect/assets/userwords-template.md`（本文件只放数据）。
-> 触发：用户主动触发（点名 userwords 或 retro-collect）；agent 不得自行触发。
+> 触发：用户触发 `retro-collect` 时收；agent 不得自行触发。
 > 情绪判定公式见 KB `skills/retro-collect/emotion-cases.md`（题库，不进日常上下文）。
 
 ---
 
-## S-<session_id>（<日期>，共 N 条）
+## <日期>｜session <sid>（共 N 条）
 
 - 项目：<项目标识>
 - 触发：<触发方式>
@@ -87,10 +87,10 @@
 
 | 错误 | 纠正 |
 |---|---|
-| agent 自行触发写入 | 只有用户主动触发才写 |
+| agent 自行触发写入 | 只有用户触发 collect 时才写 |
 | 当场筛选「没价值的」句子 | 整场全收，价值判断留到分析 |
 | 改写或概括原话 | 逐字抄，长句写全文 |
-| 从 jsonl 取原文 | 只能读当前对话；jsonl 仅验 session_id |
-| 同 session 追加新块 | 覆盖原块（块键 = session_id） |
+| 从 jsonl 取原文 | 只能读当前对话；jsonl 只作 `memory id` 备注 |
+| 同 session 追加 | 覆盖整个文件（文件即本 session） |
 | 把「情绪」写成价值判断 | 情绪只判措辞，褒贬才算 |
 | 在数据文件里定义格式 | 格式只在本模板，数据文件只放指针 |

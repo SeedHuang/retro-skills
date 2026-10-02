@@ -36,14 +36,16 @@ description: Use when 阶段/里程碑收口、session 即将结束、用户说�
 多源输入（OCR 原文 / multi-lens 结论 / session 总结 / 用户的复盘请求）
       │
       ▼
-  事实包  <日期>-facts.md        ← 本次过程的证据集（纯事实、零判断），由 retro-collect 产出
+  事实包  <session 目录>/facts.md    ← 本次过程的证据集（纯事实、零判断），由 retro-collect 产出
       │
       ▼
-  复盘    <日期>-retro.md        ← 本次过程的分析（只引条号 + 加判断），由 retro-analyze 产出；做薄
+  复盘    <session 目录>/retro.md    ← 本次过程的分析（只引条号 + 加判断），由 retro-analyze 产出；做薄
       │
-      ├────────► KB 条目         ← 跨 session 累积索引（一行一条，稳定 ID）
+      ├────────► KB 条目         ← 跨 session 累积索引（一行一条，稳定 ID；落项目根 ledger.md）
       │                            由 retro-analyze 写入，retro-institutionalize 更新状态
       └────────► 落地载体        ← 生效物（自动化 / rule / skill / memory），由 retro-institutionalize 产出
+
+（`<session 目录>` = `projects/<项目标识>/<日期>-<sid>[-<摘要>]/`，内含 `facts.md` / `userwords.md` / `moments.md`，analyze 后加 `retro.md`。）
 
 引用方向：复盘引事实包的条号；KB 条目与落地载体引复盘的产物；规则 provenance 引 KB 条目 ID
 反方向不存在——永不把下游内容回抄到上游（防第二份真相）

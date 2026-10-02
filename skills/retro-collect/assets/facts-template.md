@@ -5,11 +5,11 @@
 
 ## 落点
 
-`<KB>/projects/<项目标识>/<YYYY-MM-DD>-<sesshort>-facts.md`
+`<KB>/projects/<项目标识>/<日期>-<sid>[-<摘要>]/facts.md`
 
-（`<sesshort>` = session 短码，**防同日多 session 撞名**。项目标识取自仓库目录名，入库前须清洗：去 `|`、换行、路径分隔符、控制字符；空白折为 `-`。）
+（**一 session 一目录**——与同目录 `userwords.md` / `moments.md` 并列，analyze 后加 `retro.md`。项目标识取自仓库目录名，入库前须清洗：去 `|`、换行、路径分隔符、控制字符；空白折为 `-`。）
 
-**日期 = session 的日期，不是执行当天；禁用系统时间。** 定法（优先级阶梯 + 拿不到怎么问）以 `SKILL.md`「第 0 步」为**权威定义方**，此处不复制——防第二份。
+**日期 / `sid` / 摘要的定法以 `SKILL.md`「第 0 步：定 session」为权威定义方**，此处不复制——防第二份。要点：日期取 **session 起始日期**（**禁用系统时间**）；`sid` = 首句逐字原文的 sha256 前 8 位；目录**永不改名**。
 
 ## 模板
 
@@ -18,7 +18,7 @@
 
 - 范围：<起止锚点>
 - 生成：<日期>｜生成者：<agent/人>
-- session：<session_id>｜message 范围：<首>..<尾>
+- session：<sid>｜首句：<逐字原文>｜memory id：<可选，拿不到写 —>｜message 范围：<首>..<尾>
 
 ## 1 时间线锚点
 | 时刻 | 事件 | 来源（文件 mtime / git log / 命令输出） |
@@ -26,8 +26,8 @@
 ## 2 计数
 | 项 | 值 | 来源 |
 | … | … | … |
-| 本次 session 情绪点数 | N | <日期>-moments.md ∩ 本 session |
-| 其中未结案 | M | <日期>-moments.md |
+| 本次 session 情绪点数 | N | 同目录 `moments.md`（本 session） |
+| 其中未结案 | M | 同目录 `moments.md` |
 
 ## 3 异常事件
 | # | 现象 | 证据 |
@@ -35,14 +35,14 @@
 ## 4 情绪点
 | # | moment ID | 极性 | 时间 | 触发原话（引用） | 状态 | 来源 |
 
-> 「触发原话」取 `<日期>-moments.md` 里该条目的**证据（原话）**字段（`- 证据（原话）：` 下引用块）。极性取值：负面 / 正面 / 认知（见 `managing-lessons-store/assets/moments-template.md`）。
+> 「触发原话」取同目录 `moments.md` 里该条目的**证据（原话）**字段（`- 证据（原话）：` 下引用块）。极性取值：负面 / 正面 / 认知（见 `managing-lessons-store/assets/moments-template.md`）。
 
 ## 5 证据清单
 
 ## 6 未取得的数据
 
 ## 7 声明
-本文件不含判断、不含方案、不含优先级。分析见 <同日>-retro.md。
+本文件不含判断、不含方案、不含优先级。分析见同目录 `retro.md`。
 ```
 
 ## 节号形态（供下游引用）
