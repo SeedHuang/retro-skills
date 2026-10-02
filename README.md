@@ -58,8 +58,9 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 ### 2. `retro-collect` — 采集事实包
 
 - **什么时候用**：要复盘，但还没有事实包。
-- **产出**：`<KB>/projects/<项目标识>/<日期>-facts.md`——纯事实、每条带来源（命令原文 / 文件直读）、零判断；**用户主动触发时**另落同目录 `<日期>-userwords.md`（用户原话，逐字收、不筛选）。
-- **模板**：`skills/retro-collect/assets/facts-template.md`、`userwords-template.md`（逐字使用，权威定义在模板里）。
+- **产出（三样，一次 collect 全部刷新）**：① `<KB>/projects/<项目标识>/<日期>-facts.md`（事实包——纯事实、每条带来源、零判断）；② 同目录 `<日期>-userwords.md`（用户原话，逐字收、不筛选）；③ 同目录 `<日期>-moments.md`（情绪记录——**重扫覆盖本 session**，只清本 session，同日其他 session 保留）。
+- **日期**：一律取 **session 日期**（不是执行当天）——见技能「第 0 步」的优先级阶梯。
+- **模板**：`skills/retro-collect/assets/facts-template.md`、`userwords-template.md`、`skills/managing-lessons-store/assets/moments-template.md`（逐字使用，权威定义在模板里）。
 - **不做什么**：不分析、不给根因、不排优先级（凭印象分析会污染 KB）。
 
 ### 3. `retro-analyze` — 复盘分析
@@ -89,7 +90,7 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 | `node scripts/lessons.mjs resolve` | 解析并校验 KB 根 |
 | `node scripts/lessons.mjs deferred [--project <标识>]` | 轮询推迟项 + 命中判定（报告必须带总数）；`--project` 时附「未结案情绪 / 画像年龄」 |
 | `node scripts/lessons.mjs stats` | 三区 × 维度分布快照（看薄弱面） |
-| `node scripts/lessons.mjs moment add\|resolve ...` | 情绪记录：追加 / 结案 |
+| `node scripts/lessons.mjs moment add\|resolve\|drop ...` | 情绪记录：追加 / 结案 / 清本 session（供 collect 重扫覆盖） |
 | `node scripts/lessons.mjs show <ID>` / `find <关键词>` | 查条目 / 按关键词列条目 |
 | `node scripts/lessons.mjs verify score\|trend\|expect <目标>` | 有效性：算分 / 趋势（5 档）/ 对账事前预期 |
 | `node scripts/lessons.mjs migrate --to <路径>` | 库迁移（带四条硬校验，迁移后旧库不自动删） |

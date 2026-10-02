@@ -5,7 +5,7 @@
 
 ## 落点
 
-`<KB>/projects/<项目标识>/<YYYY-MM-DD>-userwords.md`（**按天分文件**——每天一个，防单文件膨胀/覆盖；日期 = session 日期，不是执行当天，取数见 facts-template）
+`<KB>/projects/<项目标识>/<YYYY-MM-DD>-userwords.md`（**按天分文件**——每天一个，防单文件膨胀/覆盖；日期 = session 日期，不是执行当天——定法以 `retro-collect/SKILL.md`「第 0 步」为权威定义方）
 
 与同目录 `<日期>-facts.md` / `<日期>-moments.md` / `<日期>-ledger.md` 并列。
 

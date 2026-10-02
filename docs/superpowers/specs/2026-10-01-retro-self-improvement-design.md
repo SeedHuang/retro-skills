@@ -88,7 +88,11 @@ node scripts/lessons.mjs moment add --project <标识> --session <session_id> \
   --problem "..." --evidence "<原话，必填>" --reason "<判据：对象→意图→脏字→结论>" [--cause "..."] [--attitude "..."]
 
 node scripts/lessons.mjs moment resolve --project <标识> --id <M-...> --solution "..." --cost "..."
+
+node scripts/lessons.mjs moment drop --project <标识> --date <YYYY-MM-DD> --session <session_id>
 ```
+
+> `moment drop` = 清掉某 session 在某天的全部条目（供 collect 重扫覆盖用）；**按天文件里同日其他 session 的条目原样保留**。
 
 ### 4.2 极性三态（本轮新增）
 
@@ -152,7 +156,7 @@ node scripts/lessons.mjs moment resolve --project <标识> --id <M-...> --soluti
 - **我检测到（负面/正面/认知）→ 当场轻标，不问、不打断**；**克制**：只记"有信息量的"，不是每句都记。
 - **分析/提炼不在收集时做**——并入 lessons 落地分析（§6）。
 - **收尾由用户触发**；不自动。
-- `retro-collect` 读 `<日期>-moments.md`，只把**计数**写进事实包（纯计数、不评价）。
+- **`retro-collect` 重扫覆盖（2026-10-02 定）**：collect 跑时按**当前公式重扫本 session 全对话** → `moment drop`（清本 session 旧条目）→ `moment add` 逐条重写，**直接覆盖、不留旧版**。理由：判定规则会更新，旧条目会缺/不符合；moment 本是「兜底」（不是每个 session 都 collect），对话还在就能随时再生成。**只清本 session**——按天文件可能并存多个 session，其余原样保留。重扫结果写进事实包 **§2 计数 + §4 情绪点**（只记事实：条数与原话；不评价）。**前提：对话仍完整可见；已被压缩 / 扫不全 → 不 drop**（残缺新数据盖掉完整旧数据 = 静默丢数据）。
 - **情绪必须当场抓**（工具不记情绪）；**提问/回答**工具记了 `intent`，可事后回捞，但**当场轻标最稳**（防摘要被清）。
 
 ## 5 事实包梳理（改 `retro-collect`）
@@ -161,11 +165,11 @@ node scripts/lessons.mjs moment resolve --project <标识> --id <M-...> --soluti
 
 | 动作 | 变化 |
 |---|---|
-| 多读一个文件 | `<日期>-moments.md`（筛本 session 条目） |
+| **重扫一个文件** | `<日期>-moments.md`：按当前公式**重扫本 session 全对话** → 覆盖本 session 条目（`moment drop` + `moment add`）；同日其他 session 原样保留 |
 | 多读一个外部源（可选） | `memory\...\session_memory_*.jsonl`（拿 session_id/时间做锚点） |
 | 多写一栏 | facts.md 的 **§4 情绪点**；§2 计数加"情绪点数 / 未结案数" |
 | 多一条来源类型 | **对话原文**（原话）——情绪点没有命令输出 |
-| **不写** | `<日期>-moments.md`（记录器的事）、retro.md、ledger.md |
+| **不写** | retro.md、ledger.md（记录器与账本的事） |
 
 **数据结构**：
 
@@ -183,7 +187,7 @@ node scripts/lessons.mjs moment resolve --project <标识> --id <M-...> --soluti
 
 ```
 D:\Seed\lessons\projects\<项目>\
-  ├─ <日期>-moments.md        ← 记录器写；collect 只读（按天，日期=session 日期）
+  ├─ <日期>-moments.md        ← 记录器写；collect 重扫覆盖本 session（按天，日期=session 日期）
   ├─ <日期>-userwords.md     ← 用户触发写（按天）
   ├─ <日期>-<sesshort>-facts.md   ← collect 产物（加 session 短码，防同日撞名）
   ├─ <日期>-retro.md         ← analyze 产物
@@ -305,16 +309,16 @@ node scripts/lessons.mjs find <关键词>     # 按关键词列相关条目及�
 | 1 | `skills/retro-analyze/SKILL.md` | 说人话；维度 3→5；危害并入优先级；加量化字段与必答清单；改结束动作 |
 | 2 | `skills/using-retrospective/SKILL.md` | 收口建议去落地推荐；③④ 只提议收集；落地归 lessons；**分发「有效性 / 验证」请求到 `retro-verify`** |
 | 3 | `skills/retro-institutionalize/SKILL.md` | 触发说明改"由 lessons 派工"；归属判据=通用性；保留决策树 |
-| 4 | `skills/retro-collect/SKILL.md` | 接入 moment；加 §4 情绪点与计数；来源规则扩"对话原文"；facts 名加 session 短码 |
-| 5 | `skills/managing-lessons-store/scripts/lessons.mjs` | `moment add/resolve`（含极性三态 + §4.5 护栏）+ 巡检扩展 + `show/find` + 体积守卫提醒 + **`verify record/score/trend/expect`（§14 的算数，KB 解析唯一处）** |
-| 6 | `skills/managing-lessons-store/SKILL.md` | 命令表加 `moment`/`show`/`find`/`verify`；职责边界加"情绪记录 / 体积治理 / **验证算数**" |
+| 4 | `skills/retro-collect/SKILL.md` | 接入 moment；加 §4 情绪点与计数；来源规则扩"对话原文"；facts 名加 session 短码；**moments 改为「重扫覆盖本 session」（§4.7）**；**日期定法提为「第 0 步」+ 优先级阶梯** |
+| 5 | `skills/managing-lessons-store/scripts/lessons.mjs` | `moment add/resolve/drop`（含极性三态 + §4.5 护栏；`drop` 供重扫覆盖）+ 巡检扩展 + `show/find` + 体积守卫提醒 + **`verify record/score/trend/expect`（§14 的算数，KB 解析唯一处）** |
+| 6 | `skills/managing-lessons-store/SKILL.md` | 命令表加 `moment`（含 `drop`）/`show`/`find`/`verify`；职责边界加"情绪记录 / 体积治理 / **验证算数**" |
 | 7 | `skills/evolving-skills/references/review-flywheel.md` | 删"现在改还是攒批"→ 只记账（§7.1） |
 | 8 | `skills/evolving-skills/SKILL.md` | 补"技能账本分层/体积守卫"与"改由 lessons 派工"（§7.2） |
 | 9 | `docs/architecture.md` | 同步两仓分工、情绪锚点、画像、巡检、体积治理；扫旧描述与数字 |
 | 10 | `D:\Seed\lessons`（外部 KB） | `index.md`：删"对象"列、候选与推迟"处置完移归档"、登记新机制、Obsidian 约定 |
 | 11 | `skills/retro-verify/`（**新建技能**） | 验证流程 + 判定标准（方向读法 / 置信门槛 / 5 档 / 预期对账）+ 反例集 + `scripts/verify.mjs`（**调 `lessons.mjs` CLI 取数，不 import**，避"单装扑空"） |
 
-**测试**：`moment add/resolve` 纯函数单测（新建/追加/结案/ID 递增/转义/极性必填/缺 `.migrating` 拒绝/路径穿越清洗/resolve 找不到报错/原子写/目录不存在自建）+ `show/find` 单测 + 现有测试全量回归。
+**测试**：`moment add/resolve/drop` 纯函数单测（新建/追加/结案/ID 递增/转义/极性必填/缺 `.migrating` 拒绝/路径穿越清洗/resolve 找不到报错/原子写/目录不存在自建/**drop 只清本 session、同日其他 session 原样保留**/**drop 幂等（文件不存在 → `removed 0` + `fileMissing` / 无匹配 → 0 且字节不变）**/**drop：项目标识清洗后为空 → 拒绝**/**drop：异体格式条目计入 `unparsed` 且保留不误删**）+ `show/find` 单测 + 现有测试全量回归。
 
 ## 12 验证
 
@@ -329,6 +333,9 @@ node scripts/lessons.mjs find <关键词>     # 按关键词列相关条目及�
 9. 【自动】巡检输出含"未结案情绪 N 条"（需 `--project`）"画像 X 天未更新"；主账超阈值时输出"尽早复盘 <目标>"。
 10. 【自动】`lessons show/find` 能按 ID / 关键词返回条目及状态。
 11. 【自动】现有 `lessons.mjs` 测试全量通过（含值内换行折叠、`--date` 校验）。
+12. 【自动】`moment drop` 只清指定 session 的条目，同日其他 session 的条目逐字节保留；文件不存在 → `removed 0` + `fileMissing`（CLI 提示「日期可能写错」）、不新建不改字节；项目标识清洗后为空 → 拒绝；异体格式条目（有极性行、无 session 行）→ 计入 `unparsed`、保留不误删、打 warning。
+13. 【文档】`retro-collect` 有「第 0 步：确定 session 日期」（明写「系统今天禁用」+ 优先级阶梯）；「重扫 moment」节含 `moment drop` 命令且强调「只清本 session」。
+14. 【文档】`retro-collect` 标题为「唯三产出」且列 3 项（含 moments 重扫）；「重扫 moment」节含前提「对话不完整 → 不 drop」。
 
 ## 13 落地节奏
 

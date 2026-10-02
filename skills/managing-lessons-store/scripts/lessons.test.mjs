@@ -378,7 +378,7 @@ test('isDirectRun：经 junction 安装目录启动 → 仍判为"直接执行"�
   }
 })
 
-import { momentAdd, momentResolve, sanitizeProjectId, momentsSummary, showEntry, findEntries, sizeGuard } from './lessons.mjs'
+import { momentAdd, momentResolve, momentDrop, sanitizeProjectId, momentsSummary, showEntry, findEntries, sizeGuard } from './lessons.mjs'
 
 const LEDGER_HEADER = '| ID | 日期 | 归属 | 来源 | 问题 | 根因 | 维度 | 修复 | 载体 | 状态 |\n'
 const LEDGER_SEP = '|---|---|---|---|---|---|---|---|---|---|\n'
@@ -566,7 +566,7 @@ test('moment add：新建 moments.md 头部与模板逐字一致 + 无 BOM', () 
   const text = buf.toString('utf8')
   assert.match(text, /# 情绪记录（moments）/)
   assert.match(text, /格式权威定义见 `managing-lessons-store\/assets\/moments-template.md`（本文件只放数据）/)
-  assert.match(text, /触发：agent 主动（察觉情绪即记，不问）/)
+  assert.match(text, /触发：agent 察觉情绪当场记（不问）；collect 时重扫覆盖本 session/)
   assert.match(text, /判定公式与 userwords 共用/)
   assert.match(text, /负面必填\*\*原话\*\*/)
   assert.match(text, /\n---\n/)
@@ -606,6 +606,75 @@ test('moment add：值内换行被折掉（不注入行 / 不破块）', () => {
   const text = readFileSync(join(root, 'projects', 'p', '2026-10-01-moments.md'), 'utf8')
   assert.equal(/^## 假块/m.test(text), false)            // 没注入出假块
   assert.equal((text.match(/^## M-/gm) || []).length, 1) // 只有 1 个真块
+})
+
+test('moment drop：只清本 session，同日其他 session 条目原样保留', () => {
+  const root = makeStore(tmp())
+  momentAdd(root, { project: 'p', session: 'A', polarity: '负面', problem: 'a1', evidence: 'x1', date: '2026-10-01', reason: 'r' })
+  momentAdd(root, { project: 'p', session: 'B', polarity: '正面', problem: 'b1', evidence: 'y1', date: '2026-10-01', reason: 'r' })
+  momentAdd(root, { project: 'p', session: 'A', polarity: '认知', problem: 'a2', evidence: 'x2', date: '2026-10-01', reason: 'r' })
+  const file = join(root, 'projects', 'p', '2026-10-01-moments.md')
+  const beforeText = readFileSync(file, 'utf8')
+  const bStart = beforeText.indexOf('## M-2026-10-01-2')
+  const bBlock = beforeText.slice(bStart, beforeText.indexOf('## M-2026-10-01-3')).trimEnd()
+  const r = momentDrop(root, { project: 'p', date: '2026-10-01', session: 'A' })
+  assert.equal(r.ok, true)
+  assert.equal(r.removed, 2)
+  const after = readFileSync(file, 'utf8')
+  assert.equal(/^## M-2026-10-01-1/m.test(after), false)
+  assert.equal(/^## M-2026-10-01-3/m.test(after), false)
+  assert.equal(after.includes(bBlock), true)      // B 的块一字未动
+  assert.match(after, /# 情绪记录（moments）/)     // 头部保留
+})
+
+test('moment drop：文件不存在 → removed 0 + fileMissing（幂等，不新建文件）', () => {
+  const root = makeStore(tmp())
+  const r = momentDrop(root, { project: 'p', date: '2026-10-01', session: 'A' })
+  assert.equal(r.ok, true)
+  assert.equal(r.removed, 0)
+  assert.equal(r.fileMissing, true)   // 供 CLI 区分「日期写错」与「无匹配条目」
+  assert.equal(existsSync(join(root, 'projects', 'p', '2026-10-01-moments.md')), false)
+})
+
+test('moment drop：项目标识清洗后为空 → 拒绝', () => {
+  const root = makeStore(tmp())
+  const r = momentDrop(root, { project: '|||', date: '2026-10-01', session: 'A' })
+  assert.equal(r.ok, false)
+  assert.match(r.reason, /清洗后为空/)
+})
+
+test('moment drop：异体格式条目（有极性行、无 session 行）→ 计数并保留、不静默误删', () => {
+  const root = makeStore(tmp())
+  mkdirSync(join(root, 'projects', 'p'), { recursive: true })
+  const file = join(root, 'projects', 'p', '2026-10-01-moments.md')
+  writeFileSync(file,
+    '# 情绪记录（moments）\n\n## M-2026-10-01-1\n- 极性：负面｜项目：p｜message：—｜时间：2026-10-01\n- 证据（原话）：\n  > 手改坏了 session 行\n',
+    'utf8')
+  const before = readFileSync(file, 'utf8')
+  const r = momentDrop(root, { project: 'p', date: '2026-10-01', session: 'A' })
+  assert.equal(r.ok, true)
+  assert.equal(r.removed, 0)
+  assert.equal(r.unparsed, 1)                       // 报出来了，不再静默
+  assert.equal(readFileSync(file, 'utf8'), before)  // 不误删
+})
+
+test('moment drop：本 session 无条目 → removed 0 且文件字节不变', () => {
+  const root = makeStore(tmp())
+  momentAdd(root, { project: 'p', session: 'B', polarity: '正面', problem: 'b', evidence: 'y', date: '2026-10-01', reason: 'r' })
+  const file = join(root, 'projects', 'p', '2026-10-01-moments.md')
+  const before = readFileSync(file, 'utf8')
+  const r = momentDrop(root, { project: 'p', date: '2026-10-01', session: 'A' })
+  assert.equal(r.ok, true)
+  assert.equal(r.removed, 0)
+  assert.equal(readFileSync(file, 'utf8'), before)
+})
+
+test('moment drop：缺 --session / 缺 --date / migrating → 拒绝', () => {
+  const root = makeStore(tmp())
+  assert.match(momentDrop(root, { project: 'p', date: '2026-10-01' }).reason, /--session/)
+  assert.match(momentDrop(root, { project: 'p', session: 'A' }).reason, /--date/)
+  writeFileSync(join(root, '.migrating'), 'x', 'utf8')
+  assert.match(momentDrop(root, { project: 'p', date: '2026-10-01', session: 'A' }).reason, /迁移中/)
 })
 
 import {

@@ -372,7 +372,7 @@ export function momentAdd(root, opts, deps = {}) {
   if (!project) return { ok: false, reason: '项目标识清洗后为空' }
   const date = opts.date // 必填（validateMoment 已校验）= session 日期，不是执行当天
   const file = join(root, 'projects', project, `${date}-moments.md`)
-  const text = existsSync(file) ? readFileSync(file, 'utf8').replace(/^\uFEFF/, '') : '# 情绪记录（moments）\n\n> 格式权威定义见 `managing-lessons-store/assets/moments-template.md`（本文件只放数据）。\n> 触发：agent 主动（察觉情绪即记，不问）。极性：负面 / 正面 / 认知，全收。\n> 判定公式与 userwords 共用（对象主判据，情绪由对象+意图推出）。\n> 负面必填**原话**（不猜原因/态度）；原因/态度为可选，写则标「（推断）」。\n\n---\n'
+  const text = existsSync(file) ? readFileSync(file, 'utf8').replace(/^\uFEFF/, '') : '# 情绪记录（moments）\n\n> 格式权威定义见 `managing-lessons-store/assets/moments-template.md`（本文件只放数据）。\n> 触发：agent 察觉情绪当场记（不问）；collect 时重扫覆盖本 session。极性：负面 / 正面 / 认知，全收。\n> 判定公式与 userwords 共用（对象主判据，情绪由对象+意图推出）。\n> 负面必填**原话**（不猜原因/态度）；原因/态度为可选，写则标「（推断）」。\n\n---\n'
   if (!opts.message) process.stderr.write(`[warn] moment add：未提供 --message，事后无法定位到具体对话（仅 session 级可查）\n`)
   const id = `M-${date}-${nextMomentSeq(text, date)}`
   const block = buildMoment({ id, project, session: opts.session, message: opts.message, date, polarity: opts.polarity, problem: opts.problem, cause: opts.cause, attitude: opts.attitude, evidence: opts.evidence, reason: opts.reason })
@@ -412,6 +412,41 @@ export function momentResolve(root, opts) {
   if (changed === 0) return { ok: false, reason: `条目 ${opts.id} 无可改字段（文件未改动）` }
   atomicWrite(file, lines.join('\n'))
   return { ok: true, id: opts.id }
+}
+
+/** 清掉某 session 在某天的全部条目（供 collect 重扫覆盖用）；同一天其他 session 的条目原样保留 */
+export function momentDrop(root, opts) {
+  if (existsSync(join(root, '.migrating'))) return { ok: false, reason: '错题集正在迁移中，请等迁移结束后重试' }
+  if (!opts.project) return { ok: false, reason: '缺少 --project' }
+  if (!opts.date) return { ok: false, reason: '必须提供 --date（= session 日期，不是执行当天）' }
+  if (!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(opts.date)) return { ok: false, reason: `--date 必须是 YYYY-MM-DD（收到：${opts.date}）` }
+  if (!opts.session) return { ok: false, reason: '缺少 --session（指定要清除哪个 session 的条目）' }
+  const project = sanitizeProjectId(opts.project)
+  if (!project) return { ok: false, reason: '项目标识清洗后为空' }
+  const file = join(root, 'projects', project, `${opts.date}-moments.md`)
+  if (!existsSync(file)) return { ok: true, removed: 0, unparsed: 0, fileMissing: true }
+  const lines = readFileSync(file, 'utf8').replace(/^\uFEFF/, '').split('\n')
+  const heads = []
+  for (let i = 0; i < lines.length; i++) if (/^##\s+M-/.test(lines[i])) heads.push(i)
+  if (!heads.length) return { ok: true, removed: 0, unparsed: 0 }
+  const keep = []
+  let removed = 0, unparsed = 0
+  for (let k = 0; k < heads.length; k++) {
+    const s = heads[k]
+    const e = k + 1 < heads.length ? heads[k + 1] : lines.length
+    const block = lines.slice(s, e)
+    const polLine = block.find((l) => /^- 极性：/.test(l))
+    const ses = polLine && polLine.match(/session：([^｜]*)/)
+    if (ses && ses[1].trim() === opts.session) { removed++; continue }
+    if (polLine && !ses) unparsed++   // 有极性行却解析不出 session：格式异体，静默跳过会残留
+    keep.push([s, e])
+  }
+  if (unparsed) process.stderr.write(`[warn] moment drop：${unparsed} 个条目没有可解析的 session 行（格式异体），已跳过未删——请人工复核\n`)
+  if (removed === 0) return { ok: true, removed: 0, unparsed }
+  const out = lines.slice(0, heads[0])
+  for (const [s, e] of keep) out.push(...lines.slice(s, e))
+  atomicWrite(file, out.join('\n').replace(/\s*$/, '') + '\n')
+  return { ok: true, removed, unparsed }
 }
 
 /** 统计某项目所有按天 moments 文件的总条数与未结案数 */
@@ -730,8 +765,15 @@ if (isMain) {
       const res = momentResolve(r.root, { project: argOf('--project'), id: argOf('--id'), solution: argOf('--solution'), cost: argOf('--cost') })
       if (!res.ok) { process.stderr.write(`结案失败：${res.reason}\n`); process.exit(1) }
       process.stdout.write(`已结案：${res.id}\n`); process.exit(0)
+    } else if (sub === 'drop') {
+      const res = momentDrop(r.root, { project: argOf('--project'), date: argOf('--date'), session: argOf('--session') })
+      if (!res.ok) { process.stderr.write(`清除失败：${res.reason}\n`); process.exit(1) }
+      if (res.fileMissing) process.stdout.write(`未找到 ${argOf('--date')}-moments.md——日期可能写错了，请复核；本次未改动任何文件\n`)
+      else if (res.removed === 0) process.stdout.write(`本 session 在该日无条目，未改动（未识别条目 ${res.unparsed} 个）\n`)
+      else process.stdout.write(`已清除本 session 旧条目 ${res.removed} 条（未识别条目 ${res.unparsed} 个）\n`)
+      process.exit(0)
     }
-    process.stderr.write('用法：lessons moment add|resolve --project <标识> ...\n'); process.exit(1)
+    process.stderr.write('用法：lessons moment add|resolve|drop --project <标识> ...\n'); process.exit(1)
   }
   else if (cmd === 'show') {
     const r = resolveStore({ env: process.env, pointerPaths: pointerCandidates(), deps: { isInsideGitRepo } })
@@ -789,6 +831,6 @@ if (isMain) {
     }
     process.stderr.write('用法：lessons verify record|score|trend|expect <目标（技能名 或 KB 条目 ID）> ...\n'); process.exit(1)
   }
-  process.stderr.write(`未知命令：${cmd}\n支持：resolve | deferred [--project <标识>] | stats | migrate --to <path> | moment add|resolve | show <ID> | find <关键词> | verify record|score|trend|expect <目标>\n`)
+  process.stderr.write(`未知命令：${cmd}\n支持：resolve | deferred [--project <标识>] | stats | migrate --to <path> | moment add|resolve|drop | show <ID> | find <关键词> | verify record|score|trend|expect <目标>\n`)
   process.exit(1)
 }

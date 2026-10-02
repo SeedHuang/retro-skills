@@ -22,6 +22,7 @@ description: Use when 需要初始化错题集库、迁移库到新位置、轮�
 | `node scripts/lessons.mjs stats` | 三区 × 维度分布快照（看薄弱面；实时扫描三区账本） |
 | `node scripts/lessons.mjs moment add --project <标识> --session <id> --polarity <负面\|正面\|认知> ...` | 追加一条情绪记录（必给 `--problem/--evidence`（原话）/**`--reason`（判据：对象→意图→脏字→结论）**；`--cause/--attitude` 可选且须标推断）。落 **`<日期>-moments.md`（按天，日期 = session 日期）**。格式见 `assets/moments-template.md`，判定公式与 userwords 共用 |
 | `node scripts/lessons.mjs moment resolve --project <标识> --id <M-...> --solution "..." [--cost "..."]` | 结案：只改该条目的状态与解法/代价 |
+| `node scripts/lessons.mjs moment drop --project <标识> --date <日期> --session <id>` | 清掉本 session 在某天的全部条目（供 collect 重扫覆盖用）；**同日其他 session 的条目原样保留** |
 | `node scripts/lessons.mjs show <ID>` | 查单条（状态 / 载体 / 维度） |
 | `node scripts/lessons.mjs find <关键词>` | 按关键词列相关条目及状态 |
 | `node scripts/lessons.mjs verify record <目标> --period <期> --a <机会数> [--b --n --p --date --expect --signal --note]` | 记一期有效性（台账不存在则建表头）；`<目标>` = 技能名 或 KB 条目 ID |

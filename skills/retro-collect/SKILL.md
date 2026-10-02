@@ -5,12 +5,27 @@ description: Use when 需要采集一段开发过程的客观事实（时间线 
 
 # 采集事实包（retro-collect）
 
-## 唯二产出
+## 第 0 步：确定 session 日期（先做，再动手）
 
-1. **事实包**——落 `<KB>/projects/<项目标识>/<YYYY-MM-DD>-<sesshort>-facts.md`
-2. **用户原话**（仅当用户主动触发）——落同目录 `<YYYY-MM-DD>-userwords.md`
+本技能所有日期一律取 **session 的日期**——session 是 9/30 就写 2026-09-30，哪怕今天才 collect。**系统环境里的「今天是 X」与本技能无关，禁止采用。**
 
-**日期取 session 的日期，不是执行当天**——session 是 9/30 就写 2026-09-30，哪怕今天才 collect。取数：session 上下文锚点（`memory\projects\<项目>\<YYYYMMDD>\` 目录名 / session_id 关联），拿不到 → 问用户，不用系统时间。
+按这个顺序定；定不下来就立刻问，**不要卡在「到底用哪个」**：
+
+1. 用户在本 session 说过日期 → 用
+2. 锚点 `~\.trae-cn\memory\projects\<项目>\<YYYYMMDD>\` 唯一、无歧义 → 用
+3. 都不是 → **开工第一句就问用户**（问是正常的一步，不是失败兜底）
+
+**落笔前先输出一行**：`session 日期 = YYYY-MM-DD｜依据 = <用户告知 / 锚点路径>`——供用户当场纠正；不写就会含糊着往下走。
+
+## 唯三产出
+
+跑一次 collect，产出 / 刷新这三样：
+
+1. **事实包**——`<KB>/projects/<项目标识>/<YYYY-MM-DD>-<sesshort>-facts.md`
+2. **用户原话**——同目录 `<YYYY-MM-DD>-userwords.md`
+3. **情绪记录（moments）**——同目录 `<YYYY-MM-DD>-moments.md`（重扫覆盖本 session 那批，见下节）
+
+差别只在**平时谁在记**：moments 由 agent 察觉情绪当场记、collect 只负责重扫补漏；1、2 由 collect 产。
 
 （`<sesshort>` = session 短码，**防同日多 session 撞名**。）
 KB 未初始化时：**REQUIRED SUB-SKILL:** 先用 `managing-lessons-store` 完成 bootstrap。
@@ -22,6 +37,7 @@ KB 未初始化时：**REQUIRED SUB-SKILL:** 先用 `managing-lessons-store` 完
 |---|---|
 | 事实包 | `assets/facts-template.md`（七节结构 + 节号形态 + 缺一即不合格） |
 | 用户原话 | `assets/userwords-template.md`（触发权 + 块规则 + 标签两栏定义） |
+| 情绪记录（重扫） | `managing-lessons-store/assets/moments-template.md`（结构 + 判定公式；重扫写入用） |
 
 **自创结构不用模板，是本技能明列的常见错误。** 模板不搬进本文，只引用。
 
@@ -29,15 +45,25 @@ KB 未初始化时：**REQUIRED SUB-SKILL:** 先用 `managing-lessons-store` 完
 
 写 KB 前先查 `<KB>/.migrating`：**存在 → 拒绝写入**，报告「错题集正在迁移中，请等迁移结束后重试」；不存在 → 继续。
 
-## 读入 moment（本项目）
+## 重扫 moment（覆盖本 session）
 
-收集事实时**多读一个文件**：`<KB>/projects/<项目标识>/<日期>-moments.md`——按 **session 锚点/时间**筛出**本 session**的条目，把**计数**（情绪点数 / 未结案数）与每条「触发原话」写进事实包（见模板 §2 / §4）。**纯计数、不评价**——这里是零判断区，不是分析。
+收集事实时**按当前的情绪判定公式重扫本 session 全对话**，重新记录情绪点。理由：判定规则会更新，早先记的会缺、会不符合；moment 本是「兜底」（不是每个 session 都 collect），一旦 collect 真跑了、对话还在，重扫比当时零散记的更完整——所以**直接覆盖，不留旧版**。
+
+**前提：本 session 对话仍完整可见。** 若已被压缩 / 截断（扫不全）→ **不要 drop**：残缺的新数据盖掉完整的旧数据 = 静默丢数据。此时只补新发现的条目，或直接告诉用户「本 session 对话已不全，先不覆盖」——不许自己决定硬覆盖。
+
+**只覆盖本 session 的条目**：`<日期>-moments.md` 按天分文件，同一天可能躺着好几个 session 的记录，**别人的一根不动**。两步：
+
+1. 清掉本 session 旧条目（`<日期>` 用第 0 步定出的 session 日期）：
+   `node scripts/lessons.mjs moment drop --project <标识> --date <日期> --session <session_id>`
+2. 用 `moment add` 逐条重写重扫结果（判定公式见 `retro-collect/assets/userwords-template.md`）
+
+重扫结果同时写进事实包 **§2 计数 / §4 情绪点**——第 2 栏填数字（几条 / 未结案几条），第 4 栏填明细（编号 + 极性 + 原话）；**只记事实，不评价**（这里是零判断区，不是分析）。
 
 （可选）再读外部锚点 `~\.trae-cn\memory\projects\<项目>\<日期>\session_memory_*.jsonl`，**只用于校验 session_id / 时间，不作为正文事实或原话来源**——2026-10-02 实测该文件严重滞后（切换 session + 多轮对话后仍零新增）。
 
-## 收集用户原话（仅当用户主动触发）
+## 收集用户原话
 
-**触发权在用户**：点名 `userwords` 或触发本技能时，才收集用户本 session 的**全部**原话；**agent 不得自行触发**。
+**触发权在用户**：collect 由你触发，跑到这一步就收本 session 的**全部**原话；**你没触发 collect 时，agent 不得自行收**。
 
 **不筛**：当场不判断哪句有价值——价值由分析阶段判断。**逐字抄录**，长句写全文。原话只能来自当前对话，**禁止**从 jsonl 取（见上节）。
 
@@ -62,7 +88,7 @@ KB 未初始化时：**REQUIRED SUB-SKILL:** 先用 `managing-lessons-store` 完
 | 1 | 校验脚本报路径冲突 | > `Error: EEXIST: file already exists, mkdir 'D:\\x'` |
 ```
 
-4. **用户原话只在用户主动触发时收集**，且**不做提炼**——「这句话说明什么」归分析阶段（用户在 lessons 发起落地分析）。见 `assets/userwords-template.md`。
+4. **用户原话在 collect（由用户触发）时收集**，且**不做提炼**——「这句话说明什么」归分析阶段（用户在 lessons 发起落地分析）。见 `assets/userwords-template.md`。
 
 ## 第 6 栏「未取得的数据」不可省
 
@@ -98,3 +124,7 @@ KB 未初始化时：**REQUIRED SUB-SKILL:** 先用 `managing-lessons-store` 完
 | 把事实包写进项目仓库的 `docs/` | 落点是 `<KB>/projects/<项目标识>/`；KB 在仓库外，写进仓库等于把个人数据提交出去 |
 | 把原文（报错、日志）直接写在叙述里 | 原文一律放进引用块或代码块——否则「只写事实」的检查无法把它与叙述区分开 |
 | 叙述里用了评价词（应该 / 显然 / 问题…） | 跑一遍 `examples/verdict-fixtures.md` 黑名单自检，改写为纯事实 |
+| **拿系统「今天」的日期当 session 日期** | 见「第 0 步」——一律 session 日期；定不下来就问，别用系统时间 |
+| **重扫 moment 时把整个当天文件盖掉** | 只 `moment drop` 本 session，同日其他 session 的条目一根不动 |
+| **重扫 moment 只读旧文件、不重扫对话** | 要按当前公式重扫本 session 全对话 |
+| **对话已压缩 / 扫不全，仍执行 drop** | 前提不成立就别覆盖——残缺的新数据盖掉完整的旧数据 = 静默丢数据 |

@@ -6,13 +6,26 @@
 
 ## 落点
 
-`<KB>/projects/<项目标识>/<YYYY-MM-DD>-moments.md`（**按天分文件**——每天一个，防单文件膨胀/覆盖；日期 = session 日期，不是执行当天，取数见 `retro-collect/assets/facts-template.md`）
+`<KB>/projects/<项目标识>/<YYYY-MM-DD>-moments.md`（**按天分文件**——每天一个，防单文件膨胀/覆盖；日期 = session 日期，不是执行当天——定法以 `retro-collect/SKILL.md`「第 0 步」为权威定义方）
 
 与同目录 `<日期>-facts.md` / `<日期>-userwords.md` 并列。
 
 ## 触发（谁有权写）
 
-**agent 主动**——察觉用户情绪时当场记，不用问用户。与 userwords（用户触发）本质不同。
+两条写路径：
+
+1. **agent 主动**——察觉用户情绪时**当场记**，不用问用户（主路径，平时就在记）。
+2. **`retro-collect` 重扫**——跑到 collect 时按当前公式重扫本 session 全对话，覆盖本 session 那批（补漏，见下节）。
+
+与 userwords 的区别：userwords 只在跑 collect 时才产；moments 平时就在记，collect 只负责重扫补漏。
+
+## 重扫与覆盖（`retro-collect` 跑时）
+
+collect 时按**当前**判定公式**重扫本 session 全对话** → `moment drop`（清本 session 旧条目）→ `moment add` 逐条重写。**直接覆盖，不留旧版**——对话还在，随时可再生成。
+
+**前提：本 session 对话仍完整可见。** 若已被压缩 / 截断（扫不全）→ **不要 drop**：残缺的新数据盖掉完整的旧数据 = 静默丢数据。此时只补新发现的，或先告诉用户「对话已不全，不覆盖」。
+
+**只覆盖本 session 的条目**：按天文件里可能并存多个 session，`moment drop --session <S>` 只清这一个，其余原样保留。
 
 ## 记什么（三类极性，全收）
 
@@ -38,7 +51,7 @@
 # 情绪记录（moments）
 
 > 格式权威定义见 `managing-lessons-store/assets/moments-template.md`（本文件只放数据）。
-> 触发：agent 主动（察觉情绪即记，不问）。极性：负面 / 正面 / 认知，全收。
+> 触发：agent 察觉情绪当场记（不问）；collect 时重扫覆盖本 session。极性：负面 / 正面 / 认知，全收。
 > 判定公式与 userwords 共用（对象主判据，情绪由对象+意图推出）。
 > 负面必填**原话**（不猜原因/态度）；原因/态度为可选，写则标「（推断）」。
 
