@@ -394,7 +394,10 @@ test('sanitizeDirSegment：Windows 保留字符 / 结尾点 / 截断 / 空 → �
   assert.equal(sanitizeDirSegment('结尾点...'), '结尾点')
   assert.equal(sanitizeDirSegment('a   b'), 'a-b')
   assert.equal(sanitizeDirSegment('<>:"/\\|?*'), '')
-  assert.equal(sanitizeDirSegment('x'.repeat(30)).length, 20)
+  assert.equal(sanitizeDirSegment('x'.repeat(20)).length, 20)   // 边界：恰好 20 → 不截
+  assert.equal(sanitizeDirSegment('x'.repeat(21)).length, 20)   // 边界：21 → 截到 20
+  assert.equal(sanitizeDirSegment('x'.repeat(30)).length, 20)   // 上限 = 20（sanitizeDirSegment 默认 max）
+  assert.equal([...sanitizeDirSegment('😀'.repeat(30))].length, 20)  // 含 emoji：按**码点**截断，不留孤立代理项
 })
 
 test('findSessionDir：段匹配 / 多命中报错 / 不被摘要里的同串骗到', () => {
@@ -408,7 +411,9 @@ test('findSessionDir：段匹配 / 多命中报错 / 不被摘要里的同串骗
   mk('2026-10-05-11111111-摘要里含-ffffffff-的串')
   assert.equal(findSessionDir(root, 'p', '2026-10-01', 'aaaabbbb').dir, '2026-10-01-aaaabbbb-第一句摘要')
   assert.equal(findSessionDir(root, 'p', '2026-10-01', 'ccccdddd').dir, '2026-10-01-ccccdddd')
-  assert.equal(findSessionDir(root, 'p', '2026-10-01', '99999999').dir, null)   // 同日多目录、未命中 → 不猜
+  const none = findSessionDir(root, 'p', '2026-10-01', '99999999')  // 同日多目录、未命中 → 不猜
+  assert.equal(none.ok, true)                                        // 不是错误，只是没有可复用的目录
+  assert.equal(none.dir, null)
   assert.equal(findSessionDir(root, 'p', '2026-10-04', 'eeeeeeee').ok, false)  // 多命中 → 报错
   assert.equal(findSessionDir(root, 'p', '2026-10-05', 'ffffffff').dir, '2026-10-05-ffffffff') // 段匹配，不假命中
 })
@@ -446,7 +451,7 @@ test('moment add：碰撞护栏——命中目录但首句不一致 → 报错�
   const dir = join(root, 'projects', 'p', '2026-10-01-aaaabbbb')
   mkdirSync(dir, { recursive: true })
   const facts = join(dir, 'facts.md')
-  writeFileSync(facts, '# 事实包\n\n- session：aaaabbbb｜首句：甲｜memory id：—\n', 'utf8')
+  writeFileSync(facts, '# 事实包\n\n- session：aaaabbbb｜首句：甲｜memory id：—｜message 范围：2026-10-01 09:00..2026-10-01 10:00\n', 'utf8')
   const before = readFileSync(facts, 'utf8')
   const r = momentAdd(root, { project: 'p', session: 'aaaabbbb', polarity: '负面', problem: 'x', evidence: 'y', reason: 'r', date: '2026-10-01', firstMessage: '乙' })
   assert.equal(r.ok, false)
@@ -459,9 +464,21 @@ test('moment add：首句一致 → 碰撞护栏放行', () => {
   const root = makeStore(tmp())
   const dir = join(root, 'projects', 'p', '2026-10-01-aaaabbbb')
   mkdirSync(dir, { recursive: true })
-  writeFileSync(join(dir, 'facts.md'), '- session：aaaabbbb｜首句：甲｜memory id：—\n', 'utf8')
+  writeFileSync(join(dir, 'facts.md'), '- session：aaaabbbb｜首句：甲｜memory id：—｜message 范围：2026-10-01 09:00..10:00\n', 'utf8')
   const r = momentAdd(root, { project: 'p', session: 'aaaabbbb', polarity: '负面', problem: 'x', evidence: 'y', reason: 'r', date: '2026-10-01', firstMessage: '甲' })
   assert.equal(r.ok, true)
+})
+
+test('moment add：碰撞护栏对「缺 memory id 栏」的 facts 头同样有效（该栏规范里是可选）', () => {
+  const root = makeStore(tmp())
+  const dir = join(root, 'projects', 'p', '2026-10-01-aaaabbbb')
+  mkdirSync(dir, { recursive: true })
+  writeFileSync(join(dir, 'facts.md'), '- session：aaaabbbb｜首句：甲｜message 范围：2026-10-01 09:00..10:00\n', 'utf8')
+  const ok = momentAdd(root, { project: 'p', session: 'aaaabbbb', polarity: '负面', problem: 'x', evidence: 'y', reason: 'r', date: '2026-10-01', firstMessage: '甲' })
+  assert.equal(ok.ok, true, '首句一致就该放行——正则版实现在这里会误判碰撞')   // 回归护栏
+  const bad = momentAdd(root, { project: 'p', session: 'aaaabbbb', polarity: '负面', problem: 'x', evidence: 'y', reason: 'r', date: '2026-10-01', firstMessage: '乙' })
+  assert.equal(bad.ok, false)
+  assert.match(bad.reason, /首句不一致/)
 })
 
 const LEDGER_HEADER = '| ID | 日期 | 归属 | 来源 | 问题 | 根因 | 维度 | 修复 | 载体 | 状态 |\n'
@@ -596,6 +613,26 @@ test('moment resolve：只改指定条目，其余字节不变', () => {
   assert.match(after, /- 状态：已解决/)
   assert.match(after, /- 解法：改用大白话｜代价：3 轮/)
   assert.equal(after.includes(tail), true) // 第二条一字未动
+})
+
+test('moment resolve：--id 格式非法 → 拒绝（新旧交替式护栏的负例）', () => {
+  const root = makeStore(tmp())
+  for (const bad of ['M-2026-10-1', 'M--1', 'M-2026-09-30-1-x', 'M-aaaaaaaa', 'foo']) {
+    const r = momentResolve(root, { project: 'p', id: bad, solution: 'x' })
+    assert.equal(r.ok, false, `应拒绝 id=${bad}`)
+    assert.match(r.reason, /--id 格式/)
+  }
+})
+
+test('moment resolve：同一文件里重复同名标题 → 判为歧义、拒绝（不静默取第一个）', () => {
+  const root = makeStore(tmp())
+  const dir = join(root, 'projects', 'p', '2026-10-01-aaaaaaaa')
+  mkdirSync(dir, { recursive: true })
+  writeFileSync(join(dir, 'moments.md'),
+    '# 情绪记录（moments）\n\n## M-aaaaaaaa-1\n- 极性：负面｜项目：p｜session：aaaaaaaa｜message：—｜时间：2026-10-01\n- 状态：未解决\n\n## M-aaaaaaaa-1\n- 极性：正面｜项目：p｜session：aaaaaaaa｜message：—｜时间：2026-10-01\n- 状态：未解决\n', 'utf8')
+  const r = momentResolve(root, { project: 'p', id: 'M-aaaaaaaa-1', solution: 'x' })
+  assert.equal(r.ok, false)
+  assert.match(r.reason, /歧义/)
 })
 
 test('moment resolve：旧 id（M-<日期>-N）在 session 目录里同样可定位', () => {
@@ -786,7 +823,20 @@ test('moment drop：项目标识清洗后为空 → 拒绝', () => {
   assert.match(r.reason, /清洗后为空/)
 })
 
+test('moment drop：目录在但 moments.md 不在 → fileMissing（collect 中途的真实状态）', () => {
+  const root = makeStore(tmp())
+  mkdirSync(join(root, 'projects', 'p', '2026-10-01-cccccccc'), { recursive: true })   // 只建目录
+  const r = momentDrop(root, { project: 'p', date: '2026-10-01', session: 'cccccccc' })
+  assert.equal(r.ok, true)
+  assert.equal(r.removed, 0)
+  assert.equal(r.fileMissing, true)
+  assert.equal(existsSync(join(root, 'projects', 'p', '2026-10-01-cccccccc', 'moments.md')), false)  // 不新建
+})
+
 test('moment drop：`## M-` 块一律清掉（含格式异体：缺 session 行 / 混入半角 |）', () => {
+  // 前提不变量：**文件即本 session**（一 session 一目录）。所以 drop 按 `^##\s+M-` 全清，
+  // **不再按 `session：` 字段过滤**——旧实现那套 `unparsed` 护栏已随目录制退场。
+  // 下面两个块的 session 字段一个缺失、一个写着 `A`，也一并清掉（重扫会重写）。
   const root = makeStore(tmp())
   mkdirSync(join(root, 'projects', 'p', '2026-10-01-cccccccc'), { recursive: true })
   const file = join(root, 'projects', 'p', '2026-10-01-cccccccc', 'moments.md')

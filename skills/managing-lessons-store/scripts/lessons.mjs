@@ -379,7 +379,7 @@ export function sanitizeDirSegment(s, max = 20) {
     .replace(/\s+/g, '-')                              // 空白（含全角空格）折 -
     .replace(/-+/g, '-')
     .replace(/^[.\-]+|[.\-]+$/g, '')
-  return cleaned.slice(0, max).replace(/[.\-]+$/, '')  // 截断后可能又露出结尾点/横线，再去一次
+  return [...cleaned].slice(0, max).join('').replace(/[.\-]+$/, '')  // 按码点截断（防拆开代理对）；截断后可能又露出结尾点/横线，再去一次
 }
 
 /** 列出项目下所有 session 目录名 */
@@ -409,8 +409,12 @@ export function findSessionDir(root, project, date, sid) {
 export function readRecordedFirstMessage(root, project, dir) {
   const f = join(root, 'projects', project, dir, 'facts.md')
   if (!existsSync(f)) return null
-  const m = readFileSync(f, 'utf8').replace(/^\uFEFF/, '').match(/^- session：.*?｜首句：(.*?)(?:｜memory id：.*)?$/m)
-  return m ? normText(m[1]) : null
+  const text = readFileSync(f, 'utf8').replace(/^\uFEFF/, '')
+  const at = text.indexOf('- session：')
+  if (at < 0) return null
+  // 按 ｜ 切格找「首句：」格——与相邻字段名 / 顺序解耦（`memory id` 是可选栏，可能整栏缺失）
+  const cell = text.slice(at).split('｜').find((c) => c.trim().startsWith('首句：'))
+  return cell ? normText(cell.trim().slice('首句：'.length)) : null
 }
 
 /** 本 session 文件里已有条目数 + 1（按 sid 计数） */
@@ -471,7 +475,9 @@ export function momentResolve(root, opts) {
     const f = join(root, 'projects', project, d, 'moments.md')
     if (!existsSync(f)) continue
     const text = readFileSync(f, 'utf8').replace(/^\uFEFF/, '')
-    if (text.split('\n').some((l) => l.trim() === `## ${opts.id}`)) hits.push({ f, text })
+    // 按标题出现**次数**计歧义（spec §6.1-F）：同一文件里重复同名标题也算，不能静默取第一个
+    const n = text.split('\n').filter((l) => l.trim() === `## ${opts.id}`).length
+    for (let k = 0; k < n; k++) hits.push({ f, text })
   }
   if (!hits.length) return { ok: false, reason: `找不到条目 ${opts.id}（文件未改动）` }
   if (hits.length > 1) return { ok: false, reason: `条目 ${opts.id} 在多处出现（${hits.length} 处）——歧义，请人工处理` }
