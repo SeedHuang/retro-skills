@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync, existsSync } from 'node:fs'
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync, readdirSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { resolveStore, checkStore } from './lessons.mjs'
@@ -710,6 +710,33 @@ test('守卫：momentAdd 生成头 ↔ moments-template §模板 头部逐字一
   assert.ok(m, '模板中应有 §模板 markdown 代码块')
   const tplHeader = m[1].slice(0, m[1].indexOf('## M-')).trimEnd()
   assert.equal(genHeader, tplHeader)
+})
+
+test('守卫：模板里每个表头后面必须有分隔行（防生成物表格塌成纯文本）', () => {
+  // 背景（2026-10-02 实测）：facts-template 的 §2 把分隔行位置写成了占位符「| … | … | … |」，
+  // 而技能要求"逐字使用"模板 → 生成的事实包表格不渲染，整段降级成纯文本。
+  // 这里用与当时同一套判据守住：表头行的下一行必须是 |---|（可带对齐冒号）。
+  const skillsUrl = new URL('../../', import.meta.url)          // → skills/
+  const files = []
+  for (const e of readdirSync(skillsUrl, { withFileTypes: true })) {
+    if (!e.isDirectory()) continue
+    const assets = new URL(`${e.name}/assets/`, skillsUrl)
+    if (!existsSync(assets)) continue
+    for (const f of readdirSync(assets)) if (/template.*\.md$/i.test(f)) files.push(new URL(f, assets))
+  }
+  assert.ok(files.length >= 4, `应扫到 ≥4 个模板（实际 ${files.length}）`)
+  for (const f of files) {
+    const lines = readFileSync(f, 'utf8').replace(/^\uFEFF/, '').split(/\r?\n/)   // CRLF 也要能读
+    for (let i = 1; i < lines.length - 1; i++) {
+      // 表头行 = 本行以 `|` 开头、上一行不是 `|`（即表格的起点）
+      if (!/^\|/.test(lines[i]) || /^\|/.test(lines[i - 1])) continue
+      assert.match(
+        lines[i + 1],
+        /^\|[-: |]+\|$/,
+        `${f.pathname} 第 ${i + 1} 行是表头，下一行必须是分隔行（否则整张表不渲染）；实际收到「${lines[i + 1]}」`,
+      )
+    }
+  }
 })
 
 test('showEntry / findEntries：查单条与按关键词', () => {
