@@ -524,7 +524,7 @@ test('moment resolve：正面/认知条目 → 报「不结案」且文件不变
   assert.equal(readFileSync(file, 'utf8'), before)
 })
 
-test('moment add：新建 moments.md 带头部说明 + 无 BOM', () => {
+test('moment add：新建 moments.md 头部与模板逐字一致 + 无 BOM', () => {
   const root = makeStore(tmp())
   const r = momentAdd(root, { project: 'p', session: 's', polarity: '负面', problem: 'a', evidence: 'x', date: '2026-10-01' })
   assert.equal(r.ok, true)
@@ -532,8 +532,24 @@ test('moment add：新建 moments.md 带头部说明 + 无 BOM', () => {
   assert.notEqual(buf[0], 0xEF)
   const text = buf.toString('utf8')
   assert.match(text, /# 情绪记录（moments）/)
-  assert.match(text, /触发：agent 主动/)
-  assert.match(text, /负面必填原话/)
+  assert.match(text, /格式权威定义见 `managing-lessons-store\/assets\/moments-template.md`（本文件只放数据）/)
+  assert.match(text, /触发：agent 主动（察觉情绪即记，不问）/)
+  assert.match(text, /判定公式与 userwords 共用/)
+  assert.match(text, /负面必填\*\*原话\*\*/)
+  assert.match(text, /\n---\n/)
+})
+
+test('moment resolve：兼容旧极性「负向」（改名前的数据）→ 可结案', () => {
+  const root = makeStore(tmp())
+  // 直接构造一份旧版数据（极性：负向），模拟改名前的存量
+  mkdirSync(join(root, 'projects', 'p'), { recursive: true })
+  writeFileSync(join(root, 'projects', 'p', 'moments.md'),
+    '# 情绪记录（moments）\n\n## M-2026-09-30-1\n- 极性：负向｜项目：p｜session：s｜message：—｜时间：2026-09-30\n- 状态：未解决\n- 问题：旧条目\n- 证据（原话）：\n  > 旧原话\n- 解法：（结案时补）｜代价：（结案时补）\n', 'utf8')
+  const r = momentResolve(root, { project: 'p', id: 'M-2026-09-30-1', solution: '修复', cost: '1 轮' })
+  assert.equal(r.ok, true)
+  const after = readFileSync(join(root, 'projects', 'p', 'moments.md'), 'utf8')
+  assert.match(after, /- 状态：已解决/)
+  assert.match(after, /- 解法：修复｜代价：1 轮/)
 })
 
 test('moment add：--date 非法格式 → 拒绝', () => {
