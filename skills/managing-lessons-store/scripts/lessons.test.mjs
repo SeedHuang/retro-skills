@@ -715,10 +715,14 @@ test('守卫：momentAdd 生成头 ↔ moments-template §模板 头部逐字一
 test('守卫：模板里每个表头后面必须有分隔行（防生成物表格塌成纯文本）', () => {
   // 背景（2026-10-02 实测）：facts-template 的 §2 把分隔行位置写成了占位符「| … | … | … |」，
   // 而技能要求"逐字使用"模板 → 生成的事实包表格不渲染，整段降级成纯文本。
-  // 判据（与 GFM 一致）：表头行的下一行必须是分隔行——每格**至少含一个 `-`**（可带对齐冒号），
-  // 且**列数与表头相等**（列数不等 GFM 也不认，照样塌表）。
-  // 已知边界（当前 8 个模板都不触发）：① 两张表之间没有空行时，第二张表的表头会被跳过（假阴性）；
-  //   ② 带语言的非 markdown 围栏（如 ```powershell）里的 `|` 行一律不查，防管道续行/示例日志被误判。
+  // 判据（与 GFM 一致）：表头行的下一行必须是分隔行，且**每一格**都形如 `:?-+:?`
+  //   ——不是"整行有个 `-` 就行"：`| --- |  |` 整行有 `-`，但第二格是空的，GFM 照样不认；
+  //   分隔行的列数还必须等于表头列数。
+  // 取格以**未转义的 `|`** 为准（本仓库 retro-template 规定自由文本栏位内 `|` 写作 `\|`）。
+  // 围栏：先独立扫一遍算出区间（从第 0 行起、反引号 ≥3 且闭合要求同长）。
+  //   **带语言且非 markdown** 的围栏（如 ```powershell）里的 `|` 行不查（防管道续行被误判）；
+  //   **围栏外、以及 ```markdown 与裸围栏**里的表头照查——宁可误报，也不漏报（裸围栏里也可能摆真模板）。
+  // 已知边界：两张表之间没有空行时，第二张表的表头会被跳过（假阴性）；模板一律空行分隔，暂不处理。
   const skillsUrl = new URL('../../', import.meta.url)          // → skills/
   const files = []
   for (const e of readdirSync(skillsUrl, { withFileTypes: true })) {
@@ -728,25 +732,37 @@ test('守卫：模板里每个表头后面必须有分隔行（防生成物表�
     for (const f of readdirSync(assets)) if (/template.*\.md$/i.test(f)) files.push(new URL(f, assets))
   }
   assert.ok(files.length >= 4, `应扫到 ≥4 个模板（实际 ${files.length}）`)
-  const cells = (line) => line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|')
+  const cells = (line) => line.trim().replace(/^\|/, '').replace(/(?<!\\)\|$/, '').split(/(?<!\\)\|/)
+  const isSepCell = (c) => /^\s*:?-+:?\s*$/.test(c)
+  const fenceLangs = (lines) => {                                // 逐行的围栏语言（null = 不在围栏内）
+    const out = new Array(lines.length).fill(null)
+    let lang = null, ticks = 0
+    for (let i = 0; i < lines.length; i++) {
+      const m = lines[i].match(/^\s*(`{3,})(.*)$/)
+      if (m && lang === null) { lang = m[2].trim(); ticks = m[1].length; continue }   // 开围栏
+      if (m && m[1].length >= ticks) { lang = null; ticks = 0; continue }             // 闭围栏（同长或更长）
+      out[i] = lang
+    }
+    return out
+  }
   for (const f of files) {
     const lines = readFileSync(f, 'utf8').replace(/^\uFEFF/, '').split(/\r?\n/)   // CRLF 也要能读
-    let fenceLang = null                                                          // null = 不在围栏内
-    for (let i = 1; i < lines.length - 1; i++) {
-      const fence = lines[i].match(/^\s*```(.*)$/)
-      if (fence) { fenceLang = fenceLang === null ? fence[1].trim() : null; continue }
-      if (fenceLang && !/^markdown$/i.test(fenceLang)) continue
-      // 表头行 = 本行以 `|` 开头、上一行不是 `|`（即表格的起点）
-      if (!/^\|/.test(lines[i]) || /^\|/.test(lines[i - 1])) continue
-      assert.match(
-        lines[i + 1],
-        /^\|[-: |]*-[-: |]*\|$/,
-        `${f.pathname} 第 ${i + 1} 行是表头，下一行必须是分隔行（每格至少一个「-」）；实际收到「${lines[i + 1]}」`,
+    const fences = fenceLangs(lines)
+    for (let i = 0; i < lines.length - 1; i++) {
+      const lang = fences[i]
+      if (lang && !/^markdown$/i.test(lang)) continue             // 非 markdown 围栏不查
+      // 表头行 = 本行以 `|` 开头、且（首行除外）上一行不以 `|` 开头，即表格的起点
+      if (!/^\|/.test(lines[i]) || (i > 0 && /^\|/.test(lines[i - 1]))) continue
+      const head = cells(lines[i])
+      const sep = cells(lines[i + 1])
+      assert.ok(
+        sep.every(isSepCell),
+        `${f.pathname} 第 ${i + 1} 行是表头，下一行必须是分隔行（每格形如 --- / :---:）；实际收到「${lines[i + 1]}」`,
       )
       assert.equal(
-        cells(lines[i + 1]).length,
-        cells(lines[i]).length,
-        `${f.pathname} 第 ${i + 1} 行表头 ${cells(lines[i]).length} 列、分隔行 ${cells(lines[i + 1]).length} 列——GFM 要求两者相等，否则整张表不渲染`,
+        sep.length,
+        head.length,
+        `${f.pathname} 第 ${i + 1} 行表头 ${head.length} 列、分隔行 ${sep.length} 列——GFM 要求两者相等，否则整张表不渲染`,
       )
     }
   }
