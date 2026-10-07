@@ -47,7 +47,7 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 
 典型闭环：**喊入口 → 采事实 → 复盘分析 → 归置落地 → 验证（`retro-verify`）**。落地的载体（规则 / 技能 / 自动化）在活链上，**改源即生效**——下次对话自动带着，不需要任何人记得"上次学到了什么"；改完由 `retro-verify` 看**有没有真管用**。
 
-## 十个技能：各自的作用与使用时机
+## 十一个技能：各自的作用与使用时机
 
 ### 1. `using-retrospective` — 入口与路由
 
@@ -120,6 +120,14 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 - **做什么**：算数走脚本（`lessons verify score|trend|expect <目标>`）——复发率 + 机会数 → 5 档；**对账事前预期**；无效 / 更差 → 出**回退方案**（先方案 + 理由，**用户确认后才退**）。
 - **不做什么**：不采集事实（走 `retro-collect`）、不首次归置（走 `retro-institutionalize`）、不改载体本体（属 `evolving-skills`）。
 
+### 11. `writing-after-docs` — 写「未完成事项」（🆕 2026-10-07）
+
+- **什么时候用**：**这件事还没做完 / 还有待决项 / 结论还不能当依据引用**；用户说「把这件事记下来」「哪些还没做」「先记着」「押后先不管」「归档到 after」「这件事算做完了」。
+- **做什么**：在 `docs/after/<主题>-<阶段>.md` 写一份未完成事项文档——五节骨架（**为什么有这件事 → 前因后果因果链 → 现状+取数命令 → 要做什么+完成判据 → parking+触发时机**）；条目做完走**墓碑式改写**（`~~事项~~ → 已并入 spec（日期）`，**不删条目**），全部做完则瘦成「已完成区」并改名 `<主题>-done.md`。
+- **命名**：小写 kebab-case、**不加日期前缀**（`after/` 是活账本，加日期会被当成快照）。命名规范以规则 `docs-convention` 为准。
+- **模板**：`skills/writing-after-docs/assets/after-template.md`（逐字使用）；各节写法见 `references/section-guide.md`，迁走清单见 `references/migration.md`。
+- **不做什么**：不写已定稿的设计（走 `docs/superpowers/specs/`）、不写 session 交接（`docs/handoffs/`，性质不同：handoff 是一次性快照，after 是活的账本）、不写代码。**目录语义以全局规则 `docs-convention` 为权威定义方。**
+
 ## 一个完整例子（真实闭环：2026-09-29 回显污染事故）
 
 这是本套件第一次完整跑通的真实案例，全过程可追溯（KB 错题集里有全部产物）：
@@ -158,10 +166,11 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 
 ## 仓库结构
 
-- `skills/<十个技能>/` —— 技能源（`SKILL.md` + `references/`；**改源即生效**，运行时是只读链接）
+- `skills/<十一个技能>/` —— 技能源（`SKILL.md` + `references/`；**改源即生效**，运行时是只读链接）
 - `docs/architecture.md` —— 体系总图与全部裁决（含执行顺序、待验证项、隐患挂账）
-- `docs/superpowers/` —— spec / plan（设计过程件）
-- `docs/handoffs/` —— 跨 session 交接词（每个 session 收口的交接事实）
+- `docs/superpowers/` —— spec / plan（**已定稿**的设计 / **已排期**的执行）
+- `docs/handoffs/` —— 跨 session 交接词（每个 session 收口的交接事实；**一次性快照，定格不改**）
+- `docs/after/` —— **未完成 / 待决 / 悬置**的事项（活的账本，做完迁走）——由 `writing-after-docs` 写；目录语义见全局规则 `docs-convention`
 
 ## 设计文档
 
