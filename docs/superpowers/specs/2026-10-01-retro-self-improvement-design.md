@@ -35,6 +35,8 @@
 
 **KB 维持"不做 git"的既定设计**（同 `docs/architecture.md` §7）。原"lessons 入库（甲/乙）"一项**已去掉**：不建 git、也不加定期快照。`checkStore` 的"KB 不入库"护栏**保持不动**。
 
+> **2026-10-07 已被推翻**：用户 **2026-10-03** 给 `D:\Seed\lessons` 自建了 git 仓库（远端 gitee，**已设为私有**），并于 2026-10-07 指示放行「KB 自建仓库」。护栏改为**只拦「KB 被套进其它仓库」**（`isInsideGitRepo` 从「上一层」起向上找 `.git`）。本条其余部分（不建定期快照等）保留为历史记录。
+
 ## 3 复盘产物改造（改 `retro-analyze` / `using-retrospective`）
 
 ### 3.1 说人话（硬规则）

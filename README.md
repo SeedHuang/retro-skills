@@ -132,7 +132,7 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 
 ## 错题集 KB（数据在哪、长什么样）
 
-- **位置**：由用户指定，指针在 `~/.agents/lessons.config.json`；**本仓库不含任何个人数据，KB 不建 git、永不进仓库**。
+- **位置**：由用户指定，指针在 `~/.agents/lessons.config.json`；**本仓库不含任何个人数据，KB 绝不进本仓库**（2026-10-07 起 KB 可自建**私有** git 仓库作备份，但不得被套进本仓库或其它仓库——`resolve` 会拦）。
 - **三区结构**：
   - `projects/<项目>/` —— 项目教训（账本 + 事实包 + 复盘 + rules-history/ 规则旧版备份）
   - `skills/<技能>/` —— 技能自身的教训

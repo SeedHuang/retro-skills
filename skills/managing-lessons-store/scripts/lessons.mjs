@@ -60,7 +60,7 @@ export function checkStore(root, deps) {
     return { ok: false, reason: `KB 路径不可写：${abs}`, hint: '检查权限，或迁移到可写位置' }
   }
   if (deps.isInsideGitRepo(abs)) {
-    return { ok: false, reason: `KB 位于仓库内：${abs}`, hint: '错题集含个人数据，不得入库。请迁移到仓库外' }
+    return { ok: false, reason: `KB 位于外层 git 仓库内：${abs}`, hint: '错题集不得被套进其它仓库（KB 自建仓库已放行）。请把 KB 移出该外层仓库' }
   }
   return { ok: true }
 }
@@ -159,9 +159,11 @@ export function hashTree(root) {
   return out
 }
 
-/** 自建 git 仓库探测：向上找 .git */
-function isInsideGitRepo(p) {
-  let cur = resolve(p)
+/** 外层 git 仓库探测：从「上一层」起向上找 .git（**不含** p 自己）
+ *  2026-10-07 改：KB **自建**仓库（p 自己即仓库根）不再拦——用户已把远端设为私有仓库、不对外公开；
+ *  只拦「KB 被套在别的仓库里」（p 的上层有 .git，KB 会被那份仓库连文件一起提交）这一真实风险形态。 */
+export function isInsideGitRepo(p) {
+  let cur = dirname(resolve(p))
   while (true) {
     if (existsSync(join(cur, '.git'))) return true
     const parent = dirname(cur)
@@ -175,7 +177,7 @@ export function migrate({ from, to, deps }) {
   const v = validateTarget(from, to)
   if (!v.ok) return { ok: false, reason: v.reason, stage: 'validate-target' }
   const root = resolve(from), target = resolve(to)
-  if (deps.isInsideGitRepo(target)) return { ok: false, reason: `KB 位于仓库内：${target}——错题集不得入库`, stage: 'validate-target' }
+  if (deps.isInsideGitRepo(target)) return { ok: false, reason: `KB 位于外层 git 仓库内：${target}——错题集不得被套进其它仓库`, stage: 'validate-target' }
   const lock = join(root, '.migrating')
   writeFileSync(lock, String(Date.now()), 'utf8')          // 步 3.5 上锁
   try {

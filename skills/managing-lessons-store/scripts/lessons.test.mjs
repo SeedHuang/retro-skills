@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync, readdirSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
-import { resolveStore, checkStore } from './lessons.mjs'
+import { resolveStore, checkStore, isInsideGitRepo } from './lessons.mjs'
 
 function tmp() { return mkdtempSync(join(tmpdir(), 'lessons-')) }
 function makeStore(root) {
@@ -52,12 +52,25 @@ test('checkStore：schemaVersion 不支持 → 拒绝', () => {
   assert.match(r.reason, /schemaVersion=99 不受支持/)
 })
 
-test('checkStore：位于 git 仓库内 → 拒绝（KB 绝不进仓库）', () => {
+test('checkStore：位于外层 git 仓库内 → 拒绝', () => {
   const root = makeStore(tmp())
   const r = checkStore(root, { ...emptyDeps, isInsideGitRepo: () => true })
   assert.equal(r.ok, false)
-  assert.match(r.reason, /位于仓库内/)
-  assert.match(r.hint, /迁移到仓库外/)
+  assert.match(r.reason, /位于外层 git 仓库内/)
+  assert.match(r.hint, /移出该外层仓库/)
+})
+
+test('isInsideGitRepo：KB 自建仓库（p 自己即仓库根）→ 放行（不拦）', () => {
+  const root = makeStore(tmp())
+  mkdirSync(join(root, '.git'), { recursive: true })
+  assert.equal(isInsideGitRepo(root), false)
+})
+
+test('isInsideGitRepo：KB 被套进别的仓库（上一层有 .git）→ 拦', () => {
+  const outer = tmp()
+  mkdirSync(join(outer, '.git'), { recursive: true })
+  const root = makeStore(join(outer, 'kb'))
+  assert.equal(isInsideGitRepo(root), true)
 })
 
 test('checkStore：指针 JSON 损坏 → 拒绝', () => {
