@@ -47,7 +47,7 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 
 典型闭环：**喊入口 → 采事实 → 复盘分析 → 归置落地 → 验证（`retro-verify`）**。落地的载体（规则 / 技能 / 自动化）在活链上，**改源即生效**——下次对话自动带着，不需要任何人记得"上次学到了什么"；改完由 `retro-verify` 看**有没有真管用**。
 
-## 十一个技能：各自的作用与使用时机
+## 十三个技能：各自的作用与使用时机
 
 ### 1. `using-retrospective` — 入口与路由
 
@@ -99,7 +99,7 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 ### 7. `multi-lens-review` — 多透镜评审（文档评审）
 
 - **什么时候用**：要评审 PRD / spec / 技术方案文档，找逻辑漏洞、悖论、盲点（套件自己的架构文档与 spec 也用它评审）。
-- **做什么**：六手法流程（操作序列推演 / 数据字段审计 / 跨章节一致性矩阵 / 输入空间枚举 / 假设显式化 / 可逆性核对）× 分场景角色面板；收敛判据 = 连续 2 轮零新增 P0/P1。评审中发现的盲区教训回流 KB（`<KB>/skills/multi-lens-review/ledger.md`）。
+- **做什么**：六手法流程（操作序列推演 / 数据字段审计 / 跨章节一致性矩阵 / 输入空间枚举 / 假设显式化 / 可逆性核对）× 分场景角色面板；收敛判据 = **P0/P1/采纳 P2 = 0**（无待处置 + 修复后重扫无新增）。评审中发现的盲区教训回流 KB（`<KB>/skills/multi-lens-review/ledger.md`）。
 - **不做什么**：代码审查、写新文档（那是别的工具的事）。
 
 ### 8. `prd-to-specs` — PRD 拆分（PRD → Specs）
@@ -127,6 +127,38 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 - **命名**：小写 kebab-case、**不加日期前缀**（`after/` 是活账本，加日期会被当成快照）。命名规范以规则 `docs-convention` 为准。
 - **模板**：`skills/writing-after-docs/assets/after-template.md`（逐字使用）；各节写法见 `references/section-guide.md`，迁走清单见 `references/migration.md`。
 - **不做什么**：不写已定稿的设计（走 `docs/superpowers/specs/`）、不写 session 交接（`docs/handoffs/`，性质不同：handoff 是一次性快照，after 是活的账本）、不写代码。**目录语义以全局规则 `docs-convention` 为权威定义方。**
+
+### 12. `review-loop` — 改动审查循环（🆕 2026-10-08）
+
+- **什么时候用**：要审查一批改动——用户说「review 一下」「审一下这次改动」「审代码」「审文档」。
+- **三条命令**（在输入框打，**范围直接说数字或 hash，不用去 `git log` 抄 commit id**）：
+
+| 命令 | 审什么 |
+|---|---|
+| `review-code-to-death` | 只审代码（走 OCR） |
+| `review-md-to-death` | 只审文档逻辑（走 `multi-lens-review`） |
+| `review-all-to-death` | 三段全跑 + **跨文档/代码对账** |
+
+| 范围怎么说 | 范围是什么 |
+|---|---|
+| 不说 | 工作区未提交 |
+| 给个数字 N | 最近 N 次 commit（`ocr review --from HEAD~N --to HEAD`） |
+| 给个 commit hash | 那一个 commit（`ocr review --commit <hash>`） |
+| 给个 tag | 那一个 commit（⚠️ 本仓 0 个 tag，`--commit <tag>` **没实测过**；先 `git rev-parse <tag>^{commit}` 换 hash） |
+
+- **做什么**：三段——① **代码**：OCR（先 `--preview` 确认范围）；② **文档**：`multi-lens-review`；③ **对账**：把文档里的断言拿到代码里取证，并反向扫「代码硬编码了但文档没说」。**前两段是并排的，漂移发生在两段之间的缝里**——文档说「两个参数」代码只读一个，两段单独审都全绿，只有第三段抓得到。
+- **共享口径在 `references/loop.md`**（收敛判据 / 取数方式 / 硬约束 / 输出格式），三条命令共用那一份，命令文件里不重复。
+- **什么时候停**：判据是「**清单核销干净**」，**不是「轮数够了」**——每段的清单都审完、都修完才停。其中段二（`multi-lens-review`）的收敛判据是「**P0/P1/采纳 P2 = 0**」（无待处置 + 修复后重扫无新增），只管段二，**不外借**给段一/段三（OCR 没有 P 分级，它只报问题清单）。
+- **不做什么**：不 commit、不 push（提交是用户的决定）；不碰审查范围外的文件；不提前收敛。
+- **过程账**：走 **`review-log`** —— 每轮 OCR 跑完立刻把 `session id` 记进 `.session/reviews/<那一次>/progress.md` 的轮次表。**没有这本账就没有「这条处理过没有」这个概念**（实测 2026-10-08：第 8、9 轮 OCR 报同一批 3 条，我处置了两遍，因为轮次编号是口头数的）。目录语义见全局规则 `docs-convention`「临时记录（`.session/`）」。
+
+### 13. `review-log` — 给审查过程建账（🆕 2026-10-08）
+
+- **什么时候用**：`review-loop` 跑到一半或跑完，要记「跑到哪、改了什么、哪些不改或误报」；或者 session 要断、审查还没做完。
+- **做什么**：在 `.session/reviews/<YYYY-MM-DD-HHMM>-<名字>/` 建两个文件——`progress.md`（**活的**：范围 + 轮次账 + 每轮三段记述 + 本轮改动 + 核销判定，每轮追加）与 `problems.md`（**漏斗**：逐条问题 → 解法 → 状态，**修好的立刻移走**，只留「不改」和「误报」）。
+- **关键设计**：`progress.md` 里的**轮次表**是治「重复劳动」的那本账——**轮次编号从表里数，不许口头数**；OCR 的 `session id` 必须记（它是唯一能回溯「当时报了哪些」的凭据）。
+- **两个模板在 `assets/`**，逐字使用不自创结构。
+- **什么时候删**：该次审查全部处置完 → **整个目录删掉**（结论已进测试断言 / 代码注释 / `docs/`，账本没有留存价值）。
 
 ## 一个完整例子（真实闭环：2026-09-29 回显污染事故）
 
@@ -166,7 +198,7 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 
 ## 仓库结构
 
-- `skills/<十一个技能>/` —— 技能源（`SKILL.md` + `references/`；**改源即生效**，运行时是只读链接）
+- `skills/<技能名>/` —— 技能源（`SKILL.md` + `references/` + `assets/`；**改源即生效**，运行时是只读链接）
 - `docs/architecture.md` —— 体系总图与全部裁决（含执行顺序、待验证项、隐患挂账）
 - `docs/superpowers/` —— spec / plan（**已定稿**的设计 / **已排期**的执行）
 - `docs/handoffs/` —— 跨 session 交接词（每个 session 收口的交接事实；**一次性快照，定格不改**）

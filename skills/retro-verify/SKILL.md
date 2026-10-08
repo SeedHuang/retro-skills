@@ -31,7 +31,9 @@ description: Use when 要检查一个**已落地**的 skill / rule / 自动化�
 3. **比上期**：`lessons verify trend <目标>` → 本期 vs 上期 → Δ 改善量 → **5 档**。
 4. **对账预期**：`lessons verify expect <目标>` → 实测 vs 事前预期（台账里）。
 5. **判**：
-   - **复发了** → **分型**（没生效 / 判据不对 / 归类错）；每类**要拿得出证据**，"归类错"或拿不出证据 → **交用户**；
+   - **复发了** → **分型**（没生效 / 判据不对 / 归类错）；每类**要拿得出证据**。
+     **⚠️ 拿不出证据时**：先**穷尽取证手段**（去读源文件、跑守卫、查 session 记录），**别一上来就交用户**——交之前必须说清**查了什么、为什么拿不到**（全局规则 `how-i-must-reason` §2 第三档）。**「我查不到」不等于「需要你定」**，那种写法是把判断推回给人。
+     **⚠️ 这条 2026-10-08 才改**：原写法是「归类错或拿不出证据 → 交用户」，与全局规则**直接冲突**（规则禁这么写）。实测当天我正是按旧写法把判断推回给你了。
    - **有效** → 记一行台账。
 6. **无效 / 更差** → 出**回退方案**：先出方案 + 理由 → **用户确认** → **先退载体 → 后改账目 `regressed`（附现场）** → 回炉。**绝不留在 landed 假装成功。**
 
@@ -58,7 +60,7 @@ description: Use when 要检查一个**已落地**的 skill / rule / 自动化�
 
 ## 算数（工具）
 
-- 命令住 **`lessons.mjs`**（KB 解析唯一处）：`node <managing-lessons-store>/scripts/lessons.mjs verify score|trend|check|expect <目标>`；
+- 命令住 **`lessons.mjs`**（KB 解析唯一处）：`node <managing-lessons-store>/scripts/lessons.mjs verify score|trend|expect <目标>`；
 - **调它的 CLI 取数，不 import**（避跨技能"单装扑空"）。
 
 ## 台账

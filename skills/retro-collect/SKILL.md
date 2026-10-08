@@ -91,13 +91,16 @@ KB 未初始化时：**REQUIRED SUB-SKILL:** 先用 `managing-lessons-store` 完
    `node scripts/lessons.mjs moment drop --project <标识> --date <日期> --session <sid>`
    （回报里带「**属正常**」或「**未改动**」的 → 都不用管，**别去"修"日期或 sid**；**只有带「已结案」字样的**才要按前提二办——**不逐条列回报**，列不全就是盲区）
 2. 用 `moment add` 逐条重写重扫结果（判定公式见 `retro-collect/assets/userwords-template.md`）：
-   `node scripts/lessons.mjs moment add --project <标识> --session <sid> --date <日期> --summary "<≤20字主题>" --first-message "<首句原文>" --polarity … --problem … --evidence … --reason …`
-   （**`--summary` 别省**——新建目录时必给，缺了会被拒；**`--first-message` 别省**——`sid` 碰撞护栏靠它生效）
+   `node scripts/lessons.mjs moment add --project <标识> --session <sid> --date <日期> --summary "<≤20字主题>" --first-message "<首句原文>" --message "轮次 <N>" --polarity … --problem … --evidence-up "<上文>" --evidence-up "<更早的上文>" --evidence "<触发句>" --reason …`
+   （**`--summary` 别省**——新建目录时必给，缺了会被拒；**`--first-message` 别省**——`sid` 碰撞护栏靠它生效；**`--message` 别省**——不传只有 session 级可查，定位不到具体轮次；**`--evidence-up` 选填、可重复传任意次**——给情绪补上文，让「为什么会有这个情绪」可复核；**紧邻的上一句在前**。）
    **核对**：命令会回报实际目录名（形如 `（目录 2026-10-02-ab12cd34-主题）`）——把它跟第 0 步口播的 `session = …` **当场比对**，不一致就停手查。别只看"成功"两个字。
 
-重扫结果同时写进事实包 **§2 计数 / §4 情绪点**——第 2 栏填数字（几条 / 未结案几条），第 4 栏填明细（编号 + 极性 + 原话）；**只记事实，不评价**（这里是零判断区，不是分析）。
+重扫结果同时写进事实包 **§2 计数 / §4 情绪点**——第 2 栏填数字（几条 / 未结案几条），第 4 栏填明细（编号 + 极性 + **逐字原话**）；**只记事实，不评价**（这里是零判断区，不是分析）。
 
-（可选）外部锚点 `~\.trae-cn\memory\projects\<项目>\<日期>\session_memory_*.jsonl` **只作 `memory id` 备注来源**（拿得到就记进 `facts.md` 头），**不作正文事实 / 原话来源**——2026-10-02 实测该文件严重滞后（切换 session + 多轮对话后仍零新增）。
+**§4 的「触发原话」怎么取**（2026-10-07 起有两种形态，规则见 `assets/facts-template.md` §4 注）：**取 `moments.md` 证据栏的末行引用，并去掉行首的 `[触发] ` / `[上文] ` 标签**——标签是机器标记不是原话。**别按标题字面量找**（旧形态是「证据（原话）」、新形态是「证据（对话原文…）」）。
+
+（可选）外部锚点 `~\.trae-cn\memory\projects\<项目>\<日期>\session_memory_*.jsonl` **只作 `message id` 的备注来源**（拿得到就附在 `--message` 里），**不作正文事实 / 原话来源**。
+**⚠️ 该文件的可靠性按 session 逐个实测，不要一概而论**：2026-10-02 实测严重滞后（停在 11:55 零新增），但 2026-10-07 实测 **10-01 那次有 10 个连续锚点、覆盖 1h47m**。**这正是 `--message` 以「轮次 N」为主、id 为加分项的原因**——memory 拿不到时，轮次号仍然可用。
 
 ## 收集用户原话
 

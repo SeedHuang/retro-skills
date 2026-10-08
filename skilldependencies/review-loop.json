@@ -1,8 +1,10 @@
 {
   "schemaVersion": 1,
-  "skill": "writing-after-docs",
+  "skill": "review-loop",
   "dependencies": {
     "skills": [
+      { "name": "multi-lens-review" },
+      { "name": "evolving-skills" },
       { "name": "review-log" }
     ]
   }

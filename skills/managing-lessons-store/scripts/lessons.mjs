@@ -342,9 +342,71 @@ export function validateMoment(o) {
   return null
 }
 
-/** 构造一条 moment 的 markdown 块（逐字对齐 spec §4.6） */
-export function buildMoment({ id, project, session, message, date, polarity, problem, cause, attitude, evidence, reason }) {
+/** moments.md 新建时的文件头——**从 `assets/moments-template.md` 的「## 模板」代码块读**。
+ *  消除第二份真相：此前这段头在代码里硬编码一份、模板里又有一份，改一处忘另一处就会漂移
+ *  （2026-10-07 实测漂移两次）。现在**只有模板是权威**，代码只负责取。
+ *  取不到模板 / 格式变了 → 抛错（**不静默退回硬编码**，那等于把第二份真相请回来）。 */
+let _momentsHeaderCache = null
+export function momentsFileHeader() {
+  if (_momentsHeaderCache !== null) return _momentsHeaderCache
+  const tplPath = fileURLToPath(new URL('../assets/moments-template.md', import.meta.url))
+  if (!existsSync(tplPath)) {
+    throw new Error(`读不到 moments 模板：${tplPath}——无法生成文件头（请检查 skills/managing-lessons-store/assets/moments-template.md 是否存在）`)
+  }
+  // BOM 用显式 \uFEFF（同文件其它处一致；写成隐形字符会在review 时看不见、复制粘贴可能丢）
+  // CRLF 先归一化：模板若在 Windows 下以 CRLF 落地，不归一则下面 `\n` 匹配不到，moment add 会直接抛错
+  const tpl = readFileSync(tplPath, 'utf8').replace(/^\uFEFF/, '').replace(/\r\n/g, '\n')
+  //先锚到 §模板 小节再找代码块：模板里有多个 ```markdown 块，全局 match 会取到「第一个」——
+  //今天恰好 §模板 排在最前所以能用，但换个顺序就会静默切错块（且 cut 防线抓不到，§模板 自己也含 `## M-`）
+  const at = tpl.indexOf('## 模板')
+  if (at === -1) throw new Error('moments 模板里找不到「## 模板」小节——模板结构变了，请同步实现')
+  const m = tpl.slice(at).match(/```markdown\n([\s\S]*?)\n```/)
+  if (!m) throw new Error('moments 模板的 §模板 小节里找不到 ```markdown 代码块——模板结构变了，请同步实现')
+  const block = m[1]
+  const cut = block.indexOf('## M-')
+  if (cut === -1) throw new Error('moments 模板的 §模板 代码块里找不到条目起点「## M-」——模板结构变了，请同步实现')
+  // 模板的条目起点之前**已含`---` 分隔线**（§模板 代码块里就有），直接截断即可——**不要自己再拼一个**（会多出两条 `---`）
+  _momentsHeaderCache = block.slice(0, cut).replace(/\s*$/, '') + '\n'
+  return _momentsHeaderCache
+}
+
+/** 构造一条 moment 的 markdown 块（逐字对齐 spec §4.6）
+ *  evidenceUp：上文若干句（**结构化参数**传入，不在文本里编码结构——spec 2026-10-07 §4.1）。
+ *    每句各自one() 折行后分行输出，**不拆 one() 的注入防护**；不传时输出与改动前逐字一致。 */
+export function buildMoment({ id, project, session, message, date, polarity, problem, cause, attitude, evidence, evidenceUp, reason, warn = (m) => process.stderr.write(m) }) {
   const one = (s) => String(s ?? '').replace(/\r?\n/g, ' ')   // 折掉换行，防注入行破块结构
+  // evidenceUp 应为数组；传标量（误用）→ 归一为单条并告警，不静默丢数据
+  let upRaw = []
+  if (Array.isArray(evidenceUp)) {
+    upRaw = evidenceUp
+  } else if (evidenceUp !== undefined && evidenceUp !== null) {
+    warn(`[warn] buildMoment：evidenceUp 应为数组，收到 ${typeof evidenceUp}，已按单条处理\n`)
+    upRaw = [evidenceUp]
+  }
+  // 只收字符串元素：非字符串会被 `String()` 强转（对象→`[object Object]`、数组→逗号连接、数字→数字）
+  // 写进 KB，而这一栏的语义是**用户原话逐字**，写进去就是脏数据且没人会发现（2026-10-08 OCR 指出）。
+  const up = upRaw.filter((x) => {
+    if (x === undefined || x === null) return false
+    if (typeof x !== 'string') {
+      warn(`[warn] buildMoment：evidenceUp 只收字符串，收到 ${typeof x}（会被 String() 强转成脏数据），已跳过\n`)
+      return false
+    }
+    return x.trim() !== ''
+  })
+  // ⚠️ 上文有、触发句没有 → 整块丢弃时**必须告警**（2026-10-08 OCR 指出）：
+  // 证据栏的末行固定是触发句（`> [触发] …`），没有触发句就不能出这一栏，
+  // 于是「打了两条上文清洗告警、正文里却一个字都没有」——调用方只会以为是自己看错了。
+  if (up.length && !evidence) {
+    warn(`[warn] buildMoment：收到 ${up.length} 句上文但没有触发句（--evidence），证据栏整块未输出——`
+      + '触发句是必填的，这一栏的末行固定是它\n')
+  }
+  /** 证据栏整串：末行=触发句；上文逐句一行。有上文才用多行形态（不传时与改动前逐字一致） */
+  const evidenceBlock = (ev) => {
+    if (!up.length) return `- 证据（原话）：\n  > ${one(ev ?? '')}`
+    const rows = up.map((u) => `  > [上文] ${one(u)}`)
+    rows.push(`  > [触发] ${one(ev ?? '')}`)
+    return `- 证据（对话原文，紧邻上文→触发句）：\n${rows.join('\n')}`
+  }
   const lines = [
     `## ${id}`,
     `- 极性：${polarity}｜项目：${one(project)}｜session：${one(session)}｜message：${one(message) || '—'}｜时间：${date}`,
@@ -353,14 +415,20 @@ export function buildMoment({ id, project, session, message, date, polarity, pro
     lines.push(`- 状态：未解决`)
     lines.push(`- 问题：${one(problem)}`)
     lines.push(`- 判据（思考过程）：${one(reason)}`)
-    lines.push(`- 证据（原话）：\n  > ${one(evidence ?? '')}`)
+    // 与正/认知分支**同样**只在有触发句时输出：只传 `--evidence-up` 会产出
+    // 「承诺了末行是触发句、却没有触发句」的残缺块（`momentAdd` 已由 validateMoment 拒空，
+    // 这里守的是直接调用导出的 `buildMoment` 的路径）
+    if (evidence) lines.push(evidenceBlock(evidence))
     if (cause) lines.push(`- 原因（推断）：${one(cause)}`)
     if (attitude) lines.push(`- 态度（推断）：${one(attitude)}`)
     lines.push(`- 解法：（结案时补）｜代价：（结案时补：讨论轮数 / 时间）`)
   } else {
     lines.push(`- 认可 / 倾向：${one(problem)}`)
     lines.push(`- 判据（思考过程）：${one(reason)}`)
-    if (evidence) lines.push(`- 证据（原话）：\n  > ${one(evidence)}`)
+    // 只在**有触发句**时输出证据栏：证据栏的末行固定是触发句，
+    // 只传 `--evidence-up` 而不传 `--evidence` 会产出「承诺了触发句但没有」的残缺块。
+    // （`momentAdd` 已由 validateMoment 拒空，这里守的是直接调用 `buildMoment` 的导出路径）
+    if (evidence) lines.push(evidenceBlock(evidence))
   }
   return lines.join('\n')
 }
@@ -455,10 +523,21 @@ export function momentAdd(root, opts, deps = {}) {
     dirName = `${date}-${sid}-${seg}`
   }
   const file = join(root, 'projects', project, dirName, 'moments.md')
-  const text = existsSync(file) ? readFileSync(file, 'utf8').replace(/^\uFEFF/, '') : '# 情绪记录（moments）\n\n> 格式权威定义见 `managing-lessons-store/assets/moments-template.md`（本文件只放数据）。\n> 触发：agent 察觉情绪当场记（不问）；collect 时重扫覆盖本 session。极性：负面 / 正面 / 认知，全收。\n> 判定公式与 userwords 共用（对象主判据，情绪由对象+意图推出）。\n> 负面必填**原话**（不猜原因/态度）；原因/态度为可选，写则标「（推断）」。\n\n---\n'
+  // 模板缺失 / 结构漂移时 momentsFileHeader() 会抛错，但本函数（本文件所有记账函数）的契约是
+  // **返回 { ok:false, reason } 从不抛**。这里就地转成返回值，否则 CLI 那边拿到的是裸栈、不是「记账失败：…」提示。
+  let text
+  if (existsSync(file)) {
+    text = readFileSync(file, 'utf8').replace(/^\uFEFF/, '')
+  } else {
+    try {
+      text = momentsFileHeader()
+    } catch (e) {
+      return { ok: false, reason: `读不到 moments 文件头：${e.message}` }
+    }
+  }
   if (!opts.message) process.stderr.write(`[warn] moment add：未提供 --message，事后无法定位到具体对话（仅 session 级可查）\n`)
   const id = `M-${sid}-${nextMomentSeq(text, sid)}`
-  const block = buildMoment({ id, project, session: opts.session, message: opts.message, date, polarity: opts.polarity, problem: opts.problem, cause: opts.cause, attitude: opts.attitude, evidence: opts.evidence, reason: opts.reason })
+  const block = buildMoment({ id, project, session: opts.session, message: opts.message, date, polarity: opts.polarity, problem: opts.problem, cause: opts.cause, attitude: opts.attitude, evidence: opts.evidence, evidenceUp: opts.evidenceUp, reason: opts.reason })
   atomicWrite(file, text.replace(/\s*$/, '') + '\n\n' + block + '\n')
   return { ok: true, id, file, dir: dirName }
 }
@@ -809,11 +888,77 @@ export function verifyExpect(file) {
   return { ok: true, period: last.period, actual, expect: last.expect, prev, verdict: compareExpect(actual, last.expect, prev) }
 }
 
+/** 本 CLI 认得的全部 flag——用于区分「漏值」与「原话本身以 -- 开头」。
+ *  判据：**只跳过已知 flag**，未知的一律当正文收进来（否则逐字原话以 `--` 开头会被静默丢掉，
+ *  而这个功能存在的意义就是「原话一个字都不丢」，spec 2026-10-07 §4.1）。 */
+export const CLI_FLAGS = new Set([
+  '--project', '--session', '--date', '--summary', '--first-message', '--message',
+  '--polarity', '--problem', '--cause', '--attitude', '--evidence', '--evidence-up',
+  '--reason', '--id', '--solution', '--cost',
+  // verify record 段（守卫：CLI 收的每个 flag 都必须登记，漏一个就会被当成用户原话）
+  '--period', '--a', '--b', '--n', '--p', '--expect', '--signal', '--note',
+  // migrate 段走 `process.argv.indexOf('--to')`（不是 argOf/argAll）——同样要登记
+  '--to',
+])
+
+/** 漏值判定：`v` 是不是「本该有值却只跟了一个 flag」——单值/多值两条解析器**共用**这一条
+ *
+ *  抽成函数的原因：曾只有 argAllOf 有这个判定，argOf 无条件 `argv[i + 1]`，
+ *  于是 `--evidence --project foo` 把 `--project` 当逐字原话写进证据栏（实测复现，零告警）。
+ *  两边各写一份必然再次分叉——**同一个坑，不许开两个实现**。
+ *  纯函数（可单测）。 */
+function missingValue(v) { return v === undefined || CLI_FLAGS.has(String(v)) }
+
+/** 收集 argv 里全部同名参数值，**按出现顺序**（spec 2026-10-07 §4.1）。
+ *  下一个是**已知 flag** 时视为「漏值」并跳过 + 告警——不把 flag 当正文收进去；
+ *  未知（用户原话恰好以 `--` 开头）照收不误。
+ *  纯函数（argv 入参），**可单测**。 */
+export function argAllOf(argv, f, warn = (m) => process.stderr.write(m)) {
+  const out = []
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] !== f) continue
+    const v = argv[i + 1]
+    if (missingValue(v)) {
+      warn(`[warn] ${f} 后面没有值，已跳过（读到：${v ?? 'EOF'}）\n`)
+      continue
+    }
+    out.push(v)
+  }
+  return out
+}
+
+/** 取**第一个**「有值的」同名参数（单值参数用），漏值判定与 `argAllOf` **同一套**。
+ *  纯函数（argv 入参），**可单测**。
+ *
+ *  ⚠️ 别退回 `i === -1 ? undefined : argv[i + 1]`（2026-10-08 OCR 指出，实测已复现）：
+ *  那样 `--evidence --project foo` 会把 `--project` 当成逐字原话写进证据栏，**零告警**，
+ *  而那一栏的语义是「用户原话，一个字都不许被污染」。
+ *
+ *  ⚠️ 漏值处**跳过继续扫**，不是 `return undefined`（2026-10-08 OCR 指出）：
+ *  `--evidence --evidence "原话"` 时首个 occurrence 漏值、后一个有效——
+ *  直接返回会让「明明传了值」变成 `undefined`（`argAllOf` 会跳过漏值取到 `["原话"]`）。
+ *  单值/多值两条解析器必须同一种漏值语义：跳过 + 告警 + 继续找有效值。 */
+export function argOneOf(argv, f, warn = (m) => process.stderr.write(m)) {
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] !== f) continue
+    const v = argv[i + 1]
+    if (missingValue(v)) {
+      warn(`[warn] ${f} 后面没有值，已忽略（读到：${v ?? 'EOF'}）\n`)
+      continue
+    }
+    return v
+  }
+  return undefined
+}
+
 // ── CLI 入口守卫：仅当被直接执行时运行 ────────────────────────────
 const isMain = isDirectRun(process.argv[1], import.meta.url)
 if (isMain) {
   const cmd = process.argv[2]
-  const argOf = (f) => { const i = process.argv.indexOf(f); return i === -1 ? undefined : process.argv[i + 1] }
+  // 单值取值走 `argOneOf`（**漏值判定与 argAllOf 共用**，见missingValue 的注释）：
+  // 内联 `argv[i + 1]` 会把 `--project` 当逐字原话写进证据栏且零告警——实测复现过。
+  const argOf = (f) => argOneOf(process.argv, f)
+  const argAll = (f) => argAllOf(process.argv, f)
   if (cmd === 'sid') {
     const msg = process.argv.slice(3).join(' ')
     if (!msg) { process.stderr.write('用法：lessons sid "<本 session 用户第一条消息的逐字原文>"\n'); process.exit(1) }
@@ -872,7 +1017,7 @@ if (isMain) {
     if (!r.ok) { process.stderr.write(`${r.reason}\n下一步：${r.hint}\n`); process.exit(1) }
     const sub = process.argv[3]
     if (sub === 'add') {
-      const res = momentAdd(r.root, { project: argOf('--project'), session: argOf('--session'), message: argOf('--message'), date: argOf('--date'), summary: argOf('--summary'), firstMessage: argOf('--first-message'), polarity: argOf('--polarity'), problem: argOf('--problem'), cause: argOf('--cause'), attitude: argOf('--attitude'), evidence: argOf('--evidence'), reason: argOf('--reason') })
+      const res = momentAdd(r.root, { project: argOf('--project'), session: argOf('--session'), message: argOf('--message'), date: argOf('--date'), summary: argOf('--summary'), firstMessage: argOf('--first-message'), polarity: argOf('--polarity'), problem: argOf('--problem'), cause: argOf('--cause'), attitude: argOf('--attitude'), evidence: argOf('--evidence'), evidenceUp: argAll('--evidence-up'), reason: argOf('--reason') })
       if (!res.ok) { process.stderr.write(`记账失败：${res.reason}\n`); process.exit(1) }
       process.stdout.write(`已记入情绪档案：${res.id}（目录 ${res.dir}）\n`); process.exit(0)
     } else if (sub === 'resolve') {

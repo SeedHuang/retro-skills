@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "skill": "review-log",
+  "dependencies": {
+    "skills": []
+  }
+}
