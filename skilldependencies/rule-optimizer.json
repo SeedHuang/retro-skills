@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "skill": "rule-optimizer",
+  "dependencies": {
+    "skills": [
+      { "name": "evolving-skills" },
+      { "name": "managing-lessons-store" }
+    ]
+  }
+}

@@ -20,7 +20,7 @@
 
 ### 1.1 实测基线（2026-10-08，取数命令见 §7.1）
 
-`D:\Seed\my-rules\rules\` 共 **14 个文件 / 665 行 / 21909 字符**（2026-10-08 拆 `testing-pitfalls.md` 为 `ts-expect-error.md` + `vitest-queued-alternative.md` 后重取）：
+`D:\Seed\my-rules\rules\` 共 **14 个文件 / 673 行 / 22283 字符**（2026-10-08 拆 `testing-pitfalls.md` 为两条 + 扩展 `no-git-write.md` 后重取）：
 
 | 文件 | 行 | 字符 | 头部规范状态 |
 |---|---|---|---|
@@ -28,7 +28,7 @@
 | `how-i-must-reason.md` | 114 | 3464 | 来源行≈10 行（合并记录 + 6 段用户原话） |
 | `code-style.md` | 105 | 2488 | **无来源行** |
 | `import-guard.md` | 96 | 2828 | **来源行错位在文末** |
-| `no-git-write.md` | 54 | 938 | **无来源行** |
+| `no-git-write.md` | 62 | 1312 | **无来源行**（正文有小节来源行） |
 | `global-ask-before-acting.md` | 37 | 745 | 来源行合格 |
 | `powershell-file-encoding.md` | 26 | 1125 | 来源行合格（正文证据表可压成一行） |
 | `landing-sweep.md` | 24 | 958 | 来源行合格 |
@@ -39,7 +39,7 @@
 | `ts-expect-error.md` | 10 | 276 | **无来源行**（拆自 `testing-pitfalls.md` §1，内容未动） |
 | `rules-single-source.md` | 10 | 419 | 来源行合格 |
 
-**读法**：行数最高的两条（`docs-convention` + `how-i-must-reason`，合计 243 行 = 36.5% 总量）正是来源行最膨胀的两条 —— 说明「长」和「来源行肥」强相关。
+**读法**：行数最高的两条（`docs-convention` + `how-i-must-reason`，合计 243 行 = 36.1% 总量）正是来源行最膨胀的两条 —— 说明「长」和「来源行肥」强相关。
 
 ### 1.2 三个待解问题
 
@@ -217,7 +217,7 @@ skills/rule-optimizer/
 | **单条是否有可执行判据**（H1 是判据不是主题名） | 有 = 20；是「笔记」「规范」「说明」等目录式标题 = 0 |
 | **超预算时是否触发过废话审查** | 体积超基线 ×1.5 时，报告里必须有「本次新增部分的冗余审查」小节，缺失 −20；有且写明审查结论 = 20 |
 
-**基线**（2026-10-08 实测，总 665 行 / 21909 字符）：单条行数基线 = 全库中位数 ≈ 25 行；总量基线 = 665 行。**基线随每次优化后重取**（不是固定常量），记在脚本输出的 JSON 里，便于对比。
+**基线**（2026-10-08 实测，总 673 行 / 22283 字符）：单条行数基线 = 全库中位数 ≈ 25 行；总量基线 = 673 行。**基线随每次优化后重取**（不是固定常量），记在脚本输出的 JSON 里，便于对比。
 
 ### 6.3 健康分级
 
@@ -258,8 +258,8 @@ node scripts/score.mjs --dir <规则目录> [--json] [--baseline <基线文件>]
 {
   "dir": "D:\\Seed\\my-rules\\rules",
   "measuredAt": "2026-10-08",
-  "totals": { "files": 14, "lines": 665, "chars": 21909 },
-  "currentBaseline": { "totalLines": 665, "medianLines": 25, "x1_5": 997.5 },
+  "totals": { "files": 14, "lines": 673, "chars": 22283 },
+  "currentBaseline": { "totalLines": 673, "medianLines": 25, "x1_5": 1009.5 },
   "previous": null,
   "diff": null,
   "files": [

@@ -88,12 +88,9 @@ node -e "const s=require('fs').readFileSync('skills/rule-optimizer/SKILL.md','ut
 ```
 Expected: 输出 `OK rule-optimizer`。
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 4: 不 commit（no-git-write）**
 
-```bash
-git add skills/rule-optimizer/SKILL.md
-git commit -m "feat(rule-optimizer): 建技能入口 SKILL.md（触发+硬闸门+执行顺序）"
-```
+改动留在工作区，最终统一交用户决定提交方式。
 
 ---
 
@@ -138,12 +135,9 @@ Select-String -Path 'skills/rule-optimizer/assets/rule-template.md' -Pattern '�
 ```
 Expected: `3`（模板含 来源类型 / 落地 / 来源行总长 三字段，对应 spec §3.1 表格）。
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 3: 不 commit（no-git-write）**
 
-```bash
-git add skills/rule-optimizer/assets/rule-template.md
-git commit -m "feat(rule-optimizer): 出头部模板 rule-template.md"
-```
+改动留在工作区，最终统一交用户决定提交方式。
 
 ---
 
@@ -176,12 +170,9 @@ $s = Get-Content 'skills/rule-optimizer/references/criteria.md' -Raw; @('来源�
 ```
 Expected: 全部 `OK`（10 项都在）。
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 3: 不 commit（no-git-write）**
 
-```bash
-git add skills/rule-optimizer/references/criteria.md
-git commit -m "feat(rule-optimizer): 出判据全集 criteria.md"
-```
+改动留在工作区，最终统一交用户决定提交方式。
 
 ---
 
@@ -213,12 +204,9 @@ Select-String -Path 'skills/rule-optimizer/references/recipes.md' -Pattern '^###
 ```
 Expected: 输出 `7`（§R1–§R7 各一节）。
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 3: 不 commit（no-git-write）**
 
-```bash
-git add skills/rule-optimizer/references/recipes.md
-git commit -m "feat(rule-optimizer): 出改法处方 recipes.md"
-```
+改动留在工作区，最终统一交用户决定提交方式。
 
 ---
 
@@ -347,12 +335,9 @@ node --test skills/rule-optimizer/scripts/score.test.mjs
 ```
 Expected: FAIL——`Cannot find module './score.mjs'`（Task 6 才实现）。
 
-- [ ] **Step 3: Commit（测试先落）**
+- [ ] **Step 3: 不 commit（no-git-write）**
 
-```bash
-git add skills/rule-optimizer/scripts/score.test.mjs
-git commit -m "test(rule-optimizer): 先落 score.test.mjs（六项测试）"
-```
+改动留在工作区，最终统一交用户决定提交方式。
 
 ---
 
@@ -510,14 +495,11 @@ Run:
 ```powershell
 node skills/rule-optimizer/scripts/score.mjs --dir D:\Seed\my-rules\rules --json | Select-Object -First 5
 ```
-Expected: 输出 JSON 头部含 `"totals": { "files": 14, "lines": 665, "chars": 21909 }`。
+Expected: 输出 JSON 头部含 `"totals": { "files": 14, "lines": 673, "chars": 22283 }`。
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 4: 不 commit（no-git-write）**
 
-```bash
-git add skills/rule-optimizer/scripts/score.mjs skills/rule-optimizer/scripts/score.test.mjs
-git commit -m "feat(rule-optimizer): 实现 score.mjs 并通过六项测试"
-```
+改动留在工作区，最终统一交用户决定提交方式。
 
 ---
 
@@ -559,12 +541,9 @@ node --test skilldependencies/validate.test.mjs
 ```
 Expected: 4/4 pass（含新增技能后 manifest / json / skills 目录三方一致）。
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 4: 不 commit（no-git-write）**
 
-```bash
-git add skilldependencies/rule-optimizer.json skilldependencies/manifest.json
-git commit -m "feat(rule-optimizer): 接入 skilldependencies（manifest 追加）"
-```
+改动留在工作区，最终统一交用户决定提交方式。
 
 ---
 
@@ -587,7 +566,7 @@ Run:
 ```powershell
 node skills/rule-optimizer/scripts/score.mjs --dir D:\Seed\my-rules\rules --json
 ```
-Expected: `totals.files === 14`、`totals.lines === 665`、`totals.chars === 21909`；`currentBaseline.medianLines === 25`；`how-i-must-reason` 的 `D3 < 20`（来源行 329 字符超长，findings 含 §R1 处方）。
+Expected: `totals.files === 14`、`totals.lines === 673`、`totals.chars === 22283`；`currentBaseline.medianLines === 25`；`how-i-must-reason` 的 `D3 < 20`（来源行 329 字符超长，findings 含 §R1 处方）。
 
 - [ ] **Step 3: 确认无越界输出**
 
