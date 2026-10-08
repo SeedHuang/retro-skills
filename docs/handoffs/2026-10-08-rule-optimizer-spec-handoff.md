@@ -7,9 +7,9 @@
 | 交接时间 | 2026-10-08（本机时区 Asia/Shanghai） |
 | 项目根 | `D:\Seed\retro-skills` |
 | 本次产出 | **spec 定稿**：`docs/superpowers/specs/2026-10-08-rule-optimizer-design.md`（本文档即该 spec 的交接词） |
-| 作用对象仓库 | `D:\Seed\my-rules`（13 条全局规则，本次**未改动任何规则内容**） |
+| 作用对象仓库 | `D:\Seed\my-rules`（14 条全局规则；本次拆 `testing-pitfalls.md` 为两条，未改任何规则内容） |
 | 验证基线 | 本次**未跑验证**——本次只产出设计文档，无代码改动。实现时基线见下 |
-| 待办落点 | 本 spec §10 有 3 条未决问题，需实现时向用户确认 |
+| 待办落点 | spec §10 的 3 条未决问题已于 2026-10-08 全部确认（`.mjs` / 执行时机=后续独立指令 / `testing-pitfalls.md` 拆条已执行） |
 | 状态 | **设计已定稿，等实现**。实现方 = retro-skills 仓库的 agent |
 
 ## 本次任务
@@ -27,7 +27,7 @@
 
 ### 要做什么
 
-建一个新技能 `rule-optimizer`，用来**优化 `my-rules/rules/` 里的 13 条规则**：统一头部格式、精简冗余措辞、量化评分、防劣化。
+建一个新技能 `rule-optimizer`，用来**优化 `my-rules/rules/` 里的 14 条规则**：统一头部格式、精简冗余措辞、量化评分、防劣化。
 
 ### 关键设计决策（§0 已确认边界，实现时不得推翻）
 
@@ -59,7 +59,7 @@
 
 ## 顺带发现的两个既存缺陷（spec §1.3，优化时会撞上）
 
-1. **规则矛盾**：`import-guard.md` 硬规则 3 写「**禁止**用 `GetDiagnostics`」，而 `testing-pitfalls.md` §2 把 `GetDiagnostics` 列为替代验证第一招。同一动作两个判决。
+1. **规则矛盾**：`import-guard.md` 硬规则 3 写「**禁止**用 `GetDiagnostics`」，而 `vitest-queued-alternative.md`（拆自 `testing-pitfalls.md` §2）把 `GetDiagnostics` 列为替代验证第一招。同一动作两个判决。
 2. **项目事实混入全局规则**：`import-guard.md` 的「已知编译错误清单」列了 `src/app.tsx` / `src/pages/404` 等特定项目的内容；`code-style.md` 全篇是某项目的 antd / styled-components 约定。
 
 > 这两条 spec 只写了**处理方式建议**（人工判断 + 需用户确认），**本次未修改任何规则文件**。
@@ -75,7 +75,7 @@
 
 ## 下一步（实现方要做的事）
 
-1. **先向用户确认 spec §10 的 3 条未决问题**：脚本语言（默认 .mjs）/ 规则优化执行时机 / `testing-pitfalls.md` 是否拆条
+1. **spec §10 的 3 条未决已全部确认**：脚本语言 `.mjs` / 优化执行时机 = 后续独立指令 / `testing-pitfalls.md` 已拆为 `ts-expect-error.md` + `vitest-queued-alternative.md`（基线已重取为 14 文件）
 2. 按 spec §2 建 `skills/rule-optimizer/` 四目录结构
 3. 按 spec §3.1 出 `assets/rule-template.md`；按 §3.2/§3.3 出 `references/criteria.md`
 4. 按 spec §6/§7 写 `scripts/score.mjs`（**确定性硬要求**：同输入同输出，不引 LLM、不引随机、不联网）

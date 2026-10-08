@@ -20,7 +20,7 @@
 
 ### 1.1 实测基线（2026-10-08，取数命令见 §7.1）
 
-`D:\Seed\my-rules\rules\` 共 **13 个文件 / 670 行 / 21979 字符**：
+`D:\Seed\my-rules\rules\` 共 **14 个文件 / 665 行 / 21909 字符**（2026-10-08 拆 `testing-pitfalls.md` 为 `ts-expect-error.md` + `vitest-queued-alternative.md` 后重取）：
 
 | 文件 | 行 | 字符 | 头部规范状态 |
 |---|---|---|---|
@@ -29,16 +29,17 @@
 | `code-style.md` | 105 | 2488 | **无来源行** |
 | `import-guard.md` | 96 | 2828 | **来源行错位在文末** |
 | `no-git-write.md` | 54 | 938 | **无来源行** |
-| `testing-pitfalls.md` | 30 | 698 | **无来源行**；标题是目录不是判据 |
 | `global-ask-before-acting.md` | 37 | 745 | 来源行合格 |
 | `powershell-file-encoding.md` | 26 | 1125 | 来源行合格（正文证据表可压成一行） |
 | `landing-sweep.md` | 24 | 958 | 来源行合格 |
 | `skill-assets-convention.md` | 21 | 1188 | 来源行合格 |
+| `vitest-queued-alternative.md` | 15 | 352 | **无来源行**（拆自 `testing-pitfalls.md` §2，内容未动） |
 | `plain-language-to-user.md` | 13 | 569 | 来源行合格 |
 | `poll-deferred-at-start.md` | 11 | 423 | 来源行合格 |
+| `ts-expect-error.md` | 10 | 276 | **无来源行**（拆自 `testing-pitfalls.md` §1，内容未动） |
 | `rules-single-source.md` | 10 | 419 | 来源行合格 |
 
-**读法**：行数最高的两条（`docs-convention` + `how-i-must-reason`，合计 243 行 = 36% 总量）正是来源行最膨胀的两条 —— 说明「长」和「来源行肥」强相关。
+**读法**：行数最高的两条（`docs-convention` + `how-i-must-reason`，合计 243 行 = 36.5% 总量）正是来源行最膨胀的两条 —— 说明「长」和「来源行肥」强相关。
 
 ### 1.2 三个待解问题
 
@@ -50,7 +51,7 @@
 
 ### 1.3 顺带发现的两个既存缺陷（不在本 spec 范围，但优化时会撞上）
 
-1. **规则矛盾**：`import-guard.md` 硬规则 3 写「**禁止**使用 `GetDiagnostics`（TS Server 缓存不可靠）」，而 `testing-pitfalls.md` §2 把 `GetDiagnostics` 列为替代验证第一招。同一动作两个判决。
+1. **规则矛盾**：`import-guard.md` 硬规则 3 写「**禁止**使用 `GetDiagnostics`（TS Server 缓存不可靠）」，而 `vitest-queued-alternative.md`（拆自 `testing-pitfalls.md` §2）把 `GetDiagnostics` 列为替代验证第一招。同一动作两个判决。
 2. **项目事实混入全局规则**：`import-guard.md` 的「已知编译错误清单」列了 `src/app.tsx` / `src/pages/404` 等**特定项目**的既存错误；`code-style.md` 全篇是某项目的 antd / styled-components 约定。
 
 > ⚠️ 这两条**由优化时人工判断处理，脚本不查语义**（B6）。处理方式见 §5.4。
@@ -120,7 +121,7 @@ skills/rule-optimizer/
 | `用户当场指令` | 最高，不可越权 | `global-ask-before-acting`、`plain-language-to-user`、`docs-convention`、`how-i-must-reason` |
 | `评审第 N 轮` | 中，已验证的问题 | `landing-sweep` |
 | `实测/踩坑` | 中，有证据背书 | `powershell-file-encoding`、`import-guard`、`skill-assets-convention` |
-| `项目约定` | 低-中 | `poll-deferred-at-start`、`no-git-write`、`code-style`、`testing-pitfalls`、`rules-single-source` |
+| `项目约定` | 低-中 | `poll-deferred-at-start`、`no-git-write`、`code-style`、`ts-expect-error`、`vitest-queued-alternative`、`rules-single-source` |
 
 ## 4. 「冗余措辞」的可执行定义
 
@@ -216,7 +217,7 @@ skills/rule-optimizer/
 | **单条是否有可执行判据**（H1 是判据不是主题名） | 有 = 20；是「笔记」「规范」「说明」等目录式标题 = 0 |
 | **超预算时是否触发过废话审查** | 体积超基线 ×1.5 时，报告里必须有「本次新增部分的冗余审查」小节，缺失 −20；有且写明审查结论 = 20 |
 
-**基线**（2026-10-08 实测，总 670 行 / 21979 字符）：单条行数基线 = 全库中位数 ≈ 30 行；总量基线 = 670 行。**基线随每次优化后重取**（不是固定常量），记在脚本输出的 JSON 里，便于对比。
+**基线**（2026-10-08 实测，总 665 行 / 21909 字符）：单条行数基线 = 全库中位数 ≈ 25 行；总量基线 = 665 行。**基线随每次优化后重取**（不是固定常量），记在脚本输出的 JSON 里，便于对比。
 
 ### 6.3 健康分级
 
@@ -257,8 +258,8 @@ node scripts/score.mjs --dir <规则目录> [--json] [--baseline <基线文件>]
 {
   "dir": "D:\\Seed\\my-rules\\rules",
   "measuredAt": "2026-10-08",
-  "totals": { "files": 13, "lines": 670, "chars": 21979 },
-  "currentBaseline": { "totalLines": 670, "medianLines": 30, "x1_5": 1005 },
+  "totals": { "files": 14, "lines": 665, "chars": 21909 },
+  "currentBaseline": { "totalLines": 665, "medianLines": 25, "x1_5": 997.5 },
   "previous": null,
   "diff": null,
   "files": [
@@ -295,7 +296,7 @@ node scripts/score.mjs --dir <规则目录> [--json] [--baseline <基线文件>]
 | 测试 | 方法 | 通过标准 | 验证方式 |
 |---|---|---|---|
 | **同输入同输出** | 同一目录连跑两次 `--json`，diff 结果 | 完全一致（确定性硬要求） | 自动 |
-| **维度判定正确** | 拿已知违规做输入（如 `testing-pitfalls.md` 无来源行 → D1 应扣分） | D1 扣分命中 | 自动 |
+| **维度判定正确** | 拿已知违规做输入（如 `ts-expect-error.md` 无来源行 → D1 应扣分） | D1 扣分命中 | 自动 |
 | **引用失效能查出** | 造一个指向不存在文件的指针 | D5 扣分命中 | 自动 |
 | **不越界** | 脚本输出里**不得**出现语义判断或建议删判据的字段 | grep 输出无 `判据`、`建议删除` 类字样 | 自动 |
 | **BOM 容错** | 对带 UTF-8 BOM 的规则文件跑分 | 解析正常、输出与去 BOM 版本一致（BOM 是既有踩坑，见 `powershell-file-encoding`） | 自动 |
@@ -309,12 +310,12 @@ node scripts/score.mjs --dir <规则目录> [--json] [--baseline <基线文件>]
 | 引入 Schliff / PromptQC / instruction-lint | 权威性不足（B7）：4 stars / 0.2.0 / Alpha |
 | 设规则总量硬上限 | B2：体积是防废话的秤，不是限高栏杆 |
 | 让脚本判断语义（判据糊没糊） | B6：机器测不了语义 |
-| 为统一格式而单独改 13 条规则 | 格式规范随新规则生效，旧规则**在精炼时顺手对齐**，不单独为对齐而改 |
+| 为统一格式而单独改 14 条规则 | 格式规范随新规则生效，旧规则**在精炼时顺手对齐**，不单独为对齐而改 |
 | 动 `my-rules` 仓库的规则内容 | 本次只交付 skill；实际优化是**后续独立指令**，按 §5 闸门走 |
 | 自动改判据措辞 | §5.3 闸门 2：必须报告改前改后 + 等确认 |
 
-## 10. 未决问题（需实现时向用户确认）
+## 10. 未决问题（裁决记录：2026-10-08 已逐条确认）
 
-1. **脚本语言**：本 spec 按 `.mjs`（Node）写，因与本仓既有 `lessons.mjs` / `validate.test.mjs` 一致。若用户要 Python，需改 §7 全部。
-2. **规则优化的执行时机**：本 spec 交付后，用户会另行下「优化 rules」指令；那时需确认是否一次全做 13 条，还是分批。
-3. **`testing-pitfalls.md` 是否拆**：它的标题是「测试踩坑笔记」（目录式），内含两条不相关规则（`@ts-expect-error` + Vitest 环境）。是否拆成两条独立规则，需用户定。
+1. **脚本语言** → 已确认：`.mjs`（Node）。与本仓既有 `lessons.mjs` / `validate.test.mjs` 一致，不引入第二套运行时。
+2. **规则优化的执行时机** → 已确认：**后续独立指令**。本 spec 只交付 skill；实际优化由用户另行下「优化 rules」指令时执行（§5 闸门）。
+3. **`testing-pitfalls.md` 是否拆** → 已确认：**拆**。已于 2026-10-08 拆为 `ts-expect-error.md` + `vitest-queued-alternative.md`（内容未动，仅标题改判据式并去编号）；文件数 13 → 14，重取基线见 §1.1。
