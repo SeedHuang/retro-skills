@@ -14,7 +14,7 @@
 
 - **确定性硬要求**（spec §7.2）：同输入必同输出；不引 LLM、不引随机、不联网。
 - **删判据 = 绝对禁止**（spec §0 B1 / §5.3 闸门 1）：脚本与报告都不得输出「可删判据」类建议。
-- **体积不做上限**（spec §0 B2 / §6.2）：D4 只查「H1 是否判据式」，不设总量/单条上限；超标只提示冗余审查，不强制砍。
+- **体积不做上限**（spec §0 B2 / §6.2）：D4 是**参考维度，不计入总分**（总分 = D1+D2+D3+D5，满分 80）；D4 只查「H1 是否判据式」+ 超基线提示，不设总量/单条上限；超标只提示冗余审查，不强制砍。
 - **语义判断不自动化**（spec §0 B6 / 闸门 4）：三检验 #1/#2 由 AI 判断，脚本只查形式。
 - **不引入外部打分器**（spec §0 B7 / §9）：只用自研 `score.mjs`。
 - 规则文件编码：读取时剥 UTF-8 BOM（spec §8 BOM 容错测试；既有 `powershell-file-encoding` 踩坑）。
@@ -153,7 +153,7 @@ Expected: `3`（模板含 来源类型 / 落地 / 来源行总长 三字段，�
 
 文件 `skills/rule-optimizer/references/criteria.md`，逐字落实 spec 以下章节（内容直接抄 spec，保证单源一致）：
 
-1. **来源类型枚举**（spec §3.3 表格）：`用户当场指令` / `评审第 N 轮` / `实测/踩坑` / `项目约定` 四类。
+1. **来源类型**（spec §3.3 表格）：`用户当场指令` / `评审第 N 轮` / `实测/踩坑` / `项目约定` 四类。约束力 = 措辞强度（criteria §1.2，客观判定），不看来源类型。
 2. **层级规范**（spec §3.2 表格）：`#` 规则名=一句话判据（恰一个）；`##` 大节（核心判据必须由 H2 或列表承载）；`###` 小节（不用 emoji）；`**加粗**` 仅句内强调、不承担结构职责。
 3. **三检验**（spec §4.1 表格）：①判据本身不变 ②边界例子不变 ③引用关系不变（#3 可脚本化，#1 #2 需 AI）。
 4. **评分维度 D1–D5**（spec §6.1 表格，逐字）。
@@ -166,7 +166,7 @@ Expected: `3`（模板含 来源类型 / 落地 / 来源行总长 三字段，�
 
 Run:
 ```powershell
-$s = Get-Content 'skills/rule-optimizer/references/criteria.md' -Raw; @('来源类型枚举','层级规范','三检验','D1','D2','D3','D4','D5','健康分级','取数命令') | ForEach-Object { if($s -match [regex]::Escape($_)){"OK $_"}else{"MISS $_"} }
+$s = Get-Content 'skills/rule-optimizer/references/criteria.md' -Raw; @('来源类型','层级规范','三检验','D1','D2','D3','D4','D5','健康分级','取数命令','约束力') | ForEach-Object { if($s -match [regex]::Escape($_)){"OK $_"}else{"MISS $_"} }
 ```
 Expected: 全部 `OK`（10 项都在）。
 
@@ -238,7 +238,7 @@ function makeDir(files) {
 }
 function score(dir, name) { return scoreFile(join(dir, name), dir) }
 
-// 合规文件：来源行三字段齐全、H1 判据式、来源行 ≤ 200 字符、无原话引用 → 五维全满分
+// 合规文件：来源行三字段齐全、H1 判据式、来源行 ≤ 200 字符、无原话引用 → 硬性四维全满分（D4 参考）
 const GOOD = `# 有想法先沟通，拿到授权再动手
 
 > 来源：用户当场指令（2026-10-02）｜落地：2026-10-02
@@ -290,10 +290,11 @@ test('D3 来源行超长扣分', () => {
   rmSync(dir, { recursive: true, force: true })
 })
 
-test('D4 目录式标题 0 分 / 判据式标题满分', () => {
+test('D4 目录式标题 0 分 / 判据式标题满分（参考维度，不计入 total）', () => {
   const dir = makeDir({ 'bad.md': NO_SOURCE, 'good.md': GOOD })
-  assert.equal(score(dir, 'bad.md').scores.D4, 0)
-  assert.equal(score(dir, 'good.md').scores.D4, 20)
+  assert.equal(score(dir, 'bad.md').d4.score, 0)
+  assert.equal(score(dir, 'good.md').d4.score, 20)
+  assert.equal(score(dir, 'good.md').total, 80)   // 四维满分，D4 是参考维度不计入
   rmSync(dir, { recursive: true, force: true })
 })
 
@@ -312,11 +313,25 @@ test('确定性：同一 fixture 连跑两次输出一致', () => {
   rmSync(dir, { recursive: true, force: true })
 })
 
-test('不越界：输出不含「判据」「建议删除」', () => {
-  const dir = makeDir({ 'good.md': GOOD })
+test('不越界：输出不含「判据」「建议删除」（走 D4=0 finding 路径）', () => {
+  const dir = makeDir({ 'bad.md': NO_SOURCE })
   const out = JSON.stringify(scoreDir(dir, { json: true }))
   assert.ok(!out.includes('判据'))
   assert.ok(!out.includes('建议删除'))
+  rmSync(dir, { recursive: true, force: true })
+})
+
+test('合规基准：GOOD 四维满分 total=80', () => {
+  const dir = makeDir({ 'good.md': GOOD })
+  assert.equal(score(dir, 'good.md').total, 80)
+  rmSync(dir, { recursive: true, force: true })
+})
+
+test('level 分级（80 分制）：GOOD 健康 / NO_LANDING 预警 / NO_SOURCE 超标', () => {
+  const dir = makeDir({ 'good.md': GOOD, 'mid.md': NO_LANDING, 'bad.md': NO_SOURCE })
+  assert.equal(score(dir, 'good.md').level, '健康')      // total 80 ≥ 72
+  assert.equal(score(dir, 'mid.md').level, '预警')       // total 70：56–71
+  assert.equal(score(dir, 'bad.md').level, '超标')       // total 40 < 56
   rmSync(dir, { recursive: true, force: true })
 })
 
@@ -349,7 +364,7 @@ Expected: FAIL——`Cannot find module './score.mjs'`（Task 6 才实现）。
 **Interfaces:**
 - Consumes: `criteria.md` 的 D1–D5 判定规则；`recipes.md` 的 `§R<n>` 引用。
 - Produces:
-  - `scoreFile(filePath, rulesDir)` → `{ name, lines, chars, scores: {D1,D2,D3,D4,D5}, total, level, findings: [{dim, msg, recipe}] }`
+  - `scoreFile(filePath, rulesDir)` → `{ name, lines, chars, scores: {D1,D2,D3,D5}, d4: {score, ref}, total, level, findings: [{dim, msg, recipe}] }`（total = 硬性四维和，满分 80；d4 参考不计入）
   - `scoreDir(dir, opts)` → 汇总对象（含 totals / currentBaseline / files[] / total / level / previous / diff）
   - CLI：`node scripts/score.mjs --dir <dir> [--json] [--baseline <file>]`
 
@@ -358,6 +373,7 @@ Expected: FAIL——`Cannot find module './score.mjs'`（Task 6 才实现）。
 ```js
 import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
+import { pathToFileURL } from 'node:url'
 
 const SOURCE_TYPES = ['用户当场指令', '评审第 N 轮', '实测/踩坑', '项目约定']
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
@@ -365,6 +381,7 @@ const DIR_HEADING_HINTS = /笔记|规范|说明|踩坑/   // 目录式标题特�
 const REF_MD_RE = /([A-Za-z0-9_-]+\.md)/g          // 跨规则指针（D5）
 const BASELINE_X15 = 1.5
 const LINE_OVER_LEN = 200                           // 来源行 >200 字符 = 超 2 渲染行（D3）
+const DOC_DIR_RE = /(?:^|[`"'(\s|])(docs|specs|plans|handoffs|session|assets|references|scripts)[/\\]/  // D5 文档路径前缀（docs/after/xxx.md 等外部文档引用）
 
 function stripBom(s) { return s.charCodeAt(0) === 0xFEFF ? s.slice(1) : s }
 
@@ -385,10 +402,10 @@ function parseHeader(text) {
   }
 }
 
-function scoreFile(filePath, rulesDir) {
+export function scoreFile(filePath, rulesDir, medianLines = 25) {
   const raw = readFileSync(filePath, 'utf8')
   const text = stripBom(raw)
-  const lines = text.split(/\r?\n/).length
+  const lines = text.replace(/\r?\n$/, '').split(/\r?\n/).length
   const chars = text.length
   const name = filePath.split(/[\\/]/).pop()
   const h = parseHeader(text)
@@ -404,11 +421,9 @@ function scoreFile(filePath, rulesDir) {
     if (!h.inHead) D1 -= 5                       // 错位在文末
   }
 
-  // D2 层级规范：H1 唯一；核心判据不由加粗承载（跳过引用行后首个正文段是裸加粗 = 违规，如 global-ask-before-acting）；H3 无 emoji
+  // D2 层级规范：H1 唯一；H3 无 emoji。注：`**加粗**` 与 `# 标题` 不冲突——`#` 管分节、`**` 管句内强调（如 global-ask-before-acting 的加粗总结句），加粗不参与 D2 扣分（2026-10-08 用户裁决）
   let D2 = 20
   if ((text.match(/^# /gm) ?? []).length !== 1) D2 -= 5
-  const bodyNoQuote = text.replace(/^# .+\n/, '').split(/\r?\n/).filter(l => !l.trim().startsWith('>')).join('\n')
-  if (/^\*\*[^*]+\*\*/.test(bodyNoQuote.trim())) D2 -= 5
   if (/(^|\n)### .*[^\w\s，。：:（）()\-—_]/.test(text)) D2 -= 5   // H3 含 emoji/装饰符号
 
   // D3 来源精简：来源行 >200 字符即视为超 2 渲染行（spec §3.1 锚点），每多约 80 字符多 1 行，每行 −3；含原话引用 −5
@@ -421,26 +436,40 @@ function scoreFile(filePath, rulesDir) {
     if (h.hasQuote) D3 -= 5
   } else D3 = 0
 
-  // D4 体积健康：H1 是判据（非目录式）= 20；目录式标题 = 0；超单条基线×1.5 → findings 提示
-  let D4 = DIR_HEADING_HINTS.test(h1) ? 0 : 20
+  // D4 参考维度（不计入总分）：目录式标题 = 0（提示）；超单条基线×1.5 → 提示需冗余审查。用户裁决：D4 是「说清楚要多大」的自然结果，非质量硬指标，只参考
+  const d4 = { score: DIR_HEADING_HINTS.test(h1) ? 0 : 20, ref: false }
   const findings = []
 
-  // D5 引用完整：跨规则指针 = 正文出现的「规则名（不带 .md，用 rulesDir 文件名集合匹配）」或「带 .md 的引用」，必须在 rulesDir 存在
+  // D5 引用完整：跨规则指针 = 正文出现的「规则名（不带 .md，用 rulesDir 文件名集合匹配）」或「不带路径分隔符的纯文件名 .md 引用」，必须在 rulesDir 存在
   let D5 = 20
   const ruleNames = new Set(readdirSync(rulesDir).filter(f => f.endsWith('.md')).map(f => f.replace(/\.md$/, '')))
-  const refs = new Set([...text.matchAll(REF_MD_RE)].map(m => m[1].replace(/\.md$/, '')))
-  for (const rn of ruleNames) if (rn && text.includes(rn)) refs.add(rn)
+  const refs = new Set()
+  for (const m of text.matchAll(REF_MD_RE)) {
+    const raw = m[1]
+    if (/[/\\]/.test(raw) || (m.index > 0 && /[/\\]/.test(text[m.index - 1]))) continue
+    const before = text.slice(Math.max(0, m.index - 120), m.index)
+    if (DOC_DIR_RE.test(before)) continue
+    const stem = raw.replace(/\.md$/, '')
+    if (/^xxx-/.test(stem) || stem === 'SKILL' || stem === 'README') continue
+    refs.add(stem)
+  }
+  for (const rn of ruleNames) if (rn && rn !== name.replace(/\.md$/, '') && text.includes(rn)) refs.add(rn)
   const miss = [...refs].filter(r => r !== name.replace(/\.md$/, '') && !ruleNames.has(r))
   if (miss.length) D5 -= 5 * miss.length
+  D5 = Math.max(0, D5)                       // D5 下限 0，避免扣成负数
 
-  const total = D1 + D2 + D3 + D4 + D5
-  const level = total >= 90 ? '健康' : total >= 70 ? '预警' : '超标'
+  const total = D1 + D2 + D3 + D5
+  const level = total >= 72 ? '健康' : total >= 56 ? '预警' : '超标'
   if (D1 < 20) findings.push({ dim: 'D1', msg: `头部不规范（来源行：${h.hasSource ? '有' : '无'}）`, recipe: '见 references/recipes.md §R2/§R3' })
   if (D3 < 20) findings.push({ dim: 'D3', msg: `来源行超长（${h.len} 字符）`, recipe: '见 references/recipes.md §R1' })
-  if (D4 === 0) findings.push({ dim: 'D4', msg: `标题「${h1}」是目录式不是判据`, recipe: '见 references/recipes.md §R4' })
-  if (miss.length) findings.push({ dim: 'D5', msg: `失效指针：${miss.join('、')}`, recipe: '见 references/criteria.md §4.1 检验#3' })
+  if (d4.score === 0) findings.push({ dim: 'D4', msg: `标题「${h1}」含目录式特征词（笔记/规范/说明/踩坑），D4 参考计 0`, recipe: '见 references/recipes.md §R4' })
+  if (lines > medianLines * BASELINE_X15) {
+    d4.ref = true
+    findings.push({ dim: 'D4', msg: `体积超单条基线（${lines} 行 > 中位数 ${medianLines}×1.5），需人工冗余审查（D4 只参考不计分）`, recipe: '见 references/recipes.md §R1' })
+  }
+  if (miss.length) findings.push({ dim: 'D5', msg: `失效指针：${miss.join('、')}`, recipe: '见 references/criteria.md §3 检验#3' })
 
-  return { name, lines, chars, scores: { D1, D2, D3, D4, D5 }, total, level, findings }
+  return { name, lines, chars, scores: { D1, D2, D3, D5 }, d4, total, level, findings }
 }
 
 function median(nums) {
@@ -451,10 +480,16 @@ function median(nums) {
 
 export function scoreDir(dir, opts = {}) {
   const files = readdirSync(dir).filter(f => f.endsWith('.md')).sort()
-  const scored = files.map(f => scoreFile(join(dir, f), dir))
+  // 先算全库单条行数中位数（criteria §6.1：单条行数基线），再传给每个 scoreFile 做超基线提示
+  const lineCounts = files.map(f => {
+    const t = stripBom(readFileSync(join(dir, f), 'utf8'))
+    return t.replace(/\r?\n$/, '').split(/\r?\n/).length
+  })
+  const medianLines = median(lineCounts)
+  const scored = files.map(f => scoreFile(join(dir, f), dir, medianLines))
   const linesTotal = scored.reduce((a, f) => a + f.lines, 0)
   const charsTotal = scored.reduce((a, f) => a + f.chars, 0)
-  const currentBaseline = { totalLines: linesTotal, medianLines: median(scored.map(f => f.lines)), x1_5: Math.round(linesTotal * BASELINE_X15 * 10) / 10 }
+  const currentBaseline = { totalLines: linesTotal, medianLines, x1_5: Math.round(linesTotal * BASELINE_X15 * 10) / 10 }
   let previous = null, diff = null
   if (opts.baselineFile) {
     const prev = JSON.parse(readFileSync(opts.baselineFile, 'utf8'))
@@ -462,7 +497,7 @@ export function scoreDir(dir, opts = {}) {
     diff = { lines: linesTotal - previous.lines, chars: charsTotal - previous.chars }
   }
   const total = Math.round(scored.reduce((a, f) => a + f.total, 0) / Math.max(1, scored.length))
-  const level = total >= 90 ? '健康' : total >= 70 ? '预警' : '超标'
+  const level = total >= 72 ? '健康' : total >= 56 ? '预警' : '超标'
   const out = { dir, measuredAt: new Date().toISOString().slice(0, 10), totals: { files: scored.length, lines: linesTotal, chars: charsTotal }, currentBaseline, previous, diff, files: scored, total, level }
   return out
 }
@@ -479,6 +514,9 @@ export function cli(argv = process.argv.slice(2)) {
   const out = scoreDir(args.dir, { baselineFile: args.baselineFile })
   console.log(args.json ? JSON.stringify(out, null, 2) : `共 ${out.totals.files} 文件 / ${out.totals.lines} 行 / ${out.totals.chars} 字符，平均分 ${out.total}（${out.level}）`)
 }
+
+// 仅当作为命令行直接运行时才执行 CLI（import 进测试/其他模块时不触发）
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) cli()
 ```
 
 - [ ] **Step 2: 跑测试验证通过（TDD 绿）**

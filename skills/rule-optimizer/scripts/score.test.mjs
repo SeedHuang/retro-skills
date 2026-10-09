@@ -12,7 +12,7 @@ function makeDir(files) {
 }
 function score(dir, name) { return scoreFile(join(dir, name), dir) }
 
-// 合规文件：来源行三字段齐全、H1 判据式、来源行 ≤ 200 字符、无原话引用 → 五维全满分
+// 合规文件：来源行三字段齐全、H1 判据式、来源行 ≤ 200 字符、无原话引用 → 硬性四维全满分（D4 参考）
 const GOOD = `# 有想法先沟通，拿到授权再动手
 
 > 来源：用户当场指令（2026-10-02）｜落地：2026-10-02
@@ -64,10 +64,11 @@ test('D3 来源行超长扣分', () => {
   rmSync(dir, { recursive: true, force: true })
 })
 
-test('D4 目录式标题 0 分 / 判据式标题满分', () => {
+test('D4 目录式标题 0 分 / 判据式标题满分（参考维度，不计入 total）', () => {
   const dir = makeDir({ 'bad.md': NO_SOURCE, 'good.md': GOOD })
-  assert.equal(score(dir, 'bad.md').scores.D4, 0)
-  assert.equal(score(dir, 'good.md').scores.D4, 20)
+  assert.equal(score(dir, 'bad.md').d4.score, 0)
+  assert.equal(score(dir, 'good.md').d4.score, 20)
+  assert.equal(score(dir, 'good.md').total, 80)   // 四维满分，D4 是参考维度不计入
   rmSync(dir, { recursive: true, force: true })
 })
 
@@ -94,9 +95,17 @@ test('不越界：输出不含「判据」「建议删除」（走 D4=0 finding 
   rmSync(dir, { recursive: true, force: true })
 })
 
-test('合规基准：GOOD 五维满分 total=100', () => {
+test('合规基准：GOOD 四维满分 total=80', () => {
   const dir = makeDir({ 'good.md': GOOD })
-  assert.equal(score(dir, 'good.md').total, 100)
+  assert.equal(score(dir, 'good.md').total, 80)
+  rmSync(dir, { recursive: true, force: true })
+})
+
+test('level 分级（80 分制）：GOOD 健康 / NO_LANDING 预警 / NO_SOURCE 超标', () => {
+  const dir = makeDir({ 'good.md': GOOD, 'mid.md': NO_LANDING, 'bad.md': NO_SOURCE })
+  assert.equal(score(dir, 'good.md').level, '健康')      // total 80 ≥ 72
+  assert.equal(score(dir, 'mid.md').level, '预警')       // total 70：56–71
+  assert.equal(score(dir, 'bad.md').level, '超标')       // total 40 < 56
   rmSync(dir, { recursive: true, force: true })
 })
 

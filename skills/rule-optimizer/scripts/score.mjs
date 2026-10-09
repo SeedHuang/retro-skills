@@ -8,6 +8,8 @@ const DIR_HEADING_HINTS = /笔记|规范|说明|踩坑/   // 目录式标题特�
 const REF_MD_RE = /([A-Za-z0-9_-]+\.md)/g          // 跨规则指针（D5）
 const BASELINE_X15 = 1.5
 const LINE_OVER_LEN = 200                           // 来源行 >200 字符 = 超 2 渲染行（D3）
+const HEALTHY_MIN = 72                              // 健康下限（80 分制，原 90 × 0.8）
+const WARN_MIN = 56                                 // 预警下限（80 分制，原 70 × 0.8）
 const DOC_DIR_RE = /(?:^|[`"'(\s|])(docs|specs|plans|handoffs|session|assets|references|scripts)[/\\]/  // D5 文档路径前缀（docs/after/xxx.md 等外部文档引用）
 
 function stripBom(s) { return s.charCodeAt(0) === 0xFEFF ? s.slice(1) : s }
@@ -48,11 +50,9 @@ export function scoreFile(filePath, rulesDir, medianLines = 25) {
     if (!h.inHead) D1 -= 5                       // 错位在文末
   }
 
-  // D2 层级规范：H1 唯一；核心判据不由加粗承载（跳过引用行后首个正文段是裸加粗 = 违规，如 global-ask-before-acting）；H3 无 emoji
+  // D2 层级规范：H1 唯一；H3 无 emoji。注：`**加粗**` 与 `# 标题` 不冲突——`#` 管分节结构、`**` 管句内强调（如 global-ask-before-acting 的加粗总结句），加粗不参与 D2 扣分
   let D2 = 20
   if ((text.match(/^# /gm) ?? []).length !== 1) D2 -= 5
-  const bodyNoQuote = text.replace(/^# .+\n/, '').split(/\r?\n/).filter(l => !l.trim().startsWith('>')).join('\n')
-  if (/^\*\*[^*]+\*\*/.test(bodyNoQuote.trim())) D2 -= 5
   if (/(^|\n)### .*[^\w\s，。：:（）()\-—_]/.test(text)) D2 -= 5   // H3 含 emoji/装饰符号
 
   // D3 来源精简：来源行 >200 字符即视为超 2 渲染行（spec §3.1 锚点），每多约 80 字符多 1 行，每行 −3；含原话引用 −5
@@ -65,8 +65,8 @@ export function scoreFile(filePath, rulesDir, medianLines = 25) {
     if (h.hasQuote) D3 -= 5
   } else D3 = 0
 
-  // D4 体积健康：H1 是判据（非目录式）= 20；目录式标题 = 0；超单条基线×1.5 → findings 提示（不计分，criteria §7）
-  let D4 = DIR_HEADING_HINTS.test(h1) ? 0 : 20
+  // D4 参考维度（不计入总分）：目录式标题 = 0（提示）；超单条基线×1.5 → 提示需冗余审查。用户裁决：D4 是「说清楚要多大」的自然结果，非质量硬指标，只参考
+  const d4 = { score: DIR_HEADING_HINTS.test(h1) ? 0 : 20, ref: false }
   const findings = []
 
   // D5 引用完整：跨规则指针 = 正文出现的「规则名（不带 .md，用 rulesDir 文件名集合匹配）」或「不带路径分隔符的纯文件名 .md 引用」，必须在 rulesDir 存在
@@ -90,15 +90,18 @@ export function scoreFile(filePath, rulesDir, medianLines = 25) {
   if (miss.length) D5 -= 5 * miss.length
   D5 = Math.max(0, D5)                       // D5 下限 0，避免扣成负数
 
-  const total = D1 + D2 + D3 + D4 + D5
-  const level = total >= 90 ? '健康' : total >= 70 ? '预警' : '超标'
+  const total = D1 + D2 + D3 + D5
+  const level = total >= HEALTHY_MIN ? '健康' : total >= WARN_MIN ? '预警' : '超标'
   if (D1 < 20) findings.push({ dim: 'D1', msg: `头部不规范（来源行：${h.hasSource ? '有' : '无'}）`, recipe: '见 references/recipes.md §R2/§R3' })
   if (D3 < 20) findings.push({ dim: 'D3', msg: `来源行超长（${h.len} 字符）`, recipe: '见 references/recipes.md §R1' })
-  if (D4 === 0) findings.push({ dim: 'D4', msg: `标题「${h1}」含目录式特征词（笔记/规范/说明/踩坑），D4 计 0`, recipe: '见 references/recipes.md §R4' })
-  if (lines > medianLines * BASELINE_X15) findings.push({ dim: 'D4', msg: `体积超单条基线（${lines} 行 > 中位数 ${medianLines}×1.5），需人工冗余审查`, recipe: '见 references/recipes.md §R1' })
+  if (d4.score === 0) findings.push({ dim: 'D4', msg: `标题「${h1}」含目录式特征词（笔记/规范/说明/踩坑），D4 参考计 0`, recipe: '见 references/recipes.md §R4' })
+  if (lines > medianLines * BASELINE_X15) {
+    d4.ref = true
+    findings.push({ dim: 'D4', msg: `体积超单条基线（${lines} 行 > 中位数 ${medianLines}×1.5），需人工冗余审查（D4 只参考不计分）`, recipe: '见 references/recipes.md §R1' })
+  }
   if (miss.length) findings.push({ dim: 'D5', msg: `失效指针：${miss.join('、')}`, recipe: '见 references/criteria.md §3 检验#3' })
 
-  return { name, lines, chars, scores: { D1, D2, D3, D4, D5 }, total, level, findings }
+  return { name, lines, chars, scores: { D1, D2, D3, D5 }, d4, total, level, findings }
 }
 
 function median(nums) {
@@ -126,7 +129,7 @@ export function scoreDir(dir, opts = {}) {
     diff = { lines: linesTotal - previous.lines, chars: charsTotal - previous.chars }
   }
   const total = Math.round(scored.reduce((a, f) => a + f.total, 0) / Math.max(1, scored.length))
-  const level = total >= 90 ? '健康' : total >= 70 ? '预警' : '超标'
+  const level = total >= HEALTHY_MIN ? '健康' : total >= WARN_MIN ? '预警' : '超标'
   const out = { dir, measuredAt: new Date().toISOString().slice(0, 10), totals: { files: scored.length, lines: linesTotal, chars: charsTotal }, currentBaseline, previous, diff, files: scored, total, level }
   return out
 }
