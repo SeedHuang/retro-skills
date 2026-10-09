@@ -14,24 +14,25 @@ description: 从需求写一条合规规则，或按 inspector 处方优化已�
 > 1. **禁止自动改动判据措辞** —— 判据（极性 / 动作 / 宾语 / 范围）的措辞定稿前须用户确认；草稿期只给建议，不替用户拍板。inspector 分数是体检不是验收，不因分数自动改写措辞。
 > 2. **删冗余必须过三检验** —— 删除任何文字前逐条三检验（①判据本身不变 ②边界例子不变 ③引用关系不断），并把检验过程写进报告；#1 #2 由 AI 逐条判断，不能只写「已检查」（#3 可脚本查）。
 
-## 写作流程（编写/优化路径闭环，Spec A §4.3 步骤 1-8 扩展）
+## 写作流程（起草 + 自查 + 交付草稿）
 
 **两种输入**：
 - **新建**：从需求起草。
-- **优化**：拿 rule-inspector 对现有规则的处方 + 原文 → 起草修订版（**改前 vs 改后两版都留**，报告对照）。
+- **优化**：拿 use-rule-skills 转来的 inspector 处方 + 原文 → 起草修订版（**改前 vs 改后两版都留**，供入口对照）。
 
 1. **需求澄清 / 处方确认**：按 `global-ask-before-acting` 模式——用户主动对话时先沟通，确认方向 + 给用户没想到角度的建议；优化时先确认采纳哪些处方。
-2. **起草**：按四要素写——**范围（在哪）+ 条件（何时）+ 动作（做/不做，极性）+ 宾语（对什么，可枚举）**。**判定词归一**：极性一律用封闭词表（禁令：禁止/不得/不要/严禁；义务：必须/应/要/一律），遇到表外词（不允许/不可/切勿…）读懂语义后换成最贴近的表内词，正文不引入表外判定词。
-3. **自查**：过执行力度 8 项 checklist + 来源行（模板）+ 层级（H1 唯一、H3 无 emoji）+ **判定词全部在表内**。
-4. **inspector 评分**：跑 rule-inspector 对草稿出报告（判据见 `rule-inspector/references/criteria.md`，报告模板见 `rule-inspector/assets/rule-report-template.md`）。
-5. **标题一致性收尾检查**：对照 criteria §2.4 标题第 4 项收尾三句（①范围 ②极性 ③对象 与正文一致）。
-6. **二次审查**：修复 → 重跑评分 → 核销干净。
-7. **最终报告**：按 §3 模板出「分数 + 明细」报告。
-8. **落地**：写进 `my-rules/rules/` + `aas sync`（走 `rules-single-source`：只建源仓库；写操作按 `global-ask-before-acting` 先确认）。
+2. **起草**：按四要素写——**范围（在哪）+ 条件（何时）+ 动作（做/不做，极性）+ 宾语（对什么，可枚举）**。**判定词归一**：极性一律用封闭词表（词表见 `rule-inspector/references/criteria.md` §3.1），遇到表外词（不允许/不可/切勿…）读懂语义后换成最贴近的表内词，正文不引入表外判定词。
+3. **自查**：过执行力度 8 项 checklist + 冗余度 4 项 + 来源行（模板）+ 层级（H1 唯一、H3 无 emoji）+ **判定词全部在表内**。
+4. **标题一致性三句**：对照 criteria §2.4 标题第 4 项收尾三句（①范围 ②极性 ③对象 与正文一致）。
+5. **交付草稿**：产出草稿，写入 use-rule-skills 草稿箱（命名 `<规则名>--<YYYYMMDD-HHMMSS>.md`）；合规以 rule-inspector 评分为准，验收/循环由 use-rule-skills 入口完成。
 
 ## 判据与写作指引去哪读
 
 - 判据全集（来源类型枚举 / 层级规范 / 三检验 / 评分维度 / 标题一致性）：`rule-inspector/references/criteria.md`
-- 四要素写作指引 + 执行力度 8 项自查表 + 标题一致性三句 + 例子：`references/writing-guide.md`
+- 四要素写作指引 + 执行力度 8 项自查表 + 冗余度 4 项 + 标题一致性三句 + 例子：`references/writing-guide.md`
 - 产出骨架（输出用模板）：`assets/rule-skeleton.md`
-- 报告模板（检查/编写两路径共用）：`rule-inspector/assets/rule-report-template.md`
+- 报告模板（验收/循环由入口产出）：`use-rule-skills/assets/report-template.md`
+
+## 产出与验收边界
+
+产出是**草稿**（写在 use-rule-skills 草稿箱，命名 `<规则名>--<YYYYMMDD-HHMMSS>.md`）；合规以 rule-inspector 评分为准，验收/循环走 use-rule-skills；不经入口直用本技能 = 产出未验收草稿。

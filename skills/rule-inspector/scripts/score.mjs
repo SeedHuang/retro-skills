@@ -1,5 +1,5 @@
 import { readFileSync, readdirSync, existsSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, dirname } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
 const SOURCE_TYPES = ['用户当场指令', '评审第 N 轮', '实测/踩坑', '项目约定']
@@ -302,14 +302,32 @@ export function scoreDir(dir, opts = {}) {
 }
 
 export function cli(argv = process.argv.slice(2)) {
-  const args = { dir: 'D:\\Seed\\my-rules\\rules', json: false, triCheck: false, baselineFile: null, type: null, annotationsFile: null }
+  const args = { dir: 'D:\\Seed\\my-rules\\rules', json: false, triCheck: false, baselineFile: null, type: null, annotationsFile: null, file: null, rulesDir: null }
+  let dirGiven = false   // 显式给了 --dir（args.dir 有默认值，互斥须区分「显式」与「默认」）
   for (let i = 0; i < argv.length; i++) {
-    if (argv[i] === '--dir') args.dir = argv[++i]
+    if (argv[i] === '--dir') { args.dir = argv[++i]; dirGiven = true }
+    else if (argv[i] === '--file') args.file = argv[++i]
+    else if (argv[i] === '--rules-dir') args.rulesDir = argv[++i]
     else if (argv[i] === '--json') args.json = true
     else if (argv[i] === '--tri-check') args.triCheck = true
     else if (argv[i] === '--baseline') args.baselineFile = argv[++i]
     else if (argv[i] === '--type') args.type = argv[++i]
     else if (argv[i] === '--annotations') args.annotationsFile = argv[++i]
+  }
+  if (args.file && dirGiven) { console.error('--file 与 --dir 互斥，只给一个'); process.exit(2) }
+  if (args.file) {
+    if (!existsSync(args.file)) { console.error(`文件不存在：${args.file}`); process.exit(1) }
+    if (args.rulesDir && !existsSync(args.rulesDir)) { console.error(`规则库目录不存在：${args.rulesDir}`); process.exit(1) }
+    const opts = { triCheckDone: args.triCheck, type: args.type }
+    // rulesDir 用于跨规则引用检查（scoreFile → crossRuleMiss）：评分草稿时须指规则库（my-rules/rules），
+    // 不能默认 dirname(file)（草稿在草稿箱，引用会全部误判）；评分现有规则时可不给（默认 dirname(file)=规则库）。
+    const rulesDir = args.rulesDir ?? dirname(args.file)
+    const r = scoreFile(args.file, rulesDir, opts)
+    const summary = r.level === undefined
+      ? `得分 ${r.total}/${r.max}（${Math.round(r.rate * 100)}%，合集无级别）`
+      : `得分 ${r.total}/${r.max}（${Math.round(r.rate * 100)}%，${r.level}）`
+    console.log(args.json ? JSON.stringify(r, null, 2) : summary)
+    return
   }
   if (!existsSync(args.dir)) { console.error(`目录不存在：${args.dir}`); process.exit(1) }
   if (args.baselineFile && !existsSync(args.baselineFile)) { console.error(`基线文件不存在：${args.baselineFile}，先不带 --baseline 跑一次`); process.exit(1) }

@@ -44,7 +44,7 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url))
 test('CLI --file：单文件评分，输出 = scoreFile（与 --dir 互斥；--rules-dir 传入规则库）', () => {
   const dir = makeDir({ 'a.md': GOOD })
   const script = join(__dirname, 'score.mjs')
-  const out = spawnSync(process.execPath, [script, '--file', join(dir, 'a.md'), '--rules-dir', dir, '--type', '条件触发', '--json'], { encoding: 'utf8' })
+  const out = spawnSync(process.execPath, [script, '--file', join(dir, 'a.md'), '--rules-dir', dir, '--type', '条件触发', '--tri-check', '--json'], { encoding: 'utf8' })
   assert.equal(out.status, 0, out.stderr)
   const got = JSON.parse(out.stdout.replace(/^\uFEFF/, ''))
   assert.equal(got.name, 'a.md')
@@ -70,7 +70,7 @@ Expected: 新 2 用例 FAIL（CLI 未支持 --file）。
 else if (argv[i] === '--file') args.file = argv[++i]
 else if (argv[i] === '--rules-dir') args.rulesDir = argv[++i]
 ...
-if (args.file && args.dir) { console.error('--file 与 --dir 互斥，只给一个'); process.exit(2) }
+if (args.file && dirGiven) { console.error('--file 与 --dir 互斥，只给一个'); process.exit(2) }   // 注：args.dir 有硬编码默认值，互斥须用 dirGiven 标志（显式 --dir 才判互斥）
 if (args.file) {
   if (!existsSync(args.file)) { console.error(`文件不存在：${args.file}`); process.exit(1) }
   if (args.rulesDir && !existsSync(args.rulesDir)) { console.error(`规则库目录不存在：${args.rulesDir}`); process.exit(1) }
@@ -131,7 +131,7 @@ test('ensure：目录存在则幂等返回；不存在则建', () => {
 })
 test('ls：按文件名时间戳倒序、可过滤、带 created 字段', () => {
   const box = mkbox()
-  w(box, 'a--20261009-0800.md'); w(box, 'a--20261009-1000.md'); w(box, 'b--20261009-0900.md')
+  w(box, 'a--20261009-080000.md'); w(box, 'a--20261009-100000.md'); w(box, 'b--20261009-090000.md')
   const all = ls(box)
   assert.equal(all.length, 3)
   assert.equal(all[0].name, 'a--20261009-1000.md')   // 文件名时间戳倒序
@@ -173,6 +173,7 @@ Expected: FAIL（模块不存在）。
 import { mkdirSync, readdirSync, existsSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { homedir } from 'node:os'
+import { fileURLToPath } from 'node:url'
 
 export function draftsDir() { return join(homedir(), '.retro-skills', 'rule-drafts') }
 export function ensure(box = draftsDir()) {
@@ -195,22 +196,24 @@ export function rmRule(box, ruleName, keep) {
   for (const f of ls(box, ruleName)) if (!keep || f.name !== keep) rmFile(box, f.name)
 }
 
-// CLI
-const [,, cmd, ...rest] = process.argv
-const box = draftsDir()
-switch (cmd) {
-  case 'ensure': ensure(box); console.log(`草稿箱：${box}`); break
-  case 'ls': {
-    const ruleName = rest[0]
-    for (const f of ls(box, ruleName)) console.log(`${f.name}（创建 ${f.created || '未知'}）`)
-    break
+// CLI（仅直接运行时执行——被 import 时不跑，否则测试进程被 exit(2) 杀掉）
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const [,, cmd, ...rest] = process.argv
+  const box = draftsDir()
+  switch (cmd) {
+    case 'ensure': ensure(box); console.log(`草稿箱：${box}`); break
+    case 'ls': {
+      const ruleName = rest[0]
+      for (const f of ls(box, ruleName)) console.log(`${f.name}（创建 ${f.created || '未知'}）`)
+      break
+    }
+    case 'rm': {
+      if (rest[0] === '--rule') { const rule = rest[1]; const keep = rest[2] === '--keep' ? rest[3] : undefined; rmRule(box, rule, keep); console.log(`已删除 ${rule} 名下草稿${keep ? `（保留 ${keep}）` : ''}`) }
+      else { rmFile(box, rest[0]); console.log(`已删除 ${rest[0]}`) }
+      break
+    }
+    default: console.error('用法：drafts ensure | ls [规则名] | rm <草稿> | rm --rule <规则名> [--keep <草稿>]'); process.exit(2)
   }
-  case 'rm': {
-    if (rest[0] === '--rule') { const rule = rest[1]; const keep = rest[2] === '--keep' ? rest[3] : undefined; rmRule(box, rule, keep); console.log(`已删除 ${rule} 名下草稿${keep ? `（保留 ${keep}）` : ''}`) }
-    else { rmFile(box, rest[0]); console.log(`已删除 ${rest[0]}`) }
-    break
-  }
-  default: console.error('用法：drafts ensure | ls [规则名] | rm <草稿> | rm --rule <规则名> [--keep <草稿>]'); process.exit(2)
 }
 ```
 

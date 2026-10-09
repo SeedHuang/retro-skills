@@ -3,7 +3,11 @@ import assert from 'node:assert/strict'
 import { mkdtempSync, writeFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
+import { spawnSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
 import { scoreFile, scoreDir } from './score.mjs'
+
+const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
 function makeDir(files) {
   const dir = mkdtempSync(join(tmpdir(), 'ro-test-'))
@@ -482,6 +486,27 @@ test('不越界：输出不含「判据」「建议删除」', () => {
   const out = JSON.stringify(scoreDir(dir, { triCheckDone: true }))
   assert.ok(!out.includes('判据'), '输出不应含「判据」')
   assert.ok(!out.includes('建议删除'), '输出不应含「建议删除」')
+  rmSync(dir, { recursive: true, force: true })
+})
+
+// ── Task 1（CLI --file 单文件评分）──
+
+test('CLI --file：单文件评分，输出 = scoreFile（与 --dir 互斥；--rules-dir 传入规则库）', () => {
+  const dir = makeDir({ 'a.md': GOOD })
+  const script = join(__dirname, 'score.mjs')
+  const out = spawnSync(process.execPath, [script, '--file', join(dir, 'a.md'), '--rules-dir', dir, '--type', '条件触发', '--tri-check', '--json'], { encoding: 'utf8' })
+  assert.equal(out.status, 0, out.stderr)
+  const got = JSON.parse(out.stdout.replace(/^\uFEFF/, ''))
+  assert.equal(got.name, 'a.md')
+  assert.equal(got.total, got.max)
+  rmSync(dir, { recursive: true, force: true })
+})
+test('CLI --file 与 --dir 互斥：同给 → exit 2 + 互斥提示', () => {
+  const dir = makeDir({ 'x.md': GOOD })
+  const script = join(__dirname, 'score.mjs')
+  const out = spawnSync(process.execPath, [script, '--file', join(dir, 'x.md'), '--dir', 'D:\\Seed\\my-rules\\rules'], { encoding: 'utf8' })
+  assert.equal(out.status, 2)
+  assert.match(out.stderr, /互斥/)
   rmSync(dir, { recursive: true, force: true })
 })
 
