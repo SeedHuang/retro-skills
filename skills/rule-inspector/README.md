@@ -56,8 +56,8 @@ graph TD
 
 | 适用方式 | 规则 |
 |---|---|
-| 持续适用（5） | no-git-write(禁)、how-i-must-reason(义)、plain-language(义)、docs-convention(义)、skill-assets(义) |
-| 条件触发（7） | import-guard(禁)、powershell-encoding(禁)、rules-single-source(禁)、ts-expect-error(禁)、poll-deferred(义)、landing-sweep(义)、vitest-queued(义) |
+| 持续适用（5） | no-git-write(禁)、how-i-must-reason(禁)、plain-language(义)、docs-convention(禁)、skill-assets(义) |
+| 条件触发（7） | import-guard(禁)、powershell-encoding(禁)、rules-single-source(禁)、ts-expect-error(禁)、poll-deferred(义)、landing-sweep(义)、vitest-queued(禁) |
 | 模式门控（1） | **global-ask-before-acting(禁)** |
 | 待拆未定（1） | code-style（合集：3 个独立判据 + 混合极性 → 该拆，单判据=0 样板） |
 

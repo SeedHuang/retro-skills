@@ -13,20 +13,24 @@ const LINE_OVER_LEN = 200                           // 来源行 >200 字符 = �
 const HISTORY_RE = /合并|补于|补记|历史/            // 无来源行历史叙述：来源行含历史词 → 0
 const GUIDE_RE = /^(总之|综上|需要注意的是|换句话说|由此可见)/  // 无空泛引导段：段落以此类词开头 → 0
 
-// ---- 执行力度（机械代理，照 criteria.md §2.4 判定列）----
+// ---- 执行力度（机械代理，照 criteria.md §2.4/§3.4 判定列）----
+const TYPE_KEYS = ['持续适用', '条件触发', '模式门控', '待拆未定']
 const POLAR_RE = /禁止|不得|不要|必须|应|要/        // ①极性词
 const BAN_RE = /禁止|不得|不要|严禁/                // 禁令类判定：正文有此类词 = 禁令类（④⑤⑥ 适用）
 const ACTION_RE = /执行|进行|使用|提交|查看|写|调用|删除|运行|打开|输入|生成|修改|记录/  // ①动作
 const VAGUE_RE = /合理处理|适当|认真对待|酌情|妥善处理/  // ②空泛词 → 0
 const ENUM_RE = /[A-Za-z0-9_-]+(?:、[A-Za-z0-9_-]+){1,}/ // ②可枚举项（并列列举，如 git add、commit、push）
 const SPECIFIC_TOKEN_RE = /(git|npm|tsc|node|文件|目录|命令|脚本|计划|仓库|文档|代码)/  // ②具体对象
-const CONDITION_RE = /在[^。；\n]{1,24}(?:时|场景|下|前|后|中)/  // ③「具体类型+条件」标记（如「在 typescript 场景」）
+// ③⑦ 判定口径（按类型；安全别名规避「判据」「建议删除」）
+const COND_RE = /在[^。；\n]{1,24}(?:时|场景|下|前|后|中)|当[^。；\n]{1,20}(?:时|后)/      // 条件触发 ③
+const MODE_COND_RE = /只适用于[^。；\n]{1,30}(?:的时刻|的场景|的情形)|当[^。；\n]{1,20}时(?:进入|处于|设为)?[^。；\n]{0,8}模式/ // 模式门控 ③（模式归属条件可判定）
 const BROAD_RE = /全部情况|所有情况|任何情况|任何场景/           // ③写「全部情况」→ 0
+const TRIG_RE = /落地后|开工时|编辑后|提交前|动手前|操作前|执行前|启动时|每次[^。；\n]{0,10}前/ // 条件触发 ⑦
+const MODE_TRIG_RE = /由[^。；\n]{0,24}控制|回到[^。；\n]{0,8}模式/                        // 模式门控 ⑦（切换信号可观测；「重新适用」是返回语义非可观测信号，归 M4）
 const COVER_RE = /不因|不豁免|同样禁止|任何来源|不因此/          // ④来源覆盖：声明「不因来源豁免」
 const CONFLICT_RE = /以本规则为准|以本条为准|本规则优先|本条优先/  // ⑤冲突裁决
 const EXCEPTION_RE = /只有[^。；\n]{1,40}才算/                   // ⑥例外从严：明确「只有…才算」
 const LOOSE_RE = /一般|通常|可能允许|宽松/                       // ⑥宽松词 → 0
-const TRIGGER_RE = /每次[^。；\n]{0,10}前|落地后|开工时|编辑后|提交前|动手前|操作前|执行前|启动时|写作时/  // ⑦可观测触发信号/时机
 const VERIFY_RE = /验证|自检|检查点|报告|自查|检查是否|确认遵守|复核|核销|跑一遍|体检/  // ⑧验证闭环：定义「怎么确认遵守了」
 
 // ---- 标题（机械代理）----
@@ -107,11 +111,17 @@ function crossRuleMiss(text, rulesDir, name) {
 }
 
 /**
- * 按 criteria.md §2.4 的 24 检查点逐项判定（每项 1 分）。
+ * 按 criteria.md §2.4/§3 判据逐项判定（类型感知：opts.type 选检查点，每项 1 分）。
+ * opts.type: 持续适用/条件触发/模式门控/待拆未定（缺省/非法 → 条件触发，等价旧口径）
+ * opts.modeChecks: {M1..M6} 模式门控专属检查点（AI 判，缺省全 false → 0 分进 findings）
  * opts.triCheckDone: 三检验报告是否已做（AI 侧语义判断，脚本无法复算；默认 false）
  * 返回 { name, lines, chars, groups, total, max, rate, level, findings }
- * 输出字符串全局规避「判据」「建议删除」（Task 4/7 有 grep 越界检查），标题检查点用安全别名。
+ * 输出字符串全局规避「判据」「建议删除」（越界检查），单规则/M3 用安全别名发出。
  */
+// 得分率 → 级别（健康/预警/不及格，criteria §3.7）；scoreFile 与 scoreDir 共用，防两处漂移
+function rateLevel(rate) {
+  return rate >= 0.9 ? '健康' : rate >= 0.7 ? '预警' : '不及格'
+}
 export function scoreFile(filePath, rulesDir, opts = {}) {
   const raw = readFileSync(filePath, 'utf8')
   const text = stripBom(raw)
@@ -122,6 +132,12 @@ export function scoreFile(filePath, rulesDir, opts = {}) {
   const title = text.match(/^# (.+)$/m)?.[1] ?? ''
   const lineArr = text.replace(/\r?\n$/, '').split(/\r?\n/)
   const body = lineArr.filter(l => !l.trim().startsWith('#') && !l.trim().startsWith('> 来源')).join('\n')
+
+  // 类型感知（Task 3）：type 由 opts 传入（AI 判），缺省/非法 → 条件触发（等价旧口径）
+  const type = TYPE_KEYS.includes(opts.type) ? opts.type : '条件触发'
+  const isBan = BAN_RE.test(body)
+  const isPending = type === '待拆未定'
+  const modeChecks = opts.modeChecks ?? {}
 
   const findings = []
   const groups = {}
@@ -169,26 +185,55 @@ export function scoreFile(filePath, rulesDir, opts = {}) {
   g('冗余度', '三检验报告已做', !!opts.triCheckDone,
     '三检验报告未做（AI 侧）', '由 AI 逐段做三检验并写报告；报告必须做')
 
-  // ── 执行力度（禁令类 8 / 非禁令类 5：④⑤⑥ 仅禁令类计分）──
-  const isBan = BAN_RE.test(body)
-  g('执行力度', '①极性明确', POLAR_RE.test(body) && ACTION_RE.test(body),
-    '正文无极性词（禁止/不得/不要/必须/应/要）或动作', '补极性词 + 明确动作')
-  g('执行力度', '②动作内容具体', actionSpecific(body),
-    '动作对象空泛（合理处理/适当类）或无具体对象', '动作对象改为可枚举项或具体描述')
-  g('执行力度', '③适用条件精细', CONDITION_RE.test(body) && !BROAD_RE.test(body),
-    '适用条件缺失或写「全部情况」', '条件精确到「具体类型+条件」（如「在 typescript 场景」）')
-  if (isBan) {
-    g('执行力度', '④来源覆盖（禁令类）', COVER_RE.test(body),
-      '未声明「不因来源豁免」', '补「防掠过」小节：不因计划/子代理/脚本/工具模板豁免')
-    g('执行力度', '⑤冲突裁决（禁令类）', CONFLICT_RE.test(body),
-      '未声明冲突时以本规则为准', '补「冲突裁决」小节：与具体指令/模板冲突时以本规则为准')
-    g('执行力度', '⑥例外从严（禁令类）', EXCEPTION_RE.test(body) && !LOOSE_RE.test(body),
-      '例外条件不明确或含宽松词（一般/通常/可能允许）', '例外写「只有…才算」且无宽松词')
+  // ── 单规则（通用，类型派生：待拆未定 = 0）──
+  g('单规则', '单规则检查（非合集）', !isPending,
+    '合集：多个独立规则/极性混合 → 该拆', '拆成 N 条独立规则后分别评分')
+
+  // ── 执行力度（按类型 × 极性选适用项；④⑤⑥ 仅禁令类；③⑦ 仅条件触发/模式门控）──
+  if (!isPending) {
+    const hasCond = type !== '持续适用'   // ③⑦ 仅条件触发/模式门控评估（持续适用不适用，不计满分）
+    g('执行力度', '①极性明确', POLAR_RE.test(body) && ACTION_RE.test(body),
+      '正文无极性词（禁止/不得/不要/必须/应/要）或动作', '补极性词 + 明确动作')
+    g('执行力度', '②动作内容具体', actionSpecific(body),
+      '动作对象空泛（合理处理/适当类）或无具体对象', '动作对象改为可枚举项或具体描述')
+    if (hasCond) {
+      const condOk = type === '条件触发'
+        ? (COND_RE.test(body) && !BROAD_RE.test(body))
+        : (MODE_COND_RE.test(body) && !BROAD_RE.test(body))
+      g('执行力度', '③适用条件精细', condOk,
+        '适用条件缺失或写「全部情况」', '条件精确到「具体类型+条件」（如「在 typescript 场景」）')
+    }
+    if (isBan) {
+      g('执行力度', '④来源覆盖（禁令类）', COVER_RE.test(body),
+        '未声明「不因来源豁免」', '补「防掠过」小节：不因计划/子代理/脚本/工具模板豁免')
+      g('执行力度', '⑤冲突裁决（禁令类）', CONFLICT_RE.test(body),
+        '未声明冲突时以本规则为准', '补「冲突裁决」小节：与具体指令/模板冲突时以本规则为准')
+      g('执行力度', '⑥例外从严（禁令类）', EXCEPTION_RE.test(body) && !LOOSE_RE.test(body),
+        '例外条件不明确或含宽松词（一般/通常/可能允许）', '例外写「只有…才算」且无宽松词')
+    }
+    if (hasCond) {
+      const trigOk = type === '条件触发' ? TRIG_RE.test(body) : MODE_TRIG_RE.test(body)
+      g('执行力度', '⑦触发机制', trigOk,
+        '无可观测触发信号/时机', '补「触发时机」小节（落地后/开工时/编辑后）')
+    }
+    g('执行力度', '⑧验证闭环', VERIFY_RE.test(body),
+      '未定义怎么确认遵守了', '补「验证」小节：自检命令/检查点/报告要求')
+    // ── 模式专属（仅模式门控，M1–M6 由 AI 判，缺省全 false → 0 分进 findings）──
+    if (type === '模式门控') {
+      g('模式专属', 'M1 状态集合完整', !!modeChecks.M1,
+        '状态集合不全（漏态 = 该态下规则没交代）', '补全规则管辖的全部模式（≥2 态）')
+      g('模式专属', 'M2 每状态行为明确', !!modeChecks.M2,
+        '存在状态未规定动作裁决（空态）', '每个状态都规定做/不做的动作裁决')
+      g('模式专属', 'M3 切换依据明确', !!modeChecks.M3,
+        '切换信号不可观测（感觉/大概/酌情）', '状态转移由可观测信号驱动')
+      g('模式专属', 'M4 回到逻辑完整', !!modeChecks.M4,
+        '缺「退出 → 重新适用」回转路径（单向退出 = 规则形同失效）', '补「退出 → 重新适用」回转路径')
+      g('模式专属', 'M5 模式边界封闭', !!modeChecks.M5,
+        '存在需执行者语义归类的状态情形', '每态覆盖情形写成可判定枚举（防掠过）')
+      g('模式专属', 'M6 退出后由谁接管', !!modeChecks.M6,
+        '规则让位时未指明动作按什么管（退出留空档）', '指明让位后动作按哪条规则管')
+    }
   }
-  g('执行力度', '⑦触发机制', TRIGGER_RE.test(body),
-    '无可观测触发信号/时机', '补「触发时机」小节（落地后/开工时/编辑后）')
-  g('执行力度', '⑧验证闭环', VERIFY_RE.test(body),
-    '未定义怎么确认遵守了', '补「验证」小节：自检命令/检查点/报告要求')
 
   // ── 标题（4）──
   // ①判据式非主题名：标题含极性词且无目录式特征词（笔记/规范/说明/踩坑）→ 一句话可执行规则
@@ -214,7 +259,8 @@ export function scoreFile(filePath, rulesDir, opts = {}) {
   const total = Object.values(groups).reduce((a, grp) => a + grp.score, 0)
   const max = Object.values(groups).reduce((a, grp) => a + grp.max, 0)
   const rate = max === 0 ? 0 : total / max
-  const level = rate >= 0.9 ? '健康' : rate >= 0.7 ? '预警' : '不及格'
+  // 待拆未定（合集）：只报通用组得分率，不报整体级别（满分未定，拆后按各新文件重评）
+  const level = isPending ? undefined : rateLevel(rate)
   return { name, lines, chars, groups, total, max, rate, level, findings }
 }
 
@@ -232,7 +278,11 @@ export function scoreDir(dir, opts = {}) {
     return t.replace(/\r?\n$/, '').split(/\r?\n/).length
   })
   const medianLines = median(lineCounts)
-  const scored = files.map(f => scoreFile(join(dir, f), dir, opts))
+  const scored = files.map(f => {
+    // 逐文件标注优先于全局 --type；未标注文件按 opts.type（缺省 条件触发）
+    const ann = opts.annotations?.[f]
+    return scoreFile(join(dir, f), dir, ann ? { ...opts, ...ann } : opts)
+  })
   const linesTotal = scored.reduce((a, f) => a + f.lines, 0)
   const charsTotal = scored.reduce((a, f) => a + f.chars, 0)
   const currentBaseline = { totalLines: linesTotal, medianLines, x1_5: Math.round(linesTotal * 1.5 * 10) / 10 }
@@ -242,25 +292,43 @@ export function scoreDir(dir, opts = {}) {
     previous = prev.totals ?? prev.currentBaseline
     diff = { lines: linesTotal - previous.lines, chars: charsTotal - previous.chars }
   }
-  const total = Math.round(scored.reduce((a, f) => a + f.total, 0) / Math.max(1, scored.length))
-  const rate = scored.reduce((a, f) => a + f.rate, 0) / Math.max(1, scored.length)
-  const level = rate >= 0.9 ? '健康' : rate >= 0.7 ? '预警' : '不及格'
+  // dir 级得分率/级别：跳过 level===undefined（待拆未定/合集）文件（单独列出），避免拉低 dir 健康度
+  const rated = scored.filter(f => f.level !== undefined)
+  const total = rated.length ? Math.round(rated.reduce((a, f) => a + f.total, 0) / rated.length) : undefined
+  const rate = rated.length ? rated.reduce((a, f) => a + f.rate, 0) / rated.length : undefined
+  const level = rate === undefined ? undefined : rateLevel(rate)   // 全库无已评级文件时不报 dir 级别
   const out = { dir, measuredAt: new Date().toISOString().slice(0, 10), totals: { files: scored.length, lines: linesTotal, chars: charsTotal }, currentBaseline, previous, diff, files: scored, total, rate, level }
   return out
 }
 
 export function cli(argv = process.argv.slice(2)) {
-  const args = { dir: 'D:\\Seed\\my-rules\\rules', json: false, triCheck: false, baselineFile: null }
+  const args = { dir: 'D:\\Seed\\my-rules\\rules', json: false, triCheck: false, baselineFile: null, type: null, annotationsFile: null }
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--dir') args.dir = argv[++i]
     else if (argv[i] === '--json') args.json = true
     else if (argv[i] === '--tri-check') args.triCheck = true
     else if (argv[i] === '--baseline') args.baselineFile = argv[++i]
+    else if (argv[i] === '--type') args.type = argv[++i]
+    else if (argv[i] === '--annotations') args.annotationsFile = argv[++i]
   }
   if (!existsSync(args.dir)) { console.error(`目录不存在：${args.dir}`); process.exit(1) }
   if (args.baselineFile && !existsSync(args.baselineFile)) { console.error(`基线文件不存在：${args.baselineFile}，先不带 --baseline 跑一次`); process.exit(1) }
-  const out = scoreDir(args.dir, { baselineFile: args.baselineFile, triCheckDone: args.triCheck })
-  console.log(args.json ? JSON.stringify(out, null, 2) : `共 ${out.totals.files} 文件 / ${out.totals.lines} 行 / ${out.totals.chars} 字符，平均得分率 ${Math.round(out.rate * 100)}%（${out.level}）`)
+  if (args.annotationsFile && !existsSync(args.annotationsFile)) { console.error(`标注文件不存在：${args.annotationsFile}`); process.exit(1) }
+  let annotations = undefined
+  if (args.annotationsFile) {
+    try {
+      annotations = JSON.parse(stripBom(readFileSync(args.annotationsFile, 'utf8')))
+      if (!annotations || typeof annotations !== 'object' || Array.isArray(annotations)) throw new Error('非对象')
+    } catch (e) {
+      console.error(`标注文件解析失败：${args.annotationsFile}（须为 JSON 对象，如 {"文件名":{"type":"模式门控","modeChecks":{...}}}）`)
+      process.exit(1)
+    }
+  }
+  const out = scoreDir(args.dir, { baselineFile: args.baselineFile, triCheckDone: args.triCheck, type: args.type, annotations })
+  const summary = out.level === undefined
+    ? `共 ${out.totals.files} 文件 / ${out.totals.lines} 行 / ${out.totals.chars} 字符（无已评级文件，不报 dir 得分率）`
+    : `共 ${out.totals.files} 文件 / ${out.totals.lines} 行 / ${out.totals.chars} 字符，平均得分率 ${Math.round(out.rate * 100)}%（${out.level}）`
+  console.log(args.json ? JSON.stringify(out, null, 2) : summary)
 }
 
 // 仅当作为命令行直接运行时才执行 CLI（import 进测试/其他模块时不触发）

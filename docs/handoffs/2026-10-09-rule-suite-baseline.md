@@ -1,6 +1,6 @@
 # Plan A 交付说明：rule-inspector + rule-writer 套件落地与全量基线（2026-10-09）
 
-> 状态：已实现（不 commit，改动在 retro-skills 与 my-rules 工作区）｜对接：上承 `docs/handoffs/2026-10-09-rule-suite-handoff.md`（spec/plan 定稿交接）｜实现依据：Spec A `docs/superpowers/specs/2026-10-09-rule-suite-design.md` + Plan A `docs/superpowers/plans/2026-10-09-rule-suite.md`
+> 状态：已实现（不 commit，改动在 retro-skills 与 my-rules 工作区）｜对接：上承 `docs/handoffs/2026-10-09-rule-suite-handoff.md`（spec/plan 定稿交接）｜实现依据：Spec A `docs/superpowers/specs/2026-10-09-rule-suite-design.md` + Plan A `docs/superpowers/plans/2026-10-09-rule-suite.md`｜**B 批次（类型感知评分）已实现，当前基线见 §六**
 
 ## 一、交付物清单
 
@@ -95,4 +95,51 @@ global-ask-before-acting.md  score=16  max=24  rate=67%  不及格
 
 **2 个真缺口**（禁令类按判据应补，但正文是 Spec B §3 逐字，补 = 改 spec，等用户拍板）：⑤冲突裁决（无「以本规则为准」声明；模式开关已结构性化解冲突，价值低）、⑧验证闭环（无「怎么确认遵守」自检；可加一句「每次用户发消息先判模式再回应」式自检，价值中等）。
 
-**follow-up 建议**：score.mjs 的禁令类检查点对「模式门控型规则」（如 global-ask）会误伤——可考虑加校准（需用户同意，属 rule-inspector 范畴）。
+**follow-up 建议**：score.mjs 的禁令类检查点对「模式门控型规则」（如 global-ask）会误伤——可考虑加校准（需用户同意，属 rule-inspector 范畴）。**【已解决：见 §六，B 批次类型感知评分实现——③⑦ 按模式语义判定 + M1–M6 专属检查点】**
+
+## 六、类型感知评分实现（B 批次，2026-10-09 实测）
+
+B 批次（spec `2026-10-09-rule-type-scoring-design.md` + plan `2026-10-09-rule-type-scoring.md`）完成：criteria.md 判据扩展（双轴模型/单判据/模式门控 M1–M6/各类型满分口径/判定词封闭）、报告模板类型感知化、score.mjs 支持 `opts.type`/`opts.modeChecks`/CLI `--type`/`--annotations`（默认 type=条件触发，单判据由类型派生，待拆未定只报通用组）、测试补全至 **42 用例**（覆盖各类型×极性满分口径 + 合集 + M 缺失 + ③⑦ 按类型 + 越界）。
+
+**验证（可复算）**：
+
+```powershell
+# 全量测试（46 = validate 4 + score 42）
+node --test skilldependencies/validate.test.mjs skills/rule-inspector/scripts/score.test.mjs
+
+# 类型感知基线（types.json 标注适用方式；M1–M6 为 AI 判定）
+node skills/rule-inspector/scripts/score.mjs --dir D:\Seed\my-rules\rules --annotations .superpowers\sdd\2026-10-09-rule-type-scoring\types.json --json --tri-check
+
+# 越界检查（期望无输出）
+node skills/rule-inspector/scripts/score.mjs --dir D:\Seed\my-rules\rules --annotations .superpowers\sdd\2026-10-09-rule-type-scoring\types.json --json | Select-String -Pattern '判据|建议删除'
+```
+
+**类型感知基线（14 规则，取代 §二 的 24 检查点单一口径基线）**：
+
+| 规则 | 类型·极性 | 得分 | 满分 | 得分率 | 级别 |
+|---|---|---|---|---|---|
+| code-style | 待拆未定 | 9 | 17 | 53% | —（不报级别） |
+| docs-convention | 持续·禁令 | 11 | 23 | 48% | 不及格 |
+| global-ask-before-acting | 门控·禁令 | 25 | 31 | 81% | 预警 |
+| how-i-must-reason | 持续·禁令 | 11 | 23 | 48% | 不及格 |
+| import-guard | 条件·禁令 | 16 | 25 | 64% | 不及格 |
+| landing-sweep | 条件·义务 | 16 | 22 | 73% | 预警 |
+| no-git-write | 持续·禁令 | 15 | 23 | 65% | 不及格 |
+| plain-language-to-user | 持续·义务 | 15 | 20 | 75% | 预警 |
+| poll-deferred-at-start | 条件·义务 | 14 | 22 | 64% | 不及格 |
+| powershell-file-encoding | 条件·禁令 | 16 | 25 | 64% | 不及格 |
+| rules-single-source | 条件·禁令 | 12 | 25 | 48% | 不及格 |
+| skill-assets-convention | 持续·义务 | 14 | 20 | 70% | 预警 |
+| ts-expect-error | 条件·禁令 | 13 | 25 | 52% | 不及格 |
+| vitest-queued-alternative | 条件·禁令 | 15 | 25 | 60% | 不及格 |
+
+全库：平均得分率 62%（仅计有级别的 13 文件）。对比旧基线（§二，平均 53%）：满分口径已按类型归一（同类型才可比），旧分数不可跨口径直接比。
+
+**实测发现（重要）**：
+
+1. **机械极性修正 3 条**：docs-convention / how-i-must-reason / vitest-queued 正文含「禁止/不要」→ 机械判定**禁令**（封闭词表判定，spec §1.4 初判「义务」为 AI 估计，已实测推翻）。`README.md` §2 盘点已更正；spec §1.4 为历史设计记录保留原样（P2 候选 7「盘点待核对」以此落地）。
+2. **global-ask 25/31 预警**（门控·禁令，非 plan 原预期 29/31，预期已修正）：通用 17 全过 + 模式专属 **6/6**（AI 判定 M1–M6 全满足）+ 执行力度 4/8 + 标题 2/4。执行力度丢分拆解：**④⑥ 为机械假阴性**（正文语义在但缺「不因来源豁免」「只有…才算」措辞）、**⑤⑧ 为真缺口**（无冲突裁决/验证小节）；标题 2 项为机械假阴性。**A 批次 rule-writer 优化（补⑤⑧ + 判定词归一 + 措辞对齐）后应达 31/31 健康**。
+3. **types.json 落点**：`.superpowers/sdd/2026-10-09-rule-type-scoring/types.json`（git-ignored；适用方式为 AI 标注，M1–M6 为 AI 判定；A 批次重跑时更新）。
+4. **越界检查通过**：类型感知输出（含 M3 安全别名「切换依据明确」、单判据组「单规则」）不含「判据」「建议删除」。
+
+**A 批次（规则整体优化）待办**：global-ask 落地（补⑤⑧+归一，→31/31）、code-style 拆分（待拆未定→拆后重评）、no-git-write 修订、旧规则逐条 rule-writer 优化——完成后用同一 types.json（或更新）重跑基线。
