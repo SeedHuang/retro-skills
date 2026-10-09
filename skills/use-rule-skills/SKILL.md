@@ -51,5 +51,5 @@ description: 入口：新建/优化规则——判定意图 → 路由 rule-writ
 - 两路径流程 + 草稿箱交互/生命周期：`references/flows.md`
 - 报告模板（输出用）：`assets/report-template.md`
 - 草稿箱脚本：`scripts/drafts.mjs`
-- 判据权威（评分/判据定义）：`rule-inspector/references/criteria.md`
-- 写作指引（起草/自查）：`rule-writer/references/writing-guide.md`
+- 评分/判据：调用 `rule-inspector` 技能
+- 起草/写作指引：调用 `rule-writer` 技能

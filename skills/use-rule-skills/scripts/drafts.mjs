@@ -1,4 +1,4 @@
-import { mkdirSync, readdirSync, existsSync, rmSync } from 'node:fs'
+import { mkdirSync, readdirSync, existsSync, rmSync, realpathSync } from 'node:fs'
 import { join, basename } from 'node:path'
 import { homedir } from 'node:os'
 import { fileURLToPath } from 'node:url'
@@ -30,7 +30,13 @@ export function rmRule(box, ruleName, keep) {
 }
 
 // CLI（仅直接运行时执行；被 import 时（如测试）不触发）
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+// 归一化比较：Junction/symlink 下 process.argv[1] 与 import.meta.url 的路径字符串不同，
+// 须解析到真实路径（realpath）再比；Windows 文件系统大小写不敏感，比较前归一大小写。
+if (process.argv[1]) {
+  const self = realpathSync(fileURLToPath(import.meta.url))
+  const arg = realpathSync(process.argv[1])
+  const same = process.platform === 'win32' ? self.toLowerCase() === arg.toLowerCase() : self === arg
+  if (same) {
   const [,, cmd, ...rest] = process.argv
   const box = draftsDir()
   switch (cmd) {
@@ -56,5 +62,6 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       break
     }
     default: console.error('用法：drafts ensure | ls [规则名] | rm <草稿> | rm --rule <规则名> [--keep <草稿>]'); process.exit(2)
+  }
   }
 }

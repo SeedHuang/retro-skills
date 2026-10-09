@@ -1,6 +1,6 @@
-import { readFileSync, readdirSync, existsSync } from 'node:fs'
+import { readFileSync, readdirSync, existsSync, realpathSync } from 'node:fs'
 import { join, dirname } from 'node:path'
-import { pathToFileURL } from 'node:url'
+import { fileURLToPath } from 'node:url'
 
 const SOURCE_TYPES = ['用户当场指令', '评审第 N 轮', '实测/踩坑', '项目约定']
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
@@ -350,4 +350,11 @@ export function cli(argv = process.argv.slice(2)) {
 }
 
 // 仅当作为命令行直接运行时才执行 CLI（import 进测试/其他模块时不触发）
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) cli()
+// 归一化比较：Junction/symlink 下 process.argv[1] 与 import.meta.url 的路径字符串不同，
+// 须解析到真实路径（realpath）再比；Windows 文件系统大小写不敏感，比较前归一大小写。
+if (process.argv[1]) {
+  const self = realpathSync(fileURLToPath(import.meta.url))
+  const arg = realpathSync(process.argv[1])
+  const same = process.platform === 'win32' ? self.toLowerCase() === arg.toLowerCase() : self === arg
+  if (same) cli()
+}
