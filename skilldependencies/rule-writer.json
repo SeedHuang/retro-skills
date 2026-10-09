@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "skill": "rule-writer",
+  "dependencies": {
+    "skills": [
+      { "name": "rule-inspector" }
+    ]
+  }
+}
