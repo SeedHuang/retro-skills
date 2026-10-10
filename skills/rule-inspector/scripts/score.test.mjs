@@ -504,7 +504,7 @@ test('CLI --file：单文件评分，输出 = scoreFile（与 --dir 互斥；--r
 test('CLI --file 与 --dir 互斥：同给 → exit 2 + 互斥提示', () => {
   const dir = makeDir({ 'x.md': GOOD })
   const script = join(__dirname, 'score.mjs')
-  const out = spawnSync(process.execPath, [script, '--file', join(dir, 'x.md'), '--dir', 'D:\\Seed\\my-rules\\rules'], { encoding: 'utf8' })
+  const out = spawnSync(process.execPath, [script, '--file', join(dir, 'x.md'), '--dir', 'D:\\Seed\\retro-skills\\rules'], { encoding: 'utf8' })
   assert.equal(out.status, 2)
   assert.match(out.stderr, /互斥/)
   rmSync(dir, { recursive: true, force: true })

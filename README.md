@@ -51,7 +51,7 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 
 详细说明不在 README 里（避免越写越长），拆到独立指南——与上一节「场景速查」配合看：
 
-- **技能**（十三个，各自的作用与使用时机）→ [`docs/guide/skills/`](docs/guide/skills/README.md)
+- **技能**（十七个，各自的作用与使用时机）→ [`docs/guide/skills/`](docs/guide/skills/README.md)
 - **全局规则**（十五条，各自的作用与适用范围）→ [`docs/guide/rules/`](docs/guide/rules/README.md)
 
 ## 一个完整例子（真实闭环：2026-09-29 回显污染事故）
@@ -81,7 +81,7 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 
 | 源 | 运行时 | 形态 |
 |---|---|---|
-| 全局规则源（如 `my-rules/rules/`） | `~/.trae-cn/user_rules/` | symlink |
+| 全局规则源（`rules/`） | `~/.trae-cn/user_rules/` | symlink |
 | 本仓库 `skills/` | `~/.trae-cn/skills/` | junction |
 
 同步 / 体检 / 安装由独立 CLI `aas`（agent-assets-sync）承担。**安全默认：`aas sync` 只建缺失的链接，删类动作要显式 flag**。命令全集、退出码（`0` 一致 / `1` 有差异 / `2` 出错）与配置细节见 `docs/architecture.md` §8.1（或 `agent-assets-sync` 的 README）。
@@ -93,6 +93,8 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 ## 仓库结构
 
 - `skills/<技能名>/` —— 技能源（`SKILL.md` + `references/` + `assets/`；**改源即生效**，运行时是只读链接）
+- `rules/` —— 全局规则源（纯 markdown；**改源即生效**，运行时是只读链接）
+- `docs/guide/` —— 技能与规则的分部指南（README 只留速查，详情在这）
 - `docs/architecture.md` —— 体系总图与全部裁决（含执行顺序、待验证项、隐患挂账）
 - `docs/superpowers/` —— spec / plan（**已定稿**的设计 / **已排期**的执行）
 - `docs/handoffs/` —— 跨 session 交接词（每个 session 收口的交接事实；**一次性快照，定格不改**）

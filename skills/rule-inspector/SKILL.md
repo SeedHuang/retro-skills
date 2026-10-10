@@ -1,6 +1,6 @@
 ---
 name: rule-inspector
-description: 体检 my-rules/rules/ 里的规则——按判据全集评分、出报告、给处方、防劣化。当用户说『体检 rules / 优化 rules』时触发。不自动触发。Do not use for 新建规则、按处方改规则正文（那走 rule-writer）、审查（那走 review-loop）。
+description: 体检 rules/ 里的规则——按判据全集评分、出报告、给处方、防劣化。当用户说『体检 rules / 优化 rules』时触发。不自动触发。Do not use for 新建规则、按处方改规则正文（那走 rule-writer）、审查（那走 review-loop）。
 ---
 
 # rule-inspector：判据驱动的规则检察员

@@ -302,7 +302,7 @@ export function scoreDir(dir, opts = {}) {
 }
 
 export function cli(argv = process.argv.slice(2)) {
-  const args = { dir: 'D:\\Seed\\my-rules\\rules', json: false, triCheck: false, baselineFile: null, type: null, annotationsFile: null, file: null, rulesDir: null }
+  const args = { dir: 'D:\\Seed\\retro-skills\\rules', json: false, triCheck: false, baselineFile: null, type: null, annotationsFile: null, file: null, rulesDir: null }
   let dirGiven = false   // 显式给了 --dir（args.dir 有默认值，互斥须区分「显式」与「默认」）
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--dir') { args.dir = argv[++i]; dirGiven = true }
@@ -319,7 +319,7 @@ export function cli(argv = process.argv.slice(2)) {
     if (!existsSync(args.file)) { console.error(`文件不存在：${args.file}`); process.exit(1) }
     if (args.rulesDir && !existsSync(args.rulesDir)) { console.error(`规则库目录不存在：${args.rulesDir}`); process.exit(1) }
     const opts = { triCheckDone: args.triCheck, type: args.type }
-    // rulesDir 用于跨规则引用检查（scoreFile → crossRuleMiss）：评分草稿时须指规则库（my-rules/rules），
+    // rulesDir 用于跨规则引用检查（scoreFile → crossRuleMiss）：评分草稿时须指规则库（rules/），
     // 不能默认 dirname(file)（草稿在草稿箱，引用会全部误判）；评分现有规则时可不给（默认 dirname(file)=规则库）。
     const rulesDir = args.rulesDir ?? dirname(args.file)
     const r = scoreFile(args.file, rulesDir, opts)

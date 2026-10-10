@@ -2,7 +2,7 @@
 
 > 本文是 spec 的**上层视图**：描述"这套体系由哪些部分组成、各部分职责、数据怎么流、什么能动什么不能动"。
 > 收拢自 2026-09-27 的体系设计对话，**不替代**已有 spec（`docs/superpowers/specs/2026-09-27-retro-suite-design.md`）。
-> 本文**中立描述**，可被多个仓库引用（my-rules 的 README、项目交接词、KB 的索引都可能指向它）。
+> 本文**中立描述**，可被多个仓库引用（本仓库 README、项目交接词、KB 的索引都可能指向它）。
 > 待验证项 / 隐患 / 评审 backlog 等**过程史**已拆至 `docs/architecture-history.md`（见 §9）。
 
 ## 1. 一句话
@@ -16,8 +16,7 @@
 | 组件 | 角色 | 管什么 | 住在哪 |
 |---|---|---|---|
 | **KB（错题集）** | **心脏**——唯一被所有环节读写的公共数据层 | 所有教训（数据） | `D:\Seed\lessons`（2026-10-03 起**自建私有 git 仓库**；护栏只拦「被套进其它仓库」） |
-| **retro-skills** | **引擎**——驱动逻辑 | 发现 → 分析 → 落地的流程 | `D:\Seed\retro-skills`（git） |
-| **my-rules** | **骨架**——规范的"源" | 全局规范（成品） | `D:\Seed\my-rules`（git） |
+| **retro-skills** | **引擎 + 骨架**——驱动逻辑 + 规范"源" | 发现 → 分析 → 落地；全局规则 + 技能（rules/ 与 skills/） | `D:\Seed\retro-skills`（git） |
 | 项目仓库（lpm 等） | **客户** | 项目规范（跟项目走） | 各自仓库 |
 
 **关键**：KB 是纯数据，不能承载"体系该怎么运转"（那是逻辑）→ 所以**体系架构文档的家在 retro-skills**，不在 KB。
@@ -58,7 +57,7 @@ L2.5 文档层（未完成的事记在哪）——🆕 2026-10-07
 
 L4 仓库与安装层（东西放哪、怎么生效）——✅ 已通（见 §8.1）
     ├── 项目 rule：跟项目走（.trae\rules\）——零改动
-    ├── 全局 rule：源 my-rules → 运行时 ~\.trae-cn\user_rules\（符号链接；条数见 §8.1）
+    ├── 全局 rule：源 rules/（本仓库）→ 运行时 ~\.trae-cn\user_rules\（符号链接；条数见 §8.1）
     ├── 自有 skill：源 retro-skills → 运行时 ~\.trae-cn\skills\（junction）
     └── 第三方 skill：不进化，教训降级成 rule（【缺】闸门）
 ```
@@ -82,11 +81,11 @@ L4 仓库与安装层（东西放哪、怎么生效）——✅ 已通（见 §8
 >
 > **CLI 化修订（2026-09-28，`aas`）**：运行时目录**禁止人手改**这条不变；新增的"安装形态"（`aas add` 从远端仓库装）由**工具写入**运行时，且在 `~\.aas\installed.json` 留账——一切写入都经工具、有账可查，公理的精神不变。
 >
-> **公理升格为规则（2026-10-02）**：本公理原先只写在文档里，而 agent 每次对话只被注入运行时那一侧、够不到源侧约束——实测已发生 `rule-global-ask-before-acting.md` 建在源里却长期未同步、一次都没生效。现由全局规则 **`my-rules\rules\rules-single-source.md`** 承载（新建只建源 / 改已有内容改源即生效不用同步 / 新增删除后必跑 `aas sync` / 收尾跑 `aas` 体检），KB 条目 `L-020`。
+> **公理升格为规则（2026-10-02）**：本公理原先只写在文档里，而 agent 每次对话只被注入运行时那一侧、够不到源侧约束——实测已发生 `rule-global-ask-before-acting.md` 建在源里却长期未同步、一次都没生效。现由全局规则 **`rules\rules-single-source.md`** 承载（新建只建源 / 改已有内容改源即生效不用同步 / 新增删除后必跑 `aas sync` / 收尾跑 `aas` 体检），KB 条目 `L-020`。
 
 ```
 源仓库（唯一编辑点）                      运行时（只读，只被同步写入）
-  my-rules            ──同步──►  ~\.trae-cn\user_rules\
+  rules/（retro-skills）──同步──►  ~\.trae-cn\user_rules\
   retro-skills        ──同步──►  ~\.trae-cn\skills\
   项目仓库            ──天然──►  <项目>\.trae\rules\   （本来就在项目里，零改动）
 ```
@@ -132,7 +131,7 @@ L4 仓库与安装层（东西放哪、怎么生效）——✅ 已通（见 §8
 
 | # | 建什么 | 说明 |
 |---|---|---|
-| C1 | **my-rules 仓库** | ✅ 已建（见 §8.1） |
+| C1 | **my-rules 仓库** | ✅ 已建（见 §8.1）→ 2026-10-10 并入 retro-skills，归档 |
 | C2 | **evolving-skills** | retro-skills 第 6 个技能：协议的家 + skill 差异卡（✅ 已建成 2026-09-28；设计见 `docs\superpowers\specs\2026-09-28-evolving-skills-design.md`，实施见 `docs\superpowers\plans\2026-09-28-evolving-skills.md`） |
 | C3 | **KB 的 skills\ 区** | B1 的落地（✅ 已建成 2026-09-28） |
 | C4 | **同步 / 体检脚本** | ✅ 已建，**只有一份**，同时管 rules 与 skills。（原计划"各仓库写两份"，实际证明**一份足够**——它就是一张"源 → 目标"映射表）。**2026-09-28 已抽成独立项目 `agent-assets-sync`** 并改成配置驱动（`sync.config.json`），见 §8.1 |
@@ -147,7 +146,7 @@ L4 仓库与安装层（东西放哪、怎么生效）——✅ 已通（见 §8
 |---|---|---|
 | `retro-skills` | ✅ 已建（GitHub 远程） | 复盘技能套件 + 本文档 + evolving-skills（2026-09-28 建成，见 §6 C2）。**同步脚本已于 2026-09-28 搬出**（见下） |
 | **`agent-assets-sync`** | ✅ 已建（git + GitHub 远程） | **同步 / 体检 / 安装 CLI `aas`**（独立项目、配置驱动：`sync.config.json` + 安装账本 `~\.aas\`；命令全集见 §8.1） |
-| **`my-rules`** | ✅ 已建（git + GitHub 远程） | 全局 rule 的源（在**中立目录** `rules\` —— 目录名不含工具名，为"换编辑器"解耦；见 §8.1） |
+| **my-rules** | 🗄️ 已归档（2026-10-10 并入 retro-skills） | 历史规则源仓库；本地已删、远程归档 |
 | 项目仓库（lpm 等） | ✅ 已有 | 项目 rule 跟项目走，**不建新仓库** |
 | **KB（`D:\Seed\lessons`）** | ⛔ **特意不建 git** | 数据层、含个人记录，不跟任何仓库走；备份挂账 |
 | multi-lens / prd-to-specs 的收纳仓库 | ✅ 已收编 | multi-lens 收编 2026-09-29（入 `skills/multi-lens-review/` + junction）；prd-to-specs 收编 2026-09-29（入 `skills/prd-to-specs/` + junction） |
@@ -156,7 +155,7 @@ L4 仓库与安装层（东西放哪、怎么生效）——✅ 已通（见 §8
 
 ```
 ✅ 0. ais 实测 → 已实测完成：ais 不可用（见 `architecture-history.md` §9.1），最后一公里自建
-✅ 1. C1 my-rules bootstrap + C4 同步/体检脚本 → 已完成（见 §8.1）
+✅ 1. C1 my-rules bootstrap + C4 同步/体检脚本 → 已完成（见 §8.1）；2026-10-10 规则库并入 retro-skills
 ✅ 1.5. C4 抽成独立项目 agent-assets-sync + 配置驱动 → 已完成（2026-09-28，见 §8.1）
 ✅ 2. C2 + A1（evolving-skills + 协议抽离 + institutionalize 加转发闸门）→ 已完成（2026-09-28，见 §6 C2）
 ✅ 3. C3 + A2 + B1（KB skills 区 + multi-lens 迁移 + 三区合一）→ 已完成（2026-09-28，spec：docs\superpowers\specs\2026-09-28-evolving-step3-design.md）；其中收编 multi-lens → ✅ 已完成（2026-09-29：反向建仓入本仓库 `skills/multi-lens-review/`（第 0 版 `7379a06`）+ SKILL.md 回流节替换为转发（`bb1e776`）+ aas 接管换 junction（体检已就位 8）+ 运行时 lessons.md 删除）
@@ -167,8 +166,8 @@ L4 仓库与安装层（东西放哪、怎么生效）——✅ 已通（见 §8
 
 | 落地物 | 位置 |
 |---|---|
-| 全局规则源 | `D:\Seed\my-rules\rules\`（**中性名，不带工具名**；条数以体检输出为准，见下） |
-| 源仓库说明 | `D:\Seed\my-rules\README.md` |
+| 全局规则源 | `D:\Seed\retro-skills\rules\`（**中性名，不带工具名**；条数以体检输出为准，见下） |
+| 源仓库说明 | `D:\Seed\retro-skills\README.md` |
 | **同步 / 体检 / 安装 CLI（独立项目）** | `D:\Seed\agent-assets-sync`（命令 `aas`；**配置驱动**：源 / 目标 / 命名规则 / 编辑器适配器在项目根的 `sync.config.json`；安装账本在 `~\.aas\installed.json`；设计见其 `docs\design.md` 与 `docs\cli-design.md`） |
 | **CLI 的测试** | `D:\Seed\agent-assets-sync\test\`（`node --test` 全套 69 个，全绿） |
 
@@ -190,8 +189,8 @@ aas list / aas editors      只读：列条目 / 列编辑器
 
 1. **Windows 开发者模式**——**只有"规则"这一侧需要它**（规则是 file symlink，靠它）；**技能侧用的是 junction，不需要**。本机已开
 2. Node ≥ 20（aas 的 engines 要求；本机 v22.12.0 已验证）+ git 在 PATH + npm（装命令用）
-3. 路径**全在配置里，不用改代码**：默认见 `D:\Seed\agent-assets-sync\sync.config.json`（源 `D:\Seed\my-rules\rules` ＋ `D:\Seed\retro-skills\skills`；编辑器适配器与源登记也在里面）；换机器 / 别处 clone 时用环境变量覆盖 —— `MY_RULES_SRC` / `RETRO_SKILLS_DIR` / `TRAE_RULES_DST` / `TRAE_SKILLS_DST`（变量名与路径的绑定写在配置的 `env` 字段里，换编辑器可一并换名）
-   - **仓库搬家** → 改配置里的 `srcDir`（或设 `MY_RULES_SRC`）
+3. 路径**全在配置里，不用改代码**：默认见 `D:\Seed\agent-assets-sync\sync.config.json`（源 `D:\Seed\retro-skills\rules` ＋ `D:\Seed\retro-skills\skills`；编辑器适配器与源登记也在里面）；换机器 / 别处 clone 时用环境变量覆盖 —— `RETRO_SKILLS_RULES` / `RETRO_SKILLS_DIR` / `TRAE_RULES_DST` / `TRAE_SKILLS_DST`（变量名与路径的绑定写在配置的 `env` 字段里，换编辑器可一并换名）
+   - **仓库搬家** → 改配置里的 `srcDir`（或设 `RETRO_SKILLS_RULES`）
    - **换编辑器** → 改/加配置里 `editors` 的适配条目（目录 + 命名模板），**源文件一个字不用动**
    - **添新的源仓库**（如将来收编 multi-lens）→ 在配置的 `linkTargets` 里**加一条**
 4. 依赖（2026-09-28 放开零依赖，用户拍板）：Node 内置之外只引 **commander**（子命令）+ **@inquirer/prompts**（交互问询），另用系统 **git** 做远端 clone；`package.json` `private: true`（不发 npm 仓库，R31）
@@ -200,10 +199,10 @@ aas list / aas editors      只读：列条目 / 列编辑器
 
 | 目标 | 形态 |
 |---|---|
-| `~\.trae-cn\user_rules\rule-<名字>.md` | 全部是 **SymbolicLink** → `my-rules\rules\<名字>.md`（取数：跑 `aas` 体检的"已就位"数，**不在此写死数字**；另有 **aas 安装**形态条目——经 `aas add` 从远端仓库装的，账本豁免不计入孤儿） |
+| `~\.trae-cn\user_rules\rule-<名字>.md` | 全部是 **SymbolicLink** → `rules\<名字>.md`（取数：跑 `aas` 体检的"已就位"数，**不在此写死数字**；另有 **aas 安装**形态条目——经 `aas add` 从远端仓库装的，账本豁免不计入孤儿） |
 | `~\.trae-cn\skills\<技能名>\` | 本仓库自有技能 **Junction** → `retro-skills\skills\<技能名>\`（条数取 `aas` 体检输出；`ais`/`skills` 装的第三方技能不在本脚本管理面内，报告里列为"孤儿(不动)"） |
 
-**所以"改源即生效"**：改 `my-rules` 里的规则，下次对话就是新的；改 `retro-skills` 里的技能同理。**不要在运行时目录里改**（那会丢）。
+**所以"改源即生效"**：改 `rules/`（本仓库）里的规则，下次对话就是新的；改 `retro-skills` 里的技能同理。**不要在运行时目录里改**（那会丢）。
 
 > **证据边界（别扩大理解）**：实测确认过"链接**能被读到**"（规则侧更强：新加的规则**在当前会话内就被注入**了——2026-09-28 亲历）。**"改了技能内容后是否即时可见"已验（2026-09-29，见 `architecture-history.md` §9 V6）**：新对话正常触发 managing-lessons-store，其正文含 `7e8a1e5` 新增的 stats 命令说明。
 
