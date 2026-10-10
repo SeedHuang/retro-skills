@@ -69,7 +69,7 @@ KB 未初始化时：**REQUIRED SUB-SKILL:** 先用 `managing-lessons-store` 完
 |---|---|
 | 事实包 | `assets/facts-template.md`（七节结构 + 节号形态 + 缺一即不合格） |
 | 用户原话 | `assets/userwords-template.md`（触发权 + 标签两栏定义） |
-| 情绪记录（重扫） | `managing-lessons-store/assets/moments-template.md`（结构 + 判定公式；重扫写入用） |
+| 情绪记录（重扫） | 调用 `managing-lessons-store` 技能，按它的 moments 模板（结构 + 判定公式）记录；重扫写入用 |
 
 **自创结构不用模板，是本技能明列的常见错误。** 模板不搬进本文，只引用。
 
@@ -90,7 +90,7 @@ KB 未初始化时：**REQUIRED SUB-SKILL:** 先用 `managing-lessons-store` 完
 1. 清掉本 session 的条目区（`<日期>` / `<sid>` 取第 0 步定出的值）：
    `node scripts/lessons.mjs moment drop --project <标识> --date <日期> --session <sid>`
    （回报里带「**属正常**」或「**未改动**」的 → 都不用管，**别去"修"日期或 sid**；**只有带「已结案」字样的**才要按前提二办——**不逐条列回报**，列不全就是盲区）
-2. 用 `moment add` 逐条重写重扫结果（判定公式见 `retro-collect/assets/userwords-template.md`）：
+2. 用 `moment add` 逐条重写重扫结果（判定公式见 `assets/userwords-template.md`）：
    `node scripts/lessons.mjs moment add --project <标识> --session <sid> --date <日期> --summary "<≤20字主题>" --first-message "<首句原文>" --message "轮次 <N>" --polarity … --problem … --evidence-up "<上文>" --evidence-up "<更早的上文>" --evidence "<触发句>" --reason …`
    （**`--summary` 别省**——新建目录时必给，缺了会被拒；**`--first-message` 别省**——`sid` 碰撞护栏靠它生效；**`--message` 别省**——不传只有 session 级可查，定位不到具体轮次；**`--evidence-up` 选填、可重复传任意次**——给情绪补上文，让「为什么会有这个情绪」可复核；**紧邻的上一句在前**。）
    **核对**：命令会回报实际目录名（形如 `（目录 2026-10-02-ab12cd34-主题）`）——把它跟第 0 步口播的 `session = …` **当场比对**，不一致就停手查。别只看"成功"两个字。
