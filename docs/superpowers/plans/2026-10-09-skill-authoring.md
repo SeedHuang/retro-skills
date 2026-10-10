@@ -30,7 +30,7 @@
 - Consumes: `D:\Seed\retro-skills\docs\superpowers\specs\2026-10-09-skill-authoring-design.md` §4（判据 7 项）
 - Produces: 一条可被 rule-inspector 评分的规则（类型：条件触发·禁令）
 
-- [ ] **Step 1: 起草 rule 正文**
+- [x] **Step 1: 起草 rule 正文**
 
 按 spec §4 的 7 项判据落成规则文档，结构照 `rule-writer` 的 writing-guide（来源行 + 判据 + 防掠过 + 冲突裁决 + 例外 + 验证）：
 
@@ -79,9 +79,9 @@
 跑 `check.mjs --dir skills/ --json`，目标 0 findings；自检判据 ⑤⑥⑦ 在 SKILL.md 里是否成文。
 ```
 
-- [ ] **Step 2: 自查**（照 rule-writer 自查清单：四要素 / 执行力度 8 项 / 冗余度 / 来源行 / 层级）
+- [x] **Step 2: 自查**（照 rule-writer 自查清单：四要素 / 执行力度 8 项 / 冗余度 / 来源行 / 层级）
 
-- [ ] **Step 3: 验证落盘**
+- [x] **Step 3: 验证落盘**
 
 ```powershell
 # 核读文件内容与预期一致（必做，不信工具回执）
@@ -100,7 +100,7 @@ Get-Content 'D:\Seed\my-rules\rules\skill-authoring-convention.md' -Raw
 - Consumes: `D:\Seed\retro-skills\skilldependencies\manifest.json`（技能名清单）
 - Produces: `checkSkillDir(dir, { manifest })` → `{ findings: [{skill, check, line, text}] }`；CLI `--dir <skillsDir> --json` 输出该对象
 
-- [ ] **Step 1: 写失败测试 `check.test.mjs`**
+- [x] **Step 1: 写失败测试 `check.test.mjs`**
 
 ```js
 import { test } from 'node:test'
@@ -171,7 +171,7 @@ test('干净 skill：0 findings', () => {
 })
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 ```powershell
 node --test skills/skill-inspector/scripts/check.test.mjs
@@ -179,7 +179,7 @@ node --test skills/skill-inspector/scripts/check.test.mjs
 
 Expected: FAIL（`Cannot find module './check.mjs'`）
 
-- [ ] **Step 3: 写最小实现 `check.mjs`**
+- [x] **Step 3: 写最小实现 `check.mjs`**
 
 ```js
 import { readFileSync, readdirSync, existsSync, realpathSync } from 'node:fs'
@@ -240,7 +240,7 @@ function cli() {
 }
 ```
 
-- [ ] **Step 4: 跑测试确认通过**
+- [x] **Step 4: 跑测试确认通过**
 
 ```powershell
 node --test skills/skill-inspector/scripts/check.test.mjs
@@ -261,7 +261,7 @@ Expected: PASS 5/5
 - Consumes: Task 2 的 `check.mjs`（CLI `--dir --json`）；spec §5 流程、§6 检查点
 - Produces: 一个可被 Skill 工具加载、触发「体检 skills / 优化 skill」的技能
 
-- [ ] **Step 1: 写 `SKILL.md`**（frontmatter + 流程 + 判据指针，不内联模板）
+- [x] **Step 1: 写 `SKILL.md`**（frontmatter + 流程 + 判据指针，不内联模板）
 
 ```markdown
 ---
@@ -301,7 +301,7 @@ description: 体检 skills/ 里的技能——按 skill-authoring-convention 判
 - 检查脚本（确定性、可复现）：`scripts/check.mjs`
 ```
 
-- [ ] **Step 2: 写 `references/recipes.md`**（每类问题的修法处方）
+- [x] **Step 2: 写 `references/recipes.md`**（每类问题的修法处方）
 
 ```markdown
 # skill-inspector 处方：每类命中 → 修法
@@ -353,7 +353,7 @@ if (process.argv[1]) {
 **修法**：按 `skill-assets-convention` 规则：模板 → `assets/`；流程/口径/差异卡 → `references/`；可执行 → `scripts/`。SKILL.md 只留指针。
 ```
 
-- [ ] **Step 3: 写 `assets/report-template.md`**（体检报告骨架）
+- [x] **Step 3: 写 `assets/report-template.md`**（体检报告骨架）
 
 ```markdown
 # skill-inspector 体检报告 · <日期>
@@ -376,7 +376,7 @@ if (process.argv[1]) {
 `check.mjs --dir skills/ --json` → findings：<N> → <M>（复检后）
 ```
 
-- [ ] **Step 4: 验证**：核读三个文件落盘；`node --check` 语法校验 SKILL.md 无要求（markdown），确认 frontmatter 完整。
+- [x] **Step 4: 验证**：核读三个文件落盘；`node --check` 语法校验 SKILL.md 无要求（markdown），确认 frontmatter 完整。
 
 ---
 
@@ -390,7 +390,7 @@ if (process.argv[1]) {
 - Consumes: 现有 `validate.test.mjs`（校验 manifest 与 skills/ 一一对应）
 - Produces: 新 skill 进入依赖体系
 
-- [ ] **Step 1: 写 `skill-inspector.json`**
+- [x] **Step 1: 写 `skill-inspector.json`**
 
 ```json
 {
@@ -404,9 +404,9 @@ if (process.argv[1]) {
 }
 ```
 
-- [ ] **Step 2: manifest.json skills 数组追加 `"skill-inspector"`**（保持字母序：插在 `skill` 相关位置，实际按现有排序规则放到 `rule-writer` 与 `use-rule-skills` 之间）。
+- [x] **Step 2: manifest.json skills 数组追加 `"skill-inspector"`**（保持字母序：插在 `skill` 相关位置，实际按现有排序规则放到 `rule-writer` 与 `use-rule-skills` 之间）。
 
-- [ ] **Step 3: 跑校验测试**
+- [x] **Step 3: 跑校验测试**
 
 ```powershell
 node --test skilldependencies/validate.test.mjs
@@ -426,27 +426,27 @@ Expected: PASS 4/4
 - Consumes: Task 2 的 check.mjs（复检）
 - Produces: 0 findings
 
-- [ ] **Step 1: 修 `retro-collect/SKILL.md` L72**
+- [x] **Step 1: 修 `retro-collect/SKILL.md` L72**
 
 改前：`| 情绪记录（重扫） | `managing-lessons-store/assets/moments-template.md`（结构 + 判定公式；重扫写入用） |`
 改后：`| 情绪记录（重扫） | 调用 `managing-lessons-store` 技能，其 `assets/moments-template.md` 提供结构 + 判定公式；重扫写入用 |`
 
-- [ ] **Step 2: 修 `retro-collect/SKILL.md` L93**
+- [x] **Step 2: 修 `retro-collect/SKILL.md` L93**
 
 改前：`判定公式见 `retro-collect/assets/userwords-template.md``
 改后：`判定公式见 `assets/userwords-template.md``
 
-- [ ] **Step 3: 修 `multi-lens-review/SKILL.md` L71**
+- [x] **Step 3: 修 `multi-lens-review/SKILL.md` L71**
 
 改前：`施工层同一套归因见 `evolving-skills/references/protocol.md` 步 2 的一般化版本，施工以那边为准`
 改后：`施工层同一套归因以 `evolving-skills` 技能为准（其 protocol 步 2 的一般化版本，施工调用该技能）`
 
-- [ ] **Step 4: 修 `multi-lens-review/SKILL.md` L81**
+- [x] **Step 4: 修 `multi-lens-review/SKILL.md` L81**
 
 改前：`按`evolving-skills/references/review-flywheel.md` 执行，**本文件不复制那三步**`
 改后：`按 `evolving-skills` 技能的 review-flywheel 执行，**本文件不复制那三步**`
 
-- [ ] **Step 5: 复检**
+- [x] **Step 5: 复检**
 
 ```powershell
 node skills/skill-inspector/scripts/check.mjs --dir skills --json
@@ -465,7 +465,7 @@ Expected: 0 findings（跨技能路径引用全清）
 - Consumes: Task 1–5 全部产物
 - Produces: 最终验收
 
-- [ ] **Step 1: 跑 aas sync**
+- [x] **Step 1: 跑 aas sync**
 
 ```powershell
 # 在 D:\Seed\my-rules 下
@@ -474,7 +474,7 @@ aas sync
 
 Expected: 只建缺失链接，`skill-authoring-convention` 已就位。
 
-- [ ] **Step 2: aas 体检确认**
+- [x] **Step 2: aas 体检确认**
 
 ```powershell
 aas
@@ -482,7 +482,7 @@ aas
 
 Expected: 「需建链接」应为 0。
 
-- [ ] **Step 3: 全量测试**
+- [x] **Step 3: 全量测试**
 
 ```powershell
 node --test skilldependencies/validate.test.mjs skills/skill-inspector/scripts/check.test.mjs skills/rule-inspector/scripts/score.test.mjs skills/use-rule-skills/scripts/drafts.test.mjs
@@ -490,4 +490,4 @@ node --test skilldependencies/validate.test.mjs skills/skill-inspector/scripts/c
 
 Expected: 全 PASS。
 
-- [ ] **Step 4: 用 skill-inspector 对现有 skills 跑一次真体检**，产出报告给用户看（首次体检 + 存量修复后应接近 0 findings）。
+- [x] **Step 4: 用 skill-inspector 对现有 skills 跑一次真体检**，产出报告给用户看（首次体检 + 存量修复后应接近 0 findings）。
