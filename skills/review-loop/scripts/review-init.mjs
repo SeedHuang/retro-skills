@@ -3,7 +3,7 @@
 //   1. 确保 ~/.retro-skills/reviewconfig/ 存在
 //   2. 确保 activeProjectTypes.config.json 存在（不存在才写种子，不覆盖已有；种子原子写）
 //   3. 注册表读失败 / JSON 解析失败 / 结构非法 → 报错停止，不自动覆盖（防丢用户数据）
-//   4. 输出候选集 = languagePresets ∪ ecosystemPresets ∪ activeProjectTypes（按规范化名去重；同名时对象覆盖字符串）
+//   4. 输出候选集 = languagePresets ∪ ecosystemPresets ∪ activeProjectTypes（按规范化名去重：language/active 同名时 active 优先；跨层同名时对象覆盖 ecosystem 字符串）
 // 用法：node review-init.mjs            # 初始化 + 输出候选集 JSON
 import { mkdirSync, readFileSync, writeFileSync, renameSync, rmSync, existsSync, realpathSync } from 'node:fs'
 import { join, dirname } from 'node:path'
@@ -71,8 +71,8 @@ export function ensureRegistry(home = homedir()) {
   }
   try {
     JSON.parse(raw)
-  } catch {
-    throw new Error(`注册表 JSON 解析失败：${file}\n不自动覆盖（防丢用户数据），请人工处理该文件后重跑。`)
+  } catch (e) {
+    throw new Error(`注册表 JSON 解析失败：${file}\n${e.message}\n不自动覆盖（防丢用户数据），请人工处理该文件后重跑。`)
   }
   return { created: false, path: file }
 }
@@ -91,9 +91,10 @@ export function readRegistry(home = homedir()) {
   let parsed
   try {
     parsed = JSON.parse(raw)
-  } catch {
-    // 与 ensureRegistry 同一口径：损坏 JSON → 本地化报错 + 不自动覆盖（防丢用户数据）
-    throw new Error(`注册表 JSON 解析失败：${file}\n不自动覆盖（防丢用户数据），请人工处理该文件后重跑。`)
+  } catch (e) {
+    // 与 ensureRegistry 同一口径：损坏 JSON → 本地化报错 + 不自动覆盖（防丢用户数据）。
+    // 带上底层 e.message（含行列/非法 token），提示「人工处理」时能给排查位置
+    throw new Error(`注册表 JSON 解析失败：${file}\n${e.message}\n不自动覆盖（防丢用户数据），请人工处理该文件后重跑。`)
   }
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) || !Array.isArray(parsed.activeProjectTypes)) {
     throw new Error(`注册表结构非法（activeProjectTypes 应为数组）：${file}\n不自动覆盖，请人工处理后重跑。`)
@@ -124,10 +125,14 @@ export function candidateSet(home = homedir()) {
   }
   const language = dedupe(languagePresets)
   const active = dedupe(activeProjectTypes)
+  // language 与 active 之间也做规范化去重（用户注册表可能手写与语言级预设同名的类型，如 rust/go-backend）：
+  // 同名时 active 优先——个人注册表条目是用户显式配置过的，比语言级通用预设更精确，应保留它。
+  const activeKeys = new Set(active.map((i) => keyOf(i)))
+  const languageFinal = language.filter((i) => !activeKeys.has(keyOf(i)))
   // ecosystem 的字符串若与 language / active 的对象同名 → 移除（精确类型覆盖粗粒度描述）
-  const covered = new Set([...language, ...active].map((i) => keyOf(i)))
+  const covered = new Set([...languageFinal, ...active].map((i) => keyOf(i)))
   const eco = dedupe(ecosystemPresets).filter((e) => !covered.has(keyOf(e)))
-  return { languagePresets: language, ecosystemPresets: eco, activeProjectTypes: active }
+  return { languagePresets: languageFinal, ecosystemPresets: eco, activeProjectTypes: active }
 }
 
 // 仅直接运行时执行 CLI（realpath 归一化免疫 Junction，见规则 skill-authoring-convention 判据③）
