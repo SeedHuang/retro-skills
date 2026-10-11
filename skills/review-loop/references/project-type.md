@@ -34,9 +34,9 @@
 跑 `node scripts/review-init.mjs`（本技能 scripts 下，实现版 v1，幂等）：
 
 1. 确保 `~/.retro-skills/reviewconfig/` 存在
-2. 确保 `activeProjectTypes.config.json` 存在（不存在写种子：node-cli / electron / react / cli / electron-monorepo / react-node-monorepo，均带 path + ignore；**不覆盖已有**）
-3. 注册表 JSON 解析失败 → **报错停止，不自动覆盖**（防丢用户数据），提示人工处理
-4. 输出候选集 JSON = languagePresets ∪ ecosystemPresets ∪ activeProjectTypes（给 agent 匹配用）
+2. 确保 `activeProjectTypes.config.json` 存在（不存在写种子：node-cli / electron / react / cli / electron-monorepo / react-node-monorepo，均带 path + ignore；**不覆盖已有**；种子经临时文件 + 原子改名落盘，中断不留半截文件）
+3. 注册表**读失败 / JSON 解析失败 / 结构非法**（`activeProjectTypes` 缺失或非数组）→ **报错停止，不自动覆盖**（防丢用户数据），提示人工处理——读失败与解析失败分报，别把系统错误误说成「JSON 坏」
+4. 输出候选集 JSON = languagePresets ∪ ecosystemPresets ∪ activeProjectTypes（给 agent 匹配用；**按名字去重**——electron 同时在 ecosystem 与种子注册表，不去重会破坏「唯一命中直接落地」）
 
 ## 选择流程（首次 review / 重设类型）
 

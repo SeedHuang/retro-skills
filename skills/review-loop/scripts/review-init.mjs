@@ -1,9 +1,9 @@
 // review-init.mjs —— review-loop 项目类型注册表初始化（实现版 v1，幂等）
 // 职责（spec：docs/superpowers/specs/2026-10-10-review-loop-l3-project-type-design.md §七）：
 //   1. 确保 ~/.retro-skills/reviewconfig/ 存在
-//   2. 确保 activeProjectTypes.config.json 存在（不存在才写种子，不覆盖已有）
-//   3. 注册表 JSON 解析失败 → 报错停止，不自动覆盖（防丢用户数据）
-//   4. 输出候选集 = languagePresets ∪ ecosystemPresets ∪ activeProjectTypes
+//   2. 确保 activeProjectTypes.config.json 存在（不存在才写种子，不覆盖已有；种子原子写）
+//   3. 注册表读失败 / JSON 解析失败 / 结构非法 → 报错停止，不自动覆盖（防丢用户数据）
+//   4. 输出候选集 = languagePresets ∪ ecosystemPresets ∪ activeProjectTypes（按名字去重）
 // 用法：node review-init.mjs            # 初始化 + 输出候选集 JSON
 import { mkdirSync, readFileSync, writeFileSync, renameSync, rmSync, existsSync, realpathSync } from 'node:fs'
 import { join, dirname } from 'node:path'
