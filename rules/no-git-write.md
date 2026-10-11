@@ -58,7 +58,7 @@
 
 ## review 分支例外（唯一的结构性例外）
 
-> 来源：2026-10-10 用户裁定（review-loop 锁基线方案落地，spec：`.session/temp/2026-10-10-review-branch-design.md`）｜落地：2026-10-10
+> 来源：2026-10-10 用户裁定（review-loop 锁基线方案落地，spec：`docs/superpowers/specs/2026-10-10-review-branch-design.md`）｜落地：2026-10-10
 > 为什么要有它：review-loop 靠「每轮 commit 锁基线」来让下一轮 OCR 只审增量（否则 L1 全量重审无解）。这个目的只能靠 git 写操作实现，故开例外；**只此一种例外**。
 
 **只有 review-loop 技能能触发本例外，且分两段，缺一段即不成立：**

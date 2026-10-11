@@ -20,7 +20,8 @@ description: 循环审查未提交改动或最近 N 次 commit 的代码与文�
    - 有残留 → **阻塞式确认**：报分支名 + 该分支上有几个未合并 commit，问用户「是否删除残留分支 `review/xxx`？（删除不可恢复）」选「是」→ 删除后继续；选「否」→ **终止本次 review**，不降级、不硬来
    - 无残留 → 继续
 3. **建 review 分支**：`git checkout -b review/<yyyyMMdd-HHmm>-<短摘要>`（日期防撞车；git 写权限例外见全局规则 `no-git-write` 段 1）
-4. **记母分支**：把「母分支名 = 触发时的当前分支」+ 新建的分支名写进 `.session/reviews/<那一次>/progress.md`——**目录不存在则先建**，目录名沿用 review-log 的 `<YYYY-MM-DD-HHMM>-<名字>` 格式（同一目录：分支前置建、review-log 续写）
+4. **项目类型初始化 + 规则派生**：按 `references/project-type.md` 跑——跑 `review-init.mjs`（初始化全局注册表，幂等）→ 读项目类型指针 `.reviewconfig/project-type`：无 → 走选择流程（用户描述 → 匹配候选 → 唯一命中直接落地 / 多候选列表选 / 无候选新建）→ 有 → 复用 → 派生 `.opencodereview/rule.json` → 验证 `ocr rules check <文件>` 应显示 `Source: Project`。生成的 `.opencodereview/rule.json` 属审查范围外，循环内不 commit，收尾后留在母分支工作区交用户决定提交
+5. **记母分支**：把「母分支名 = 触发时的当前分支」+ 新建的分支名写进 `.session/reviews/<那一次>/progress.md`——**目录不存在则先建**，目录名沿用 review-log 的 `<YYYY-MM-DD-HHMM>-<名字>` 格式（同一目录：分支前置建、review-log 续写）
 
 > **不支持并行**：同一时间只允许一个 review 运行。残留检查时**排除当前所在分支**（它可能是中断恢复），其余 `review/*` 分支一律视为残留。
 
@@ -64,6 +65,7 @@ ocr review --preview            # 只看会审哪些文件，不花 LLM
 ```
 
 `--preview` 建议**每次先跑**，确认范围对了再正式跑。
+规则对症通过项目内 `.opencodereview/rule.json`（分支前置第 4 步派生）生效；命令**不带** `--background-file`（实现版 v1 不做背景层）。
 
 ### 段二 · 文档逻辑（multi-lens-review）
 
@@ -83,6 +85,7 @@ ocr review --preview            # 只看会审哪些文件，不花 LLM
 
 - **每轮收尾 = commit 到 review 分支**（message 带 【review】标记；只 add 本次审查清单内文件，禁止 `git add -A`）——这是锁基线的动作，是流程必需，**不许问「要不要提交」**
 - **先过滤再处置**——每轮 OCR 评论先对照 `problems.md` 的「不改/误报」锚点过滤（规则匹配 + 语义裁决），重复的直接吞掉，不修、不计入本轮问题数；**只过滤「不改/误报」，「已修」再报必须按新问题处置**（细节见 `loop.md` §1「处置前的重复判定过滤」）
+- **修复纪律 A1/A2/A3**——修复前列全失败面、样式级评论判不改、修完真实场景实测，完整清单见 `loop.md` §1「修复纪律」（防 18 轮式自伤回归）
 - **不 push、不 merge、不 reset**——review 分支不推送远程；收尾合回母分支用 **rebase**，且必须用户确认后才做
 - **不许手动判断「应该没问题了」提前停**——停机判据在 `references/loop.md` §1：**修复轮 + 复查轮都干净才停**，轮内自审（手法 3 重跑 / 同族扫描）不算复查
 - **不许跳段**——指定哪段就跑哪段
