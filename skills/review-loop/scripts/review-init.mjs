@@ -5,7 +5,7 @@
 //   3. 注册表 JSON 解析失败 → 报错停止，不自动覆盖（防丢用户数据）
 //   4. 输出候选集 = languagePresets ∪ ecosystemPresets ∪ activeProjectTypes
 // 用法：node review-init.mjs            # 初始化 + 输出候选集 JSON
-import { mkdirSync, readFileSync, writeFileSync, existsSync, realpathSync } from 'node:fs'
+import { mkdirSync, readFileSync, writeFileSync, renameSync, rmSync, existsSync, realpathSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { homedir } from 'node:os'
@@ -44,11 +44,27 @@ export function ensureRegistry(home = homedir()) {
   const file = registryPath(home)
   mkdirSync(dirname(file), { recursive: true })
   if (!existsSync(file)) {
-    writeFileSync(file, JSON.stringify({ activeProjectTypes: seedProjectTypes }, null, 2) + '\n', 'utf8')
+    // 原子写（临时文件 + rename）：中断不留半截文件，否则下次解析失败会被「不自动覆盖」卡死
+    const tmp = `${file}.tmp-${process.pid}-${Date.now()}`
+    writeFileSync(tmp, JSON.stringify({ activeProjectTypes: seedProjectTypes }, null, 2) + '\n', 'utf8')
+    try {
+      renameSync(tmp, file)
+    } catch (e) {
+      // 失败路径清临时文件：Windows 上目标被占用时 rename 会 EPERM
+      try { rmSync(tmp, { force: true }) } catch { /* 清理失败不掩盖原始错误 */ }
+      throw e
+    }
     return { created: true, path: file }
   }
+  // 读与解析分开 try：读失败（EACCES / EISDIR）是系统错误，别误报成「JSON 解析失败」指错方向
+  let raw
   try {
-    JSON.parse(readFileSync(file, 'utf8'))
+    raw = readFileSync(file, 'utf8')
+  } catch (e) {
+    throw new Error(`注册表读取失败：${file}\n${e.message}`)
+  }
+  try {
+    JSON.parse(raw)
   } catch {
     throw new Error(`注册表 JSON 解析失败：${file}\n不自动覆盖（防丢用户数据），请人工处理该文件后重跑。`)
   }
@@ -58,13 +74,39 @@ export function ensureRegistry(home = homedir()) {
 export function readRegistry(home = homedir()) {
   const file = registryPath(home)
   if (!existsSync(file)) return { activeProjectTypes: [] }
-  return JSON.parse(readFileSync(file, 'utf8'))
+  // 读与解析分开 try（同 ensureRegistry），并校验形状：合法 JSON 但缺 activeProjectTypes / 非数组
+  // 也要报错而不是静默丢 key——与「损坏→报错停止」的既有行为一致（否则候选集少一层且无提示）
+  let raw
+  try {
+    raw = readFileSync(file, 'utf8')
+  } catch (e) {
+    throw new Error(`注册表读取失败：${file}\n${e.message}`)
+  }
+  const parsed = JSON.parse(raw)
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) || !Array.isArray(parsed.activeProjectTypes)) {
+    throw new Error(`注册表结构非法（activeProjectTypes 应为数组）：${file}\n不自动覆盖，请人工处理后重跑。`)
+  }
+  return parsed
 }
 
 export function candidateSet(home = homedir()) {
   ensureRegistry(home)
   const { activeProjectTypes } = readRegistry(home)
-  return { languagePresets, ecosystemPresets, activeProjectTypes }
+  // 按名字去重（ecosystem 的字符串与 activeProjectTypes 的对象按 name 判重）：
+  // electron 同时出现在 ecosystemPresets 与 seedProjectTypes，不去重会让「唯一命中」判不出来、
+  // 选择流程列出同一个类型两次（spec §六 依赖唯一命中直接落地）
+  const seen = new Set()
+  const dedupe = (list) => (list ?? []).filter((item) => {
+    const name = typeof item === 'string' ? item : item?.name
+    if (!name || seen.has(name)) return false
+    seen.add(name)
+    return true
+  })
+  return {
+    languagePresets: dedupe(languagePresets),
+    ecosystemPresets: dedupe(ecosystemPresets),
+    activeProjectTypes: dedupe(activeProjectTypes),
+  }
 }
 
 // 仅直接运行时执行 CLI（realpath 归一化免疫 Junction，见规则 skill-authoring-convention 判据③）
