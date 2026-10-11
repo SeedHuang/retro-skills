@@ -3,7 +3,7 @@
 //   1. 确保 ~/.retro-skills/reviewconfig/ 存在
 //   2. 确保 activeProjectTypes.config.json 存在（不存在才写种子，不覆盖已有；种子原子写）
 //   3. 注册表读失败 / JSON 解析失败 / 结构非法 → 报错停止，不自动覆盖（防丢用户数据）
-//   4. 输出候选集 = languagePresets ∪ ecosystemPresets ∪ activeProjectTypes（按名字去重）
+//   4. 输出候选集 = languagePresets ∪ ecosystemPresets ∪ activeProjectTypes（按规范化名去重；同名时对象覆盖字符串）
 // 用法：node review-init.mjs            # 初始化 + 输出候选集 JSON
 import { mkdirSync, readFileSync, writeFileSync, renameSync, rmSync, existsSync, realpathSync } from 'node:fs'
 import { join, dirname } from 'node:path'
@@ -46,7 +46,13 @@ export function ensureRegistry(home = homedir()) {
   if (!existsSync(file)) {
     // 原子写（临时文件 + rename）：中断不留半截文件，否则下次解析失败会被「不自动覆盖」卡死
     const tmp = `${file}.tmp-${process.pid}-${Date.now()}`
-    writeFileSync(tmp, JSON.stringify({ activeProjectTypes: seedProjectTypes }, null, 2) + '\n', 'utf8')
+    try {
+      writeFileSync(tmp, JSON.stringify({ activeProjectTypes: seedProjectTypes }, null, 2) + '\n', 'utf8')
+    } catch (e) {
+      // 写失败也清临时文件（EACCES / ENOSPC）：否则 config 目录堆 orphan tmp
+      try { rmSync(tmp, { force: true }) } catch { /* 清理失败不掩盖原始错误 */ }
+      throw e
+    }
     try {
       renameSync(tmp, file)
     } catch (e) {
@@ -82,7 +88,13 @@ export function readRegistry(home = homedir()) {
   } catch (e) {
     throw new Error(`注册表读取失败：${file}\n${e.message}`)
   }
-  const parsed = JSON.parse(raw)
+  let parsed
+  try {
+    parsed = JSON.parse(raw)
+  } catch {
+    // 与 ensureRegistry 同一口径：损坏 JSON → 本地化报错 + 不自动覆盖（防丢用户数据）
+    throw new Error(`注册表 JSON 解析失败：${file}\n不自动覆盖（防丢用户数据），请人工处理该文件后重跑。`)
+  }
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) || !Array.isArray(parsed.activeProjectTypes)) {
     throw new Error(`注册表结构非法（activeProjectTypes 应为数组）：${file}\n不自动覆盖，请人工处理后重跑。`)
   }
@@ -92,21 +104,30 @@ export function readRegistry(home = homedir()) {
 export function candidateSet(home = homedir()) {
   ensureRegistry(home)
   const { activeProjectTypes } = readRegistry(home)
-  // 按名字去重（ecosystem 的字符串与 activeProjectTypes 的对象按 name 判重）：
-  // electron 同时出现在 ecosystemPresets 与 seedProjectTypes，不去重会让「唯一命中」判不出来、
-  // 选择流程列出同一个类型两次（spec §六 依赖唯一命中直接落地）
-  const seen = new Set()
-  const dedupe = (list) => (list ?? []).filter((item) => {
-    const name = typeof item === 'string' ? item : item?.name
-    if (!name || seen.has(name)) return false
-    seen.add(name)
-    return true
-  })
-  return {
-    languagePresets: dedupe(languagePresets),
-    ecosystemPresets: dedupe(ecosystemPresets),
-    activeProjectTypes: dedupe(activeProjectTypes),
+  // 候选集语义：三层 union 给 agent 匹配用（spec §六），同名不重复出现。
+  // 去重规则：
+  //   - 每层内部按规范化名（小写）去重——React/react、CLI/cli 视为同一类型（大小写变体是笔误不是两个候选）；
+  //   - 跨层同名时「精确类型对象」优先于「生态级粗粒度字符串」：active/language 有 electron 对象，
+  //     就把 ecosystem 的裸字符串 electron 让位移除——否则 electron 出现两次，「唯一命中」判不出来。
+  const nameOf = (item) => (typeof item === 'string' ? item : item?.name)
+  const keyOf = (item) => String(nameOf(item) ?? '').toLowerCase()
+  const dedupe = (list) => {
+    const seen = new Set()
+    const out = []
+    for (const item of list ?? []) {
+      const k = keyOf(item)
+      if (!k || seen.has(k)) continue
+      seen.add(k)
+      out.push(item)
+    }
+    return out
   }
+  const language = dedupe(languagePresets)
+  const active = dedupe(activeProjectTypes)
+  // ecosystem 的字符串若与 language / active 的对象同名 → 移除（精确类型覆盖粗粒度描述）
+  const covered = new Set([...language, ...active].map((i) => keyOf(i)))
+  const eco = dedupe(ecosystemPresets).filter((e) => !covered.has(keyOf(e)))
+  return { languagePresets: language, ecosystemPresets: eco, activeProjectTypes: active }
 }
 
 // 仅直接运行时执行 CLI（realpath 归一化免疫 Junction，见规则 skill-authoring-convention 判据③）
