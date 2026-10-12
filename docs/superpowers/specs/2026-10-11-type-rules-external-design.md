@@ -45,7 +45,7 @@
 ```
 ensureTypeRules() {
   if 文件不存在 → 写入内置默认（临时文件 + 原子改名）
-  if 文件已存在 → 只 JSON.parse 读出来用，绝不写
+  if 文件已存在 → 读出来用，绝不写；但读失败 / JSON 解析失败 / 形状非法 → 报错停止，不自动覆盖（与 activeProjectTypes.config.json 同口径，防丢用户数据）
 }
 ```
 
@@ -125,7 +125,7 @@ ensureTypeRules() {
 | 内置默认与落盘内容漂移 | 单一来源：内置默认 = 初始化时写出的那份内容，落盘后代码里的默认只在「重建」时用 |
 | 用户改了 type-rules.json 想恢复默认 | 手动删文件 → 下次 review-init 重建（与 activeProjectTypes 行为一致，写进操作卡） |
 | 生态级 ignore 配错（如 React H5 不该忽略前端却忽略了） | React 家族 ignore 留空（§二 说明），只在「明确无前端」的类型上写忽略声明 |
-| 老用户已有 type-rules.json 不存在 | 首次跑 review-init 自动创建；已有 `activeProjectTypes.config.json` 不受影响（两文件职责不同） |
+| 老用户尚无 type-rules.json | 首次跑 review-init 自动创建；已有 `activeProjectTypes.config.json` 不受影响（两文件职责不同） |
 
 ---
 
