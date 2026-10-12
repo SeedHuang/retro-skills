@@ -70,7 +70,7 @@
 3. **本轮的增量范围是什么** —— **不是全量 diff**，是上一轮修完之后的增量
 
 **分支确认（SKILL.md「分支前置」的延续）**：确认当前在 review 分支上（`git branch --show-current` 以 `review/` 开头），
-且上一轮已 commit（`git log --oneline` 末位是带 【review】标记的提交）。
+且上一轮已 commit（`git log --oneline` 末位是带 `<标准前缀>: 【review> 的提交——**必须对照 §3 的 message 格式核对**：前缀按改动性质、【review】紧跟冒号空格后，缺一个就是格式不对，当场发现、当场改，别等收尾）。
 **第 1 轮的增量基线 = 建分支时的工作区快照**（分支前置已做）；第 N（≥2）轮的增量基线 = 第 N-1 轮的 commit。
 **中断恢复**：若上一轮 commit 后会话中断、这次接着审（分支前置第 1 步已识别当前在 `review/*` 上）→
 第 1 轮的增量基线 = 中断前最后一次 commit（不是建分支时快照）——**先读 progress.md 确认中断在那一轮**。
@@ -229,7 +229,7 @@ git diff HEAD~N HEAD -- <路径>        # 它后来又改了什么
 
 | 约束 | 为什么 |
 |---|---|
-| **每轮收尾 = commit 到 review 分支**（message 带 【review】标记；**只 add 本次审查清单内的文件，禁止 `git add -A`**） | 锁基线：OCR workspace 审的是「HEAD vs 工作区」，只有 commit 了 HEAD 才前进，下一轮才只审增量。这是本技能能收敛的前提。git 写权限例外见全局规则 `no-git-write` 段 2 |
+| **每轮收尾 = commit 到 review 分支**（message 必须按本行格式写：`<标准前缀>: 【review】<改动摘要>`，前缀按改动性质选 Conventional Commits（`feat:` / `fix:` / `refactor:` / `test:` / `docs:` 等）；**写完核对前缀 + 【review】都在、缺一不可**，格式不对的 commit 不允许作为锁基线；**只 add 本次审查清单内的文件，禁止 `git add -A`**） | 锁基线：OCR workspace 审的是「HEAD vs 工作区」，只有 commit 了 HEAD 才前进，下一轮才只审增量。这是本技能能收敛的前提。git 写权限例外见全局规则 `no-git-write` 段 2 |
 | **不 push、不 merge、不 reset** | review 分支不推送远程；合回母分支用 rebase，且必须用户确认后才做（见 §1 收尾） |
 | **不许手动判断「应该没问题了」提前停** | 停机判据在 §1：**修复轮 + 复查轮都干净才停**，轮内自审（手法 3 重跑 / 同族扫描）不算复查，不许自行放宽 |
 | **不许跳段** | 指定哪段就跑哪段，`code` 模式不许顺手改文档 |

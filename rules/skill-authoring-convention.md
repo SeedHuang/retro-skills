@@ -13,9 +13,9 @@
 - 正例：「判据：调用 `rule-inspector` 技能」
 - 反例：「判据：`rule-inspector/references/criteria.md`」（诱导 agent 去文件系统找路径，用错 Junction/运行时/源仓库）
 
-### 判据 ②：本技能内自引用用相对路径
+### 判据 ②：本技能内自引用用相对路径，同一文件不混用两种叫法
 
-本技能自己的 `references/` `scripts/` `assets/` 文件用相对路径（`references/x.md`），禁止带自己技能名前缀（`retro-collect/assets/...`）。
+本技能自己的 `references/` `scripts/` `assets/` 文件用相对路径（`references/x.md`），禁止带自己技能名前缀（`retro-collect/assets/...`）。引用 reference 时写相对路径全称（`references/x.md`），**同一文件禁止出现两种叫法**（`loop.md` 和 `references/loop.md` 混用 = 读者以为两个文件）。不用「开头声明简称」——agent 跳读，声明只对「从头读到尾」的读者有效，统一全称让每个片段自解释。
 
 ### 判据 ③：脚本「直接运行 vs 被 import」判断禁止路径字符串比较
 
