@@ -5,6 +5,7 @@
 //   3. 注册表读失败 / JSON 解析失败 / 结构非法 → 报错停止，不自动覆盖（防丢用户数据）
 //   4. 输出候选集 = languagePresets ∪ ecosystemPresets ∪ activeProjectTypes（按规范化名去重：language/active 同名时 active 优先；跨层同名时对象覆盖 ecosystem 字符串）
 // 用法：node review-init.mjs            # 初始化 + 输出候选集 JSON
+//       node review-init.mjs --list     # 输出 { current, candidates }（项目指针 + 扁平候选列表，update-review-project-type 命令用）
 import { mkdirSync, readFileSync, writeFileSync, renameSync, rmSync, existsSync, realpathSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -135,6 +136,38 @@ export function candidateSet(home = homedir()) {
   return { languagePresets: languageFinal, ecosystemPresets: eco, activeProjectTypes: active }
 }
 
+// --list 模式用：读项目内指针（.reviewconfig/project-type，一行类型名）
+// 只在文件不存在（ENOENT）时返回 null；读失败（EACCES/EISDIR）抛错——与 ensureRegistry/readRegistry 口径一致，
+// 别把「读不了」和「没选类型」混成一个 null（否则命令会把坏指针当成未设置去重设）
+export function readProjectType(cwd = process.cwd()) {
+  const p = join(cwd, '.reviewconfig', 'project-type')
+  let raw
+  try {
+    raw = readFileSync(p, 'utf8')
+  } catch (e) {
+    if (e.code === 'ENOENT') return null
+    throw new Error(`项目类型指针读取失败：${p}\n${e.message}`)
+  }
+  const t = raw.trim()
+  return t || null
+}
+
+// --list 模式用：把三层候选展平成 [{ name, path, ignore, source }]，供 update-review-project-type 命令一次拿全直接出列表
+// path/ignore 必须带上——命令落地时要写注册表 + 派生 rule.json，两者都需要这两个字段；
+// 只留 name/source 会让命令「拿到列表却没法一步落地」，还得回退非 list 输出
+export function flattenCandidates(set) {
+  const withSource = (list, source) => (list ?? []).map((item) =>
+    typeof item === 'string'
+      ? { name: item, source }
+      : { name: item?.name, path: item?.path, ignore: item?.ignore, source },
+  )
+  return [
+    ...withSource(set.activeProjectTypes, '个人累积'),
+    ...withSource(set.languagePresets, '语言级'),
+    ...withSource(set.ecosystemPresets, '生态级'),
+  ].filter((x) => x.name)
+}
+
 // 仅直接运行时执行 CLI（realpath 归一化免疫 Junction，见规则 skill-authoring-convention 判据③）
 let isDirectRun = false
 if (process.argv[1]) {
@@ -147,9 +180,14 @@ if (process.argv[1]) {
   }
 }
 if (isDirectRun) {
+  const listMode = process.argv.includes('--list')
   try {
     const set = candidateSet()
-    console.log(JSON.stringify(set, null, 2))
+    if (listMode) {
+      console.log(JSON.stringify({ current: readProjectType(), candidates: flattenCandidates(set) }, null, 2))
+    } else {
+      console.log(JSON.stringify(set, null, 2))
+    }
   } catch (e) {
     console.error(e.message)
     process.exit(1)
