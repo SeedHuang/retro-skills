@@ -20,29 +20,28 @@ const LESSONS_SRC = resolve(SKILL_DIR, 'scripts', 'lessons.mjs')           // �
  *  实测 2026-10-08：仓库 59 个 md、最深 ≤3 层、漏 0 个，所以这条防线当时是「没用上」而非「已生效」。
  */
 function makeScanner(maxDepth = 3) {
-  const scan = { truncated: [], skippedDirs: [] }
-  // 这四个目录**刻意不扫**（`.git` / `node_modules` 一个巨大且无内容价值、一个内部结构随版本变化；
+  const scan = { truncated: [] }
+  // 这六个目录**刻意不扫**（`.git` / `node_modules` 一个巨大且无内容价值、一个内部结构随版本变化；
   // `.session/` 是临时过程账——不进 git、做完即删；`.superpowers/` 是 SDD 执行账本（一次性历史记录，
-  //   git-ignored 整棵忽略，**排除的是整棵树而不只是 sdd/ 子目录**，且按目录名匹配、任意层级同名目录都跳过）——
-  // 四者的行号引用 / 测试数都是审查当时的快照，
-  // 参与全仓一致性校对的只有 active 文档，和 handoffs 被排除是同一逻辑（2026-10-08 补 .session，2026-10-13 补 .superpowers）。
+  //   git-ignored 整棵忽略，**排除的是整棵树而不只是 sdd/ 子目录**，且按目录名匹配、任意层级同名目录都跳过）；
+  // `lessons/`（个人 KB 库，gitignore 兜底）与 `.trae/skills/`（安装副产物）同属非 active 文档——
+  // 六者的行号引用 / 测试数都是审查当时的快照，
+  // 参与全仓一致性校对的只有 active 文档，和 handoffs 被排除是同一逻辑（2026-10-08 补 .session，2026-10-13 补 .superpowers/lessons/.trae）。
   // 注意：曾靠调用方的 `.filter(p => !p.includes('.git'))` 事后排除，那只滤掉了**扫到的文件**，
   // 漏扫的目录照样被记进 truncated → 首次运行时误报 12 个（实测 2026-10-08）。所以要在扫描层就跳过。
-  const SKIP_DIRS = new Set(['.git', 'node_modules', '.session', '.superpowers'])
+  const SKIP_DIRS = new Set(['.git', 'node_modules', '.session', '.superpowers', 'lessons', '.trae'])
   // 透出给守卫做**结构性断言**（SKIP_DIRS ↔ allowed ↔ .gitignore 三方一致）——不能靠「实际扫到」验证，
   // git-ignored 目录（如 .superpowers）在干净检出上不存在，运行时观察永远测不到新条目（2026-10-13 OCR 指出）
   scan.skipDirs = SKIP_DIRS
   // `noteTruncated` 那趟下探自己的深度刹车。它只回答「有没有目标文件」，
   // 不收集、不返回，所以可以比walk 的 maxDepth 深；深到 8 层足够把「再下一层」的漏也照出来。
   const PROBE_MAX = 8
-  /** 跳过的目录名（不含路径）——供调用方断言「只跳了该跳的」 */
-  scan.skippedNames = () => scan.skippedDirs.map((p) => p.split(/[\\/]/).pop())
   function walk(dir, exts, depth = 0) {
     if (!existsSync(dir)) return []
     if (depth > maxDepth) { noteTruncated(dir, exts); return [] }
     const out = []
     for (const e of readdirSync(dir, { withFileTypes: true })) {
-      if (e.isDirectory() && SKIP_DIRS.has(e.name)) { scan.skippedDirs.push(join(dir, e.name)); continue }
+      if (e.isDirectory() && SKIP_DIRS.has(e.name)) continue
       const p = join(dir, e.name)
       if (e.isDirectory()) out.push(...walk(p, exts, depth + 1))
       else if (exts.some((x) => e.name.endsWith(x))) out.push(p)
@@ -1783,7 +1782,7 @@ test('守卫：文档里的「<名>.mjs 第 N 行」引用，行号必须仍有�
     + '守卫等于「假装扫全了」。要么把内容挪浅，要么给 makeScanner 放宽 maxDepth')
   // SKIP_DIRS 与 allowed 必须是同一份清单（双向相等）——不能靠「实际扫到」验证：git-ignored 目录
   // （如 .superpowers）在干净检出/CI 上不存在，运行时观察永远测不到新条目（2026-10-13 OCR 指出）
-  const allowed = ['.git', 'node_modules', '.session', '.superpowers']
+  const allowed = ['.git', 'node_modules', '.session', '.superpowers', 'lessons', '.trae']
   assert.deepEqual(
     [...scan.skipDirs].sort(),
     [...allowed].sort(),
@@ -1792,16 +1791,27 @@ test('守卫：文档里的「<名>.mjs 第 N 行」引用，行号必须仍有�
   // 排除口径必须与 `.gitignore` 一致：目录一旦被取消 ignore 而这里仍跳过，守卫会静默漏校验
   // （白名单只查子集、truncated 也不记）→「假装扫全了」（2026-10-13 OCR 指出）。
   // `.git` 是 git 内部目录、不在 .gitignore 里，跳过它不需要 ignore 规则，故排除在外。
+  // 匹配规则：逐字目录名，或它的子目录前缀（`.trae` 命中 `.trae/skills`）。⚠️ 规则本身必须是**逐字**目录名，
+  // 等价 glob 写法（`**/.superpowers/`、`.super*`）会让这里假红——请保持逐字形态（2026-10-13 OCR 指出）。
+  const gitignorePath = resolve(REPO_ROOT, '.gitignore')
+  assert.ok(existsSync(gitignorePath),
+    `仓库根没有 .gitignore（${gitignorePath}）——无法校验跳过目录与忽略规则是否一致（worktree/archive 检出可能有此布局）`)
   const ignoreRules = new Set(
-    readFileSync(resolve(REPO_ROOT, '.gitignore'), 'utf8')
+    readFileSync(gitignorePath, 'utf8')
       .split(/\r?\n/)
       .map((l) => l.trim().replace(/^\/+|\/+$/g, ''))
       .filter((l) => l && !l.startsWith('#')),
   )
+  const hasIgnoreFor = (d) => [...ignoreRules].some((r) => r === d || r.startsWith(`${d}/`))
+  const unignore = [...ignoreRules].filter((r) => r.startsWith('!'))
   for (const d of scan.skipDirs) {
     if (d === '.git') continue
-    assert.ok(ignoreRules.has(d),
+    assert.ok(hasIgnoreFor(d),
       `${d} 已进 SKIP_DIRS（扫描层跳过）但 .gitignore 不再忽略它——扫描范围与仓库真实内容脱节，守卫会「假装扫全了」`)
+    // 取反规则会把目录**部分**重新纳管：`!.superpowers/keep.md` 时 has() 仍 true，但被跳过的树里混进了进 git 的文件
+    const negated = unignore.filter((r) => r.slice(1).split('/')[0] === d || r.slice(1).startsWith(`${d}/`))
+    assert.ok(negated.length === 0,
+      `${d} 仍在 SKIP_DIRS，但 .gitignore 存在取反规则（${negated.join(' / ')}）把它重新纳管——被跳过的树里混进了进 git 的文件，守卫会「假装扫全了」`)
   }
   // **不要求 `.git` 必须存在或必须是目录**：`git worktree` / submodule 下 .git 是个*文件*
   // （`gitdir: …`），archive/zip 检出里则完全没有 —— 那种布局下 `e.isDirectory()` 为 false，

@@ -1,52 +1,59 @@
-// review-init.test.mjs —— readProjectType / flattenCandidates / listInfo / candidateSet 单测
-// 惯例：同目录 *.test.mjs，node:test + 临时目录 fixture（参照 skill-inspector/scripts/check.test.mjs）
+// review-init.test.mjs —— readProjectType / flattenCandidates / listInfo / candidateSet / update-review-project-type 单测
+// 惯例：同目录 *.test.mjs，node:test + 临时目录 fixture（参照 skill-inspector/scripts/check.test.mjs）；
+// 每个用例 t.after 清理临时目录，不留垃圾（2026-10-13 OCR 指出）
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtempSync, writeFileSync, mkdirSync, readFileSync } from 'node:fs'
+import { mkdtempSync, writeFileSync, mkdirSync, readFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import {
   readProjectType, flattenCandidates, listInfo, candidateSet, ensureRegistry, registryPath,
 } from './review-init.mjs'
+import { main, CliError } from './update-review-project-type.mjs'
 
-const tmpDir = () => mkdtempSync(join(tmpdir(), 'review-init-test-'))
-const seedCount = () => {
-  const { activeProjectTypes } = JSON.parse(readFileSync(registryPath(tmpHomeRef), 'utf8'))
+// 临时目录 + t.after 自动清理
+function tmpDir(t) {
+  const dir = mkdtempSync(join(tmpdir(), 'review-init-test-'))
+  t.after(() => rmSync(dir, { recursive: true, force: true }))
+  return dir
+}
+
+const registryCount = (home) => {
+  ensureRegistry(home) // 与真实使用一致：命令跑前注册表已初始化（种子）
+  const { activeProjectTypes } = JSON.parse(readFileSync(registryPath(home), 'utf8'))
   return activeProjectTypes.length
 }
 
-let tmpHomeRef = null
-
 // ---------- readProjectType ----------
 
-test('readProjectType：指针不存在（ENOENT）→ null，视为未设置', () => {
-  const cwd = tmpDir()
+test('readProjectType：指针不存在（ENOENT）→ null，视为未设置', (t) => {
+  const cwd = tmpDir(t)
   assert.equal(readProjectType(cwd), null)
 })
 
-test('readProjectType：空 / 纯空白 → null', () => {
-  const cwd = tmpDir()
+test('readProjectType：空 / 纯空白 → null', (t) => {
+  const cwd = tmpDir(t)
   mkdirSync(join(cwd, '.reviewconfig'), { recursive: true })
   writeFileSync(join(cwd, '.reviewconfig', 'project-type'), '  \n', 'utf8')
   assert.equal(readProjectType(cwd), null)
 })
 
-test('readProjectType：有值 → trim 后返回', () => {
-  const cwd = tmpDir()
+test('readProjectType：有值 → trim 后返回', (t) => {
+  const cwd = tmpDir(t)
   mkdirSync(join(cwd, '.reviewconfig'), { recursive: true })
   writeFileSync(join(cwd, '.reviewconfig', 'project-type'), 'Agent Skill 项目\n', 'utf8')
   assert.equal(readProjectType(cwd), 'Agent Skill 项目')
 })
 
-test('readProjectType：EISDIR（指针是目录）→ 抛错，不吞成 null（读不了 ≠ 未设置）', () => {
-  const cwd = tmpDir()
+test('readProjectType：EISDIR（指针是目录）→ 抛错，不吞成 null（读不了 ≠ 未设置）', (t) => {
+  const cwd = tmpDir(t)
   mkdirSync(join(cwd, '.reviewconfig', 'project-type'), { recursive: true })
   assert.throws(() => readProjectType(cwd), /项目类型指针读取失败/)
 })
 
 // ---------- flattenCandidates ----------
 
-test('flattenCandidates：对象条目透传 path/ignore，字符串条目只有 name/source', () => {
+test('flattenCandidates：对象条目透传 path/ignore，字符串条目只有 name/source', (t) => {
   const out = flattenCandidates({
     activeProjectTypes: [{ name: 'node-cli', path: '**/*.{js,mjs}', ignore: '无前端' }],
     languagePresets: [{ name: 'python-backend', path: '**/*.py', ignore: '无前端' }],
@@ -60,7 +67,7 @@ test('flattenCandidates：对象条目透传 path/ignore，字符串条目只有
   assert.equal('ignore' in byName['React H5'], false)
 })
 
-test('flattenCandidates：无名项被丢弃', () => {
+test('flattenCandidates：无名项被丢弃', (t) => {
   const out = flattenCandidates({
     activeProjectTypes: [{ name: '', path: 'x' }, { name: 'ok', path: 'y' }],
     languagePresets: [],
@@ -71,36 +78,107 @@ test('flattenCandidates：无名项被丢弃', () => {
 
 // ---------- candidateSet / ensureRegistry ----------
 
-test('candidateSet：注册表不存在 → 写种子；幂等（第二次不覆盖、不翻倍）', () => {
-  tmpHomeRef = tmpDir()
-  const first = candidateSet(tmpHomeRef)
+test('candidateSet：注册表不存在 → 写种子；幂等（第二次不覆盖、不翻倍）', (t) => {
+  const home = tmpDir(t)
+  const first = candidateSet(home)
   const firstCount = first.activeProjectTypes.length
   assert.ok(firstCount > 0)
-  assert.equal(ensureRegistry(tmpHomeRef).created, false) // 已存在 → created=false
-  const again = candidateSet(tmpHomeRef)
+  assert.equal(ensureRegistry(home).created, false) // 已存在 → created=false
+  const again = candidateSet(home)
   assert.equal(again.activeProjectTypes.length, firstCount) // 不是 2×firstCount
-  assert.equal(seedCount(), firstCount)
+  assert.equal(registryCount(home), firstCount)
 })
 
-// ---------- listInfo（currentHit：MiniMax 悬空指针场景） ----------
+// ---------- listInfo（currentHit：悬空指针场景） ----------
 
-test('listInfo：current 在候选集内 → currentHit 命中该类型', () => {
-  tmpHomeRef = tmpDir()
-  const cwd = tmpDir()
+test('listInfo：current 在候选集内 → currentHit 命中该类型', (t) => {
+  const home = tmpDir(t)
+  const cwd = tmpDir(t)
   mkdirSync(join(cwd, '.reviewconfig'), { recursive: true })
   writeFileSync(join(cwd, '.reviewconfig', 'project-type'), 'node-cli\n', 'utf8')
-  const info = listInfo(tmpHomeRef, cwd)
+  const info = listInfo(home, cwd)
   assert.equal(info.current, 'node-cli')
   assert.equal(info.currentHit.name, 'node-cli')
   assert.ok(info.candidates.length > 0)
 })
 
-test('listInfo：current 悬空（注册表误删后自定义类型消失，指针仍在）→ currentHit 为 null', () => {
-  tmpHomeRef = tmpDir()
-  const cwd = tmpDir()
+test('listInfo：current 悬空（注册表误删后自定义类型消失，指针仍在）→ currentHit 为 null', (t) => {
+  const home = tmpDir(t)
+  const cwd = tmpDir(t)
   mkdirSync(join(cwd, '.reviewconfig'), { recursive: true })
   writeFileSync(join(cwd, '.reviewconfig', 'project-type'), 'H5 中台\n', 'utf8') // 不在任何候选层
-  const info = listInfo(tmpHomeRef, cwd)
+  const info = listInfo(home, cwd)
   assert.equal(info.current, 'H5 中台')
   assert.equal(info.currentHit, null)
+})
+
+// ---------- update-review-project-type.mjs 落地（2026-10-13 OCR 指出命令无测试） ----------
+
+test('命令落地：空 ignore 对象条目（种子 react）正常落地，rule 不以「；」开头', (t) => {
+  const home = tmpDir(t)
+  const cwd = tmpDir(t)
+  const before = registryCount(home)
+  main({ home, cwd, argv: ['react'] })
+  // 注册表：react 已在种子，registryUpdated 应为 false，数量不变
+  assert.equal(registryCount(home), before)
+  // rule.json 派生：空 ignore → rule 直接以「派生自…」开头
+  const rule = JSON.parse(readFileSync(join(cwd, '.opencodereview', 'rule.json'), 'utf8'))
+  assert.equal(rule.rules[0].path, '**/*.{js,mjs,cjs,ts,tsx,jsx}')
+  assert.ok(!rule.rules[0].rule.startsWith('；'), '空 ignore 不应以「；」开头')
+  assert.ok(rule.rules[0].rule.includes('派生自 activeProjectTypes.config.json 的 react 条目'))
+  assert.equal(rule.rules[0].merge_system_rule, true)
+  // 指针写入
+  assert.equal(readFileSync(join(cwd, '.reviewconfig', 'project-type'), 'utf8').trim(), 'react')
+})
+
+test('命令落地：对象条目不在注册表 → 加进去且保留其它顶层键', (t) => {
+  const home = tmpDir(t)
+  const cwd = tmpDir(t)
+  // 注册表塞一个自定义顶层键，验证回写不丢（2026-10-13 OCR 指出）
+  const regPath = registryPath(home)
+  ensureRegistry(home) // 先建种子
+  const reg = JSON.parse(readFileSync(regPath, 'utf8'))
+  reg.customMeta = { owner: 'test' }
+  writeFileSync(regPath, JSON.stringify(reg, null, 2), 'utf8')
+  const before = registryCount(home)
+  // 语言级预设类型（不在 active 层）落地 → 应加入注册表
+  main({ home, cwd, argv: ['python-backend'] })
+  const after = JSON.parse(readFileSync(regPath, 'utf8'))
+  assert.equal(registryCount(home), before + 1)
+  assert.equal(after.customMeta.owner, 'test', '注册表其它顶层键被静默丢掉')
+  assert.ok(after.activeProjectTypes.some((x) => x.name === 'python-backend'))
+})
+
+test('命令落地：字符串条目 → CliError code 1，注册表与指针不动', (t) => {
+  const home = tmpDir(t)
+  const cwd = tmpDir(t)
+  const before = registryCount(home)
+  assert.throws(() => main({ home, cwd, argv: ['React H5'] }), (e) => e instanceof CliError && e.code === 1)
+  assert.equal(registryCount(home), before, '字符串条目不应改注册表')
+  assert.equal(readProjectType(cwd), null, '字符串条目不应写指针')
+})
+
+test('命令落地：手写 rule.json → CliError code 2，注册表不变（先校验后落盘）', (t) => {
+  const home = tmpDir(t)
+  const cwd = tmpDir(t)
+  mkdirSync(join(cwd, '.opencodereview'), { recursive: true })
+  writeFileSync(join(cwd, '.opencodereview', 'rule.json'),
+    JSON.stringify({ rules: [{ path: '**/*.js', rule: '手写', merge_system_rule: true }] }), 'utf8')
+  const before = registryCount(home)
+  assert.throws(() => main({ home, cwd, argv: ['python-backend'] }), (e) => e instanceof CliError && e.code === 2)
+  assert.equal(registryCount(home), before, '手写 rule.json 拒绝时注册表不得已改')
+  assert.equal(readProjectType(cwd), null)
+  // --force 后成功
+  main({ home, cwd, argv: ['python-backend', '--force'] })
+  const rule = JSON.parse(readFileSync(join(cwd, '.opencodereview', 'rule.json'), 'utf8'))
+  assert.ok(rule.rules[0].rule.includes('派生自 activeProjectTypes.config.json 的 python-backend 条目'))
+})
+
+test('命令落地：未知 flag → CliError code 1，不落盘', (t) => {
+  const home = tmpDir(t)
+  const cwd = tmpDir(t)
+  const before = registryCount(home)
+  assert.throws(() => main({ home, cwd, argv: ['react', '--dry-run'] }), (e) => e instanceof CliError && e.code === 1)
+  assert.equal(registryCount(home), before)
+  assert.equal(readProjectType(cwd), null)
 })

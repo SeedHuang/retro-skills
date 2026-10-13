@@ -41,26 +41,26 @@ export function registryPath(home = homedir()) {
   return join(home, '.retro-skills', 'reviewconfig', 'activeProjectTypes.config.json')
 }
 
+// 原子写（临时文件 + rename）：中断不留半截文件，否则下次解析失败会被「不自动覆盖」卡死。
+// 导出给 update-review-project-type.mjs 复用——两处必须同一份实现，防原子性保证漂移（2026-10-13 OCR 指出）
+export function atomicWrite(file, text) {
+  mkdirSync(dirname(file), { recursive: true })
+  const tmp = `${file}.tmp-${process.pid}-${Date.now()}`
+  try {
+    writeFileSync(tmp, text, 'utf8')
+    renameSync(tmp, file)
+  } catch (e) {
+    // 失败路径清临时文件（EACCES / ENOSPC / Windows rename EPERM）：否则 config 目录堆 orphan tmp
+    try { rmSync(tmp, { force: true }) } catch { /* 清理失败不掩盖原始错误 */ }
+    throw e
+  }
+}
+
 export function ensureRegistry(home = homedir()) {
   const file = registryPath(home)
   mkdirSync(dirname(file), { recursive: true })
   if (!existsSync(file)) {
-    // 原子写（临时文件 + rename）：中断不留半截文件，否则下次解析失败会被「不自动覆盖」卡死
-    const tmp = `${file}.tmp-${process.pid}-${Date.now()}`
-    try {
-      writeFileSync(tmp, JSON.stringify({ activeProjectTypes: seedProjectTypes }, null, 2) + '\n', 'utf8')
-    } catch (e) {
-      // 写失败也清临时文件（EACCES / ENOSPC）：否则 config 目录堆 orphan tmp
-      try { rmSync(tmp, { force: true }) } catch { /* 清理失败不掩盖原始错误 */ }
-      throw e
-    }
-    try {
-      renameSync(tmp, file)
-    } catch (e) {
-      // 失败路径清临时文件：Windows 上目标被占用时 rename 会 EPERM
-      try { rmSync(tmp, { force: true }) } catch { /* 清理失败不掩盖原始错误 */ }
-      throw e
-    }
+    atomicWrite(file, JSON.stringify({ activeProjectTypes: seedProjectTypes }, null, 2) + '\n')
     return { created: true, path: file }
   }
   // 读与解析分开 try：读失败（EACCES / EISDIR）是系统错误，别误报成「JSON 解析失败」指错方向
@@ -103,6 +103,15 @@ export function readRegistry(home = homedir()) {
   return parsed
 }
 
+// 名称归一化（单一来源，2026-10-13 OCR 指出三处重复）：candidateSet / listInfo / update-review-project-type 共用，
+// 一处加 trim/全角归一，别处不会漏——漏了会出现「候选集里有、命令 find 不到」的 exit 1 假报
+export function nameOf(item) {
+  return typeof item === 'string' ? item : item?.name
+}
+export function nameKey(item) {
+  return String(nameOf(item) ?? '').toLowerCase()
+}
+
 export function candidateSet(home = homedir()) {
   ensureRegistry(home)
   const { activeProjectTypes } = readRegistry(home)
@@ -111,13 +120,11 @@ export function candidateSet(home = homedir()) {
   //   - 每层内部按规范化名（小写）去重——React/react、CLI/cli 视为同一类型（大小写变体是笔误不是两个候选）；
   //   - 跨层同名时「精确类型对象」优先于「生态级粗粒度字符串」：active/language 有 electron 对象，
   //     就把 ecosystem 的裸字符串 electron 让位移除——否则 electron 出现两次，「唯一命中」判不出来。
-  const nameOf = (item) => (typeof item === 'string' ? item : item?.name)
-  const keyOf = (item) => String(nameOf(item) ?? '').toLowerCase()
   const dedupe = (list) => {
     const seen = new Set()
     const out = []
     for (const item of list ?? []) {
-      const k = keyOf(item)
+      const k = nameKey(item)
       if (!k || seen.has(k)) continue
       seen.add(k)
       out.push(item)
@@ -128,11 +135,11 @@ export function candidateSet(home = homedir()) {
   const active = dedupe(activeProjectTypes)
   // language 与 active 之间也做规范化去重（用户注册表可能手写与语言级预设同名的类型，如 rust/go-backend）：
   // 同名时 active 优先——个人注册表条目是用户显式配置过的，比语言级通用预设更精确，应保留它。
-  const activeKeys = new Set(active.map((i) => keyOf(i)))
-  const languageFinal = language.filter((i) => !activeKeys.has(keyOf(i)))
+  const activeKeys = new Set(active.map((i) => nameKey(i)))
+  const languageFinal = language.filter((i) => !activeKeys.has(nameKey(i)))
   // ecosystem 的字符串若与 language / active 的对象同名 → 移除（精确类型覆盖粗粒度描述）
-  const covered = new Set([...languageFinal, ...active].map((i) => keyOf(i)))
-  const eco = dedupe(ecosystemPresets).filter((e) => !covered.has(keyOf(e)))
+  const covered = new Set([...languageFinal, ...active].map((i) => nameKey(i)))
+  const eco = dedupe(ecosystemPresets).filter((e) => !covered.has(nameKey(e)))
   return { languagePresets: languageFinal, ecosystemPresets: eco, activeProjectTypes: active }
 }
 
@@ -176,8 +183,7 @@ export function listInfo(home = homedir(), cwd = process.cwd()) {
   const set = candidateSet(home)
   const candidates = flattenCandidates(set)
   const current = readProjectType(cwd)
-  const key = (x) => String(x ?? '').toLowerCase()
-  const currentHit = current == null ? null : (candidates.find((c) => key(c.name) === key(current)) ?? null)
+  const currentHit = current === null ? null : (candidates.find((c) => nameKey(c.name) === nameKey(current)) ?? null)
   return { current, currentHit, candidates }
 }
 
