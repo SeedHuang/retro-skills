@@ -235,4 +235,6 @@ test('命令落地：单横线多字符当合法类型名、单横线单字符/�
   assert.throws(() => main({ home, cwd, argv: ['--'] }), (e) => e instanceof CliError && e.code === 1 && /未知参数/.test(e.message))
   // `-legacy-cli`（单横线多字符）→ 当类型名处理 → 不在候选集（不是未知参数）
   assert.throws(() => main({ home, cwd, argv: ['-legacy-cli'] }), (e) => e instanceof CliError && e.code === 1 && /不在候选集/.test(e.message))
+  // 守卫目的 = 防拼错 flag 静默落盘：报错路径都不许写指针/rule.json（2026-10-13 OCR 指出补不落盘断言）
+  assert.equal(readProjectType(cwd), null, 'flag/类型名报错都不该写指针')
 })

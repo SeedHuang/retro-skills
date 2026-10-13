@@ -40,8 +40,8 @@ function isDerivedRule(ruleJson) {
 }
 
 export function main({ home = homedir(), cwd = process.cwd(), argv = process.argv.slice(2) } = {}) {
-  // 未知 flag（`--xxx` 双横线，或 `-x` 单字符单横线）一律报错 + 拒绝多余位置参数——本脚本写全局注册表 + 覆盖 rule.json，
-  // 拼错参数静默落盘代价高；单横线多字符（如用户自建类型 `-legacy-cli`）不算 flag，是合法类型名（2026-10-13 OCR 指出）
+  // 未知 flag（`--xxx` 双横线，或 `-x`/`-ab` 单横线 1~2 字符）一律报错 + 拒绝多余位置参数——本脚本写全局注册表 + 覆盖 rule.json，
+  // 拼错参数静默落盘代价高；单横线 ≥3 字符（如用户自建类型 `-legacy-cli`）当类型名（2026-10-13 OCR 指出边界）
   const isFlagLike = (a) => /^--($|[^-])/.test(a) || /^-[^-][^-]?$/.test(a)
   const KNOWN_FLAGS = new Set(['--force'])
   const unknown = argv.filter((a) => isFlagLike(a) && !KNOWN_FLAGS.has(a))

@@ -1834,7 +1834,7 @@ function checkIgnoreAlignment(skipDirs, gitignoreText) {
   return violations
 }
 
-test('守卫：checkIgnoreAlignment 各分支（逐字 / 子路径不足 / 缺忽略 / 取反目录 / 取反子文件惰性 / 最后匹配胜出 / .git 豁免 / 注释行 / 前导空白）', () => {
+test('守卫：checkIgnoreAlignment 各分支（逐字 / 尾随空白 / 子路径不足 / 缺忽略 / 取反目录 / 取反子文件惰性 / 最后匹配胜出 / .git 豁免 / 注释行 / 前导空白）', () => {
   // .git 不在 .gitignore 里（git 内部目录），跳过它不需要 ignore 规则 → 不判失败
   assert.deepEqual(checkIgnoreAlignment(['.git'], 'node_modules/\n'), [])
   // 注释行/空行不算忽略规则：`# lessons/` 被注释掉后，lessons 就不再被忽略
