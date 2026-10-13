@@ -3,7 +3,7 @@
 // 每个用例 t.after 清理临时目录，不留垃圾（2026-10-13 OCR 指出）
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtempSync, writeFileSync, mkdirSync, readFileSync, rmSync } from 'node:fs'
+import { mkdtempSync, writeFileSync, mkdirSync, readFileSync, rmSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import {
@@ -226,15 +226,18 @@ test('命令落地：active 已有同条目（同 path/ignore）→ 幂等不更
   // 该分支按设计防御保留（listInfo 快照 vs 最终读取之间的注册表外部变更，2026-10-13 OCR 指出），无直接单测
 })
 
-test('命令落地：单横线多字符当合法类型名、单横线单字符/裸 -- 当未知 flag', (t) => {
+test('命令落地：单横线 1~2 字符/裸 -- 当未知 flag、≥3 字符当类型名', (t) => {
   const home = tmpDir(t)
   const cwd = tmpDir(t)
-  // `-x`（单横线单字符）→ 未知 flag
+  // `-x`（单横线 1 字符）→ 未知 flag
   assert.throws(() => main({ home, cwd, argv: ['-x'] }), (e) => e instanceof CliError && e.code === 1 && /未知参数/.test(e.message))
+  // `-ab`（单横线 2 字符）→ 未知 flag——isFlagLike 边界是「横线后 1~2 字符」，只测 -x/-legacy-cli 的话把 [^-]? 去掉回归也不会红
+  assert.throws(() => main({ home, cwd, argv: ['-ab'] }), (e) => e instanceof CliError && e.code === 1 && /未知参数/.test(e.message))
   // 裸 `--` → 未知 flag（不是「类型不存在」）
   assert.throws(() => main({ home, cwd, argv: ['--'] }), (e) => e instanceof CliError && e.code === 1 && /未知参数/.test(e.message))
-  // `-legacy-cli`（单横线多字符）→ 当类型名处理 → 不在候选集（不是未知参数）
+  // `-legacy-cli`（单横线 ≥3 字符）→ 当类型名处理 → 不在候选集（不是未知参数）
   assert.throws(() => main({ home, cwd, argv: ['-legacy-cli'] }), (e) => e instanceof CliError && e.code === 1 && /不在候选集/.test(e.message))
   // 守卫目的 = 防拼错 flag 静默落盘：报错路径都不许写指针/rule.json（2026-10-13 OCR 指出补不落盘断言）
   assert.equal(readProjectType(cwd), null, 'flag/类型名报错都不该写指针')
+  assert.equal(existsSync(join(cwd, '.opencodereview', 'rule.json')), false, 'flag/类型名报错都不该写 rule.json')
 })
