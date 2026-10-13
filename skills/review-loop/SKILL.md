@@ -21,7 +21,7 @@ description: 循环审查未提交改动或最近 N 次 commit 的代码与文�
    - 无残留 → 继续
 3. **建 review 分支**：`git checkout -b review/<yyyyMMdd-HHmm>-<短摘要>`（日期防撞车；git 写权限例外见全局规则 `no-git-write` 段 1）
 4. **项目类型初始化 + 规则派生**：按 `references/project-type.md` 跑——跑 `review-init.mjs`（初始化全局注册表，幂等）→ 读项目类型指针 `.reviewconfig/project-type`：无 → 走选择流程（用户描述 → 匹配候选 → 唯一命中直接落地 / 多候选列表选 / 无候选新建）→ 有 → 复用 → 派生 `.opencodereview/rule.json` → 验证 `ocr rules check <文件>` 应显示 `Source: Project`。生成的 `.opencodereview/rule.json` 属审查范围外，循环内不 commit，收尾后留在母分支工作区交用户决定提交
-5. **记母分支**：把「母分支名 = 触发时的当前分支」+ 新建的分支名写进 `.session/reviews/<那一次>/progress.md`——**目录不存在则先建**，目录名沿用 review-log 的 `<YYYY-MM-DD-HHMM>-<名字>` 格式（同一目录：分支前置建、review-log 续写）
+5. **建账（调 review-log 技能）**：调 `review-log` 技能建账——按它的规矩在 `.session/reviews/<那一次>/` 下建 **progress.md + problems.md 两个文件**（目录不存在则先建；目录名沿用 review-log 的 `<YYYY-MM-DD-HHMM>-<名字>` 格式；两文件骨架逐字用 review-log 自己的模板，本技能不复制、不缩写），并把「母分支名 = 触发时的当前分支」+ 新建的分支名写进 progress.md。**产出核对：progress.md + problems.md 两个文件都在、progress.md 里母分支名与分支名都写了，缺一 = 分支前置不算完成，回头补建再进下一步。**
 
 > **不支持并行**：同一时间只允许一个 review 运行。残留检查时**排除当前所在分支**（它可能是中断恢复），其余 `review/*` 分支一律视为残留。
 
