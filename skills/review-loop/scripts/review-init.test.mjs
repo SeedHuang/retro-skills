@@ -229,15 +229,21 @@ test('命令落地：active 已有同条目（同 path/ignore）→ 幂等不更
 test('命令落地：单横线 1~2 字符/裸 -- 当未知 flag、≥3 字符当类型名', (t) => {
   const home = tmpDir(t)
   const cwd = tmpDir(t)
+  // 先建种子，便于比对注册表全文（-legacy-cli 会走到 listInfo→ensureRegistry，不预置就测不到「未改」）
+  ensureRegistry(home)
+  const regBefore = readFileSync(registryPath(home), 'utf8')
   // `-x`（单横线 1 字符）→ 未知 flag
   assert.throws(() => main({ home, cwd, argv: ['-x'] }), (e) => e instanceof CliError && e.code === 1 && /未知参数/.test(e.message))
   // `-ab`（单横线 2 字符）→ 未知 flag——isFlagLike 边界是「横线后 1~2 字符」，只测 -x/-legacy-cli 的话把 [^-]? 去掉回归也不会红
   assert.throws(() => main({ home, cwd, argv: ['-ab'] }), (e) => e instanceof CliError && e.code === 1 && /未知参数/.test(e.message))
   // 裸 `--` → 未知 flag（不是「类型不存在」）
   assert.throws(() => main({ home, cwd, argv: ['--'] }), (e) => e instanceof CliError && e.code === 1 && /未知参数/.test(e.message))
-  // `-legacy-cli`（单横线 ≥3 字符）→ 当类型名处理 → 不在候选集（不是未知参数）
+  // `-abc`（单横线恰好 3 字符）→ 仍当类型名 → 不在候选集（钉住 isFlagLike 上界，2026-10-13 OCR 指出）
+  assert.throws(() => main({ home, cwd, argv: ['-abc'] }), (e) => e instanceof CliError && e.code === 1 && /不在候选集/.test(e.message))
+  // `-legacy-cli`（单横线多字符）→ 当类型名处理 → 不在候选集（不是未知参数）
   assert.throws(() => main({ home, cwd, argv: ['-legacy-cli'] }), (e) => e instanceof CliError && e.code === 1 && /不在候选集/.test(e.message))
-  // 守卫目的 = 防拼错 flag 静默落盘：报错路径都不许写指针/rule.json（2026-10-13 OCR 指出补不落盘断言）
+  // 守卫目的 = 防拼错 flag 静默落盘：报错路径都不许写指针/rule.json/全局注册表（2026-10-13 OCR 指出补注册表比对）
   assert.equal(readProjectType(cwd), null, 'flag/类型名报错都不该写指针')
   assert.equal(existsSync(join(cwd, '.opencodereview', 'rule.json')), false, 'flag/类型名报错都不该写 rule.json')
+  assert.equal(readFileSync(registryPath(home), 'utf8'), regBefore, 'flag/类型名报错都不该写全局注册表')
 })
