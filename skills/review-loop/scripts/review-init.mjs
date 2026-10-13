@@ -5,7 +5,7 @@
 //   3. 注册表读失败 / JSON 解析失败 / 结构非法 → 报错停止，不自动覆盖（防丢用户数据）
 //   4. 输出候选集 = languagePresets ∪ ecosystemPresets ∪ activeProjectTypes（按规范化名去重：language/active 同名时 active 优先；跨层同名时对象覆盖 ecosystem 字符串）
 // 用法：node review-init.mjs            # 初始化 + 输出候选集 JSON
-//       node review-init.mjs --list     # 输出 { current, candidates }（项目指针 + 扁平候选列表，update-review-project-type 命令用）
+//       node review-init.mjs --list     # 输出 { current, currentHit, candidates }（项目指针 + 指针在候选集的命中项/失效时 null + 扁平候选列表，update-review-project-type 命令用）
 import { mkdirSync, readFileSync, writeFileSync, renameSync, rmSync, existsSync, realpathSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -153,8 +153,8 @@ export function readProjectType(cwd = process.cwd()) {
 }
 
 // --list 模式用：把三层候选展平成 [{ name, path, ignore, source }]，供 update-review-project-type 命令一次拿全直接出列表
-// path/ignore 必须带上——命令落地时要写注册表 + 派生 rule.json，两者都需要这两个字段；
-// 只留 name/source 会让命令「拿到列表却没法一步落地」，还得回退非 list 输出
+// path/ignore 只在对象条目（语言级 / 个人累积）上带；字符串条目（生态级粗粒度描述）只有 name/source——没有 path/ignore 可带。
+// 命令落地派生 rule.json 需要 path/ignore：遇到字符串条目必须报错（提示选对象条目或新建对象类型），不许猜补字段。
 export function flattenCandidates(set) {
   const withSource = (list, source) => (list ?? []).map((item) =>
     typeof item === 'string'
@@ -166,6 +166,19 @@ export function flattenCandidates(set) {
     ...withSource(set.languagePresets, '语言级'),
     ...withSource(set.ecosystemPresets, '生态级'),
   ].filter((x) => x.name)
+}
+
+// --list 输出：current + currentHit + candidates。
+// currentHit = current 在 candidates 里的命中项（按规范化名匹配）或 null——命令分得清
+// 「已选类型可直接复用」（currentHit 非 null）和「指针失效需重新选择」（current 非 null 但 currentHit null：
+// 全局注册表误删 → ensureRegistry 只重建种子，自定义类型不在候选里，指针成了悬空引用，见 spec 风险表）。
+export function listInfo(home = homedir(), cwd = process.cwd()) {
+  const set = candidateSet(home)
+  const candidates = flattenCandidates(set)
+  const current = readProjectType(cwd)
+  const key = (x) => String(x ?? '').toLowerCase()
+  const currentHit = current == null ? null : (candidates.find((c) => key(c.name) === key(current)) ?? null)
+  return { current, currentHit, candidates }
 }
 
 // 仅直接运行时执行 CLI（realpath 归一化免疫 Junction，见规则 skill-authoring-convention 判据③）
@@ -182,11 +195,10 @@ if (process.argv[1]) {
 if (isDirectRun) {
   const listMode = process.argv.includes('--list')
   try {
-    const set = candidateSet()
     if (listMode) {
-      console.log(JSON.stringify({ current: readProjectType(), candidates: flattenCandidates(set) }, null, 2))
+      console.log(JSON.stringify(listInfo(), null, 2))
     } else {
-      console.log(JSON.stringify(set, null, 2))
+      console.log(JSON.stringify(candidateSet(), null, 2))
     }
   } catch (e) {
     console.error(e.message)

@@ -37,6 +37,7 @@
 2. 确保 `activeProjectTypes.config.json` 存在（不存在写种子：node-cli / electron / react / cli / electron-monorepo / react-node-monorepo，均带 path + ignore；**不覆盖已有**；种子经临时文件 + 原子改名落盘，中断不留半截文件）
 3. 注册表**读失败 / JSON 解析失败 / 结构非法**（`activeProjectTypes` 缺失或非数组）→ **报错停止，不自动覆盖**（防丢用户数据），提示人工处理——读失败与解析失败分报，别把系统错误误说成「JSON 坏」
 4. 输出候选集 JSON = languagePresets ∪ ecosystemPresets ∪ activeProjectTypes（给 agent 匹配用；**按规范化名去重**——大小写变体视为同一类型；language/active 同名时 active 优先，且同名时「精确类型对象」覆盖「生态级粗粒度字符串」，保证唯一命中不判重）
+5. `node review-init.mjs --list` 输出 `{ current, currentHit, candidates }`——currentHit 是 current 在候选集的命中项（按规范化名）或 null；**null 且 current 非 null = 指针失效**（注册表误删导致自定义类型消失），重新走选择流程
 
 ## 选择流程（首次 review / 重设类型）
 
@@ -50,11 +51,15 @@ agent 匹配：从 候选集（review-init 输出）里找
   ├─ 多候选 → 列出来给用户选（例：纯静态 H5 / React H5 / Vue H5 / 小程序 H5 / Angular H5）
   └─ 无候选 → 新建类型条目 + 问用户这种类型要忽略什么检查
   ↓
-落地（三步一起）：
+落地（三步一起）——用 `scripts/update-review-project-type.mjs <类型名>` 一步完成（无头命令，只做确定性动作，交互由 agent 层做）：
   ① 写 activeProjectTypes.config.json（没有的类型加进去；已有的跳过）
-  ② 派生项目 .opencodereview/rule.json（按该类型 rule 配置）
+  ② 派生项目 .opencodereview/rule.json（按该类型 rule 配置；生成文件带「派生自…」互指注释）
   ③ 写项目类型指针 .reviewconfig/project-type（一行类型名）
 ```
+
+- **类型名必须是对象条目**（语言级 / 个人累积，带 path/ignore）——字符串条目（生态级粗粒度描述，如「React H5」）无 path/ignore，命令会报错；此时改选对象类型，或手动编辑注册表新建带 path/ignore 的类型
+- **覆盖手写 rule.json**：命令遇到无「派生自…」互指注释的 rule.json 会拒绝（exit 2），agent 问用户确认替换后加 `--force` 重跑
+- **指针失效**：`review-init.mjs --list` 的 `currentHit` = null 且 current 非 null（注册表误删导致自定义类型消失，指针悬空）→ 重新走选择流程
 
 **只问一次**：问完**立即落盘**（注册表 + 派生 + 指针），中途关窗口下次也不重复问。
 
@@ -73,7 +78,7 @@ agent 匹配：从 候选集（review-init 输出）里找
 ```
 
 - **叠加语义（`merge_system_rule: true`）**：系统规则全保留 + 我们的忽略声明追加在后——模型读声明跳过 React 项；万一判断错，系统规则兜底还在。**已实测通过**（2026-10-11，aas 20 文件 8 评论 React 类=0）
-- **覆盖手写 rule.json 必须先问**：覆盖前看文件是否存在且非本流程生成（无「派生自…」互指注释）→ 报告「保留还是替换？」走确认，**不静默覆盖**
+- **互指注释是「流程生成 vs 手写」的判定标记**：`update-review-project-type.mjs` 生成的 rule.json 含「派生自 activeProjectTypes.config.json 的 <类型名> 条目」，无此标记 = 手写。**覆盖手写 rule.json 必须先问**：命令遇手写文件会拒绝（exit 2），报告「保留还是替换？」走确认后加 `--force` 重跑，**不静默覆盖**
 - **验证**：`ocr rules check <文件>` 应显示 `Source: Project (.opencodereview/rule.json)` 且输出含 `## User-Specific Rules` 段
 
 ## 若叠加实测无效（B 计划，备用）

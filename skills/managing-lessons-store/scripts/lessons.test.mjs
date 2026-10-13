@@ -21,12 +21,17 @@ const LESSONS_SRC = resolve(SKILL_DIR, 'scripts', 'lessons.mjs')           // �
  */
 function makeScanner(maxDepth = 3) {
   const scan = { truncated: [], skippedDirs: [] }
-  // 这三个目录**刻意不扫**（`.git` / `node_modules` 一个巨大且无内容价值、一个内部结构随版本变化；
-  // `.session/` 是临时过程账——不进 git、做完即删，里面的行号引用 / 测试数是审查当时的快照，
-  // 参与全仓一致性校对的只有 active 文档，和 handoffs 被排除是同一逻辑（2026-10-08 补）。
+  // 这四个目录**刻意不扫**（`.git` / `node_modules` 一个巨大且无内容价值、一个内部结构随版本变化；
+  // `.session/` 是临时过程账——不进 git、做完即删；`.superpowers/` 是 SDD 执行账本（一次性历史记录，
+  //   git-ignored 整棵忽略，**排除的是整棵树而不只是 sdd/ 子目录**，且按目录名匹配、任意层级同名目录都跳过）——
+  // 四者的行号引用 / 测试数都是审查当时的快照，
+  // 参与全仓一致性校对的只有 active 文档，和 handoffs 被排除是同一逻辑（2026-10-08 补 .session，2026-10-13 补 .superpowers）。
   // 注意：曾靠调用方的 `.filter(p => !p.includes('.git'))` 事后排除，那只滤掉了**扫到的文件**，
   // 漏扫的目录照样被记进 truncated → 首次运行时误报 12 个（实测 2026-10-08）。所以要在扫描层就跳过。
-  const SKIP_DIRS = new Set(['.git', 'node_modules', '.session'])
+  const SKIP_DIRS = new Set(['.git', 'node_modules', '.session', '.superpowers'])
+  // 透出给守卫做**结构性断言**（SKIP_DIRS ↔ allowed ↔ .gitignore 三方一致）——不能靠「实际扫到」验证，
+  // git-ignored 目录（如 .superpowers）在干净检出上不存在，运行时观察永远测不到新条目（2026-10-13 OCR 指出）
+  scan.skipDirs = SKIP_DIRS
   // `noteTruncated` 那趟下探自己的深度刹车。它只回答「有没有目标文件」，
   // 不收集、不返回，所以可以比walk 的 maxDepth 深；深到 8 层足够把「再下一层」的漏也照出来。
   const PROBE_MAX = 8
@@ -1693,7 +1698,7 @@ test('守卫：技能文档里的 `lessons.mjs <子命令> --xxx` 参数，代�
  *   `ambiguous` 非空 = 找到多个（此时 `file` 为 null）
  */
 function findByName(name) {
-  // `makeScanner` 已在扫描层跳过 `.git` / `node_modules` / `.session`，这里**不再事后 filter**——
+  // `makeScanner` 已在扫描层跳过 `.git` / `node_modules` / `.session` / `.superpowers`，这里**不再事后 filter**——
   // 事后 filter 用 `p.includes('.git')` 会连带误杀 `.github/` 之类，而扫描层的精确匹配不会（2026-10-08 OCR 指出）
   const { walk } = makeScanner()               // 自建 scanner：旁路查找不污染调用方的 scan
   // ⚠️ walk 的匹配是「扩展名后缀」`endsWith(x)`——做**精确文件名**查找时必须按 basename 过滤，
@@ -1707,7 +1712,7 @@ function findByName(name) {
 test('守卫：文档里的「<名>.mjs 第 N 行」引用，行号必须仍有效（防行号漂移）', () => {
   // 扫全仓 md（行号引用可能出现在 skills / docs / README 任意处）
   const { walk, scan } = makeScanner()
-  const mds = walk(REPO_ROOT, ['.md'])   // `.git` / `node_modules` 由 makeScanner 跳过，不事后filter
+  const mds = walk(REPO_ROOT, ['.md'])   // `.git` / `node_modules` 等跳过目录由 makeScanner 处理，不事后filter
   let checked = 0
   let anchored = 0
   const missing = []                        // 找不到目标文件的引用（报错要能指到是哪条）
@@ -1776,11 +1781,27 @@ test('守卫：文档里的「<名>.mjs 第 N 行」引用，行号必须仍有�
   assert.deepEqual(scan.truncated, [],
     `扫描被深度上限截断了（漏扫 ${scan.truncated.length} 个目录：${scan.truncated.slice(0, 3).join(' | ')}）——`
     + '守卫等于「假装扫全了」。要么把内容挪浅，要么给 makeScanner 放宽 maxDepth')
-  // 跳过的目录**只能是** SKIP_DIRS 的子集（本仓库可能没有 node_modules，不必强求两个都在）
-  const allowed = ['.git', 'node_modules', '.session']
-  const skipped = [...new Set(scan.skippedNames())]
-  for (const s of skipped) {
-    assert.ok(allowed.includes(s), `扫描跳过了不该跳的目录：${s}（只允许 ${allowed.join(' / ')}）——守卫等于「假装扫全了」`)
+  // SKIP_DIRS 与 allowed 必须是同一份清单（双向相等）——不能靠「实际扫到」验证：git-ignored 目录
+  // （如 .superpowers）在干净检出/CI 上不存在，运行时观察永远测不到新条目（2026-10-13 OCR 指出）
+  const allowed = ['.git', 'node_modules', '.session', '.superpowers']
+  assert.deepEqual(
+    [...scan.skipDirs].sort(),
+    [...allowed].sort(),
+    `SKIP_DIRS 与本测试的 allowed 白名单不一致——新增跳过目录必须两边同步（SKIP_DIRS: ${[...scan.skipDirs].sort().join(' / ')}；allowed: ${allowed.join(' / ')}）`,
+  )
+  // 排除口径必须与 `.gitignore` 一致：目录一旦被取消 ignore 而这里仍跳过，守卫会静默漏校验
+  // （白名单只查子集、truncated 也不记）→「假装扫全了」（2026-10-13 OCR 指出）。
+  // `.git` 是 git 内部目录、不在 .gitignore 里，跳过它不需要 ignore 规则，故排除在外。
+  const ignoreRules = new Set(
+    readFileSync(resolve(REPO_ROOT, '.gitignore'), 'utf8')
+      .split(/\r?\n/)
+      .map((l) => l.trim().replace(/^\/+|\/+$/g, ''))
+      .filter((l) => l && !l.startsWith('#')),
+  )
+  for (const d of scan.skipDirs) {
+    if (d === '.git') continue
+    assert.ok(ignoreRules.has(d),
+      `${d} 已进 SKIP_DIRS（扫描层跳过）但 .gitignore 不再忽略它——扫描范围与仓库真实内容脱节，守卫会「假装扫全了」`)
   }
   // **不要求 `.git` 必须存在或必须是目录**：`git worktree` / submodule 下 .git 是个*文件*
   // （`gitdir: …`），archive/zip 检出里则完全没有 —— 那种布局下 `e.isDirectory()` 为 false，
