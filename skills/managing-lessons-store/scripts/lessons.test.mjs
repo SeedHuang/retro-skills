@@ -1813,9 +1813,10 @@ function checkIgnoreAlignment(skipDirs, gitignoreText) {
   // 只剥**尾部**空白：前导空白在 .gitignore 里有语义（`  lessons/` 不再匹配顶层目录），l.trim() 会静默假绿（2026-10-13 OCR 指出）
   const rules = gitignoreText.split(/\r?\n/)
     .map((l) => {
-      // `!` 前缀后的锚定斜杠也要剥：`!/lessons` → `!lessons`（2026-10-13 OCR 指出漏匹配）
+      // `!` 前缀后的锚定斜杠也要剥：`!/lessons` → `!lessons`（2026-10-13 OCR 指出漏匹配）；
+      // 先剥尾部空白再剥斜杠：`lessons/  ` 的尾斜杠被空格挡住剥不掉，先剥空白才对齐 git 语义（2026-10-13 OCR 指出）
       const neg = l.startsWith('!')
-      const body = (neg ? l.slice(1) : l).replace(/^\/+|\/+$/g, '').replace(/\s+$/, '')
+      const body = (neg ? l.slice(1) : l).replace(/\s+$/, '').replace(/^\/+|\/+$/g, '')
       return (neg ? '!' : '') + body
     })
     .filter((l) => l && !l.startsWith('#'))
@@ -1845,6 +1846,8 @@ test('守卫：checkIgnoreAlignment 各分支（逐字 / 子路径不足 / 缺�
   // 逐字命中（带/不带尾斜杠）→ 无违反
   assert.deepEqual(checkIgnoreAlignment(['lessons'], 'lessons/\n'), [])
   assert.deepEqual(checkIgnoreAlignment(['lessons'], 'lessons\n'), [])
+  // 尾随空白被 git 忽略：`lessons/  ` 与 `lessons/` 语义相同（先剥尾部空白再剥斜杠，2026-10-13 OCR 指出）→ 无违反
+  assert.deepEqual(checkIgnoreAlignment(['lessons'], 'lessons/  \n'), [])
   // 缺忽略规则 → 违反
   assert.deepEqual(checkIgnoreAlignment(['.trae'], 'node_modules/\n'),
     ['.trae 已进 SKIP_DIRS 但 .gitignore 没有逐字忽略规则（跳过的是整棵树，必须整棵被忽略）'])

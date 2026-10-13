@@ -117,6 +117,7 @@ test('nameKey：NFKC 归一全角 + trim 去首尾空白 + lowercase（单一来
   assert.equal(nameKey('　CLI　'), 'cli')            // 全角空格
   assert.equal(nameKey('Ｒｅａｃｔ'), 'react')        // 全角字符
   assert.equal(nameKey('React'), nameKey('react'))  // 大小写一致
+  assert.equal(nameKey({ name: 'Ｒｅａｃｔ' }), 'react') // 对象入参（命令收敛分支用 nameKey(item)）
 })
 
 // ---------- update-review-project-type.mjs 落地（2026-10-13 OCR 指出命令无测试） ----------
@@ -212,4 +213,26 @@ test('命令落地：类型不在候选集 → CliError code 1（带近似候选
   assert.throws(() => main({ home, cwd, argv: ['node-c'] }),
     (e) => e instanceof CliError && e.code === 1 && /近似候选/.test(e.message))
   assert.equal(readProjectType(cwd), null)
+})
+
+test('命令落地：active 已有同条目（同 path/ignore）→ 幂等不更新；收敛分支为 TOCTOU 防御（同步无法模拟，逻辑简单）', (t) => {
+  const home = tmpDir(t)
+  const cwd = tmpDir(t)
+  // node-cli 是种子条目 → 落地应「已有的跳过」（registryUpdated=false）
+  const result = main({ home, cwd, argv: ['node-cli'] })
+  assert.equal(result.registryUpdated, false, '已有同条目不应更新')
+  assert.equal(result.type, 'node-cli')
+  // 收敛分支（同名不同 path/ignore → 更新）只在 TOCTOU 场景触发——main 同步执行无法在读写之间注入外部改动，
+  // 该分支按设计防御保留（listInfo 快照 vs 最终读取之间的注册表外部变更，2026-10-13 OCR 指出），无直接单测
+})
+
+test('命令落地：单横线多字符当合法类型名、单横线单字符/裸 -- 当未知 flag', (t) => {
+  const home = tmpDir(t)
+  const cwd = tmpDir(t)
+  // `-x`（单横线单字符）→ 未知 flag
+  assert.throws(() => main({ home, cwd, argv: ['-x'] }), (e) => e instanceof CliError && e.code === 1 && /未知参数/.test(e.message))
+  // 裸 `--` → 未知 flag（不是「类型不存在」）
+  assert.throws(() => main({ home, cwd, argv: ['--'] }), (e) => e instanceof CliError && e.code === 1 && /未知参数/.test(e.message))
+  // `-legacy-cli`（单横线多字符）→ 当类型名处理 → 不在候选集（不是未知参数）
+  assert.throws(() => main({ home, cwd, argv: ['-legacy-cli'] }), (e) => e instanceof CliError && e.code === 1 && /不在候选集/.test(e.message))
 })

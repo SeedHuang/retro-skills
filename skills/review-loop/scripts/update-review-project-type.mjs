@@ -42,7 +42,7 @@ function isDerivedRule(ruleJson) {
 export function main({ home = homedir(), cwd = process.cwd(), argv = process.argv.slice(2) } = {}) {
   // 未知 flag（`--xxx` 双横线，或 `-x` 单字符单横线）一律报错 + 拒绝多余位置参数——本脚本写全局注册表 + 覆盖 rule.json，
   // 拼错参数静默落盘代价高；单横线多字符（如用户自建类型 `-legacy-cli`）不算 flag，是合法类型名（2026-10-13 OCR 指出）
-  const isFlagLike = (a) => /^--[^-]/.test(a) || /^-[^-][^-]?$/.test(a)
+  const isFlagLike = (a) => /^--($|[^-])/.test(a) || /^-[^-][^-]?$/.test(a)
   const KNOWN_FLAGS = new Set(['--force'])
   const unknown = argv.filter((a) => isFlagLike(a) && !KNOWN_FLAGS.has(a))
   if (unknown.length) throw new CliError(1, `未知参数：${unknown.join(' / ')}（支持：--force）`)
@@ -118,8 +118,9 @@ export function main({ home = homedir(), cwd = process.cwd(), argv = process.arg
     try {
       atomicWrite(registryPath(home), JSON.stringify({ ...registry, activeProjectTypes: active }, null, 2) + '\n')
     } catch (e) {
-      // 注册表写失败：项目文件（rule.json/指针）已更新但注册表没落——必须明确提示半成品（2026-10-13 OCR 指出）
-      throw new CliError(1, `注册表写入失败：${registryPath(home)}\n${e.message}\n⚠️ 项目 rule.json 与指针已更新为「${hit.name}」，但全局注册表未包含该类型——请人工处理或修复权限后重跑（重跑会收敛）。`)
+      // 注册表写失败：项目文件（rule.json/指针）已更新但注册表没落——按「新增失败 vs 更新失败」区分措辞（2026-10-13 OCR 指出）
+      const what = idx === -1 ? '全局注册表未包含该类型' : '全局注册表未更新为最新 path/ignore'
+      throw new CliError(1, `注册表写入失败：${registryPath(home)}\n${e.message}\n⚠️ 项目 rule.json 与指针已更新为「${hit.name}」，但${what}——请人工处理或修复权限后重跑（重跑会收敛）。`)
     }
   }
 
