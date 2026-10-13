@@ -7,7 +7,7 @@ import { mkdtempSync, writeFileSync, mkdirSync, readFileSync, rmSync } from 'nod
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import {
-  readProjectType, flattenCandidates, listInfo, candidateSet, ensureRegistry, registryPath,
+  readProjectType, flattenCandidates, listInfo, candidateSet, ensureRegistry, registryPath, nameKey,
 } from './review-init.mjs'
 import { main, CliError } from './update-review-project-type.mjs'
 
@@ -112,6 +112,13 @@ test('listInfo：current 悬空（注册表误删后自定义类型消失，指�
   assert.equal(info.currentHit, null)
 })
 
+test('nameKey：NFKC 归一全角 + trim 去首尾空白 + lowercase（单一来源口径，2026-10-13 OCR 指出无测试）', () => {
+  assert.equal(nameKey('  React  '), 'react')       // 首尾空格
+  assert.equal(nameKey('　CLI　'), 'cli')            // 全角空格
+  assert.equal(nameKey('Ｒｅａｃｔ'), 'react')        // 全角字符
+  assert.equal(nameKey('React'), nameKey('react'))  // 大小写一致
+})
+
 // ---------- update-review-project-type.mjs 落地（2026-10-13 OCR 指出命令无测试） ----------
 
 test('命令落地：空 ignore 对象条目（种子 react）正常落地，rule 不以「；」开头', (t) => {
@@ -165,7 +172,7 @@ test('命令落地：手写 rule.json → CliError code 2，注册表不变（�
   mkdirSync(join(cwd, '.opencodereview'), { recursive: true })
   writeFileSync(join(cwd, '.opencodereview', 'rule.json'),
     JSON.stringify({ rules: [{ path: '**/*.js', rule: '手写', merge_system_rule: true }] }), 'utf8')
-  const before = registryCount(home)
+  ensureRegistry(home) // 先建种子，便于比对注册表全文
   const regBefore = readFileSync(registryPath(home), 'utf8')
   assert.throws(() => main({ home, cwd, argv: ['python-backend'] }), (e) => e instanceof CliError && e.code === 2)
   assert.equal(readFileSync(registryPath(home), 'utf8'), regBefore, '手写 rule.json 拒绝时注册表全文不得变')
