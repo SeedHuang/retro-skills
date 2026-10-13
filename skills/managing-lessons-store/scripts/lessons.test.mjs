@@ -1791,31 +1791,55 @@ test('守卫：文档里的「<名>.mjs 第 N 行」引用，行号必须仍有�
   // 排除口径必须与 `.gitignore` 一致：目录一旦被取消 ignore 而这里仍跳过，守卫会静默漏校验
   // （白名单只查子集、truncated 也不记）→「假装扫全了」（2026-10-13 OCR 指出）。
   // `.git` 是 git 内部目录、不在 .gitignore 里，跳过它不需要 ignore 规则，故排除在外。
-  // 匹配规则：逐字目录名，或它的子目录前缀（`.trae` 命中 `.trae/skills`）。⚠️ 规则本身必须是**逐字**目录名，
-  // 等价 glob 写法（`**/.superpowers/`、`.super*`）会让这里假红——请保持逐字形态（2026-10-13 OCR 指出）。
+  // ⚠️ 忽略规则必须是**逐字目录名**：等价 glob 写法（`**/.superpowers/`、`.super*`）不认（2026-10-13 OCR 指出）
   const gitignorePath = resolve(REPO_ROOT, '.gitignore')
   assert.ok(existsSync(gitignorePath),
     `仓库根没有 .gitignore（${gitignorePath}）——无法校验跳过目录与忽略规则是否一致（worktree/archive 检出可能有此布局）`)
-  const ignoreRules = new Set(
-    readFileSync(gitignorePath, 'utf8')
-      .split(/\r?\n/)
-      .map((l) => l.trim().replace(/^\/+|\/+$/g, ''))
-      .filter((l) => l && !l.startsWith('#')),
-  )
-  const hasIgnoreFor = (d) => [...ignoreRules].some((r) => r === d || r.startsWith(`${d}/`))
-  const unignore = [...ignoreRules].filter((r) => r.startsWith('!'))
-  for (const d of scan.skipDirs) {
-    if (d === '.git') continue
-    assert.ok(hasIgnoreFor(d),
-      `${d} 已进 SKIP_DIRS（扫描层跳过）但 .gitignore 不再忽略它——扫描范围与仓库真实内容脱节，守卫会「假装扫全了」`)
-    // 取反规则会把目录**部分**重新纳管：`!.superpowers/keep.md` 时 has() 仍 true，但被跳过的树里混进了进 git 的文件
-    const negated = unignore.filter((r) => r.slice(1).split('/')[0] === d || r.slice(1).startsWith(`${d}/`))
-    assert.ok(negated.length === 0,
-      `${d} 仍在 SKIP_DIRS，但 .gitignore 存在取反规则（${negated.join(' / ')}）把它重新纳管——被跳过的树里混进了进 git 的文件，守卫会「假装扫全了」`)
-  }
+  const violations = checkIgnoreAlignment([...scan.skipDirs], readFileSync(gitignorePath, 'utf8'))
+  assert.deepEqual(violations, [],
+    `跳过目录与 .gitignore 忽略规则不一致：\n  ${violations.join('\n  ')}`)
   // **不要求 `.git` 必须存在或必须是目录**：`git worktree` / submodule 下 .git 是个*文件*
   // （`gitdir: …`），archive/zip 检出里则完全没有 —— 那种布局下 `e.isDirectory()` 为 false，
   // 扫不到就扫不到，上面的白名单循环已经兜住了「跳过了不该跳的」（2026-10-08 OCR 指出）
+})
+
+// 判定「跳过目录 ↔ .gitignore 忽略规则」的一致性（纯函数，可 fixture 测试各分支——2026-10-13 OCR 指出原逻辑在本仓恒不触发=零覆盖）
+// 不变式：
+//   ① SKIP_DIRS 跳过的**整棵树**必须有逐字忽略规则——`.trae/skills/` 只忽略子路径不够，`.trae/xxx.md` 会被静默漏扫；
+//   ② 只有「取反目录本身」（`!lessons` / `!.trae`，含锚定斜杠 `!/lessons` 写法）才真的重新纳管整棵；
+//      `!lessons/keep.md` 是惰性规则（父目录已排除时 git 不下探），无害，不判失败
+const checkIgnoreAlignment = (skipDirs, gitignoreText) => {
+  const rules = gitignoreText.split(/\r?\n/)
+    .map((l) => l.trim().replace(/^\/+|\/+$/g, ''))
+    .filter((l) => l && !l.startsWith('#'))
+  const neg = rules.filter((r) => r.startsWith('!')).map((r) => r.slice(1).replace(/^\/+|\/+$/g, ''))
+  const violations = []
+  for (const d of skipDirs) {
+    if (d === '.git') continue
+    if (!rules.includes(d)) violations.push(`${d} 已进 SKIP_DIRS 但 .gitignore 没有逐字忽略规则（跳过的是整棵树，必须整棵被忽略）`)
+    if (neg.includes(d)) violations.push(`${d} 被取反规则重新纳管（!${d}）——被跳过的树混进了进 git 的文件`)
+  }
+  return violations
+}
+
+test('守卫：checkIgnoreAlignment 各分支（逐字 / 子路径不足 / 缺忽略 / 取反目录 / 取反子文件惰性）', () => {
+  // 逐字命中（带/不带尾斜杠）→ 无违反
+  assert.deepEqual(checkIgnoreAlignment(['lessons'], 'lessons/\n'), [])
+  assert.deepEqual(checkIgnoreAlignment(['lessons'], 'lessons\n'), [])
+  // 缺忽略规则 → 违反
+  assert.deepEqual(checkIgnoreAlignment(['.trae'], 'node_modules/\n'),
+    ['.trae 已进 SKIP_DIRS 但 .gitignore 没有逐字忽略规则（跳过的是整棵树，必须整棵被忽略）'])
+  // 只有子路径忽略 → 违反（整棵树必须被忽略）
+  assert.deepEqual(checkIgnoreAlignment(['.trae'], '.trae/skills/\n'),
+    ['.trae 已进 SKIP_DIRS 但 .gitignore 没有逐字忽略规则（跳过的是整棵树，必须整棵被忽略）'])
+  // 取反目录本身 → 违反
+  assert.deepEqual(checkIgnoreAlignment(['lessons'], 'lessons/\n!lessons\n'),
+    ['lessons 被取反规则重新纳管（!lessons）——被跳过的树混进了进 git 的文件'])
+  // 取反子文件（惰性）→ 不违反
+  assert.deepEqual(checkIgnoreAlignment(['lessons'], 'lessons/\n!lessons/keep.md\n'), [])
+  // 取反目录带锚定斜杠 → 违反
+  assert.deepEqual(checkIgnoreAlignment(['lessons'], 'lessons/\n!/lessons\n'),
+    ['lessons 被取反规则重新纳管（!lessons）——被跳过的树混进了进 git 的文件'])
 })
 
 test('守卫：makeScanner 的 truncated 只在「被截断那一层真有目标扩展名」时才算漏扫（防假红）', () => {

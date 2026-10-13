@@ -109,7 +109,9 @@ export function nameOf(item) {
   return typeof item === 'string' ? item : item?.name
 }
 export function nameKey(item) {
-  return String(nameOf(item) ?? '').toLowerCase()
+  // NFKC 归一全角 + trim 去首尾空白 + 小写——单一来源保证各处匹配口径一致；
+  // 只 lowercase 的话「候选集里有、命令 find 不到」的症状仍会在全角/空格名上复现（2026-10-13 OCR 指出）
+  return String(nameOf(item) ?? '').normalize('NFKC').trim().toLowerCase()
 }
 
 export function candidateSet(home = homedir()) {

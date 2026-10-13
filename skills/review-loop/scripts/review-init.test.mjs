@@ -152,9 +152,10 @@ test('命令落地：对象条目不在注册表 → 加进去且保留其它顶
 test('命令落地：字符串条目 → CliError code 1，注册表与指针不动', (t) => {
   const home = tmpDir(t)
   const cwd = tmpDir(t)
-  const before = registryCount(home)
+  ensureRegistry(home) // 先建种子，便于比对注册表全文
+  const regBefore = readFileSync(registryPath(home), 'utf8')
   assert.throws(() => main({ home, cwd, argv: ['React H5'] }), (e) => e instanceof CliError && e.code === 1)
-  assert.equal(registryCount(home), before, '字符串条目不应改注册表')
+  assert.equal(readFileSync(registryPath(home), 'utf8'), regBefore, '字符串条目不应改注册表')
   assert.equal(readProjectType(cwd), null, '字符串条目不应写指针')
 })
 
@@ -165,8 +166,9 @@ test('命令落地：手写 rule.json → CliError code 2，注册表不变（�
   writeFileSync(join(cwd, '.opencodereview', 'rule.json'),
     JSON.stringify({ rules: [{ path: '**/*.js', rule: '手写', merge_system_rule: true }] }), 'utf8')
   const before = registryCount(home)
+  const regBefore = readFileSync(registryPath(home), 'utf8')
   assert.throws(() => main({ home, cwd, argv: ['python-backend'] }), (e) => e instanceof CliError && e.code === 2)
-  assert.equal(registryCount(home), before, '手写 rule.json 拒绝时注册表不得已改')
+  assert.equal(readFileSync(registryPath(home), 'utf8'), regBefore, '手写 rule.json 拒绝时注册表全文不得变')
   assert.equal(readProjectType(cwd), null)
   // --force 后成功
   main({ home, cwd, argv: ['python-backend', '--force'] })
@@ -177,8 +179,30 @@ test('命令落地：手写 rule.json → CliError code 2，注册表不变（�
 test('命令落地：未知 flag → CliError code 1，不落盘', (t) => {
   const home = tmpDir(t)
   const cwd = tmpDir(t)
-  const before = registryCount(home)
+  ensureRegistry(home) // 先建种子，便于比对注册表全文
+  const regBefore = readFileSync(registryPath(home), 'utf8')
   assert.throws(() => main({ home, cwd, argv: ['react', '--dry-run'] }), (e) => e instanceof CliError && e.code === 1)
-  assert.equal(registryCount(home), before)
+  assert.equal(readFileSync(registryPath(home), 'utf8'), regBefore)
+  assert.equal(readProjectType(cwd), null)
+})
+
+test('命令落地：现有 rule.json 解析失败 → CliError code 1，注册表与指针不动', (t) => {
+  const home = tmpDir(t)
+  const cwd = tmpDir(t)
+  ensureRegistry(home) // 先建种子，便于比对注册表全文
+  mkdirSync(join(cwd, '.opencodereview'), { recursive: true })
+  writeFileSync(join(cwd, '.opencodereview', 'rule.json'), '{broken json', 'utf8')
+  const regBefore = readFileSync(registryPath(home), 'utf8')
+  assert.throws(() => main({ home, cwd, argv: ['python-backend'] }), (e) => e instanceof CliError && e.code === 1)
+  assert.equal(readFileSync(registryPath(home), 'utf8'), regBefore, '解析失败时注册表全文不得变')
+  assert.equal(readProjectType(cwd), null)
+})
+
+test('命令落地：类型不在候选集 → CliError code 1（带近似候选提示）', (t) => {
+  const home = tmpDir(t)
+  const cwd = tmpDir(t)
+  // node-cli 在候选集里，node-c 是它的前缀 → 应提示近似候选
+  assert.throws(() => main({ home, cwd, argv: ['node-c'] }),
+    (e) => e instanceof CliError && e.code === 1 && /近似候选/.test(e.message))
   assert.equal(readProjectType(cwd), null)
 })

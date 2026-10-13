@@ -19,7 +19,7 @@ import { readFileSync, existsSync, realpathSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { homedir } from 'node:os'
-import { listInfo, readRegistry, registryPath, atomicWrite, nameKey, nameOf } from './review-init.mjs'
+import { listInfo, readRegistry, registryPath, atomicWrite, nameKey } from './review-init.mjs'
 
 // 与 project-type.md「派生 rule.json 的形态」互指注释一致；isDerivedRule 靠它识别流程生成 vs 手写
 export const DERIVED_MARK = '派生自 activeProjectTypes.config.json 的'
@@ -40,12 +40,15 @@ function isDerivedRule(ruleJson) {
 }
 
 export function main({ home = homedir(), cwd = process.cwd(), argv = process.argv.slice(2) } = {}) {
-  // 未知 flag 一律报错，不静默忽略——本脚本写全局注册表 + 覆盖 rule.json，拼错 flag 静默照跑代价高
+  // 未知 flag（含单横杠 `-f`）一律报错 + 拒绝多余位置参数——本脚本写全局注册表 + 覆盖 rule.json，
+  // 拼错参数静默落盘代价高（`react pythn-backend` 会静默按 react 执行，2026-10-13 OCR 指出）
   const KNOWN_FLAGS = new Set(['--force'])
-  const unknown = argv.filter((a) => a.startsWith('--') && !KNOWN_FLAGS.has(a))
+  const unknown = argv.filter((a) => a.startsWith('-') && !KNOWN_FLAGS.has(a))
   if (unknown.length) throw new CliError(1, `未知参数：${unknown.join(' / ')}（支持：--force）`)
+  const positional = argv.filter((a) => !a.startsWith('-'))
+  if (positional.length > 1) throw new CliError(1, `多余参数：${positional.slice(1).join(' / ')}（只接受一个类型名）`)
   const force = argv.includes('--force')
-  const typeName = argv.find((a) => !a.startsWith('--'))
+  const typeName = positional[0]
   if (!typeName) {
     throw new CliError(1, '用法：node update-review-project-type.mjs <类型名> [--force]\n类型名必须是对象条目（带 path/ignore）；候选列表见 node review-init.mjs --list')
   }
@@ -60,12 +63,16 @@ export function main({ home = homedir(), cwd = process.cwd(), argv = process.arg
     const hint = similar.length ? `，近似候选：${similar.join(' / ')}` : ''
     throw new CliError(1, `类型「${typeName}」不在候选集里${hint}。候选列表：node review-init.mjs --list`)
   }
-  // 判「字符串条目」看有没有 path/ignore **键**，不是看 ignore 值——对象条目的 ignore 可以是空串（如种子 react）
-  if (!hit.path || !('ignore' in hit)) {
-    throw new CliError(1, `类型「${typeName}」是生态级粗粒度描述（只有 name/source，无 path/ignore），派生不了 rule.json。\n请选对象条目（语言级 / 个人累积），或手动编辑 ${registryPath(home)} 新建带 path/ignore 的类型（见 skills/review-loop/references/project-type.md）。`)
+  // 字符串条目（生态级，flattenCandidates 只给 { name, source }）没有 path；
+  // 对象条目也可能手编时缺 path——两分支报错信息不同，别把缺 path 对象条目说成「生态级字符串」（2026-10-13 OCR 指出）
+  if (!hit.path) {
+    const isStringEntry = hit.source === '生态级'
+    throw new CliError(1, isStringEntry
+      ? `类型「${typeName}」是生态级粗粒度描述（只有 name/source，无 path），派生不了 rule.json。\n请选对象条目（语言级 / 个人累积），或手动编辑 ${registryPath(home)} 新建带 path 的类型（见 skills/review-loop/references/project-type.md）。`
+      : `类型「${typeName}」的注册表条目缺少 path，派生不了 rule.json。\n请手动编辑 ${registryPath(home)} 给该条目补上 path（见 skills/review-loop/references/project-type.md）。`)
   }
 
-  // 2. 先校验现有 rule.json（覆盖冲突在这里就拒，别等注册表已改完再 exit 2——失败路径不留半成品）
+  // 2. 先校验现有 rule.json（覆盖冲突在这里就拒，别等落盘后再 exit 2——失败路径不留半成品）
   const ruleFile = join(cwd, '.opencodereview', 'rule.json')
   if (existsSync(ruleFile)) {
     let existing = {}
@@ -79,17 +86,8 @@ export function main({ home = homedir(), cwd = process.cwd(), argv = process.arg
     }
   }
 
-  // 3. 写注册表（保留注册表其它顶层键，不静默丢用户手写元数据；选中类型不在 activeProjectTypes 则加进去；已有的跳过）
-  const registry = readRegistry(home)
-  const active = Array.isArray(registry.activeProjectTypes) ? registry.activeProjectTypes : []
-  let registryUpdated = false
-  if (!active.some((item) => nameKey(nameOf(item)) === nameKey(hit.name))) {
-    active.push({ name: hit.name, path: hit.path, ignore: hit.ignore })
-    atomicWrite(registryPath(home), JSON.stringify({ ...registry, activeProjectTypes: active }, null, 2) + '\n')
-    registryUpdated = true
-  }
-
-  // 4. 派生 rule.json（空 ignore 时不以「；」开头）
+  // 3. 先写**项目内可再生文件**（rule.json + 指针）——它们失败（EACCES/ENOSPC）不影响全局；
+  //    全局注册表最后提交，避免「注册表已加类型、项目文件写失败」的半成品（2026-10-13 OCR 指出三次写非事务）
   const ruleText = JSON.stringify({
     rules: [{
       path: hit.path,
@@ -99,11 +97,21 @@ export function main({ home = homedir(), cwd = process.cwd(), argv = process.arg
   }, null, 2) + '\n'
   atomicWrite(ruleFile, ruleText)
 
-  // 5. 写指针
   const pointerFile = join(cwd, '.reviewconfig', 'project-type')
   atomicWrite(pointerFile, hit.name + '\n')
 
-  console.log(JSON.stringify({
+  // 4. 写全局注册表（保留注册表其它顶层键，不静默丢用户手写元数据；选中类型不在 activeProjectTypes 则加进去；已有的跳过）
+  const registry = readRegistry(home)
+  const active = Array.isArray(registry.activeProjectTypes) ? registry.activeProjectTypes : []
+  let registryUpdated = false
+  if (!active.some((item) => nameKey(item) === nameKey(hit.name))) {
+    active.push({ name: hit.name, path: hit.path, ignore: hit.ignore })
+    atomicWrite(registryPath(home), JSON.stringify({ ...registry, activeProjectTypes: active }, null, 2) + '\n')
+    registryUpdated = true
+  }
+
+  // 返回 summary（isDirectRun 打印）——测试可断言输出契约，尤其 previousHit 更名不能静默回退（2026-10-13 OCR 指出）
+  return {
     ok: true,
     type: hit.name,
     registry: registryPath(home),
@@ -113,7 +121,7 @@ export function main({ home = homedir(), cwd = process.cwd(), argv = process.arg
     previous: current,
     // 这是**更新前**的指针命中项，不是落地后的——命名避免 agent 误当「落地后指针有效」用（2026-10-13 OCR 指出）
     previousHit: currentHit ? currentHit.name : null,
-  }, null, 2))
+  }
 }
 
 // 仅直接运行时执行 CLI（realpath 归一化免疫 Junction，见规则 skill-authoring-convention 判据③）
@@ -129,7 +137,7 @@ if (process.argv[1]) {
 }
 if (isDirectRun) {
   try {
-    main()
+    console.log(JSON.stringify(main(), null, 2))
   } catch (e) {
     // CliError = 业务错误（exit code 区分）；其余（落盘系统错误等）= 顶层兜底，吐堆栈便于排查
     if (e instanceof CliError) {
