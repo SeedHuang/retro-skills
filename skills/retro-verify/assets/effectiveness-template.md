@@ -1,6 +1,6 @@
 # 有效性台账模板（逐字使用）
 
-> 本文件是 **`effectiveness.md` 结构的权威定义方**。`retro-verify/SKILL.md` 只指向这里，不复制；spec §14.8 只补判定口径。
+> 本文件是 **`effectiveness.md` 结构的权威定义方**。`SKILL.md` 只指向这里，不复制；spec §14.8 只补判定口径。
 > **必须逐字使用**。
 
 ## 落点

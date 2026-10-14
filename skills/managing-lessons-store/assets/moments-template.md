@@ -1,12 +1,12 @@
 # 情绪点模板（moments，逐字使用）
 
-> 本文件是**情绪点（moments）结构的权威定义方**。`managing-lessons-store/SKILL.md` 只指向这里，不复制。
+> 本文件是**情绪点（moments）结构的权威定义方**。`SKILL.md` 只指向这里，不复制。
 > **必须逐字使用**。
-> 情绪判定公式与 userwords 共用一套（见 `retro-collect/assets/userwords-template.md`）——**对象主判据，情绪由对象+核心意图推出**，不自创第二套。
+> 情绪判定公式与 userwords 共用一套（见 retro-collect 技能的 userwords 模板）——**对象主判据，情绪由对象+核心意图推出**，不自创第二套。
 
 ## 落点
 
-`<KB>/projects/<项目标识>/<日期>-<sid>-<摘要>/moments.md`（**一 session 一份**——文件即本 session；日期 / `sid` / 摘要的定法以 `retro-collect/SKILL.md`「第 0 步：定 session」为权威定义方）
+`<KB>/projects/<项目标识>/<日期>-<sid>-<摘要>/moments.md`（**一 session 一份**——文件即本 session；日期 / `sid` / 摘要的定法以 retro-collect 技能「第 0 步：定 session」为权威定义方）
 
 与同目录 `facts.md` / `userwords.md` 并列。
 
@@ -45,7 +45,7 @@ collect 时按**当前**判定公式**重扫本 session 全对话** → `moment 
 
 ## 情绪判定公式（与 userwords 共用，不在此重写）
 
-按 `retro-collect/assets/userwords-template.md` 的公式：
+按 retro-collect 技能的 userwords 模板的公式：
 1. 有脏字 → 情绪波动标记，剥掉看核心
 2. 核心意图：夸→正面 / 贬→负面 / 中性→中性
 3. **对象（人/事）决定强度**：对人→情绪重；对事→情绪轻（对事的纠正是中性）
@@ -56,7 +56,7 @@ collect 时按**当前**判定公式**重扫本 session 全对话** → `moment 
 ```markdown
 # 情绪记录（moments）
 
-> 格式权威定义见 `managing-lessons-store/assets/moments-template.md`（本文件只放数据）。
+> 格式权威定义见 `assets/moments-template.md`（本文件只放数据）。
 > 触发：agent 察觉情绪当场记（不问）；collect 时重扫覆盖本 session。极性：负面 / 正面 / 认知，全收。
 > 判定公式与 userwords 共用（对象主判据，情绪由对象+意图推出）。
 > 触发句（原话）**三种极性都必填**（不猜原因/态度）；原因/态度为可选，写则标「（推断）」。

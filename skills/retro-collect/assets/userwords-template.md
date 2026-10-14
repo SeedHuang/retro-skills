@@ -1,11 +1,11 @@
 # 用户原话模板（逐字使用）
 
-> 本文件是**用户原话（userwords）结构的权威定义方**。`retro-collect/SKILL.md` 只指向这里，不复制；KB 里的 `userwords.md` **只放数据 + 一行指针**，不重复定义格式（双份真相禁令）。
+> 本文件是**用户原话（userwords）结构的权威定义方**。`SKILL.md` 只指向这里，不复制；KB 里的 `userwords.md` **只放数据 + 一行指针**，不重复定义格式（双份真相禁令）。
 > **必须逐字使用**。
 
 ## 落点
 
-`<KB>/projects/<项目标识>/<日期>-<sid>-<摘要>/userwords.md`（**一 session 一份**——文件即本 session；日期 / `sid` / 摘要的定法以 `retro-collect/SKILL.md`「第 0 步：定 session」为权威定义方，此处不复制）
+`<KB>/projects/<项目标识>/<日期>-<sid>-<摘要>/userwords.md`（**一 session 一份**——文件即本 session；日期 / `sid` / 摘要的定法以 `SKILL.md`「第 0 步：定 session」为权威定义方，此处不复制）
 
 与同目录 `facts.md` / `moments.md` 并列（`ledger.md` 在项目根，**不在** session 目录内）。
 
@@ -55,7 +55,7 @@
 # 用户原话（userwords）
 
 > 用途：画像提炼的唯一原话来源。每条只记「时间 / 对象 / 情绪 / 立场 / 判据 / 原话」，**不做提炼**。
-> 格式权威定义见 `retro-collect/assets/userwords-template.md`（本文件只放数据）。
+> 格式权威定义见 `assets/userwords-template.md`（本文件只放数据）。
 > 触发：用户触发 `retro-collect` 时收；agent 不得自行触发。
 > 情绪判定公式见 KB `skills/retro-collect/emotion-cases.md`（题库，不进日常上下文）。
 
