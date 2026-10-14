@@ -6,7 +6,9 @@
 //   4. 输出候选集 = languagePresets ∪ ecosystemPresets ∪ activeProjectTypes（按规范化名去重：language/active 同名时 active 优先；跨层同名时对象覆盖 ecosystem 字符串）
 // 用法：node review-init.mjs            # 初始化 + 输出候选集 JSON
 //       node review-init.mjs --list     # 输出 { current, currentHit, candidates }（项目指针 + 指针在候选集的命中项/失效时 null + 扁平候选列表，update-review-project-type 命令用）
+//       node review-init.mjs --gitignore # 审查环境初始化：确保目标仓库 .gitignore 含 .session/（幂等，缺则追加）
 import { mkdirSync, readFileSync, writeFileSync, renameSync, rmSync, existsSync, realpathSync } from 'node:fs'
+import { spawnSync } from 'node:child_process'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { homedir } from 'node:os'
@@ -189,6 +191,44 @@ export function listInfo(home = homedir(), cwd = process.cwd()) {
   return { current, currentHit, candidates }
 }
 
+// 审查环境初始化（--gitignore 模式）：确保目标仓库 .gitignore 含 `.session/`
+// `.session/` 是审查过程账本（做完即删，docs-convention 语义），必须被忽略——缺则自动追加（幂等，保留已有内容）。
+// 做成机制而不是提示：靠 agent「记得检查」会漏（2026-10-13 实测 sound-control-tool 缺这条，历史账本脏进 git）。
+// 注意：`.opencodereview/rule.json` 与 `.reviewconfig/project-type` 是**项目配置**（L3 产物），应进 git、不该忽略——与 `.session/` 相反。
+// 追加片段（新建/追加两分支共用，防文案分叉——2026-10-14 OCR 指出）
+const SESSION_IGNORE_BLOCK = '# ── 审查过程账本：review-loop 生成，做完即删（docs-convention 语义）──────\n.session/\n'
+
+// 与 lessons.test.mjs 的 checkIgnoreAlignment 同口径判定「.session 已被忽略」：
+// 只剥尾部空白（git 忽略尾部空白；前导空白有语义，`  .session/` 不匹配顶层目录）+ 兼容锚定斜杠；
+// `!` 取反的逐字形式也算命中，取**最后一条**——`!.session` 在末尾 = git 实际不忽略，判未覆盖（2026-10-14 OCR 指出）
+const isSessionIgnored = (text) => {
+  const rules = text.split(/\r?\n/)
+    .map((l) => {
+      const neg = l.startsWith('!')
+      return (neg ? '!' : '') + (neg ? l.slice(1) : l).replace(/\s+$/, '').replace(/^\/+|\/+$/g, '')
+    })
+    .filter((l) => l && !l.startsWith('#'))
+  const last = [...rules].reverse().find((r) => r === '.session' || r === '!.session')
+  return last === '.session'
+}
+
+export function ensureGitignore(cwd = process.cwd()) {
+  const file = join(cwd, '.gitignore')
+  if (!existsSync(file)) {
+    atomicWrite(file, SESSION_IGNORE_BLOCK)
+    return { created: true, appended: true, path: file }
+  }
+  const text = readFileSync(file, 'utf8')
+  if (isSessionIgnored(text)) return { created: false, appended: false, path: file }
+  const sep = text.endsWith('\n') ? '' : '\n'
+  atomicWrite(file, text + `${sep}${SESSION_IGNORE_BLOCK}`)
+  // .gitignore 只管未跟踪文件：已被 git 跟踪的 .session/** 不会被摘掉——只读检测给出提示，不代劳写 git（2026-10-14 OCR 指出）
+  const tracked = existsSync(join(cwd, '.git'))
+    ? (spawnSync('git', ['ls-files', '--', '.session'], { cwd, encoding: 'utf8' }).stdout || '').trim().length > 0
+    : false
+  return { created: false, appended: true, path: file, tracked }
+}
+
 // 仅直接运行时执行 CLI（realpath 归一化免疫 Junction，见规则 skill-authoring-convention 判据③）
 let isDirectRun = false
 if (process.argv[1]) {
@@ -201,9 +241,12 @@ if (process.argv[1]) {
   }
 }
 if (isDirectRun) {
+  const gitignoreMode = process.argv.includes('--gitignore')
   const listMode = process.argv.includes('--list')
   try {
-    if (listMode) {
+    if (gitignoreMode) {
+      console.log(JSON.stringify(ensureGitignore(), null, 2))
+    } else if (listMode) {
       console.log(JSON.stringify(listInfo(), null, 2))
     } else {
       console.log(JSON.stringify(candidateSet(), null, 2))
