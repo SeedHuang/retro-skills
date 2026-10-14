@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync, existsSync, realpathSync, statSync } from 'node:fs'
+import { readFileSync, readdirSync, existsSync, realpathSync, statSync, lstatSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -28,12 +28,15 @@ function collectScanFiles(skillDir) {
   return files
 }
 
+// 技能目录判定口径与 check-all.mjs / validate.test.mjs 一致：lstatSync 不跟随符号链接（防 SKILL.md 是指向特殊设备/超大文件的链接被读爆）
+const SKILL_MD_IS_FILE = (d) => lstatSync(join(d, SKILL_MD), { throwIfNoEntry: false })?.isFile() === true
+
 export function checkSkillDir(dir, { manifest } = {}) {
   if (manifest && !Array.isArray(manifest.skills)) {
     throw new Error('manifest.skills 必须是数组')
   }
   // 扫描目标 = 目录下真实存在的技能（未登记 manifest 的新技能也要扫——前置自查路径）
-  const dirSkills = readdirSync(dir).filter(d => existsSync(join(dir, d, SKILL_MD)))
+  const dirSkills = readdirSync(dir).filter(d => SKILL_MD_IS_FILE(join(dir, d)))
   // ① 的已知技能列表 = 目录真实技能 ∪ manifest 技能（磁盘存在但未登记的引用也要能报，与扫描目标一致）
   const knownSkills = [...new Set([...dirSkills, ...(manifest?.skills ?? [])])]
   const findings = []
@@ -108,7 +111,7 @@ function cli() {
     console.error(`目录不存在或不是目录：${dir}（--dir 指向包含各技能子目录（各含 SKILL.md）的 skills 目录）`)
     process.exit(1)
   }
-  const hasSkillSubdir = readdirSync(dir).some(d => existsSync(join(dir, d, SKILL_MD)))
+  const hasSkillSubdir = readdirSync(dir).some(d => SKILL_MD_IS_FILE(join(dir, d)))
   if (!hasSkillSubdir) {
     console.error(`--dir 下没有含 SKILL.md 的技能子目录：${dir}（--dir 指向的是 skills 父目录，不是单个技能目录）`)
     process.exit(1)
