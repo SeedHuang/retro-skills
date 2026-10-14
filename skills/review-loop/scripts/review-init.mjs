@@ -195,8 +195,8 @@ export function listInfo(home = homedir(), cwd = process.cwd()) {
 // `.session/` 是审查过程账本（做完即删，docs-convention 语义），必须被忽略——缺则自动追加（幂等，保留已有内容）。
 // 做成机制而不是提示：靠 agent「记得检查」会漏（2026-10-13 实测 sound-control-tool 缺这条，历史账本脏进 git）。
 // 注意：`.opencodereview/rule.json` 与 `.reviewconfig/project-type` 是**项目配置**（L3 产物），应进 git、不该忽略——与 `.session/` 相反。
-// 追加片段（新建/追加两分支共用，防文案分叉——2026-10-14 OCR 指出）
-const SESSION_IGNORE_BLOCK = '# ── 审查过程账本：review-loop 生成，做完即删（docs-convention 语义）──────\n.session/\n'
+// 追加片段（新建/追加两分支共用，防文案分叉——2026-10-14 OCR 指出；export 供测试精确断言）
+export const SESSION_IGNORE_BLOCK = '# ── 审查过程账本：review-loop 生成，做完即删（docs-convention 语义）──────\n.session/\n'
 
 // 与 lessons.test.mjs 的 checkIgnoreAlignment 同口径判定「.session 已被忽略」：
 // 只剥尾部空白（git 忽略尾部空白；前导空白有语义，`  .session/` 不匹配顶层目录）+ 兼容锚定斜杠；
@@ -212,21 +212,23 @@ const isSessionIgnored = (text) => {
   return last === '.session'
 }
 
+// .gitignore 只管未跟踪文件：已被 git 跟踪的 .session/** 不会被摘掉——只读检测给出提示，不代劳写 git（2026-10-14 OCR 指出）
+const detectTrackedSession = (cwd) => existsSync(join(cwd, '.git'))
+  ? (spawnSync('git', ['ls-files', '--', '.session'], { cwd, encoding: 'utf8' }).stdout || '').trim().length > 0
+  : false
+
 export function ensureGitignore(cwd = process.cwd()) {
   const file = join(cwd, '.gitignore')
   if (!existsSync(file)) {
     atomicWrite(file, SESSION_IGNORE_BLOCK)
-    return { created: true, appended: true, path: file }
+    return { created: true, appended: true, path: file, tracked: detectTrackedSession(cwd) }
   }
   const text = readFileSync(file, 'utf8')
   if (isSessionIgnored(text)) return { created: false, appended: false, path: file }
-  const sep = text.endsWith('\n') ? '' : '\n'
+  // 空文件/已换行结尾不补前导换行（2026-10-14 OCR 指出：空文件会留无意义首行空行）
+  const sep = text === '' || text.endsWith('\n') ? '' : '\n'
   atomicWrite(file, text + `${sep}${SESSION_IGNORE_BLOCK}`)
-  // .gitignore 只管未跟踪文件：已被 git 跟踪的 .session/** 不会被摘掉——只读检测给出提示，不代劳写 git（2026-10-14 OCR 指出）
-  const tracked = existsSync(join(cwd, '.git'))
-    ? (spawnSync('git', ['ls-files', '--', '.session'], { cwd, encoding: 'utf8' }).stdout || '').trim().length > 0
-    : false
-  return { created: false, appended: true, path: file, tracked }
+  return { created: false, appended: true, path: file, tracked: detectTrackedSession(cwd) }
 }
 
 // 仅直接运行时执行 CLI（realpath 归一化免疫 Junction，见规则 skill-authoring-convention 判据③）

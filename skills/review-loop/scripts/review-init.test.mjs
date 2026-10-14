@@ -4,10 +4,12 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { mkdtempSync, writeFileSync, mkdirSync, readFileSync, rmSync, existsSync } from 'node:fs'
+import { spawnSync } from 'node:child_process'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import {
   readProjectType, flattenCandidates, listInfo, candidateSet, ensureRegistry, registryPath, nameKey, ensureGitignore,
+  SESSION_IGNORE_BLOCK,
 } from './review-init.mjs'
 import { main, CliError } from './update-review-project-type.mjs'
 
@@ -133,6 +135,7 @@ test('ensureGitignore：缺 .session/ → 追加且保留已有内容，幂等�
   writeFileSync(join(cwd, '.gitignore'), 'node_modules/\n', 'utf8')
   const r1 = ensureGitignore(cwd)
   assert.equal(r1.appended, true)
+  assert.equal(r1.tracked, false, '临时目录无 .git，tracked 应为 false')
   const text1 = readFileSync(join(cwd, '.gitignore'), 'utf8')
   assert.ok(text1.split(/\r?\n/).includes('.session/'), '.session/ 应被追加')
   assert.ok(text1.includes('node_modules/'), '已有内容应保留')
@@ -147,6 +150,27 @@ test('ensureGitignore：已有 .session/ → 不动', (t) => {
   const r = ensureGitignore(cwd)
   assert.equal(r.appended, false)
   assert.equal(readFileSync(join(cwd, '.gitignore'), 'utf8'), '.session/\nnode_modules/\n', '原样保留')
+})
+
+// isSessionIgnored 语义 fixture 表（与 lessons.test.mjs 的 checkIgnoreAlignment 同口径，2026-10-14 OCR 指出防单边漂移）
+// 每项：.gitignore 内容 → 期望 appended（true = isSessionIgnored 判未覆盖，需追加）
+const IGNORE_SEMANTICS = [
+  ['  .session/\n', true, '前导空白有语义，不匹配顶层目录 → 未忽略'],
+  ['/.session/\n', false, '锚定斜杠兼容 → 已忽略'],
+  ['.session/  \n', false, '尾部空白由 git 忽略 → 已忽略'],
+  ['.session/\n!.session\n', true, '取反胜出（最后命中）→ 未忽略'],
+  ['.session/\n!/.session\n', true, '取反带锚定斜杠 → 未忽略'],
+  ['.session/\n!.session\n.session/\n', false, '取反后被正规则覆盖（最后匹配胜出）→ 已忽略'],
+  ['node_modules/\n', true, '无关规则 → 未忽略'],
+]
+
+test('ensureGitignore：isSessionIgnored 语义 fixture 表（前导空白/锚定/尾部空白/取反/最后匹配）', (t) => {
+  for (const [content, expectAppended, why] of IGNORE_SEMANTICS) {
+    const cwd = tmpDir(t)
+    writeFileSync(join(cwd, '.gitignore'), content, 'utf8')
+    const r = ensureGitignore(cwd)
+    assert.equal(r.appended, expectAppended, `${why}（输入：${JSON.stringify(content)}）`)
+  }
 })
 
 test('ensureGitignore：取反胜出（.session/ + !.session）→ 判未覆盖并追加修复', (t) => {
@@ -165,6 +189,15 @@ test('ensureGitignore：无 .gitignore → 创建含 .session/', (t) => {
   assert.ok(readFileSync(join(cwd, '.gitignore'), 'utf8').split(/\r?\n/).includes('.session/'))
 })
 
+test('ensureGitignore：空 .gitignore → 追加不产生无意义首行空行', (t) => {
+  const cwd = tmpDir(t)
+  writeFileSync(join(cwd, '.gitignore'), '', 'utf8')
+  ensureGitignore(cwd)
+  const text = readFileSync(join(cwd, '.gitignore'), 'utf8')
+  assert.ok(text.startsWith('# ──'), '空文件追加不应以空行开头')
+  assert.ok(text.split(/\r?\n/).includes('.session/'))
+})
+
 test('ensureGitignore：末尾无换行 → 追加前补换行，不与上一行粘连', (t) => {
   const cwd = tmpDir(t)
   writeFileSync(join(cwd, '.gitignore'), 'node_modules/', 'utf8')
@@ -178,7 +211,18 @@ test('ensureGitignore：CRLF 文件按行判定，追加不破坏原换行', (t)
   const cwd = tmpDir(t)
   writeFileSync(join(cwd, '.gitignore'), 'node_modules/\r\n', 'utf8')
   ensureGitignore(cwd)
-  assert.ok(readFileSync(join(cwd, '.gitignore'), 'utf8').includes('.session/'))
+  assert.equal(readFileSync(join(cwd, '.gitignore'), 'utf8'), 'node_modules/\r\n' + SESSION_IGNORE_BLOCK, 'CRLF 文件追加后精确等于 原内容 + 忽略块')
+})
+
+test('ensureGitignore：.session/ 已被 git 跟踪 → tracked: true（.gitignore 对已跟踪文件不生效）', (t) => {
+  const cwd = tmpDir(t)
+  spawnSync('git', ['init', '-q'], { cwd })
+  mkdirSync(join(cwd, '.session'), { recursive: true })
+  writeFileSync(join(cwd, '.session', 'ledger.md'), 'x', 'utf8')
+  spawnSync('git', ['add', '-f', '.session/ledger.md'], { cwd })
+  const r = ensureGitignore(cwd)
+  assert.equal(r.appended, true)
+  assert.equal(r.tracked, true, '已跟踪的 .session 应报 tracked: true')
 })
 
 // ---------- update-review-project-type.mjs 落地（2026-10-13 OCR 指出命令无测试） ----------
