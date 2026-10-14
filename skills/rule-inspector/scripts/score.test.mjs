@@ -825,3 +825,54 @@ test('越界复检：类型感知输出（含 M3 安全别名）不含「判据�
   assert.ok(!out.includes('建议删除'), '输出不应含「建议删除」')
   rmSync(dir, { recursive: true, force: true })
 })
+
+// ── 执行保障叠加轴（X1/X2/X3，--cognitive）──
+
+// 认知动作型 + 缺产物/必经/前置声明 → X1/X2/X3 各 0 分进 findings，执行力度组 max 基础 +3
+const COG_NO_DECL = `# 被质疑时必须先深度思考
+
+> 来源：用户当场指令（2026-10-14）｜落地：2026-10-14
+
+## 核心要求
+被质疑时必须先深度思考，再回应。
+`
+
+// 认知动作型 + 有产物/必经/前置声明 → X1/X2/X3 各 1 分
+const COG_DECLARED = `# 被质疑时必须先深度思考
+
+> 来源：用户当场指令（2026-10-14）｜落地：2026-10-14
+
+## 核心要求
+被质疑时必须先深度思考，再回应。
+
+## 产物（前置必经）
+输出思考确认块；挂进每轮收尾检查点；任务开头先声明。`
+
+test('认知动作型缺声明 → X1/X2/X3 各 0 进 findings，执行力度 max +3', () => {
+  const dir = makeDir({ 'cog.md': COG_NO_DECL })
+  const r = score(dir, 'cog.md', { cognitive: true })
+  assert.equal(findingScore(r, '执行力度', 'X1动作产物化'), 0)
+  assert.equal(findingScore(r, '执行力度', 'X2必经路径绑定'), 0)
+  assert.equal(findingScore(r, '执行力度', 'X3触发前置'), 0)
+  // 基础执行力度 max：① ② + ⑧（条件触发非禁令：①②③⑦⑧ 但③⑦ 视正文，此处仅 ①②⑧ 有正文支撑）
+  assert.equal(r.groups['执行力度'].max, 8)  // ① ② ③ ⑦ ⑧ + X1 X2 X3 = 5 + 3
+  rmSync(dir, { recursive: true, force: true })
+})
+
+test('认知动作型有声明 → X1/X2/X3 各 1，执行力度 max +3', () => {
+  const dir = makeDir({ 'cog.md': COG_DECLARED })
+  const r = score(dir, 'cog.md', { cognitive: true })
+  assert.equal(findingScore(r, '执行力度', 'X1动作产物化'), 1)
+  assert.equal(findingScore(r, '执行力度', 'X2必经路径绑定'), 1)
+  assert.equal(findingScore(r, '执行力度', 'X3触发前置'), 1)
+  assert.ok(!r.findings.some(f => /^X[123]/.test(f.check)), '声明齐全时不应有 X findings')
+  rmSync(dir, { recursive: true, force: true })
+})
+
+test('非认知动作型（无 cognitive）→ X1/X2/X3 不注册（max 不 +3）', () => {
+  const dir = makeDir({ 'cog.md': COG_NO_DECL })
+  const r = score(dir, 'cog.md')
+  assert.ok(!r.findings.some(f => /^X[123]/.test(f.check)), '无 cognitive 时不应有 X findings')
+  assert.equal(r.groups['执行力度'].max, 5)  // ① ② ③ ⑦ ⑧ 无 X
+  rmSync(dir, { recursive: true, force: true })
+})

@@ -32,6 +32,9 @@ const CONFLICT_RE = /以本规则为准|以本条为准|本规则优先|本条�
 const EXCEPTION_RE = /只有[^。；\n]{1,40}才算/                   // ⑥例外从严：明确「只有…才算」
 const LOOSE_RE = /一般|通常|可能允许|宽松/                       // ⑥宽松词 → 0
 const VERIFY_RE = /验证|自检|检查点|报告|自查|检查是否|确认遵守|复核|核销|跑一遍|体检/  // ⑧验证闭环：定义「怎么确认遵守了」
+// 执行保障（X1/X2/X3）：认知动作的产物/必经路径/触发前置声明
+const PRODUCT_RE = /产物|清单|确认块|输出块|spec 文件|spec文件/        // X1 动作产物化
+const PATHBIND_RE = /必经|核销|锁基线|检查点|流程步骤|挂进|前置/       // X2 必经路径绑定（+ X3 前置）
 
 // ---- 标题（机械代理）----
 const H3_DECO_RE = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{2B50}\u{FE0F}\u{2300}-\u{23FF}\u{25A0}-\u{25FF}\u{2700}-\u{27BF}\u{2190}-\u{21FF}\u{2B05}-\u{2B07}★☆◆●■▲▶✔✗‼❓❕❗⚠]/u  // H3 无 emoji/装饰符号
@@ -115,6 +118,7 @@ function crossRuleMiss(text, rulesDir, name) {
  * opts.type: 持续适用/条件触发/模式门控/待拆未定（缺省/非法 → 条件触发，等价旧口径）
  * opts.modeChecks: {M1..M6} 模式门控专属检查点（AI 判，缺省全 false → 0 分进 findings）
  * opts.triCheckDone: 三检验报告是否已做（AI 侧语义判断，脚本无法复算；默认 false）
+ * opts.cognitive: 规则是否含认知动作（AI 判，默认 false；true/'true' 均生效，与 triCheckDone 布尔化同风格）
  * 返回 { name, lines, chars, groups, total, max, rate, level, findings }
  * 输出字符串全局规避「判据」「建议删除」（越界检查），单规则/M3 用安全别名发出。
  */
@@ -216,6 +220,17 @@ export function scoreFile(filePath, rulesDir, opts = {}) {
       g('执行力度', '⑦触发机制', trigOk,
         '无可观测触发信号/时机', '补「触发时机」小节（落地后/开工时/编辑后）')
     }
+    // 执行保障叠加轴（X1/X2/X3，仅认知动作型规则）：opts.cognitive 由 --cognitive 传入（AI 判，同三检验模式）
+    // 布尔化与 triCheckDone 同风格：true/'true' 生效，防 annotations JSON 字符串 "false"/0 被当真值静默加检查点
+    const cognitive = opts.cognitive === true || opts.cognitive === 'true'
+    if (cognitive) {
+      g('执行力度', 'X1动作产物化', PRODUCT_RE.test(body),
+        '认知动作未声明可观测产物', '补产物声明：动作完成后留下什么可查（清单/确认块/输出块）')
+      g('执行力度', 'X2必经路径绑定', PATHBIND_RE.test(body),
+        '认知动作未声明必经路径绑定', '补绑定：挂进哪条核销步骤（skill 检查点/锁基线）')
+      g('执行力度', 'X3触发前置', PATHBIND_RE.test(body),
+        '触发在应激时刻且未前置显式化', '应激时刻触发需前置显式化：任务开头先声明')
+    }
     g('执行力度', '⑧验证闭环', VERIFY_RE.test(body),
       '未定义怎么确认遵守了', '补「验证」小节：自检命令/检查点/报告要求')
     // ── 模式专属（仅模式门控，M1–M6 由 AI 判，缺省全 false → 0 分进 findings）──
@@ -302,7 +317,7 @@ export function scoreDir(dir, opts = {}) {
 }
 
 export function cli(argv = process.argv.slice(2)) {
-  const args = { dir: 'D:\\Seed\\retro-skills\\rules', json: false, triCheck: false, baselineFile: null, type: null, annotationsFile: null, file: null, rulesDir: null }
+  const args = { dir: 'D:\\Seed\\retro-skills\\rules', json: false, triCheck: false, cognitive: false, baselineFile: null, type: null, annotationsFile: null, file: null, rulesDir: null }
   let dirGiven = false   // 显式给了 --dir（args.dir 有默认值，互斥须区分「显式」与「默认」）
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--dir') { args.dir = argv[++i]; dirGiven = true }
@@ -310,6 +325,7 @@ export function cli(argv = process.argv.slice(2)) {
     else if (argv[i] === '--rules-dir') args.rulesDir = argv[++i]
     else if (argv[i] === '--json') args.json = true
     else if (argv[i] === '--tri-check') args.triCheck = true
+    else if (argv[i] === '--cognitive') args.cognitive = true
     else if (argv[i] === '--baseline') args.baselineFile = argv[++i]
     else if (argv[i] === '--type') args.type = argv[++i]
     else if (argv[i] === '--annotations') args.annotationsFile = argv[++i]
@@ -318,7 +334,7 @@ export function cli(argv = process.argv.slice(2)) {
   if (args.file) {
     if (!existsSync(args.file)) { console.error(`文件不存在：${args.file}`); process.exit(1) }
     if (args.rulesDir && !existsSync(args.rulesDir)) { console.error(`规则库目录不存在：${args.rulesDir}`); process.exit(1) }
-    const opts = { triCheckDone: args.triCheck, type: args.type }
+    const opts = { triCheckDone: args.triCheck, type: args.type, cognitive: args.cognitive }
     // rulesDir 用于跨规则引用检查（scoreFile → crossRuleMiss）：评分草稿时须指规则库（rules/），
     // 不能默认 dirname(file)（草稿在草稿箱，引用会全部误判）；评分现有规则时可不给（默认 dirname(file)=规则库）。
     const rulesDir = args.rulesDir ?? dirname(args.file)
@@ -342,7 +358,7 @@ export function cli(argv = process.argv.slice(2)) {
       process.exit(1)
     }
   }
-  const out = scoreDir(args.dir, { baselineFile: args.baselineFile, triCheckDone: args.triCheck, type: args.type, annotations })
+  const out = scoreDir(args.dir, { baselineFile: args.baselineFile, triCheckDone: args.triCheck, type: args.type, cognitive: args.cognitive, annotations })
   const summary = out.level === undefined
     ? `共 ${out.totals.files} 文件 / ${out.totals.lines} 行 / ${out.totals.chars} 字符（无已评级文件，不报 dir 得分率）`
     : `共 ${out.totals.files} 文件 / ${out.totals.lines} 行 / ${out.totals.chars} 字符，平均得分率 ${Math.round(out.rate * 100)}%（${out.level}）`
