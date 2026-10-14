@@ -99,13 +99,36 @@ OCR 是 LLM 审查，审语法/lint/测试这类**可机械判定的问题**是�
 
 **推翻的历史约束**：2026-09-27 retro-suite plan 的 Global Constraint 1「避免为测试引入 package.json 与依赖」——本次引入是「为了固化检查入口」而非「为测试引依赖」，且**零外部依赖**（只用 Node 内置的 node/npx），不违背「无依赖」的本意，但需在 spec 中显式记录这次推翻及理由。
 
+### 3.5 review commit 加改动明细
+
+**问题**：现状 review 锁基线 commit 只有标题（`<标准前缀>: 【review】<改动摘要>`），没有本轮改动的明细——commit 里查不到「这轮到底改了哪些文件、各自改了什么」，只能靠 progress.md 账本（且账本在 `.session/` 不进 git，合并后 git 历史里查不到明细）。
+
+**方案**：commit message 标题行保持现状（`<标准前缀>: 【review】<改动摘要>`，作为 `git log --oneline` 可读的一行），**标题下加 body 明细**——逐条列本轮改动（文件 + 改了什么），内容抄自 progress.md 本轮「改了什么」表。符合 Conventional Commits 规范（标题一行 + body 放详情）。
+
+**commit message 形态**：
+
+```
+<前缀>: 【review】<第 N 轮改动摘要>
+
+本轮改动明细（第 N 轮）：
+- <文件路径>：<改了什么>
+- <文件路径>：<改了什么>
+- （本轮无改动 → 只写标题，body 写「本轮无改动」）
+
+核销：修复轮/复查轮 <干净/卡在哪>。耗时 <Nm>。
+```
+
+**明细来源**：progress.md 本轮「改了什么」表（文件 | 改了什么 | 为什么）——取「文件 + 改了什么」两列拼 body；「为什么」不进 commit（那是设计意图，留在账本），body 只列可复核的改动事实。
+
+**为什么 body 而不仅是标题**：`git log --oneline` 每轮只显示一行标题（轮次可扫）；`git log -p` / `git show <hash>` 能看到 body 明细（改动可查）；合并回母分支后明细仍在 git 历史里（不依赖 `.session/` 账本）。标题短 + body 全，两者兼得。
+
 ## 4. 影响面
 
 | 文件 | 改动 |
 |---|---|
 | `package.json`（新建） | scripts.check 聚合语法+测试+守卫 |
 | `skills/review-loop/SKILL.md` | 执行顺序加「OCR 前置工程检测」步骤 |
-| `skills/review-loop/references/loop.md` | 修复纪律加 A4（评论关联分析）；收尾加「验证闸门」步骤 |
+| `skills/review-loop/references/loop.md` | 修复纪律加 A4（评论关联分析）；收尾加「验证闸门」步骤；§3 commit message 加 body 明细（§3.5） |
 | `skills/review-log/SKILL.md` | 必填表加「评论关联分析」行；`assets/review-progress-template.md` 加「评论关联分析」小节（A4 产物骨架） |
 
 ## 5. 待决项（2026-10-14 全部裁决完毕，移入正文 §3）

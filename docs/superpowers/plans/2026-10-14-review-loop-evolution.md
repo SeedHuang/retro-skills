@@ -2,9 +2,9 @@
 
 > **For agentic workers:** 按此计划逐任务实现。步骤用 checkbox（`- [ ]`）跟踪。**本计划不含任何 git 写操作步骤**——每个任务收尾 = 改动留在工作区，最终交用户决定提交方式。
 
-**Goal:** 把 review-loop 的四个进化点落地：评论关联分析（A4）、每轮验证闸门、OCR 前置工程检测、package.json 固化检查入口。
+**Goal:** 把 review-loop 的五个进化点落地：评论关联分析（A4）、每轮验证闸门、OCR 前置工程检测、package.json 固化检查入口、review commit 加改动明细。
 
-**Architecture:** 四条进化都落 review-loop/review-log 技能文档 + 仓库根工具链。检查命令固化在根 `package.json` 的 `scripts.check`（内部调根 `scripts/check-all.mjs` 聚合：语法遍历 + 测试 + 技能守卫），review-loop 只调 `npm run check`，不重复命令文本。评论关联分析 = 修复纪律 A4（loop.md 定义判据）+ progress.md 本轮小节产物（review-log 模板）。
+**Architecture:** 五条进化都落 review-loop/review-log 技能文档 + 仓库根工具链。检查命令固化在根 `package.json` 的 `scripts.check`（内部调根 `scripts/check-all.mjs` 聚合：语法遍历 + 测试 + 技能守卫），review-loop 只调 `npm run check`，不重复命令文本。评论关联分析 = 修复纪律 A4（loop.md 定义判据）+ progress.md 本轮小节产物（review-log 模板）。commit 明细 = loop.md §3 commit message 加 body（抄 progress.md「改了什么」表）。
 
 **Tech Stack:** Node.js（node --check / node --test，无外部依赖）、Markdown（技能文档）。
 
@@ -211,6 +211,27 @@ Run: `node skills/skill-inspector/scripts/check.mjs` → 0 findings（新小节�
 - [ ] **Step 5: 验证**
 
 Run: `node skills/skill-inspector/scripts/check.mjs` → 0 findings。重读 loop.md 确认 A4 无「读一下」类被动措辞（全部接「读→产出」闭环）、收尾表与整体停机句位置正确。
+
+- [ ] **Step 6: §3 硬约束 commit message 加 body 明细（spec §3.5）**
+
+在 `skills/review-loop/references/loop.md` §3 硬约束表「每轮收尾 = commit 到 review 分支」行（L239 附近）的 message 格式描述后，补 body 明细要求：
+
+```markdown
+message 正文（标题下）：**每轮 commit 必须带 body 明细**——逐条列本轮改动（文件 + 改了什么），内容抄自 progress.md 本轮「改了什么」表（取「文件 + 改了什么」两列；「为什么」不进 commit，留在账本）；本轮无改动 → body 写「本轮无改动」。形态：
+<前缀>: 【review】<第 N 轮改动摘要>
+
+本轮改动明细（第 N 轮）：
+- <文件路径>：<改了什么>
+- <文件路径>：<改了什么>
+
+核销：<干净/卡在哪>。耗时 <Nm>。
+```
+
+提交时用多行 message：`git commit -m "<标题行>" -m "本轮改动明细（第 N 轮）：..."`（`-m` 多次 = 段落分隔，或 heredoc）。**写完后核对**：`git log -1 --format=%B` 应看到标题行 + 明细 body 都在，缺 body = 不算数（对齐「必须逐项填满」语义）。
+
+- [ ] **Step 7: 验证（承接 Step 5）**
+
+Run: `node skills/skill-inspector/scripts/check.mjs` → 0 findings。重读 loop.md §3 确认 commit 格式描述已含 body 明细要求。
 
 ---
 
