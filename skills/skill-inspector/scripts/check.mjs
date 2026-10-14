@@ -2,9 +2,31 @@ import { readFileSync, readdirSync, existsSync, realpathSync, statSync } from 'n
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const PATH_REF_RE = /`([a-z][a-z0-9-]*)\/(?:references|assets|scripts)\//g
+// 路径引用：技能名 + references/ | assets/ | scripts/，或技能名 + SKILL.md（后者是技能入口文件，同样是「带前缀的路径」）
+// 可选 skills/ 前缀：文档写全路径 `skills/<名>/SKILL.md` 时，捕获的技能名是中间那一段
+// SKILL\.md 后加右边界 (?![a-z0-9.])：防 `beta/SKILL.md.bak` 这类被误判成对 SKILL.md 的引用（. 也是文件名延续符）
+const PATH_REF_RE = /`(?:skills\/)?([a-z][a-z0-9-]*)\/(?:references\/|assets\/|scripts\/|SKILL\.md(?![a-z0-9.]))/g
 const GUARD_RE = /(?:process\.argv\[1\]\s*(?:===|!==|==|!=)\s*fileURLToPath\(import\.meta\.url\)|fileURLToPath\(import\.meta\.url\)\s*(?:===|!==|==|!=)\s*process\.argv\[1\]|import\.meta\.url\s*(?:===|!==|==|!=)\s*pathToFileURL\(process\.argv\[1\]\)\.href|pathToFileURL\(process\.argv\[1\]\)\.href\s*(?:===|!==|==|!=)\s*import\.meta\.url)/g
 const SKILL_MD = 'SKILL.md'
+
+// ① ② 的正文读取面 = 技能目录下**全部 .md**（SKILL.md / references / assets / README.md / examples 等，递归收集）
+// 不跟随符号链接 / junction：readdirSync 的 isDirectory() 对 junction 返回 false（本仓 0 个，天然跳过）。
+// 故技能目录经链接安装时（如运行时 ~/.trae-cn/skills/ 下的 junction），请在**源仓库**运行本脚本。
+function collectScanFiles(skillDir) {
+  const files = []
+  const walk = (d, rel) => {
+    for (const e of readdirSync(d, { withFileTypes: true })) {
+      if (e.isDirectory()) {
+        if (e.name.startsWith('.') || e.name === 'node_modules') continue
+        walk(join(d, e.name), rel ? `${rel}/${e.name}` : e.name)
+      } else if (e.name.endsWith('.md')) {
+        files.push({ abs: join(d, e.name), rel: rel ? `${rel}/${e.name}` : e.name })
+      }
+    }
+  }
+  walk(skillDir, '')
+  return files
+}
 
 export function checkSkillDir(dir, { manifest } = {}) {
   if (manifest && !Array.isArray(manifest.skills)) {
@@ -17,11 +39,14 @@ export function checkSkillDir(dir, { manifest } = {}) {
   const findings = []
   for (const skill of dirSkills) {
     const skillDir = join(dir, skill)
-    const text = readFileSync(join(skillDir, SKILL_MD), 'utf8')
-    // ① 跨技能路径引用（非自己名 + 已知技能）+ ② 自引用带前缀（自己名）：同一次遍历分流
-    for (const m of text.matchAll(PATH_REF_RE)) {
-      if (m[1] === skill) findings.push({ skill, check: '自引用带前缀', line: lineOf(text, m.index), text: m[0] })
-      else if (knownSkills.includes(m[1])) findings.push({ skill, check: '跨技能路径引用', line: lineOf(text, m.index), text: m[0] })
+    for (const { abs, rel } of collectScanFiles(skillDir)) {
+      const text = readFileSync(abs, 'utf8')
+      // ① 跨技能路径引用（非自己名 + 已知技能）+ ② 自引用带前缀（自己名）：同一次遍历分流
+      for (const m of text.matchAll(PATH_REF_RE)) {
+        const ref = m[1]
+        if (ref === skill) findings.push({ skill, file: rel, check: '自引用带前缀', line: lineOf(text, m.index), text: m[0] })
+        else if (knownSkills.includes(ref)) findings.push({ skill, file: rel, check: '跨技能路径引用', line: lineOf(text, m.index), text: m[0] })
+      }
     }
     // ③ 守卫路径字符串比较
     const scriptsDir = join(skillDir, 'scripts')
@@ -30,7 +55,7 @@ export function checkSkillDir(dir, { manifest } = {}) {
       for (const f of readdirSync(scriptsDir).filter(f => f.endsWith('.mjs') && !f.endsWith('.test.mjs'))) {
         const s = readFileSync(join(scriptsDir, f), 'utf8')
         for (const m of s.matchAll(GUARD_RE)) {
-          findings.push({ skill, file: f, check: '守卫路径字符串比较', line: lineOf(s, m.index), text: m[0] })
+          findings.push({ skill, file: 'scripts/' + f, check: '守卫路径字符串比较', line: lineOf(s, m.index), text: m[0] })
         }
       }
     }

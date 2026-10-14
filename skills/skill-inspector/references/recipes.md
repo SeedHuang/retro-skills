@@ -9,9 +9,9 @@
 2. 确需读对方文件时，Skill 调用该技能，由对方 SKILL.md 指引加载；
 3. 删除路径写法，保留技能名。
 
-**例子**：
-- 改前：`判据见 rule-inspector/references/criteria.md`
-- 改后：`判据以 rule-inspector 技能为准（Skill 调用加载）`
+**例子**（技能名一律用占位名 `some-skill`，**别改成真名**——本文件在守卫扫描面内，写成「真技能名 + 标准写法」会让守卫对本文件自己报违规）：
+- 改前：`判据见 some-skill/references/criteria.md`
+- 改后：`判据以 some-skill 技能为准（Skill 调用加载）`
 
 > **AI 判线索（check.mjs 抓不到的形式）**：以下写法也属跨技能文件引用，体检时 AI 人工扫：
 > - 拆反引号：`` 按 `evolving-skills` 的 `references/review-flywheel.md` 执行 ``
@@ -20,10 +20,10 @@
 
 ## ② 自引用带技能名前缀
 
-**症状**：SKILL.md 写了 `<自己名>/xxx`（如 `retro-collect/assets/x.md`）。
+**症状**：SKILL.md 写了 `<自己名>/xxx`（如 `some-skill/assets/x.md`，用不存在的技能名举例，避免本文件自己被守卫判违规）。
 
 **修法**：去掉技能名前缀，改相对路径。
-- 改前：`见 retro-collect/assets/userwords-template.md`
+- 改前：`见 some-skill/assets/userwords-template.md`
 - 改后：`见 assets/userwords-template.md`
 
 ## ③ 守卫路径字符串比较

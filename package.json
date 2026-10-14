@@ -1,0 +1,7 @@
+{
+  "name": "retro-skills",
+  "private": true,
+  "scripts": {
+    "check": "node scripts/check-all.mjs"
+  }
+}

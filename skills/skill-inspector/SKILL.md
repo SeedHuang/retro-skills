@@ -15,7 +15,7 @@ description: 体检 skills/ 里的技能——按 skill-authoring-convention 判
 
 ## 执行顺序（检查路径闭环，一次一条）
 
-1. **跑检查**：`node <this-skill-dir>/scripts/check.mjs --dir <skills目录> --json`，记录每 skill 命中。检查脚本口径：`--dir` 须是**含技能子目录（各含 SKILL.md）的 skills 父目录**（传单个技能目录会报错）；扫描目标 = 目录下**真实存在的技能**（未登记 manifest 的新技能也扫——写新 skill 前置自查路径）；① 跨技能路径引用的「已知技能」= **目录真实技能 ∪ manifest 技能**（磁盘不存在且不在 manifest 的名字不报，`docs/` 等假阳性排除）；③ 守卫检查**排除 `*.test.mjs`**（测试里的违规 fixture 是断言素材，不算违规），覆盖 `scripts/` **直接子目录**下的 `.mjs`（嵌套子目录脚本暂不扫——出现嵌套 scripts 时再扩）。有 findings 时 CLI 退出码非 0（脚本化「0 findings 才交付」判定）。
+1. **跑检查**：`node <this-skill-dir>/scripts/check.mjs --dir <skills目录> --json`，记录每 skill 命中。检查脚本口径：`--dir` 须是**含技能子目录（各含 SKILL.md）的 skills 父目录**（传单个技能目录会报错）；扫描目标 = 目录下**真实存在的技能**（未登记 manifest 的新技能也扫——写新 skill 前置自查路径）；①② 的正文读取面 = 技能目录下**全部 `.md`**（含 SKILL.md / references / assets / README.md / examples 等，**递归**；**不跟随符号链接 / junction**——技能经链接安装时须在源仓库运行）；① 跨技能路径引用的「已知技能」= **目录真实技能 ∪ manifest 技能**（磁盘不存在且不在 manifest 的名字不报，`docs/` 等假阳性排除）；③ 守卫检查**排除 `*.test.mjs`**（测试里的违规 fixture 是断言素材，不算违规），覆盖 `scripts/` **直接子目录**下的 `.mjs`（嵌套子目录脚本暂不扫——出现嵌套 scripts 时再扩）。有 findings 时 CLI 退出码非 0（脚本化「0 findings 才交付」判定）。
 2. **出报告**：按 `assets/report-template.md` 逐 skill 出「findings + 处方」。
 3. **给处方**：对照 `references/recipes.md`，把每类命中映射到修法；**跨技能文件引用的「拆反引号 / 相对形式」**（check.mjs 抓不到）由 AI 体检时人工扫，线索见 recipes ①；**目录语义**按 `skill-assets-convention` 规则判（见 recipes ④）。
 4. **处方确认**：把清单列给用户，用户勾选改哪些（按 skill 或按类别批）。

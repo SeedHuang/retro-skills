@@ -37,6 +37,23 @@ description: 循环审查未提交改动或最近 N 次 commit 的代码与文�
 
 **不用用户去 `git log` 抄 hash**：数字 N / hash / tag 都能直接从用户那句话里取。
 **「一个 hash」和「N 次」不是一回事**：前者是那一次（`--commit`），后者是 N 次的合计（`--from/--to`，一个文件中间改过多轮只留净额）。文档侧取数、以及 commit 范围内读文件要注意什么，都在 `references/loop.md` §2。
+**⚠️ N 模式的滑动陷阱**：`HEAD~N` 是相对引用，一旦本轮有**前置 commit**（见下节「OCR 前置工程检测」），它会滑一格 → 最老那个 commit 被静默挤出范围。**先 `git rev-parse HEAD~N HEAD` 把两端落成 hash 再 commit**，跑 OCR 时用 hash。hash / tag 模式不受影响。
+
+## OCR 前置工程检测（每次触发必跑，先于段一）
+
+**跑 OCR 之前，先跑 `npm run check`**——把可机械判定的问题（工程闸门：语法 / markdown / 测试 / 守卫）用工程工具先修掉，**不进入 OCR 范围**（OCR 是 LLM，审这类问题是浪费 token）。
+
+1. `npm run check` 全绿 → 直接进「三种模式」选段跑。
+2. 有红 → **先修**：语法错改语法、markdown 坏改格式、测试红改代码、守卫 findings 改技能文档——修完重跑 `npm run check` 直到全绿，才进 OCR。
+   - **目标仓没有配 `check` script** → 跳过本节，在报告里写明「无工程闸门」，直接进 OCR，不阻塞审查。
+3. 机械问题修完的改动，**在 OCR 之前的收尾一并锁基线**（同一轮 commit，message 按 `references/loop.md` §3 格式写，**写完核对 `<标准前缀>: 【review】` 两个都在，缺一不可**；只 add 本次机械修复涉及的文件）。
+   - **N 模式必须先把范围两端落成 hash 再 commit**：`--from HEAD~N` 里的 `HEAD~N` 会随前置 commit 滑一格，最老那个 commit 被静默挤出范围、而机械修复 commit 反而进了 OCR 范围。先 `git rev-parse HEAD~N HEAD` 记下两端，跑 OCR 时用 hash 而非 `HEAD~N`。hash / tag 模式天然不受影响（「一个 hash」和「N 次」不是一回事，见上方范围表）。
+   - **项目配置文件例外**：`.opencodereview/rule.json` 与 `.reviewconfig/project-type` 按分支前置第 4 步的规矩留到收尾提交，不进这个前置 commit。
+4. 机械问题**不算 OCR 评论**——不喂给 OCR 重复审，也不进 problems.md 的 OCR 处置流程。
+
+**不因来源豁免**：子代理、脚本执行本技能时同样先过 `npm run check`。
+
+**为什么前置**：机械问题用工程工具查得又快又准（实测全仓语法检查 209ms + 测试 866ms vs OCR 单次 ~74 万 token / 4m39s）；把机械层剥离后，OCR 只审它真正擅长的逻辑 / 语义 / 跨文件一致性。
 
 ## 三种模式（决定走哪几段）
 
@@ -86,7 +103,7 @@ ocr review --preview            # 只看会审哪些文件，不花 LLM
 
 - **每轮收尾 = commit 到 review 分支**（message 必须按 `references/loop.md` §3 的格式写，写完核对 `<标准前缀>: 【review】` 两个都在，缺一不可；只 add 本次审查清单内文件，禁止 `git add -A`）——这是锁基线的动作，是流程必需，**不许问「要不要提交」**。**执行本技能时，「每轮 commit 锁基线」是全局规则 no-git-write 的唯一结构性例外——不得用「不主动 commit」的惯性回避它。**
 - **先过滤再处置**——每轮 OCR 评论先对照 `problems.md` 的「不改/误报」锚点过滤（规则匹配 + 语义裁决），重复的直接吞掉，不修、不计入本轮问题数；**只过滤「不改/误报」，「已修」再报必须按新问题处置**（细节见 `references/loop.md` §1「处置前的重复判定过滤」）
-- **修复纪律 A1/A2/A3**——修复前列全失败面、样式级评论判不改、修完真实场景实测，完整清单见 `references/loop.md` §1「修复纪律」（防 18 轮式自伤回归）
+- **修复纪律 A1/A2/A3/A4**——修复前列全失败面、样式级评论判不改、修完真实场景实测、修复前先做评论关联分析（把本轮要修的评论当一个整体，合并同文件 / 按依赖排序契约链），完整清单见 `references/loop.md` §1「修复纪律」（防 18 轮式自伤回归）
 - **不 push、不 merge、不 reset**——review 分支不推送远程；收尾合回母分支用 **rebase**，且必须用户确认后才做
 - **不许手动判断「应该没问题了」提前停**——停机判据在 `references/loop.md` §1：**修复轮 + 复查轮都干净才停**，轮内自审（手法 3 重跑 / 同族扫描）不算复查
 - **不许跳段**——指定哪段就跑哪段
