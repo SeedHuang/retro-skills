@@ -38,7 +38,7 @@
 **Interfaces:**
 - Produces: `npm run check`（聚合语法检查 + 测试 + 技能守卫）——Task 2/3/5 的验证闸门和 OCR 前置检测都调它。
 
-- [ ] **Step 1: 新建仓库根 `package.json`**
+- [x] **Step 1: 新建仓库根 `package.json`**
 
 内容（零依赖，只声明 name/private/scripts）：
 
@@ -54,7 +54,7 @@
 
 > 说明：本仓 `skills/use-rule-skills/scripts/package.json` 已有 `{"type": "module"}`（ESM 声明），与根 package.json 职责不同、不冲突，**不要动它**。根 package.json 只做检查入口。
 
-- [ ] **Step 2: 新建仓库根 `scripts/check-all.mjs`**
+- [x] **Step 2: 新建仓库根 `scripts/check-all.mjs`**
 
 内容（Node 内置模块，零依赖；聚合三步：语法遍历 → 测试 → 技能守卫）：
 
@@ -116,12 +116,12 @@ if (failed) {
 console.log('check 全部通过')
 ```
 
-- [ ] **Step 3: 验证 `npm run check`**
+- [x] **Step 3: 验证 `npm run check`**
 
 Run: `npm run check`
 Expected: 三节输出（① 语法检查通过 / ② node --test 的 226 用例全过 / ③ 0 findings），末尾 `check 全部通过`，exit 0。
 
-- [ ] **Step 4: 反向验证——故意引入语法错误，确认 check 会拦**
+- [x] **Step 4: 反向验证——故意引入语法错误，确认 check 会拦**
 
 把 `scripts/check-all.mjs` 临时加一行 `const broken = ;` → `npm run check` 应报语法错误、exit 非 0 → 删掉该行 → 再跑恢复全绿。（验证闸门能拦「修坏了」，不是摆设。）
 
@@ -136,11 +136,11 @@ Expected: 三节输出（① 语法检查通过 / ② node --test 的 226 用例
 - Consumes: Task 1 的 `npm run check`。
 - Produces: OCR 前强制先跑工程检测的流程步骤——Task 3/5 的验证闸门与其呼应（前置检测 = 每轮开头，验证闸门 = 每轮收尾）。
 
-- [ ] **Step 1: 读 SKILL.md 确定插入位置**
+- [x] **Step 1: 读 SKILL.md 确定插入位置**
 
 读 `skills/review-loop/SKILL.md`，「先读范围规则」（L29-39）与「三种模式」（L41-49）之间插入新小节「## OCR 前置工程检测（每次触发必跑，先于段一）」。
 
-- [ ] **Step 2: 插入小节**
+- [x] **Step 2: 插入小节**
 
 在「先读范围规则」表之后、「三种模式」之前插入：
 
@@ -159,7 +159,7 @@ Expected: 三节输出（① 语法检查通过 / ② node --test 的 226 用例
 **为什么前置**：机械问题用工程工具查得又快又准（实测全仓语法检查 209ms + 测试 866ms vs OCR 单次 ~74 万 token / 4m39s）；把机械层剥离后，OCR 只审它真正擅长的逻辑 / 语义 / 跨文件一致性。
 ```
 
-- [ ] **Step 3: 验证**
+- [x] **Step 3: 验证**
 
 Run: `node skills/skill-inspector/scripts/check.mjs` → 0 findings（新小节无跨技能路径引用、无守卫违规）。重读 SKILL.md 确认小节位置正确、无 markdown 破损。
 
@@ -174,11 +174,11 @@ Run: `node skills/skill-inspector/scripts/check.mjs` → 0 findings（新小节�
 - Consumes: Task 1 的 `npm run check`。
 - Produces: A4 判据（评论关联分析）——Task 4 在 review-log progress.md 模板加对应产物小节。
 
-- [ ] **Step 1: 读 loop.md 确认插入位置**
+- [x] **Step 1: 读 loop.md 确认插入位置**
 
 读 `skills/review-loop/references/loop.md`：「修复纪律」节（A1/A2/A3，约 L105-112）与「§1 收尾表」（约 L55-64）与「§1 整体停机」（约 L33-45）。
 
-- [ ] **Step 2: 修复纪律节 A3 之后插入 A4**
+- [x] **Step 2: 修复纪律节 A3 之后插入 A4**
 
 在 A3 条目之后追加：
 
@@ -192,7 +192,7 @@ Run: `node skills/skill-inspector/scripts/check.mjs` → 0 findings（新小节�
    **验收**：动手修前 progress.md 有「评论关联分析」块；同文件评论已合并；契约链已按依赖排序。缺关联分析 = 本轮修复不算数（对齐「必须逐项填满」语义）。
 ```
 
-- [ ] **Step 3: §1 收尾表加「验证闸门」行**
+- [x] **Step 3: §1 收尾表加「验证闸门」行**
 
 在「收尾」表（建/更新过程账、扫声明它的地方、跑一次全量测试、合并、报结论、收尾审计）中，把「**跑一次全量测试**」行改写为「**跑一次验证闸门**」：
 
@@ -200,7 +200,7 @@ Run: `node skills/skill-inspector/scripts/check.mjs` → 0 findings（新小节�
 | **跑一次验证闸门** | `npm run check`（语法 + 测试 + 守卫）全绿才 commit 锁基线、才进下一轮；有红先修再跑，直到全绿——这是进下一轮的前置，不是可选项 |
 ```
 
-- [ ] **Step 4: §1「整体停机」判据处补闸门句**
+- [x] **Step 4: §1「整体停机」判据处补闸门句**
 
 在「整体停机」小节的「修复轮 + 复查轮，两轮都干净才停」之后补一句：
 
@@ -208,11 +208,11 @@ Run: `node skills/skill-inspector/scripts/check.mjs` → 0 findings（新小节�
 **进下一轮的前置**：上一轮 commit 锁基线前，`npm run check` 必须全绿（验证闸门）；没跑或没全绿 = 那轮不算数，先补跑、修完、再进下一轮。
 ```
 
-- [ ] **Step 5: 验证**
+- [x] **Step 5: 验证**
 
 Run: `node skills/skill-inspector/scripts/check.mjs` → 0 findings。重读 loop.md 确认 A4 无「读一下」类被动措辞（全部接「读→产出」闭环）、收尾表与整体停机句位置正确。
 
-- [ ] **Step 6: §3 硬约束 commit message 加 body 明细（spec §3.5）**
+- [x] **Step 6: §3 硬约束 commit message 加 body 明细（spec §3.5）**
 
 在 `skills/review-loop/references/loop.md` §3 硬约束表「每轮收尾 = commit 到 review 分支」行（L239 附近）的 message 格式描述后，补 body 明细要求：
 
@@ -229,7 +229,7 @@ message 正文（标题下）：**每轮 commit 必须带 body 明细**——逐
 
 提交时用多行 message：`git commit -m "<标题行>" -m "本轮改动明细（第 N 轮）：..."`（`-m` 多次 = 段落分隔，或 heredoc）。**写完后核对**：`git log -1 --format=%B` 应看到标题行 + 明细 body 都在，缺 body = 不算数（对齐「必须逐项填满」语义）。
 
-- [ ] **Step 7: 验证（承接 Step 5）**
+- [x] **Step 7: 验证（承接 Step 5）**
 
 Run: `node skills/skill-inspector/scripts/check.mjs` → 0 findings。重读 loop.md §3 确认 commit 格式描述已含 body 明细要求。
 
@@ -245,11 +245,11 @@ Run: `node skills/skill-inspector/scripts/check.mjs` → 0 findings。重读 loo
 - Consumes: Task 3 的 A4 判据（本任务给产物落点）。
 - Produces: progress.md 的「评论关联分析」小节骨架。
 
-- [ ] **Step 1: 读 review-progress-template.md 确认插入位置**
+- [x] **Step 1: 读 review-progress-template.md 确认插入位置**
 
 读 `skills/review-log/assets/review-progress-template.md`：「### 本轮改了什么」小节（约 L42）之前插入「### 评论关联分析（修复前填）」。
 
-- [ ] **Step 2: 插入小节**
+- [x] **Step 2: 插入小节**
 
 在「### 本轮改了什么」之前插入：
 
@@ -265,7 +265,7 @@ Run: `node skills/skill-inspector/scripts/check.mjs` → 0 findings。重读 loo
 **分级**：解法被 OCR 判明 + 单文件 → 本表一行 + 直接修；解法未判明 + 有设计决策 → 另行写修复 plan 并对 plan 做 md-review；未判明 + 跨文件 + 高影响 → plan + 预期返回/调用方清单 + 真实场景实测。
 ```
 
-- [ ] **Step 3: review-log SKILL.md「必须逐项填满的」表加行**
+- [x] **Step 3: review-log SKILL.md「必须逐项填满的」表加行**
 
 在 `skills/review-log/SKILL.md` 的「必须逐项填满的」表（约 L52-61）加一行：
 
@@ -273,7 +273,7 @@ Run: `node skills/skill-inspector/scripts/check.mjs` → 0 findings。重读 loo
 | **评论关联分析**（本轮要修的评论 ≥1 条时） | 评论被孤立修，A 改签名 B 漏改调用点 → 中间态损坏；没有整体设计 = 修一半 |
 ```
 
-- [ ] **Step 4: 验证**
+- [x] **Step 4: 验证**
 
 Run: `node skills/skill-inspector/scripts/check.mjs` → 0 findings。重读两文件确认表格无破损、小节位置正确。
 
@@ -283,19 +283,19 @@ Run: `node skills/skill-inspector/scripts/check.mjs` → 0 findings。重读两�
 
 **Files:** 无（只跑验证）
 
-- [ ] **Step 1: 全量检查**
+- [x] **Step 1: 全量检查**
 
 Run: `npm run check`
 Expected: ① 语法检查通过 ② node --test 226 用例全过 ③ 技能守卫 0 findings，末尾 `check 全部通过`。
 
-- [ ] **Step 2: 关联分析产物实测**
+- [x] **Step 2: 关联分析产物实测**
 
 读 `.session/reviews/2026-10-14-1706-execution-assurance-all/progress.md` 第 1 轮小节——按新模板标准走查：本轮 5 条修复（OCR 3 + 段二 2）的「评论关联分析」应如何填（⑤ 布尔化是契约定义者、③ 测试是消费者、④ JSDoc 是记录者 → 合并/排序），确认模板能承载本次案例（不要求补写旧账本，只验证模板够用）。
 
-- [ ] **Step 3: 验证闸门拦截场景实测**
+- [x] **Step 3: 验证闸门拦截场景实测**
 
 在 `scripts/check-all.mjs` 临时加一行 `const broken = ;` → `npm run check` 应报语法错误、exit 非 0 → 删掉该行 → 再跑恢复全绿。确认闸门能拦住「修坏了」。
 
-- [ ] **Step 4: 落地扫引用（landing-sweep）**
+- [x] **Step 4: 落地扫引用（landing-sweep）**
 
 `Get-ChildItem docs,skills,rules -Recurse -File -Include *.md | Select-String -Pattern '跑一次全量测试|全量测试'`——命中「验证闸门」改写前旧说法的位置，逐个对照新口径更新（A3「修复后真实场景实测」保留，它是单条修复实测，不是全量闸门，不冲突）。注意：旧说法可能同时存在于 loop.md（skills/）与 docs/ 的文档里，**两个目录都要扫**，别只扫 docs/。
