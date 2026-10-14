@@ -4,7 +4,7 @@
 //       ③ 技能规范守卫（skill-inspector check.mjs）
 //       ④ markdown 机械检查（围栏配对 / 表格列数 / BOM / SKILL.md frontmatter）
 // 零外部依赖：只用 Node 内置模块。失败任一 → 非零退出（供脚本化调用拿失败信号）。
-import { readdirSync, readFileSync, existsSync, openSync, readSync, closeSync } from 'node:fs'
+import { readdirSync, readFileSync, existsSync, openSync, readSync, closeSync, lstatSync } from 'node:fs'
 import { join, dirname, resolve } from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
@@ -28,11 +28,12 @@ let failed = false
 
 // ① 语法检查：node --check 逐个（只查语法，不执行）
 const skillsDir = join(root, 'skills')
-if (!existsSync(skillsDir)) {
+const skillsDirExists = existsSync(skillsDir)
+if (!skillsDirExists) {
   failed = true
   console.error('[语法] 未找到 skills/ 目录，语法检查未实际执行')
 }
-const mjsFiles = existsSync(skillsDir) ? collectMjs(skillsDir) : []
+const mjsFiles = skillsDirExists ? collectMjs(skillsDir) : []
 if (mjsFiles.length === 0) {
   failed = true
   console.error('[语法] 未找到任何 .mjs 文件，语法检查未实际执行')
@@ -226,15 +227,20 @@ for (const file of mdFiles) {
 const FM_RE = /^---\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/
 const skillsRoot = join(root, 'skills')
 let skillDirs = []
+let frontmatterSkipped = false
 if (!existsSync(skillsRoot)) {
   failed = true
+  frontmatterSkipped = true
   console.error('[markdown] 未找到 skills/ 目录，frontmatter 检查未实际执行')
 } else {
+  // lstatSync().isFile()：不跟随符号链接（与 collectMd 的 !isSymbolicLink() 同一条不变量）。
+  // existsSync 会跟随链接，指向特殊设备/超大文件时仍会被 readFileSync 读爆；对无读权限文件也返回 true 后抛 EACCES。
   skillDirs = readdirSync(skillsRoot, { withFileTypes: true })
-    .filter(e => e.isDirectory() && existsSync(join(skillsRoot, e.name, 'SKILL.md')))
+    .filter(e => e.isDirectory() && lstatSync(join(skillsRoot, e.name, 'SKILL.md'), { throwIfNoEntry: false })?.isFile())
     .map(e => e.name)
   if (skillDirs.length === 0) {
     failed = true
+    frontmatterSkipped = true
     console.error('[markdown] skills/ 下没有任何技能目录，frontmatter 检查未实际执行')
   }
 }
@@ -254,8 +260,8 @@ for (const name of skillDirs) {
 }
 
 for (const f of mdFindings) console.error(`[markdown] ${f.file}:${f.line} ${f.check}`)
-// 扫描没真跑（mdFiles 为空）时不得打「通过」——否则会紧跟「check 未通过」自相矛盾
-if (mdFindings.length === 0 && mdFiles.length > 0) console.log(`④ markdown 检查通过（${mdFiles.length} 个文件 / ${tableCount} 张表）`)
+// 扫描没真跑（mdFiles 为空，或 frontmatter 检查被跳过）时不得打「通过」——否则会紧跟「check 未通过」自相矛盾
+if (mdFindings.length === 0 && mdFiles.length > 0 && !frontmatterSkipped) console.log(`④ markdown 检查通过（${mdFiles.length} 个文件 / ${tableCount} 张表）`)
 else if (mdFindings.length > 0) {
   failed = true
   console.error(`[markdown] ${mdFindings.length} 处问题`)
