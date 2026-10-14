@@ -20,7 +20,7 @@ description: 体检 rules/ 里的规则——按判据全集评分、出报告�
 
 ## 执行顺序（检查路径闭环，一次一条）
 
-1. **跑评分**：`node skills/rule-inspector/scripts/score.mjs --dir <rules目录> --json`，记录总分与每条得分。
+1. **跑评分**：`node skills/rule-inspector/scripts/score.mjs --dir <rules目录> --json`，记录总分与每条得分。**`--dir` 下传 `--cognitive` 会应用到目录内全部文件、误评机械动作型规则，故体检不传；先 AI 判规则是否含认知动作（判据 `references/criteria.md` §3.3b），判定为认知动作型的用 `node skills/rule-inspector/scripts/score.mjs --file <该规则> --cognitive` 逐条复核；并把「认知动作型 / 机械动作型」判定写进报告（可复算证据）。**
 2. **出报告**：按 `assets/rule-report-template.md` 模板逐条出「分数 + 明细」报告。
 3. **给处方**：对照 `references/recipes.md`，把每类违规映射到可复制的改法。
 4. **修复**：一条一条改，**每条过硬闸门（上面 1–6）** 后才落地。
