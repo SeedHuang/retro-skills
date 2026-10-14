@@ -10,12 +10,16 @@ const GUARD_RE = /(?:process\.argv\[1\]\s*(?:===|!==|==|!=)\s*fileURLToPath\(imp
 const SKILL_MD = 'SKILL.md'
 
 // ① ② 的正文读取面 = 技能目录下**全部 .md**（SKILL.md / references / assets / README.md / examples 等，递归收集）
-// 不跟随符号链接 / junction：readdirSync 的 isDirectory() 对 junction 返回 false（本仓 0 个，天然跳过）。
+// 不跟随符号链接 / junction，两条都要挡（缺一条就会出现「注释承诺的保护没兑现」）：
+// ① 目录条目：withFileTypes 的 isDirectory() 对 junction / symlink 返回 false → 天然跳过
+// ② 文件条目：指向 .md 的符号链接 isDirectory() 也是 false，会落进 else if 被 readFileSync 跟随读入 → 必须显式挡
+// 与 check-all.mjs 的 collectMd（显式 !isSymbolicLink()）口径一致。
 // 故技能目录经链接安装时（如运行时 ~/.trae-cn/skills/ 下的 junction），请在**源仓库**运行本脚本。
 function collectScanFiles(skillDir) {
   const files = []
   const walk = (d, rel) => {
     for (const e of readdirSync(d, { withFileTypes: true })) {
+      if (e.isSymbolicLink()) continue        // 不跟随链接（② 文件条目）
       if (e.isDirectory()) {
         if (e.name.startsWith('.') || e.name === 'node_modules') continue
         walk(join(d, e.name), rel ? `${rel}/${e.name}` : e.name)
@@ -28,15 +32,32 @@ function collectScanFiles(skillDir) {
   return files
 }
 
-// 技能目录判定口径与 check-all.mjs / validate.test.mjs 一致：lstatSync 不跟随符号链接（防 SKILL.md 是指向特殊设备/超大文件的链接被读爆）
-const SKILL_MD_IS_FILE = (d) => lstatSync(join(d, SKILL_MD), { throwIfNoEntry: false })?.isFile() === true
+// 技能目录判定口径与 check-all.mjs / validate.test.mjs 一致，两层都要对齐：
+// ① 目录层：withFileTypes 的 isDirectory() 对 junction 返回 false → 天然跳过，不跟随
+// ② 文件层：lstatSync 不跟随符号链接（防 SKILL.md 是指向特殊设备/超大文件的链接被 readFileSync 读爆）
+// ⚠️ 只对齐 ② 不对齐 ① 会让 junction 判定与另两处相反（裸 readdirSync 会把 junction 当普通条目列出）
+// ⚠️ throwIfNoEntry 只覆盖 ENOENT；EACCES / ELOOP / ENAMETOOLONG / ENOTDIR 仍会抛。
+//    这里显式 catch 兜住，保持 existsSync 旧有的「任何错误都算 false」契约——
+//    因为 hasSkillSubdir 的调用点在 CLI 的 try/catch 之外，抛出去就是裸堆栈。
+function listSkillDirs(parent) {
+  const names = readdirSync(parent, { withFileTypes: true })
+    .filter(e => e.isDirectory())
+    .map(e => e.name)
+  return names.filter(name => {
+    try {
+      return lstatSync(join(parent, name, SKILL_MD)).isFile()
+    } catch {
+      return false
+    }
+  })
+}
 
 export function checkSkillDir(dir, { manifest } = {}) {
   if (manifest && !Array.isArray(manifest.skills)) {
     throw new Error('manifest.skills 必须是数组')
   }
   // 扫描目标 = 目录下真实存在的技能（未登记 manifest 的新技能也要扫——前置自查路径）
-  const dirSkills = readdirSync(dir).filter(d => SKILL_MD_IS_FILE(join(dir, d)))
+  const dirSkills = listSkillDirs(dir)
   // ① 的已知技能列表 = 目录真实技能 ∪ manifest 技能（磁盘存在但未登记的引用也要能报，与扫描目标一致）
   const knownSkills = [...new Set([...dirSkills, ...(manifest?.skills ?? [])])]
   const findings = []
@@ -111,9 +132,9 @@ function cli() {
     console.error(`目录不存在或不是目录：${dir}（--dir 指向包含各技能子目录（各含 SKILL.md）的 skills 目录）`)
     process.exit(1)
   }
-  const hasSkillSubdir = readdirSync(dir).some(d => SKILL_MD_IS_FILE(join(dir, d)))
+  const hasSkillSubdir = listSkillDirs(dir).length > 0
   if (!hasSkillSubdir) {
-    console.error(`--dir 下没有含 SKILL.md 的技能子目录：${dir}（--dir 指向的是 skills 父目录，不是单个技能目录）`)
+    console.error(`--dir 下没有含 SKILL.md 的技能子目录：${dir}（两种可能：① --dir 指向的是 skills 父目录，不是单个技能目录；② 该目录下有技能是 junction / 符号链接安装的 —— 本脚本不跟随链接，请在源仓库跑）`)
     process.exit(1)
   }
   const manifestFile = opts.manifest ?? join(here, '..', '..', '..', 'skilldependencies', 'manifest.json')
