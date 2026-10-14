@@ -13,9 +13,9 @@
 - 改前：`判据见 some-skill/references/criteria.md`
 - 改后：`判据以 some-skill 技能为准（Skill 调用加载）`
 
-> **AI 判线索（check.mjs 抓不到的形式）**：以下写法也属跨技能文件引用，体检时 AI 人工扫：
-> - 拆反引号：`` 按 `evolving-skills` 的 `references/review-flywheel.md` 执行 ``
-> - 相对形式但文件在对方目录：`` 调用 `managing-lessons-store` 技能，其 `assets/moments-template.md` 提供结构 ``
+> **AI 判线索（check.mjs 抓不到的形式）**：以下写法也属跨技能文件引用，体检时 AI 人工扫（示例同样用占位名 `some-skill`，理由同上）：
+> - 拆反引号：`` 按 `some-skill` 的 `references/review-flywheel.md` 执行 ``
+> - 相对形式但文件在对方目录：`` 调用 `some-skill` 技能，其 `assets/moments-template.md` 提供结构 ``
 > 判据：**凡指向「别的技能目录下的文件」就是跨技能引用，一律改纯技能名**；对方技能自己的文件路径只能由对方 SKILL.md 指引。
 
 ## ② 自引用带技能名前缀

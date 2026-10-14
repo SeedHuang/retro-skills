@@ -3,5 +3,8 @@
   "private": true,
   "scripts": {
     "check": "node scripts/check-all.mjs"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

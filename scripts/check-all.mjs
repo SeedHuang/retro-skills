@@ -4,7 +4,7 @@
 //       ③ 技能规范守卫（skill-inspector check.mjs）
 //       ④ markdown 机械检查（围栏配对 / 表格列数 / BOM / SKILL.md frontmatter）
 // 零外部依赖：只用 Node 内置模块。失败任一 → 非零退出（供脚本化调用拿失败信号）。
-import { readdirSync, statSync, readFileSync, existsSync, openSync, readSync, closeSync } from 'node:fs'
+import { readdirSync, readFileSync, existsSync, openSync, readSync, closeSync } from 'node:fs'
 import { join, dirname, resolve } from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
@@ -12,11 +12,14 @@ import { fileURLToPath } from 'node:url'
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 
 // 收集 skills/**/*.mjs（排除 *.test.mjs——测试文件由 node --test 编译）
+// 不跟随 junction/symlink：自引用链接会无限递归，链接到仓库外会扫进外部文件
+// 测试文件只认 *.test.mjs 命名（本仓约定如此，其它命名的测试不在此排除，会当普通脚本过语法）
 function collectMjs(dir, out = []) {
-  for (const entry of readdirSync(dir)) {
-    const p = join(dir, entry)
-    if (statSync(p).isDirectory()) collectMjs(p, out)
-    else if (entry.endsWith('.mjs') && !entry.endsWith('.test.mjs')) out.push(p)
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (entry.isSymbolicLink()) continue        // 不跟随 junction/symlink，防成环与扫到仓库外
+    const p = join(dir, entry.name)
+    if (entry.isDirectory()) collectMjs(p, out)
+    else if (entry.name.endsWith('.mjs') && !entry.name.endsWith('.test.mjs')) out.push(p)
   }
   return out
 }
@@ -24,13 +27,23 @@ function collectMjs(dir, out = []) {
 let failed = false
 
 // ① 语法检查：node --check 逐个（只查语法，不执行）
-const mjsFiles = collectMjs(join(root, 'skills'))
+const skillsDir = join(root, 'skills')
+if (!existsSync(skillsDir)) {
+  failed = true
+  console.error('[语法] 未找到 skills/ 目录，语法检查未实际执行')
+}
+const mjsFiles = existsSync(skillsDir) ? collectMjs(skillsDir) : []
 if (mjsFiles.length === 0) {
   failed = true
   console.error('[语法] 未找到任何 .mjs 文件，语法检查未实际执行')
 }
 for (const file of mjsFiles) {
   const r = spawnSync(process.execPath, ['--check', file], { encoding: 'utf8' })
+  if (r.error) {
+    failed = true
+    console.error(`[语法] ${file} 进程启动失败：${r.error.message}`)
+    continue
+  }
   if (r.status !== 0) {
     failed = true
     console.error(`[语法] ${file}\n${r.stderr}`)
@@ -43,24 +56,32 @@ if (!failed) console.log('① 语法检查通过')
 // maxBuffer 要给足：下面要回读 "# tests N" 判定测试是否真跑，输出被截断会误报成「解析不出用例总数」
 const t = spawnSync(process.execPath, ['--test', '**/*.test.mjs'], { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
 console.log(t.stdout)
-if (t.status !== 0) {
+if (t.error) {
   failed = true
-  if (t.stderr) console.error(t.stderr)
-}
-// 零匹配时 node --test 仍 exit 0（# tests 0），故必须回读用例总数，失能即失败
-const testsLine = /^\s*#\s*tests\s+(\d+)\s*$/m.exec(t.stdout || '')
-if (!testsLine) {
-  failed = true
-  console.error('[测试] 无法从 node --test 输出解析出用例总数（缺少 "# tests N" 行）')
-} else if (Number(testsLine[1]) === 0) {
-  failed = true
-  console.error('[测试] 用例总数为 0，测试未实际执行（glob 零匹配？）')
+  console.error('[测试] 进程启动失败：' + t.error.message)
+} else {
+  if (t.status !== 0) {
+    failed = true
+    if (t.stderr) console.error(t.stderr)
+  }
+  // 零匹配时 node --test 仍 exit 0（# tests 0），故必须回读用例总数，失能即失败
+  const testsLine = /^\s*#\s*tests\s+(\d+)\s*$/m.exec(t.stdout || '')
+  if (!testsLine) {
+    failed = true
+    console.error('[测试] 无法从 node --test 输出解析出用例总数（缺少 "# tests N" 行）')
+  } else if (Number(testsLine[1]) === 0) {
+    failed = true
+    console.error('[测试] 用例总数为 0，测试未实际执行（glob 零匹配？）')
+  }
 }
 
 // ③ 技能守卫
 const c = spawnSync(process.execPath, ['skills/skill-inspector/scripts/check.mjs'], { cwd: root, encoding: 'utf8' })
 console.log(c.stdout)
-if (c.status !== 0) {
+if (c.error) {
+  failed = true
+  console.error('[守卫] 进程启动失败：' + c.error.message)
+} else if (c.status !== 0) {
   failed = true
   if (c.stderr) console.error(c.stderr)
 }
@@ -81,7 +102,8 @@ function collectMd(dir, out = []) {
     if (entry.isDirectory()) {
       if (MD_SKIP_DIRS.has(entry.name)) continue
       collectMd(join(dir, entry.name), out)
-    } else if (entry.name.endsWith('.md')) {
+    } else if (!entry.isSymbolicLink() && entry.name.endsWith('.md')) {
+      // 不跟随 symlink：指向巨大文件或特殊设备会卡死或爆内存
       out.push(join(dir, entry.name))
     }
   }
@@ -111,7 +133,15 @@ function splitRow(line) {
   return cells
 }
 const isDelim = c => c.length > 0 && c.every(x => /^:?-{1,}:?$/.test(x))
+// 围栏识别：`^\s*` 未收紧到 CommonMark 的 `^ {0,3}`——4 空格缩进的 ``` 仍按围栏处理。
+// 收紧会变更既有行为，本仓实测 0 findings，留作已知边界。
+// 另：闭合判定不要求 info string 为空（CommonMark 规定闭合围栏不得带 info string，本仓不采纳）。
+// 理由：本仓文档有意用同字符嵌套围栏展示内嵌 README/示例（如 plans/2026-09-27-retro-suite.md
+// 的 ```markdown 块内套 ```bash）。按 CommonMark 强制 info 为空时，该文档会被判「围栏未闭合」
+// 而把闸门变红，而修该文档超出本检查的职责面；故本边界以本仓约定为准，不收紧。
 const FENCE_RE = /^\s*(`{3,}|~{3,})/
+// 表格行只覆盖首竖线写法（`| A | B |`）——本仓约定所有表格都用首竖线。
+// 放宽到 GFM 的无首竖线写法会把正文里含 `|` 的行大量误判成表格（本 session 实测过 5 条假阳）
 const TABLE_ROW_RE = /^\s*\|/
 
 // 围栏掩码：mask[i]=true 表示第 i 行在围栏内部（分隔行本身不算内部）
@@ -191,19 +221,25 @@ for (const file of mdFiles) {
 }
 
 // 检查 4.4 · SKILL.md frontmatter 完整性（技能靠 name/description 两个字段加载，缺任一即不可用）
-const FM_RE = /^---\r?\n([\s\S]*?)\r?\n---/
+// 只把「含 SKILL.md 的目录」当技能——非技能目录（如技能下嵌套的 node_modules/）不得报「缺少 SKILL.md」
+// 口径与 skilldependencies/validate.test.mjs 一致（按 SKILL.md 过滤）
+const FM_RE = /^---\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/
 const skillsRoot = join(root, 'skills')
-const skillDirs = readdirSync(skillsRoot, { withFileTypes: true }).filter(e => e.isDirectory()).map(e => e.name)
-if (skillDirs.length === 0) {
+let skillDirs = []
+if (!existsSync(skillsRoot)) {
   failed = true
-  console.error('[markdown] skills/ 下没有任何技能目录，frontmatter 检查未实际执行')
+  console.error('[markdown] 未找到 skills/ 目录，frontmatter 检查未实际执行')
+} else {
+  skillDirs = readdirSync(skillsRoot, { withFileTypes: true })
+    .filter(e => e.isDirectory() && existsSync(join(skillsRoot, e.name, 'SKILL.md')))
+    .map(e => e.name)
+  if (skillDirs.length === 0) {
+    failed = true
+    console.error('[markdown] skills/ 下没有任何技能目录，frontmatter 检查未实际执行')
+  }
 }
 for (const name of skillDirs) {
   const p = join(skillsRoot, name, 'SKILL.md')
-  if (!existsSync(p)) {
-    mdFindings.push({ file: `skills/${name}`, line: 0, check: '缺少 SKILL.md' })
-    continue
-  }
   // 开头剥 BOM：BOM 已由 4.3 单独报，同一根因不重复报两条
   const fm = FM_RE.exec(readFileSync(p, 'utf8').replace(/^\uFEFF/, ''))
   if (!fm) {
@@ -218,14 +254,16 @@ for (const name of skillDirs) {
 }
 
 for (const f of mdFindings) console.error(`[markdown] ${f.file}:${f.line} ${f.check}`)
-if (mdFindings.length === 0) console.log(`④ markdown 检查通过（${mdFiles.length} 个文件 / ${tableCount} 张表）`)
-else {
+// 扫描没真跑（mdFiles 为空）时不得打「通过」——否则会紧跟「check 未通过」自相矛盾
+if (mdFindings.length === 0 && mdFiles.length > 0) console.log(`④ markdown 检查通过（${mdFiles.length} 个文件 / ${tableCount} 张表）`)
+else if (mdFindings.length > 0) {
   failed = true
   console.error(`[markdown] ${mdFindings.length} 处问题`)
 }
 
 if (failed) {
   console.error('check 未通过')
-  process.exit(1)
+  process.exitCode = 1          // 不要 process.exit(1)：管道/CI 下会截断 stdout，正好隐藏要报的 findings
+} else {
+  console.log('check 全部通过')
 }
-console.log('check 全部通过')
