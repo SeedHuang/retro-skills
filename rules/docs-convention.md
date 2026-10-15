@@ -29,9 +29,17 @@
 | `specs/` | `YYYY-MM-DD-<主题>-design.md` | `2026-10-02-session-dir-layout-design.md` |
 | `plans/` | `YYYY-MM-DD-<主题>.md` | `2026-10-02-session-dir-layout.md` |
 | `handoffs/` | `YYYY-MM-DD-<主题>.md` | `2026-09-29-session-close.md` |
+| `retro/` | `YYYY-MM-DD-<那一次>/retro-<轮次>-<主题>.md` | `2026-10-14-2248-review-all-to-death/retro-07-single-source.md` |
 | **`after/`** | **`<主题>-<阶段>.md`（小写 kebab-case，**不加日期**）** | `collect-requirements-exploration.md` |
 
-**`after/` 为什么唯独不加日期前缀**：它是**活的账本**，会被反复更新——加日期会让人当成「某天的快照」，而它其实是持续更新的。**兄弟目录带日期是因为它们定格（定稿 / 排期完成 / session 收尾），`after/` 不定格。**
+**`after/` 为什么唯独不加日期前缀**：它是**活的账本**，会被反复更新——加日期会让人当成「某天的快照」，而它其实是持续更新的。**兄弟目录带日期是因为它们定格（定稿 / 排期完成 / session 收尾 / 审查收尾），`after/` 不定格。**
+
+### `retro/`：审查复盘的归档位（2026-10-15 新增）
+
+**装什么**：某次审查的**轮次复盘**——每轮「暴露了什么会重复发生的机制缺陷」，以及长复盘的完整内容。
+**谁写入**：审查进行中写在 `.session/reviews/<那一次>/retro-*.md`（与 progress 同级）；**审查收尾删目录前**按 `review-log` 的规程搬进本目录（不搬就跟着 `.session/` 一起没了——它是那次审查唯一不进 git 的产物）。
+**什么时候删**：**不删**。它是跨 session 的输入（下次审查/新 session 判断「这个坑踩过没有」的唯一凭据）。只在结论已进 git（规则 / 测试断言 / spec）后删对应那份。
+**为什么不进 git 的 `.session/` 了**：`.session/` 不进 git → 不存在「与真版本漂移」，所以不违反「`.session/` 里不放成果」——但受「审查完删整个目录」约束，故必须搬。
 
 **构成**：`after/` 的文件名 = **主题 + 当前阶段**，让人不打开就知道这文档处在哪个阶段。
 
@@ -62,10 +70,10 @@
 
 | 落点 | 装什么 | 什么时候删 |
 |---|---|---|
-| `.session/reviews/<YYYY-MM-DD-HHMM>-<kebab-case 名字>/` | **某次审查的过程账**：跑了几轮、三段各做了什么、改了什么。**两个文件**：`progress.md`（活的，每轮追加）+ `problems.md`（漏斗，修好的移走） | 该次审查全部处置完 → **整个目录删掉** |
+| `.session/reviews/<YYYY-MM-DD-HHMM>-<kebab-case 名字>/` | **某次审查的过程账**：跑了几轮、三段各做了什么、改了什么。**三个文件**：`progress.md`（活的，每轮追加）+ `problems.md`（漏斗，修好的移走）+ `retro-*.md`（**复盘文件，0 或多个**；长的复盘独立成文件，与 progress 同级） | 该次审查全部处置完 → **整个目录删掉**；⚠️ **删之前必须先按 review-log 的规程把 `retro-*.md` 搬进 `docs/superpowers/retro/`**（它是这次审查唯一不进 git 的产物，不搬就一起没了） |
 | `.session/README.md` | 这个目录现在有什么（**现状**） | 不删 |
 
-**命名**：`reviews/` 下的目录用 **kebab-case + 时间戳**（跨平台安全 + 能排序）；**中文标题写在文件首行**，不写进路径。
+**命名**：`reviews/` 下的目录用 **kebab-case + 时间戳**（跨平台安全 + 能排序）；**中文标题写在文件首行**，不写进路径。复盘文件用 `retro-<轮次>-<主题>.md`。
 
 ### ⚠️ 待决事项只有一处：`docs/after/`，不设第二处
 
