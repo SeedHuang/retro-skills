@@ -1,9 +1,11 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { readFileSync, readdirSync, lstatSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { readManifest } from 'file:///D:/Seed/agent-assets-sync/src/deps.mjs'
+// 「什么算技能目录」判据的唯一真相源（另两处消费方：check-all.mjs / skill-inspector check.mjs。勿在本文件另写一份）
+import { listSkillDirs } from '../scripts/skill-dir.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 
@@ -31,27 +33,10 @@ test('每个技能清单：跨技能依赖都在本套件内', () => {
   }
 })
 
-// 技能目录判定：与 check-all.mjs / skill-inspector check.mjs 三处语义一致（两层 + 错误契约）。
-// ① 目录层：isDirectory() 对 junction 返回 false → 天然跳过 ② 文件层：lstatSync 不跟随符号链接
-// 错误契约：ENOENT 静默跳过；EACCES/ELOOP 等判定不了 → 抛（不静默当「不是技能目录」，否则该技能漏扫、测试假绿）
-function isSkillDir(parent, name) {
-  let st
-  try {
-    st = lstatSync(join(parent, name, 'SKILL.md'))
-  } catch (e) {
-    if (e.code === 'ENOENT') return false
-    throw new Error(`读取 ${join(parent, name, 'SKILL.md')} 失败：${e.code || e.message}`)
-  }
-  return st.isFile()
-}
-
 test('skills/ 目录与 manifest 一一对应（防新增技能漏登记）', () => {
   const m = JSON.parse(readFileSync(join(here, 'manifest.json'), 'utf8'))
   const skillsDir = join(here, '..', 'skills')
-  const dirs = readdirSync(skillsDir, { withFileTypes: true })
-    .filter((d) => d.isDirectory())
-    .map((d) => d.name)
-    .filter((name) => isSkillDir(skillsDir, name))
-    .sort()
+  // 技能目录判定：两层 + 错误契约全在 scripts/skill-dir.mjs（唯一真相源），本文件不另写
+  const dirs = listSkillDirs(skillsDir).sort()
   assert.deepEqual([...m.skills].sort(), dirs)
 })

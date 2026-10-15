@@ -4,26 +4,14 @@
 //       ③ 技能规范守卫（skill-inspector check.mjs）
 //       ④ markdown 机械检查（围栏配对 / 表格列数 / BOM / SKILL.md frontmatter）
 // 零外部依赖：只用 Node 内置模块。失败任一 → 非零退出（供脚本化调用拿失败信号）。
-import { readdirSync, readFileSync, existsSync, openSync, readSync, closeSync, lstatSync } from 'node:fs'
+import { readdirSync, readFileSync, existsSync, openSync, readSync, closeSync } from 'node:fs'
 import { join, dirname, resolve } from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
+// 「什么算技能目录」判据的唯一真相源（另两处消费方：skill-inspector check.mjs / validate.test.mjs。勿在本文件另写一份）
+import { listSkillDirs } from './skill-dir.mjs'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-
-// 技能目录判定：三层里只有这一处定义（skill-inspector check.mjs 与 validate.test.mjs 各自有一份等价实现，
-// 三处语义必须一致——改这里时同步那两处，否则「口径一致」的注释会变成假话）。
-// ① 目录层由调用方的 isDirectory() 过滤（对 junction 返回 false → 天然跳过）
-// ② 文件层用 lstatSync 不跟随符号链接
-// 错误契约：ENOENT 静默跳过；其余抛（响亮失败 > 假干净）
-function isSkillDir(parent, name) {
-  try {
-    return lstatSync(join(parent, name, 'SKILL.md')).isFile()
-  } catch (e) {
-    if (e.code === 'ENOENT') return false
-    throw new Error(`读取 ${join(parent, name, 'SKILL.md')} 失败：${e.code || e.message}`)
-  }
-}
 
 // 收集 skills/**/*.mjs（排除 *.test.mjs——测试文件由 node --test 编译）
 // 不跟随 junction/symlink：自引用链接会无限递归，链接到仓库外会扫进外部文件
@@ -247,15 +235,8 @@ if (!existsSync(skillsRoot)) {
   frontmatterSkipped = true
   console.error('[markdown] 未找到 skills/ 目录，frontmatter 检查未实际执行')
 } else {
-  // 技能目录判定口径与 skill-inspector check.mjs / validate.test.mjs 三处一致（两层都要对齐）：
-  // ① 目录层：withFileTypes 的 isDirectory() 对 junction 返回 false → 天然跳过，不跟随
-  // ② 文件层：lstatSync 不跟随符号链接（与 collectMd 的 !isSymbolicLink() 同一条不变量）
-  // 错误契约：ENOENT = 没有 SKILL.md → 静默跳过（正常路径）；EACCES/ELOOP/ENAMETOOLONG 等 = 判定不了 → 抛，
-  //   不静默当「不是技能目录」——那会让该技能整体漏扫、违规一条不报、exit 0（闸门最该防的假干净）。
-  skillDirs = readdirSync(skillsRoot, { withFileTypes: true })
-    .filter(e => e.isDirectory())
-    .map(e => e.name)
-    .filter(name => isSkillDir(skillsRoot, name))
+  // 技能目录判定：两层 + 错误契约全在 scripts/skill-dir.mjs（唯一真相源），本文件不另写
+  skillDirs = listSkillDirs(skillsRoot)
   if (skillDirs.length === 0) {
     failed = true
     frontmatterSkipped = true

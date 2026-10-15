@@ -1,13 +1,15 @@
-import { readFileSync, readdirSync, existsSync, realpathSync, statSync, lstatSync } from 'node:fs'
+import { readFileSync, readdirSync, existsSync, realpathSync, statSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+// 「什么算技能目录」判据的唯一真相源（三处共用，勿在本文件另写一份 —— 理由见该文件头注释）
+import { SKILL_MD, listSkillDirs } from '../../../scripts/skill-dir.mjs'
 
 // 路径引用：技能名 + references/ | assets/ | scripts/，或技能名 + SKILL.md（后者是技能入口文件，同样是「带前缀的路径」）
 // 可选 skills/ 前缀：文档写全路径 `skills/<名>/SKILL.md` 时，捕获的技能名是中间那一段
 // SKILL\.md 后加右边界 (?![a-z0-9.])：防 `beta/SKILL.md.bak` 这类被误判成对 SKILL.md 的引用（. 也是文件名延续符）
 const PATH_REF_RE = /`(?:skills\/)?([a-z][a-z0-9-]*)\/(?:references\/|assets\/|scripts\/|SKILL\.md(?![a-z0-9.]))/g
 const GUARD_RE = /(?:process\.argv\[1\]\s*(?:===|!==|==|!=)\s*fileURLToPath\(import\.meta\.url\)|fileURLToPath\(import\.meta\.url\)\s*(?:===|!==|==|!=)\s*process\.argv\[1\]|import\.meta\.url\s*(?:===|!==|==|!=)\s*pathToFileURL\(process\.argv\[1\]\)\.href|pathToFileURL\(process\.argv\[1\]\)\.href\s*(?:===|!==|==|!=)\s*import\.meta\.url)/g
-const SKILL_MD = 'SKILL.md'
+// 注：SKILL_MD 常量来自 ../../../scripts/skill-dir.mjs（唯一真相源），本文件不另定义
 
 // ① ② 的正文读取面 = 技能目录下**全部 .md**（SKILL.md / references / assets / README.md / examples 等，递归收集）
 // 不跟随符号链接 / junction，两条都要挡（缺一条就会出现「注释承诺的保护没兑现」）：
@@ -32,42 +34,8 @@ function collectScanFiles(skillDir) {
   return files
 }
 
-// 技能目录判定口径与 check-all.mjs / validate.test.mjs 一致，两层都要对齐：
-// ① 目录层：withFileTypes 的 isDirectory() 对 junction 返回 false → 天然跳过，不跟随
-// ② 文件层：lstatSync 不跟随符号链接（防 SKILL.md 是指向特殊设备/超大文件的链接被 readFileSync 读爆）
-// ⚠️ 只对齐 ② 不对齐 ① 会让 junction 判定与另两处相反（裸 readdirSync 会把 junction 当普通条目列出）
-//
-// 错误处理分两层，**不能只在 lstatSync 里 catch**（2026-10-15 实测教训）：
-// · lstatSync 的 `throwIfNoEntry: false` 只吞 ENOENT，EACCES / ELOOP / ENAMETOOLONG / ENOTDIR 仍会抛
-// · readdirSync(parent) 本身也会抛（ACL 受限目录 → EPERM）
-// 两者都在调用方（CLI 的 hasSkillSubdir）的 try/catch 之外，抛出去就是裸堆栈。
-//
-// ⚠️ 但 catch 一律 return false 会造成**假干净**：「SKILL.md 因权限读不到」被当成「不是技能目录」
-// → 该技能整体静默不扫 → 它的违规一条不报、exit 0 —— 正是闸门最该防的失败面。
-// 故：**读得到但判定不了 → 抛（响亮失败）；确实不存在 → 跳过（正常路径）**。
-function listSkillDirs(parent) {
-  let entries
-  try {
-    entries = readdirSync(parent, { withFileTypes: true })
-  } catch (e) {
-    throw new Error(`读取技能目录失败：${parent}（${e.code || e.message}）`)
-  }
-  return entries
-    .filter(e => e.isDirectory())
-    .map(e => e.name)
-    .filter(name => {
-      let st
-      try {
-        st = lstatSync(join(parent, name, SKILL_MD))
-      } catch (e) {
-        // ENOENT = 该技能没有 SKILL.md → 不是技能目录（正常路径，静默跳过）
-        if (e.code === 'ENOENT') return false
-        // 其余（EACCES / ELOOP / ENAMETOOLONG…）= 判定不了 → 抛，不静默当「不是」
-        throw new Error(`读取 ${join(parent, name, SKILL_MD)} 失败：${e.code || e.message}`)
-      }
-      return st.isFile()
-    })
-}
+// 「什么算技能目录」的两层判定 + 错误契约，全部来自 ../../../scripts/skill-dir.mjs（唯一真相源）。
+// 本文件**不再另写一份** —— 2026-10-15 实测：3 份副本各自演化，R4-R6 三轮分 3 次才统一完（progress.md 轮次复盘）。
 
 export function checkSkillDir(dir, { manifest } = {}) {
   if (manifest && !Array.isArray(manifest.skills)) {
