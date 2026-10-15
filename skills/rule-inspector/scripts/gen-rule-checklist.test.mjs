@@ -1,9 +1,12 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs'
+import { mkdtempSync, writeFileSync, readFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
+import { fileURLToPath } from 'node:url'
 import { hasBom, parsePorcelain, parseDiffStatus, changedRules, scoreRule, renderRuleTable, ruleAddDeleteVerdict, renderESections, fillTemplate, templateAICounts } from './gen-rule-checklist.mjs'
+
+const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
 function tmpfile(content) {
   const dir = mkdtempSync(join(tmpdir(), 'gen-chk-'))
@@ -135,19 +138,18 @@ test('renderRuleTable：逐行成表', () => {
   assert.equal(renderRuleTable(rows), '| rules/a.md | M | commit diff（master..工作区） |')
 })
 
-test('fillTemplate：全部占位符替换（含 C2），无 {{ 残留', () => {
-  const tpl = 'R{{ROUND}}\nT {{RULE_TABLE}}\nC1 {{C1_OUTPUT}}\nC2 {{C2_OUTPUT}}\nC4 {{C4_OUTPUT}}\nE {{E_SECTIONS}}\nS {{MECH_SUMMARY}}\n'
+test('fillTemplate：用真实模板渲染后无 {{ 残留（映射覆盖模板全部占位符）', () => {
+  const tpl = readFileSync(join(__dirname, '..', 'assets', 'rule-edit-checklist-template.md'), 'utf8').replace(/^\uFEFF/, '')
   const out = fillTemplate(tpl, {
-    round: 'R13', ruleTable: '| r |', c1: 'True', c2: '未触发', c4: 'false',
+    ruleTable: '| r |', c1: 'True', c2: '未触发', c4: 'false',
     eSections: '### E-1', mechSummary: '- 摘要',
   })
-  assert.ok(!out.includes('{{'), '占位符必须全部替换')
-  assert.ok(out.includes('R13') && out.includes('未触发'))
+  assert.ok(!out.includes('{{'), '真实模板的每个 {{X}} 都必须有对应映射（防 map/模板占位符漂移）')
 })
 
 test('fillTemplate：E_SECTIONS 含多行表格时保留换行结构', () => {
   const out = fillTemplate('X {{E_SECTIONS}} Y', {
-    round: 'R', ruleTable: '', c1: '', c2: '', c4: '',
+    ruleTable: '', c1: '', c2: '', c4: '',
     eSections: '### E-1 · a\n\n| 1 | 行 |', mechSummary: '',
   })
   assert.equal(out, 'X ### E-1 · a\n\n| 1 | 行 | Y')

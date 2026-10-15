@@ -66,14 +66,15 @@
 
 **为什么要有这一档**：`docs/` 五类都是长期的（specs 定稿、plans 排期、handoffs 快照、after 活账本、retro 审查复盘），**没有一档是短期的**。硬把「只在这几个小时有用」的东西塞进 `docs/`，会同时污染两类目录：长期目录里混进草稿，或为短期单开一个 `docs/xxx/` —— 后者与 `after/` 功能重复。
 
-### 封闭清单（只有这两种，加新的先回答「为什么塞不进这两」）
+### 封闭清单（加新的前先回答「为什么塞不进已有的档」）
 
 | 落点 | 装什么 | 什么时候删 |
 |---|---|---|
 | `.session/reviews/<YYYY-MM-DD-HHMM>-<kebab-case 名字>/` | **某次审查的过程账**：跑了几轮、三段各做了什么、改了什么。**三个文件**：`progress.md`（活的，每轮追加）+ `problems.md`（漏斗，修好的移走）+ `retro-*.md`（**复盘文件，0 或多个**；长的复盘独立成文件，与 progress 同级） | 该次审查全部处置完 → **整个目录删掉**；⚠️ **`retro-*.md` 必须在删之前（或更早：本次 session 结束前）搬进 `docs/superpowers/retro/`** —— `.session/` 不进 git，不搬就**永久丢失**（换机器即失），实测 26 个审查目录从没被删过，所以真正的 deadline 是 session 结束，不是删目录 |
+| `.session/rule-checks/checklist-<YYYYMMDD-HHmmss>.md` | **一次「编辑 rule」动作的自查账**：rule-edit-checklist 快照（由 `rule-inspector` 技能的 `gen-rule-checklist.mjs` 从 `rule-edit-checklist-template` 展开，含 A–F 组检查项）。**为什么塞不进另两档**：它不是「某次审查的过程账」（挂在一次 rule 编辑动作上、与审查无关），也不是 README 的现状 | 该 rule 编辑动作收尾（全行「确认执行」）后即可删；对应结论已进 git（规则 / 测试断言 / spec）→ 删 |
 | `.session/README.md` | 这个目录现在有什么（**现状**） | 不删 |
 
-**命名**：`reviews/` 下的目录用 **kebab-case + 时间戳**（跨平台安全 + 能排序）；**中文标题写在文件首行**，不写进路径。复盘文件用 `retro-<轮次>-<主题>.md`。
+**命名**：`reviews/` 下的目录用 **kebab-case + 时间戳**（跨平台安全 + 能排序）；**中文标题写在文件首行**，不写进路径。复盘文件用 `retro-<轮次>-<主题>.md`；`rule-checks/` 下的快照用 `checklist-<YYYYMMDD-HHmmss>.md`（时间戳定序，一次编辑一份）。
 
 ### ⚠️ 待决事项只有一处：`docs/after/`，不设第二处
 

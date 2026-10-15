@@ -1,16 +1,16 @@
-// gen-rule-checklist.mjs —— 生成「rule 编辑查账 checklist」轮次快照（review-log 技能）
-// 职责：① git diff 判定本轮编辑了哪些 rules/*.md（机器判触发，不归 AI 判）
+// gen-rule-checklist.mjs —— 生成「rule 编辑查账 checklist」快照（rule-inspector 技能）
+// 职责：① git diff 判定本次编辑了哪些 rules/*.md（机器判触发，不归 AI 判）
 //       ② 机械项自动取证填表：diff 证据 / C1 Test-Path / C2 增删触发判定 / C4 BOM / E 段逐检查点（score.mjs checks[] 原样展开，一行一个检查点）
-//       ③ 从 assets/rule-edit-checklist-template.md 展开 → 写 .session/reviews/<那一次>/checklist/checklist-<round>.md
+//       ③ 从 assets/rule-edit-checklist-template.md 展开 → 写 <out-dir>/checklist-<YYYYMMDD-HHmmss>.md（默认 out-dir = .session/rule-checks）
 // 列结构（模板硬约束，全表统一五列）：# / 检查项 / 判据 / 实际输出 / 确认执行——AI 只填 AI 项（A/B/C3/D/E2/F + C2/C4 确认列），机械段（E）不得手抄。
-// 用法：node skills/review-log/scripts/gen-rule-checklist.mjs --round R13 --review-dir .session/reviews/2026-10-14-2248-review-all-to-death [--base master]
+// 用法：node skills/rule-inspector/scripts/gen-rule-checklist.mjs [--out-dir .session/rule-checks] [--base HEAD]
 import { readFileSync, writeFileSync, mkdirSync, openSync, readSync, closeSync, realpathSync } from 'node:fs'
 import { join, dirname, resolve } from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const REPO = resolve(__dirname, '..', '..', '..')          // skills/review-log/scripts → 仓库根
+const REPO = resolve(__dirname, '..', '..', '..')          // skills/rule-inspector/scripts → 仓库根
 const TEMPLATE = join(__dirname, '..', 'assets', 'rule-edit-checklist-template.md')
 const SCORE_SCRIPT = join(REPO, 'skills', 'rule-inspector', 'scripts', 'score.mjs')
 
@@ -134,7 +134,7 @@ export function renderESections(rules, scores) {
 
 export function fillTemplate(tpl, data) {
   const map = {
-    ROUND: data.round, RULE_TABLE: data.ruleTable, C1_OUTPUT: data.c1, C2_OUTPUT: data.c2,
+    RULE_TABLE: data.ruleTable, C1_OUTPUT: data.c1, C2_OUTPUT: data.c2,
     C4_OUTPUT: data.c4, E_SECTIONS: data.eSections, MECH_SUMMARY: data.mechSummary,
   }
   // 替换值走函数形式：避免 $& / $` / $' 等替换模式被解释 → 快照内容被静默篡改（OCR R14 :94）
@@ -193,22 +193,16 @@ function main() {
   const argv = process.argv.slice(2)
   const opt = {}
   for (let i = 0; i < argv.length; i++) {
-    if (argv[i] === '--round') opt.round = argv[++i]
-    else if (argv[i] === '--review-dir') opt.reviewDir = argv[++i]
+    if (argv[i] === '--out-dir') opt.outDir = argv[++i]
     else if (argv[i] === '--base') opt.base = argv[++i]
-    else { console.error(`未知参数：${argv[i]}（支持 --round / --review-dir / --base）`); process.exit(2) }
+    else { console.error(`未知参数：${argv[i]}（支持 --out-dir / --base）`); process.exit(2) }
   }
-  if (!opt.round || !opt.reviewDir || !opt.base) {
-    console.error('用法：node skills/review-log/scripts/gen-rule-checklist.mjs --round R<N> --review-dir .session/reviews/<那一次> --base <基线 commit>')
-    console.error('  --base 必传：基线 = 上轮锁基线 commit（见 review-log 轮次账），不可用 master——master 落后于 review 分支时会把历史轮的 rule 改动重复算进本轮')
-    process.exit(2)
-  }
-  const base = opt.base
+  const base = opt.base || 'HEAD'
   const { rules } = changedRules(base)
   const diffEvidence = `git diff --name-status ${base} -- rules/ + git status --porcelain -- rules/ → ${rules.length} 条`
   if (rules.length === 0) {
-    console.log(`[触发判定] 本轮无 rule 编辑：${diffEvidence}`)
-    console.log(`→ 不生成 checklist 快照；progress.md 链接行写「本轮无 rule 编辑（diff 证据：${diffEvidence}）」`)
+    console.log(`[触发判定] 未检测到 rule 编辑：${diffEvidence}`)
+    console.log('→ 本次编辑未涉及 rules/*.md → 不生成 checklist 快照')
     return
   }
   const scores = rules.map(r => scoreRule(REPO, r.name))
@@ -224,8 +218,9 @@ function main() {
   // 模板先剥头 BOM（模板可能带 U+FEFF），渲染后写盘前校验——写盘后校验会让违规产物已落盘——OCR R14 :184
   const tplText = readFileSync(TEMPLATE, 'utf8').replace(/^\uFEFF/, '')
   const ai = templateAICounts(tplText)
+  const d = new Date(); const p2 = n => String(n).padStart(2, '0')
+  const stampStr = `${d.getFullYear()}${p2(d.getMonth() + 1)}${p2(d.getDate())}-${p2(d.getHours())}${p2(d.getMinutes())}${p2(d.getSeconds())}`
   const data = {
-    round: opt.round,
     ruleTable: renderRuleTable(rules),
     c1, c2: c2v.text, c4,
     eSections: renderESections(rules, scores),
@@ -235,9 +230,9 @@ function main() {
       `- AI 项待填：A×${ai.A}、B×${ai.B}、C2/C3 确认列、D×${ai.D}、E2×${ai.E2}、F×${ai.F} —— **每行贴命令输出 + 写「确认执行」；缺任一 = 本次编辑未完成**`,
     ].join('\n'),
   }
-  const outDir = join(REPO, opt.reviewDir, 'checklist')
+  const outDir = join(REPO, opt.outDir || '.session/rule-checks')
   mkdirSync(outDir, { recursive: true })
-  const outPath = join(outDir, `checklist-${opt.round}.md`)
+  const outPath = join(outDir, `checklist-${stampStr}.md`)
   const rendered = fillTemplate(tplText, data)
   if (rendered.startsWith('\uFEFF')) { console.error(`[BOM 违规] 模板渲染出带 BOM 的快照：${outPath}`); process.exit(1) }
   writeFileSync(outPath, rendered, 'utf8')

@@ -19,7 +19,7 @@ description: 体检 rules/ 里的规则——按判据全集评分、出报告�
 > 4. **禁止把语义判断交给脚本** —— 三检验里的 #1 #2 由 AI 逐条判断并写进报告，不能只写「已检查」。
 > 5. **删冗余必须在报告里写出三检验的验证过程** —— 不能只报「已精简」。
 > 6. **标题一致性检查是收尾必做** —— 每次报告前对照标题与正文三句：①范围 ②极性 ③对象，全一致才算收尾（判据见 `references/criteria.md` §2.4 标题第 4 项）。
-> 7. **检查项变更同步义务（增/改/删检查项时，不许跳过）** —— 每次增加 / 修改 / 删除判据、检查点、词表、处方，必须过同步清单**逐项核销**：① `scripts/score.mjs` 机械常量 ↔ `references/criteria.md` 判据/词表（单源，同批改）② `criteria.md` 检查点 ↔ `references/recipes.md` 处方 ③ 判据/词表 ↔ rule-writer 三层（SKILL 自查 / writing-guide 自查表 / rule-skeleton）④ 检查项 ↔ review 账本模板「验证查账」表行（删检查 → 查账行删；加检查 → 查账行补）⑤ **删检查项反向扫**：全仓 grep 其名字/锚点词，声明处逐个删（防「幽灵检查项」）⑥ **rule-edit-checklist 模板**（review-log 技能 `assets/rule-edit-checklist-template.md`，rule 编辑查账清单的活模板）——检查项增删时同步其 A-F 组行。设计判据见 `docs/superpowers/specs/2026-10-15-verification-audit-checklist-design.md` §5——本条是**单源定义**，其它技能只引用不复制。
+> 7. **检查项变更同步义务（增/改/删检查项时，不许跳过）** —— 每次增加 / 修改 / 删除判据、检查点、词表、处方，必须过同步清单**逐项核销**：① `scripts/score.mjs` 机械常量 ↔ `references/criteria.md` 判据/词表（单源，同批改）② `criteria.md` 检查点 ↔ `references/recipes.md` 处方 ③ 判据/词表 ↔ rule-writer 三层（SKILL 自查 / writing-guide 自查表 / rule-skeleton）④ 检查项 ↔ review 账本模板「验证查账」表行（删检查 → 查账行删；加检查 → 查账行补）⑤ **删检查项反向扫**：全仓 grep 其名字/锚点词，声明处逐个删（防「幽灵检查项」）⑥ **rule-edit-checklist 模板**（本技能 `assets/rule-edit-checklist-template.md`，rule 编辑查账清单的活模板；快照由本技能 `scripts/gen-rule-checklist.mjs` 从该模板展开生成）——检查项增删时同步其 A-F 组行。设计判据见 `docs/superpowers/specs/2026-10-15-verification-audit-checklist-design.md` §5——本条是**单源定义**，其它技能只引用不复制。
 
 ## 执行顺序（检查路径闭环，一次一条）
 
