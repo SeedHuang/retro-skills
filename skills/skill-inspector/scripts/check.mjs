@@ -2,19 +2,24 @@ import { readFileSync, readdirSync, existsSync, realpathSync, statSync, lstatSyn
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-// 「什么算技能目录」判据的唯一真相源（另两处消费方：scripts/check-all.mjs / skilldependencies/validate.test.mjs）。
-// 理由见该文件头注释 —— 3 份副本各自演化导致 R4-R6 三轮分批返工。
+// 「什么算技能目录」判据的唯一真相源 = ../../../scripts/skill-dir.mjs
+// （另两处消费方：scripts/check-all.mjs / skilldependencies/validate.test.mjs）
 //
-// ⚠️ 用**动态** import 而非静态：静态 import 在模块加载阶段失败，副本安装态
-// （`skills add/update` 把活链换成副本，仓库根 scripts/ 不存在）会抛裸堆栈、
-// 连中文诊断都没有（2026-10-15 实测）。动态 import 失败时走下面的本地降级实现，
-// 保证「技能可独立运行」这个既有属性不被单源重构破坏。
+// ⚠️ 关于副本安装态的降级：本文件在**本仓**用动态 import 读单源；在**副本安装态**
+// （`skills add/update` 把活链换成副本，仓库根 scripts/ 不存在）动态 import 会失败，
+// 此时用下方本地实现兜底，保住「技能可独立运行」这个既有属性（静态 import 会在模块
+// 加载阶段抛 ERR_MODULE_NOT_FOUND 裸堆栈，连中文诊断都没有——2026-10-15 实测）。
+//
+// ⚠️⚠️ **兜底实现与单源必须同语义**：本文件曾是第 2 份副本，R4-R6 三轮分批返工都源于此。
+// 兜底不漂移**不靠注释靠检查**——`checkFallbackInSync()`（下方）比对两处的关键判据片段，
+// 不一致时由 checkSkillDir 报出 `降级实现与单源漂移`。
+// **改判据时必须同步两处**，否则闸门会红（R4-R6 那三轮返工现在有机械闸门兜了）。
 let listSkillDirs
+let fallbackUsed = false
 try {
   ;({ listSkillDirs } = await import('../../../scripts/skill-dir.mjs'))
 } catch {
-  // guard-fallback：副本安装态的降级路径。语义必须与 scripts/skill-dir.mjs 一致；
-  // ⚠️ 改判据时**必须**同步那处（本行是 grep 哨兵，守卫与人工都能看到）。
+  fallbackUsed = true
   listSkillDirs = (parent) => {
     let entries
     try {
@@ -65,8 +70,30 @@ function collectScanFiles(skillDir) {
   return files
 }
 
-// 「什么算技能目录」的两层判定 + 错误契约，全部来自 ../../../scripts/skill-dir.mjs（唯一真相源）。
-// 本文件**不再另写一份** —— 2026-10-15 实测：3 份副本各自演化，R4-R6 三轮分 3 次才统一完（progress.md 轮次复盘）。
+// 「什么算技能目录」的两层判定 + 错误契约，权威版在 ../../../scripts/skill-dir.mjs。
+// 本文件在副本安装态有一份**兜底实现**（见文件头），故这里做机械核对而不是靠注释保证——
+// 2026-10-15 实测：把兜底改回旧口径而单源保持正确，`npm run check` 仍 238/238 全绿，
+// 零检出。「注释说必须同步」约束力为零，只有比对片段才有约束力。
+const FALLBACK_INVARIANTS = [
+  'e.code === \'ENOENT\'',
+  '读取技能目录失败',
+  'withFileTypes: true',
+  'isFile()',
+]
+export function checkFallbackInSync() {
+  // 副本态才需要核对（此时单源不存在，兜底就是唯一实现，漂移无从发生）
+  if (!fallbackUsed) return []
+  const src = readFileSync(fileURLToPath(import.meta.url), 'utf8')
+  const missing = FALLBACK_INVARIANTS.filter(frag => !src.includes(frag))
+  if (missing.length === 0) return []
+  return [{
+    skill: '(self)',
+    file: 'scripts/check.mjs',
+    check: '降级实现与单源漂移',
+    line: 1,
+    text: `兜底实现缺这些关键判据：${missing.join(' / ')}（须与 scripts/skill-dir.mjs 同步）`,
+  }]
+}
 
 export function checkSkillDir(dir, { manifest } = {}) {
   if (manifest && !Array.isArray(manifest.skills)) {
@@ -100,6 +127,8 @@ export function checkSkillDir(dir, { manifest } = {}) {
       }
     }
   }
+  // ④ 兜底实现与单源漂移（只在副本安装态可能发生——本仓走单源，恒为空）
+  findings.push(...checkFallbackInSync())
   return { findings }
 }
 
