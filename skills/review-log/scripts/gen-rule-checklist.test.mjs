@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { mkdtempSync, writeFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
-import { hasBom, parsePorcelain, parseDiffNames, renderRuleTable, ruleAddDeleteVerdict, renderESections, fillTemplate } from './gen-rule-checklist.mjs'
+import { hasBom, parsePorcelain, parseDiffStatus, changedRules, scoreRule, renderRuleTable, ruleAddDeleteVerdict, renderESections, fillTemplate, templateAICounts } from './gen-rule-checklist.mjs'
 
 function tmpfile(content) {
   const dir = mkdtempSync(join(tmpdir(), 'gen-chk-'))
@@ -43,9 +43,55 @@ test('parsePorcelain：带引号的路径（中文/空格文件名）剥引号�
   assert.deepEqual(rows, [{ name: 'rules/my rule.md', type: 'M' }])
 })
 
-test('parseDiffNames：只收 rules/ 下 .md', () => {
-  const out = 'rules/a.md\ndocs/b.md\nrules/c.txt\nrules/sub/d.md\n'
-  assert.deepEqual(parseDiffNames(out, 'rules/'), ['rules/a.md', 'rules/sub/d.md'])
+test('parseDiffStatus：A/M/D 收 rules/ 下 .md；R100 old → 旧删 D + 新加 A 双行', () => {
+  const out = 'A\trules/new.md\nM\trules/mod.md\nD\trules/del.md\nM\tdocs/b.md\nR100\trules/old.md\trules/new2.md\n'
+  assert.deepEqual(parseDiffStatus(out, 'rules/'), [
+    { name: 'rules/new.md', type: 'A' },
+    { name: 'rules/mod.md', type: 'M' },
+    { name: 'rules/del.md', type: 'D' },
+    { name: 'rules/old.md', type: 'D' },
+    { name: 'rules/new2.md', type: 'A' },
+  ])
+})
+
+test('parsePorcelain：rename（R old -> new）→ 旧删 D + 新加 A，两条都收', () => {
+  const rows = parsePorcelain('R  rules/old.md -> rules/new.md\n', 'rules/')
+  assert.deepEqual(rows, [
+    { name: 'rules/old.md', type: 'D' },
+    { name: 'rules/new.md', type: 'A' },
+  ])
+})
+
+test('changedRules：commit diff（--name-status）与工作区 porcelain 合并（注入 git runner）', () => {
+  const calls = []
+  const runner = (args) => {
+    calls.push(args.join(' '))
+    if (args[0] === 'diff') return 'A\trules/new-committed.md\nD\trules/del-committed.md\nM\trules/mod-committed.md\n'
+    return ' M rules/mod-committed.md\n?? rules/untracked-new.md\n'
+  }
+  const { rules } = changedRules('base', runner)
+  assert.deepEqual(rules, [
+    { name: 'rules/del-committed.md', type: 'D', evidence: 'commit diff（base..工作区）' },
+    { name: 'rules/mod-committed.md', type: 'M', evidence: 'commit diff（base..工作区） + 工作区未提交（M）' },
+    { name: 'rules/new-committed.md', type: 'A', evidence: 'commit diff（base..工作区）' },
+    { name: 'rules/untracked-new.md', type: 'A', evidence: '工作区未提交（A）' },
+  ])
+  assert.ok(calls[0].includes('--name-status'), 'diff 侧用 --name-status（C2 才能看见已 commit 的 A/D，OCR R14 :168）')
+  assert.ok(calls[1].includes('--porcelain'), 'porcelain 侧保留')
+})
+
+test('scoreRule：stdout 前置非 JSON 文本（警告）仍能解析；纯非 JSON / exit≠0 → error 带证据', () => {
+  const ok = scoreRule('repo', 'rules/a.md', () => ({ status: 0, stdout: 'node: warning...\n{"total":1,"max":1}', stderr: '' }))
+  assert.equal(ok.total, 1, '剥掉前置文本后 JSON 正常解析（OCR R14 :6）')
+  const bad = scoreRule('repo', 'rules/a.md', () => ({ status: 0, stdout: 'not json at all', stderr: '' }))
+  assert.equal(bad.error, 'exit 0', '整体非 JSON → error（exit 0）')
+  const err = scoreRule('repo', 'rules/a.md', () => ({ status: 1, stdout: '', stderr: 'boom' }))
+  assert.ok(err.error.includes('exit 1') && err.stderr.includes('boom'), 'exit 非 0 → error 带 stderr')
+})
+
+test('templateAICounts：从模板表行派生 A/B/C/D/E2/F 计数（不硬编码）', () => {
+  const tpl = ['| A1 | x | | | |', '| A2 | x | | | |', '| B1 | x | | | |', '| C1 | x | | | |', '| D1 | x | | | |', '| E2-1 | x | | | |', '| F1 | x | | | |'].join('\n')
+  assert.deepEqual(templateAICounts(tpl), { A: 2, B: 1, C: 1, D: 1, E2: 1, F: 1 })
 })
 
 test('ruleAddDeleteVerdict：无 A/D → 未触发；有 A → 触发并列名', () => {

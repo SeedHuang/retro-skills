@@ -1048,3 +1048,49 @@ test('CLI --file 自动发现 annotations：未传 --cognitive，x3Done 仍生�
   assert.ok(got.findings.some(f => f.check === 'X2必经路径绑定'), '缺路径绑定声明 → X2 红')
   rmSync(dir, { recursive: true, force: true })
 })
+
+test('CLI --file 显式 --annotations 优先于自动发现；annotations 的 triCheckDone/type 不被 CLI 默认值冲掉（OCR R14 :443）', () => {
+  // 自动发现文件与显式 --annotations 内容不同：显式给 type=待拆未定 + triCheckDone=true
+  const dir = makeDir({
+    '.inspector-annotations.json': JSON.stringify({ 'cog.md': { cognitive: true, x3Done: false } }),
+    'cog.md': COG_NO_DECL,
+  })
+  const annPath = join(dir, 'ann.json')
+  writeFileSync(annPath, JSON.stringify({ 'cog.md': { cognitive: true, triCheckDone: true, type: '待拆未定' } }))
+  const script = join(__dirname, 'score.mjs')
+  const out = spawnSync(process.execPath, [script, '--file', join(dir, 'cog.md'), '--rules-dir', dir, '--annotations', annPath, '--json'], { encoding: 'utf8' })
+  assert.equal(out.status, 0, out.stderr)
+  const got = JSON.parse(out.stdout.replace(/^\uFEFF/, ''))
+  assert.equal(got.name, 'cog.md')
+  assert.ok(!('执行力度' in got.groups), 'annotations 的 type=待拆未定 保留（不被 CLI 默认 null 冲掉）→ 不评执行力度')
+  assert.equal(findingScore(got, '冗余度', '三检验报告已做'), 1, 'annotations 的 triCheckDone=true 保留（不被 CLI 默认 false 冲掉）→ 三检验过')
+  rmSync(dir, { recursive: true, force: true })
+})
+
+test('CLI --file --annotations 指向不存在的文件 → exit 1（与 --dir 分支同语义，OCR R14 :432）', () => {
+  const dir = makeDir({ 'cog.md': COG_NO_DECL })
+  const script = join(__dirname, 'score.mjs')
+  const out = spawnSync(process.execPath, [script, '--file', join(dir, 'cog.md'), '--rules-dir', dir, '--annotations', join(dir, 'nope.json'), '--json'], { encoding: 'utf8' })
+  assert.equal(out.status, 1, '显式给的标注文件不存在必须报错退出')
+  assert.ok((out.stderr || '').includes('标注文件不存在'), 'stderr 明示「标注文件不存在」')
+  rmSync(dir, { recursive: true, force: true })
+})
+
+test('CLI --repo-root：仓内相对路径按 repo 根断言（不依赖调用 cwd，OCR R14 :59）', () => {
+  // 临时 repo：rules/cog.md 声明 `skills/review-log/assets/target.md`（repo 根相对），--repo-root 指向临时根
+  const repo = mkdtempSync(join(tmpdir(), 'ro-root-'))
+  try {
+    mkdirSync(join(repo, 'rules'), { recursive: true })
+    mkdirSync(join(repo, 'skills/review-log/assets'), { recursive: true })
+    writeFileSync(join(repo, 'skills/review-log/assets/target.md'), '# 目标\n\n### 全貌确认\n')
+    const cog = COG_NO_DECL + '\n\n## 产物（前置必经）\n先输出「深度思考」块，写进 `skills/review-log/assets/target.md`。'
+    writeFileSync(join(repo, 'rules/cog.md'), cog)
+    const script = join(__dirname, 'score.mjs')
+    const out = spawnSync(process.execPath, [script, '--file', join(repo, 'rules/cog.md'), '--repo-root', repo, '--json'], { encoding: 'utf8' })
+    assert.equal(out.status, 0, out.stderr)
+    const got = JSON.parse(out.stdout.replace(/^\uFEFF/, ''))
+    assert.equal(findingScore(got, '执行力度', 'X1动作产物化'), 1, 'repo-root 相对路径在 repo 根存在 → X1 pass')
+  } finally {
+    rmSync(repo, { recursive: true, force: true })
+  }
+})

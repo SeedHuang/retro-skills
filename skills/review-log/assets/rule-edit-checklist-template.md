@@ -1,7 +1,7 @@
 # rule 编辑查账 checklist 模板
 
-> 挂载：每轮 review 编辑了 rules/*.md → 跑 `node skills/review-log/scripts/gen-rule-checklist.mjs --round R<N> --review-dir .session/reviews/<那一次>` 生成快照（本模板展开 → `checklist/checklist-R<N>.md`），AI 项逐行填满，progress.md 放链接。
-> **触发判定（机器判）**：`git diff --name-only <基线> -- rules/`（含工作区）为空 = 本轮无 rule 编辑 → 不生成快照；progress 链接行写 diff 证据。
+> 挂载：每轮 review 编辑了 rules/*.md → 跑 `node skills/review-log/scripts/gen-rule-checklist.mjs --round R<N> --review-dir .session/reviews/<那一次> --base <基线 commit>` 生成快照（本模板展开 → `checklist/checklist-R<N>.md`），AI 项逐行填满，progress.md 放链接。**<基线 commit> 必传 = 上轮锁基线 commit（见 review-log 轮次账），不可用 master**——master 落后 review 分支时会把历史轮的 rule 改动重复算进本轮。
+> **触发判定（机器判）**：`git diff --name-only <基线 commit> -- rules/`（含工作区）为空 = 本轮无 rule 编辑 → 不生成快照；progress 链接行写 diff 证据。
 > **列结构（全表统一五列，一组也不许变）**：`# / 检查项 / 判据（取数命令 · 产物必含词）/ 实际输出（必填）/ 确认执行`。
 > **确认执行列硬规则**：只许写「确认执行」四个字，前提 = 该行命令真实跑过、实际输出原样贴出。**该列写不出「确认执行」= 该项未完成 → 本次编辑未完成，停止，不得交付。** 没有「不适用 / 未执行 / 稍后」档——触发条件没发生也用命令输出证明（例：C2 未增删规则文件 → 贴 `git status` 显示无 A/D 的输出 + 确认执行）。
 > **每个检查项一行**：不得把多个检查项并进一行（「头部规范 3 项」= 3 行；「画全貌六维」= 6 行）。

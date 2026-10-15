@@ -344,7 +344,8 @@ test('兜底实现 ≡ 单源：5 组基础 fixture +（平台支持时）符号
   }
 
   const safeJson = (v) => {
-    try { return JSON.stringify(v) } catch { return `[unserializable:${typeof v}]` }
+    try { return JSON.stringify(v) }
+    catch (e) { return `[unserializable:${typeof v}:${e && e.message}]` }   // 带失败原因，区分不同的不可序列化来源（OCR R14 :346）
   }
   const run = (fn, c) => {
     try { return { ok: JSON.stringify(fn(c).slice().sort()) } }

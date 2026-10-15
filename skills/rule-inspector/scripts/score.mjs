@@ -36,11 +36,12 @@ const VERIFY_RE = /验证|自检|检查点|报告|自查|检查是否|确认遵�
 // ⚠️ 判据权威 = references/criteria.md §3.3b（含封闭词表全文）；本区是机械执行体，词表改动须与 criteria 同批。
 // X1 产物模式：字面词 + 「引用名」块/节/表 形态（如「全貌确认」块）。
 //   旧字面词表含「确认块」曾与定稿文本「全貌确认」块脱节（R12 P0-α）——匹配不上的判据会把对的规则判红，已改模式匹配。
-const PRODUCT_RE = /产物|清单|报告|spec|输出块|「[^」]{2,12}」(?:块|节|表)/
+const PRODUCT_RE = /产物|清单|报告|\bspec\b|输出块|「[^」]{2,12}」(?:块|节|表)/
 // X1 去处动词（「随」不入表：「随任务记录可查」是「声称有落点实际无锚点」的原型，必须判红）
 const PRODUCT_VERB_RE = /写进|落到|记入|落盘|挂进|绑进/
 // X1 去处载体词（对话类产物不可文件断言，封闭词表认可；「任务记录」不入表——无锚点）
-const CARRIER_RE = /回复|回答|报告|commit body|账本|对话记录/
+// ⚠️「报告」不在本表：它同时在 PRODUCT_RE 里，同一个词可同时充当「产物」与「去处」→ 假绿（OCR R14 :43）。改词表须与 criteria §3.3b 同批。
+const CARRIER_RE = /回复|回答|commit body|账本|对话记录/
 // X2 绑定动词
 const BIND_VERB_RE = /挂进|绑进|写进|落到|核销/
 // 反引号仓内路径（.md/.mjs）。占位符（<…>）与 ~ 开头路径不断言（spec §7 风险 2）
@@ -56,17 +57,19 @@ function extractPaths(text) {
   }
   return out
 }
-function pathExists(p) {
-  try { return existsSync(resolve(p)) } catch { return false }
+// 路径存在判定：base = 仓库根（CLI --repo-root / gen-rule-checklist cwd:REPO / 测试注入）；缺省 cwd 兼容旧调用
+function pathExists(p, base = process.cwd()) {
+  try { return existsSync(resolve(base, p)) } catch { return false }
 }
 // 句 = 按 。；\n 切分（spec §4.1 窗口语义）；成对 = 同句或相邻句
 function sentences(text) { return text.split(/[。；\n]/) }
 
 // X1：产物模式 + 去处动词 + 去处（载体词 或 仓内路径存在）在窗口内成对
-function x1ProductLanding(body) {
+// base = 仓库根（显式传入），缺省 cwd 兼容直接调用
+function x1ProductLanding(body, base = process.cwd()) {
   // 公共前置：任何声明的落点路径都必须存在（多路径 all-exist，spec §4.2）
   const allPaths = extractPaths(body)
-  const bad = allPaths.find(p => !pathExists(p.raw))
+  const bad = allPaths.find(p => !pathExists(p.raw, base))
   if (bad) return { ok: false, why: `声称的落点路径不存在：${bad.raw}` }
   const ss = sentences(body)
   for (let i = 0; i < ss.length; i++) {
@@ -79,25 +82,28 @@ function x1ProductLanding(body) {
 }
 
 // X2：绑定动词 + 反引号路径（存在）+ 路径后同句首个「槽位」词（目标文件含该词）——本设计的核心闸门
-function x2Binding(body) {
+// fail-closed 与 X1 对齐：所有「绑定声明」逐条验证，任一目标缺槽位 = 红（不短路，OCR R14 :96-97）
+function x2Binding(body, base = process.cwd()) {
   const ss = sentences(body)
+  let declared = 0
   for (const s of ss) {
     if (!BIND_VERB_RE.test(s)) continue
     const ps = extractPaths(s)
     if (ps.length === 0) continue
     for (const p of ps) {
-      const after = s.slice(p.index + p.raw.length)
+      const after = s.slice(p.index + 1 + p.raw.length)  // 跳过闭引号（off-by-one 修正，OCR R14 :89）
       const slot = after.match(/「([^」]{2,12})」/)
       if (!slot) continue
-      if (!pathExists(p.raw)) return { ok: false, why: `绑定路径不存在：${p.raw}` }
+      declared += 1
+      if (!pathExists(p.raw, base)) return { ok: false, why: `绑定路径不存在：${p.raw}` }
       let target
-      try { target = readFileSync(resolve(p.raw), 'utf8') }
+      try { target = readFileSync(resolve(base, p.raw), 'utf8') }
       catch (e) { return { ok: false, why: `读取绑定目标失败 ${p.raw}：${e.code || e.message}` } }
       if (!target.includes(slot[1])) return { ok: false, why: `目标文件 ${p.raw} 不含声明的槽位「${slot[1]}」` }
-      return { ok: true, why: '' }
     }
   }
-  return { ok: false, why: '无「绑定动词 + 反引号路径 + 「槽位」」三段齐全的声明（挂进/绑进/写进/落到/核销 + `路径` + 「节名」）' }
+  if (declared === 0) return { ok: false, why: '无「绑定动词 + 反引号路径 + 「槽位」」三段齐全的声明（挂进/绑进/写进/落到/核销 + `路径` + 「节名」）' }
+  return { ok: true, why: '' }
 }
 
 // ---- 标题（机械代理）----
@@ -211,11 +217,13 @@ export function scoreFile(filePath, rulesDir, opts = {}) {
   const checks = []   // 逐检查点登记（group/check/pass/msg）——rule-edit-checklist 消费：机器逐项输出，AI 不得手抄
   const groups = {}
   // 注册一个检查点：pass → 该组 +1 分；fail → 记一条 finding
+  // 单一判定源：score / findings / checks 三处都用 ok（pass === true），防「truthy 非 true」时打分与 checks 报红打架（OCR R14 归一化建议）
   const g = (gname, check, pass, msg, recipe) => {
     groups[gname] ??= { score: 0, max: 0 }
     groups[gname].max += 1
-    checks.push({ group: gname, check, pass: pass === true, msg: pass ? '' : msg })
-    if (pass) groups[gname].score += 1
+    const ok = pass === true
+    checks.push({ group: gname, check, pass: ok, msg: ok ? '' : msg })
+    if (ok) groups[gname].score += 1
     else findings.push({ group: gname, check, msg, recipe })
   }
 
@@ -293,11 +301,11 @@ export function scoreFile(filePath, rulesDir, opts = {}) {
     // → X2 文件槽位断言不适用（会话产物无自然文件落点，强制文件绑定 = 假落点）；文件类规则不标 → X2 仍强制。
     const x2Carrier = opts.x2Carrier === true || opts.x2Carrier === 'true'
     if (cognitive) {
-      const x1 = x1ProductLanding(body)
+      const x1 = x1ProductLanding(body, opts.base)
       g('执行力度', 'X1动作产物化', x1.ok,
         `认知动作未声明「产物+去处」成对：${x1.why}`, '补产物模式 + 去处动词 + 去处（载体词表或仓内路径，路径须 Test-Path 为真）——判据见 criteria §3.3b')
       if (!x2Carrier) {
-        const x2 = x2Binding(body)
+        const x2 = x2Binding(body, opts.base)
         g('执行力度', 'X2必经路径绑定', x2.ok,
           `认知动作未声明必经路径绑定：${x2.why}`, '补「绑定动词 + 反引号路径 + 「槽位」」三段，且目标文件真含该槽位（文件断言）——判据见 criteria §3.3b')
       }
@@ -405,7 +413,7 @@ export function scoreDir(dir, opts = {}) {
 }
 
 export function cli(argv = process.argv.slice(2)) {
-  const args = { dir: 'D:\\Seed\\retro-skills\\rules', json: false, triCheck: false, cognitive: false, baselineFile: null, type: null, annotationsFile: null, file: null, rulesDir: null }
+  const args = { dir: 'D:\\Seed\\retro-skills\\rules', json: false, triCheck: false, cognitive: false, baselineFile: null, type: null, annotationsFile: null, file: null, rulesDir: null, repoRoot: null }
   let dirGiven = false   // 显式给了 --dir（args.dir 有默认值，互斥须区分「显式」与「默认」）
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--dir') { args.dir = argv[++i]; dirGiven = true }
@@ -417,6 +425,7 @@ export function cli(argv = process.argv.slice(2)) {
     else if (argv[i] === '--baseline') args.baselineFile = argv[++i]
     else if (argv[i] === '--type') args.type = argv[++i]
     else if (argv[i] === '--annotations') args.annotationsFile = argv[++i]
+    else if (argv[i] === '--repo-root') args.repoRoot = argv[++i]
   }
   if (args.file && dirGiven) { console.error('--file 与 --dir 互斥，只给一个'); process.exit(2) }
   if (args.file) {
@@ -428,8 +437,8 @@ export function cli(argv = process.argv.slice(2)) {
     const rulesDir = args.rulesDir ?? dirname(args.file)
     // --file 模式同样自动发现 annotations（同 scoreDir：两种入口判定资产化必须一致生效，
     // 否则逐条 --file --cognitive 复核时 x3Done 传不进去 → X3 永远红——round-3 补的洞）。
-    // 显式 --cognitive 优先：命令行给了就以命令行为准，annotations 只补没给的键。
-    const annPath = join(rulesDir, '.inspector-annotations.json')
+    // 显式 --annotations 优先于自动发现（与 --dir 分支同语义，OCR R14 :432）。
+    const annPath = args.annotationsFile ?? join(rulesDir, '.inspector-annotations.json')
     if (existsSync(annPath)) {
       let ann
       try { ann = JSON.parse(stripBom(readFileSync(annPath, 'utf8'))) }
@@ -440,13 +449,18 @@ export function cli(argv = process.argv.slice(2)) {
       }
       const a = ann[basename(args.file)]
       if (a && typeof a === 'object' && !Array.isArray(a)) {
-        opts = { ...a, ...opts }
-        // CLI 未显式传 --cognitive 时，opts.cognitive=false 会把 annotations 的判定冲掉 → 补回。
-        // （CLI 只有「传了 = true」一种形态，显式优先 = 传了就不动。）
-        if (!opts.cognitive && a.cognitive) opts.cognitive = a.cognitive
+        // 只让 CLI 真正显式传了的键覆盖 annotations（args.* 恒有默认值，直接展开会把
+        // annotations 的 triCheckDone/type 冲成 false/null——OCR R14 :443）。
+        const explicit = {}
+        if (args.triCheck) explicit.triCheckDone = true
+        if (args.type) explicit.type = args.type
+        if (args.cognitive) explicit.cognitive = true
+        opts = { ...a, ...explicit, cognitive: explicit.cognitive || a.cognitive }
       }
+    } else if (args.annotationsFile) {
+      console.error(`标注文件不存在：${args.annotationsFile}`); process.exit(1)
     }
-    const r = scoreFile(args.file, rulesDir, opts)
+    const r = scoreFile(args.file, rulesDir, { ...opts, base: args.repoRoot ?? resolve(rulesDir, '..') })
     const summary = r.level === undefined
       ? `得分 ${r.total}/${r.max}（${Math.round(r.rate * 100)}%，合集无级别）`
       : `得分 ${r.total}/${r.max}（${Math.round(r.rate * 100)}%，${r.level}）`
@@ -466,7 +480,7 @@ export function cli(argv = process.argv.slice(2)) {
       process.exit(1)
     }
   }
-  const out = scoreDir(args.dir, { baselineFile: args.baselineFile, triCheckDone: args.triCheck, type: args.type, cognitive: args.cognitive, annotations })
+  const out = scoreDir(args.dir, { baselineFile: args.baselineFile, triCheckDone: args.triCheck, type: args.type, cognitive: args.cognitive, annotations, base: args.repoRoot ?? resolve(args.dir, '..') })
   const summary = out.level === undefined
     ? `共 ${out.totals.files} 文件 / ${out.totals.lines} 行 / ${out.totals.chars} 字符（无已评级文件，不报 dir 得分率）`
     : `共 ${out.totals.files} 文件 / ${out.totals.lines} 行 / ${out.totals.chars} 字符，平均得分率 ${Math.round(out.rate * 100)}%（${out.level}）`
