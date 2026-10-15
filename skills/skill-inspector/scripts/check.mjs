@@ -36,20 +36,37 @@ function collectScanFiles(skillDir) {
 // ① 目录层：withFileTypes 的 isDirectory() 对 junction 返回 false → 天然跳过，不跟随
 // ② 文件层：lstatSync 不跟随符号链接（防 SKILL.md 是指向特殊设备/超大文件的链接被 readFileSync 读爆）
 // ⚠️ 只对齐 ② 不对齐 ① 会让 junction 判定与另两处相反（裸 readdirSync 会把 junction 当普通条目列出）
-// ⚠️ throwIfNoEntry 只覆盖 ENOENT；EACCES / ELOOP / ENAMETOOLONG / ENOTDIR 仍会抛。
-//    这里显式 catch 兜住，保持 existsSync 旧有的「任何错误都算 false」契约——
-//    因为 hasSkillSubdir 的调用点在 CLI 的 try/catch 之外，抛出去就是裸堆栈。
+//
+// 错误处理分两层，**不能只在 lstatSync 里 catch**（2026-10-15 实测教训）：
+// · lstatSync 的 `throwIfNoEntry: false` 只吞 ENOENT，EACCES / ELOOP / ENAMETOOLONG / ENOTDIR 仍会抛
+// · readdirSync(parent) 本身也会抛（ACL 受限目录 → EPERM）
+// 两者都在调用方（CLI 的 hasSkillSubdir）的 try/catch 之外，抛出去就是裸堆栈。
+//
+// ⚠️ 但 catch 一律 return false 会造成**假干净**：「SKILL.md 因权限读不到」被当成「不是技能目录」
+// → 该技能整体静默不扫 → 它的违规一条不报、exit 0 —— 正是闸门最该防的失败面。
+// 故：**读得到但判定不了 → 抛（响亮失败）；确实不存在 → 跳过（正常路径）**。
 function listSkillDirs(parent) {
-  const names = readdirSync(parent, { withFileTypes: true })
+  let entries
+  try {
+    entries = readdirSync(parent, { withFileTypes: true })
+  } catch (e) {
+    throw new Error(`读取技能目录失败：${parent}（${e.code || e.message}）`)
+  }
+  return entries
     .filter(e => e.isDirectory())
     .map(e => e.name)
-  return names.filter(name => {
-    try {
-      return lstatSync(join(parent, name, SKILL_MD)).isFile()
-    } catch {
-      return false
-    }
-  })
+    .filter(name => {
+      let st
+      try {
+        st = lstatSync(join(parent, name, SKILL_MD))
+      } catch (e) {
+        // ENOENT = 该技能没有 SKILL.md → 不是技能目录（正常路径，静默跳过）
+        if (e.code === 'ENOENT') return false
+        // 其余（EACCES / ELOOP / ENAMETOOLONG…）= 判定不了 → 抛，不静默当「不是」
+        throw new Error(`读取 ${join(parent, name, SKILL_MD)} 失败：${e.code || e.message}`)
+      }
+      return st.isFile()
+    })
 }
 
 export function checkSkillDir(dir, { manifest } = {}) {

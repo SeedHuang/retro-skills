@@ -11,6 +11,20 @@ import { fileURLToPath } from 'node:url'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 
+// 技能目录判定：三层里只有这一处定义（skill-inspector check.mjs 与 validate.test.mjs 各自有一份等价实现，
+// 三处语义必须一致——改这里时同步那两处，否则「口径一致」的注释会变成假话）。
+// ① 目录层由调用方的 isDirectory() 过滤（对 junction 返回 false → 天然跳过）
+// ② 文件层用 lstatSync 不跟随符号链接
+// 错误契约：ENOENT 静默跳过；其余抛（响亮失败 > 假干净）
+function isSkillDir(parent, name) {
+  try {
+    return lstatSync(join(parent, name, 'SKILL.md')).isFile()
+  } catch (e) {
+    if (e.code === 'ENOENT') return false
+    throw new Error(`读取 ${join(parent, name, 'SKILL.md')} 失败：${e.code || e.message}`)
+  }
+}
+
 // 收集 skills/**/*.mjs（排除 *.test.mjs——测试文件由 node --test 编译）
 // 不跟随 junction/symlink：自引用链接会无限递归，链接到仓库外会扫进外部文件
 // 测试文件只认 *.test.mjs 命名（本仓约定如此，其它命名的测试不在此排除，会当普通脚本过语法）
@@ -233,11 +247,15 @@ if (!existsSync(skillsRoot)) {
   frontmatterSkipped = true
   console.error('[markdown] 未找到 skills/ 目录，frontmatter 检查未实际执行')
 } else {
-  // lstatSync().isFile()：不跟随符号链接（与 collectMd 的 !isSymbolicLink() 同一条不变量）。
-  // existsSync 会跟随链接，指向特殊设备/超大文件时仍会被 readFileSync 读爆；对无读权限文件也返回 true 后抛 EACCES。
+  // 技能目录判定口径与 skill-inspector check.mjs / validate.test.mjs 三处一致（两层都要对齐）：
+  // ① 目录层：withFileTypes 的 isDirectory() 对 junction 返回 false → 天然跳过，不跟随
+  // ② 文件层：lstatSync 不跟随符号链接（与 collectMd 的 !isSymbolicLink() 同一条不变量）
+  // 错误契约：ENOENT = 没有 SKILL.md → 静默跳过（正常路径）；EACCES/ELOOP/ENAMETOOLONG 等 = 判定不了 → 抛，
+  //   不静默当「不是技能目录」——那会让该技能整体漏扫、违规一条不报、exit 0（闸门最该防的假干净）。
   skillDirs = readdirSync(skillsRoot, { withFileTypes: true })
-    .filter(e => e.isDirectory() && lstatSync(join(skillsRoot, e.name, 'SKILL.md'), { throwIfNoEntry: false })?.isFile())
+    .filter(e => e.isDirectory())
     .map(e => e.name)
+    .filter(name => isSkillDir(skillsRoot, name))
   if (skillDirs.length === 0) {
     failed = true
     frontmatterSkipped = true
