@@ -317,9 +317,14 @@ test('兜底实现 ≡ 单源：5 组基础 fixture +（平台支持时）符号
   // ⚠️ catch 只吞「平台不支持建链接」的错误码，其余（路径错 / 权限错 = 真 setup bug）必须重新抛——
   //   否则真 bug 会被伪装成「平台限制」静默吞掉，正是本轮在消灭的「假闸门」形态。
   const linked = fixture({ 'alpha/SKILL.md': '# a', 'beta/SKILL.md': '# b' })
+  // ⚠️ 清理钩子必须注册在本轮可能 rethrow 的 try 之前，否则真 setup bug 时钩子不执行 → fixture 全泄漏在 tmpdir。
+  //   new Set 去重：linked 若 push 进 cases 只删一次（消除「建链成功被删两次」的冗余）。
+  t.after(() => { for (const c of new Set([...cases, linked])) rmSync(c, { recursive: true, force: true }) })
   let linkedOk = true
+  // ⚠️ rmSync 必须在 try 外：删除失败（文件被锁 / 权限拒绝 → EPERM/EACCES）是真 setup bug，
+  //   不能走「平台不支持建链接」的豁免分支——否则唯一能检出 lstatSync→statSync 漂移的 fixture 被静默丢弃。
+  rmSync(join(linked, 'alpha', 'SKILL.md'))
   try {
-    rmSync(join(linked, 'alpha', 'SKILL.md'))
     symlinkSync(join(linked, 'beta', 'SKILL.md'), join(linked, 'alpha', 'SKILL.md'))
     cases.push(linked)
   } catch (e) {
@@ -331,14 +336,13 @@ test('兜底实现 ≡ 单源：5 组基础 fixture +（平台支持时）符号
     }
   }
 
-  t.after(() => { for (const c of cases) rmSync(c, { recursive: true, force: true }); rmSync(linked, { recursive: true, force: true }) })
-
   const run = (fn, c) => {
     try { return { ok: JSON.stringify(fn(c).slice().sort()) } }
     catch (e) {
-      // ⚠️ 不能用 e.message：非 Error 的 throw（如 throw 'str'）时 message 是 undefined，
-      //   两份实现都返回 {err: undefined} → deepEqual 判相等 → 等价闸门在「不同的失败」上放行
-      return { err: String((e && e.message) || e) }
+      // ⚠️ 非 Error 的 throw 不能折叠成 String(obj)：所有非 Error 对象都会变 "[object Object]"，
+      //   throw {code:'ENOENT'} 与 throw {} 会判相等 → 差分等价闸门在真实分歧上放行。
+      //   Error 按 message、其它按 typeof + 可序列化内容区分。
+      return { err: e instanceof Error ? e.message : `${typeof e}:${JSON.stringify(e) ?? ''}` }
     }
   }
   for (const c of cases) {
@@ -377,7 +381,7 @@ test('副本安装态：只拷 check.mjs、不拷仓库根 scripts/ 时 CLI 仍�
   //   改为枚举全部**非目录**条目并保留相对路径。
   const copiedFiles = readdirSync(copyRoot, { recursive: true, withFileTypes: true })
     .filter(d => !d.isDirectory())
-    .map(d => join(d.path, d.name))
+    .map(d => join(d.parentPath, d.name))
   assert.deepEqual(copiedFiles, [copiedCli], '副本树里不止那一个脚本 → 单源可能变可达了')
   const dir = fixture({
     'alpha/SKILL.md': '判据见 `beta/references/criteria.md`',
@@ -399,6 +403,9 @@ test('副本安装态：只拷 check.mjs、不拷仓库根 scripts/ 时 CLI 仍�
     assert.fail(`副本 CLI stdout 无法解析（很可能没跑到兜底）：status=${r.status} stderr=${r.stderr}`)
   }
   assert.equal(r.status, 1, `副本 CLI 未按预期因 findings 退出：stderr=${r.stderr}`)
+  // ⚠️ 先断言结构再取字段：stdout 是合法 JSON 但形状意外（null / 无 findings / 进程没起来时
+  //   JSON.parse(null)=null）时，.find 会抛裸 TypeError 盖掉 stderr 诊断（同 R10 修的 stderr 反模式）。
+  assert.ok(out && Array.isArray(out.findings), `副本 CLI 输出结构异常：status=${r.status} stderr=${r.stderr}`)
   const hit = out.findings.find(f => f.check === '跨技能路径引用' && f.skill === 'alpha')
   assert.ok(hit, '副本态没能跑出 findings：兜底实现可能没被执行')
 })
