@@ -868,6 +868,10 @@ test('认知动作型缺声明 → X1/X2/X3 各 0 进 findings，执行力度 ma
   assert.equal(findingScore(r, '执行力度', 'X1动作产物化'), 0)
   assert.equal(findingScore(r, '执行力度', 'X2必经路径绑定'), 0)
   assert.equal(findingScore(r, '执行力度', 'X3触发前置'), 0)
+  // checks[] 逐项登记：条数 = 满分项数；findings 必在 checks 里有对应未过项（rule-edit-checklist 消费面）
+  assert.equal(r.checks.length, r.max, 'checks 逐项登记：条数 = 满分项数')
+  assert.ok(r.checks.some(c => c.check === 'X1动作产物化' && c.pass === false), 'checks 含 X1 未过项')
+  assert.ok(r.checks.every(c => c.pass || r.findings.some(f => f.check === c.check)), '每个未过项都有对应 finding')
   // 基础执行力度 max：① ② + ⑧（条件触发非禁令：①②③⑦⑧ 但③⑦ 视正文，此处仅 ①②⑧ 有正文支撑）
   assert.equal(r.groups['执行力度'].max, 8)  // ① ② ③ ⑦ ⑧ + X1 X2 X3 = 5 + 3
   rmSync(dir, { recursive: true, force: true })

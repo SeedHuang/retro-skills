@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { mkdtempSync, writeFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
-import { hasBom, parsePorcelain, parseDiffNames, renderRuleTable, fillTemplate } from './gen-rule-checklist.mjs'
+import { hasBom, parsePorcelain, parseDiffNames, renderRuleTable, ruleAddDeleteVerdict, renderESections, fillTemplate } from './gen-rule-checklist.mjs'
 
 function tmpfile(content) {
   const dir = mkdtempSync(join(tmpdir(), 'gen-chk-'))
@@ -48,25 +48,61 @@ test('parseDiffNames：只收 rules/ 下 .md', () => {
   assert.deepEqual(parseDiffNames(out, 'rules/'), ['rules/a.md', 'rules/sub/d.md'])
 })
 
-test('renderRuleTable：逐行成表', () => {
-  const rows = [{ name: 'rules/a.md', type: 'M', evidence: 'commit diff（master..HEAD）' }]
-  assert.equal(renderRuleTable(rows), '| rules/a.md | M | commit diff（master..HEAD） |')
+test('ruleAddDeleteVerdict：无 A/D → 未触发；有 A → 触发并列名', () => {
+  const none = ruleAddDeleteVerdict([{ name: 'rules/a.md', type: 'M' }])
+  assert.equal(none.triggered, false)
+  assert.ok(none.text.includes('未触发'))
+  const has = ruleAddDeleteVerdict([{ name: 'rules/a.md', type: 'A' }, { name: 'rules/b.md', type: 'M' }])
+  assert.equal(has.triggered, true)
+  assert.ok(has.text.includes('rules/a.md'))
 })
 
-test('fillTemplate：全部占位符替换，无 {{ 残留', () => {
-  const tpl = '# {{ROUND}} @ {{GENERATED_AT}}\nT1 {{RULE_TABLE}}\nC1 {{C1_OUTPUT}}\nC4 {{C4_OUTPUT}}\nE {{E_SECTIONS}}\nS {{MECH_SUMMARY}}\n'
+test('renderESections：checks[] 逐检查点一行一项，未过项保留 msg；缺 checks → 取证失败行', () => {
+  const rules = [{ name: 'rules/a.md' }]
+  const ok = renderESections(rules, [{
+    total: 2, max: 2, level: '健康', groups: { '头部规范': { score: 3, max: 3 } },
+    checks: [
+      { group: '头部规范', check: '来源行三字段（类型/日期/落地）', pass: true, msg: '' },
+      { group: '冗余度', check: '三检验报告已做', pass: false, msg: '三检验报告未做（AI 侧）' },
+    ],
+  }])
+  assert.ok(ok.includes('| 1 | 来源行三字段（类型/日期/落地） |'), '每个检查项一行')
+  assert.ok(ok.includes('| 2 | 三检验报告已做 |'), '未过项也是一行')
+  assert.ok(ok.includes('**未过**：三检验报告未做（AI 侧）'), '未过项保留 msg')
+  assert.ok(ok.includes('确认执行'), '机械行确认列已填')
+  // checks 条数 ≠ 组 max 之和 → 对账告警行
+  const drift = renderESections(rules, [{
+    total: 2, max: 2, level: '健康', groups: { '头部规范': { score: 3, max: 5 } },
+    checks: [{ group: '头部规范', check: 'X', pass: true, msg: '' }],
+  }])
+  assert.ok(drift.includes('数据不一致'), 'checks 与 groups 漂移时必须告警')
+  // 缺 checks[] → 取证失败
+  const missing = renderESections(rules, [{ total: 1, max: 1, level: '健康', groups: {} }])
+  assert.ok(missing.includes('取证失败'), '缺 checks[] 视为取证失败')
+  // score 报错 → 取证失败行原样留档
+  const errored = renderESections(rules, [{ error: 'exit 1', stderr: 'boom' }])
+  assert.ok(errored.includes('exit 1') && errored.includes('boom'), '错误原样进快照')
+})
+
+test('renderRuleTable：逐行成表', () => {
+  const rows = [{ name: 'rules/a.md', type: 'M', evidence: 'commit diff（master..工作区）' }]
+  assert.equal(renderRuleTable(rows), '| rules/a.md | M | commit diff（master..工作区） |')
+})
+
+test('fillTemplate：全部占位符替换（含 C2），无 {{ 残留', () => {
+  const tpl = 'R{{ROUND}}\nT {{RULE_TABLE}}\nC1 {{C1_OUTPUT}}\nC2 {{C2_OUTPUT}}\nC4 {{C4_OUTPUT}}\nE {{E_SECTIONS}}\nS {{MECH_SUMMARY}}\n'
   const out = fillTemplate(tpl, {
-    round: 'R13', generatedAt: '2026-10-15 18:00', ruleTable: '| r |', c1: 'True', c4: 'false',
-    eSections: 'E-1', mechSummary: '- 摘要',
+    round: 'R13', ruleTable: '| r |', c1: 'True', c2: '未触发', c4: 'false',
+    eSections: '### E-1', mechSummary: '- 摘要',
   })
   assert.ok(!out.includes('{{'), '占位符必须全部替换')
-  assert.ok(out.includes('R13') && out.includes('E-1'))
+  assert.ok(out.includes('R13') && out.includes('未触发'))
 })
 
-test('fillTemplate：E_SECTIONS 含多行 JSON 块时保留换行结构', () => {
+test('fillTemplate：E_SECTIONS 含多行表格时保留换行结构', () => {
   const out = fillTemplate('X {{E_SECTIONS}} Y', {
-    round: 'R', generatedAt: 't', ruleTable: '', c1: '', c4: '',
-    eSections: '### E-1 · a\n\n> line1\n> line2', mechSummary: '',
+    round: 'R', ruleTable: '', c1: '', c2: '', c4: '',
+    eSections: '### E-1 · a\n\n| 1 | 行 |', mechSummary: '',
   })
-  assert.equal(out, 'X ### E-1 · a\n\n> line1\n> line2 Y')
+  assert.equal(out, 'X ### E-1 · a\n\n| 1 | 行 | Y')
 })

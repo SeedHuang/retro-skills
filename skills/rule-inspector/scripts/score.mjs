@@ -208,11 +208,13 @@ export function scoreFile(filePath, rulesDir, opts = {}) {
   const modeChecks = opts.modeChecks ?? {}
 
   const findings = []
+  const checks = []   // 逐检查点登记（group/check/pass/msg）——rule-edit-checklist 消费：机器逐项输出，AI 不得手抄
   const groups = {}
   // 注册一个检查点：pass → 该组 +1 分；fail → 记一条 finding
   const g = (gname, check, pass, msg, recipe) => {
     groups[gname] ??= { score: 0, max: 0 }
     groups[gname].max += 1
+    checks.push({ group: gname, check, pass: pass === true, msg: pass ? '' : msg })
     if (pass) groups[gname].score += 1
     else findings.push({ group: gname, check, msg, recipe })
   }
@@ -348,7 +350,7 @@ export function scoreFile(filePath, rulesDir, opts = {}) {
   const rate = max === 0 ? 0 : total / max
   // 待拆未定（合集）：只报通用组得分率，不报整体级别（满分未定，拆后按各新文件重评）
   const level = isPending ? undefined : rateLevel(rate)
-  return { name, lines, chars, groups, total, max, rate, level, findings }
+  return { name, lines, chars, groups, total, max, rate, level, findings, checks }
 }
 
 function median(nums) {

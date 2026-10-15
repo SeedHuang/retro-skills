@@ -119,7 +119,11 @@
 
 **rule-edit-checklist 机制（2026-10-15 用户裁定，本 spec 补记）**：
 - **活模板**（进 git）：`skills/review-log/assets/rule-edit-checklist-template.md`，跟随 rule-inspector / rule-writer / 全局规则检查项变化，变更走上面第 6 条同步。
-- **轮次快照**（.session，定格）：`.session/reviews/<那一次>/checklist/checklist-R<N>.md`，由 `skills/review-log/scripts/gen-rule-checklist.mjs` 生成——**触发判定机器做**（`git diff --name-only <基线> -- rules/` 为空 → 不生成，progress 链接行写 diff 证据）；**机械项机器填**（diff 证据 / C1 Test-Path / C4 BOM / E 段 score.mjs --file --json 逐字填入——AI 不得手抄 E 段，手抄即造假面）；**AI 项**（A/B/C2/C3/D/E2/F）逐项贴「命令 → 实际输出」，空缺 = 本次编辑未完成。
+- **列结构（用户 2026-10-15 复核裁定，全表统一五列）**：`# / 检查项 / 判据（取数命令 · 产物必含词）/ 实际输出（必填）/ 确认执行`——确认执行列只许写「确认执行」四字（前提 = 该行命令真实跑过、输出原样贴），写不出 = 该项未完成 → 本次编辑未完成，停止；无「不适用 / 未执行」档，触发条件没发生也用命令输出证明。
+- **每个检查项一行**：不得多检查项并进一行（「头部规范 3 项」= 3 行；「画全貌六维」= 6 行）。
+- **机械项机器填**：diff 证据 / C1 Test-Path / C2 增删触发判定 / C4 BOM / **E 段逐检查点**——score.mjs 输出 `checks[]`（每个注册检查点的 group/check/pass/msg），gen 脚本一行一项展开；**AI 不得手抄 E 段**（手抄即造假面）；checks 条数与组 max 之和不一致 → 对账告警行。
+- **AI 项**（A×9 / B×5 / C2·C3 / D×4 / E2×11 / F×6）逐行贴「命令 → 实际输出」+ 写「确认执行」，空缺 = 本次编辑未完成。
+- **轮次快照**（.session，定格）：`.session/reviews/<那一次>/checklist/checklist-R<N>.md`，由 `skills/review-log/scripts/gen-rule-checklist.mjs` 生成。
 - **无余地选项**：不设「不适用 / 未执行」档——触发条件没发生由脚本用 diff 判，不归 AI 判。
 - **快照判读**：回溯查账只核「当时贴的输出真不真」（重跑该行命令比对），不拿活模板追杀旧轮次。
 - **抽查方式**：随机抽任意行 → 重跑该行命令 → 比对输出。
