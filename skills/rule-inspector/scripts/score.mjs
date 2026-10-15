@@ -1,5 +1,5 @@
 import { readFileSync, readdirSync, existsSync, realpathSync } from 'node:fs'
-import { join, dirname } from 'node:path'
+import { join, dirname, resolve, basename } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const SOURCE_TYPES = ['用户当场指令', '评审第 N 轮', '实测/踩坑', '项目约定']
@@ -32,9 +32,73 @@ const CONFLICT_RE = /以本规则为准|以本条为准|本规则优先|本条�
 const EXCEPTION_RE = /只有[^。；\n]{1,40}才算/                   // ⑥例外从严：明确「只有…才算」
 const LOOSE_RE = /一般|通常|可能允许|宽松/                       // ⑥宽松词 → 0
 const VERIFY_RE = /验证|自检|检查点|报告|自查|检查是否|确认遵守|复核|核销|跑一遍|体检/  // ⑧验证闭环：定义「怎么确认遵守了」
-// 执行保障（X1/X2/X3）：认知动作的产物/必经路径/触发前置声明
-const PRODUCT_RE = /产物|清单|确认块|输出块|spec 文件|spec文件/        // X1 动作产物化
-const PATHBIND_RE = /必经|核销|锁基线|检查点|流程步骤|挂进|前置/       // X2 必经路径绑定（+ X3 前置）
+// ---- 执行保障（X1/X2/X3）：认知动作的产物/必经路径/触发前置声明 ----
+// ⚠️ 判据权威 = references/criteria.md §3.3b（含封闭词表全文）；本区是机械执行体，词表改动须与 criteria 同批。
+// X1 产物模式：字面词 + 「引用名」块/节/表 形态（如「全貌确认」块）。
+//   旧字面词表含「确认块」曾与定稿文本「全貌确认」块脱节（R12 P0-α）——匹配不上的判据会把对的规则判红，已改模式匹配。
+const PRODUCT_RE = /产物|清单|报告|spec|输出块|「[^」]{2,12}」(?:块|节|表)/
+// X1 去处动词（「随」不入表：「随任务记录可查」是「声称有落点实际无锚点」的原型，必须判红）
+const PRODUCT_VERB_RE = /写进|落到|记入|落盘|挂进|绑进/
+// X1 去处载体词（对话类产物不可文件断言，封闭词表认可；「任务记录」不入表——无锚点）
+const CARRIER_RE = /回复|回答|报告|commit body|账本|对话记录/
+// X2 绑定动词
+const BIND_VERB_RE = /挂进|绑进|写进|落到|核销/
+// 反引号仓内路径（.md/.mjs）。占位符（<…>）与 ~ 开头路径不断言（spec §7 风险 2）
+const PATH_RE = /`([^`\n]{1,200}\.(?:md|mjs))`/g
+
+// 全部无占位符反引号路径（fail-closed：任何一个不存在 = 声称了假落点）
+function extractPaths(text) {
+  const out = []
+  for (const m of text.matchAll(PATH_RE)) {
+    const p = m[1]
+    if (p.includes('<') || p.startsWith('~') || p.includes('*')) continue
+    out.push({ raw: p, index: m.index })
+  }
+  return out
+}
+function pathExists(p) {
+  try { return existsSync(resolve(p)) } catch { return false }
+}
+// 句 = 按 。；\n 切分（spec §4.1 窗口语义）；成对 = 同句或相邻句
+function sentences(text) { return text.split(/[。；\n]/) }
+
+// X1：产物模式 + 去处动词 + 去处（载体词 或 仓内路径存在）在窗口内成对
+function x1ProductLanding(body) {
+  // 公共前置：任何声明的落点路径都必须存在（多路径 all-exist，spec §4.2）
+  const allPaths = extractPaths(body)
+  const bad = allPaths.find(p => !pathExists(p.raw))
+  if (bad) return { ok: false, why: `声称的落点路径不存在：${bad.raw}` }
+  const ss = sentences(body)
+  for (let i = 0; i < ss.length; i++) {
+    const win = i + 1 < ss.length ? ss[i] + '。' + ss[i + 1] : ss[i]
+    if (!PRODUCT_RE.test(win) || !PRODUCT_VERB_RE.test(win)) continue
+    if (CARRIER_RE.test(win)) return { ok: true, why: '' }
+    if (extractPaths(win).length > 0) return { ok: true, why: '' }
+  }
+  return { ok: false, why: '产物与去处未在同句/相邻句成对（产物模式 + 写进/落到/记入/落盘/挂进/绑进 + 载体词或仓内路径）' }
+}
+
+// X2：绑定动词 + 反引号路径（存在）+ 路径后同句首个「槽位」词（目标文件含该词）——本设计的核心闸门
+function x2Binding(body) {
+  const ss = sentences(body)
+  for (const s of ss) {
+    if (!BIND_VERB_RE.test(s)) continue
+    const ps = extractPaths(s)
+    if (ps.length === 0) continue
+    for (const p of ps) {
+      const after = s.slice(p.index + p.raw.length)
+      const slot = after.match(/「([^」]{2,12})」/)
+      if (!slot) continue
+      if (!pathExists(p.raw)) return { ok: false, why: `绑定路径不存在：${p.raw}` }
+      let target
+      try { target = readFileSync(resolve(p.raw), 'utf8') }
+      catch (e) { return { ok: false, why: `读取绑定目标失败 ${p.raw}：${e.code || e.message}` } }
+      if (!target.includes(slot[1])) return { ok: false, why: `目标文件 ${p.raw} 不含声明的槽位「${slot[1]}」` }
+      return { ok: true, why: '' }
+    }
+  }
+  return { ok: false, why: '无「绑定动词 + 反引号路径 + 「槽位」」三段齐全的声明（挂进/绑进/写进/落到/核销 + `路径` + 「节名」）' }
+}
 
 // ---- 标题（机械代理）----
 const H3_DECO_RE = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{2B50}\u{FE0F}\u{2300}-\u{23FF}\u{25A0}-\u{25FF}\u{2700}-\u{27BF}\u{2190}-\u{21FF}\u{2B05}-\u{2B07}★☆◆●■▲▶✔✗‼❓❕❗⚠]/u  // H3 无 emoji/装饰符号
@@ -220,16 +284,24 @@ export function scoreFile(filePath, rulesDir, opts = {}) {
       g('执行力度', '⑦触发机制', trigOk,
         '无可观测触发信号/时机', '补「触发时机」小节（落地后/开工时/编辑后）')
     }
-    // 执行保障叠加轴（X1/X2/X3，仅认知动作型规则）：opts.cognitive 由 --cognitive 传入（AI 判，同三检验模式）
+    // 执行保障叠加轴（X1/X2/X3，仅认知动作型规则）：opts.cognitive 由 --cognitive 或 annotations 传入（AI 判，同三检验模式）
     // 布尔化与 triCheckDone 同风格：true/'true' 生效，防 annotations JSON 字符串 "false"/0 被当真值静默加检查点
     const cognitive = opts.cognitive === true || opts.cognitive === 'true'
+    // x2Carrier（AI 判，经 annotations 传入，同 x3Done 模式）：规则产物去处 = 会话载体（回答/回复等 X1 载体词）
+    // → X2 文件槽位断言不适用（会话产物无自然文件落点，强制文件绑定 = 假落点）；文件类规则不标 → X2 仍强制。
+    const x2Carrier = opts.x2Carrier === true || opts.x2Carrier === 'true'
     if (cognitive) {
-      g('执行力度', 'X1动作产物化', PRODUCT_RE.test(body),
-        '认知动作未声明可观测产物', '补产物声明：动作完成后留下什么可查（清单/确认块/输出块）')
-      g('执行力度', 'X2必经路径绑定', PATHBIND_RE.test(body),
-        '认知动作未声明必经路径绑定', '补绑定：挂进哪条核销步骤（skill 检查点/锁基线）')
-      g('执行力度', 'X3触发前置', PATHBIND_RE.test(body),
-        '触发在应激时刻且未前置显式化', '应激时刻触发需前置显式化：任务开头先声明')
+      const x1 = x1ProductLanding(body)
+      g('执行力度', 'X1动作产物化', x1.ok,
+        `认知动作未声明「产物+去处」成对：${x1.why}`, '补产物模式 + 去处动词 + 去处（载体词表或仓内路径，路径须 Test-Path 为真）——判据见 criteria §3.3b')
+      if (!x2Carrier) {
+        const x2 = x2Binding(body)
+        g('执行力度', 'X2必经路径绑定', x2.ok,
+          `认知动作未声明必经路径绑定：${x2.why}`, '补「绑定动词 + 反引号路径 + 「槽位」」三段，且目标文件真含该槽位（文件断言）——判据见 criteria §3.3b')
+      }
+      const x3Done = opts.x3Done === true || opts.x3Done === 'true'
+      g('执行力度', 'X3触发前置', x3Done,
+        '触发在应激时刻且未前置显式化（AI 判，经 annotations x3Done 传入，判定依据须可复核）', '应激时刻触发需前置显式化：任务开头先声明；AI 判定后写进 rules/.inspector-annotations.json')
     }
     g('执行力度', '⑧验证闭环', VERIFY_RE.test(body),
       '未定义怎么确认遵守了', '补「验证」小节：自检命令/检查点/报告要求')
@@ -286,6 +358,20 @@ function median(nums) {
 }
 
 export function scoreDir(dir, opts = {}) {
+  // annotations 自动发现：未显式传 --annotations 且 rulesDir 下存在 .inspector-annotations.json → 自动加载（显式传参优先）。
+  // 认知动作判定资产化（spec §4.5）：判定落仓内文件，不依赖调用者每次重判。
+  if (!opts.annotations) {
+    const annPath = join(dir, '.inspector-annotations.json')
+    if (existsSync(annPath)) {
+      let ann
+      try { ann = JSON.parse(stripBom(readFileSync(annPath, 'utf8'))) }
+      catch (e) { throw new Error(`annotations 解析失败：${annPath}（须为 JSON 对象，如 {"文件名":{"cognitive":true,"x3Done":true}}）——${e.message}`) }
+      if (!ann || typeof ann !== 'object' || Array.isArray(ann)) {
+        throw new Error(`annotations 格式错误：${annPath}（须为 JSON 对象，如 {"文件名":{"cognitive":true,"x3Done":true}}）`)
+      }
+      opts = { ...opts, annotations: ann }
+    }
+  }
   const files = readdirSync(dir).filter(f => f.endsWith('.md')).sort()
   // 先算全库单条行数中位数（作为体积基线，参考维度），再逐文件评分
   const lineCounts = files.map(f => {
@@ -334,10 +420,30 @@ export function cli(argv = process.argv.slice(2)) {
   if (args.file) {
     if (!existsSync(args.file)) { console.error(`文件不存在：${args.file}`); process.exit(1) }
     if (args.rulesDir && !existsSync(args.rulesDir)) { console.error(`规则库目录不存在：${args.rulesDir}`); process.exit(1) }
-    const opts = { triCheckDone: args.triCheck, type: args.type, cognitive: args.cognitive }
+    let opts = { triCheckDone: args.triCheck, type: args.type, cognitive: args.cognitive }
     // rulesDir 用于跨规则引用检查（scoreFile → crossRuleMiss）：评分草稿时须指规则库（rules/），
     // 不能默认 dirname(file)（草稿在草稿箱，引用会全部误判）；评分现有规则时可不给（默认 dirname(file)=规则库）。
     const rulesDir = args.rulesDir ?? dirname(args.file)
+    // --file 模式同样自动发现 annotations（同 scoreDir：两种入口判定资产化必须一致生效，
+    // 否则逐条 --file --cognitive 复核时 x3Done 传不进去 → X3 永远红——round-3 补的洞）。
+    // 显式 --cognitive 优先：命令行给了就以命令行为准，annotations 只补没给的键。
+    const annPath = join(rulesDir, '.inspector-annotations.json')
+    if (existsSync(annPath)) {
+      let ann
+      try { ann = JSON.parse(stripBom(readFileSync(annPath, 'utf8'))) }
+      catch (e) { console.error(`annotations 解析失败：${annPath}（${e.message}）`); process.exit(1) }
+      if (!ann || typeof ann !== 'object' || Array.isArray(ann)) {
+        console.error(`annotations 格式错误：${annPath}（须为 JSON 对象，如 {"文件名":{"cognitive":true,"x3Done":true}}）`)
+        process.exit(1)
+      }
+      const a = ann[basename(args.file)]
+      if (a && typeof a === 'object' && !Array.isArray(a)) {
+        opts = { ...a, ...opts }
+        // CLI 未显式传 --cognitive 时，opts.cognitive=false 会把 annotations 的判定冲掉 → 补回。
+        // （CLI 只有「传了 = true」一种形态，显式优先 = 传了就不动。）
+        if (!opts.cognitive && a.cognitive) opts.cognitive = a.cognitive
+      }
+    }
     const r = scoreFile(args.file, rulesDir, opts)
     const summary = r.level === undefined
       ? `得分 ${r.total}/${r.max}（${Math.round(r.rate * 100)}%，合集无级别）`

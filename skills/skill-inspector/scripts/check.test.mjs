@@ -299,14 +299,23 @@ test('干净技能：递归扩面后 examples/ 里的正常文件不误报', (t)
 // 覆盖：正常 / 空目录 / SKILL.md 是目录 / 非目录条目 + 点开头目录名 / SKILL.md 是符号链接 / 父目录不存在（错误契约）。
 // 只比**集合**不比顺序：顺序来自 readdirSync 的文件系统返回顺序，本仓不作为契约（要改顺序语义时两处一起改）。
 test('兜底实现 ≡ 单源：5 组基础 fixture +（平台支持时）符号链接组，返回值与抛错文本全等', (t) => {
+  // ⚠️ 参与清理的目录集合提到用例最前面声明 + 立即注册钩子：本用例开头 4 个 fixture（normal/empty/skillMdIsDir/strays）
+  //   的构造（mkdtempSync / writeFileSync / mkdirSync）也可能抛错，钩子注册晚了 → 已建的 tmpdir 照样泄漏
+  //   （R12 只把钩子提前到 rethrow try 之前，R13 复核发现仍晚于开头构造——正是本条要封的口）。
+  const owned = []
+  t.after(() => { for (const c of new Set(owned)) rmSync(c, { recursive: true, force: true }) })
   const normal = fixture({ 'alpha/SKILL.md': '# a', 'beta/SKILL.md': '# b' })
+  owned.push(normal)
   const empty = fixture({})
+  owned.push(empty)
   const skillMdIsDir = mkdtempSync(join(tmpdir(), 'check-'))
+  owned.push(skillMdIsDir)
   mkdirSync(join(skillMdIsDir, 'alpha', 'SKILL.md'), { recursive: true })
   const strays = fixture({ 'alpha/SKILL.md': '# a' })
+  owned.push(strays)
   writeFileSync(join(strays, 'stray.txt'), 'x')
   mkdirSync(join(strays, '.hidden'))
-  const missing = join(normal, 'no-such-dir')
+  const missing = join(normal, 'no-such-dir')   // 只参与比对，不参与清理（不存在）
   const cases = [normal, empty, skillMdIsDir, strays, missing]
 
   // SKILL.md 是符号链接 → 挡住「兜底把 lstatSync 漂移成 statSync」这类改动。
@@ -317,9 +326,7 @@ test('兜底实现 ≡ 单源：5 组基础 fixture +（平台支持时）符号
   // ⚠️ catch 只吞「平台不支持建链接」的错误码，其余（路径错 / 权限错 = 真 setup bug）必须重新抛——
   //   否则真 bug 会被伪装成「平台限制」静默吞掉，正是本轮在消灭的「假闸门」形态。
   const linked = fixture({ 'alpha/SKILL.md': '# a', 'beta/SKILL.md': '# b' })
-  // ⚠️ 清理钩子必须注册在本轮可能 rethrow 的 try 之前，否则真 setup bug 时钩子不执行 → fixture 全泄漏在 tmpdir。
-  //   new Set 去重：linked 若 push 进 cases 只删一次（消除「建链成功被删两次」的冗余）。
-  t.after(() => { for (const c of new Set([...cases, linked])) rmSync(c, { recursive: true, force: true }) })
+  owned.push(linked)
   let linkedOk = true
   // ⚠️ rmSync 必须在 try 外：删除失败（文件被锁 / 权限拒绝 → EPERM/EACCES）是真 setup bug，
   //   不能走「平台不支持建链接」的豁免分支——否则唯一能检出 lstatSync→statSync 漂移的 fixture 被静默丢弃。
@@ -336,13 +343,18 @@ test('兜底实现 ≡ 单源：5 组基础 fixture +（平台支持时）符号
     }
   }
 
+  const safeJson = (v) => {
+    try { return JSON.stringify(v) } catch { return `[unserializable:${typeof v}]` }
+  }
   const run = (fn, c) => {
     try { return { ok: JSON.stringify(fn(c).slice().sort()) } }
     catch (e) {
       // ⚠️ 非 Error 的 throw 不能折叠成 String(obj)：所有非 Error 对象都会变 "[object Object]"，
       //   throw {code:'ENOENT'} 与 throw {} 会判相等 → 差分等价闸门在真实分歧上放行。
       //   Error 按 message、其它按 typeof + 可序列化内容区分。
-      return { err: e instanceof Error ? e.message : `${typeof e}:${JSON.stringify(e) ?? ''}` }
+      //   ⚠️ JSON.stringify 自身也可能抛（循环引用 / BigInt / toJSON 抛异常）——若穿透 run() 会打断差分、
+      //   把「两份实现不等价」盖成 "Converting circular structure to JSON"，用 safeJson 兜底。
+      return { err: e instanceof Error ? e.message : `${typeof e}:${safeJson(e)}` }
     }
   }
   for (const c of cases) {

@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs'
-import { join } from 'node:path'
+import { mkdtempSync, writeFileSync, rmSync, mkdirSync } from 'node:fs'
+import { join, dirname } from 'node:path'
 import { tmpdir } from 'node:os'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
@@ -837,8 +837,22 @@ const COG_NO_DECL = `# 被质疑时必须先深度思考
 被质疑时必须先深度思考，再回应。
 `
 
-// 认知动作型 + 有产物/必经/前置声明 → X1/X2/X3 各 1 分
-const COG_DECLARED = `# 被质疑时必须先深度思考
+// 认知动作型 + 声明齐全（真路径 + 真槽位，文件断言过）→ X1/X2/X3 各 1 分
+// 目标文件动态造（同目录），规则引用其绝对路径——路径断言 resolve 相对 cwd，绝对路径原样成立
+function buildCogDeclared(targetPath) {
+  return `# 被质疑时必须先深度思考
+
+> 来源：用户当场指令（2026-10-14）｜落地：2026-10-14
+
+## 核心要求
+被质疑时必须先深度思考，再回应。
+
+## 产物（前置必经）
+先输出「深度思考」块，写进当次回复；review 流程中挂进 \`${targetPath}\` 的「全貌确认」节。`
+}
+
+// 墓碑：旧关键词写法（「确认块」「检查点」无去处动词/路径/槽位）——旧假判据给它 1 分，新判据必须 fail
+const COG_OLD_KEYWORDS = `# 被质疑时必须先深度思考
 
 > 来源：用户当场指令（2026-10-14）｜落地：2026-10-14
 
@@ -859,13 +873,81 @@ test('认知动作型缺声明 → X1/X2/X3 各 0 进 findings，执行力度 ma
   rmSync(dir, { recursive: true, force: true })
 })
 
-test('认知动作型有声明 → X1/X2/X3 各 1，执行力度 max +3', () => {
-  const dir = makeDir({ 'cog.md': COG_DECLARED })
-  const r = score(dir, 'cog.md', { cognitive: true })
+test('认知动作型声明齐全（真路径真槽位，文件断言）→ X1/X2/X3 各 1', () => {
+  const dir = makeDir({})
+  writeFileSync(join(dir, 'target.md'), '# 目标模板\n\n### 全貌确认（必填）\n\n内容占位。\n')
+  writeFileSync(join(dir, 'cog.md'), buildCogDeclared(join(dir, 'target.md')))
+  const r = score(dir, 'cog.md', { cognitive: true, x3Done: true })
   assert.equal(findingScore(r, '执行力度', 'X1动作产物化'), 1)
   assert.equal(findingScore(r, '执行力度', 'X2必经路径绑定'), 1)
   assert.equal(findingScore(r, '执行力度', 'X3触发前置'), 1)
   assert.ok(!r.findings.some(f => /^X[123]/.test(f.check)), '声明齐全时不应有 X findings')
+  rmSync(dir, { recursive: true, force: true })
+})
+
+test('X2 仓内相对路径（resolve 相对 cwd，真实存在）→ 绑定 pass', () => {
+  // score.mjs 路径断言用 resolve(p) 相对 process.cwd() 解析：声明写相对路径、文件真实存在 → X2 过。
+  // 在 cwd 下临时建 .score-test-rel/ 目录树（不动 chdir），测完 finally 清理，避免污染仓库。
+  const rel = join('.score-test-rel', 'references', 'target.md')
+  const abs = join(process.cwd(), rel)
+  let dir = null
+  try {
+    mkdirSync(dirname(abs), { recursive: true })
+    writeFileSync(abs, '# 目标模板\n\n### 全貌确认（必填）\n')
+    dir = makeDir({ 'cog.md': buildCogDeclared(rel) })
+    const r = score(dir, 'cog.md', { cognitive: true, x3Done: true })
+    assert.equal(findingScore(r, '执行力度', 'X2必经路径绑定'), 1, '相对路径在 cwd 下真实存在 → X2 pass')
+    assert.equal(findingScore(r, '执行力度', 'X1动作产物化'), 1, '真路径存在 → X1 pass')
+  } finally {
+    if (dir) rmSync(dir, { recursive: true, force: true })
+    rmSync(join(process.cwd(), '.score-test-rel'), { recursive: true, force: true })
+  }
+})
+
+test('墓碑：旧关键词写法（确认块/检查点，无去处/路径/槽位）→ X1/X2 必 fail', () => {
+  // 旧假判据（关键词命中 = 过）曾给这段文本 X1/X2 各 1 分；新判据（落点断言）必须判它红。
+  const dir = makeDir({ 'cog.md': COG_OLD_KEYWORDS })
+  const r = score(dir, 'cog.md', { cognitive: true, x3Done: true })
+  assert.equal(findingScore(r, '执行力度', 'X1动作产物化'), 0, '「确认块」无去处动词/载体/路径 → X1 必红')
+  assert.equal(findingScore(r, '执行力度', 'X2必经路径绑定'), 0, '「检查点」无路径无槽位 → X2 必红')
+  rmSync(dir, { recursive: true, force: true })
+})
+
+test('X1 载体词去处（产物 + 写进回复）→ X1 pass（半机械档：载体词表认可）', () => {
+  const cog = COG_NO_DECL + '\n\n## 产物（前置必经）\n先输出「深度思考」块，写进回复。'
+  const dir = makeDir({ 'cog.md': cog })
+  const r = score(dir, 'cog.md', { cognitive: true, x3Done: true })
+  assert.equal(findingScore(r, '执行力度', 'X1动作产物化'), 1)
+  rmSync(dir, { recursive: true, force: true })
+})
+
+test('X1 多路径 all-exist：真路径 + 假路径混合声明 → fail（只查首个 / some() 聚合的坏实现会误过）', () => {
+  const dir = makeDir({})
+  writeFileSync(join(dir, 'real.md'), '# 目标模板\n\n### 全貌确认（必填）\n')
+  const cog = COG_NO_DECL + `\n\n## 产物（前置必经）\n先输出「深度思考」块，写进 \`${join(dir, 'real.md')}\`，并挂进 \`${join(dir, 'ghost.md')}\`。`
+  writeFileSync(join(dir, 'cog.md'), cog)
+  const r = score(dir, 'cog.md', { cognitive: true, x3Done: true })
+  assert.equal(findingScore(r, '执行力度', 'X1动作产物化'), 0, '真路径存在但假路径不存在 → all-exist fail-closed，X1 必红')
+  rmSync(dir, { recursive: true, force: true })
+})
+
+test('X2 目标文件不含声明的槽位词 → fail（核心闸门：文件断言）', () => {
+  const dir = makeDir({})
+  writeFileSync(join(dir, 'target.md'), '# 目标模板\n\n这里没有那个节。\n')
+  writeFileSync(join(dir, 'cog.md'), buildCogDeclared(join(dir, 'target.md')))
+  const r = score(dir, 'cog.md', { cognitive: true, x3Done: true })
+  assert.equal(findingScore(r, '执行力度', 'X2必经路径绑定'), 0, '目标文件不含「全貌确认」→ X2 必红')
+  rmSync(dir, { recursive: true, force: true })
+})
+
+test('X2 绑定路径不存在 → fail（msg 含「绑定路径不存在」）', () => {
+  const dir = makeDir({})
+  writeFileSync(join(dir, 'cog.md'), buildCogDeclared(join(dir, 'ghost-target.md')))
+  const r = score(dir, 'cog.md', { cognitive: true, x3Done: true })
+  const f = r.findings.find(x => x.check === 'X2必经路径绑定')
+  assert.ok(f, '绑定路径不存在 → 应有 X2 finding')
+  assert.match(f.msg, /绑定路径不存在/, 'X2 fail 的 msg 应明示「绑定路径不存在」')
+  assert.equal(findingScore(r, '执行力度', 'X2必经路径绑定'), 0, '绑定路径不存在 → X2 必红')
   rmSync(dir, { recursive: true, force: true })
 })
 
@@ -874,5 +956,91 @@ test('非认知动作型（无 cognitive）→ X1/X2/X3 不注册（max 不 +3�
   const r = score(dir, 'cog.md')
   assert.ok(!r.findings.some(f => /^X[123]/.test(f.check)), '无 cognitive 时不应有 X findings')
   assert.equal(r.groups['执行力度'].max, 5)  // ① ② ③ ⑦ ⑧ 无 X
+  rmSync(dir, { recursive: true, force: true })
+})
+
+test('scoreDir 自动发现：.inspector-annotations.json 坏 JSON → throw「解析失败」', () => {
+  const dir = makeDir({ '.inspector-annotations.json': '{bad json', 'cog.md': COG_NO_DECL })
+  assert.throws(() => scoreDir(dir), /解析失败/, '坏 JSON 应 fail-fast 抛「解析失败」')
+  rmSync(dir, { recursive: true, force: true })
+})
+
+test('scoreDir 自动发现：.inspector-annotations.json 非对象（数组）→ throw「格式错误」', () => {
+  const dir = makeDir({ '.inspector-annotations.json': '[1,2]', 'cog.md': COG_NO_DECL })
+  assert.throws(() => scoreDir(dir), /格式错误/, '数组非对象应 fail-fast 抛「格式错误」')
+  rmSync(dir, { recursive: true, force: true })
+})
+
+test('scoreDir 自动发现 annotations：标注文件 X 组注册（max +3）、未标注文件不评估（max 不变）、x3Done/x2Carrier 经 annotations 传播', () => {
+  // spec §4.5 判定资产化：不显式传 annotations 时，scoreDir 自动加载仓内 .inspector-annotations.json
+  const dir = makeDir({
+    '.inspector-annotations.json': JSON.stringify({
+      'cog.md': { cognitive: true, x3Done: true },
+      'carrier.md': { cognitive: true, x3Done: true, x2Carrier: true },
+    }),
+    'cog.md': COG_NO_DECL,
+    'plain.md': COG_NO_DECL,
+    'carrier.md': COG_NO_DECL,
+  })
+  const out = scoreDir(dir)  // 无 annotations 参数 → 走自动发现
+  const cog = out.files.find(f => f.name === 'cog.md')
+  const plain = out.files.find(f => f.name === 'plain.md')
+  const carrier = out.files.find(f => f.name === 'carrier.md')
+  assert.ok(cog && plain && carrier, 'scoreDir 应产出 cog.md / plain.md / carrier.md 的评分结果')
+  assert.equal(cog.groups['执行力度'].max, 8, '标注文件：X1/X2/X3 注册 → max 5+3')
+  assert.ok(cog.findings.some(f => /^X[123]/.test(f.check)), '标注文件缺声明 → X 组 0 分进 findings')
+  assert.equal(findingScore(cog, '执行力度', 'X3触发前置'), 1, 'annotations x3Done:true → X3 pass')
+  assert.equal(plain.groups['执行力度'].max, 5, '未标注文件：max 不变（无 X 组）')
+  assert.ok(!plain.findings.some(f => /^X[123]/.test(f.check)), '未标注文件不评估 X 组')
+  assert.equal(carrier.groups['执行力度'].max, 7, 'x2Carrier 经 annotations 传播 → X2 不注册，max = 5 基础 + X1 + X3 = 7')
+  assert.ok(!carrier.findings.some(f => f.check === 'X2必经路径绑定'), 'x2Carrier → carrier.md 无 X2 finding')
+  assert.ok(carrier.findings.some(f => f.check === 'X1动作产物化'), 'carrier.md 缺产物声明 → X1 仍评估并红')
+  rmSync(dir, { recursive: true, force: true })
+})
+
+test('scoreDir 显式传 annotations 优先于自动发现（.inspector-annotations.json 被忽略）', () => {
+  const dir = makeDir({
+    '.inspector-annotations.json': JSON.stringify({ 'cog.md': { cognitive: true, x3Done: true } }),
+    'cog.md': COG_NO_DECL,
+  })
+  const out = scoreDir(dir, { annotations: { 'cog.md': { type: '待拆未定' } } })
+  const cog = out.files.find(f => f.name === 'cog.md')
+  assert.ok(cog, '应产出 cog.md 评分结果')
+  assert.ok(!('执行力度' in cog.groups), '显式 annotations 优先：待拆未定不评执行力度')
+  assert.equal(cog.level, undefined)
+  rmSync(dir, { recursive: true, force: true })
+})
+
+test('X1 通配路径（references/*.md）不断言 → 有去处时 X1 pass（A1：通配是类别描述不是文件声称）', () => {
+  const cog = COG_NO_DECL + '\n\n## 落点（收尾审计）\n该技能的 `references/*.md`；产物写进当次回答。'
+  const dir = makeDir({ 'cog.md': cog })
+  const r = score(dir, 'cog.md', { cognitive: true, x3Done: true })
+  assert.equal(findingScore(r, '执行力度', 'X1动作产物化'), 1, '通配路径被跳过 + 产物去处成对 → X1 pass')
+  assert.equal(findingScore(r, '执行力度', 'X2必经路径绑定'), 0, 'X2 仍需真文件绑定 → 不与通配混淆，仍红')
+  rmSync(dir, { recursive: true, force: true })
+})
+
+test('x2Carrier=true（产物去处=会话载体）→ X2 不注册（max +2，无 X2 finding；X1 不受影响）', () => {
+  const dir = makeDir({ 'cog.md': COG_NO_DECL })
+  const r = score(dir, 'cog.md', { cognitive: true, x3Done: true, x2Carrier: true })
+  assert.ok(!r.findings.some(f => f.check === 'X2必经路径绑定'), 'x2Carrier → 无 X2 finding')
+  assert.equal(r.groups['执行力度'].max, 7, 'x2Carrier → max = 5 基础 + X1 + X3 = 7（X2 不注册）')
+  assert.equal(findingScore(r, '执行力度', 'X1动作产物化'), 0, 'X1 仍评估：缺去处声明 → 红')
+  rmSync(dir, { recursive: true, force: true })
+})
+
+test('CLI --file 自动发现 annotations：未传 --cognitive，x3Done 仍生效（findings 无 X3，X1/X2 红）', () => {
+  const dir = makeDir({
+    '.inspector-annotations.json': JSON.stringify({ 'cog.md': { cognitive: true, x3Done: true } }),
+    'cog.md': COG_NO_DECL,
+  })
+  const script = join(__dirname, 'score.mjs')
+  const out = spawnSync(process.execPath, [script, '--file', join(dir, 'cog.md'), '--rules-dir', dir, '--json'], { encoding: 'utf8' })
+  assert.equal(out.status, 0, out.stderr)
+  const got = JSON.parse(out.stdout.replace(/^\uFEFF/, ''))
+  assert.equal(got.name, 'cog.md')
+  assert.ok(!got.findings.some(f => f.check === 'X3触发前置'), '--file 经 annotations 自动发现传入 x3Done → X3 pass（findings 无 X3）')
+  assert.ok(got.findings.some(f => f.check === 'X1动作产物化'), '缺产物声明 → X1 红')
+  assert.ok(got.findings.some(f => f.check === 'X2必经路径绑定'), '缺路径绑定声明 → X2 红')
   rmSync(dir, { recursive: true, force: true })
 })
