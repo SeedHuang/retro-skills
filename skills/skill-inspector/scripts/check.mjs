@@ -1,15 +1,46 @@
-import { readFileSync, readdirSync, existsSync, realpathSync, statSync } from 'node:fs'
+import { readFileSync, readdirSync, existsSync, realpathSync, statSync, lstatSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-// 「什么算技能目录」判据的唯一真相源（三处共用，勿在本文件另写一份 —— 理由见该文件头注释）
-import { SKILL_MD, listSkillDirs } from '../../../scripts/skill-dir.mjs'
+
+// 「什么算技能目录」判据的唯一真相源（另两处消费方：scripts/check-all.mjs / skilldependencies/validate.test.mjs）。
+// 理由见该文件头注释 —— 3 份副本各自演化导致 R4-R6 三轮分批返工。
+//
+// ⚠️ 用**动态** import 而非静态：静态 import 在模块加载阶段失败，副本安装态
+// （`skills add/update` 把活链换成副本，仓库根 scripts/ 不存在）会抛裸堆栈、
+// 连中文诊断都没有（2026-10-15 实测）。动态 import 失败时走下面的本地降级实现，
+// 保证「技能可独立运行」这个既有属性不被单源重构破坏。
+let listSkillDirs
+try {
+  ;({ listSkillDirs } = await import('../../../scripts/skill-dir.mjs'))
+} catch {
+  // guard-fallback：副本安装态的降级路径。语义必须与 scripts/skill-dir.mjs 一致；
+  // ⚠️ 改判据时**必须**同步那处（本行是 grep 哨兵，守卫与人工都能看到）。
+  listSkillDirs = (parent) => {
+    let entries
+    try {
+      entries = readdirSync(parent, { withFileTypes: true })
+    } catch (e) {
+      throw new Error(`读取技能目录失败：${parent}（${e.code || e.message}）`)
+    }
+    return entries.filter(e => e.isDirectory()).map(e => e.name).filter(name => {
+      let st
+      try {
+        st = lstatSync(join(parent, name, 'SKILL.md'))
+      } catch (e) {
+        if (e.code === 'ENOENT') return false
+        throw new Error(`读取 ${join(parent, name, 'SKILL.md')} 失败：${e.code || e.message}`)
+      }
+      return st.isFile()
+    })
+  }
+}
 
 // 路径引用：技能名 + references/ | assets/ | scripts/，或技能名 + SKILL.md（后者是技能入口文件，同样是「带前缀的路径」）
 // 可选 skills/ 前缀：文档写全路径 `skills/<名>/SKILL.md` 时，捕获的技能名是中间那一段
 // SKILL\.md 后加右边界 (?![a-z0-9.])：防 `beta/SKILL.md.bak` 这类被误判成对 SKILL.md 的引用（. 也是文件名延续符）
 const PATH_REF_RE = /`(?:skills\/)?([a-z][a-z0-9-]*)\/(?:references\/|assets\/|scripts\/|SKILL\.md(?![a-z0-9.]))/g
 const GUARD_RE = /(?:process\.argv\[1\]\s*(?:===|!==|==|!=)\s*fileURLToPath\(import\.meta\.url\)|fileURLToPath\(import\.meta\.url\)\s*(?:===|!==|==|!=)\s*process\.argv\[1\]|import\.meta\.url\s*(?:===|!==|==|!=)\s*pathToFileURL\(process\.argv\[1\]\)\.href|pathToFileURL\(process\.argv\[1\]\)\.href\s*(?:===|!==|==|!=)\s*import\.meta\.url)/g
-// 注：SKILL_MD 常量来自 ../../../scripts/skill-dir.mjs（唯一真相源），本文件不另定义
+const SKILL_MD = 'SKILL.md'   // 仅本文件用（collectScanFiles 拼路径），判定逻辑不在这里
 
 // ① ② 的正文读取面 = 技能目录下**全部 .md**（SKILL.md / references / assets / README.md / examples 等，递归收集）
 // 不跟随符号链接 / junction，两条都要挡（缺一条就会出现「注释承诺的保护没兑现」）：
