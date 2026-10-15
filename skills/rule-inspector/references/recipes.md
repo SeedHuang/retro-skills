@@ -32,7 +32,7 @@
 
 ### §R2 无来源行
 
-**判据**：规则头部（第 1–3 行内）缺 `> 来源：` 行。2026-10-08 实测命中：`code-style.md`、`no-git-write.md`、`ts-expect-error.md`、`vitest-queued-alternative.md`。
+**判据**：规则头部（第 1–3 行内）缺 `> 来源：` 行。2026-10-08 实测命中：`no-git-write.md`、`ts-expect-error.md`、`vitest-queued-alternative.md`；2026-10-15 命中：`code-style.md`（拆前合集，已拆为 `import-path-choice` / `list-empty-state` / `styled-component-file`，拆后各自补了来源行）。
 
 **改法**：
 
@@ -45,7 +45,7 @@
 **例子**：
 
 - `vitest-queued-alternative.md`（拆自 `testing-pitfalls.md` §2，内容未动）→ `> 来源：项目约定（2026-10-08）｜落地：2026-10-08`（类型/日期继承原文件，拆条日期如实）
-- `code-style.md`（antd / `@/` 别名约定）→ 先走 §R6 判断是否搬走；确定保留则补 `> 来源：项目约定（<原日期>）｜落地：<原日期>`
+- `import-path-choice` / `list-empty-state` / `styled-component-file`（拆自 `code-style.md` §1/§2/§3，继承原「项目约定」来源类型，补 `> 来源：项目约定（2026-10-10）｜落地：2026-10-15`）
 - 查遍 git 与文档都无来源 → `> 来源：未记录｜落地：2026-10-08`（落地填体检/记录当天，如实标注）
 
 ### §R3 来源行错位在文末
@@ -72,7 +72,7 @@
 **例子**：
 
 - ✅ 已拆（2026-10-08 实测）：`# 测试踩坑笔记` → `# @ts-expect-error 只在 TS 实际报错时使用`（`ts-expect-error.md`）+ `# Vitest 在受限环境 stuck 时改用替代验证`（`vitest-queued-alternative.md`）——一条管类型注释、一条管测试环境兜底，互不相关。
-- ❌ → ✅：`# 代码风格规则` → 拆/改为可执行判据标题，如 `# 代码按「业务模块相对路径、公共资源 @/ 别名」选择 import 路径`（若保留全局；整条是否保留见 §R6）。
+- ✅ 已拆（2026-10-15 实测）：`# 代码风格规则` → `# 在写前端代码 import 时，路径必须按归属使用相对路径或 @/ 别名`（`import-path-choice.md`）+ `# 在列表数据为空时，空态必须使用 antd Empty 渲染，不得用纯文本占位`（`list-empty-state.md`）+ `# 在使用 styled-components 的项目中，styled.xxx 定义必须使用独立 sc.tsx 文件，不得写在业务组件文件内`（`styled-component-file.md`）——三条互不相关。
 - 目录式标题反例：`# 测试踩坑笔记`、`# 代码风格规则`、`# 笔记`、`# 规范`——全是主题名，不是判据。
 
 ### §R5 层级混用
@@ -93,7 +93,7 @@
 
 ### §R6 项目事实混入全局规则
 
-**判据**：全局规则（`rules/`，对每个项目生效）里出现**只对某个项目成立**的事实——特定文件路径（`src/pages/404/index.tsx`）、特定框架/组件库（antd、UmiHistory、styled-components、`@/` 别名）、特定项目名。这些事实在其它项目里要么不成立、要么是错的。2026-10-08 实测命中：`import-guard.md` 的「已知的已有编译错误」清单、`code-style.md` 全篇。
+**判据**：全局规则（`rules/`，对每个项目生效）里出现**只对某个项目成立**的事实——特定文件路径（`src/pages/404/index.tsx`）、特定框架/组件库（antd、UmiHistory、styled-components、`@/` 别名）、特定项目名。这些事实在其它项目里要么不成立、要么是错的。2026-10-08 实测命中：`import-guard.md` 的「已知的已有编译错误」清单、`code-style.md` 全篇（后者 2026-10-15 已拆为 `import-path-choice` / `list-empty-state` / `styled-component-file`，各标注「仅适用使用 antd / styled-components / @/ 别名的项目」）。
 
 **改法**：
 
@@ -107,7 +107,7 @@
 **例子**：
 
 - `import-guard.md`「已知的已有编译错误」清单（`src/app.tsx` — `location` 不在 `UmiHistory` 类型上 等 3 条，某 Umi+antd 项目既存错误）→ 移到项目内文档；通用判据（「编辑后 tsc 验证」）对任何项目成立，保留，项目清单处只留指针。
-- `code-style.md` 全篇（antd `Empty` / styled-components `sc.tsx` / `@/` 别名）→ 整体标注「仅适用于该项目」，或整体搬去项目文档后 `rules/` 删文件。**搬与删都需用户确认后执行**。
+- `import-path-choice` / `list-empty-state` / `styled-component-file`（拆自 `code-style.md`，antd `Empty` / styled-components `sc.tsx` / `@/` 别名）→ 各在「例外」小节标注适用范围（「未配置 `@/` 别名的项目」「不使用 antd 的项目」「不使用 styled-components 的项目」不适用），保留在全局规则库。
 
 ### §R7 规则矛盾
 

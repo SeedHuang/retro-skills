@@ -52,7 +52,7 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 详细说明不在 README 里（避免越写越长），拆到独立指南——与上一节「场景速查」配合看：
 
 - **技能**（十八个，各自的作用与使用时机）→ [`docs/guide/skills/`](docs/guide/skills/README.md)
-- **全局规则**（十八条，各自的作用与适用范围）→ [`docs/guide/rules/`](docs/guide/rules/README.md)
+- **全局规则**（二十条，各自的作用与适用范围）→ [`docs/guide/rules/`](docs/guide/rules/README.md)
 
 ## 一个完整例子（真实闭环：2026-09-29 回显污染事故）
 

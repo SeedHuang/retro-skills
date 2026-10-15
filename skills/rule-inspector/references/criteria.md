@@ -10,7 +10,7 @@
 | `用户当场指令` | `global-ask-before-acting`、`plain-language-to-user`、`docs-convention`、`how-i-must-reason` |
 | `评审第 N 轮` | `landing-sweep` |
 | `实测/踩坑` | `powershell-file-encoding`、`import-guard`、`skill-assets-convention`、`ts-expect-error`、`vitest-queued-alternative` |
-| `项目约定` | `poll-deferred-at-start`、`no-git-write`、`code-style`、`rules-single-source` |
+| `项目约定` | `poll-deferred-at-start`、`no-git-write`、`import-path-choice`、`list-empty-state`、`styled-component-file`、`rules-single-source` |
 
 > 来源类型 = 权限标记（谁定的、可审计），**不决定约束力**——极性（做/不做）由措辞判定（grep 正文极性词，可复算）。
 

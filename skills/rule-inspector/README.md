@@ -52,14 +52,14 @@ graph TD
 
 曾把「硬禁令/模式门控/事件触发/正向义务」当同一层 4 类——**错**。它们是两轴的跨乘结果（硬禁令 = 持续或条件×禁令，事件触发 = 条件×义务，正向义务 = 任意×义务）。真正新增的第三种**适用方式**只有**模式门控**。以双轴为准。
 
-### 现有 14 条实际盘点（2026-10-09）
+### 现有 16 条实际盘点（2026-10-15）
 
 | 适用方式 | 规则 |
 |---|---|
 | 持续适用（5） | no-git-write(禁)、how-i-must-reason(禁)、plain-language(义)、docs-convention(禁)、skill-assets(义) |
-| 条件触发（7） | import-guard(禁)、powershell-encoding(禁)、rules-single-source(禁)、ts-expect-error(禁)、poll-deferred(义)、landing-sweep(义)、vitest-queued(禁) |
+| 条件触发（10） | import-guard(禁)、import-path-choice(义)、list-empty-state(义)、styled-component-file(义)、powershell-encoding(禁)、rules-single-source(禁)、ts-expect-error(禁)、poll-deferred(义)、landing-sweep(义)、vitest-queued(禁) |
 | 模式门控（1） | **global-ask-before-acting(禁)** |
-| 待拆未定（1） | code-style（合集：3 个独立判据 + 混合极性 → 该拆，单判据=0 样板） |
+| 待拆未定（0） | （原 code-style 已拆为 import-path-choice / list-empty-state / styled-component-file） |
 
 ## 3. 类型判定流程（AI 判，脚本只接收）
 
@@ -83,7 +83,7 @@ graph TD
 
 **通用 17 项**（所有类型共用）：头部规范 3 + 层级规范 2 + 来源精简 2 + 引用完整 1 + 冗余度 4 + 标题 4 + **单判据 1**。
 
-**单判据（通用结构检查点，AI 判，每项 1 分）**：一个文件只承载一个核心判据（一个极性 + 一个主题）；多个互不相关的 H2 主题 / 极性混合且无单一核心判据 = 合集 = 该拆（判 0 + 处方「拆成 N 条独立规则」）。**评分单元保持按文件**，不按节评分。「一个判据的部件」（如 no-git-write 的禁止写/允许读/遇到不确定暂停）不算多判据。code-style 为合集样板。
+**单判据（通用结构检查点，AI 判，每项 1 分）**：一个文件只承载一个核心判据（一个极性 + 一个主题）；多个互不相关的 H2 主题 / 极性混合且无单一核心判据 = 合集 = 该拆（判 0 + 处方「拆成 N 条独立规则」）。**评分单元保持按文件**，不按节评分。「一个判据的部件」（如 no-git-write 的禁止写/允许读/遇到不确定暂停）不算多判据。合集样板：拆前的 `code-style`（已拆为 import-path-choice / list-empty-state / styled-component-file 三条）。
 
 **执行力度适用项 + 满分口径**：
 
