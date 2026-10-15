@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtempSync, writeFileSync, mkdirSync, rmSync, copyFileSync, existsSync } from 'node:fs'
+import { mkdtempSync, writeFileSync, mkdirSync, rmSync, copyFileSync, readdirSync, symlinkSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
@@ -296,8 +296,9 @@ test('干净技能：递归扩面后 examples/ 里的正常文件不误报', (t)
 
 // ⚠️ 这条用例是「兜底实现 ≡ 单源」的唯一机械保证（R4-R6 三轮分批返工的根因就是两份副本漂移）。
 // 判据只能在本仓跑：副本安装态单源根本不在，两份实现无法同时存在 → 无从比对。
-// 覆盖：正常 / 空目录 / SKILL.md 是目录 / 非目录条目 + 点开头目录名 / 父目录不存在（错误契约）。
-test('兜底实现 ≡ 单源：5 组 fixture 下返回值与抛错文本全等', (t) => {
+// 覆盖：正常 / 空目录 / SKILL.md 是目录 / 非目录条目 + 点开头目录名 / SKILL.md 是符号链接 / 父目录不存在（错误契约）。
+// 只比**集合**不比顺序：顺序来自 readdirSync 的文件系统返回顺序，本仓不作为契约（要改顺序语义时两处一起改）。
+test('兜底实现 ≡ 单源：6 组 fixture 下返回值与抛错文本全等', (t) => {
   const normal = fixture({ 'alpha/SKILL.md': '# a', 'beta/SKILL.md': '# b' })
   const empty = fixture({})
   const skillMdIsDir = mkdtempSync(join(tmpdir(), 'check-'))
@@ -305,24 +306,36 @@ test('兜底实现 ≡ 单源：5 组 fixture 下返回值与抛错文本全等'
   const strays = fixture({ 'alpha/SKILL.md': '# a' })
   writeFileSync(join(strays, 'stray.txt'), 'x')
   mkdirSync(join(strays, '.hidden'))
+  // SKILL.md 是符号链接 → 挡住「兜底把 lstatSync 漂移成 statSync」这类改动。
+  // 单源判据②的用意就是不跟随链接（防 /dev/zero、FIFO、超大外部文件被 readFileSync 读爆），
+  // 没有这组 fixture，把 lstatSync 换成 statSync 这条用例照样全绿。
+  const linked = fixture({ 'alpha/SKILL.md': '# a', 'beta/SKILL.md': '# b' })
+  let linkedOk = true
+  try {
+    rmSync(join(linked, 'alpha', 'SKILL.md'))
+    symlinkSync(join(linked, 'beta', 'SKILL.md'), join(linked, 'alpha', 'SKILL.md'))
+  } catch {
+    linkedOk = false      // 平台不允许建符号链接 → 跳过该组，并在用例名后标注
+  }
   const missing = join(normal, 'no-such-dir')
-  const cases = [normal, empty, skillMdIsDir, strays, missing]
+  const cases = [normal, empty, skillMdIsDir, strays, missing, linked].filter(Boolean)
   t.after(() => { for (const c of cases) rmSync(c, { recursive: true, force: true }) })
 
-  const probe = (fn) => {
-    try { return { ok: JSON.stringify(fn(normal).slice().sort()) } }
+  const run = (fn, c) => {
+    try { return { ok: JSON.stringify(fn(c).slice().sort()) } }
     catch (e) { return { err: e.message } }
   }
   for (const c of cases) {
-    const run = (fn) => {
-      try { return { ok: JSON.stringify(fn(c).slice().sort()) } }
-      catch (e) { return { err: e.message } }
-    }
-    assert.deepEqual(run(listSkillDirs), run(listSkillDirsFallback), `两份实现在 ${c} 上不等价`)
+    assert.deepEqual(run(listSkillDirs, c), run(listSkillDirsFallback, c), `两份实现在 ${c} 上不等价`)
   }
-  // 防止「两边都返回同一个错」被当成等价通过：至少要有一组真的正常返回
-  assert.ok(probe(listSkillDirs).ok, '基线失效：单源对正常 fixture 都没正常返回')
-  assert.ok(probe(listSkillDirsFallback).ok, '基线失效：兜底对正常 fixture 都没正常返回')
+  // 基线锚定**内容**而不只是「没抛错」：两份实现同时退化成返回空数组也要能看出来
+  assert.deepEqual(JSON.parse(run(listSkillDirs, normal).ok), ['alpha', 'beta'], '单源基线不对')
+  assert.deepEqual(JSON.parse(run(listSkillDirsFallback, normal).ok), ['alpha', 'beta'], '兜底基线不对')
+  if (linkedOk) {
+    // 单源不跟随链接 → alpha 的 SKILL.md 是链接时它不算技能，只剩 beta
+    assert.deepEqual(JSON.parse(run(listSkillDirs, linked).ok), ['beta'], '符号链接组：单源没挡住链接')
+    assert.deepEqual(JSON.parse(run(listSkillDirsFallback, linked).ok), ['beta'], '符号链接组：兜底没挡住链接')
+  }
 })
 
 test('副本安装态：只拷 check.mjs、不拷仓库根 scripts/ 时 CLI 仍能独立跑（走兜底）', (t) => {
@@ -330,7 +343,14 @@ test('副本安装态：只拷 check.mjs、不拷仓库根 scripts/ 时 CLI 仍�
   const copiedCli = join(copyRoot, 'skills', 'skill-inspector', 'scripts', 'check.mjs')
   mkdirSync(dirname(copiedCli), { recursive: true })
   copyFileSync(CLI, copiedCli)          // 只拷脚本 → ../../../scripts/skill-dir.mjs 不存在 → 走兜底
-  assert.equal(existsSync(join(copyRoot, 'scripts', 'skill-dir.mjs')), false)
+  // 真实断言：副本树里**只有那一个脚本文件** → `../../../scripts/skill-dir.mjs` 必然不可达。
+  // ⚠️ 别写成 existsSync(copyRoot/scripts/skill-dir.mjs) === false —— copyRoot 是 mkdtemp 空目录，
+  // 没有任何代码往 copyRoot/scripts/ 写过东西，那条断言恒真、什么也证明不了（同「假闸门」）。
+  // 只比文件不比目录：目录是脚手架，不是内容。
+  const copiedFiles = readdirSync(copyRoot, { recursive: true, withFileTypes: true })
+    .filter(d => d.isFile())
+    .map(d => d.name)
+  assert.deepEqual(copiedFiles, ['check.mjs'], '副本树里不止那一个脚本 → 单源可能变可达了')
   const dir = fixture({
     'alpha/SKILL.md': '判据见 `beta/references/criteria.md`',
     'beta/SKILL.md': '# beta',
@@ -340,7 +360,10 @@ test('副本安装态：只拷 check.mjs、不拷仓库根 scripts/ 时 CLI 仍�
     rmSync(dir, { recursive: true, force: true })
   })
   const r = spawnSync(process.execPath, [copiedCli, '--dir', dir, '--json'], { encoding: 'utf8' })
-  assert.equal(r.status, 1)
+  // 先看 stderr：进程崩溃时 status 同样是 1，但 stdout 是空的，
+  // 直接 JSON.parse('') 会抛一句看不懂的 SyntaxError，下面那句诊断永远轮不到。
+  assert.equal(r.stderr, '', `副本 CLI 有 stderr 输出（很可能没跑到兜底）：${r.stderr}`)
+  assert.equal(r.status, 1, `副本 CLI 未按预期因 findings 退出：stderr=${r.stderr}`)
   const hit = JSON.parse(r.stdout).findings.find(f => f.check === '跨技能路径引用' && f.skill === 'alpha')
   assert.ok(hit, '副本态没能跑出 findings：兜底实现可能没被执行')
 })
