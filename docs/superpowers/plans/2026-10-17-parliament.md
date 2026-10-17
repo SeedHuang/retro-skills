@@ -34,12 +34,13 @@
 - Consumes: spec §2/§3/§5/§8（流程骨架）
 - Produces: 目录 `skills/parliament/`；frontmatter `name: parliament`；引用 5 个 references 与 6 个 assets 的文件名（Task 2/3 按名创建）
 
-- [ ] **Step 1: 目录改名（文件系统改名，非 git 命令）**
+- [x] **Step 1: 目录改名（文件系统改名，非 git 命令）**
 
 Run（PowerShell）: `Rename-Item -LiteralPath "d:\Seed\retro-skills\skills\multi-lens-review" -NewName "parliament"`
 Expected: 目录变为 `d:\Seed\retro-skills\skills\parliament`（内含旧 SKILL.md 与 references/role-panels.md）。运行时 junction `~\.trae-cn\skills\multi-lens-review` 变悬空——Task 6 用 aas 清理，本任务不碰。
 
-- [ ] **Step 2: 覆写 SKILL.md（全文）**
+- [x] **Step 2: 覆写 SKILL.md（全文）**
+> 2026-10-17 施工注（Ruling 1）：实际落盘为裁决版全文——在下方原文的 step 0 追加「→ 按 `references/host-duties.md` 定答辩组编制（架构师 7 方向选一、研发 4 人按文档类型换编制）」、step 1 追加「（审 rule/skill/agents 类文档时，另对照 `references/failure-modes.md` 13 病根表逐层核对）」，使 SKILL.md 真正引用全部 5 个 references（与本任务 Interfaces 声明一致；host-duties/failure-modes 原文无入口指针）。行数 32 <200。
 
 用 Write 工具覆写 `skills/parliament/SKILL.md`：
 
@@ -78,7 +79,7 @@ description: 议会式多方评审。Use when 用户说「开议会」「议会�
 - 评审飞轮回流：使用中发现本应议会抓到却没抓到的问题 → 先记账进本技能 KB 账本，只告知「已记账」；「改」由用户在 lessons 发起后走 evolving-skills 技能
 ```
 
-- [ ] **Step 3: 验证**
+- [x] **Step 3: 验证**
 
 Run: Grep 工具，pattern `^name: parliament$`，path `skills/parliament/SKILL.md` → 命中 1 行。
 Run: PowerShell `(Get-Content "d:\Seed\retro-skills\skills\parliament\SKILL.md").Count` → 期望 <200。
@@ -100,12 +101,12 @@ Run: PowerShell `(Get-Content "d:\Seed\retro-skills\skills\parliament\SKILL.md")
 - Consumes: spec §4/§5/§7.3/§8/§9（表全部逐字搬）
 - Produces: 五个文件名被 SKILL.md 与 gen-agents.mjs（Task 4 读 assets）引用；host-duties.md 定义架构师 7 方向与研发 4 人编制表
 
-- [ ] **Step 1: doc-taxonomy.md**——正文 = spec §4 表逐字 + 每类型一段「评委关注点展开」（引用 spec §7.1 对应席清单，不重复抄全量，写「见该席生成卡」即可）。
-- [ ] **Step 2: assembly-matrix.md**——正文 = spec §5 表逐字 + 四条硬规矩逐字 + 「花名册常驻、按需点将」说明 + 轮间补点/自扩展（复制模板→填清单→aas sync）两节。
-- [ ] **Step 3: host-duties.md**——正文 = 主持人合规义务 6 条（不得代填审计两表 / 丢卡压卡留理由 / 名单变更留痕 / 跑机械计数贴输出 / 评审记录每轮落盘 / 宣布交付以审计通过为前提）+ 架构师 7 方向表 + 研发 4 人 × 文档类型编制表（审 rule 带规则工程背景、审 skill 带技能编写背景、审 agents 带提示词工程背景）。
-- [ ] **Step 4: debate-protocol.md**——正文 = spec §8 全部逐字（评审轮 / 答辩 / 升级协议 / 两档审计 / 修复纪律）+ 侦探机械判据与处置表（spec §7.2 逐字）+ 六手法全文（操作序列推演 / 字段生命周期 / 跨章节一致性 / 输入空间 / 假设显式化 / 可逆性——从旧 SKILL.md 技法段搬，作为技术维度评委与主持人追问轮的通用手法层）。
-- [ ] **Step 5: failure-modes.md**——正文 = spec §9 全部逐字（13 病根表 + 试金石 + 20 判据分配表 + 复盘回流）。
-- [ ] **Step 6: 验证**
+- [x] **Step 1: doc-taxonomy.md**——正文 = spec §4 表逐字 + 每类型一段「评委关注点展开」（引用 spec §7.1 对应席清单，不重复抄全量，写「见该席生成卡」即可）。
+- [x] **Step 2: assembly-matrix.md**——正文 = spec §5 表逐字 + 四条硬规矩逐字 + 「花名册常驻、按需点将」说明 + 轮间补点/自扩展（复制模板→填清单→aas sync）两节。
+- [x] **Step 3: host-duties.md**——正文 = 主持人合规义务 6 条（不得代填审计两表 / 丢卡压卡留理由 / 名单变更留痕 / 跑机械计数贴输出 / 评审记录每轮落盘 / 宣布交付以审计通过为前提）+ 架构师 7 方向表 + 研发 4 人 × 文档类型编制表（审 rule 带规则工程背景、审 skill 带技能编写背景、审 agents 带提示词工程背景）。
+- [x] **Step 4: debate-protocol.md**——正文 = spec §8 全部逐字（评审轮 / 答辩 / 升级协议 / 两档审计 / 修复纪律）+ 侦探机械判据与处置表（spec §7.2 逐字）+ 六手法全文（操作序列推演 / 字段生命周期 / 跨章节一致性 / 输入空间 / 假设显式化 / 可逆性——从旧 SKILL.md 技法段搬，作为技术维度评委与主持人追问轮的通用手法层）。
+- [x] **Step 5: failure-modes.md**——正文 = spec §9 全部逐字（13 病根表 + 试金石 + 20 判据分配表 + 复盘回流）。
+- [x] **Step 6: 验证**
 
 Run: `node skills/skill-inspector/scripts/check.mjs` → 0 findings（若报「SKILL.md 引用了不存在的 assets」属预期——Task 3 补齐；引用类 findings 以 Task 3 收尾为准，其余 0）。
 收尾：改动留工作区。
@@ -127,14 +128,15 @@ Run: `node skills/skill-inspector/scripts/check.mjs` → 0 findings（若报「S
 - Consumes: spec §6.1（模板全文）/§8（核对单与审计表）/§7.2（观察记录格式）
 - Produces: `agent-template.md`（gen-agents.mjs 读它做占位替换，占位符 `{{NAME}} {{DESCRIPTION}} {{ZH_NAME}} {{DIMENSION}} {{IDENTITY}} {{FIXED_LIST}} {{OUTPUT_FORMAT}} {{SHARED_BLOCK}}`）；五张产出模板（流程与审计填卡用；gen 从 issue-card / round-check / delivery-audit 内联子代理输出格式）
 
-- [ ] **Step 1: agent-template.md**——正文 = spec §6.1 模板逐字（frontmatter 三行 + 七节结构）。
-- [ ] **Step 2: issue-card.md**——两节：`# 问题卡`八字段表（编号 Q-轮-序 / 提出角色 / 归属维度 / 问题描述 / 证据 / 严重级别 P0·P1·P2 / 建议解法【必填】/ 无问题时的显式声明格式）；`# 观察记录（侦探用）`五字段表（卡号 / 对象 / 行为类型 / 判定依据【引用原文】/ 处置建议）。
-- [ ] **Step 3: defense-record.md**——每卡一行表：问题编号 / 判定（承认·反驳·部分承认）/ 依据（实测证据）/ 修法或反驳理由 / 评审方是否接受。
-- [ ] **Step 4: escalation-report.md**——spec §8 升级协议字段逐字：争议焦点一句话 / 双方各自【立场·赞成原因·反对对方原因·摸查记录（查了什么+命令+结果）】/ 双方各自具体解法（必填）/ 侦探驳回记录 / 用户终裁栏（留空待填）。
-- [ ] **Step 5: round-check.md**——spec §8 轮间核对单：第 0 项轮际对账 + 五项机械核对（卡片字段齐 / 答辩字段齐 / 本轮终态对账 / 侦探观察存在且卡号真实 / 汇总未丢卡）+ 结论（过 / 不过+打回清单）+ 「审计员本人填写」声明行。
-- [ ] **Step 6: delivery-audit.md**——spec §8 交付审计表：A 节 6 项（A1 终态对账 / A2 P0P1 清零 / A3 落点抽查 ≥3 / A4 P2 三态齐 / A5 数字一致 / A6 升级项有终裁，各带证据栏）+ B 节按 doc-taxonomy 完成判据逐交付物核对 + 结论三态（通过 / 有条件通过【候选项+触发信号列明】/ 不通过【打回清单】）。
-- [ ] **Step 7: 删 role-panels.md**——DeleteFile 工具删除 `skills/parliament/references/role-panels.md`。
-- [ ] **Step 8: 验证（技能全量验收闸门）**
+- [x] **Step 1: agent-template.md**——正文 = spec §6.1 模板逐字（frontmatter 三行 + 七节结构）。
+- [x] **Step 2: issue-card.md**——两节：`# 问题卡`八字段表（编号 Q-轮-序 / 提出角色 / 归属维度 / 问题描述 / 证据 / 严重级别 P0·P1·P2 / 建议解法【必填】/ 无问题时的显式声明格式）；`# 观察记录（侦探用）`五字段表（卡号 / 对象 / 行为类型 / 判定依据【引用原文】/ 处置建议）。
+- [x] **Step 3: defense-record.md**——每卡一行表：问题编号 / 判定（承认·反驳·部分承认）/ 依据（实测证据）/ 修法或反驳理由 / 评审方是否接受。
+- [x] **Step 4: escalation-report.md**——spec §8 升级协议字段逐字：争议焦点一句话 / 双方各自【立场·赞成原因·反对对方原因·摸查记录（查了什么+命令+结果）】/ 双方各自具体解法（必填）/ 侦探驳回记录 / 用户终裁栏（留空待填）。
+- [x] **Step 5: round-check.md**——spec §8 轮间核对单：第 0 项轮际对账 + 五项机械核对（卡片字段齐 / 答辩字段齐 / 本轮终态对账 / 侦探观察存在且卡号真实 / 汇总未丢卡）+ 结论（过 / 不过+打回清单）+ 「审计员本人填写」声明行。
+- [x] **Step 6: delivery-audit.md**——spec §8 交付审计表：A 节 6 项（A1 终态对账 / A2 P0P1 清零 / A3 落点抽查 ≥3 / A4 P2 三态齐 / A5 数字一致 / A6 升级项有终裁，各带证据栏）+ B 节按 doc-taxonomy 完成判据逐交付物核对 + 结论三态（通过 / 有条件通过【候选项+触发信号列明】/ 不通过【打回清单】）。
+- [x] **Step 7: 删 role-panels.md**——DeleteFile 工具删除 `skills/parliament/references/role-panels.md`。
+- [x] **Step 8: 验证（技能全量验收闸门）**
+> 2026-10-17 施工注（Ruling 2）：`npm run check` 本次 268 pass / 1 fail——fail 为 `skilldependencies/validate.test.mjs`（skills/ 目录与 manifest 一一对应），根因 = Task 1 改名后 manifest 未跟随（spec §10 #4 属 Task 5 接线），预期中间态，Task 5 恢复全绿。
 
 Run: `node skills/skill-inspector/scripts/check.mjs` → **0 findings**。
 Run: `npm run check` → 全绿（此时 gen-agents.test.mjs 尚未存在，属预期）。
@@ -153,7 +155,7 @@ Run: `npm run check` → 全绿（此时 gen-agents.test.mjs 尚未存在，属�
 - Consumes: `assets/agent-template.md`、`assets/issue-card.md`、`assets/round-check.md`、`assets/delivery-audit.md`（读文件内联输出格式节）；spec §7.1/§7.2（ROLES 数据逐字源）
 - Produces: 导出 `ROLES`（13 元素数组：`{ name, zh, dimension, description, identity, fixedList: string[], sharedBlock?: string, outputKind: 'issue-card' | 'observation' | 'audit' }`）、`buildAgent(role): string`、`renderAll(): { [name]: string }`、`checkAll(dir): string[]`、`AGENTS_DIR`；CLI：无参=生成、`--check`=校验不写、`--out <dir>`=写到指定目录
 
-- [ ] **Step 1: 写失败测试（全文）**
+- [x] **Step 1: 写失败测试（全文）**
 
 `skills/parliament/scripts/gen-agents.test.mjs`：
 
@@ -216,12 +218,12 @@ test('checkAll：一致报空、漂移报红', () => {
 })
 ```
 
-- [ ] **Step 2: 跑测试确认红**
+- [x] **Step 2: 跑测试确认红**
 
 Run: `node --test skills/parliament/scripts/gen-agents.test.mjs`
 Expected: FAIL（`./gen-agents.mjs` 不存在，Cannot find module）。
 
-- [ ] **Step 3: 写 gen-agents.mjs（骨架全文；ROLES 数据 reviewer-audit 为完整样例，其余 12 席按 spec §7.1 表与 §7.2 逐字转录成同构对象）**
+- [x] **Step 3: 写 gen-agents.mjs（骨架全文；ROLES 数据 reviewer-audit 为完整样例，其余 12 席按 spec §7.1 表与 §7.2 逐字转录成同构对象）**
 
 ```js
 #!/usr/bin/env node
@@ -342,14 +344,14 @@ if (isMain()) {
 }
 ```
 
-- [ ] **Step 4: 跑生成 + 测试确认绿**
+- [x] **Step 4: 跑生成 + 测试确认绿**
 
 Run: `node skills/parliament/scripts/gen-agents.mjs` → 输出「已生成 13 个 agent 文件」
 Run: `node --test skills/parliament/scripts/gen-agents.test.mjs` → 全绿（6 用例）
 Run: `node skills/parliament/scripts/gen-agents.mjs --check` → OK（重跑确定性）
 Run: PowerShell `Get-ChildItem "d:\Seed\retro-skills\agents" | Measure-Object` → Count = 13
 
-- [ ] **Step 5: 验证子代理文件形态抽查**
+- [x] **Step 5: 验证子代理文件形态抽查**
 
 Run: Read `agents/reviewer-audit.md` 头 30 行 → frontmatter 三行齐（name/description/tools: Read, Glob, Grep）、共享特质节与模板逐字一致、固定清单表 7 行。
 收尾：改动留工作区。
@@ -368,9 +370,10 @@ Run: Read `agents/reviewer-audit.md` 头 30 行 → frontmatter 三行齐（name
 - Consumes: Task 1-4 的目录与技能名
 - Produces: 全仓活文件对 `parliament` 的统一引用；历史文档（specs/plans/handoffs/architecture、rules/skill-authoring-convention.md 来源行）**不改**
 
-- [ ] **Step 1: skilldependencies 四件**——Rename-Item json + 逐文件改 `"skill"`/`"name"` 字段；改完跑 `node scripts/check-all.mjs` 的依赖校验（若仓库有 deps 校验脚本则跑之）。
-- [ ] **Step 2: 12 文件引用替换**——每文件用 Grep 定位 `multi-lens-review` 全部命中行，逐处替换为 `parliament`；`docs/guide/skills/README.md` §7 的技能描述段改写为：「议会评审：按项目类型×文档类型点将组队，评审团双清单提问、答辩方作答、侦探观察、审计闸门，3 轮答辩未决升级用户」；`README.md` 表行同步。
-- [ ] **Step 3: 清零验证**
+- [x] **Step 1: skilldependencies 四件**——Rename-Item json + 逐文件改 `"skill"`/`"name"` 字段；改完跑 `node scripts/check-all.mjs` 的依赖校验（若仓库有 deps 校验脚本则跑之）。
+- [x] **Step 2: 12 文件引用替换**——每文件用 Grep 定位 `multi-lens-review` 全部命中行，逐处替换为 `parliament`；`docs/guide/skills/README.md` §7 的技能描述段改写为：「议会评审：按项目类型×文档类型点将组队，评审团双清单提问、答辩方作答、侦探观察、审计闸门，3 轮答辩未决升级用户」；`README.md` 表行同步。
+> 2026-10-17 施工注（Ruling 3）：`skills/evolving-skills/references/protocol.md` 的 3 处 multi-lens-review 属 2026-09-28/29 迁移事件历史出处注记，按 spec §10 #3「历史证据不改」同性质处理，不改；验收排除清单加入该文件。Step 3 验收实际结果：活引用命中 0（残留仅受保护/历史类）。
+- [x] **Step 3: 清零验证**
 
 Run: Grep pattern `multi-lens-review`，path `d:\Seed\retro-skills`，排除 `docs/superpowers/`、`docs/handoffs/`、`docs/architecture*`、`docs/reports/`、`rules/`、`skilldependencies`（已改名）→ 活文件命中 0。
 Run: `npm run check` → 全绿（含 gen-agents 守卫）。
@@ -389,12 +392,13 @@ Run: `node skills/skill-inspector/scripts/check.mjs` → 0 findings。
 - Consumes: Task 4 的 `agents/` 13 个文件；aas CLI（`D:\Seed\agent-assets-sync`）
 - Produces: 用户级子代理花名册运行时就位；旧 `~\.trae-cn\skills\multi-lens-review` 悬空 junction 清理
 
-- [ ] **Step 1: 探测现有解析机制**
+- [x] **Step 1: 探测现有解析机制**
 
 Run: PowerShell `Get-ChildItem Env: | Where-Object Name -like 'RETRO_*'` 与 `aas`（体检）。
 判读：skills 条目走 env（RETRO_SKILLS_DIR）还是 repoRoot 相对解析 → agents 条目**镜像同款机制**（env 键名用 `RETRO_SKILLS_AGENTS` / `TRAE_AGENTS_DST`）。
+> 2026-10-17 实测（Ruling 4）：env 未设置；`~/.aas/config.json` 有 repoRoot → skills 走 repoRoot 相对解析；agents 镜像同款，env 块保留未设变量。
 
-- [ ] **Step 2: 加第三条 linkTarget（在 skills 条目后追加）**
+- [x] **Step 2: 加第三条 linkTarget（在 skills 条目后追加）**
 
 ```json
 {
@@ -408,12 +412,14 @@ Run: PowerShell `Get-ChildItem Env: | Where-Object Name -like 'RETRO_*'` 与 `aa
 }
 ```
 （若 Step 1 判明 skills 条目靠 env 变量，则同步 `[Environment]::SetEnvironmentVariable('RETRO_SKILLS_AGENTS','D:\Seed\retro-skills\agents','User')` 并镜像 skills 现有 env 值的设置方式。）
+> 2026-10-17 实测：已加；JSON 校验通过。
 
-- [ ] **Step 3: 同步 + 体检**
+- [x] **Step 3: 同步 + 体检**
 
 Run: `aas sync` → 期望新建 `~\.trae-cn\agents\` + 13 个文件级链接（缺失才建）。
 Run: `aas` 体检 → 「需建链接 = 0」；旧 multi-lens-review junction 应报为孤儿/失效。
 Run: `aas sync --rm-old` → 清理失效链接（**只删运行时链接，不动源仓库、非 git 操作**；删前核对体检输出确认只含预期孤儿）。
+> 2026-10-17 实测：sync 建 14 链接；rm-old 清 multi-lens-review；体检 0 需建 0 残留；13 agent 链接为 SymbolicLink 实测。体检 exit 1 为预存 skill-creator 漂移（另事，未动）。
 
 - [ ] **Step 4: 用户手动闸门（阻塞后续任务的验收，不可跳过）**
 
@@ -427,17 +433,21 @@ Run: `aas sync --rm-old` → 清理失效链接（**只删运行时链接，不�
 ### Task 7: 历史回归验收——用议会重审 rule-writer / rule-inspector
 
 **Files:**
-- Create: `docs/reports/2026-10-17-parliament-acceptance/acceptance.md`（对照表 + token 实测）
+- Create: `.session/reviews/2026-10-17-1707-parliament-acceptance/`（`problems.md` 问题漏斗 + `progress.md` 过程账；2026-10-17 按 review-log 规矩修正落点——原计划误写 `docs/reports/.../acceptance.md`，docs/reports/ 只放分析数据）
 - Modify: `D:\Seed\lessons\skills\parliament\ledger.md`（验收结论回填）
 
 **Interfaces:**
 - Consumes: 建成的议会技能（走路径 B：Builder 会话 Task 派子代理）；`docs/reports/2026-10-16-1-rule-writer-rule-inspector-深度评审报告/problems.md`（标准答案卷：P0-1/2/3、P1-1~5）
 - Produces: 议会判据质量的实测证据；漏抓项回填判据
 
-- [ ] **Step 1: 走完整议会流程**——按新 SKILL.md 组队（纯文档仓库矩阵：读者代表+审计+测试+AI+后端，用户确认名单）审 `skills/rule-writer` + `skills/rule-inspector`，产出问题卡、答辩记录、两档审计表。
-- [ ] **Step 2: 对标准答案**——acceptance.md 填复现对照表：10-16 报告的 P0-1（草稿评分链路断裂）/P0-2（「评审第 N 轮」字面匹配）/P0-3（词表三层漂移）/P1-1~5 各自「议会是否抓到 / 由哪席哪条判据抓到 / 未抓到的归因」。
-- [ ] **Step 3: token 实测**——记录本场评审子代理实例化与主会话消耗（以工具返回/会话统计为准，注明取数口径），对照判据：同等评审质量下总 token ≤ 旧体系漏审返工总成本（参照 10-16 报告 §2.3 的实测口径）。
-- [ ] **Step 4: 回流**——漏抓项：改 spec §7.1 对应席清单 + gen ROLES 数据 → 重新生成 → `--check`；KB 账本记新 open 条目。全抓：账本 L-001~L-003 状态改 `landed(→skill)`，议会验收通过。
+- [x] **Step 1: 走完整议会流程**——按新 SKILL.md 组队（纯文档仓库矩阵：读者代表+审计+测试+AI+后端，用户确认名单）审 `skills/rule-writer` + `skills/rule-inspector`，产出问题卡、答辩记录、两档审计表。
+> 2026-10-17 实测：5 席并行出卡 52 张 → 41 族 → 答辩（承认 40/部分 1/反驳 0）→ 侦探抓到主持人账目错误 3 条 → 审计打回 3 项 → 修正后复审放行（轮间核对过、交付审计通过）。
+- [x] **Step 2: 对标准答案**——acceptance.md 填复现对照表：10-16 报告的 P0-1（草稿评分链路断裂）/P0-2（「评审第 N 轮」字面匹配）/P0-3（词表三层漂移）/P1-1~5 各自「议会是否抓到 / 由哪席哪条判据抓到 / 未抓到的归因」。
+> 2026-10-17 实测：P0 3/3、P1 4/5 + 1 部分、P2 2/2 复现（对照表与结论见 `.session/reviews/2026-10-17-1707-parliament-acceptance/progress.md`，问题漏斗见同目录 `problems.md`）。
+- [x] **Step 3: token 实测**——记录本场评审子代理实例化与主会话消耗（以工具返回/会话统计为准，注明取数口径），对照判据：同等评审质量下总 token ≤ 旧体系漏审返工总成本（参照 10-16 报告 §2.3 的实测口径）。
+> 2026-10-17 实测：8 次子代理调度（5 评委+侦探+审计+复审），Task 工具不返回逐子代理 token → 以调度计数+工作量代理为近似口径（`.session/reviews/2026-10-17-1707-parliament-acceptance/progress.md` §Token 实测），精确值待补。
+- [x] **Step 4: 回流**——漏抓项：改 spec §7.1 对应席清单 + gen ROLES 数据 → 重新生成 → `--check`；KB 账本记新 open 条目。全抓：账本 L-001~L-003 状态改 `landed(→skill)`，议会验收通过。
+> 2026-10-17 实测：漏抓 2 项（P1-1/P1-2）→ spec §7.1 补 reviewer-qa 第 9 条 + reviewer-ai 第 8 条 → gen-agents.mjs ROLES 同步 → 重新生成 13 agent + `--check` OK + 6 测试绿 + `npm run check` 275 全绿；KB 账本 L-001~L-003 改 landed(→skill)、新增 L-004/L-005 open。验收结论：**有条件通过**。
 收尾：改动留工作区，交用户决定提交方式。
 
 ---

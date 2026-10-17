@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "skill": "multi-lens-review",
+  "skill": "parliament",
   "dependencies": {
     "skills": [
       { "name": "evolving-skills" },

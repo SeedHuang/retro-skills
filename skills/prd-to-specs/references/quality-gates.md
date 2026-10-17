@@ -43,10 +43,10 @@
 - [ ] 待定决策标为开放问题了吗（没有假装已定）？
 - [ ] 有没有把 PRD 已定稿内容复制进新文件？（双份真相 = 打回，spec 只许引用"见 PRD §X"）
 - [ ] 是否在用户确认路线图之前生成了任何 spec/shared/索引文件？（默认只改 PRD）
-- [ ] 建议用户对每个 spec 走 multi-lens-review 了吗？
+- [ ] 建议用户对每个 spec 走 parliament 了吗？
 
 ## 与其他技能的衔接
 
-- spec 文档定稿后 → `multi-lens-review` 评审（六手法 + 角色面板）
+- spec 文档定稿后 → `parliament` 评审（六手法 + 角色面板）
 - 评审收敛后 → `writing-plans` 产出实施计划（plan 句式见 conventions.md §4）
 - 计划执行 → `subagent-driven-development`（推荐）或 `executing-plans`

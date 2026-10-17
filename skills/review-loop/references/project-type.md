@@ -5,7 +5,7 @@
 
 ## 适用性
 
-只对「OCR 能审到代码」的项目生效（有 `.js/.ts/.py/.go/...` 代码文件）。**纯 Markdown 仓库**（md 不在 OCR 白名单，实测 `unsupported_ext`）走 md 模式（调用 `multi-lens-review` 技能），不生成 `.opencodereview/`。
+只对「OCR 能审到代码」的项目生效（有 `.js/.ts/.py/.go/...` 代码文件）。**纯 Markdown 仓库**（md 不在 OCR 白名单，实测 `unsupported_ext`）走 md 模式（调用 `parliament` 技能），不生成 `.opencodereview/`。
 
 ## 两个层（缺一不可）
 

@@ -48,7 +48,7 @@ description: Split an existing PRD into independently developable specs with a r
 
 ### 第 6 步 · 自检与评审
 
-逐条过 `references/quality-gates.md` 末尾的自检清单，把结果汇报给用户。建议用户对每个 spec 文档走 `multi-lens-review` 评审后再进入 writing-plans。
+逐条过 `references/quality-gates.md` 末尾的自检清单，把结果汇报给用户。建议用户对每个 spec 文档走 `parliament` 评审后再进入 writing-plans。
 
 ## 写作规范（句式一致性）
 

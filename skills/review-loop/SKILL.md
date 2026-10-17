@@ -85,9 +85,9 @@ ocr review --preview            # 只看会审哪些文件，不花 LLM
 `--preview` 建议**每次先跑**，确认范围对了再正式跑。
 规则对症通过项目内 `.opencodereview/rule.json`（分支前置第 4 步派生）生效；命令**不带** `--background-file`（实现版 v1 不做背景层）。
 
-### 段二 · 文档逻辑（multi-lens-review）
+### 段二 · 文档逻辑（parliament）
 
-调用 **skill `multi-lens-review`**，范围 = 本次审查范围内的所有未提交/涉及的 `.md`。收敛协议、输出格式、修复纪律全部按那个技能自己的规矩走，本技能不重定义。
+调用 **skill `parliament`**，范围 = 本次审查范围内的所有未提交/涉及的 `.md`。收敛协议、输出格式、修复纪律全部按那个技能自己的规矩走，本技能不重定义。
 
 ### 段三 · 断言取证
 

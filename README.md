@@ -40,7 +40,7 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 | 复盘已有结论，要把教训写回规范 | `retro-institutionalize` |
 | 要改 rule / skill / 自动化本体（施工） | `evolving-skills` |
 | 要验证某个**已落地**的 skill / rule / 自动化有没有效 | `retro-verify` |
-| 要评审 PRD / spec / 技术方案文档，找逻辑漏洞、悖论、盲点 | `multi-lens-review` |
+| 要评审 PRD / spec / plan / 文档，找逻辑漏洞、矛盾、盲点，或用户说「开议会」 | `parliament` |
 | 已有定稿 PRD，要拆成可独立开发的 spec 与路线图 | `prd-to-specs` |
 | 库未初始化 / 库要搬家 / 会话开始轮询 / 看库的规模与薄弱面 | `managing-lessons-store` |
 | 审查最近一次提交引入的冗余代码，抽取合并、出审计报告 | `dry-refactor-newadd` |

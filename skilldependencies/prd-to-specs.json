@@ -4,7 +4,7 @@
   "dependencies": {
     "skills": [
       { "name": "evolving-skills" },
-      { "name": "multi-lens-review" },
+      { "name": "parliament" },
       { "name": "retro-collect" },
       { "name": "retro-analyze" }
     ]

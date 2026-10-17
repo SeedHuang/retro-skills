@@ -3,7 +3,7 @@
   "skill": "review-loop",
   "dependencies": {
     "skills": [
-      { "name": "multi-lens-review" },
+      { "name": "parliament" },
       { "name": "evolving-skills" },
       { "name": "review-log" }
     ]
