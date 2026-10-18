@@ -15,7 +15,7 @@ description: 议会式多方评审。Use when 用户说「开议会」「议会�
 - 角色卡由 gen-agents.mjs 单源生成；禁止手改 `agents/*.md`，改角色 = 改脚本数据 → 重新生成 → `--check`。
 
 ## 总流程
-0. **组队**：读项目类型 → 按 `references/doc-taxonomy.md` 判文档类型 → 按 `references/assembly-matrix.md` 点将矩阵出提议名单 → 按 `references/host-duties.md` 定答辩组编制（架构师 7 方向选一、研发 4 人按文档类型换编制）→ 用户确认（覆盖矩阵零缺口 = 最低法定人数；侦探无条件常驻）
+0. **组队、送审与开评**：读项目类型 → 按 `references/doc-taxonomy.md` 判文档类型 → 按 `references/assembly-matrix.md` 自动点将并核覆盖矩阵零缺口 → 按 `references/submission-matrix.md` 判必带件 → 填 `assets/submission.md` 并建评审账本 → 按 `references/host-duties.md` 定答辩组编制（架构师 7 方向选一、研发 4 人按文档类型换编制）→ **提交授权**：用户已说「提交议会审批 / 提交议会评审」= 直接开评；若只是材料就绪而未授权，先问一次「spec 和 testcase 已经准备好了，是否提交议会进行评审？」，答「是」才开评，答「否」停 → 名单零缺口自动开评（不再问名单；只有缺口、高风险或用户明确要求时才问）；送审说明第 8 节自检缺一 = 不得开评；侦探无条件常驻
 1. **评审**：被点评委并行独立出卡（每席：固定清单逐条作答 + 自由探索 3-5 问）→ 主持人汇总、去重、按族分组 → 追问轮发全体评委补视角（审 rule/skill/agents 类文档时，另对照 `references/failure-modes.md` 13 病根表逐层核对）
 2. **答辩**：答辩方小组核实问题客观性 → leader 按 `references/debate-protocol.md` 逐卡作答（承认 / 反驳带依据 / 部分承认带修法）→ ≤3 轮
 3. **侦探**：每轮答辩后行为核对（刁难 / 回避 / 丢卡），机械判据与处置表在 `references/debate-protocol.md`
@@ -25,6 +25,7 @@ description: 议会式多方评审。Use when 用户说「开议会」「议会�
 7. **产出**：结论先行（X 矛盾 + Y 盲点 + Z 优化）→ 分级详述（`assets/issue-card.md` 格式）→ 自洽确认区 → 团队名单与轮间变更记录 → 实际执行路径标注 → **评审产物落点按 review-log 规矩**进 `.session/reviews/<YYYY-MM-DD-HHMM>-<kebab 名字>/`（`problems.md` 问题漏斗 + `progress.md` 过程账）；`docs/reports/` 只放分析数据，不放评审结论（2026-10-17 落地，原因见本技能 KB 账本验收回填）
 
 ## 关键规矩
+- 送审说明未填或缺项 = 不得开评；它是开卷清单的唯一来源（模板 `assets/submission.md`，必带件判据 `references/submission-matrix.md`）
 - 问题卡缺「证据」或「建议解法」= 废卡；无 P0 形态证据标 P0 = 级别不匹配
 - 重提已关闭问题且无新证据 = 刁难；答辩反驳无依据 = 回避（侦探均按机械判据核）
 - 审计两表必由审计专员本人实例完成，主持人代填即违规；证据栏空 = 不通过，不是待补

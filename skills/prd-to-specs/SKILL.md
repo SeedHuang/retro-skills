@@ -42,13 +42,19 @@ description: Split an existing PRD into independently developable specs with a r
 
 **双份真相禁令（硬性）**：PRD 已定稿的内容（DDL、架构决策、错误处理原则）**只活在 PRD**，严禁复制进任何新文件。后续 spec 一律用引用（"见 PRD §4.1"），不抄写。
 
-### 第 5 步 ·（可选）生成 spec 骨架
+### 第 5 步 ·（可选）生成 spec 骨架与测试用例骨架
 
 **默认不生成任何文件。** 仅当用户明确确认路线图并要求开工下一个 spec 时，才为其生成骨架：用 `assets/spec-template.md`，只填"为什么 + 核心决定表"，其余节留空并注释 `<开工时填充>`。一次只生成一个，不批量。
 
+**测试用例是 spec 的必有配套（硬性门）**：同一批生成 `<spec 同名前缀>-testcase.md`，按 `assets/testcase-template.md` 的字段填「覆盖总表 + 正例/负例骨架」。生成后逐条核对：① 每条用例五要素齐全（覆盖 / 前置 / 步骤 / 预期 / 判据）；② 负例与边界条数 ≥ 正例；③ 覆盖总表每行都能指回 spec 的具体节号或 R 编号。**缺任一项 = 该 spec 不算定稿，不得进入 writing-plans。**
+
+**编写者必须是 `senior-sdet` 子代理（硬性）**：testcase 由**全新上下文的 Senior SDET 子代理**编写，与 spec 作者、后续施工者**不是同一实例**。派发时先读角色卡 `agents/senior-sdet.md`，按它的「测试设计固定清单 + 三条铁律」执行；输入只给四样：spec 全文、验收锚点、已知风险点、不测清单。产出后核对：文件头「编写者 / 独立性声明」在位、七节结构齐全、每条用例五要素齐全——缺一不合格。若当前环境未注册该子代理（路径 B），把角色卡逐字贴入任务提示词。spec 作者回收后**只能核对覆盖与提问，不得自行改写判据**——自己写、自己判，等于把自评偏差搬进验收。
+
+**落点与命名**：按 `spec-testcase-gate` 规则判据 1（与 spec 同目录；文件名 = spec 文件名去掉 `.md` 后 + `-testcase.md`；spec 为目录形态时用目录内固定名 `testcase.md`）。
+
 ### 第 6 步 · 自检与评审
 
-逐条过 `references/quality-gates.md` 末尾的自检清单，把结果汇报给用户。建议用户对每个 spec 文档走 `parliament` 评审后再进入 writing-plans。
+逐条过 `references/quality-gates.md` 末尾的自检清单，把结果汇报给用户。spec + testcase 落盘后，问用户一次：**「spec 和 testcase 已经准备好了，是否提交议会进行评审？」** 答「是」→ 调用 `parliament`，由它自动生成送审说明、账本与名单（零缺口不再问名单），直接开评；答「否」→ 停下来，不自行开评。用户已明确说「提交议会审批 / 提交议会评审」时跳过提问，直接提交。两件都通过后再进入 writing-plans。
 
 ## 写作规范（句式一致性）
 
@@ -64,8 +70,8 @@ description: Split an existing PRD into independently developable specs with a r
 ## 产出物清单
 
 1. **PRD 内的 Spec 路线图章节**（默认唯一产出）
-2. （仅用户显式确认后）下一个 spec 的骨架文件
-3. 自检结果汇报
+2. （仅用户显式确认后）下一个 spec 的骨架文件 **+ 配套的 `-testcase.md`**（缺 testcase = spec 不算定稿）
+3. 自检结果汇报（含 testcase 五要素与负例数量核对结果）
 
 ## 复盘回流（进化飞轮）
 
