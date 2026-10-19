@@ -7,9 +7,10 @@
 | # | 文件 | 功能 | 状态 | 依赖 |
 |---|---|---|---|---|
 | 索引 | `docgen-index.md` | 共享决策 / 状态 / 依赖 | 生效 | — |
-| P1 | `docgen-rule-whole-file.md` | 一条 rule 的整文件生成 | **验证通过（V1–V11 全绿，2026-10-18）** | 索引 |
-| P2 | `docgen-skill-agent.md` | skill / agent 生成 + description / 触发表；含 gen-agents 的 `ROLES` / `--check` 收编与旧脚本退役（D14）；含 rule 六组合骨架（持续 / 条件触发 / 模式门控 × 义务 / 禁令）与两轴非法值矩阵 | 未创建 | P1 |
-| P3 | `docgen-inventory-migration.md` | 存量盘点 + 按需迁移 | 未创建 | P2 |
+| P1 | `docgen-rule-whole-file.md` | 一条 rule 的整文件生成（`spec-testcase-gate` 整文件链路验证） | **验证通过（V1–V11 全绿，2026-10-18）** | 索引 |
+| P2 | `docgen-agent-generation.md` | **agent 整文件生成**（13 席数据搬家 + senior-sdet 转录 = 14 个）+ description / 触发表 + gen-agents 收编与旧脚本退役（D14）；执行 = 逐 agent 串行巩固（P2-7，§6 逐步迁移方案）；生成物走「草稿 → 确认 → 替换」（参考 rule 草稿机制） | **待评审** | P1 |
+| P3 | `docgen-rule-generation.md` | **rule 整文件生成扩容**：rule 六组合骨架（持续 / 条件触发 / 模式门控 × 义务 / 禁令）+ 其余手写 rule 收编；复用 P2 基建 + 草稿机制 | 未创建 | P2 |
+| P4 | `docgen-skill-generation.md` | **skill 整文件生成**：frontmatter + 正文转录，17 个手写 skill 按需收编（D16）；复用 P2 基建 + 草稿机制 | 未创建 | P2 |
 
 **状态词表**：生效 / 待评审 / 已定稿 / 未创建 / 验证通过。
 
