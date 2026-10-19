@@ -10,6 +10,8 @@ import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 // 「什么算技能目录」判据的唯一真相源（另两处消费方：skill-inspector check.mjs / validate.test.mjs。勿在本文件另写一份）
 import { listSkillDirs } from './skill-dir.mjs'
+// docgen baseline 两清单（rule + agent）的共享常量——gate 的 baseline 断言从它派生，勿在本文件另写一份
+import { BASELINE_RULES, agentPaths } from '../tools/docgen/components/baseline.mjs'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -80,18 +82,12 @@ if (t.error) {
   }
 }
 
-// ②.5 docgen gate：整文件生成物与 baseline 的只读守卫
-// 设 DOCGEN_CHECK_ACTIVE=1：测试步骤里的 V10/V10b e2e 会自动 skip，避免 check → test → check 自递归。
-// gate env：嵌套（V10/V10b 沙箱）时透传 DOCGEN_*（让 gate 看到沙箱 sentinel）；常规 npm run check 剥离，
-// 防止 shell 残留测试变量把 gate 重定向到临时目录造成假绿。DOCGEN_NESTED 由 run.mjs 的 nestedCheck() 注入。
+// ②.5 docgen gate：整文件生成物与 baseline 的只读守卫（P2：切换到 tools/docgen/cli.mjs gate；baseline 从共享常量派生）
 const gateEnv = process.env.DOCGEN_NESTED === '1'
   ? { ...process.env, DOCGEN_CHECK_ACTIVE: '1' }
   : { ...testEnv, DOCGEN_CHECK_ACTIVE: '1' }
-const g = spawnSync(process.execPath, ['tools/docgen-spike/run.mjs', '--gate', '--no-clean'], {
-  cwd: root,
-  encoding: 'utf8',
-  env: gateEnv,
-})
+const baselineN = BASELINE_RULES.length + agentPaths().length
+const g = spawnSync(process.execPath, ['tools/docgen/cli.mjs', 'gate'], { cwd: root, encoding: 'utf8', env: gateEnv })
 if (g.error) {
   failed = true
   console.error('[docgen] 进程启动失败：' + g.error.message)
@@ -100,9 +96,9 @@ if (g.error) {
   if (g.status !== 0) {
     failed = true
     if (g.stderr) console.error(g.stderr)
-  } else if (!/baseline 21\/21/.test(g.stdout || '')) {
+  } else if (!new RegExp(`baseline ${baselineN}\/${baselineN}`).test(g.stdout || '')) {
     failed = true
-    console.error('[docgen] gate 退出 0 但未打印 baseline 21/21')
+    console.error(`[docgen] gate 退出 0 但未打印 baseline ${baselineN}/${baselineN}`)
   }
 }
 

@@ -19,5 +19,19 @@
   "rules/spec-testcase-gate.md",
   "rules/styled-component-file.md",
   "rules/ts-expect-error.md",
-  "rules/vitest-queued-alternative.md"
+  "rules/vitest-queued-alternative.md",
+  "agents/detective-observer.md",
+  "agents/reviewer-actuary.md",
+  "agents/reviewer-ai.md",
+  "agents/reviewer-audit.md",
+  "agents/reviewer-backend.md",
+  "agents/reviewer-frontend.md",
+  "agents/reviewer-interaction.md",
+  "agents/reviewer-ops.md",
+  "agents/reviewer-product.md",
+  "agents/reviewer-qa.md",
+  "agents/reviewer-reader.md",
+  "agents/reviewer-security.md",
+  "agents/reviewer-ui.md",
+  "agents/senior-sdet.md"
 ]

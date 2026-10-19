@@ -1,7 +1,7 @@
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
-export const TEMPLATE_PATH = join(dirname(fileURLToPath(import.meta.url)), 'template.md');
+export const TEMPLATE_PATH = join(dirname(fileURLToPath(import.meta.url)), '..', 'templates', 'rule.md.tpl');
 
 export const TEMPLATE_H2S = [
   '## 四要素声明',
@@ -15,47 +15,11 @@ export const TEMPLATE_H2S = [
   '## 验证',
 ];
 
-export const TARGET_GIT_HASH = '356d54e380098e19edea4d7ace048d872d8f3399';
-
-export const TARGET_SHA256 = 'b2c94a0dce9c71178f39bc85cb4af0d2db49a8aa6fc8bf80da63d44b972c5c69';
-
 export const TARGET_SIGNATURES = [
   '一条 spec 要算「可交付」，下面五条必须同时成立，缺一不合格：',
   '测试用例是验收的执行清单；没有它，spec 的验收项只是一句愿望，谁都可以说「做完了」。',
   '与「先写 spec、测试以后补」「这次先快速交付」「用例由 spec 作者顺手写」冲突时，以本规则为准。拿不准先停下说明，等确认再动。',
 ];
-
-export const SENTINEL_V4 = 'docgen-spike sentinel V4: temporary rule file for case V4 (safe to delete on next start)';
-
-export const SENTINEL_V10 = 'docgen-spike sentinel V10: temporary rule file for case V10 (safe to delete on next start)';
-
-export const BASELINE_RULES = [
-  'rules/core-working-principles.md',
-  'rules/data-support-triple.md',
-  'rules/docs-convention.md',
-  'rules/global-ask-before-acting.md',
-  'rules/how-i-must-reason.md',
-  'rules/import-guard.md',
-  'rules/import-path-choice.md',
-  'rules/landing-sweep.md',
-  'rules/list-empty-state.md',
-  'rules/no-git-write.md',
-  'rules/plain-language-to-user.md',
-  'rules/poll-deferred-at-start.md',
-  'rules/powershell-file-encoding.md',
-  'rules/reference-read-output-loop.md',
-  'rules/rules-single-source.md',
-  'rules/skill-assets-convention.md',
-  'rules/skill-authoring-convention.md',
-  'rules/spec-testcase-gate.md',
-  'rules/styled-component-file.md',
-  'rules/ts-expect-error.md',
-  'rules/vitest-queued-alternative.md',
-];
-
-export function renderBaseline() {
-  return JSON.stringify(BASELINE_RULES, null, 2) + '\n';
-}
 
 export function buildData() {
   return {

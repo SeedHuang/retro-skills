@@ -12,7 +12,7 @@ description: 议会式多方评审。Use when 用户说「开议会」「议会�
 - **A** Trae Agent / SOLO 会话：调度用户级子代理（`~/.trae-cn/agents/` 花名册，本仓 `agents/` 经 aas 同步），点名各成员。
 - **B** Builder / IDE 会话：用 Task 工具派通用子代理，角色卡从 `agents/<角色>.md` 读取后逐字贴入任务提示词。
 - **C** 无调度能力：主持人串行扮演各角色，报告醒目标注「降级模式」（第四层防线打折）。
-- 角色卡由 gen-agents.mjs 单源生成；禁止手改 `agents/*.md`，改角色 = 改脚本数据 → 重新生成 → `--check`。
+- 角色卡由 docgen 管线生成（`tools/docgen/cli.mjs` 六子命令）；禁止手改 `agents/*.md`，改角色 = 改组件数据 → 生成 → 草稿 → 确认 → 替换。
 
 ## 总流程
 0. **组队、送审与开评**：读项目类型 → 按 `references/doc-taxonomy.md` 判文档类型 → 按 `references/assembly-matrix.md` 自动点将并核覆盖矩阵零缺口 → 按 `references/submission-matrix.md` 判必带件 → 填 `assets/submission.md` 并建评审账本 → 按 `references/host-duties.md` 定答辩组编制（架构师 7 方向选一、研发 4 人按文档类型换编制）→ **提交授权**：用户已说「提交议会审批 / 提交议会评审」= 直接开评；若只是材料就绪而未授权，先问一次「spec 和 testcase 已经准备好了，是否提交议会进行评审？」，答「是」才开评，答「否」停 → 名单零缺口自动开评（不再问名单；只有缺口、高风险或用户明确要求时才问）；送审说明第 8 节自检缺一 = 不得开评；侦探无条件常驻
