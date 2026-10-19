@@ -7,11 +7,13 @@
 | # | 文件 | 功能 | 状态 | 依赖 |
 |---|---|---|---|---|
 | 索引 | `docgen-index.md` | 共享决策 / 状态 / 依赖 | 生效 | — |
-| P1 | `docgen-rule-whole-file.md` | 一条 rule 的整文件生成 | **已定稿（五席三轮评审通过）** | 索引 |
+| P1 | `docgen-rule-whole-file.md` | 一条 rule 的整文件生成 | **验证通过（V1–V11 全绿，2026-10-18）** | 索引 |
 | P2 | `docgen-skill-agent.md` | skill / agent 生成 + description / 触发表；含 gen-agents 的 `ROLES` / `--check` 收编与旧脚本退役（D14）；含 rule 六组合骨架（持续 / 条件触发 / 模式门控 × 义务 / 禁令）与两轴非法值矩阵 | 未创建 | P1 |
 | P3 | `docgen-inventory-migration.md` | 存量盘点 + 按需迁移 | 未创建 | P2 |
 
 **状态词表**：生效 / 待评审 / 已定稿 / 未创建 / 验证通过。
+
+> P1 验证证据（2026-10-18）：`tools/docgen-spike/run.mjs` 13/13 PASS；`--gate` baseline 21/21；`npm run check` 357 tests（347 pass / 10 skip）/ 0 findings / 190 文件 / 586 表 / exit 0。
 
 **规则**：一次只审一份 PRD + 本索引；已通过且依赖未变的 PRD 不重审。
 

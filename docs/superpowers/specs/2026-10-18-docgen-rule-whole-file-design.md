@@ -95,7 +95,7 @@ P1 的五个模型（整文件、入口基线、规则类型、纯度、可复�
   applicability: 'conditional',   // sustained | conditional | mode-gated
   polarity: 'obligation',         // obligation | prohibition
   title: '<H1 原文>',
-  sourceLine: '> <来源行原文>',
+  sourceLine: '来源：<来源行原文>',
   fourElements: {
     scope: '<范围（在哪）的值>',
     condition: '<条件（何时）的值>',
@@ -122,7 +122,7 @@ P1 的五个模型（整文件、入口基线、规则类型、纯度、可复�
 
 - 所有字符串必须非空、非纯空白、非 `TODO`；目标规则当前文本原样转录，不改写（V1 逐字节证明）。
 - `criteria` 的 `name` 是表格第二列的加粗文本；`pass` 是第三列文本；`id` 是稳定寻址键（默认取 `name`，必须唯一）。
-- `sourceLine` 含 `> ` 前缀；`examples` / `trigger` 的条目不含 `- ` 前缀，由组件统一加。
+- `sourceLine` **不含** `> ` 前缀（模板行已带 `> `）；`examples` / `trigger` 的条目不含 `- ` 前缀，由组件统一加。
 
 **占位符 → 来源**（模板 key 的封闭白名单）：
 
@@ -214,7 +214,7 @@ P1 的五个模型（整文件、入口基线、规则类型、纯度、可复�
 - 节与节之间恰好一个空行；文件末尾恰好一个 `\n`。
 - 本模板共 **9 个 H2**：核心判据 + 其余 8 个；与 target 一致（PRD P1-5 的「另有 8 个」是「除核心判据外还有 8 个」，合计 9）。
 - `fourElements`：四行 `- **范围（在哪）**：…` / `- **条件（何时）**：…` / `- **动作（极性 = 义务）**：…` / `- **宾语（对什么）**：…`。
-- `criteriaTable`：表头 `| # | 判据 | 怎么算合格 |` + 分隔行 + 每行 `| <no> | **<name>** | <pass> |`。
+- `criteriaTable`：表头 `| # | 判据 | 怎么算合格 |` + 分隔行 + 每行 `| <no> | **<name>** | <pass> |`；**块内含表后「无子代理环境时…」段落**（target 原文；不另设占位符，V1 逐字节证明）。
 - `examples`：正例行 `- **正例**：…`，反例行 `- **反例**：…`，按数据顺序。
 - `trigger`：每行 `- <条目>`。
 - `verification`：段与段之间一个空行。
@@ -364,6 +364,7 @@ V10 允许嵌套调用 gate（`run.mjs(V10) → check-all → run.mjs(gate)`）�
 
 - 启动：只删 `tools/docgen-spike/.tmp-test/`，随后 `mkdirSync(ROOT, { recursive: true })`；对 V4/V10 的唯一临时文件做哨兵自愈：内容等于各自写入的固定串 → 删除并打印「已清理上次中断残留」，否则按 `UnregisteredHandwritten` fail-closed。`--no-clean` 跳过本步。
 - **ROOT 归属**：只有顶层 owner 进程清 ROOT / 做哨兵自愈；嵌套 check、测试侧 spawn 一律带 `--no-clean`，不得清外层正在使用的 ROOT 或临时文件。
+- **测试隔离（仅测试）**：只有 `DOCGEN_TEST_MODE=1` 时才读取 `DOCGEN_TMP_ROOT` / `DOCGEN_RULES_DIR` / `DOCGEN_BASELINE_PATH`；正常 CLI 与 `npm run check` 不设置，路径固定。
 - **临时文件唯一名**：V4 用 `rules/tmp-new-rule-V4.md`，V10 用 `rules/tmp-new-rule-V10.md`；避免嵌套 check 时互相删除。baseline 扫描把任何 `rules/*.md` 都视为新增。
 
 > PRD §4 的 `rules/tmp-new-rule.md` 在本实现按用例加后缀（`-V4` / `-V10`），属实现细化，待 PRD 下次同步。

@@ -108,11 +108,13 @@ ocr session list
 
 **为什么进 git 就安全了**：`docs/` 全部进 git → 复盘跟着 commit 走，换机器也在。**这是唯一能防「session 一断就丢」的落点。**
 
-## 什么时候删
+## 什么时候归档（2026-10-18 改：不再删）
 
-**这次 review 的全部条目都处置完 → `.session/reviews/<那个目录>/` 整个删掉。**
+**这次 review 的全部条目都处置完 → 把 `.session/reviews/<那个目录>/` 整目录迁到 `docs/superpowers/reviews/<同名>/`（进 git），再删 `.session/` 里的副本。**
 
-⚠️ 删之前确认复盘**已归档**（见上节，`docs/superpowers/retro/` 下能查到）—— 没归档就删 = 永久丢失。
+⚠️ `retro-*.md` 仍按上一节先搬 `docs/superpowers/retro/`（或随整目录一起迁，并在 docs 里保留）。
+
+**为什么不再直接删**：过程账是跨 session 判断「这个坑踩过没有」的唯一凭据；`.session/` 不进 git，删了就永久丢失。此前实测 26 个审查目录从未被删，保留是有效实践——2026-10-18 用户裁定把这个实践写成规则。
 
 结论已经进了**测试断言**（修好的 bug）、**代码注释 / spec**（不改的理由）、**`docs/after/`**（还没做的待决项）。
 

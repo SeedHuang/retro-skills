@@ -13,13 +13,15 @@ const LESSONS_SRC = resolve(SKILL_DIR, 'scripts', 'lessons.mjs')           // �
 
 /** 递归列文件（守卫用：按扩展名筛，深度浅）
  *
- *  ⚠️ `depth > 3` 是刹车（防扫进 node_modules / .git 那种大目录），
- *  但它曾**静默截断**——超过 3 层的文件整个被跳过、且不告诉任何人，
+ *  ⚠️ `depth > maxDepth` 是刹车（防扫进 node_modules / .git 那种大目录），
+ *  但它曾**静默截断**——超过上限的文件整个被跳过、且不告诉任何人，
  *  三条守卫（命令参数 / 行号引用 / 数字漂移）于是「假装扫全了」。
  *  现在把截断情况记进 `scan.truncated`，由调用方断言「没有漏」。
  *  实测 2026-10-08：仓库 59 个 md、最深 ≤3 层、漏 0 个，所以这条防线当时是「没用上」而非「已生效」。
+ *  2026-10-18 提到 4：`docs/superpowers/retro/<那一次>/retro-*.md`（docs-convention 2026-10-15 定的归档布局）
+ *  正好是第 4 层，保持 3 会让新复盘文件被截断、守卫假绿（实测：议会评审复盘首次落盘即触发）。
  */
-function makeScanner(maxDepth = 3) {
+function makeScanner(maxDepth = 4) {
   const scan = { truncated: [] }
   // 这六个目录**刻意不扫**（`.git` / `node_modules` 一个巨大且无内容价值、一个内部结构随版本变化；
   // `.session/` 是临时过程账——不进 git、做完即删；`.superpowers/` 是 SDD 执行账本（一次性历史记录，

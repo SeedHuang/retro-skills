@@ -57,7 +57,9 @@ if (!failed) console.log('① 语法检查通过')
 // ② 测试：node --test（glob 由 Node 展开，引号包住防 shell 展开差异）
 // glob 覆盖全仓（不只 skills/，否则 skilldependencies/ 等目录下的测试会漏跑）；node_modules 由 Node 自身默认排除
 // maxBuffer 要给足：下面要回读 "# tests N" 判定测试是否真跑，输出被截断会误报成「解析不出用例总数」
-const t = spawnSync(process.execPath, ['--test', '**/*.test.mjs'], { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
+const testEnv = { ...process.env, DOCGEN_CHECK_ACTIVE: '1' }
+for (const key of ['DOCGEN_TMP_ROOT', 'DOCGEN_RULES_DIR', 'DOCGEN_BASELINE_PATH', 'DOCGEN_TEST_MODE', 'DOCGEN_NESTED', 'NODE_TEST_CONTEXT']) delete testEnv[key]
+const t = spawnSync(process.execPath, ['--test', '**/*.test.mjs'], { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, env: testEnv })
 console.log(t.stdout)
 if (t.error) {
   failed = true
@@ -75,6 +77,32 @@ if (t.error) {
   } else if (Number(testsLine[1]) === 0) {
     failed = true
     console.error('[测试] 用例总数为 0，测试未实际执行（glob 零匹配？）')
+  }
+}
+
+// ②.5 docgen gate：整文件生成物与 baseline 的只读守卫
+// 设 DOCGEN_CHECK_ACTIVE=1：测试步骤里的 V10/V10b e2e 会自动 skip，避免 check → test → check 自递归。
+// gate env：嵌套（V10/V10b 沙箱）时透传 DOCGEN_*（让 gate 看到沙箱 sentinel）；常规 npm run check 剥离，
+// 防止 shell 残留测试变量把 gate 重定向到临时目录造成假绿。DOCGEN_NESTED 由 run.mjs 的 nestedCheck() 注入。
+const gateEnv = process.env.DOCGEN_NESTED === '1'
+  ? { ...process.env, DOCGEN_CHECK_ACTIVE: '1' }
+  : { ...testEnv, DOCGEN_CHECK_ACTIVE: '1' }
+const g = spawnSync(process.execPath, ['tools/docgen-spike/run.mjs', '--gate', '--no-clean'], {
+  cwd: root,
+  encoding: 'utf8',
+  env: gateEnv,
+})
+if (g.error) {
+  failed = true
+  console.error('[docgen] 进程启动失败：' + g.error.message)
+} else {
+  if (g.stdout) console.log(g.stdout.trim())
+  if (g.status !== 0) {
+    failed = true
+    if (g.stderr) console.error(g.stderr)
+  } else if (!/baseline 21\/21/.test(g.stdout || '')) {
+    failed = true
+    console.error('[docgen] gate 退出 0 但未打印 baseline 21/21')
   }
 }
 

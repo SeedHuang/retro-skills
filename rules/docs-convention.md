@@ -8,11 +8,14 @@
 
 | 目录 | 装什么 | 状态标记 | 什么时候搬走 |
 |---|---|---|---|
+| **`docs/prd/`** | **需求定义（PRD）**：要做什么、为什么、验收与 Spec 路线图 | 明确写「待评审（未定稿）」或「已定稿」 | 不搬走；被后续 PRD 取代时原文保留（历史记录） |
 | `docs/superpowers/specs/` | **已定稿**的设计 | 定稿即生效 | 被后续 spec 取代时，**原文保留不改**（历史记录） |
 | `docs/superpowers/plans/` | **已排期**的执行步骤 | 勾选框 + 进度表 | 全部执行完 → 勾选，**不搬走** |
 | `docs/handoffs/` | 某次 session 的**收尾交接** | 一次性 | 永不改写；新 session 另起一份 |
 | **`docs/after/`** | **未完成 / 待决 / 悬置** | 明确写「未决」 | 做完了 → 把结论并入 spec，条目迁出 |
 | 仓库根 | 体系总图、README | 长期 | — |
+
+**`docs/prd/` 为什么单列一档**：PRD 与 spec 的生命周期不同——PRD 允许未定稿（正在被议会审），spec 必须定稿。把未定稿 PRD 放 `after/` 会让它随「待办清账」消失，放 `specs/` 又会让读者误当定稿。判据是「需求定义 vs 实现设计」，不是「定没定稿」。
 
 ## 硬约束
 
@@ -70,7 +73,8 @@
 
 | 落点 | 装什么 | 什么时候删 |
 |---|---|---|
-| `.session/reviews/<YYYY-MM-DD-HHMM>-<kebab-case 名字>/` | **某次审查的过程账**：跑了几轮、三段各做了什么、改了什么。**三个文件**：`progress.md`（活的，每轮追加）+ `problems.md`（漏斗，修好的移走）+ `retro-*.md`（**复盘文件，0 或多个**；长的复盘独立成文件，与 progress 同级） | 该次审查全部处置完 → **整个目录删掉**；⚠️ **`retro-*.md` 必须在删之前（或更早：本次 session 结束前）搬进 `docs/superpowers/retro/`** —— `.session/` 不进 git，不搬就**永久丢失**（换机器即失），实测 26 个审查目录从没被删过，所以真正的 deadline 是 session 结束，不是删目录 |
+| `.session/reviews/<YYYY-MM-DD-HHMM>-<kebab-case 名字>/` | **某次审查的过程账**：跑了几轮、三段各做了什么、改了什么。**三个文件**：`progress.md`（活的，每轮追加）+ `problems.md`（漏斗，修好的移走）+ `retro-*.md`（**复盘文件，0 或多个**；长的复盘独立成文件，与 progress 同级） | 该次审查全部处置完 → **整目录迁 `docs/superpowers/reviews/<同名>/`（进 git），再删 `.session/` 副本**（2026-10-18 改：不再直接删；此前实测 26 个目录从未被删，保留是有效实践）。⚠️ `retro-*.md` 仍要在本次 session 结束前先搬 `docs/superpowers/retro/`——`.session/` 不进 git，不搬就**永久丢失**（换机器即失） |
+| `docs/superpowers/reviews/<YYYY-MM-DD-HHMM>-<kebab-case 名字>/` | **已处置完的审查全过程账**（progress / problems / cards / 复盘指针）；与 `.session/reviews/` 同名同构，区别是**进 git** | **不删**；被后续审查取代时原文保留（历史记录） |
 | `.session/rule-checks/checklist-<YYYYMMDD-HHmmss>.md` | **一次「编辑 rule」动作的自查账**：rule-edit-checklist 快照（由 `rule-inspector` 技能的 `gen-rule-checklist.mjs` 从 `rule-edit-checklist-template` 展开，含 A–F 组检查项）。**为什么塞不进另两档**：它不是「某次审查的过程账」（挂在一次 rule 编辑动作上、与审查无关），也不是 README 的现状 | 该 rule 编辑动作收尾（全行「确认执行」）后即可删；对应结论已进 git（规则 / 测试断言 / spec）→ 删 |
 | `.session/README.md` | 这个目录现在有什么（**现状**） | 不删 |
 

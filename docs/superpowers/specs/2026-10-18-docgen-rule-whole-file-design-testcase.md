@@ -3,8 +3,10 @@
 > 归属 spec：`docs/superpowers/specs/2026-10-18-docgen-rule-whole-file-design.md`（split from `docs/prd/docgen-rule-whole-file.md`，2026-10-18）
 > 编写者：`senior-sdet`（实例标识 `sdet-2026-10-18-docgen-p1`，全新上下文）｜**独立性声明**：编写者 ≠ spec 作者，≠ 施工者；本文件编写期间未读到任何 docgen 实现（实测 `tools/docgen-spike/` 目录在本轮不存在），用例只从 spec 全文、PRD §4/§5/§6/§8 的验收锚点推导；spec 作者只能核对覆盖与提疑问，不得自行改写本文件的判据。
 > 状态：**定稿（内容评审通过；机械检查通过，2026-10-18）**（定稿 = 每条用例五要素齐全 + 覆盖总表与 V1–V11、R1–R15 一一对应）｜最后更新：`2026-10-18`（第 7 轮：按 spec 补的三处口径同步——§5.4 哨兵常量 `SENTINEL_V4` / `SENTINEL_V10` 从 `specTestCaseGate.mjs` 导出、§7.2 涉及 check 的 e2e 在 `DOCGEN_CHECK_ACTIVE=1` 下显式 `t.skip()`、§7.3/§7.4 故障注入副本由 `run.mjs` 启动清理后自建 + 唯一临时名；本文件同步 TC-049、TC-051、TC-057、TC-070 与 §0/§4/§7/§8；**第 8 轮**按 spec 补的最后四处口径再同步——`--case` 枚举含 `V10b`、省略 `--case` 的全量为 **13** 例、`--no-clean` 的 ROOT 归属（测试内 spawn 一律带、顶层 owner 不带）、故障注入副本由 `run.mjs --case Vn` 的用例代码在启动清理后自建、TC-057 并入 §7.2 的 skip 清单且 ROOT 残片预置获 §7.3 明文例外；本文件同步 §0、TC-049/051/052/053/054/057/062/063、§1/§3/§4/§7/§8；**第 9 轮**按 spec §7.3 补的「副本归属两分」口径再同步——`--case Vn` 内的副本由用例代码在启动清理后自建，`--gate` / `--compare` 等非 `--case` 模式的副本允许在 spawn 前预置在 ROOT 内（须带 `--no-clean` + spawn 前先断言存在），同时把第 6 轮的旧断言口径标为历史记录；本文件同步 §0、TC-065、TC-069、TC-068、§7.1、§8；**用例总数不变：71 条 / 正 13 / 负 58**）
+> 第 10 轮（2026-10-18）：TC-022 的 byte 5→4（按 §6.1 逐字节复算；仅修正期望，不改输入）。
+> 第 11 轮（2026-10-18，代码审查修复）：新增 **TC-052b**（回归：§7.2 中 baseline 校验先于模板读取，模板缺失 + baseline 坏 → `InvalidBaseline` 优先；总数 71 → **72** 条，正 13 / 负 59）。
 > 命名与落点：按 `spec-testcase-gate` 判据 1（与 spec 同目录；文件名 = spec 文件名去 `.md` + `-testcase.md`）。
-> 来源标注：本文件 71 条用例**全部为「spec 推导」**（第 5 轮新增 TC-067–TC-071 仍从 spec 推导：F4 依据 spec §7.2「防自递归」段、F15 依据 §7.2 步③.5、F11 依据 §7.1 `TargetReadFailed` 与 `--compare`、F18 依据 §7.1 `--write-baseline`；F13/F14 只是判据实现方式的换装，不新增语义）；无「实现观察（补充）」类用例（实测 `tools/docgen-spike/` 在本轮仍不存在）。§8 建议表中的条目另标状态列，写明「已落地（spec 哪一节）」「不采纳」或「仍开放」。
+> 来源标注：本文件 72 条用例（第 11 轮起）**全部为「spec 推导」**（第 5 轮新增 TC-067–TC-071 仍从 spec 推导：F4 依据 spec §7.2「防自递归」段、F15 依据 §7.2 步③.5、F11 依据 §7.1 `TargetReadFailed` 与 `--compare`、F18 依据 §7.1 `--write-baseline`；F13/F14 只是判据实现方式的换装，不新增语义；**TC-052b 第 11 轮补登**，判据依据 §7.2 步骤顺序与 §7.1 逐码表）；无「实现观察（补充）」类用例（实测 `tools/docgen-spike/` 在本轮仍不存在）。§8 建议表中的条目另标状态列，写明「已落地（spec 哪一节）」「不采纳」或「仍开放」。
 
 **第 2 轮改动清单**（TC 编号不删不改号，新用例从 TC-063 起）：
 
@@ -183,6 +185,7 @@ spec §3.1 已把测试代码落点写进文件布局（`tools/docgen-spike/test
 | TC-050 | V10；§7.2 接线 + 防自递归；§7.4 **唯一名 `tmp-new-rule-V10.md`**；R11 | e2e | 负 | 机器 | `run.mjs --case V10`（内部跑一次 `npm run check`） | P0 |
 | TC-051 | V10b 前半；R6（比对能力）；§7.2（`DOCGEN_CHECK_ACTIVE=1` 显式 `t.skip()`）；§7.3（副本由该例启动后自建）；§7.4（测试内 spawn 带 `--no-clean`）；§7.1 断言模式（本例期望的 `Mismatch` → `PASS V10b` + exit 0） | e2e | 负 | 机器 | `run.mjs --case V10b --no-clean`（前半；`cli.test.mjs` 内带嵌套 skip 选项） | P0 |
 | TC-052 | R6（基线能力，不假绿）；§7.3（副本由该例启动后自建）；§7.4（测试内 spawn 带 `--no-clean`）；§7.1 断言模式（`BaselineDrift` 是 V7 的期望 → `PASS V7` + exit 0） | e2e | 负 | 机器 | `run.mjs --case V7 --no-clean` | P0 |
+| TC-052b | §7.2 步骤顺序（baseline 校验先于模板读取；模板缺失 + baseline 坏 → `InvalidBaseline` 优先，不报 `TemplateReadFailed`）；R9 | 单元 | 负 | 机器 | `node --test fault` | P1 |
 | TC-053 | R10 退出码 1 | 单元 | 负 | 机器 | `node --test cli` | P1 |
 | TC-054 | R10 退出码 2 | 单元 | 负 | 机器 | `node --test cli` | P0 |
 | TC-055 | R10 退出码 3 | 单元 | 负 | 机器 | `node --test cli` | P0 |
@@ -476,10 +479,10 @@ spec §3.1 已把测试代码落点写进文件布局（`tools/docgen-spike/test
 ### TC-022 line 计算口径：坏占位符前有 2 个换行 → line 恰为 3；比较对象含 `\r` 时不单独成行
 
 - **覆盖**：`§5.1`「`line` = 该 `{{` 之前 `\n` 的数量 + 1」；`§6.1 步3`「`0x0D` 不单独成行」
-- **前置**：① 模板副本第 3 行放 `{{bad`（前两行各以 `\n` 结束）；② 一对 Buffer：`expected = 'a\nbc\ndef'`、`actual = 'a\nbc\rdef'`（差异字节在 index 5，差异前只有 1 个 `0x0A`、差异前无 `0x0D`）
+- **前置**：① 模板副本第 3 行放 `{{bad`（前两行各以 `\n` 结束）；② 一对 Buffer：`expected = 'a\nbc\ndef'`、`actual = 'a\nbc\rdef'`（差异字节在 index 4，差异前只有 1 个 `0x0A`、差异前无 `0x0D`）
 - **步骤**：① 渲染①的模板；② 捕获异常并读 `line`；③ 调 `compareBuffers(actual, expected)`；④ 读返回的 `line` 与 `byte`
-- **预期**：②`line === 3`（不是 4、不是字节偏移）；④`line === 2`、`byte === 5`——若实现把 `0x0D` 也当行尾，`line` 会算成 3，本步专门抓这一类
-- **判据**：`node --test tools/docgen-spike/test/validate.test.mjs` 与 `node --test tools/docgen-spike/test/compare.test.mjs` 均退出码 0；断言 `§5.1 > line 计算`（`assert.strictEqual(err.line, 3)`）与 `§6.1 > CR 不成行`（`assert.strictEqual(r.line, 2)` 且 `assert.strictEqual(r.byte, 5)`）通过
+- **预期**：②`line === 3`（不是 4、不是字节偏移）；④`line === 2`、`byte === 4`——若实现把 `0x0D` 也当行尾，`line` 会算成 3，本步专门抓这一类
+- **判据**：`node --test tools/docgen-spike/test/validate.test.mjs` 与 `node --test tools/docgen-spike/test/compare.test.mjs` 均退出码 0；断言 `§5.1 > line 计算`（`assert.strictEqual(err.line, 3)`）与 `§6.1 > CR 不成行`（`assert.strictEqual(r.line, 2)` 且 `assert.strictEqual(r.byte, 4)`）通过
 - **红绿证据**：红① = 应用 `MUT-17`（line 用字符偏移）→ ②的值不等于 3，本用例 FAIL；红② = 应用 `MUT-61`（line 统计时把 `0x0D` 也计为换行，或先把 `\r\n` 归一）→ ④的 `line` 变 3，本用例 FAIL；绿 = 两者都不应用时 PASS
 - **对应测试**：`tools/docgen-spike/test/validate.test.mjs::§5.1 > line 计算`、`tools/docgen-spike/test/compare.test.mjs::§6.1 > CR 不成行`（待 plan Task N）
 - **不覆盖**：不覆盖「模板本身含 CRLF 时的行号」——模板属输入角色，会先被 `EnvironmentEOL` 拦（TC-026），到不了行号计算
@@ -817,6 +820,17 @@ spec §3.1 已把测试代码落点写进文件布局（`tools/docgen-spike/test
 - **红绿证据**：红 = 应用 `MUT-47`（gate 里把基线校验包在 `try{}catch{}` 里吞掉）→ 输出 21/21、该例判红（`FAIL V7` + exit 1），本用例 FAIL；绿 = 撤掉 MUT 后 PASS
 - **对应测试**：`tools/docgen-spike/test/cli.test.mjs::R6 > gate 基线能力`（待 plan Task N）
 - **不覆盖**：不覆盖 `--gate` 与 `--case` 同时给出的行为（spec §7.1 已定为互斥并以 exit 2 拒绝，由 TC-063 覆盖）；**不再单跑 `--gate --baseline <副本>`**：该路径理论上可带 `--no-clean` 预置副本（§7.3 第②类），但会与「V7 副本由该例自建」的语义重复，且另起一次 spawn 时前一次用例的退出钩子已把 ROOT 删掉、副本须由测试重建并断言存在——本用例只锁「不假绿」，不为它再造一套预置逻辑
+
+### TC-052b 检查顺序回归：baseline 校验先于模板读取（模板缺失 + baseline 坏 → `InvalidBaseline` 优先）
+
+- **覆盖**：`R9`（baseline 五步）；`§7.2`（步骤顺序：环境 → baseline → 模板；baseline 校验在模板读取之前）；`§7.1`（逐码表：`InvalidBaseline` → 2）
+- **前置**：`.tmp-test/TC-052b/` 下由测试预置一份坏 baseline 副本（`[]\n`，结构步即失败）与一个不存在的模板路径（**注意**：本副本属非 `--case` 的 gate 模式 §7.3 第②类，spawn 带 `--no-clean` 且 spawn 前先断言坏 baseline 存在；模板是「缺失」对象，断言其不存在）
+- **步骤**：① 断言坏 baseline 副本存在、模板路径不存在；② `run.mjs --gate --baseline <副本> --template <缺失模板> --no-clean`；③ 检查输出与退出码
+- **预期**：退出码 2；输出含 `InvalidBaseline`，**不得**含 `TemplateReadFailed`（若实现先读模板，模板缺失会抢在 baseline 校验前报 3）
+- **判据**：命令退出码 `=== 2`；输出匹配 `/InvalidBaseline/` 且 `doesNotMatch(/TemplateReadFailed/)`
+- **红绿证据**：红 = 恢复旧顺序（先读模板再查 baseline）→ 报 `TemplateReadFailed` + exit 3，本用例 FAIL；绿 = 现顺序（baseline 在模板之前）→ PASS
+- **对应测试**：`tools/docgen-spike/test/fault.test.mjs::TC-052b`（新增回归，2026-10-18）
+- **不覆盖**：不覆盖「target 缺失 + baseline 坏」组合——target 读取属 §7.2 步①（环境检查需先读入），先报 `TargetReadFailed`(3) 是 spec 顺序的必然结果，非缺陷
 
 ### TC-053 退出码 1：`--case V1` + 差异 target → 用例未达预期
 
