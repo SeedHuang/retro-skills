@@ -195,6 +195,8 @@ P1 用一条 rule 证明了整文件模型、入口基线、规则类型「枚�
 
 > 状态口径：`未入队`（还没轮到）/ `迁移中`（已入队，未过 6.3）/ `已巩固`（过 6.3）/ `停损未迁`（停损放弃，附停损轮次与复盘指针）。**全部 14 个 agent 无「停损未迁」才满足理想收口；带未迁按 §8 例外收口条款（≤3）收口**。
 
+> **S1 终态（2026-10-19，能力与终态里程碑）**：14 席组件数据已入 docgen（`agentData` 骨架 + `triggerTable` 2 锚点席拆槽）；`agents/*.md` 均未由 docgen 替换 → 全部「未入队（registered 态）」；守卫载体 = gate/check-agents 的 registered 存在性检查 + W4 派生断言（锚点席）+ UnregisteredHandwritten 清单外拦截 + 两清单 baseline 35 条。验收证据（2026-10-19 实跑）：`npm run check` 318 tests 全绿 / gate `baseline 35/35` / W4 黄金断言逐字相等 / W5 基线 35 条 / W8 `gen-agents.mjs` 退役 / W9 `tools/docgen-spike/` 删除。S2/S3/S4 将逐个把 14 席从「未入队」推进到「已巩固」。
+
 ## 7 交付物
 
 1. `tools/docgen/components/*.mjs`：specTestCaseGate（迁移）+ agentData（ROLES + senior-sdet）+ triggerTable + patternRegistry（模式登记册）+ validateAgentData（承接 gen-agents.test.mjs 守卫断言）；
