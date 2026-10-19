@@ -182,4 +182,5 @@ skills/dc-translate/
 
 - [ ] P2 管线建成（`tools/docgen/` 落位）后：建 `skills/dc-translate/`（§5 结构）+ 两条 rule（§6）→ `aas sync`
 - [ ] dc-translator 角色卡走 W5 受控变更旅程（§7）
+- [ ] **PRD 回环（第 2 轮评审 AI-N2 裁决，待决）**：PRD `docgen-agent-generation.md` P2-8 断言 e「存在声明 fallback」措辞改为 vacuous（与 S1 spec §6-13 已落地的「未声明 = 合法」对齐）——S1 spec 已按 vacuous 实现，PRD 下次修订时同步；同步后删除本行
 - [ ] 本文档瘦身为 done，待办迁出

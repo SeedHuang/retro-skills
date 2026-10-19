@@ -220,3 +220,82 @@ P1 用一条 rule 证明了整文件模型、入口基线、规则类型「枚�
 本 PRD 不直接产生 testcase。由它拆出的 spec 必须同批产出独立 testcase（`spec-testcase-gate` 规则判据 1–5），否则 spec 不算定稿、不得进 plan。
 
 > 拆分提示（给 prd-to-specs）：P2 因 P2-7 的串行节奏，spec 应按「agent 类一组」拆，内部按对象粒度分任务；每个对象任务的验收锚点 = 对应 W 行；description 派生（P2-2/P2-8）、迁移期数据所有权（6.2 步 2）、带未迁收口（§8）须在 testcase 中独立覆盖。
+
+## 10 Spec 路线图
+
+> 拆分决策（2026-10-19，用户确认「按对象拆多份」）：P2 拆 **4 份 spec** + 每份独立 testcase（`spec-testcase-gate` 判据 1–5）。拆分依据 = 对象粒度（能力与终态 / 试点 / senior-sdet / 余下 12 席），每个对象任务的验收锚点 = 对应 W 行。
+
+### 依赖图
+
+```text
+S1（能力与终态，序 0+4+5，先行）
+└──→ S2（试点 1 席，序 1，W1）      [依赖 S1]
+      └──→ S3（senior-sdet 转录，序 2，W2）[依赖 S1 + S2]
+            └──→ S4（余下 12 席，序 3，W3）[依赖 S1 + S2]
+S1 终态任务（W4/W5/W8/W9）依赖 S2/S3/S4 完成后再验收
+```
+
+> **串行链（非并行）**：S2/S3/S4 都写 `tools/docgen/components/agentData.mjs` 与 `agents/*.md`、共享 baseline 扩容——变更半径重叠，**严格按队列序 1→2→3 串行执行**（PRD 6.1），不可并行开发。S1 的序 0 能力先行落位，序 4/5 终态依赖对象迁移完成。
+
+### S1 · docgen-agent-capability — 能力与终态（依赖：无，先行）
+
+- **边界**：序 0（CLI 基建 `tools/docgen/`、草稿箱、守卫迁移、check-all 参数化、baseline 两清单 35 条）+ 序 4（draft/replace 幂等完备）+ 序 5（W4 派生 / W5 扩容+新增旅程 / W8 退役 / W9 spike 退役）；**不做**任何单席数据搬家（那是 S2/S3/S4）。
+- **大纲**：
+  - 落位 `tools/docgen/` 组件 / 模板 / CLI 与草稿箱机制（P2-4/P2-6）
+  - gen-agents.test.mjs 守卫断言迁入 validateAgentData / check-agents（P2-3）
+  - baseline 两清单 35 条常量 + check-all 参数化（P2-5）
+  - W4 description 派生锚点 + gate 全 14 席断言
+  - W5 gate 扩容 + 新增 1 席受控变更旅程
+  - W8 gen-agents 退役 / W9 spike 退役（等价迁移表）
+- **验收锚点**：W4 / W5 / W6 / W7 / W8 / W9（PRD §5）+ 退出码五档（PRD §4）+ P2-遗-1/2/3/6/8
+
+### S2 · docgen-agent-pilot — 试点 1 席（依赖：S1）
+
+- **边界**：`reviewer-audit`（试点）数据搬家走完九步闭环（6.2）到巩固（6.3）；**不做**其它席、不做 senior-sdet。
+- **大纲**：
+  - ROLES 该席字段迁入组件 + description 拆槽（6.2 步 2）
+  - 生成 → 逐字节比对（排除 description）→ 落草稿 → 替换 → 验收
+  - 迁移前黄金断言「派生 description == 现文件 frontmatter」（P2-遗-7）
+  - W1 验收（含 gen-agents 该席产物 = docgen 产物，黄金快照时序）
+- **验收锚点**：W1（PRD §5）+ P2-遗-7（黄金快照时序）
+
+### S3 · docgen-agent-senior-sdet — senior-sdet 转录（依赖：S1 + S2）
+
+- **边界**：`senior-sdet` 手写卡转录成组件数据（第二套模板，P2-1）；**不做** 13 席、不做草稿能力本身。
+- **大纲**：
+  - 手写正文转录 + 来源声明行更新（W2 唯一允许差异）
+  - 专属 description 句式（身份句 + when + `Do not use for` + notWhen，P2-2）
+  - 翻译质量三标准自评写入组件数据注释（P2-遗-9）
+  - 转录九步闭环到巩固
+- **验收锚点**：W2（PRD §5）+ P2-遗-9
+
+### S4 · docgen-agent-batch — 余下 12 席（依赖：S1 + S2）
+
+- **边界**：余下 12 席逐个 ROLES 搬家，逐个走九步闭环、逐个巩固（P2-7 / 6.1 序 3）；**不做**试点已迁席、不做能力。
+- **大纲**：
+  - 12 席逐个：ROLES 搬家 + description 拆槽 → 生成 → 比对 → 草稿 → 替换 → 巩固
+  - 逐席迁移前黄金断言（P2-遗-7）
+  - 每席巩固后才下一席（W3）
+- **验收锚点**：W3（PRD §5）+ P2-遗-7
+
+### 你要做的事 → 读这些
+
+| 你要做 | 必读 |
+|---|---|
+| 实施 S1 | S1 spec + 本 PRD §3/§4/§5/§7/§8 |
+| 实施 S2 | S2 spec + S1 spec（能力前置）+ 本 PRD §6.1–6.4 |
+| 实施 S3 | S3 spec + S1 spec + S2 spec（试点模板已验证）+ 本 PRD §6.1–6.4 |
+| 实施 S4 | S4 spec + S1 spec + S2 spec（试点模板已验证）+ 本 PRD §6.1–6.4 |
+
+### 跨文件关键设计决定（2026-10-19 定）
+
+- **shared-退出码**：五档退出码完整映射（0/1/2/3/4）在 S1 定义并落 testcase；S2/S3/S4 的 testcase 引用 S1 码表，不重复定义（P2-遗-6）。
+- **shared-迁移闭环**：九步闭环（6.2）+ 巩固定义（6.3）+ 失败回退（6.4）在 S1 落地为组件/CLI 能力；S2/S3/S4 引用 PRD §6，不复制正文（双份真相禁令）。
+- **shared-黄金断言**：迁移前「派生 description == 现文件 frontmatter」断言口径由 S2 首次落 testcase；S4 复用（P2-遗-7）。
+- **shared-registered**：未入队 registered 席的计数 / 守卫 / 收口口径在 S1 定义，S2/S4 迁移期引用（P2-遗-1/2/3）。
+
+### 注意
+
+- spec 首行保留追溯标记 `> split from docs/prd/docgen-agent-generation.md (2026-10-19)`。
+- 每份 spec 必须同批产出独立 testcase（senior-sdet 全新上下文编写），一起送议会；缺 testcase 不得送议会、不得进 plan（`spec-testcase-gate`）。
+- shared 文件在第一个引用它的 spec 开工时创建，内容用引用指向 PRD，不抄写。
