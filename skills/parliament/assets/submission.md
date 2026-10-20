@@ -1,6 +1,6 @@
 # 送审说明：<评审对象>
 
-> 状态：待开评｜准备时间：<YYYY-MM-DD HH:MM>｜账本：<`.session/reviews/<YYYY-MM-DD-HHMM>-<kebab 名字>/`>
+> 状态：待开评｜准备时间：<YYYY-MM-DD HH:MM:SS>（取数：`node skills/review-log/scripts/time.mjs`）｜账本：<`.session/reviews/<YYYY-MM-DD-HHMMSS>-<kebab 名字>/`>
 > 文档类型：<PRD / spec / plan / rule / skill / agents / 描述性 / 记录型 / 探索稿>｜口语别名：<需求评审 / 技术设计评审 / 实施计划评审 / …>
 > 执行路径：<A / B / C>（A = 用户级子代理；B = Task 通用子代理；C = 主持人串行扮演，报告须标「降级模式」）
 

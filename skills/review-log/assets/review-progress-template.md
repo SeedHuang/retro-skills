@@ -6,7 +6,7 @@
 ## 范围（一旦定下，后续轮次只在其上做增量）
 
 - **范围**：<工作区未提交 / 最近 N 次 commit / 那一个 commit（hash）>
-- **审查启动**：<HH:MM>（= 开始全部 review 的时刻，取数：`node skills/review-log/scripts/time.mjs`；总耗时计时的起点。⚠️ 这条命令**必须带完整路径**、从仓库根跑——`scripts/time.mjs` 不存在，去掉 `skills/review-log/` 前缀会报 `Cannot find module`。命令要能跑通，优先于「本技能内引用用相对路径」那条规矩）
+- **审查启动**：<HH:MM:SS>（= 开始全部 review 的时刻，取数：`node skills/review-log/scripts/time.mjs`；总耗时计时的起点。⚠️ 这条命令**必须带完整路径**、从仓库根跑——`scripts/time.mjs` 不存在，去掉 `skills/review-log/` 前缀会报 `Cannot find module`。命令要能跑通，优先于「本技能内引用用相对路径」那条规矩）
 - **母分支 / 分支名**：<母分支 = 触发时的当前分支> / <新建的分支名（分支前置第 5 步必写，漏了中断恢复/收尾找不到母分支）>
 - **起始 diff**：**<N> 文件 +<A> / -<B>**（取数命令：`git diff --stat`）
 - **未跟踪新增**（取数命令：`git status --porcelain`）：<逐条列；这是本次审查的一部分，别漏>
@@ -16,9 +16,9 @@
 
 **轮次编号从这张表数，不许口头数。**
 
-| 轮 | 起止（HH:MM） | 耗时 | OCR session id | FILES/COMMENTS | 逐条处置完 | 段二 | 段三 | 本轮核销 |
+| 轮 | 起止（HH:MM:SS） | 耗时 | OCR session id | FILES/COMMENTS | 逐条处置完 | 段二 | 段三 | 本轮核销 |
 |---|---|---|---|---|---|---|---|---|
-| 1 | <HH:MM>~<HH:MM> | <Nm> | `<uuid>` | <N> / <M> | ⬜ | ⬜ | ⬜ | ⬜ |
+| 1 | <HH:MM:SS>~<HH:MM:SS> | <Nm> | `<uuid>` | <N> / <M> | ⬜ | ⬜ | ⬜ | ⬜ |
 
 - 取数命令：`ocr session list`
 - **耗时口径（用户裁定 2026-10-14，勿用「建分支→commit」代替）**：
@@ -179,7 +179,7 @@
 ## 最终结论（全部轮次跑完后填）
 
 - 共<N> 轮，每轮修了 <M> 条
-- **总耗时**：<X>m（审查启动 <HH:MM> → 全部 review 修复结束 <HH:MM>；取数 = 各轮起止 time.mjs 输出之和核对一致；不是「建分支→commit」）
+- **总耗时**：<X>m（审查启动 <HH:MM:SS> → 全部 review 修复结束 <HH:MM:SS>；取数 = 各轮起止 time.mjs 输出之和核对一致；不是「建分支→commit」）
 - **最终状态**：核销干净 / 未核销（**未核销要说清卡在哪一段**）
 - **本轮有没有做到「清单核销干净」**：<有/没有 + 差在哪>
 - **验证查账汇总（全轮）**：<每轮逐行：R<N> 未执行 a 项（均有归因：…）/ 无归因未执行 0 项；载体缺口修复状态：rule/skill 补了没；抽查建议（主观项：A3 实测 / 段二清单 / landing-sweep）>

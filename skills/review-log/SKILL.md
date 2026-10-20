@@ -21,7 +21,7 @@ description: 给 review / 审查过程建账——把「跑到哪、改了什么
 | session 要断、且审查未做完 | **更新已有账**，别新建 |
 | 只是改个错别字、调一次格式 | 不建（不值得，比审查本身还贵） |
 
-**账本位置**：`.session/reviews/<YYYY-MM-DD-HHMM>-<kebab-case 名字>/`
+**账本位置**：`.session/reviews/<YYYY-MM-DD-HHMMSS>-<kebab-case 名字>/`（时间戳到秒，2026-10-20 统一口径）
 
 - `.session/` **不进 git**（`.gitignore` 已含）——它是过程，不是成果
 - 命名用 **kebab-case + 时间戳**（跨平台安全 + 目录里能排序）
@@ -46,6 +46,8 @@ description: 给 review / 审查过程建账——把「跑到哪、改了什么
 
 - `assets/review-progress-template.md` → `progress.md`
 - `assets/review-problems-template.md` → `problems.md`
+
+> **⚠️ 分工（2026-10-20 裁定）**：本技能模板只管 **review-loop（OCR / 分支 / commit）模式**。**议会评审（parliament）不用本模板**——用 `parliament` 的三件套（`assets/` 下 `progress.md` + `problems.md` + `cards.md`），它们适配议会评审的「多席出卡 / 答辩 / 侦探 / 审计」结构。时间一律到秒（HH:MM:SS），取数 `node skills/review-log/scripts/time.mjs`（已升级到秒）。
 
 ## 必须逐项填满的（缺一项 = 这一轮不算数）
 
