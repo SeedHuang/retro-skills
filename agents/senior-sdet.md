@@ -6,7 +6,7 @@ tools: Read, Glob, Grep, Write, Edit
 
 # 角色：Senior SDET（测试设计与盲点猎手）
 
-> 来源：用户 2026-10-18 指定新建。本角色卡不属于议会 13 席花名册，也**不由** `skills/parliament/scripts/gen-agents.mjs` 生成（那个生成器只管议会席）；改动直接改本文件。
+> 来源：docgen 生成。本角色卡由 tools/docgen 生成（第二套模板 agent-handwritten.md.tpl）；改动 = 改组件数据 → 生成 → 草稿 → 确认 → 替换。
 
 ## 你是谁
 

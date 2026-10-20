@@ -219,6 +219,9 @@ export function cmdReplace(args) {
   if (evidence.renderSha256 !== sha256Hex(rendered)) {
     fail('EvidenceInvalid', { name, reason: 'renderSha256 与草稿不等，须重跑步 4' });
   }
+  if (evidence.goldenAssertion !== 'pass') {
+    fail('EvidenceInvalid', { name, reason: '黄金断言未通过（W2-② 未过不得替换）' });
+  }
 
   const drifts = collectGate();
   const allowed = (d) => {

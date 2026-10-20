@@ -1,7 +1,7 @@
 # Docgen P2 · S3：senior-sdet 手写卡转录
 
 > split from `docs/prd/docgen-agent-generation.md` (2026-10-19)
-> 日期：2026-10-19｜修订：2026-10-20（补 heading 字段、数据槽/模板常量分配表、来源行逐字锁定、A 组结构项验收；见 §3.1 与 §5 末行）｜**修订 2（2026-10-20 议会第 1 轮答辩后）**：when/notWhen 收归 triggerTable（§3 + §6-3）、notWhen 不渲染进正文（R4 + §6-5）、§3.1 补表头/分隔行与 tools 槽位归属 + 模板纯度、九步补 evidence / generate 预期 exit 1 / 比对落点 / 崩溃恢复 / 干净口径、黄金值改为冻结快照（§5）、硬约束扩到 10 条｜**修订 3（2026-10-20 议会第 2/3 轮答辩后）**：§1④ 限定 `diffSet` 只服务步 4（generate/gate 仍整缓冲）、§4 新增「比对 helper 契约」`{raw, unallowed}`、步 3 补「替换后 exit 0」、步 7 崩溃恢复按实现重写、步 8 干净口径三项、§5 notWhen 行改为「除 `description:` 行外 + 全卡恰 1 次」、§3.1 新增「模板骨架」行并把纯度改为数据探针、§6-3 的 notWhen 必填限定 `outputKind='testcase'`、§6-9 改引用、§9 只留指针、§7 补取数命令｜状态：待评审（草稿，spec + testcase 一起送议会）｜PRD 状态：已定稿
+> 日期：2026-10-19｜修订：2026-10-20（补 heading 字段、数据槽/模板常量分配表、来源行逐字锁定、A 组结构项验收；见 §3.1 与 §5 末行）｜**修订 2（2026-10-20 议会第 1 轮答辩后）**：when/notWhen 收归 triggerTable（§3 + §6-3）、notWhen 不渲染进正文（R4 + §6-5）、§3.1 补表头/分隔行与 tools 槽位归属 + 模板纯度、九步补 evidence / generate 预期 exit 1 / 比对落点 / 崩溃恢复 / 干净口径、黄金值改为冻结快照（§5）、硬约束扩到 10 条｜**修订 3（2026-10-20 议会第 2/3 轮答辩后）**：§1④ 限定 `diffSet` 只服务步 4（generate/gate 仍整缓冲）、§4 新增「比对 helper 契约」`{raw, unallowed}`、步 3 补「替换后 exit 0」、步 7 崩溃恢复按实现重写、步 8 干净口径三项、§5 notWhen 行改为「除 `description:` 行外 + 全卡恰 1 次」、§3.1 新增「模板骨架」行并把纯度改为数据探针、§6-3 的 notWhen 必填限定 `outputKind='testcase'`、§6-9 改引用、§9 只留指针、§7 补取数命令｜**状态：已定稿（2026-10-20，议会 9 轮：后端 / 前端 / 测试 / AI 四席 PASS + 审计 A/B 两节 PASS；testcase 同批送审）**｜PRD 状态：已定稿
 > 测试用例文件：`docs/superpowers/specs/2026-10-19-docgen-agent-senior-sdet-design-testcase.md`
 > 依赖：S1 spec `2026-10-19-docgen-agent-capability-design.md`（能力地基）+ S2 spec `2026-10-19-docgen-agent-pilot-design.md`（已跑通议会席模板的试点闭环）+ PRD §5 W2 + PRD §6.1–6.4
 

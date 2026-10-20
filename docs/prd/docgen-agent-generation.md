@@ -190,7 +190,7 @@ P1 用一条 rule 证明了整文件模型、入口基线、规则类型「枚�
 | 对象 | 类型 | 状态 | 现产物双哈希 | 迁移日期 | 巩固证据 |
 |---|---|---|---|---|---|
 | `reviewer-audit`（试点） | agent | **已巩固** | blob `291ec6a` + SHA256 `703E6DFA565E01EA2975BE971D38F873D20E091BC9A079EBA3D7E53B56B3CA16` | 2026-10-20 | gate ×2 `baseline 35/35` + 冷跑 `35/35` + `npm run check` 344/344 |
-| `senior-sdet` | agent | 未入队 / 迁移中 / 已巩固 / 停损未迁 | … | — | … |
+| `senior-sdet` | agent | **已巩固** | blob `be5672b` + SHA256 `717803BE432BE5147DA49EDA531EA3250ADE54E8FC02C133A4F03424B679E7BF`（迁移前快照 blob `3469455` + SHA256 `4D78162DED2B678879E2136C91C7C2B381DE119EBC7AD04DF1A1611F540CDF27`） | 2026-10-20 | W2：`diffSet` 唯一差异 = 来源行（`unallowed=0` / `raw=1`）+ 归一化后整文件逐字节 `EQUAL` + golden-assert 通过；gate ×2 `baseline 35/35` + 冷跑 `35/35` + `replace-scenarios` PASS 6/6 + A3–A7 `struct-red=0` + `npm run check` 469/469 |
 | 余下 12 席 | agent | 逐行登记 | … | — | … |
 
 > 状态口径：`未入队`（还没轮到）/ `迁移中`（已入队，未过 6.3）/ `已巩固`（过 6.3）/ `停损未迁`（停损放弃，附停损轮次与复盘指针）。**全部 14 个 agent 无「停损未迁」才满足理想收口；带未迁按 §8 例外收口条款（≤3）收口**。

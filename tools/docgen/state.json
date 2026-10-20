@@ -1,6 +1,7 @@
 {
   "version": 1,
   "agents": {
-    "reviewer-audit": "replaced"
+    "reviewer-audit": "replaced",
+    "senior-sdet": "replaced"
   }
 }

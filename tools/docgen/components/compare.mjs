@@ -23,6 +23,25 @@ export function compareBuffers(actual, expected) {
   return { code: 'Mismatch', line, byte: i };
 }
 
+// spec §4「比对 helper 契约」：逐行比对并按**行内容**排除允许差异（本席 = 来源声明行的改前/改后文本）。
+// raw = 全部逐行差异；unallowed = raw 中 line 不在 ignorable 的条目。
+// line = 期望侧（expected）该 index 的内容，期望侧无该行（实际侧多行）时为 null；index 0 基。
+// 排除判定只看行内容——不得按 index、不得按 `>` 前缀过滤（否则行号偏移/其它引用行会漏检）。
+export function diffSet(actual, expected, ignorable = []) {
+  const a = (Buffer.isBuffer(actual) ? actual : Buffer.from(actual, 'utf8')).toString('utf8').split('\n');
+  const b = (Buffer.isBuffer(expected) ? expected : Buffer.from(expected, 'utf8')).toString('utf8').split('\n');
+  const allowed = new Set(ignorable);
+  const raw = [];
+  const n = Math.max(a.length, b.length);
+  for (let i = 0; i < n; i += 1) {
+    const line = i < b.length ? b[i] : null;
+    const actualLine = i < a.length ? a[i] : null;
+    if (line !== actualLine) raw.push({ index: i, line });
+  }
+  const unallowed = raw.filter((d) => d.line === null || !allowed.has(d.line));
+  return { raw, unallowed };
+}
+
 // ImpureRender 静态扫描：render 模块图固定，源码级禁止任何 fs 模块导入。
 // 运行时探针无法 patch node:fs/promises 的 ESM 命名导出（实测 read-only、configurable=false），
 // 因此用静态扫描兜底：命中 fs / fs/promises 的导入语句即判 ImpureRender。

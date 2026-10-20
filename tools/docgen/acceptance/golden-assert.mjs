@@ -5,6 +5,7 @@ import { readEvidence, writeEvidence } from '../evidence.mjs';
 import { renderByName } from '../cli.mjs';
 import { agentData, triggerTable } from '../components/agentData.mjs';
 import { patternRegistry } from '../components/patternRegistry.mjs';
+import { diffSet } from '../components/compare.mjs';
 
 const name = process.argv[2];
 if (!name) { console.error('用法：node tools/docgen/acceptance/golden-assert.mjs <name>'); process.exit(2); }
@@ -15,13 +16,21 @@ function main() {
   const snapshotDescription = /^---\n[^\n]*\n?description: ([^\n]*)\n[^\n]*\n?---\n/.exec(snapshot)?.[1];
   const agent = agentData.find((a) => a.name === name);
   const t = triggerTable[name];
-  const derived = patternRegistry.description.parliament(agent.role, t.when);
+  // 句式按 outputKind 分流：testcase（手写卡）走 handwritten，其余走议会席句式（spec §1 影响面⑤ 修法 1）
+  const derived = agent.outputKind === 'testcase'
+    ? patternRegistry.description.handwritten(agent.role, t.when, t.notWhen?.text ?? '')
+    : patternRegistry.description.parliament(agent.role, t.when);
   const goldenOk = snapshotDescription === derived;
 
   const rendered = renderByName(name);
   const renderedBytes = Buffer.from(rendered, 'utf8');
   const snapshotBytes = Buffer.from(snapshot, 'utf8');
-  const cmp = renderedBytes.equals(snapshotBytes) ? null : { code: 'Mismatch', byte: 0, line: 1 };
+  // 整文件比较改 diffSet，并豁免来源声明行的改前/改后文本（spec §1 影响面⑤ 修法 2）：
+  // 唯一允许差异 = 来源行（raw 至多 1 行），且该行必须落在 ignorable 里（unallowed 为空）。
+  const snapshotSourceLine = snapshot.split('\n').find((l) => l.startsWith('> 来源：'));
+  const ignorable = [snapshotSourceLine, agent.sourceLine].filter((v) => typeof v === 'string' && v.length > 0);
+  const diff = diffSet(renderedBytes, snapshotBytes, ignorable);
+  const cmp = diff.unallowed.length === 0 && diff.raw.length <= 1 ? null : { code: 'Mismatch' };
 
   evidence.goldenAssertion = goldenOk ? 'pass' : 'fail';
   evidence.compareResult = cmp;
@@ -36,7 +45,7 @@ function main() {
     console.error('整文件比对失败：渲染与快照不一致');
     process.exit(1);
   }
-  console.log('黄金断言通过：description 逐字相等 + 整文件逐字节相等');
+  console.log('黄金断言通过：description 逐字相等 + 除来源声明行外整文件逐字节相等');
 }
 
 try {
