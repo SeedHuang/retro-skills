@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // docgen CLI（R1）：六子命令统一入口。本任务实现 generate + gate；draft/replace/check-agents/baseline 由 Task 5/6 扩展。
 import { readFileSync, existsSync, realpathSync, mkdirSync, writeFileSync, readdirSync, rmSync, renameSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
@@ -10,6 +11,11 @@ import { validateAgentData, exitCodeFor } from './components/validateAgentData.m
 import { BASELINE_RULES, agentPaths, renderBaseline } from './components/baseline.mjs';
 import * as spec from './components/specTestCaseGate.mjs';
 import { compareBuffers, checkEnvironment } from './components/compare.mjs';
+import { renderAgent } from './components/renderAgent.mjs';
+import { sharedBlocks } from './components/sharedBlocks.mjs';
+import { outputFormats } from './components/outputFormats.mjs';
+import { readState, writeState, setAgentState, statePath } from './state.mjs';
+import { readEvidence, writeEvidence, evidencePath } from './evidence.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const AGENTS_DIR = join(REPO_ROOT, 'agents');
@@ -18,11 +24,7 @@ const GENERATED_RULE = 'rules/spec-testcase-gate.md'; // 唯一生成规则（Ru
 
 function fail(code, fields = {}) { const e = new Error(code); e.code = code; Object.assign(e, fields); e.exitCode = exitCodeFor(code); throw e; }
 
-// registered 席 = triggerTable 无完整 when（S1 未拆槽）→ 跳过逐字节比对
-function isRegistered(name) {
-  const t = triggerTable[name];
-  return !t || t.when === undefined;
-}
+function sha256Hex(buf) { return createHash('sha256').update(buf).digest('hex').toUpperCase(); }
 
 function readTemplate(kind) {
   if (kind === 'rule') return readFileSync(spec.TEMPLATE_PATH, 'utf8');
@@ -57,60 +59,71 @@ export function cmdGenerate(args) {
     } else {
       const agent = agentData.find((a) => a.name === o.name);
       if (!agent) fail('MissingComponentData', { name: o.name });
-      if (isRegistered(o.name)) {
-        // R3：registered 席只做存在性检查（与 gate / check-agents 同口径），不做逐字节比对
-        if (!existsSync(join(AGENTS_DIR, `${o.name}.md`))) fail('DanglingBaselineEntry', { name: o.name });
-        continue;
-      }
-      if (!existsSync(join(AGENTS_DIR, `${o.name}.md`))) fail('DanglingBaselineEntry', { name: o.name });
-      // 已拆槽席：S1 阶段存在性检查即可（逐字节比对与 W4 派生断言由 gate 承接 / S2+ 完整化）
+      const p = join(AGENTS_DIR, `${o.name}.md`);
+      if (!existsSync(p)) fail('DanglingBaselineEntry', { name: o.name });
+      const t = triggerTable[o.name];
+      if (!t || t.when === undefined) continue; // registered 未拆槽席：存在性检查
+      const rendered = Buffer.from(renderByName(o.name), 'utf8');
+      if (compareBuffers(rendered, readFileSync(p))) drift += 1;
     }
   }
   console.log(`baseline ${BASELINE_RULES.length + agentPaths().length}/${BASELINE_RULES.length + agentPaths().length}`);
   return drift === 0 ? 0 : 1;
 }
 
-// gateChecks：校验主体（无 console.log，全部 fail() 抛错）——cmdGate 与 cmdReplace 前置共用（Ruling S18）
-function gateChecks() {
+// collectGate：收集漂移清单（不抛）——cmdReplace 判别子与 gateChecks 共用（Task 7）
+export function collectGate() {
+  const drifts = [];
   validateAgentData(agentData, triggerTable);
-  // ① baseline 文件 = renderBaseline() 逐字节（R5）
   const onDisk = readFileSync(BASELINE_PATH, 'utf8');
-  if (onDisk !== renderBaseline()) fail('BaselineDrift', { path: BASELINE_PATH });
-  // ② rule 侧：生成规则逐字节（V1）
+  if (onDisk !== renderBaseline()) drifts.push({ code: 'BaselineDrift', path: BASELINE_PATH });
   const tpl = readTemplate('rule');
   const target = readFileSync(join(REPO_ROOT, GENERATED_RULE), 'utf8');
-  if (compareBuffers(Buffer.from(spec.render(spec.buildData(), tpl)), Buffer.from(target))) fail('Mismatch', { path: GENERATED_RULE });
-  // 非生成 rule：存在性 + 环境检查（与 cmdGenerate rule 分支同构，守卫面与 P1 gate 一致）
+  if (compareBuffers(Buffer.from(spec.render(spec.buildData(), tpl)), Buffer.from(target))) {
+    drifts.push({ code: 'Mismatch', path: GENERATED_RULE });
+  }
   for (const p of BASELINE_RULES) {
     if (p === GENERATED_RULE) continue;
     const rp = join(REPO_ROOT, p);
-    if (!existsSync(rp)) fail('DanglingBaselineEntry', { name: p, path: rp });
-    checkEnvironment(Buffer.from(readFileSync(rp, 'utf8')), 'target', p);
+    if (!existsSync(rp)) { drifts.push({ code: 'DanglingBaselineEntry', path: p }); continue; }
+    try { checkEnvironment(Buffer.from(readFileSync(rp, 'utf8')), 'target', p); }
+    catch (e) { drifts.push({ code: e.code ?? 'EnvironmentEOL', path: p }); }
   }
-  // ③ agent 侧：registered 席登记/存在检查；已拆槽席 W4 派生断言（时时机械断言）
+  let state;
+  try { state = readState(); }
+  catch (e) { drifts.push({ code: e.code ?? 'StateFileInvalid', path: statePath() }); state = { agents: {} }; }
   for (const a of agentData) {
-    if (isRegistered(a.name)) {
-      if (!existsSync(join(AGENTS_DIR, `${a.name}.md`))) fail('DanglingBaselineEntry', { name: a.name });
-      continue;
+    const p = join(AGENTS_DIR, `${a.name}.md`);
+    if (!existsSync(p)) { drifts.push({ code: 'DanglingBaselineEntry', path: `agents/${a.name}.md` }); continue; }
+    if (state.agents[a.name] === 'replaced') {
+      if (compareBuffers(Buffer.from(renderByName(a.name), 'utf8'), readFileSync(p))) {
+        drifts.push({ code: 'Mismatch', path: `agents/${a.name}.md` });
+      }
     }
-    const t = triggerTable[a.name];
-    const derived = a.outputKind === 'testcase'
-      ? patternRegistry.description.handwritten(a.role, t.when, t.notWhen?.text ?? '')
-      : patternRegistry.description.parliament(a.role, t.when);
-    if (derived.includes('时时')) fail('DescriptionDerivation', { name: a.name });
   }
-  // ④ 清单外新增任一类文件 → UnregisteredHandwritten（R10 / §8.2）
-  // 测试隔离：DOCGEN_RULES_DIR / DOCGEN_AGENTS_DIR 可重定向扫描目录（与 DOCGEN_DRAFTS_DIR 同模式）
   const scanRulesDir = process.env.DOCGEN_RULES_DIR || join(REPO_ROOT, 'rules');
   const scanAgentsDir = process.env.DOCGEN_AGENTS_DIR || join(REPO_ROOT, 'agents');
-  const unregRules = readdirSync(scanRulesDir)
-    .filter((f) => f.endsWith('.md') && !BASELINE_RULES.includes(`rules/${f}`))
-    .map((f) => `rules/${f}`);
-  if (unregRules.length > 0) fail('UnregisteredHandwritten', { files: unregRules });
-  const unregAgents = readdirSync(scanAgentsDir)
-    .filter((f) => f.endsWith('.md') && !agentPaths().includes(`agents/${f}`))
-    .map((f) => `agents/${f}`);
-  if (unregAgents.length > 0) fail('UnregisteredHandwritten', { files: unregAgents });
+  for (const f of readdirSync(scanRulesDir)) {
+    if (f.endsWith('.md') && !BASELINE_RULES.includes(`rules/${f}`)) {
+      drifts.push({ code: 'UnregisteredHandwritten', path: `rules/${f}` });
+    }
+  }
+  for (const f of readdirSync(scanAgentsDir)) {
+    if (f.endsWith('.md') && !agentPaths().includes(`agents/${f}`)) {
+      drifts.push({ code: 'UnregisteredHandwritten', path: `agents/${f}` });
+    }
+  }
+  return drifts;
+}
+
+const BASELINE_CLASS = new Set(['BaselineDrift', 'UnregisteredHandwritten', 'DanglingBaselineEntry', 'StateFileInvalid', 'EnvironmentEOL', 'InvalidBaseline', 'InvalidBaselinePath']);
+const PRIORITY = (d) => (BASELINE_CLASS.has(d.code) ? 0 : 1);
+
+export function gateChecks() {
+  const drifts = collectGate();
+  if (drifts.length === 0) return;
+  const first = [...drifts].sort((a, b) => PRIORITY(a) - PRIORITY(b))[0];
+  fail(first.code, first);
 }
 
 export function cmdGate() {
@@ -120,15 +133,22 @@ export function cmdGate() {
 }
 
 export function cmdCheckAgents() {
-  // S1（Ruling S17）：14 席 agents/*.md 均未由 docgen 管线替换 → 全部未巩固、容忍红；只做存在性 + 计数。
-  // S2+ 拆槽后：已巩固席加入逐字节比对（漂移 → exit 1 并输出文件名），此处分支届时激活。
+  const state = readState();
+  let replaced = 0;
   let unconsolidated = 0;
   for (const a of agentData) {
     const p = join(AGENTS_DIR, `${a.name}.md`);
     if (!existsSync(p)) fail('DanglingBaselineEntry', { name: a.name, path: p });
-    unconsolidated += 1;
+    const s = state.agents[a.name];
+    if (s === 'replaced') {
+      replaced += 1;
+      const rendered = Buffer.from(renderByName(a.name), 'utf8');
+      if (compareBuffers(rendered, readFileSync(p))) fail('Mismatch', { name: a.name, path: p });
+    } else {
+      unconsolidated += 1;
+    }
   }
-  console.log(`OK：${agentData.length} 个 agent 已检查（未巩固 ${unconsolidated}）`);
+  console.log(`OK：${agentData.length} 个 agent 已检查（已接管 ${replaced}，未迁移 ${unconsolidated}）`);
   return 0;
 }
 
@@ -167,10 +187,13 @@ export function cmdDraft(args, argv) {
   const existing = existsSync(dir) ? readdirSync(dir).filter((f) => f.startsWith(`${name}--`)) : [];
   if (existing.length > 0) fail('DraftNameConflict', { name, existing: existing.join(', ') });
   const file = `${name}--${ts()}.md`;
-  const content = renderAgent(name); // registered 席在此抛 MissingComponentData，此时尚未建箱目录（J4 fix）
+  const content = renderByName(name); // registered 席在此抛 MissingComponentData，此时尚未建箱目录（J4 fix）
   mkdirSync(dir, { recursive: true });
-  try { writeFileSync(join(dir, file), content); }
-  catch { fail('DraftWriteFailed', { path: join(dir, file) }); }
+  try { writeFileSync(join(dir, file), content, { flag: 'wx' }); }
+  catch (e) {
+    if (e.code === 'EEXIST') fail('DraftNameConflict', { name, existing: file });
+    fail('DraftWriteFailed', { path: join(dir, file) });
+  }
   console.log(`草稿已落：${join(dir, file)}`);
   return 0;
 }
@@ -179,17 +202,62 @@ export function cmdReplace(args) {
   if (args.kind !== 'agent') fail('UnsupportedKind', { kind: args.kind });
   assertAgentName(args.name);
   if (!args.yes) fail('NotAuthorized', {});
-  const agent = agentData.find((a) => a.name === args.name);
-  if (!agent) fail('MissingComponentData', { name: args.name });
+  const name = args.name;
+  const agent = agentData.find((a) => a.name === name);
+  if (!agent) fail('MissingComponentData', { name });
   if (!args.draft || !existsSync(args.draft)) fail('DraftNotFound', { draft: args.draft });
+
+  // 启动清理：上次崩溃残留的 .part 临时文件（在读取目标之前）
+  for (const f of readdirSync(AGENTS_DIR).filter((x) => x.startsWith(`.tmp-${name}-`) && x.endsWith('.part'))) {
+    rmSync(join(AGENTS_DIR, f), { force: true });
+  }
+
   const draftBytes = readFileSync(args.draft);
-  const rendered = Buffer.from(renderAgent(args.name), 'utf8');
-  if (!draftBytes.equals(rendered)) fail('DraftDrift', { name: args.name });
-  // gate 前置（§5.3）：S1 阶段 gate 恒绿（无已巩固席）→ 判别子休眠；S2+ 拆槽后激活（Ruling S18）
-  gateChecks();
-  // 原子替换：临时文件与目标同目录（同卷 rename）；失败清理 tmp 防残留（I7 fix）
-  const target = join(AGENTS_DIR, `${args.name}.md`);
-  const tmp = join(AGENTS_DIR, `.tmp-${args.name}-${process.pid}.md`);
+  const rendered = Buffer.from(renderByName(name), 'utf8'); // registered 未拆槽席在此抛 MissingComponentData
+  if (!draftBytes.equals(rendered)) fail('DraftDrift', { name });
+  const evidence = readEvidence(name);
+  if (evidence.renderSha256 !== sha256Hex(rendered)) {
+    fail('EvidenceInvalid', { name, reason: 'renderSha256 与草稿不等，须重跑步 4' });
+  }
+
+  const drifts = collectGate();
+  const allowed = (d) => {
+    if (d.path === `agents/${name}.md`) return true;
+    const m = /^agents\/([a-z0-9-]+)\.md$/.exec(d.path);
+    if (!m) return false;
+    const other = m[1];
+    const st = readState();
+    if (st.agents[other] !== 'replaced') return false;
+    const box = DRAFTS_DIR();
+    if (!existsSync(box)) return false;
+    const f = readdirSync(box).find((x) => x.startsWith(`${other}--`));
+    if (!f) return false;
+    return readFileSync(join(box, f)).equals(Buffer.from(renderByName(other), 'utf8'));
+  };
+  const blocked = drifts.filter((d) => !allowed(d));
+  if (blocked.length > 0) {
+    const first = [...blocked].sort((a, b) => PRIORITY(a) - PRIORITY(b))[0];
+    fail(first.code, first);
+  }
+
+  const target = join(AGENTS_DIR, `${name}.md`);
+  // #6：target 缺失须在 collectGate 判别子放行（allowed 对 target 无条件 return true）后、硬读之前捕获，
+  // 否则 readFileSync 抛 ENOENT 被兜底成 exit 2，掩盖 DanglingBaselineEntry 的可读语义
+  if (!existsSync(target)) fail('DanglingBaselineEntry', { name, path: `agents/${name}.md` });
+  const targetBytes = readFileSync(target);
+  const current = readState();
+  const idempotent = current.agents[name] === 'replaced' && targetBytes.equals(rendered);
+  if (idempotent) {
+    evidence.lastWrittenHash = sha256Hex(rendered);
+    writeEvidence(name, evidence);
+    clearDrafts(name);
+    console.log(`已替换（幂等恢复）：${target}`);
+    return 0;
+  }
+
+  if (sha256Hex(targetBytes) !== evidence.lastWrittenHash) fail('TargetDrift', { name, path: target });
+  setAgentState(name, 'replaced');
+  const tmp = join(AGENTS_DIR, `.tmp-${name}-${process.pid}.part`);
   try {
     writeFileSync(tmp, draftBytes);
     renameSync(tmp, target);
@@ -197,33 +265,29 @@ export function cmdReplace(args) {
     rmSync(tmp, { force: true });
     fail('WriteFailed', { path: target });
   }
-  // 清该名下草稿（DRAFTS_DIR 未建时容忍，I7 fix）
-  const dir = DRAFTS_DIR();
-  if (existsSync(dir)) {
-    for (const f of readdirSync(dir).filter((x) => x.startsWith(`${args.name}--`))) rmSync(join(dir, f), { force: true });
-  }
+  clearDrafts(name);
+  evidence.lastWrittenHash = sha256Hex(rendered);
+  writeEvidence(name, evidence);
   console.log(`已替换：${target}`);
   return 0;
 }
 
-function renderAgent(name) {
+function clearDrafts(name) {
+  const dir = DRAFTS_DIR();
+  if (!existsSync(dir)) return;
+  for (const f of readdirSync(dir).filter((x) => x.startsWith(`${name}--`))) rmSync(join(dir, f), { force: true });
+}
+
+export function renderByName(name) {
   const agent = agentData.find((a) => a.name === name);
+  if (!agent) fail('MissingComponentData', { name });
   const t = triggerTable[name];
-  // I1 fix：registered 未拆槽席（triggerTable 无 when）不可渲染 → MissingComponentData（exit 2），不崩溃
-  if (!t || t.when === undefined) fail('MissingComponentData', { name, reason: 'registered 未拆槽席不可 draft/replace（S2+ 拆槽后可用）' });
-  const tpl = readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'templates', agent.outputKind === 'testcase' ? 'agent-handwritten.md.tpl' : 'agent.md.tpl'), 'utf8');
-  const description = agent.outputKind === 'testcase'
-    ? patternRegistry.description.handwritten(agent.role, t.when, t.notWhen?.text ?? '')
-    : patternRegistry.description.parliament(agent.role, t.when);
-  return tpl
-    .replaceAll('{{NAME}}', agent.name)
-    .replaceAll('{{DESCRIPTION}}', description)
-    .replaceAll('{{ZH_NAME}}', agent.role)
-    .replaceAll('{{DIMENSION}}', agent.dimension ?? '')
-    .replaceAll('{{IDENTITY}}', agent.identity ?? '')
-    .replaceAll('{{FIXED_LIST}}', '| # | 必问 | 回答 |\n|---|---|---|')
-    .replaceAll('{{OUTPUT_FORMAT}}', '')
-    .replaceAll('{{SHARED_BLOCK}}', '');
+  if (!t || t.when === undefined) {
+    fail('MissingComponentData', { name, reason: 'registered 未拆槽席不可渲染（S2+ 拆槽后可用）' });
+  }
+  const tplName = agent.outputKind === 'testcase' ? 'agent-handwritten.md.tpl' : 'agent.md.tpl';
+  const template = readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'templates', tplName), 'utf8');
+  return renderAgent({ agent, trigger: t, template, sharedBlocks, outputFormats });
 }
 
 export function main(argv) {
@@ -236,7 +300,9 @@ export function main(argv) {
     if (sub === 'gate') return cmdGate();
     if (sub === 'draft' || sub === 'draft ls' || sub === 'draft rm' || sub === 'draft ensure') {
       const parts = argv[0] === 'draft' && ['ls', 'rm', 'ensure'].includes(argv[1]) ? ['draft', argv[1], ...argv.slice(2)] : argv;
-      return cmdDraft({ sub: parts[1] ?? 'draft', kind: flag('--kind', 'agent'), name: flag('--name', undefined) }, parts);
+      // 健康 sub 归一再传：仅 ls/rm/ensure 是真正的子命令，其余（如 --name）都应视为生成 draft，避免 `draft --name x` 时 sub 携带错误值
+      const healthySub = ['ls', 'rm', 'ensure'].includes(parts[1]) ? parts[1] : 'draft';
+      return cmdDraft({ sub: healthySub, kind: flag('--kind', 'agent'), name: flag('--name', undefined) }, parts);
     }
     if (sub === 'replace') return cmdReplace({ kind: flag('--kind', 'agent'), name: flag('--name', undefined), draft: flag('--draft', undefined), yes: has('--yes') });
     if (sub === 'check-agents') return cmdCheckAgents();

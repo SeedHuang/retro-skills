@@ -16,12 +16,12 @@ after(() => rmSync(box, { recursive: true, force: true }));
 const run = (args) => spawnSync(process.execPath, [CLI, ...args], { encoding: 'utf8', env: { ...process.env, DOCGEN_DRAFTS_DIR: box } });
 
 test('I1：draft/replace 对 registered 未拆槽席 → MissingComponentData（exit 2，不再崩溃/误标）', () => {
-  const d = run(['draft', '--kind', 'agent', '--name', 'reviewer-audit']);
+  const d = run(['draft', '--kind', 'agent', '--name', 'reviewer-qa']);
   assert.equal(d.status, 2, d.stdout + d.stderr);
   assert.match(d.stdout + d.stderr, /MissingComponentData/);
   const fake = join(box, 'fake.md');
   writeFileSync(fake, '# 伪造草稿\n');
-  const r = run(['replace', '--kind', 'agent', '--name', 'reviewer-audit', '--draft', fake, '--yes']);
+  const r = run(['replace', '--kind', 'agent', '--name', 'reviewer-qa', '--draft', fake, '--yes']);
   assert.equal(r.status, 2, r.stdout + r.stderr);
   assert.match(r.stdout + r.stderr, /MissingComponentData/);
 });
@@ -59,7 +59,7 @@ test('J1：断言 4 对非数组 tools → ToolsViolation（不抛 TypeError）'
 
 test('J4：registered 席 draft 失败不创建草稿箱目录', () => {
   const p = join(tmpdir(), `dg-rf4-${Date.now()}`);
-  const r = spawnSync(process.execPath, [CLI, 'draft', '--kind', 'agent', '--name', 'reviewer-audit'], { encoding: 'utf8', env: { ...process.env, DOCGEN_DRAFTS_DIR: p } });
+  const r = spawnSync(process.execPath, [CLI, 'draft', '--kind', 'agent', '--name', 'reviewer-qa'], { encoding: 'utf8', env: { ...process.env, DOCGEN_DRAFTS_DIR: p } });
   assert.equal(r.status, 2, r.stdout + r.stderr);
   assert.ok(!existsSync(p), '失败路径不应创建草稿箱目录');
 });

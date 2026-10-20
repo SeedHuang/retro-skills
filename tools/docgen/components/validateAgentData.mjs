@@ -2,14 +2,16 @@
 import { patternRegistry } from './patternRegistry.mjs';
 
 const EXIT = {
-  0: [], 1: ['MissingSlot', 'MissingPlaceholder', 'InvalidRuleType', 'TemplateSyntaxError',
+  0: [],
+  1: ['MissingSlot', 'MissingPlaceholder', 'InvalidRuleType', 'TemplateSyntaxError',
     'TemplateHardcoded', 'ImpureRender', 'Mismatch', 'DuplicateAgentName', 'InvalidName',
     'FrontmatterFieldMissing', 'ToolsViolation', 'SharedBlockMissing', 'WhenFormatViolation',
     'DescriptionDerivation', 'TriggerMissingRoute', 'TriggerConflict', 'DuplicateWhen',
-    'InvalidOutputKind', 'MissingWhen', 'DraftDrift', 'DraftNameConflict'],
+    'InvalidOutputKind', 'MissingWhen', 'DraftDrift', 'DraftNameConflict', 'TargetDrift'],
   2: ['UnregisteredHandwritten', 'InvalidBaseline', 'InvalidBaselinePath', 'DanglingBaselineEntry',
     'BaselineDrift', 'EnvironmentEOL', 'InvalidInputPath', 'InvalidOutputPath',
-    'MissingComponentData', 'UnsupportedKind'],
+    'MissingComponentData', 'UnsupportedKind', 'StateFileInvalid', 'GoldenSnapshotUnavailable',
+    'EvidenceInvalid', 'InvalidArgs'],
   3: ['GeneratedMissing', 'TemplateReadFailed', 'TargetReadFailed', 'WriteFailed', 'DraftNotFound', 'DraftWriteFailed'],
   4: ['NotAuthorized'],
 };
@@ -28,6 +30,8 @@ export function validateAgentData(data, table) {
     if (seen.has(a.name)) fail('DuplicateAgentName', { name: a.name });
     seen.add(a.name);
   }
+  // 断言 1b：数据层不得含独立 description（S2 §3 / S1 R13）
+  for (const a of data) if ('description' in a) fail('DescriptionDerivation', { name: a.name });
   // 断言 3：name / tools 必填（when 存在性归断言 14）
   for (const a of data) {
     if (!a.name || (Array.isArray(a.tools) && a.tools.length === 0) || !a.tools) fail('FrontmatterFieldMissing', { name: a.name });
