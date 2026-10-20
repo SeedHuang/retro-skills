@@ -130,6 +130,22 @@
 
 ---
 
+## 线 F：docgen P2 收尾（2026-10-20）
+
+**S3（senior-sdet 转录）已完成并巩固**：卡已由 docgen 生成，除来源行外与迁移前逐字节一致；A/B/C 十项语义注解经独立子代理判定全通过；`npm run check` 470/470。
+
+剩下三件：
+
+| # | 事项 | 现状 / 下一步 |
+|---|---|---|
+| 1 | **S4：余下 12 席数据搬家** | 下一件正事。S4 spec（`2026-10-19-docgen-agent-batch-design.md`）还是草稿且已过时：它写「逐席移除 gen-agents.mjs 的 ROLES」，而该文件已不存在；11 席还没有 `triggerTable.when`；每席要新建 evidence。**顺序 = 修订 spec + 同批 testcase（独立 senior-sdet 子代理）→ 送议会 → 定稿 → plan → 12 席逐个闭环**。另：`tools/docgen/test/review-fixes.test.mjs`（第 18–26 行）用 `reviewer-qa` 当「未拆槽样本」，S4 给它补 `when` 后会失效，必须同批改 |
+| 2 | **senior-sdet 卡内容缺陷：description 里有「评审测试策略」这个触发，但卡的职责、输出、边界都没有对应项** | 这是旧手写卡带进来的问题（S3 只做零改写转录，本轮不改）。修法二选一：从 description 删掉该触发，或补一个「评审测试策略」职责与产出位——两者都会改动卡内容，需要重走一次 W2 基线（冻结 → 改 → 比对 → 替换），等用户拍板 |
+| 3 | **`tools/execution-matrix/criteria.md` 的 C 组缺「模板形态适配」条款** | §0.2 只说明 A 组要兼容手写模板；C1/C4 仍按「回答列 / 证据列」写，手写卡没有这两列时只能靠评审者按同一精神解释（否则会系统性误伤）。修法 = 在 C 组补一条与 §0.2 对齐的说明；属判据正文变更，要按判据/规则变更流程走，不顺手改 |
+
+> 已关闭但可回看的：S3 的 TC-026（停损态）在替换成功后已不可复现；TC-028 的巩固判据没有独立脚本，三项口径（gate 绿 / 草稿箱清 / `git status` 范围）已直接执行，不补造注入样例。
+
+---
+
 ## 收尾提醒（所有线共同遵守）
 
 - 全程**不许自动提交 git**，改完留在工作区，由你决定怎么提交（你的规矩）。
@@ -140,6 +156,8 @@
 
 ## 现在的下一步（一件事）
 
-**线 E 已完成，下一步进 S3**（用户 2026-10-20 裁定：先独立完整做线 E，再做 S3）：线 E 的 spec + testcase + 9 任务 plan 已全部落地（归桶索引 / 判据单源 / A 组检查 / 模式表 / 评级，见 `tools/execution-matrix/`）。**下一步 = S3（senior-sdet 转录）**：把 senior-sdet 卡的 A1/A2 + B1~B4 + C1~C4 十项 AI 判落进 `rules/.inspector-annotations.json`（键 `senior-sdet:<判定项名>`，三态值）。
+**S3 已收口（2026-10-20）：卡已生成、W2 逐字节验收通过、A/B/C 十项语义注解已落库（`checkAgentFile('senior-sdet')` ok=true）、`npm run check` 470/470。**
 
-> 注：旧「下一步」（systematic-repair spec 送议会）仍在 line C 挂着，线 E 完成后可回看是否启动。
+**下一步 = S4（余下 12 席）**：先把过时的 S4 spec 修订到与现状一致（gen-agents 已不存在、11 席无 `triggerTable.when`、每席一份 evidence），同批修订 testcase（独立 senior-sdet 子代理），再送议会评审 → 定稿 → 写 plan → 12 席逐个走九步闭环、逐个巩固。详见上文「线 F」第 1 条。
+
+> 注：线 C 的 systematic-repair 送议会仍在挂着；线 F 第 2、3 条等用户拍板。

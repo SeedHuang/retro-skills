@@ -11,5 +11,15 @@
   "reviewer-audit:C1": "pass",
   "reviewer-audit:C2": "pass",
   "reviewer-audit:C3": "pass",
-  "reviewer-audit:C4": "pass"
+  "reviewer-audit:C4": "pass",
+  "senior-sdet:A1": "pass",
+  "senior-sdet:A2": "pass",
+  "senior-sdet:B1": "pass",
+  "senior-sdet:B2": "pass",
+  "senior-sdet:B3": "pass",
+  "senior-sdet:B4": "pass",
+  "senior-sdet:C1": "pass",
+  "senior-sdet:C2": "pass",
+  "senior-sdet:C3": "pass",
+  "senior-sdet:C4": "pass"
 }

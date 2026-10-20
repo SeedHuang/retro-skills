@@ -1,6 +1,7 @@
 // check-agent.test.mjs —— A 组检查：A3-A7 结构断言（存在性+语义）+ A1/A2/B/C 十键三态机械接收
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { checkAgent, checkAgentFile, checkAgentFromText, checkSemantic, judgeAnnotation, splitSections, SEMANTIC_KEYS } from './check-agent.mjs';
 
 test('reviewer-audit 渲染卡：A 结构项 A3-A7 全过', () => {
@@ -59,17 +60,24 @@ test('F2：senior-sdet 真卡 A3-A7 结构项全绿（存量红项清单只含�
   assert.equal(struct.length, 0, JSON.stringify(struct));
 });
 
-test('F2：senior-sdet 真卡存量红项清单可枚举（语义项为 pending，按三态判红）', () => {
-  const { findings } = checkAgentFile('senior-sdet');
-  const semantic = findings.filter((f) => SEMANTIC_KEYS.includes(f.code));
+test('F2：缺 annotations 键 → 10 项按 pending 报红（三态，不压成布尔）', () => {
+  const semantic = checkSemantic({}, 'senior-sdet');
   assert.equal(semantic.length, 10);
   assert.ok(semantic.every((f) => f.state === 'pending'));
 });
 
-test('F2：真卡路径读的是 agents/<name>.md 文件（非 renderByName 桩）', () => {
+test('F2：senior-sdet 真卡 + 十键注解就位 → 整卡 0 findings', () => {
   const { ok, findings } = checkAgentFile('senior-sdet');
-  assert.equal(ok, false);                       // 语义项未判 → 不通过
-  assert.ok(findings.length > 0);
+  assert.equal(ok, true, JSON.stringify(findings));
+  assert.equal(findings.length, 0);
+});
+
+test('F2：真卡路径读的是 agents/<name>.md 文件（非 renderByName 桩）', () => {
+  // 用「文件文本的结构结论 == checkAgentFile 的结构结论」证明读的是文件；不依赖某席是否已拆槽
+  // （reviewer-qa 在 S4 会补 when，届时若写成 assert.throws(renderByName) 会无故变红）。
+  const card = readFileSync('agents/reviewer-qa.md', 'utf8');
+  const fromFile = checkAgentFile('reviewer-qa').findings.filter((f) => !SEMANTIC_KEYS.includes(f.code));
+  assert.deepEqual(fromFile, checkAgentFromText(card).findings);
   const missing = checkAgentFile('__不存在的卡__');
   assert.ok(missing.findings.some((f) => f.code === 'CardNotFound'));
 });

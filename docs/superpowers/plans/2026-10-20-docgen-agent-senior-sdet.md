@@ -638,10 +638,12 @@ node tools/docgen/cli.mjs draft ls --name senior-sdet   # 无输出
 | 步 4 比对 | `diffSet(render, frozen, [OLD,NEW])` → `raw=1`（`idx=8`，`line=OLD`）、`unallowed=0` → `exact1 PASS`；归一化后整文件 `EQUAL` |
 | 步 6 草稿 | 草稿字节 == 渲染字节；`agents/` 零改动 |
 | 步 7 替换 | `replace --yes` exit 0；替换后卡 == 替换前草稿副本 `EQUAL`；`state.agents['senior-sdet']='replaced'`；草稿箱已清 |
-| 步 8 验收 | `git diff --numstat` = `1 1 agents/senior-sdet.md`（定向核 `-`/`+` 恰为来源行）；`checkAgentFile('senior-sdet')` → `struct-red=0`、`fake-green=[]`、槽位残留 `[]`；`npm run check` **469/469 pass**、baseline 35/35、0 findings、markdown 223/759 |
+| 步 8 验收 | `git diff --numstat` = `1 1 agents/senior-sdet.md`（定向核 `-`/`+` 恰为来源行）；`checkAgentFile('senior-sdet')` → `struct-red=0`、`fake-green=[]`、槽位残留 `[]`；`npm run check` **470/470 pass**、baseline 35/35、0 findings、markdown 223/760 |
 | 步 9 巩固 | `gate` ×2 `baseline 35/35`；`cold-run` exit 0；`replace-scenarios` `PASS 6/6`；`git status --short rules/ skills/` 无输出；`gen-agents.mjs` 不存在 |
 | 负例（已跑） | TC-024 单测三实现对照；TC-014 / 016 / 021 以**内存变异**喂 `diffSet`（`fail` / `overflow1` / `truncated` 均 PASS，未走副本仓端到端）；TC-025 `BaselineDrift` exit 2 + 草稿保留 + 还原后 gate 绿；TC-029 缺 `--yes` exit 4；TC-027 五 violation 单测（新增 `compare-env.test.mjs`） |
 | 未执行 | TC-022（副本仓删节）、TC-026（停损态，替换成功后已不可复现）、TC-028 的三种污染注入；TC-030 的 N1–N5 负例方向。这些属「用例判别力复核」，不影响本次 W2 正向验收结论 |
+| S3 尾巴（2026-10-20 补） | 独立子代理判 A1/A2/B1–B4/C1–C4 十项 → **全 pass**，已落 `rules/.inspector-annotations.json`；`checkAgentFile('senior-sdet')` 由 10 项 pending 转为 **ok=true / 0 findings**（check-agent 测试同步改为「缺键 → pending」+「注解就位 → 全绿」两条）｜TC-030 N1–N5 以**内存变异**跑通（`checkAgentFromText` 同一实现）：删闭环字样→A4、改证据字样→A5、改表头→A3、改边界节名→A6、删输出格式标题→A7 全红｜TC-022 内存删「边界」节→`unallowed=7` 红；未填充槽位→`MissingSlot`｜TC-026 停损态已不可复现、TC-028 无巩固判定脚本（三项口径直接执行），均只记录不补造 |
+| 独立判定发现 | ① 卡内 description 的「评审测试策略」触发没有对应职责/输出位（转录自旧手写卡，零改写约束下本轮不动）；② `criteria.md` C 组缺「模板形态适配」条款（§0.2 只覆盖 A 组）——两条均记入 `docs/after/pending-work-overview.md` |
 | 与计划的偏差 | 新增 `tools/docgen/test/compare-env.test.mjs`（TC-027 五 violation，原有测试只覆盖 BOM/CR/UTF-8，缺 `TRAILING_NEWLINE`） |
 | 来源证明（TC-031） | 锚点 = **未提交态**（`evidence.commit` 早于 docgen 建立，`renderAgent.mjs` 在该 commit 不存在）；改前 hash `7c9eb66…`、改后 `548292b…`；13 席 fixture 快照改前后 `EQUAL` |
 
