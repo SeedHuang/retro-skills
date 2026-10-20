@@ -189,7 +189,7 @@ P1 用一条 rule 证明了整文件模型、入口基线、规则类型「枚�
 
 | 对象 | 类型 | 状态 | 现产物双哈希 | 迁移日期 | 巩固证据 |
 |---|---|---|---|---|---|
-| `reviewer-audit`（试点） | agent | 未入队 / 迁移中 / 已巩固 / 停损未迁 | `git hash-object` + SHA256 | — | gate 连续 2 次绿输出 |
+| `reviewer-audit`（试点） | agent | **已巩固** | blob `291ec6a` + SHA256 `703E6DFA565E01EA2975BE971D38F873D20E091BC9A079EBA3D7E53B56B3CA16` | 2026-10-20 | gate ×2 `baseline 35/35` + 冷跑 `35/35` + `npm run check` 344/344 |
 | `senior-sdet` | agent | 未入队 / 迁移中 / 已巩固 / 停损未迁 | … | — | … |
 | 余下 12 席 | agent | 逐行登记 | … | — | … |
 
