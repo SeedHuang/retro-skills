@@ -126,7 +126,10 @@ for (const r of dataRows) {
 }
 
 // 软判 ②：轮次账行数 vs 轮次小节数（排除「第 <N> 轮」占位）
-const sections = lines.filter(l => /^##\s*第\s*\d+\s*轮\s*$/.test(l)).length
+// 小节标题允许带括号说明——实测账本普遍写成 `## 第 5 轮（确认轮，20:24:27~20:30；…）`，
+// 旧正则要求标题必须是裸的 `## 第 N 轮`，导致 9 个真实小节只被认出 1 个（假 WARN）。
+// 判据仍只看「有没有独立的 `## 第 N 轮` 开头」，括号内容不参与判定。
+const sections = lines.filter(l => /^##\s*第\s*\d+\s*轮(?:\s*[（(][^\n]*[）)])?\s*$/.test(l)).length
 if (sections > 0 && sections !== dataRows.length) {
   warns.push(`轮次账 ${dataRows.length} 行 vs 「## 第 N 轮」小节 ${sections} 个不一致——可能有轮次没写独立小节`)
 }
