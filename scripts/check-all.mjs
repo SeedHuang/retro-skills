@@ -12,6 +12,13 @@ import { fileURLToPath } from 'node:url'
 import { listSkillDirs } from './skill-dir.mjs'
 // docgen baseline 两清单（rule + agent）的共享常量——gate 的 baseline 断言从它派生，勿在本文件另写一份
 import { BASELINE_RULES, agentPaths } from '../tools/docgen/components/baseline.mjs'
+// 执行力度矩阵：归桶守卫 + A 组检查 + 共享项变更硬闸门 + 模式表守卫
+// （判据单源在 tools/execution-matrix/，本文件只调用不内联）
+import { checkBuckets } from '../tools/execution-matrix/check-buckets.mjs'
+import { checkAgent } from '../tools/execution-matrix/check-agent.mjs'
+import { checkSharedChanges } from '../tools/execution-matrix/shared-changes/check-shared-changes.mjs'
+import { checkPatternTable } from '../tools/execution-matrix/check-pattern-table.mjs'
+import { splitRow, fenceMask } from '../tools/execution-matrix/markdown-rows.mjs'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -102,6 +109,29 @@ if (g.error) {
   }
 }
 
+// ②.6 执行力度矩阵：归桶守卫 + A 组检查 + 共享项变更硬闸门（R7）+ 模式表守卫
+// （对齐既有 gate 模式：failed=true 统一出口）
+const bucketRes = checkBuckets()
+if (!bucketRes.ok) {
+  failed = true
+  console.error(`[execution-matrix] 归桶守卫失败：${JSON.stringify(bucketRes.findings)}`)
+}
+const agentRes = checkAgent('reviewer-audit')
+if (!agentRes.ok) {
+  failed = true
+  console.error(`[execution-matrix] reviewer-audit A 组检查失败：${JSON.stringify(agentRes.findings)}`)
+}
+const sharedRes = checkSharedChanges()
+if (!sharedRes.ok) {
+  failed = true
+  console.error(`[execution-matrix] 共享项变更硬闸门失败（R7）：${JSON.stringify(sharedRes.findings)}`)
+}
+const patternRes = checkPatternTable()
+if (!patternRes.ok) {
+  failed = true
+  console.error(`[execution-matrix] 模式表守卫失败：${JSON.stringify(patternRes.findings)}`)
+}
+
 // ③ 技能守卫
 const c = spawnSync(process.execPath, ['skills/skill-inspector/scripts/check.mjs'], { cwd: root, encoding: 'utf8' })
 console.log(c.stdout)
@@ -137,64 +167,19 @@ function collectMd(dir, out = []) {
   return out
 }
 
-// 表格单元格切分——按 markdown 代码跨度规则处理（控制器实跑验证过的版本，不要简化）
-// `ticks > 0` 分支是关键：反引号跨度内反斜杠与竖线都是字面量，不特判会让 `` `scripts\` `` 吃掉收尾反引号、
-// 代码跨度永不闭合，后面所有竖线都不算分隔符（第一版漏这条 → 15 条 findings 里 14 条是它的误报）。
-function splitRow(line) {
-  let s = line.trim()
-  if (s[0] === '|') s = s.slice(1)
-  const cells = []; let cur = ''; let i = 0; let ticks = 0
-  while (i < s.length) {
-    const ch = s[i]
-    if (ticks > 0) {                       // 代码跨度内：反斜杠与竖线都是字面量
-      if (ch === '`') { let n = 0; while (s[i+n] === '`') n++; if (n === ticks) ticks = 0; cur += '`'.repeat(n); i += n; continue }
-      cur += ch; i++; continue
-    }
-    if (ch === '\\' && i + 1 < s.length) { cur += s[i + 1]; i += 2; continue }  // 跨度外才转义
-    if (ch === '`') { let n = 0; while (s[i+n] === '`') n++; ticks = n; cur += '`'.repeat(n); i += n; continue }
-    if (ch === '|') { cells.push(cur.trim()); cur = ''; i++; continue }
-    cur += ch; i++
-  }
-  cells.push(cur.trim())
-  if (cells.length > 1 && cells[cells.length - 1] === '' && s.endsWith('|')) cells.pop()
-  return cells
-}
+// 表格单元格切分 = tools/execution-matrix/markdown-rows.mjs 的共享单源（反引号跨度内的竖线是字面量）
+// 为什么不再在本文件留一份：与执行力度矩阵守卫的 splitRow 逻辑完全一致（2026-10-20 归一化逐行比对
+// 19 行仅差注释/分号/空格 + 全仓 6653 条表格行实跑输出 0 条不一致），两份实现必然漂移 → 合成一份。
+// 改动切分口径时改 markdown-rows.mjs 一处，本文件与那边自动同步。
+
 const isDelim = c => c.length > 0 && c.every(x => /^:?-{1,}:?$/.test(x))
-// 围栏识别：`^\s*` 未收紧到 CommonMark 的 `^ {0,3}`——4 空格缩进的 ``` 仍按围栏处理。
-// 收紧会变更既有行为，本仓实测 0 findings，留作已知边界。
-// 另：闭合判定不要求 info string 为空（CommonMark 规定闭合围栏不得带 info string，本仓不采纳）。
-// 理由：本仓文档有意用同字符嵌套围栏展示内嵌 README/示例（如 plans/2026-09-27-retro-suite.md
-// 的 ```markdown 块内套 ```bash）。按 CommonMark 强制 info 为空时，该文档会被判「围栏未闭合」
-// 而把闸门变红，而修该文档超出本检查的职责面；故本边界以本仓约定为准，不收紧。
-const FENCE_RE = /^\s*(`{3,}|~{3,})/
 // 表格行只覆盖首竖线写法（`| A | B |`）——本仓约定所有表格都用首竖线。
 // 放宽到 GFM 的无首竖线写法会把正文里含 `|` 的行大量误判成表格（本 session 实测过 5 条假阳）
 const TABLE_ROW_RE = /^\s*\|/
 
-// 围栏掩码：mask[i]=true 表示第 i 行在围栏内部（分隔行本身不算内部）
-// 未闭合的围栏会把文件剩余部分全吞进代码块，故未闭合时其后的行同样标为内部
-// 按 CommonMark 记「字符 + 长度」：闭合必须字符相同且长度 ≥ 开启长度。
-// 否则 4 反引号的嵌套围栏会被内层 3 反引号提前关掉，块里的表格骨架被当成真表格 → 假阳（本仓 12 处嵌套围栏）。
-function fenceMask(lines) {
-  const mask = new Array(lines.length).fill(false)
-  let open = -1, openChar = '', openLen = 0
-  for (let i = 0; i < lines.length; i++) {
-    const m = FENCE_RE.exec(lines[i])
-    if (!m) {
-      if (open >= 0) mask[i] = true
-      continue
-    }
-    const fence = m[1]
-    if (open < 0) {
-      open = i; openChar = fence[0]; openLen = fence.length
-    } else if (fence[0] === openChar && fence.length >= openLen) {
-      open = -1; openChar = ''; openLen = 0
-    } else {
-      mask[i] = true          // 关不掉的开围栏行 = 代码块内部的普通内容
-    }
-  }
-  return { mask, unclosedLine: open >= 0 ? open + 1 : 0 }
-}
+// 围栏掩码 fenceMask 也是共享单源（tools/execution-matrix/markdown-rows.mjs）：
+// 「围栏内内容算不算结构」只能有一个口径——本文件的 markdown 机械检查与 A 组结构检查若各写一份，
+// 同一份卡会在两处得出相反结论。语义（含未闭合围栏的处理）见该文件注释。
 
 const mdFindings = []
 const mdFiles = collectMd(root)

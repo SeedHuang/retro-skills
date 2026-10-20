@@ -1,5 +1,15 @@
 {
   "core-working-principles.md": { "cognitive": true, "x3Done": true },
   "how-i-must-reason.md": { "cognitive": true, "x3Done": true, "x2Carrier": true },
-  "data-support-triple.md": { "cognitive": true, "x3Done": true, "x2Carrier": true }
+  "data-support-triple.md": { "cognitive": true, "x3Done": true, "x2Carrier": true },
+  "reviewer-audit:A1": "pass",
+  "reviewer-audit:A2": "pass",
+  "reviewer-audit:B1": "pass",
+  "reviewer-audit:B2": "pass",
+  "reviewer-audit:B3": "pass",
+  "reviewer-audit:B4": "pass",
+  "reviewer-audit:C1": "pass",
+  "reviewer-audit:C2": "pass",
+  "reviewer-audit:C3": "pass",
+  "reviewer-audit:C4": "pass"
 }
