@@ -2,15 +2,24 @@
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { readEvidence, writeEvidence } from '../evidence.mjs';
-import { renderByName } from '../cli.mjs';
+import { renderByName, assertAgentName } from '../cli.mjs';
+import { readState } from '../state.mjs';
+import { exitCodeFor } from '../components/validateAgentData.mjs';
 import { agentData, triggerTable } from '../components/agentData.mjs';
 import { patternRegistry } from '../components/patternRegistry.mjs';
 import { diffSet } from '../components/compare.mjs';
 
 const name = process.argv[2];
-if (!name) { console.error('用法：node tools/docgen/acceptance/golden-assert.mjs <name>'); process.exit(2); }
+if (!name) { console.error('InvalidArgs: 用法：node tools/docgen/acceptance/golden-assert.mjs <name>'); process.exit(2); }
+
+function fail(code, message) { const e = new Error(message); e.code = code; throw e; }
 
 function main() {
+  // R6 ① name 合法性 → ② 阶段判定（不碰 git、不读 evidence）→ ③ readEvidence → ④ git / 写盘
+  assertAgentName(name);
+  if (readState().agents[name] === 'replaced') {
+    fail('MigrationPhaseClosed', `${name} 已迁移（state=replaced），golden-assert 已关闭；正确通路 = node tools/docgen/cli.mjs diff --kind agent --name ${name} → replace --expect-change <凭证>`);
+  }
   const evidence = readEvidence(name);
   const snapshot = execFileSync('git', ['show', `${evidence.commit}:agents/${name}.md`], { encoding: 'utf8' });
   const snapshotDescription = /^---\n[^\n]*\n?description: ([^\n]*)\n[^\n]*\n?---\n/.exec(snapshot)?.[1];
@@ -51,10 +60,12 @@ function main() {
 try {
   main();
 } catch (e) {
-  // EvidenceInvalid 等错误档位按 exit 2（与 cli.mjs 错误码档位一致）
+  // stderr 契约（spec §3.3）：首个非空行必须以 `错误码:` 开头，恒带冒号（EvidenceInvalid 等档位按 EXIT 表走）
   if (e.code) {
-    process.stderr.write(`${e.code}${e.message && e.message !== e.code ? `: ${e.message}` : ''}\n`);
-    process.exit(2);
+    process.stderr.write(`${e.code}: ${e.message && e.message !== e.code ? e.message : e.code}\n`);
+    let exit = 2;
+    try { exit = exitCodeFor(e.code); } catch { exit = 2; }
+    process.exit(exit);
   }
   // 无 code = 程序 bug（如 TypeError），重抛保留根因与默认 exit 1，避免掩盖
   throw e;

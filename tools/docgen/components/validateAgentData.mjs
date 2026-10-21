@@ -12,9 +12,9 @@ const EXIT = {
   2: ['UnregisteredHandwritten', 'InvalidBaseline', 'InvalidBaselinePath', 'DanglingBaselineEntry',
     'BaselineDrift', 'EnvironmentEOL', 'InvalidInputPath', 'InvalidOutputPath',
     'MissingComponentData', 'UnsupportedKind', 'StateFileInvalid', 'GoldenSnapshotUnavailable',
-    'EvidenceInvalid', 'InvalidArgs'],
+    'EvidenceInvalid', 'InvalidArgs', 'MigrationPhaseClosed'],
   3: ['GeneratedMissing', 'TemplateReadFailed', 'TargetReadFailed', 'WriteFailed', 'DraftNotFound', 'DraftWriteFailed'],
-  4: ['NotAuthorized'],
+  4: ['NotAuthorized', 'UnapprovedChange'],
 };
 export function exitCodeFor(code) {
   for (const [exit, codes] of Object.entries(EXIT)) if (codes.includes(code)) return Number(exit);

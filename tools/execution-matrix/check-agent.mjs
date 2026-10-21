@@ -3,7 +3,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { renderByName } from '../docgen/cli.mjs';
+import { renderByName } from '../docgen/components/renderByName.mjs';
 import { splitRow, fenceMask } from './markdown-rows.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');

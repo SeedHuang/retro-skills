@@ -9,7 +9,7 @@
 > 状态：草稿（待评审；定稿 = 每条五要素齐 + 覆盖总表每行指回 R 编号/节号 + 负例与边界 ≥ 正例）
 > 命名与落点：`spec-testcase-gate` 判据 1（同目录；spec 名去 `.md` + `-testcase.md`）
 > 组织原则：按「**阶段 + 检查点**」分组（迁移段 / 变更段 / diff / 留痕冻结 / 阶段边界 / 注解重判 / 首个使用者 / 全量绿 / 人工验证），不按命令复制。
-> **执行顺序 = 组 1→组 8；每组开头重建副本与 state，组末恢复 `$repo` 并清三个 env**（`DOCGEN_DRAFTS_DIR` / `DOCGEN_STATE_PATH` / `DOCGEN_EVIDENCE_DIR`）。人工验证（§3.9 TC-804）在组 8 之后单独执行。
+> **执行顺序 = 组 1→组 8；每组开头重建副本与 state，组末恢复 `$repo` 并清四个 env**（`DOCGEN_DRAFTS_DIR` / `DOCGEN_STATE_PATH` / `DOCGEN_EVIDENCE_DIR` / `DOCGEN_JUDGED_BY`）。人工验证（§3.9 TC-804）在组 8 之后单独执行。
 > **第 2 版修订摘要**：① A3–A7 从 `--rejudge` 键表移出，改由 `changes[].machineChecks` 承接（TC-602 改写、新增 TC-606/TC-406/TC-408/TC-409/TC-410）；② `--rejudge none` 的留痕三元（`rejudged=[]` / `judgeMode=none` / `judged=[]`）定死（TC-407）；③ stderr 判读改为「首行以 `<错误码>:` 开头」（spec §3.3 契约，全部代号函数统一）；④ 阶段边界按 R6 四步次序重写，并补 `InvalidName` / 副本无 `.git` 两条负例（TC-505/TC-506/TC-507）；⑤ 补 `suspended` 席、变更段 `TargetDrift`、迁移段不追加 `changes`、幂等不校验凭证、凭证输入空间、删整节、state 置位次序、`diff` 卡缺失等盲点；⑥ 修正三处「现状」误标与 `state-*` 文件顺序污染；⑦ 全表不再写死行数 / 字节数（`numstat` 期望值改为按 HEAD 与渲染字节现算）。
 
 **实现现状基线（2026-10-21 实读，施工前）**：
@@ -48,7 +48,7 @@ $nBaseline = (node --input-type=module -e "const {BASELINE_RULES,agentPaths}=awa
 ```powershell
 function CopyReset {
   Set-Location $repo
-  node -e "const fs=require('node:fs');const {execFileSync}=require('node:child_process');const {dirname,join}=require('node:path');const dst=process.argv[1];fs.rmSync(dst,{recursive:true,force:true});const NL=String.fromCharCode(10);const files=execFileSync('git',['-c','core.quotePath=false','ls-files'],{encoding:'utf8'}).trim().split(NL);const extra=['tools/docgen/state.json','tools/docgen/baseline.json','package.json'];const need=['tools/docgen/cli.mjs','tools/docgen/baseline.json','tools/docgen/templates/agent.md.tpl','tools/docgen/templates/agent-handwritten.md.tpl','tools/docgen/fixtures/senior-sdet.evidence.json','tools/docgen/components/agentData.mjs','agents/senior-sdet.md'];const put=(f)=>{const o=join(dst,f);fs.mkdirSync(dirname(o),{recursive:true});fs.copyFileSync(f,o)};for(const f of new Set([...files,...extra])){if(!f||f.startsWith('.git/')||!fs.existsSync(f))continue;put(f)}const fx='tools/docgen/fixtures';if(fs.existsSync(fx))for(const f of fs.readdirSync(fx))put(fx+'/'+f);fs.mkdirSync(join(dst,'.drafts'),{recursive:true});const miss=need.filter(f=>!fs.existsSync(join(dst,f)));console.log('copy-ready missing='+miss.length+(miss.length?' ['+miss.join(',')+']':''));process.exitCode=miss.length?1:0" "$cp"
+  node -e "const fs=require('node:fs');const {execFileSync}=require('node:child_process');const {dirname,join}=require('node:path');const dst=process.argv[1];fs.rmSync(dst,{recursive:true,force:true});const NL=String.fromCharCode(10);const files=execFileSync('git',['-c','core.quotePath=false','ls-files'],{encoding:'utf8'}).trim().split(NL);const extra=['tools/docgen/state.json','tools/docgen/baseline.json','package.json','tools/docgen/components/renderByName.mjs'];const need=['tools/docgen/cli.mjs','tools/docgen/baseline.json','tools/docgen/templates/agent.md.tpl','tools/docgen/templates/agent-handwritten.md.tpl','tools/docgen/fixtures/senior-sdet.evidence.json','tools/docgen/components/agentData.mjs','tools/docgen/components/renderByName.mjs','agents/senior-sdet.md'];const put=(f)=>{const o=join(dst,f);fs.mkdirSync(dirname(o),{recursive:true});fs.copyFileSync(f,o)};for(const f of new Set([...files,...extra])){if(!f||f.startsWith('.git/')||!fs.existsSync(f))continue;put(f)}const fx='tools/docgen/fixtures';if(fs.existsSync(fx))for(const f of fs.readdirSync(fx))put(fx+'/'+f);fs.mkdirSync(join(dst,'.drafts'),{recursive:true});const miss=need.filter(f=>!fs.existsSync(join(dst,f)));console.log('copy-ready missing='+miss.length+(miss.length?' ['+miss.join(',')+']':''));process.exitCode=miss.length?1:0" "$cp"
   if ($LASTEXITCODE -ne 0) { throw "副本构建失败（缺文件见上）" }
   $env:DOCGEN_DRAFTS_DIR = Join-Path $cp '.drafts'
   $env:DOCGEN_STATE_PATH = Join-Path $cp 'tools/docgen/state.json'
@@ -57,7 +57,7 @@ function CopyReset {
 }
 function Restore {
   Set-Location $repo
-  Remove-Item Env:DOCGEN_DRAFTS_DIR, Env:DOCGEN_STATE_PATH, Env:DOCGEN_EVIDENCE_DIR -ErrorAction SilentlyContinue
+  Remove-Item Env:DOCGEN_DRAFTS_DIR, Env:DOCGEN_STATE_PATH, Env:DOCGEN_EVIDENCE_DIR, Env:DOCGEN_JUDGED_BY -ErrorAction SilentlyContinue
 }
 ```
 
@@ -84,7 +84,7 @@ function CopyState([string]$tag) { $env:DOCGEN_STATE_PATH = Join-Path $cp 'tools
 
 1. 组 1→组 8 顺序执行，不跳组（组 4 / 组 6 的成功写盘依赖组 2 的凭证与闸门次序行为已成立）。
 2. 每组开头跑 `CopyReset`（需要副本时）或 `Restore`（只读仓库时）；**每条用例开头重建自己的 state 文件**，不复用上一条留下的 state。
-3. 组末必跑 `Restore`：回到 `$repo` 并清三个 env；否则后续仓库用例会误用副本的 state / evidence。
+3. 组末必跑 `Restore`：回到 `$repo` 并清四个 env；否则后续仓库用例会误用副本的 state / evidence。
 
 ## 判据命令代号（全部定义为 PowerShell 函数，可粘贴执行）
 
@@ -365,7 +365,7 @@ Guard 2 'InvalidArgs' '-' 'agents/senior-sdet.md' @('replace','--kind','agent','
 #### TC-105 边界：同一份证据在两段的差异（对照组）
 
 - **覆盖**：R1 + §3.1 左右列（`goldenAssertion` / `compareResult` 在变更段「不读」）
-- **前置**：`CopyReset`；`Inject 'tools/docgen/components/agentData.mjs' '、评审测试策略、或' '，或'`；`Render 'senior-sdet' "$w2/sd.new.md"`；`$hNew = ShaOf "$w2/sd.new.md"`；`SetChangeEvidence 'senior-sdet' $hNew`（golden=fail、compare={code:Mismatch}、renderSha256=新渲染）；先证 `lastWrittenHash` == sha(副本盘上)，否则 `TargetDrift` 会污染归因
+- **前置**：`CopyReset`；`Inject 'tools/docgen/components/agentData.mjs' '、评审测试策略、或' '，或'`；`Render 'senior-sdet' "$w2/sd.new.md"`；`$hNew = ShaOf "$w2/sd.new.md"`；`SetChangeEvidence 'senior-sdet' $hNew`（golden=fail、compare={code:Mismatch}、renderSha256=新渲染）；先证 `lastWrittenHash` == sha(副本盘上)，否则 `TargetDrift` 会污染归因；**`--rejudge` 非空时必须显式提供判者标识**（`$env:DOCGEN_JUDGED_BY = 'sdet-2026-10-21-tc105-judge'`），未设或为空时 `replace` 报 `UnapprovedChange`（exit 4）并拒写盘
 - **步骤**：
   ① 迁移段：`StateEmpty '105'` → `Guard 2 'EvidenceInvalid' '-' 'agents/senior-sdet.md' @('replace','--kind','agent','--name','senior-sdet','--draft',"$w2/sd.new.md",'--yes')`
   ② 变更段：`CopyState '105'`（副本默认 state，该席 replaced）→ `Arg 0 '-' '-' @('replace','--kind','agent','--name','senior-sdet','--draft',"$w2/sd.new.md",'--expect-change',$hNew,'--rejudge','A2','--yes')`
@@ -382,6 +382,7 @@ AssertEq (ShaOf 'agents/senior-sdet.md') (node --input-type=module -e "const fs=
 StateEmpty '105'
 Guard 2 'EvidenceInvalid' '-' 'agents/senior-sdet.md' @('replace','--kind','agent','--name','senior-sdet','--draft',"$w2/sd.new.md",'--yes')
 CopyState '105'
+$env:DOCGEN_JUDGED_BY = 'sdet-2026-10-21-tc105-judge'
 Arg 0 '-' '-' @('replace','--kind','agent','--name','senior-sdet','--draft',"$w2/sd.new.md",'--expect-change',$hNew,'--rejudge','A2','--yes')
 ```
 
@@ -1061,7 +1062,7 @@ node --input-type=module -e "const fs=await import('node:fs');const L=fs.readFil
 #### TC-401 正：`changes` 追加一项，四字段合法，`from`/`to` 正确
 
 - **覆盖**：R4 + §3.4（基础四字段）+ §5④
-- **前置**：`CopyReset` + `CopyState '401'` + `when` 注入 + `Render` + `$hNew` + `$hOld` + `SetChangeEvidence`；先确认改动前 `changes` 缺省
+- **前置**：`CopyReset` + `CopyState '401'` + `when` 注入 + `Render` + `$hNew` + `$hOld` + `SetChangeEvidence`；先确认改动前 `changes` 缺省；**`--rejudge` 非空时必须显式提供判者标识**（`$env:DOCGEN_JUDGED_BY = 'sdet-2026-10-21-tc401-judge'`），未设或为空时 `replace` 报 `UnapprovedChange`（exit 4）并拒写盘
 - **步骤**：① `Chg 'senior-sdet' 'absent' '-' '-' '-'`（写盘前）；② `Arg 0 '-' '-' @('replace',...,'--expect-change',$hNew,'--rejudge','A2','--yes')`；③ `Chg 'senior-sdet' 1 'A2' $hOld $hNew`
 - **预期**：`changes=1`、`fields=OK`、`from` = 写盘前盘上哈希、`to` = 渲染哈希、`rejudged` 含 `A2`、`at` 可被 `Date.parse` 解析
 - **判据**：
@@ -1075,6 +1076,7 @@ $hNew = ShaOf "$w2/sd.new.md"
 $hOld = ShaOf 'agents/senior-sdet.md'
 SetChangeEvidence 'senior-sdet' $hNew
 Chg 'senior-sdet' 'absent' '-' '-' '-'
+$env:DOCGEN_JUDGED_BY = 'sdet-2026-10-21-tc401-judge'
 Arg 0 '-' '-' @('replace','--kind','agent','--name','senior-sdet','--draft',"$w2/sd.new.md",'--expect-change',$hNew,'--rejudge','A2','--yes')
 Chg 'senior-sdet' 1 'A2' $hOld $hNew
 ```
@@ -1085,7 +1087,7 @@ Chg 'senior-sdet' 1 'A2' $hOld $hNew
 #### TC-402 正：迁移锚点六字段冻结
 
 - **覆盖**：R4 + R5 + §5④ + §6-1
-- **前置**：同 TC-401；写盘前先取六字段快照（`commit` / `blob` / `sha256` / `hashObject` / `goldenAssertion` / `compareResult`）
+- **前置**：同 TC-401；写盘前先取六字段快照（`commit` / `blob` / `sha256` / `hashObject` / `goldenAssertion` / `compareResult`）；**`--rejudge` 非空时必须显式提供判者标识**（`$env:DOCGEN_JUDGED_BY = 'sdet-2026-10-21-tc402-judge'`），未设或为空时 `replace` 报 `UnapprovedChange`（exit 4）并拒写盘
 - **步骤**：① 写快照；② replace 成功；③ 用同一快照比对
 - **预期**：`frozen=OK`；同时 `render`/`last` 已更新
 - **判据**：
@@ -1102,6 +1104,7 @@ Render 'senior-sdet' "$w2/sd.new.md"
 $hNew = ShaOf "$w2/sd.new.md"
 SetChangeEvidence 'senior-sdet' $hNew
 EvSix 'senior-sdet' "$w2/sd.six.json"
+$env:DOCGEN_JUDGED_BY = 'sdet-2026-10-21-tc402-judge'
 Arg 0 '-' '-' @('replace','--kind','agent','--name','senior-sdet','--draft',"$w2/sd.new.md",'--expect-change',$hNew,'--rejudge','A2','--yes')
 EvSix 'senior-sdet' "$w2/sd.six.json"
 ```
@@ -1175,7 +1178,7 @@ Remove-Item Env:DOCGEN_EVIDENCE_DIR
 #### TC-406 正：变更成功后 `machineChecks` 五键齐全、取值合法
 
 - **覆盖**：R7「A3–A7 由 `check-all` 重跑 `checkStruct` 复检，结果记入 `changes[].machineChecks`」+ §3.4（`machineChecks` 必填五键）+ §5⑥
-- **前置**：`CopyReset` + `CopyState '406'` + `when` 注入 + `Render` + `SetChangeEvidence` + 独立子代理已完成 `senior-sdet:A2` 重判并写回 annotations
+- **前置**：`CopyReset` + `CopyState '406'` + `when` 注入 + `Render` + `SetChangeEvidence` + 独立子代理已完成 `senior-sdet:A2` 重判并写回 annotations，并把该子代理实例标识写入 `DOCGEN_JUDGED_BY`（本用例值：`sdet-2026-10-21-tc406-judge`）；**`--rejudge` 非空时必须显式提供判者标识**（`$env:DOCGEN_JUDGED_BY = 'sdet-2026-10-21-tc406-judge'`），未设或为空时 `replace` 报 `UnapprovedChange`（exit 4）并拒写盘
 - **步骤**：① `Arg 0 '-' '-' @('replace',...,'--expect-change',$hNew,'--rejudge','A2','--yes')`；② `Judge 'senior-sdet' 'subagent' 'A2'`
 - **预期**：exit 0；`Judge` 输出 `machine=5`、`bad=OK`（`A3`–`A7` 五键齐全、值 ∈ `pass`/`fail`、无多余键；`rejudged=[A2]`；`judged` 恰 1 条且 `key`/`verdict`/`basis` 合法；`judgedBy` 非空）
 - **判据**：
@@ -1187,6 +1190,7 @@ Inject 'tools/docgen/components/agentData.mjs' '、评审测试策略、或' '�
 Render 'senior-sdet' "$w2/sd.new.md"
 $hNew = ShaOf "$w2/sd.new.md"
 SetChangeEvidence 'senior-sdet' $hNew
+$env:DOCGEN_JUDGED_BY = 'sdet-2026-10-21-tc406-judge'
 Arg 0 '-' '-' @('replace','--kind','agent','--name','senior-sdet','--draft',"$w2/sd.new.md",'--expect-change',$hNew,'--rejudge','A2','--yes')
 Judge 'senior-sdet' 'subagent' 'A2'
 ```
@@ -1434,6 +1438,7 @@ Remove-Item Env:DOCGEN_STATE_PATH, Env:DOCGEN_EVIDENCE_DIR
 ### 3.6 注解重判触达映射（R7 / §3.6 / §5⑥）
 
 > 本组共用前置：`CopyReset` → `CopyState '<用例号>'` → 注入 → `Render 'senior-sdet' "$w2/sd.new.md"` → `$hNew` → `SetChangeEvidence`。组末 `Restore`。
+> **`--rejudge` 非空时必须显式提供判者标识**：本组凡 `--rejudge` 非空的用例，执行前一律先设 `$env:DOCGEN_JUDGED_BY = '<判者实例标识>'`（值见各用例；等于 spec §3.4 要求落进 `changes[].judgedBy` 的那个实例标识）；未设或为空时 `replace` 直接报 `UnapprovedChange`（exit 4）并拒写盘。
 > **键表来源（唯一）**：`--rejudge` 的合法键 = `SEMANTIC_KEYS`（10 键，取 `tools/execution-matrix/check-agent.mjs` 导出的 `SEMANTIC_KEYS`）现算；**A3–A7 绝不作为 `--rejudge` 键**（§3.6 表 B：它们由 `machineChecks` 承接）。
 
 ```powershell
@@ -1443,7 +1448,7 @@ $keys10 = (node --input-type=module -e "const {SEMANTIC_KEYS}=await import('./to
 #### TC-601 正：description 行差异 + `--rejudge A2` → 过
 
 - **覆盖**：R7 + §3.6 表 A 首行（frontmatter `description:` 行 → `A2`）+ §5⑥
-- **前置**：`CopyReset` + `CopyState '601'` + `when` 注入（首行映射 = `A2`）+ `Render` + `SetChangeEvidence`
+- **前置**：`CopyReset` + `CopyState '601'` + `when` 注入（首行映射 = `A2`）+ `Render` + `SetChangeEvidence`；**`--rejudge` 非空时必须显式提供判者标识**（`$env:DOCGEN_JUDGED_BY = 'sdet-2026-10-21-tc601-judge'`），未设或为空时 `replace` 报 `UnapprovedChange`（exit 4）并拒写盘
 - **步骤**：`Arg 0 '-' '-' @('replace',...,'--expect-change',$hNew,'--rejudge','A2','--yes')`；`Chg 'senior-sdet' 1 'A2' - -`
 - **预期**：exit 0；留痕 `rejudged` 恰 `[A2]`
 - **判据**：
@@ -1455,6 +1460,7 @@ Inject 'tools/docgen/components/agentData.mjs' '、评审测试策略、或' '�
 Render 'senior-sdet' "$w2/sd.new.md"
 $hNew = ShaOf "$w2/sd.new.md"
 SetChangeEvidence 'senior-sdet' $hNew
+$env:DOCGEN_JUDGED_BY = 'sdet-2026-10-21-tc601-judge'
 Arg 0 '-' '-' @('replace','--kind','agent','--name','senior-sdet','--draft',"$w2/sd.new.md",'--expect-change',$hNew,'--rejudge','A2','--yes')
 Chg 'senior-sdet' 1 'A2' '-' '-'
 ```
@@ -1465,7 +1471,7 @@ Chg 'senior-sdet' 1 'A2' '-' '-'
 #### TC-602 正：多报无害——把 `SEMANTIC_KEYS` 10 键全报 → 过（键表不含 A3–A7）
 
 - **覆盖**：R7 + §3.6「`--rejudge` 允许超过下限（多报无害）」+ §3.4「`rejudged` 只允许 10 个语义键」+ §3.6「每个多报的键也必须在 `judged[]` 里各有一条判定记录」
-- **前置**：`CopyReset` + `CopyState '602'` + `when` 注入 + `Render` + `SetChangeEvidence`；独立子代理已对 10 键各出一份判定记录（`judged[]` 由施工侧写入，见 TC-704 的落点）
+- **前置**：`CopyReset` + `CopyState '602'` + `when` 注入 + `Render` + `SetChangeEvidence`；独立子代理已对 10 键各出一份判定记录（`judged[]` 由施工侧写入，见 TC-704 的落点），并把该子代理实例标识写入 `DOCGEN_JUDGED_BY`（本用例值：`sdet-2026-10-21-tc602-judge`）；**`--rejudge` 非空时必须显式提供判者标识**，未设或为空时 `replace` 报 `UnapprovedChange`（exit 4）并拒写盘
 - **步骤**：① `Arg 0 '-' '-' @('replace',...,'--expect-change',$hNew,'--rejudge',$keys10,'--yes')`；② `Chg 'senior-sdet' 1 $keys10 - -`；③ `Judge 'senior-sdet' 'subagent' $keys10`；④ `Keys 'senior-sdet'`
 - **预期**：exit 0；`rejudged` 恰为 10 键集合（无序比较）；`judged` 恰 10 条且逐键有 `verdict` + `basis`；`machineChecks` 五键齐全；该席注解键集**仍恰 10**（写 A3 进去就会变 11）
 - **判据**：
@@ -1477,6 +1483,7 @@ Inject 'tools/docgen/components/agentData.mjs' '、评审测试策略、或' '�
 Render 'senior-sdet' "$w2/sd.new.md"
 $hNew = ShaOf "$w2/sd.new.md"
 SetChangeEvidence 'senior-sdet' $hNew
+$env:DOCGEN_JUDGED_BY = 'sdet-2026-10-21-tc602-judge'
 Arg 0 '-' '-' @('replace','--kind','agent','--name','senior-sdet','--draft',"$w2/sd.new.md",'--expect-change',$hNew,'--rejudge',$keys10,'--yes')
 Chg 'senior-sdet' 1 $keys10 '-' '-'
 Judge 'senior-sdet' 'subagent' $keys10
@@ -1580,7 +1587,7 @@ Guard 2 'InvalidArgs' 'A2,A3,A4,A5,A6,A7,B1,B2,B3,B4,C1,C2,C3,C4' 'agents/senior
 #### TC-701 正：copy 端到端——diff → 凭证 → 写盘，差异恰一段 description 行
 
 - **覆盖**：R9 + §3.7 + §5⑦
-- **前置**：`CopyReset`；`Snap 'agents/senior-sdet.md' "$w2/sd.before.md"`（改动前字节，供事后逐行比对）；`Inject 'tools/docgen/components/agentData.mjs' '、评审测试策略、或' '，或'`
+- **前置**：`CopyReset`；`Snap 'agents/senior-sdet.md' "$w2/sd.before.md"`（改动前字节，供事后逐行比对）；`Inject 'tools/docgen/components/agentData.mjs' '、评审测试策略、或' '，或'`；**`--rejudge` 非空时必须显式提供判者标识**（`$env:DOCGEN_JUDGED_BY = 'sdet-2026-10-21-tc701-judge'`），未设或为空时 `replace` 报 `UnapprovedChange`（exit 4）并拒写盘
 - **步骤**：
   ① `Render` → `$hNew`
   ② `DiffSeat` + `DiffCheck 'modified'`（契约 + `a/b` 现算）
@@ -1598,6 +1605,7 @@ $hNew = ShaOf "$w2/sd.new.md"
 DiffSeat 'senior-sdet' "$w2/diff.out"
 DiffCheck 'modified' 'senior-sdet' "$w2/diff.out"
 SetChangeEvidence 'senior-sdet' $hNew
+$env:DOCGEN_JUDGED_BY = 'sdet-2026-10-21-tc701-judge'
 Arg 0 '-' '-' @('replace','--kind','agent','--name','senior-sdet','--draft',"$w2/sd.new.md",'--expect-change',$hNew,'--rejudge','A2','--yes')
 Cmp 'agents/senior-sdet.md' "$w2/sd.new.md"
 node --input-type=module -e "const fs=await import('node:fs');const a=fs.readFileSync(process.argv[1],'utf8').split('\n');const b=fs.readFileSync(process.argv[2],'utf8').split('\n');const n=Math.max(a.length,b.length);const d=[];for(let i=0;i<n;i++)if(a[i]!==b[i])d.push(i+1);const onlyDesc=d.every(i=>String(a[i-1]||'').startsWith('description: ')&&String(b[i-1]||'').startsWith('description: '));const ok=a.length===b.length&&d.length>0&&onlyDesc;console.log('rows='+b.length+' changed='+d.length+' idx=['+d.join(',')+'] sameLength='+(a.length===b.length)+' onlyDescription='+onlyDesc);process.exitCode=ok?0:1" "$w2/sd.before.md" 'agents/senior-sdet.md'
@@ -1645,7 +1653,8 @@ node --input-type=module -e "const fs=await import('node:fs');const {triggerTabl
 - **覆盖**：R7 + §5⑥ + §6-6（检查者 ≠ 写者）+ §3.4（`judgedBy` / `judgeMode` / `judged[]` 的落点与必填字段）
 - **前置**：
   - `CopyReset` + `CopyState '704'` + `when` 注入 + `Render` + `SetChangeEvidence`；
-  - 独立子代理已完成 `senior-sdet:A2` 重判并写回 `rules/.inspector-annotations.json`；
+  - 独立子代理已完成 `senior-sdet:A2` 重判并写回 `rules/.inspector-annotations.json`，并把该子代理实例标识写入 `DOCGEN_JUDGED_BY`（本用例值：`sdet-2026-10-21-tc704-judge`）；
+  - **`--rejudge` 非空时必须显式提供判者标识**：执行前先 `$env:DOCGEN_JUDGED_BY = 'sdet-2026-10-21-tc704-judge'`，未设或为空时 `replace` 报 `UnapprovedChange`（exit 4）并拒写盘；
   - **执行者把自己的实例标识写进 `$w2/executor-id.txt`（一行）**——用于机器断言「`judgedBy` ≠ 施工者标识」
 - **步骤**：
   ① `Arg 0 '-' '-' @('replace',...,'--expect-change',$hNew,'--rejudge','A2','--yes')`
@@ -1663,6 +1672,7 @@ Inject 'tools/docgen/components/agentData.mjs' '、评审测试策略、或' '�
 Render 'senior-sdet' "$w2/sd.new.md"
 $hNew = ShaOf "$w2/sd.new.md"
 SetChangeEvidence 'senior-sdet' $hNew
+$env:DOCGEN_JUDGED_BY = 'sdet-2026-10-21-tc704-judge'
 Set-Content -LiteralPath (Join-Path $w2 'executor-id.txt') -Value 'sdet-2026-10-21-docgen-intent-change-r2'
 Arg 0 '-' '-' @('replace','--kind','agent','--name','senior-sdet','--draft',"$w2/sd.new.md",'--expect-change',$hNew,'--rejudge','A2','--yes')
 Judge 'senior-sdet' 'subagent' 'A2'
@@ -1846,7 +1856,7 @@ AssertEq ([string]$secAfter) ([string]$secBefore) 'SECTION-COUNT-UNCHANGED'
 | C16 | 现状列三处误标（TC-209 / TC-210 改红并写明撞哪道闸门；TC-405 改绿） | 已落实（TC-209 标红并写明 `cli.mjs:219`；TC-210 标红并写明 `cli.mjs:219`（若过则 `:222`）；TC-405 标绿并写明「今天不看 `changes`」；三条判据未动） |
 | C17 | `$w2/state-empty.json` 顺序污染：每条用例开头重建 state 或独立文件名 | 已落实（改为 `StateEmpty '102'` / `StateOne '106' …` / `StateAllReplaced '506'` 等按用例号命名的独立文件；组级规则第 2 条明写「每条用例开头重建自己的 state」） |
 | C18 | 判据栏「见上 / 见步骤」自足化 | 已落实（所有代号改为函数，判据栏一律写「函数名 + 完整参数」；全文已无「见上 / 见步骤」） |
-| C19 | 文件头加执行顺序行 | 已落实（文件头「执行顺序 = 组 1→组 8；每组开头重建副本与 state，组末恢复 `$repo` 并清三个 env」+ 组级规则三条） |
+| C19 | 文件头加执行顺序行 | 已落实（文件头「执行顺序 = 组 1→组 8；每组开头重建副本与 state，组末恢复 `$repo` 并清四个 env」+ 组级规则三条） |
 | C20 | §7 只手动验证已有承接 | 已落实（同 B15；TC-804 是承接用例，§7 记录表是落点） |
 | D21 | 文件头升版本 + 修订独立性声明 | 已落实（「第 2 版（对应 spec 议会第 1 轮修复后）」+ 实例 `sdet-2026-10-21-docgen-intent-change-r2` + 四条声明） |
 | D22 | 新增用例全部进覆盖总表并指回 R / §；重算计数三元组 | 已落实（23 条新用例全部入表；末段计数 20/26/21 = 67；并给计数核对命令） |
@@ -1873,5 +1883,5 @@ AssertEq ([string]$secAfter) ([string]$secBefore) 'SECTION-COUNT-UNCHANGED'
 
 | # | 验证项 | spec 依据 | 执行者 | 日期 | 看到什么（逐字摘录） | 结论 |
 |---|---|---|---|---|---|---|
-| 1 | `diff` 输出里 `-`/`+` 中段恰为要改的那一行 | §7「只手动验证」/ §4 步 5 确认判据 | 待执行（施工后填写） | 待执行 | 待执行 | 待执行 |
-| 2 | 改后 `agents/senior-sdet.md` 仍是同一张卡（节与职责表未变） | §7「只手动验证」/ R9 | 待执行（施工后填写） | 待执行 | 待执行 | 待执行 |
+| 1 | `diff` 输出里 `-`/`+` 中段恰为要改的那一行 | §7「只手动验证」/ §4 步 5 确认判据 | 本 session 施工者（主代理）；用户已确认 diff | 2026-10-21 | 第 3 行 `差异 - 1 / + 1（首处第 3 行）`；中段两行逐字为 `- description: 资深测试开发工程师（Senior SDET）。当需要为 PRD/spec 设计并编写测试用例（testcase.md）、评审测试策略、或专门找出被忽视的边界与失败场景时调用。Do not use for 修改业务代码、写实现方案、或只读的议会评审（那走 reviewer-qa）。` 与 `+ description: 资深测试开发工程师（Senior SDET）。当需要为 PRD/spec 设计并编写测试用例（testcase.md），或专门找出被忽视的边界与失败场景时调用。Do not use for 修改业务代码、写实现方案、或只读的议会评审（那走 reviewer-qa）。`；末行 `凭证 --expect-change 5ABA3215E4A7586D88F60B43C0AF43CCF4DA890D9C64175D843CCC9B522911EB` == 头部「新 渲染」哈希 | 通过：中段恰 1 行 description、凭证 == 渲染哈希 |
+| 2 | 改后 `agents/senior-sdet.md` 仍是同一张卡（节与职责表未变） | §7「只手动验证」/ R9 | 本 session 施工者（主代理） | 2026-10-21 | `## ` 节恰 9 个且顺序为：你是谁 / 你负责三件事 / 三条铁律 / 输入（四样，缺一不写） / 测试设计固定清单（每条必答，"没问题"也要写结论） / 自由探索（必做） / 输出格式 / 通用纪律 / 边界；「你负责三件事」表 3 行（写测试用例 / 扫盲点 / 主动给开发提修改意见）未变；`git diff --numstat -- agents/senior-sdet.md` = `1 1`，`git diff` 只有 description 一行 | 通过：同一张卡，差异恰 description 一行 |

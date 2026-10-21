@@ -46,6 +46,8 @@ test('字节反例：副本仓注入一字节 → generate 判漂移 exit 1（�
   const dst = mkdtempSync(join(tmpdir(), 'dg-copy-'));
   try {
     cpSync('tools/docgen', join(dst, 'tools/docgen'), { recursive: true });
+    // cli.mjs 的 replace/diff 依赖 execution-matrix（SEMANTIC_KEYS / checkStruct / readAnnotations），副本要一起带
+    cpSync('tools/execution-matrix', join(dst, 'tools/execution-matrix'), { recursive: true });
     cpSync('agents', join(dst, 'agents'), { recursive: true });
     const target = join(dst, 'agents', 'reviewer-qa.md');
     appendFileSync(target, ' ');

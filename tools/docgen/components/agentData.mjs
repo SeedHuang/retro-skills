@@ -259,7 +259,7 @@ export const triggerTable = {
   'reviewer-reader': { when: '当主持人调度对描述性/记录型/任意文档做读者视角评审', route: 'reviewer-reader' },
   'detective-observer': { when: '每轮答辩结束后由主持人调度做行为核实', route: 'detective-observer' },
   'senior-sdet': {
-    when: '当需要为 PRD/spec 设计并编写测试用例（testcase.md）、评审测试策略、或专门找出被忽视的边界与失败场景',
+    when: '当需要为 PRD/spec 设计并编写测试用例（testcase.md），或专门找出被忽视的边界与失败场景',
     route: 'senior-sdet',
     notWhen: { text: '修改业务代码、写实现方案、或只读的议会评审（那走 reviewer-qa）', refs: ['reviewer-qa'] },
   },
