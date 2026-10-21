@@ -1,6 +1,6 @@
 # Docgen 写盘通路：迁移期与变更期分派（有意变更）
 
-> 日期：2026-10-21｜状态：**待评审（未定稿）**｜触发：`docs/handoffs/2026-10-21-f1-sdet-desc-trigger.md`（用户 2026-10-21 裁定「路 B」）
+> 日期：2026-10-21｜状态：**已定稿**（议会 2026-10-21 第 1 轮通过：6 席评审，26 族问题全部处置，审计 8 项关闭）｜触发：`docs/handoffs/2026-10-21-f1-sdet-desc-trigger.md`（用户 2026-10-21 裁定「路 B」）
 > 测试用例文件：`docs/superpowers/specs/2026-10-21-docgen-replace-intent-change-design-testcase.md`（由独立 `senior-sdet` 子代理在全新上下文编写）
 > 依赖：S1 能力地基（CLI / 错误码五档）、S2 试点（evidence 四字段）、S3（第二套模板 / 黄金快照锚点）、S4 `2026-10-19-docgen-agent-batch-design.md`（R6 双闸门 / R7 卡字节不变）、线 E `2026-10-20-execution-assurance-matrix-design.md`（十键注解契约）
 
