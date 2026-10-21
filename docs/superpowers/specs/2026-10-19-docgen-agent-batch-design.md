@@ -1,7 +1,7 @@
 # Docgen P2 · S4：余下 12 席批量数据搬家
 
 > split from `docs/prd/docgen-agent-generation.md` (2026-10-19)
-> 日期：2026-10-19｜**修订 3（2026-10-20，议会第 2 轮答辩后）**：影响面⑫补 `cli-gate.test.mjs`（generate 期望不得依赖迁移进度）与 `pilot-render.test.mjs` 三连空行断言收窄；§3 删 fixedList 条数列（条数只由 testcase 现算）；§4.1 明确无共享块空行只在已迁 B 席上验；§5-① 补快照 = HEAD 的等价写法、§5-⑤ 补 check-all 输出席名与降级不收口；§6 补 11–13（槽位特判、测试改写不删断言、降级只 pending）｜**修订 2（2026-10-20，议会第 1 轮答辩后）**：补「空共享块少一个空行」的渲染修复与影响面；`[CONST]` 快照改 `HEAD`（检查点不再依赖未生成的 evidence）；R6 改为双闸门（`goldenAssertion` + `compareResult`）；补四键运行时守卫、注解判定时点/判者落账/降级、12 席注解进 `check-all`；干净口径改为「预期产物之外无改动」；拆批判据补「渲染器语义缺陷 → 回炉不拆批」；常量尺寸数字改为指向 testcase 现算｜**修订 1（2026-10-20）**：数据源由 gen-agents 改为迁移前现卡、四键收归 triggerTable、补四常量/evidence/注解、新增前 3 席检查点｜状态：待评审（草稿，spec + testcase 一起送议会）｜PRD 状态：已定稿
+> 日期：2026-10-19｜**修订 3（2026-10-20，议会第 2 轮答辩后）**：影响面⑫补 `cli-gate.test.mjs`（generate 期望不得依赖迁移进度）与 `pilot-render.test.mjs` 三连空行断言收窄；§3 删 fixedList 条数列（条数只由 testcase 现算）；§4.1 明确无共享块空行只在已迁 B 席上验；§5-① 补快照 = HEAD 的等价写法、§5-⑤ 补 check-all 输出席名与降级不收口；§6 补 11–13（槽位特判、测试改写不删断言、降级只 pending）｜**修订 2（2026-10-20，议会第 1 轮答辩后）**：补「空共享块少一个空行」的渲染修复与影响面；`[CONST]` 快照改 `HEAD`（检查点不再依赖未生成的 evidence）；R6 改为双闸门（`goldenAssertion` + `compareResult`）；补四键运行时守卫、注解判定时点/判者落账/降级、12 席注解进 `check-all`；干净口径改为「预期产物之外无改动」；拆批判据补「渲染器语义缺陷 → 回炉不拆批」；常量尺寸数字改为指向 testcase 现算｜**修订 1（2026-10-20）**：数据源由 gen-agents 改为迁移前现卡、四键收归 triggerTable、补四常量/evidence/注解、新增前 3 席检查点｜状态：**已定稿（2026-10-20，议会 5 轮：QA/AI/AU PASS + 审计两表 PASS）**｜PRD 状态：已定稿
 > 测试用例文件：`docs/superpowers/specs/2026-10-19-docgen-agent-batch-design-testcase.md`
 > 依赖：S1 spec `2026-10-19-docgen-agent-capability-design.md` + S2 spec `2026-10-19-docgen-agent-pilot-design.md` + S3 spec `2026-10-19-docgen-agent-senior-sdet-design.md` + 线 E `tools/execution-matrix/criteria.md` + PRD §5 W3 + PRD §6.1–6.4
 
@@ -122,7 +122,7 @@
 >
 > **无共享块分支（第 1 轮 P0）**：现模板 `{{SHARED_BLOCK}}` 独占一行且前后无空行，`fill` 空值会连同该行换行一起删除，导致 B 组 9 席在「通用纪律末条」与 `## 边界` 之间少一个空行。修法 = `renderAgent` 对 `{{SHARED_BLOCK}}` 空值**只删占位符、保留该行换行**（即把 `{{SHARED_BLOCK}}` 替换为空串，不删其后的 `\n`；**不得**把值写成 `\n`——那会产生两个空行）；非空分支不变。必须补 `pilot-render.test.mjs` 断言：无共享块席该处恰一个空行。
 
-**description 派生**：`在议会评审中担任{role}。{when}时调用`（domain = `patternRegistry.DOMAIN`），逐字 == 现卡 description。`description` 不存进条目（S1 R13）。
+**description 派生**：`在议会评审中担任{role}。{when}时调用`（domain = `patternRegistry.DOMAIN`），逐字 == 现卡 description。`description` 不存进条目（S1 R13）。ASCII 开头的 role（`UI 评委` / `AI 评委`）在 `担任` 与 role 之间**恰一个空格**（实现落 `patternRegistry.description.parliament`）——否则这 2 席 description 与现卡不逐字相等（2026-10-20 施工期勘误：原式未写明该分隔规则）。
 
 ## 4 九步闭环执行细则（每席同构）
 

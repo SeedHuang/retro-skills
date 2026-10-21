@@ -15,7 +15,9 @@ import { BASELINE_RULES, agentPaths } from '../tools/docgen/components/baseline.
 // 执行力度矩阵：归桶守卫 + A 组检查 + 共享项变更硬闸门 + 模式表守卫
 // （判据单源在 tools/execution-matrix/，本文件只调用不内联）
 import { checkBuckets } from '../tools/execution-matrix/check-buckets.mjs'
-import { checkAgent } from '../tools/execution-matrix/check-agent.mjs'
+import { checkAgentFile } from '../tools/execution-matrix/check-agent.mjs'
+// docgen 状态（哪些席已由生成器替换）——A 组检查的覆盖集从这里现算，不写死试点席
+import { readState } from '../tools/docgen/state.mjs'
 import { checkSharedChanges } from '../tools/execution-matrix/shared-changes/check-shared-changes.mjs'
 import { checkPatternTable } from '../tools/execution-matrix/check-pattern-table.mjs'
 import { splitRow, fenceMask } from '../tools/execution-matrix/markdown-rows.mjs'
@@ -116,10 +118,34 @@ if (!bucketRes.ok) {
   failed = true
   console.error(`[execution-matrix] 归桶守卫失败：${JSON.stringify(bucketRes.findings)}`)
 }
-const agentRes = checkAgent('reviewer-audit')
-if (!agentRes.ok) {
+// A 组 + 十键检查覆盖每个已被 docgen 替换的席（覆盖集从 state 现算：只挂试点席会让新增席静默漏检）
+let replacedSeats = []
+let stateRead = true
+try {
+  replacedSeats = Object.entries(readState().agents)
+    .filter(([, st]) => st === 'replaced')
+    .map(([name]) => name)
+    .sort()
+} catch (e) {
+  // readState 抛 StateFileInvalid（state.json 损坏 / 键不在 agentData）：按本文件统一出口收敛，
+  // 不让整个 check 以未捕获堆栈中止、把后面的共享项闸门与 markdown 检查一起丢掉
+  stateRead = false
   failed = true
-  console.error(`[execution-matrix] reviewer-audit A 组检查失败：${JSON.stringify(agentRes.findings)}`)
+  console.error(`[execution-matrix] state 读取失败：${e.code ?? e.name}（A 组检查未执行）`)
+}
+if (stateRead && replacedSeats.length === 0) {
+  failed = true
+  console.error('[execution-matrix] state 中没有任何 replaced 席，A 组检查未实际执行')
+}
+if (replacedSeats.length > 0) {
+  console.log(`[execution-matrix] A 组+十键检查已覆盖 ${replacedSeats.length} 席：${replacedSeats.join(', ')}`)
+}
+for (const seat of replacedSeats) {
+  const agentRes = checkAgentFile(seat)
+  if (!agentRes.ok) {
+    failed = true
+    console.error(`[execution-matrix] ${seat} A 组检查失败：${JSON.stringify(agentRes.findings)}`)
+  }
 }
 const sharedRes = checkSharedChanges()
 if (!sharedRes.ok) {

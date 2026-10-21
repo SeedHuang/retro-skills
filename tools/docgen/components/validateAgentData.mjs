@@ -7,7 +7,8 @@ const EXIT = {
     'TemplateHardcoded', 'ImpureRender', 'Mismatch', 'DuplicateAgentName', 'InvalidName',
     'FrontmatterFieldMissing', 'ToolsViolation', 'SharedBlockMissing', 'WhenFormatViolation',
     'DescriptionDerivation', 'TriggerMissingRoute', 'TriggerConflict', 'DuplicateWhen',
-    'InvalidOutputKind', 'MissingWhen', 'DraftDrift', 'DraftNameConflict', 'TargetDrift'],
+    'InvalidOutputKind', 'MissingWhen', 'DraftDrift', 'DraftNameConflict', 'TargetDrift',
+    'TriggerFieldMisplaced'],
   2: ['UnregisteredHandwritten', 'InvalidBaseline', 'InvalidBaselinePath', 'DanglingBaselineEntry',
     'BaselineDrift', 'EnvironmentEOL', 'InvalidInputPath', 'InvalidOutputPath',
     'MissingComponentData', 'UnsupportedKind', 'StateFileInvalid', 'GoldenSnapshotUnavailable',
@@ -96,6 +97,18 @@ export function validateAgentData(data, table) {
     const t = table[a.name];
     if (t === undefined) continue; // registered 未拆槽豁免
     if (!t.when) fail('MissingWhen', { name: a.name });
+  }
+  // 断言 15：条目不得含四键（when / notWhen / route / fallback 只住 triggerTable），且键集不超白名单
+  // 普通席 8 键；testcase 席（手写卡模板）另容 heading / sourceLine。identity / fixedList 不要求必填（施工中段骨架合法）
+  const BASE_KEYS = ['name', 'role', 'dimension', 'tools', 'identity', 'fixedList', 'sharedBlock', 'outputKind'];
+  const HANDWRITTEN_KEYS = ['heading', 'sourceLine'];
+  for (const a of data) {
+    for (const k of ['when', 'notWhen', 'route', 'fallback']) {
+      if (k in a) fail('TriggerFieldMisplaced', { name: a.name, key: k });
+    }
+    const allowed = a.outputKind === 'testcase' ? [...BASE_KEYS, ...HANDWRITTEN_KEYS] : BASE_KEYS;
+    const extra = Object.keys(a).filter((k) => !allowed.includes(k));
+    if (extra.length) fail('TriggerFieldMisplaced', { name: a.name, extra });
   }
   return { ok: true };
 }

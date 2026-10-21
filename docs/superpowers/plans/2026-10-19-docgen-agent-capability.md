@@ -3,6 +3,10 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use `subagent-driven-development`（推荐）或 `executing-plans` 逐任务执行。步骤用 `- [ ]` 勾选跟踪。
 >
 > **本计划不执行任何 git 写操作**：每个任务收尾把改动留在工作区，最终由用户决定提交方式。
+>
+> **执行状态（2026-10-21 复核，批量勾选）**：Task 1–8 全部完成。依据两处——① PRD §6.6 的「S1 终态」记录（2026-10-19 实跑：`npm run check` 318 tests 全绿 / gate `baseline 35/35` / W4 黄金断言逐字相等 / W5 基线 35 条 / W8 `gen-agents.mjs` 退役 / W9 `tools/docgen-spike/` 删除）；② 本次复核实测：`tools/docgen/**` 产出物齐全（`components/*.mjs`、`templates/*.tpl`、`acceptance/*`、`test/e2e-final.test.mjs` 均在盘）、`node --test tools/docgen/test/*.test.mjs` **92/92 绿** exit 0、`tools/docgen-spike/` 与 `skills/parliament/scripts/gen-agents.mjs` 均已不存在。
+>
+> **如实披露**：本计划的 `Step 2：跑测试确认失败` 是 TDD 过程步骤，事后无法复核「当时确实红过」；该步一并勾选仅为记录进度，**不作为证据**。另：原文 8 处 `Step 5：提交` 标题与用户「计划不得含 git 写步骤」的规则冲突，已按正文原意改名为「收尾（改动留工作区，不执行 git 写操作）」，不改正文内容。
 
 **Goal:** 把 P2 的能力地基（`tools/docgen/` 管线：六子命令 CLI + 草稿箱 + 守卫断言迁移 + 五档退出码 + 两清单 baseline + W4–W9 终态验收）落成可运行代码，让 S2/S3/S4 的每个 agent 走同一条九步闭环。
 
@@ -65,7 +69,7 @@
 **Interfaces:**
 - Produces: `agentData`（14 席数组）、`triggerTable`（Map/对象，when/route/notWhen/fallback）、`AGENT_KINDS = { rule, agent }`、`patternRegistry`、`BASELINE_RULES`、`agentPaths()`（POSIX 字典序 14 条）、`renderBaseline()`、`DOMAIN = '议会评审'`。
 
-- [ ] **Step 1：写失败测试**
+- [x] **Step 1：写失败测试**
 
 `tools/docgen/test/data.test.mjs`：
 
@@ -123,12 +127,12 @@ test('renderBaseline() = JSON.stringify(两清单, null, 2) + \\n（H 族）', (
 });
 ```
 
-- [ ] **Step 2：跑测试确认失败**
+- [x] **Step 2：跑测试确认失败**
 
 Run: `node --test tools/docgen/test/data.test.mjs`
 Expected: FAIL（模块不存在 / `Cannot find module`）
 
-- [ ] **Step 3：写最小实现**
+- [x] **Step 3：写最小实现**
 
 `tools/docgen/components/patternRegistry.mjs`：
 
@@ -215,12 +219,12 @@ export function renderBaseline() {
 }
 ```
 
-- [ ] **Step 4：跑测试确认通过**
+- [x] **Step 4：跑测试确认通过**
 
 Run: `node --test tools/docgen/test/data.test.mjs`
 Expected: PASS（14 席 / 无 description / 触发表单住 / when 无尾时 / 14 条字典序 POSIX / 35 条 baseline）
 
-- [ ] **Step 5：提交**
+- [x] **Step 5：收尾（改动留工作区，不执行 git 写操作）**
 
 改动留在工作区（本计划全程不 git 写操作，交用户决定提交方式）。
 
@@ -236,7 +240,7 @@ Expected: PASS（14 席 / 无 description / 触发表单住 / when 无尾时 / 1
 - Consumes: `agentData` / `triggerTable` / `AGENT_KINDS`（Task 1）、`patternRegistry`（Task 1）、`renderBaseline` / `agentPaths`（Task 1）、`TEMPLATE_H2S`（P1）。
 - Produces: `validateAgentData(agentData, triggerTable)` → 返回 `{ ok: true }` 或 `throw fail(code, fields)`；`exitCodeFor(code)`（§7 五档映射）。
 
-- [ ] **Step 1：写失败测试**
+- [x] **Step 1：写失败测试**
 
 `tools/docgen/test/validate.test.mjs`（覆盖 §6 断言 1–14 关键正负例）：
 
@@ -341,12 +345,12 @@ test('退出码五档映射：exitCodeFor 对齐 §7（21+10+6+1=38）', () => {
 });
 ```
 
-- [ ] **Step 2：跑测试确认失败**
+- [x] **Step 2：跑测试确认失败**
 
 Run: `node --test tools/docgen/test/validate.test.mjs`
 Expected: FAIL（模块不存在）
 
-- [ ] **Step 3：写最小实现**
+- [x] **Step 3：写最小实现**
 
 `tools/docgen/components/validateAgentData.mjs`（14 条断言按序，返回第一个错误；派生公式对齐 patternRegistry）：
 
@@ -450,12 +454,12 @@ export function validateAgentData(data, table) {
 }
 ```
 
-- [ ] **Step 4：跑测试确认通过**
+- [x] **Step 4：跑测试确认通过**
 
 Run: `node --test tools/docgen/test/validate.test.mjs`
 Expected: PASS（14 条断言正负例全过 + 五档退出码对齐）
 
-- [ ] **Step 5：提交**
+- [x] **Step 5：收尾（改动留工作区，不执行 git 写操作）**
 
 改动留在工作区。
 
@@ -473,7 +477,7 @@ Expected: PASS（14 条断言正负例全过 + 五档退出码对齐）
 - Consumes: P1 源（`tools/docgen-spike/specTestCaseGate.mjs`、`compare.mjs`、`template.md`）。
 - Produces: `render(data, template)`、`renderBlocks(data)`、`validateData(data)`、`assertTemplateClean(template)`、`compareBuffers(a,b)`、`checkEnvironment(buf, role, path)`、`assertInside(root, input, kind)`、`withReadProbe`。
 
-- [ ] **Step 1：迁移源文件（复制 → 调整路径 → 语义不变，R14）**
+- [x] **Step 1：迁移源文件（复制 → 调整路径 → 语义不变，R14）**
 
 复制以下 P1 文件内容到 docgen（**语义零改写**，仅路径与导入调整）：
 - `tools/docgen-spike/specTestCaseGate.mjs` → `tools/docgen/components/specTestCaseGate.mjs`（TEMPLATE_PATH 改指 `../templates/rule.md.tpl`）
@@ -503,7 +507,7 @@ export function checkEnvironment(buffer, role, path) {
 }
 ```
 
-- [ ] **Step 2：写失败测试**
+- [x] **Step 2：写失败测试**
 
 `tools/docgen/test/migrate.test.mjs`（等价迁移表 §8.4 关键锚点 V1/V2b/V6/V8/V11）：
 
@@ -550,17 +554,17 @@ test('V11 等价：assertInside 越界 → InvalidOutputPath', () => {
 });
 ```
 
-- [ ] **Step 3：跑测试确认失败**
+- [x] **Step 3：跑测试确认失败**
 
 Run: `node --test tools/docgen/test/migrate.test.mjs`
 Expected: FAIL（模块不存在）
 
-- [ ] **Step 4：完成迁移并跑测试**
+- [x] **Step 4：完成迁移并跑测试**
 
 按 Step 1 复制迁移；`node --test tools/docgen/test/migrate.test.mjs`
 Expected: PASS（V1 逐字节一致 / V2b CR / V6 签名 / V8 顺序 / V11 越界）
 
-- [ ] **Step 5：提交**
+- [x] **Step 5：收尾（改动留工作区，不执行 git 写操作）**
 
 改动留在工作区。
 
@@ -576,7 +580,7 @@ Expected: PASS（V1 逐字节一致 / V2b CR / V6 签名 / V8 顺序 / V11 越�
 - Consumes: `agentData`/`triggerTable`/`AGENT_KINDS`（Task 1）、`validateAgentData`/`exitCodeFor`（Task 2）、`render`/`renderBlocks`/`buildData`（Task 3）、`compareBuffers`/`checkEnvironment`/`assertInside`（Task 3）、`agentPaths`/`renderBaseline`（Task 1）。
 - Produces: `parseArgs(argv)`、`cmdGenerate(args)`、`cmdGate(args)`、`main(argv)`；错误统一 `fail(code, fields)` + `process.exitCode = exitCodeFor(code)`。
 
-- [ ] **Step 1：写失败测试**
+- [x] **Step 1：写失败测试**
 
 `tools/docgen/test/cli-gate.test.mjs`：
 
@@ -628,12 +632,12 @@ test('篡改已生成 agent → gate Mismatch（exit 1）', () => {
 
 > 注：篡改 agent → Mismatch 的 e2e 放到 Task 7（check-all 参数化后）用隔离目录做，避免本任务污染真 `agents/`。本任务聚焦命令可跑 + 基线 35/35。
 
-- [ ] **Step 2：跑测试确认失败**
+- [x] **Step 2：跑测试确认失败**
 
 Run: `node --test tools/docgen/test/cli-gate.test.mjs`
 Expected: FAIL（cli.mjs 不存在）
 
-- [ ] **Step 3：写最小实现**
+- [x] **Step 3：写最小实现**
 
 `tools/docgen/cli.mjs`（骨架，后续任务扩展子命令）：
 
@@ -750,14 +754,14 @@ export function main(argv) {
 if (process.argv[1] && resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url))) process.exitCode = main(process.argv.slice(2));
 ```
 
-- [ ] **Step 4：跑测试确认通过**
+- [x] **Step 4：跑测试确认通过**
 
 Run: `node --test tools/docgen/test/cli-gate.test.mjs`
 Expected: PASS（generate 35/35 / gate 35/35 / ghost → exit 2）
 
 > 注：本实现 `cmdGenerate`/`cmdGate` 里用了顶层 `await`/`import()`——Node ≥22 支持 ESM 顶层 await。若测试环境报语法错，把 `const spec = await import(...)` 改为文件顶部静态 `import * as spec from './components/specTestCaseGate.mjs'`。
 
-- [ ] **Step 5：提交**
+- [x] **Step 5：收尾（改动留工作区，不执行 git 写操作）**
 
 改动留在工作区。
 
@@ -773,7 +777,7 @@ Expected: PASS（generate 35/35 / gate 35/35 / ghost → exit 2）
 - Consumes: Task 1–4 产物 + `DOCGEN_DRAFTS_DIR`（测试重定向）。
 - Produces: `cmdDraft(args)`（子命令 `draft` / `draft ls` / `draft rm` / `draft ensure`）、`cmdReplace(args)`；错误：`DraftNameConflict`(1)、`DraftNotFound`(3)、`DraftDrift`(1)、`DraftWriteFailed`(3)、`NotAuthorized`(4)、`InvalidOutputPath`(2)。
 
-- [ ] **Step 1：写失败测试**
+- [x] **Step 1：写失败测试**
 
 `tools/docgen/test/drafts.test.mjs`：
 
@@ -863,12 +867,12 @@ test('name 逃逸：--name foo/../bar → InvalidName（exit 1，格式层拦截
 });
 ```
 
-- [ ] **Step 2：跑测试确认失败**
+- [x] **Step 2：跑测试确认失败**
 
 Run: `node --test tools/docgen/test/drafts.test.mjs`
 Expected: FAIL（cmdDraft/cmdReplace 不存在）
 
-- [ ] **Step 3：写最小实现（cli.mjs 追加）**
+- [x] **Step 3：写最小实现（cli.mjs 追加）**
 
 ```js
 import { mkdirSync, writeFileSync, readdirSync, rmSync, renameSync, statSync } from 'node:fs';
@@ -965,12 +969,12 @@ if (sub === 'replace') return cmdReplace({ kind: flag('--kind', 'agent'), name: 
 
 > 注：`draft ls` / `draft rm` / `draft ensure` 在 argv 里是 `['draft', 'ls', ...]`——`main` 的 `sub = argv[0]` 是 'draft'，需要按 `argv[1]` 判断子命令。实现时统一按 `argv[0]==='draft' ? argv[1] : argv[0]` 解析。
 
-- [ ] **Step 4：跑测试确认通过**
+- [x] **Step 4：跑测试确认通过**
 
 Run: `node --test tools/docgen/test/drafts.test.mjs`
 Expected: PASS（草稿落箱 / 遇旧稿冲突 / ls / rm --yes / ensure 幂等 / replace 缺 --yes / DraftDrift / DraftNotFound / UnsupportedKind / name 逃逸 InvalidName）
 
-- [ ] **Step 5：提交**
+- [x] **Step 5：收尾（改动留工作区，不执行 git 写操作）**
 
 改动留在工作区。
 
@@ -986,7 +990,7 @@ Expected: PASS（草稿落箱 / 遇旧稿冲突 / ls / rm --yes / ensure 幂等 
 - Consumes: Task 1–5 产物。
 - Produces: `cmdCheckAgents()`、`cmdBaselineWrite()`、`gate()`（供 replace 前置的纯函数）；拒红判别子（§5.3）。
 
-- [ ] **Step 1：写失败测试**
+- [x] **Step 1：写失败测试**
 
 `tools/docgen/test/check-baseline.test.mjs`：
 
@@ -1031,12 +1035,12 @@ test('gate 读 baseline.json：与 renderBaseline() 逐字节一致', () => {
 });
 ```
 
-- [ ] **Step 2：跑测试确认失败**
+- [x] **Step 2：跑测试确认失败**
 
 Run: `node --test tools/docgen/test/check-baseline.test.mjs`
 Expected: FAIL（cmdCheckAgents/cmdBaselineWrite 不存在 / baseline.json 未生成）
 
-- [ ] **Step 3：写最小实现（cli.mjs 追加）**
+- [x] **Step 3：写最小实现（cli.mjs 追加）**
 
 ```js
 export function cmdCheckAgents() {
@@ -1074,12 +1078,12 @@ if (sub === 'baseline' && rest[0] === '--write') return cmdBaselineWrite();
 
 `replace` 前置 gate（§5.3 判别子，Task 5 中已简化——此处补完整版）：在 `cmdReplace` 写入前调用 `gate()`；gate 红时按文件名判别子放行（目标自身 / 已有草稿且草稿==渲染），否则拒红。
 
-- [ ] **Step 4：跑测试确认通过**
+- [x] **Step 4：跑测试确认通过**
 
 Run: `node --test tools/docgen/test/check-baseline.test.mjs`
 Expected: PASS（check-agents OK / baseline --write 35 条 / gate 读 baseline 逐字节一致）
 
-- [ ] **Step 5：提交**
+- [x] **Step 5：收尾（改动留工作区，不执行 git 写操作）**
 
 改动留在工作区。
 
@@ -1098,7 +1102,7 @@ Expected: PASS（check-agents OK / baseline --write 35 条 / gate 读 baseline �
 - Consumes: `cli.mjs gate`（Task 4）、`renderBaseline`（Task 1）、`BASELINE_RULES` + `agentPaths`（Task 1）。
 - Produces: check-all 的 gate 段调用 `cli.mjs gate`；baseline 断言 `baseline ${N}/${N}` 从常量派生。
 
-- [ ] **Step 1：写失败测试**
+- [x] **Step 1：写失败测试**
 
 `tools/docgen/test/checkall.test.mjs`：
 
@@ -1133,12 +1137,12 @@ test('parliament SKILL.md / assembly-matrix.md 生成指令已改指 docgen', ()
 });
 ```
 
-- [ ] **Step 2：跑测试确认失败**
+- [x] **Step 2：跑测试确认失败**
 
 Run: `node --test tools/docgen/test/checkall.test.mjs`
 Expected: FAIL（check-all 仍引用 spike / 21/21 / gen-agents.test.mjs 存在 / 文档未改）
 
-- [ ] **Step 3：实施**
+- [x] **Step 3：实施**
 
 `scripts/check-all.mjs` 的 ②.5 docgen gate 段替换为：
 
@@ -1183,12 +1187,12 @@ if (g.error) {
 复制现有角色数据 → 填新席清单（`tools/docgen/components/agentData.mjs` + `triggerTable`）→ 跑 `node tools/docgen/cli.mjs generate --kind agent --name <新席>` → 走草稿 → 确认 → 替换；**禁止手改 `agents/*.md`**。
 ```
 
-- [ ] **Step 4：跑测试确认通过 + 全仓 check**
+- [x] **Step 4：跑测试确认通过 + 全仓 check**
 
 Run: `node --test tools/docgen/test/checkall.test.mjs`；再 `npm run check`
 Expected: checkall PASS；`npm run check` 全绿（gate 段切到 docgen、baseline N/N 参数化、gen-agents.test.mjs 已删、文档已改指）
 
-- [ ] **Step 5：提交**
+- [x] **Step 5：收尾（改动留工作区，不执行 git 写操作）**
 
 改动留在工作区。
 
@@ -1205,7 +1209,7 @@ Expected: checkall PASS；`npm run check` 全绿（gate 段切到 docgen、basel
 - Consumes: Task 1–7 全部。
 - Produces: 终态验收证据——W4（锚点派生逐字相等）、W5（gate 扩容基线 N 派生）、W8（gen-agents 退役后 check 绿）、W9（V1–V11 等价迁移全绿 + spike 删）。
 
-- [ ] **Step 1：写失败测试**
+- [x] **Step 1：写失败测试**
 
 `tools/docgen/test/e2e-final.test.mjs`：
 
@@ -1257,12 +1261,12 @@ test('W9：等价迁移 V1 在 docgen 逐字节成立；spike 已删（全绿后
 });
 ```
 
-- [ ] **Step 2：跑测试确认失败**
+- [x] **Step 2：跑测试确认失败**
 
 Run: `node --test tools/docgen/test/e2e-final.test.mjs`
 Expected: FAIL（W8/W9 未满足——gen-agents.mjs/spike 未删）
 
-- [ ] **Step 3：实施**
+- [x] **Step 3：实施**
 
 1. **W4 前置**：确认 `agents/reviewer-product.md` 与 `agents/senior-sdet.md` 现 description 与派生公式逐字相等（若现文件 description 含尾「时」等不一致，**以现文件为基准调 when 提取**，不手改生成物——见 spec §4.2 黄金断言）。若现文件确与句式有出入，记录差异并在 S2 试点时按黄金断言修正 when 槽（S1 只验证公式，不强制现文件已收敛）。
 
@@ -1272,12 +1276,12 @@ Expected: FAIL（W8/W9 未满足——gen-agents.mjs/spike 未删）
 
 4. 跑 `npm run check` 全绿 + `node --test tools/docgen/test/` 全绿。
 
-- [ ] **Step 4：跑测试确认通过**
+- [x] **Step 4：跑测试确认通过**
 
 Run: `node --test tools/docgen/test/e2e-final.test.mjs`；再 `npm run check`
 Expected: e2e-final PASS；`npm run check` 全绿（357 tests 基线 + docgen 全绿）
 
-- [ ] **Step 5：提交**
+- [x] **Step 5：收尾（改动留工作区，不执行 git 写操作）**
 
 改动留在工作区；P2 验收证据（W4–W9 全绿）记录到 PRD §6.6 迁移状态账本（交用户）。
 

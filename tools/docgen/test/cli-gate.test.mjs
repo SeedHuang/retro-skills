@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, cpSync, appendFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
@@ -8,15 +8,15 @@ import { spawnSync } from 'node:child_process';
 const CLI = 'tools/docgen/cli.mjs';
 const run = (args, env = {}) => spawnSync(process.execPath, [CLI, ...args], { encoding: 'utf8', env: { ...process.env, DOCGEN_DRAFTS_DIR: mkdtempSync(join(tmpdir(), 'dg-draft-')), ...env } });
 
-test('generate 缺省 = rule + agent 两清单全遍历（NF-2）：已拆槽席渲染比对（锚点席文件未替换 → 红 exit 1）+ baseline 35/35', () => {
+test('generate 缺省 = rule + agent 两清单全遍历（NF-2）：14 席全部拆槽且渲染 == 现卡 → exit 0 + baseline 35/35', () => {
   const r = run(['generate']);
-  assert.equal(r.status, 1, r.stdout + r.stderr);
+  assert.equal(r.status, 0, r.stdout + r.stderr);
   assert.match(r.stdout, /baseline 35\/35/);
 });
 
-test('generate --kind agent --name reviewer-product：已拆槽席渲染比对，S1 手写文件未替换 → 不等 exit 1', () => {
+test('generate --kind agent --name reviewer-product：渲染 == 现卡 → exit 0', () => {
   const r = run(['generate', '--kind', 'agent', '--name', 'reviewer-product']);
-  assert.equal(r.status, 1, r.stdout + r.stderr);
+  assert.equal(r.status, 0, r.stdout + r.stderr);
 });
 
 test('generate --name ghost → MissingComponentData（exit 2）', () => {
@@ -37,13 +37,24 @@ test('generate --name reviewer-audit：渲染与黄金快照一致 → exit 0', 
   assert.equal(r.status, 0, r.stdout + r.stderr);
 });
 
-test('generate --name reviewer-qa：registered 未拆槽席只做存在性检查 → exit 0', () => {
+test('generate --name reviewer-qa：拆槽后渲染 == 现卡 → exit 0', () => {
   const r = run(['generate', '--kind', 'agent', '--name', 'reviewer-qa']);
   assert.equal(r.status, 0, r.stdout + r.stderr);
 });
 
-test('generate 全遍历：14 席中已拆槽席渲染比对、其余存在性检查 → 锚点席未替换 exit 1 + baseline 35/35', () => {
-  const r = run(['generate']);
-  assert.equal(r.status, 1, r.stdout + r.stderr);
-  assert.match(r.stdout, /baseline 35\/35/);
+test('字节反例：副本仓注入一字节 → generate 判漂移 exit 1（不依赖工作区）', () => {
+  const dst = mkdtempSync(join(tmpdir(), 'dg-copy-'));
+  try {
+    cpSync('tools/docgen', join(dst, 'tools/docgen'), { recursive: true });
+    cpSync('agents', join(dst, 'agents'), { recursive: true });
+    const target = join(dst, 'agents', 'reviewer-qa.md');
+    appendFileSync(target, ' ');
+    const r = spawnSync(process.execPath, ['tools/docgen/cli.mjs', 'generate', '--kind', 'agent', '--name', 'reviewer-qa'], {
+      cwd: dst, encoding: 'utf8', env: { ...process.env, DOCGEN_DRAFTS_DIR: join(dst, '.drafts') },
+    });
+    assert.equal(r.status, 1, r.stdout + r.stderr);
+    assert.match(r.stdout, /baseline 35\/35/);
+  } finally {
+    rmSync(dst, { recursive: true, force: true });
+  }
 });

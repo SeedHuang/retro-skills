@@ -191,7 +191,24 @@ P1 用一条 rule 证明了整文件模型、入口基线、规则类型「枚�
 |---|---|---|---|---|---|
 | `reviewer-audit`（试点） | agent | **已巩固** | blob `291ec6a` + SHA256 `703E6DFA565E01EA2975BE971D38F873D20E091BC9A079EBA3D7E53B56B3CA16` | 2026-10-20 | gate ×2 `baseline 35/35` + 冷跑 `35/35` + `npm run check` 344/344 |
 | `senior-sdet` | agent | **已巩固** | blob `be5672b` + SHA256 `717803BE432BE5147DA49EDA531EA3250ADE54E8FC02C133A4F03424B679E7BF`（迁移前快照 blob `3469455` + SHA256 `4D78162DED2B678879E2136C91C7C2B381DE119EBC7AD04DF1A1611F540CDF27`） | 2026-10-20 | W2：`diffSet` 唯一差异 = 来源行（`unallowed=0` / `raw=1`）+ 归一化后整文件逐字节 `EQUAL` + golden-assert 通过；gate ×2 `baseline 35/35` + 冷跑 `35/35` + `replace-scenarios` PASS 6/6 + A3–A7 `struct-red=0` + A1/A2/B1–B4/C1–C4 十键注解 pass（`checkAgentFile` ok=true） + `npm run check` 470/470 |
-| 余下 12 席 | agent | 逐行登记 | … | — | … |
+| `reviewer-product` | agent | **已巩固** | blob `1076150` + SHA256 `813A36CAF72D1AAEAA73A33D47E37490B4CB9DBE2BEB075EBFD118CE9B58274F` | 2026-10-21 | `numstat` 空 + 前快照 blob 等值 |
+| `reviewer-frontend` | agent | **已巩固** | blob `613d886` + SHA256 `8B9C568F28D26F60A6B2463FF3C3E32C970A8D9B9F71A80787279BE31A31D8B1` | 2026-10-21 | `numstat` 空 + 前快照 blob 等值 |
+| `detective-observer` | agent | **已巩固** | blob `2f8d8fd` + SHA256 `4364645A689E47B295C4FDD1D77E2444F90DA0185180BC9798811BDDC2C89668` | 2026-10-21 | `numstat` 空 + 前快照 blob 等值 |
+| `reviewer-backend` | agent | **已巩固** | blob `0542e02` + SHA256 `75ACBB10EB15A17A1092EB2DCB62DBA91F8DE37DF4EB16B5E006712884324BE3` | 2026-10-21 | `numstat` 空 + 前快照 blob 等值 |
+| `reviewer-interaction` | agent | **已巩固** | blob `3a3f782` + SHA256 `1EA704B5A9737C4C1CEB60464451FF90E850BC6A8FEC3526FB665FC5F46F4097` | 2026-10-21 | `numstat` 空 + 前快照 blob 等值 |
+| `reviewer-ui` | agent | **已巩固** | blob `f96adc2` + SHA256 `1C703E34C6831A1EAF0FC404DAC73EC3F2E288F7666C4E235DC47829120F37D2` | 2026-10-21 | `numstat` 空 + 前快照 blob 等值 |
+| `reviewer-ops` | agent | **已巩固** | blob `9648388` + SHA256 `D40FE71D9E1C57985446E16E123B084F6AADBDC23BA2FB8925808827FD30C7E5` | 2026-10-21 | `numstat` 空 + 前快照 blob 等值 |
+| `reviewer-qa` | agent | **已巩固** | blob `44c92b4` + SHA256 `7B4495504D59218E438951C42A04758FD273CD174CB5EB92F161187F61DA9A79` | 2026-10-21 | `numstat` 空 + 前快照 blob 等值 |
+| `reviewer-ai` | agent | **已巩固** | blob `22f478c` + SHA256 `683E318854A1129E3482929FF2EE73D131F6F56C59693BCD79FCE26AF7F71D0F` | 2026-10-21 | `numstat` 空 + 前快照 blob 等值 |
+| `reviewer-security` | agent | **已巩固** | blob `ada7095` + SHA256 `D26E870A755510F5D13E153F73DDCB500D270B20EAC3B0BEB3012491C3C424D1` | 2026-10-21 | `numstat` 空 + 前快照 blob 等值 |
+| `reviewer-actuary` | agent | **已巩固** | blob `5702c41` + SHA256 `388D8539B9F75E79220629F2B0868D23F6CA93F91B198FEE6C6FA12228B9B961` | 2026-10-21 | `numstat` 空 + 前快照 blob 等值 |
+| `reviewer-reader` | agent | **已巩固** | blob `c3da6b6` + SHA256 `9631FBE521FBCA0D9642C06A59666CD7A0205AF471DF44CBF9C09B623E4091E3` | 2026-10-21 | `numstat` 空 + 前快照 blob 等值 |
+
+> **账本注 1（12 席批次级共用证据，2026-10-21 实跑）**：gate ×2 = `baseline 35/35`；冷跑 `35/35`；`replace-scenarios` PASS；`npm run check` 470/470 + `0 findings`；A1/A2/B1–B4/C1–C4 十键语义注解全 pass（由独立子代理判定，判者与依据见 S4 plan 执行记录）；`git diff --numstat -- agents/` 无输出。逐席证据不在此重复（同一事实只留一处，避免漂移）；命令与逐步输出见 `docs/superpowers/plans/2026-10-20-docgen-agent-batch.md` 的「执行记录」。
+>
+> **账本注 2（跨机可复现）**：每席的迁移前快照可由 evidence fixture 现取——`git rev-parse "$(node -p "require('./tools/docgen/fixtures/<名>.evidence.json').commit"):agents/<名>.md"`。12 席的该值与上表现产物 blob **等值**（证明零改写）；`senior-sdet` 的 fixture `sha256` 记的是**迁移前**快照（S3 设计如此，用于 `diffSet` 唯一差异 = 来源行的举证），故与现产物 SHA256 不同（现产物 SHA256 见上行）。
+>
+> **S4 收口（2026-10-21）**：14 席全部 `replaced`，**无「停损未迁」**——满足 §8「理想收口」的前置条件；W1–W3 已逐席落地，能力项 W4/W5/W8/W9 见上方「S1 终态」记录。
 
 > 状态口径：`未入队`（还没轮到）/ `迁移中`（已入队，未过 6.3）/ `已巩固`（过 6.3）/ `停损未迁`（停损放弃，附停损轮次与复盘指针）。**全部 14 个 agent 无「停损未迁」才满足理想收口；带未迁按 §8 例外收口条款（≤3）收口**。
 

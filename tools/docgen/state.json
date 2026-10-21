@@ -2,6 +2,18 @@
   "version": 1,
   "agents": {
     "reviewer-audit": "replaced",
-    "senior-sdet": "replaced"
+    "senior-sdet": "replaced",
+    "reviewer-product": "replaced",
+    "reviewer-frontend": "replaced",
+    "detective-observer": "replaced",
+    "reviewer-backend": "replaced",
+    "reviewer-interaction": "replaced",
+    "reviewer-ui": "replaced",
+    "reviewer-ops": "replaced",
+    "reviewer-qa": "replaced",
+    "reviewer-ai": "replaced",
+    "reviewer-security": "replaced",
+    "reviewer-actuary": "replaced",
+    "reviewer-reader": "replaced"
   }
 }

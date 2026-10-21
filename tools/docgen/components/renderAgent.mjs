@@ -32,7 +32,9 @@ export function renderAgent({ agent, trigger, template, sharedBlocks = {}, outpu
   out = fill(out, '{{IDENTITY}}', agent.identity ?? '');
   out = fill(out, '{{FIXED_LIST}}', fixedList);
   out = fill(out, '{{OUTPUT_FORMAT}}', outputFormats[agent.outputKind] ?? '');
-  out = fill(out, '{{SHARED_BLOCK}}', sharedBlocks[agent.sharedBlock] ?? '');
+  // {{SHARED_BLOCK}} 空值时只删占位符、保留该行换行（B 组席位：通用纪律末条与 `## 边界` 之间保留恰一空行）；
+  // fill 的通用空值分支仍连行尾换行一起删，不改（spec §6-11）
+  out = out.replaceAll('{{SHARED_BLOCK}}', () => sharedBlocks[agent.sharedBlock] ?? '');
   // 未实现/未消费的槽位只做 replaceAll，不校验残留 → 一旦模板写了没人填的槽位，{{XXX}} 会原样进产物。
   if (/\{\{[A-Z_]+\}\}/.test(out)) {
     const e = new Error(`MissingSlot：模板槽位未填充（${agent.name}）`);

@@ -222,6 +222,10 @@ export function cmdReplace(args) {
   if (evidence.goldenAssertion !== 'pass') {
     fail('EvidenceInvalid', { name, reason: '黄金断言未通过（W2-② 未过不得替换）' });
   }
+  // 双闸门之二：diffSet 差异集须为空（golden-assert 通过但仍有残余差异 = 步 4 未真正过）
+  if (evidence.compareResult !== null) {
+    fail('EvidenceInvalid', { name, reason: 'compareResult 非 null（差异集未清空，步 4 未过不得替换）' });
+  }
 
   const drifts = collectGate();
   const allowed = (d) => {
