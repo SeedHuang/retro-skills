@@ -29,8 +29,6 @@
   - `?? docs/handoffs/2026-10-21-f1-sdet-desc-trigger.md` —— 上一 session 的交接词（即本文件的「继任自」）
   - `?? docs/superpowers/specs/2026-10-21-docgen-replace-intent-change-design.md` —— 本 session 产出（spec）
   - `?? docs/superpowers/specs/2026-10-21-docgen-replace-intent-change-design-testcase.md` —— 本 session 产出（testcase v2）
-  - `?? docs/superpowers/specs/2026-10-21-skill-eval-harness-design.md` —— **不属于本 session**，本 session 从未触碰该路径
-  - `?? docs/superpowers/specs/2026-10-21-skill-eval-harness-design-testcase.md` —— 同上
   - `.session/reviews/2026-10-21-183302-docgen-replace-intent-change/` 不进 git（`.session/` 已在 `.gitignore`）
 
 ## 过程记录
@@ -59,8 +57,7 @@
 
 ## 开放问题
 
-1. 工作树里那组 `2026-10-21-skill-eval-harness-design.md` / `-testcase.md` 与本任务无关，如何处理？推断：**忽略**，不属于本 session（依据：本 session 从未读写该路径，`git status` 显示为独立未跟踪新增）；请用户：确认可忽略。
-2. 施工改动 `agentData.mjs` 的 `when` 后，`tools/docgen/fixtures/senior-sdet.evidence.json` 要不要同步改？推断：**只追加 `changes[]`，不动六项锚点**（依据：spec R4 / R5 与 §3.4「迁移段成功不追加 changes；变更段成功追加一项」）；请用户：确认。
+1. 施工改动 `agentData.mjs` 的 `when` 后，`tools/docgen/fixtures/senior-sdet.evidence.json` 要不要同步改？推断：**只追加 `changes[]`，不动六项锚点**（依据：spec R4 / R5 与 §3.4「迁移段成功不追加 changes；变更段成功追加一项」）；请用户：确认。
 
 ## 既定约束（不要重新讨论、不要重新选型）
 
