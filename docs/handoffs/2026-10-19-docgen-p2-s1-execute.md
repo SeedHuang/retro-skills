@@ -71,7 +71,7 @@
 
 ## 遗留裁决与留观项
 
-- fallback 断言 e vacuous 化需随 PRD 下次修订同步 —— 来源：`docs/after/dc-translator-design.md` §11；收敛时机：PRD 下次修订时。
+- fallback 断言 e vacuous 化需随 PRD 下次修订同步 —— 来源：`docs/after/20261019131757-dc-translator-design.md` §11；收敛时机：PRD 下次修订时。
 - S2/S3/S4 三份 spec+testcase 未送议会 —— 来源：用户「按这一轮开发哪个审哪个」；收敛时机：各自开工轮次送审后再提交。
 - S1 评审过程遗留 P2-遗-4/5（第 3–5 轮卡未逐张落盘、round-check 补做）—— 来源：`.session/reviews/2026-10-19-1430-docgen-p2-s1-spec/problems.md`；已按族补记 + round-check 落盘，供后续追溯。
 

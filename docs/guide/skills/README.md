@@ -76,8 +76,8 @@
 ### 11. `writing-after-docs` — 写「未完成事项」（🆕 2026-10-07）
 
 - **什么时候用**：**这件事还没做完 / 还有待决项 / 结论还不能当依据引用**；用户说「把这件事记下来」「哪些还没做」「先记着」「押后先不管」「归档到 after」「这件事算做完了」。
-- **做什么**：在 `docs/after/<主题>-<阶段>.md` 写一份未完成事项文档——五节骨架（**为什么有这件事 → 前因后果因果链 → 现状+取数命令 → 要做什么+完成判据 → parking+触发时机**）；条目做完走**墓碑式改写**（`~~事项~~ → 已并入 spec（日期）`，**不删条目**），全部做完则瘦成「已完成区」并改名 `<主题>-done.md`。
-- **命名**：小写 kebab-case、**不加日期前缀**（`after/` 是活账本，加日期会被当成快照）。命名规范以规则 `docs-convention` 为准。
+- **做什么**：在 `docs/after/<YYYYMMDDHHmmss>-<主题>-<阶段>.md` 写一份未完成事项文档——五节骨架（**为什么有这件事 → 前因后果因果链 → 现状+取数命令 → 要做什么+完成判据 → parking+触发时机**）；条目做完走**墓碑式改写**（`~~事项~~ → 已并入 spec（日期）`，**不删条目**），全部做完则瘦成「已完成区」并把阶段段改成 `done`。
+- **命名**：`YYYYMMDDHHmmss-<主题>-<阶段>.md`——小写 kebab-case，前缀 = **文件创建时间**（新建时取当前时间，之后不改前缀）。命名规范以规则 `docs-convention` 为准。
 - **模板**：`skills/writing-after-docs/assets/after-template.md`（逐字使用）；各节写法见 `references/section-guide.md`，迁走清单见 `references/migration.md`。
 - **不做什么**：不写已定稿的设计（走 `docs/superpowers/specs/`）、不写 session 交接（`docs/handoffs/`，性质不同：handoff 是一次性快照，after 是活的账本）、不写代码。**目录语义以全局规则 `docs-convention` 为权威定义方。**
 

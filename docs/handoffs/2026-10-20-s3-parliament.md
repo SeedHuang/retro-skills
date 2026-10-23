@@ -44,7 +44,7 @@ d:\Seed\retro-skills —— 把议会评审 agent 的 markdown 生成物从手�
   - `skills/parliament/references/submission-matrix.md` + `assets/submission.md`——送审说明必带件
   - `skills/parliament/references/assembly-matrix.md`——席位点名与覆盖矩阵
   - 转录对象与实现：`agents/senior-sdet.md`（现卡，9 节）、`tools/docgen/components/agentData.mjs`（senior-sdet 条目现为桩）、`tools/docgen/components/renderAgent.mjs`（:13-15 按单元格重拼 fixedList，:17-27 无 HEADING/SOURCE_LINE/NOT_WHEN 槽位）、`tools/docgen/templates/agent-handwritten.md.tpl`（当前仅 5 节占位骨架）、`tools/docgen/state.json`（只有 reviewer-audit=replaced）
-- **勿重做（已闭环）**：线 E 全部产物（`tools/execution-matrix/**` 18 文件 + `scripts/check-all.mjs` ②.6 段 + `rules/.inspector-annotations.json` 的 10 个 reviewer-audit 键 + `rules/skill-authoring-convention.md` 归桶索引节 + `skills/rule-inspector/references/criteria.md` 归桶索引节 + `docs/after/pending-work-overview.md` 线 E 瘦身）；S2 的 reviewer-audit 迁移（state=replaced，gate 已兜）。
+- **勿重做（已闭环）**：线 E 全部产物（`tools/execution-matrix/**` 18 文件 + `scripts/check-all.mjs` ②.6 段 + `rules/.inspector-annotations.json` 的 10 个 reviewer-audit 键 + `rules/skill-authoring-convention.md` 归桶索引节 + `skills/rule-inspector/references/criteria.md` 归桶索引节 + `docs/after/20261017210609-pending-work-overview.md` 线 E 瘦身）；S2 的 reviewer-audit 迁移（state=replaced，gate 已兜）。
 
 ## 开放问题
 

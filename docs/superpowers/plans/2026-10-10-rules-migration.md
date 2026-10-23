@@ -14,7 +14,7 @@
 
 - **跨两个仓库**：`d:\Seed\retro-skills` 与 `d:\Seed\agent-assets-sync` 分开改，改动各自留在工作区。
 - **no-git-write**：本计划**不含任何 git 写操作**（无 add / commit / push）。每个任务收尾是「改动留在工作区，最终交用户决定提交方式」。
-- **历史快照不改**：`docs/handoffs/*`、`docs/architecture-history.md`、`my-rules/README.md` 收编账目、规则正文里的历史反例描述（`landing-sweep.md` 的 L3/L22）、`docs/after/collect-requirements-exploration.md` L184——全是历史记录，原样保留。
+- **历史快照不改**：`docs/handoffs/*`、`docs/architecture-history.md`、`my-rules/README.md` 收编账目、规则正文里的历史反例描述（`landing-sweep.md` 的 L3/L22）、`docs/after/20261007201648-collect-requirements-exploration.md` L184——全是历史记录，原样保留。
 - **数字实测**：技能/规则条数不手写，用取数命令（`aas` 体检 / `Get-ChildItem`）拿终态值。
 - **改 skill 遵循 `skill-authoring-convention`**：本仓库内引用用相对路径 `rules/...`，不写绝对路径；跨技能引用用技能名。
 - **验收红线**：全仓 `grep my-rules` 只剩历史记录，活的引用清零；`aas` 体检规则侧源路径显示 `d:\Seed\retro-skills\rules` 且「已就位 15」。

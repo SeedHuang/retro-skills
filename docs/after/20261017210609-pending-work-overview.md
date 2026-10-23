@@ -1,6 +1,6 @@
 # 当前要做的事（大白话清单）
 
-> 起笔 2026-10-17 / 最近更新 2026-10-21｜状态：**未决 / 活账本**｜落点：`docs/after/`（进 git）。做完一条删一条（不设 ✅ 档）；全部做完时瘦成「已完成区 + 一句话」，并改名为 `pending-work-overview-done.md`。
+> 起笔 2026-10-17 / 最近更新 2026-10-21｜状态：**未决 / 活账本**｜落点：`docs/after/`（进 git）。做完一条删一条（不设 ✅ 档）；全部做完时瘦成「已完成区 + 一句话」，并改名为 `20261017210609-pending-work-overview-done.md`（**前缀保留原创建时间，不换**）。
 
 ---
 
@@ -166,6 +166,34 @@
 
 ---
 
+## 线 H：技能行为评测工装（新发现，2026-10-21）
+
+**是什么**：我们现有的验证只有「静态（`npm run check`）+ 脚本单测（`node --test`）+ 长期复发率（`retro-verify`）」三层，中间缺一层——**技能对模型到底有没有约束力**。改一条技能的判据措辞，现在只能等下一次真实 session 才知道有没有生效。
+
+**试跑已证明这条路可行**（2026-10-21，证据在 `.session/eval-trial/`，不进 git）：用阿里开源的 skill-up v0.14.0 在本机原生 Windows 跑通，「装技能 / 不装技能」对照实验抓到了真实差异——用例「命令替换必须 review」装技能 3/3 通过、不装 0/3 通过，且不装时的理由正是技能要纠正的「跑一遍绿了就提交」。
+
+**产物与状态**：
+
+| 产物 | 路径 | 状态 |
+|---|---|---|
+| spec | `docs/superpowers/specs/2026-10-21-skill-eval-harness-design.md` | **已定稿**（议会第 9 轮通过） |
+| testcase | `docs/superpowers/specs/2026-10-21-skill-eval-harness-design-testcase.md` | 79 条，已定稿 |
+| plan 施工 | `evals/review-triage/` 全套 + `scripts/` 四个脚本 + 三个单测 + 一条 npm script | **Task 1–8 已交付，改动留在工作区未提交**；`check-all` 589/589、A1 findings=0、exit 0 |
+
+**还没做完（按序）**：
+
+1. **真跑取证**——本机无 `skill-up` 二进制、无模型凭据，`fixtures/RECORD.md` 第一/三节与验收表 ④⑧ 仍标「未取证」；取证口径与 Ruling 12–15 见 `docs/after/20261022113509-skill-eval-harness-open-decisions.md`。
+2. **置 `origin: frozen`**——三项前置：ledger 六字段齐、`fixtures/calibration/` 进 git 且 `verified_at` 指向它、补 frozen 的用例级核对。
+3. **本轮范围只到 `review-triage` 两条用例**，不铺开、不建 CI 门禁。
+
+**已知缺口（施工前必须知道）**：
+
+- `skills[].path: .` **不会**被 `skill-up validate` 拒绝（实测 exit 0）→ R1 的「必须指向 `skills/<技能名>`」没有工具强制，只能靠结构断言兜住（已写进 spec §3.2）。
+- 结论只对「实测时的引擎 + 模型」成立。报告里的模型名是**配置值**（请求值），CCR 转发成什么从报告读不出——结论必须标注「配置模型 + 引擎版本 + 真实后端未验证」（R9）。
+- testcase 的 TC-004 已按实测精确化：「`path: .` 被接受」且「缺口已登记」即为通过（不再是条件判据）。
+
+---
+
 ## 收尾提醒（所有线共同遵守）
 
 - 全程**不许自动提交 git**，改完留在工作区，由你决定怎么提交（你的规矩）。
@@ -178,6 +206,24 @@
 
 **线 F 的 S3 + S4 + 第 1 件都已收口（2026-10-20 / 2026-10-21）**：14 席全部 `replaced`、逐字节验收通过、十键注解全 pass；写盘通路的迁移期 / 变更期分派已落地，第一个真实变更（senior-sdet description 删「评审测试策略」）已走变更段写盘，`npm run check` 493/493 全绿。**docgen P2 这条线还剩三件待你拍板**（见上文「线 F」表：`criteria.md` C 组补「模板形态适配」条款 / 14 席来源行统一——机制已就绪、可直接走变更段 / `judged[]` 入参通道缺失——本次施工新发现）。
 
-**当前实际待办 = 线 F 第 2、3、4 件拍板 + 线 G 一件拍板**。工作区现状：本次施工（`tools/docgen/**` 6 个文件 + 新增 1 个测试文件 + `agents/senior-sdet.md` + `tools/docgen/fixtures/senior-sdet.evidence.json` + `tools/docgen/components/agentData.mjs` + 本文件 + testcase 的 §7 人工验证记录）**全部未提交，留工作区等你定提交方式**；HEAD 仍是 `9dd9610`（本仓不停留自动提交）。
+**当前实际待办 = 线 F 第 2、3、4 件拍板 + 线 G 一件拍板 + 线 H 送议会**。工作区现状：docgen 变更段施工已随 `65b2702` 提交（`npm run check` 493/493 全绿、工作区干净）；**本次新增的是「线 H」这一节与配套两份 spec/testcase，留工作区等你定提交方式**（本仓不停留自动提交）。
 
 > 注：线 B 的 41 个问题、线 D 两个留观项还挂着未动；**线 C 已关闭（2026-10-21）**——不建 systematic-repair，机制①转「候选 + 触发信号」。
+
+## 线 I：主 Agent ↔ SDET 互测（沉淀为 skill；2026-10-23 用户指定，当前为试行）
+
+**是什么**：spec 作者（主 Agent）与 testcase 作者（SDET）在**提交议会之前**必须互测——SDET 攻 spec 的盲区/悖论/不闭环；主 Agent 攻 testcase 是否与需求相符。可多轮，要有理有据；双方在产出物上达成一致并双签后，才允许送审。
+
+**为什么不能只靠口头**：用户明确「这之后是要落在 skill 里面的，不是这一次说说算的」——不落成 skill，新 session 不加载就等于没有；本次（skill-eval-harness）只作**试行**，记录在 `.session/reviews/2026-10-22-093735-skill-eval-harness/clarify.md`。
+
+**待办（按序）**：
+
+1. **定落点（二选一，倾向 A）**：
+   - **A（推荐）**：新建 skill `pre-submission-crosscheck`——SKILL.md 写「何时触发 / 两方各攻什么 / 退出条件」；`references/spec-attack.md`（盲区/悖论/不闭环的检查清单 + 证据格式）、`references/testcase-vs-requirements.md`（覆盖映射、判别力、误杀检查）、`assets/clarify.template.md`（双签账本）。`parliament` 只加一条闸门：「送审件缺 `clarify.md` 双签 → 不得开评」。
+   - B：并入 `senior-sdet`（testcase 侧）+ `parliament` 送审前置（spec 侧）——改动小，但「互测」这一动作会被拆成两半，容易被只加载一个 skill 的 session 漏掉。
+2. **写判据（可机械判）**：SDET 每条攻击必须带「两处原文 / 一个走不通的构造」；主 Agent 每条必须带「TC 号 + 判据行 + 对应 R/§」；缺证据的条目不进结论。
+2.1 **写「双向拒绝权」（用户 2026-10-23 补充，必须进 skill 正文）**：互测是讨论，不是抄作业——**主 Agent 与 SDET 谁都可以拒绝对方建议**，但拒绝必须同时给 ① 依据（原文 / 构造 / 实测 / 权威文档）② **认输判据**（对方拿出什么证据我就改口）③ 替代方案或「保留 + 复活条件」。**不得存心拒绝合理建议**：对方已给前三项且自己拿不出反证时必须接受；「不想改 / 改动大 / 来不及」不是拒绝理由。落点：`SKILL.md` 的讨论规则段 + `assets/clarify.template.md` 的每条争议三个必填列（依据 / 认输判据 / 处置），缺任一列 = 该条不计入一致结论。
+3. **接入闸门**：`parliament` 送审说明增加必带件 `clarify.md`（双签 + 未闭合差异清单），缺 = 不得开评。
+4. **试行复盘**：用 skill-eval-harness 这一次的互测记录验证 skill 措辞——攻击项有没有被格式逼出证据、轮次是否收敛、有没有变成走过场；据此改 SKILL.md 再定稿。
+
+**验收**：`skill-inspector` 体检通过 + 下一次 spec 提交时实际按新 skill 走过一轮、且 `clarify.md` 是开评必需件。

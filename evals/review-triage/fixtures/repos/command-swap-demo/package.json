@@ -1,0 +1,8 @@
+{
+  "name": "command-swap-demo",
+  "private": true,
+  "scripts": {
+    "check": "node scripts/lint.mjs",
+    "check:all": "node scripts/lint.mjs && node scripts/typecheck.mjs"
+  }
+}

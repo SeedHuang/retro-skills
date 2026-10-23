@@ -33,7 +33,7 @@
 **联动四问**：
 - **治本了吗**：按 `state` 分派「迁移段 / 变更段」，两类证明各归其位；不是删闸门，是让闸门只在对的阶段生效。治本。
 - **有副作用吗**：改的是首次替换的分支条件，写错会让未来新席失去迁移保护 → 用 S1–S6 全量回归 + 「未迁移席内容有差异仍被拒」新用例兜住；变更段放宽的两道闸门用「凭证 + 盘上未动」两道新闸门替代。
-- **跨问题联动吗**：`docs/after/pending-work-overview.md` 线 F-3（14 席来源行统一）本质也是「改卡内容」，本机制就绪后它不再需要「重开基线」，是本 spec 的最大附带收益。
+- **跨问题联动吗**：`docs/after/20261017210609-pending-work-overview.md` 线 F-3（14 席来源行统一）本质也是「改卡内容」，本机制就绪后它不再需要「重开基线」，是本 spec 的最大附带收益。
 - **跨文件吗**：evidence 结构只增不改、`gate` / `check-all` / 渲染器零改动；受影响文件见影响面 ①–⑦。
 
 ## 2 核心决定（不可违反）
@@ -214,7 +214,7 @@
 5. 改 `agentData.mjs` 的 `when` → 跑 `diff` → **把 diff 原样给用户确认**（确认判据见下）→ 独立子代理重判 `senior-sdet:A2` 并写回 annotations → `draft` → `replace --expect-change <凭证> --rejudge A2 --yes`。
    - **确认判据**：`diff` 输出的 `-`/`+` 中段恰为要改的那 1 行 `description`（不多不少），且末行凭证哈希 == `diff` 头部打印的「新渲染 sha256」。两条都成立才算用户确认过；缺一不许继续。
 6. 跑 `npm run check`（应全绿）；核对 `git diff --numstat -- agents/senior-sdet.md` 输出为「1 行新增 / 1 行删除」，且 `git diff` 只有 `description` 一行。
-7. 账本留痕：`docs/after/pending-work-overview.md` 线 F 第 1 件结案；线 F-3 补「机制就绪，可走变更段」的指针。
+7. 账本留痕：`docs/after/20261017210609-pending-work-overview.md` 线 F 第 1 件结案；线 F-3 补「机制就绪，可走变更段」的指针。
 8. 改动留工作区，提交方式由用户决定（不执行任何 git 写操作）。
 
 ## 5 验收

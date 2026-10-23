@@ -267,7 +267,7 @@
 ### TC-013（spec 第 5 轮修复同步）新增 1 席受控变更旅程（W5 终态验收）
 
 - **覆盖**：`W5 / R12（加组件数据 → 生成 → 草稿 → 确认 → 替换 → baseline --write → gate 绿）；新增席 when 与现有 14 席两两不同（断言 10 联动，P2-Y）；replace 必须带 --yes（§9-10，P2-Y）；新增席 description 同样豁免词表（N3 残留裁决：词表第一次生效时点 = dc-translate skill 落地后的加席流程）`
-- **前置**：干净树；`docs/after/dc-translator-design.md` 的试点对象已具备组件数据口径；新增席 when 构造为与现有 14 席两两不同
+- **前置**：干净树；`docs/after/20261019131757-dc-translator-design.md` 的试点对象已具备组件数据口径；新增席 when 构造为与现有 14 席两两不同
 - **步骤**：① 加组件数据（agentData + triggerTable）；② `generate --kind agent --name <新增>`；③ `draft --kind agent --name <新增>`；④ `replace --kind agent --name <新增> --draft <草稿> --yes`；⑤ `baseline --write`；⑥ `gate`
 - **预期**：旅程每步退出码 0；新增席进入 baseline 常量；新增席 when 不撞现有席（断言 10 联动，否则 `DuplicateWhen`）；新增席 description 同样豁免词表（与 13 席/senior-sdet 一致，句式机械锁定，词表首次生效时点 = dc-translate 落地后，P2 内不触发词表断言）；最终 gate 绿；`git status --short agents/ rules/ skills/` 干净
 - **判据**：步骤 ①–⑥ 退出码均 0；replace 显式带 `--yes`（九步闭环步 7 口径，§9-10，缺省被拒则旅程卡死）；gate stdout 含 `baseline N/N`（N = 常量派生：旅程前 35 = 21+14，旅程后 36 = 21+15，**不写死 35/35 或 36/36，P1-N**）；后置 `git status --short` 干净

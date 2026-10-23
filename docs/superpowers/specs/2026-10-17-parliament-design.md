@@ -357,7 +357,7 @@ reviewer-reader：
 |---|---|---|
 | 1 | 技能目录改名 multi-lens-review → parliament；旧 role-panels.md 内容并入后删除 | skills/ |
 | 2 | aas 第三条 linkTarget：`{"label":"用户级子智能体","srcDir":"agents","dstDir":"~/.trae-cn/agents","dstName":"{name}","level":"file","editor":"trae-cn","env":{"srcDir":"RETRO_SKILLS_AGENTS","dstDir":"TRAE_AGENTS_DST"}}`（srcDir 解析机制先探测，与现有 skills 条目同款） | D:\Seed\agent-assets-sync\sync.config.json |
-| 3 | 活文件引用替换 `multi-lens-review` → `parliament`（12 个文件，验收以 grep 清零为准）：README.md、docs/guide/skills/README.md、prd-to-specs/SKILL.md、prd-to-specs/references/quality-gates.md、review-loop/SKILL.md、review-loop/references/loop.md、project-type.md、mode-all.md、review-log/assets/review-progress-template.md、evolving-skills/references/review-flywheel.md、docs/after/review-ledger-mechanical-gate.md。**不改**：specs/plans/handoffs/architecture 历史、rules/skill-authoring-convention.md 的来源行（历史证据） | 各文件 |
+| 3 | 活文件引用替换 `multi-lens-review` → `parliament`（12 个文件，验收以 grep 清零为准）：README.md、docs/guide/skills/README.md、prd-to-specs/SKILL.md、prd-to-specs/references/quality-gates.md、review-loop/SKILL.md、review-loop/references/loop.md、project-type.md、mode-all.md、review-log/assets/review-progress-template.md、evolving-skills/references/review-flywheel.md、docs/after/20261015210914-review-ledger-mechanical-gate.md。**不改**：specs/plans/handoffs/architecture 历史、rules/skill-authoring-convention.md 的来源行（历史证据） | 各文件 |
 | 4 | skilldependencies：multi-lens-review.json → parliament.json（skill 字段改 parliament，依赖不变）、manifest.json、prd-to-specs.json、review-loop.json | skilldependencies/ |
 | 5 | 守卫接线：gen-agents.test.mjs 由 `npm run check`（scripts/check-all.mjs 跑全仓 *.test.mjs）自动覆盖，**无需改 check-all.mjs** | —— |
 | 6 | 仓库根新建 agents/（gen 脚本 mkdirSync recursive 创建），生成物进 git | 仓库根 |

@@ -25,7 +25,7 @@
 | 同族 | 同类失败面：判据重复定义 → 两处漂移 → 批次返工（本仓已踩：判据重复定义 → 批次漂移 → 多轮返工）；只设 allShared 不设两两 shared → 共享不彻底；agent 判据越界去查运行时 → 与 parliament/review-loop 重复；评级豁免验收 → 自证偏差绕回 |
 | 边界 | **不做**：运行时产出验证（归 parliament/review-loop）；rule/skill 判据正文的改写（那是 line B）；S3/S4 迁移（本 spec 只建检查体系）；新 agent 角色（复用现有角色）。**只做**：检查项归桶组织 + agent 判据定义 + 模式表种子 + 评级设计 |
 | 验收 | ①检查项矩阵：每类文档的 checklist 完整、共享项零重复定义（allShared/两两 shared 归桶正确）；②agent 判据：A/B/C 三组在 reviewer-audit 卡上全部可判（机器查通过、AI 判有判据）；③模式表：种子条目 ≥5 行、每条能指回来源；④评级：三档定义完整、三条硬约束生效 |
-| 影响面 | `skills/rule-inspector/references/criteria.md`（新增归桶索引，不复制判据）、`rules/skill-authoring-convention.md`（新增归桶索引，不复制）、`tools/docgen/`（新增 agent 判据检查，若走脚本则新增组件）、`docs/after/pending-work-overview.md`（线 E 素材，定稿后瘦身）、各类型 checklist 载体（载体落点见 §6 开放问题） |
+| 影响面 | `skills/rule-inspector/references/criteria.md`（新增归桶索引，不复制判据）、`rules/skill-authoring-convention.md`（新增归桶索引，不复制）、`tools/docgen/`（新增 agent 判据检查，若走脚本则新增组件）、`docs/after/20261017210609-pending-work-overview.md`（线 E 素材，定稿后瘦身）、各类型 checklist 载体（载体落点见 §6 开放问题） |
 
 **联动四问**：
 

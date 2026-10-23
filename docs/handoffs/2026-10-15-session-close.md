@@ -50,8 +50,8 @@
 - R1-R11 已完成并 commit（HEAD `1e5f9ea` = R11）。
 - **R12 悬置**，三件事没做完：
   1. **段一未跑成**：两次 OCR 都 failed——首次 session `61f41090`（STARTED 12:31:23，failed），重跑 session `7b51aff5`（STARTED **13:42:45**，30 秒内 planning + core 两个请求各六连 HTTP 429，0 token——服务端限流，非代码问题）。→ 新 session 等限流解除后重跑 `ocr review --commit 1e5f9ea`。
-  2. **段二已审未落账**：子代理报告（R12 复查，把 R11 修复当新内容重审）——R11 的 12 条修复 10 修 2 半修；新发现 **P1-1**（loop-stop L10「0 命中」过期数字）+ **P2-1**（序 6「有机械信号」原文未删）+ P2-2（关闭：历史快照数字）。**这两条本 session 已修**（loop-stop-asking-user.md，3 处编辑：L10 / L32 序 6 / L23 表头去重，已核在磁盘）——但 **R12 小节/轮次账/复盘都没写、没 commit**（实测核：progress.md 轮次账末行 = `| 11 |`，轮次小节最大轮号 = 11）。
-  3. 收口判定：R12 修了东西 → 按停机判据需 R13 复查；**plan 的改动（8 个修改文件 + 4 个新增）是审查范围外新增量，应进 R13 复查范围**——注意 9 个 M 里 `loop-stop-asking-user.md` 属于 R12 段二修复，不算 plan 的。
+  2. **段二已审未落账**：子代理报告（R12 复查，把 R11 修复当新内容重审）——R11 的 12 条修复 10 修 2 半修；新发现 **P1-1**（loop-stop L10「0 命中」过期数字）+ **P2-1**（序 6「有机械信号」原文未删）+ P2-2（关闭：历史快照数字）。**这两条本 session 已修**（20261015210914-loop-stop-asking-user.md，3 处编辑：L10 / L32 序 6 / L23 表头去重，已核在磁盘）——但 **R12 小节/轮次账/复盘都没写、没 commit**（实测核：progress.md 轮次账末行 = `| 11 |`，轮次小节最大轮号 = 11）。
+  3. 收口判定：R12 修了东西 → 按停机判据需 R13 复查；**plan 的改动（8 个修改文件 + 4 个新增）是审查范围外新增量，应进 R13 复查范围**——注意 9 个 M 里 `20261015210914-loop-stop-asking-user.md` 属于 R12 段二修复，不算 plan 的。
 - **注意**：`.session/reviews/2026-10-14-2248-review-all-to-death/progress.md` 已含 R1-R11 全部小节 + 11 条复盘；R12 需补小节（模板在 plan Task 里描述过形态：段一 failed 两次 429 + 段二 2 修 1 关闭 + 全貌确认节——**R12 起每轮修复前要先填 progress.md 的「全貌确认」节**，模板已加，这条规则 core 也已生效）。
 - 用户 2026-10-15 裁定过不归档的 `retro-04-to-07-mechanism-defects.md`：合并分支时一并搬 `docs/superpowers/retro/`（换机器即失，分支未 push 当前风险为零）。
 
@@ -59,14 +59,14 @@
 
 | 文件 | 待办要点 |
 |---|---|
-| `docs/after/review-ledger-mechanical-gate.md` | 5 条 `- [ ]`：① review-log 加机械核对脚本（落点已定 `skills/review-log/scripts/`，完成判据已写）② 模板补「未取数不许留空」③ 段一未跑自记成硬要求 ④ 自洽确认区 ✅ 须带取数命令+输出（改 multi-lens-review）⑤ docs-convention 给 after/ 加「写现状必须带时间戳或现状列」。**注意：core 的「全貌确认」槽位已建（Task 5），待办 ① 说的「轮次账 vs 小节数」核对仍没做** |
-| `docs/after/loop-stop-asking-user.md` | 3 条待办（改 `loop.md` §1.5 判据表 / `how-i-must-reason` §5 决策式 / `loop.md` §1 收尾表自检项——**都在审查范围外，须 review 收口后另起一轮**，完成判据已写成可跑断言）+ 2 条 parking |
-| `docs/after/collect-requirements-exploration.md` | 更早的待决（未验证本 session 是否有进展） |
+| `docs/after/20261015210914-review-ledger-mechanical-gate.md` | 5 条 `- [ ]`：① review-log 加机械核对脚本（落点已定 `skills/review-log/scripts/`，完成判据已写）② 模板补「未取数不许留空」③ 段一未跑自记成硬要求 ④ 自洽确认区 ✅ 须带取数命令+输出（改 multi-lens-review）⑤ docs-convention 给 after/ 加「写现状必须带时间戳或现状列」。**注意：core 的「全貌确认」槽位已建（Task 5），待办 ① 说的「轮次账 vs 小节数」核对仍没做** |
+| `docs/after/20261015210914-loop-stop-asking-user.md` | 3 条待办（改 `loop.md` §1.5 判据表 / `how-i-must-reason` §5 决策式 / `loop.md` §1 收尾表自检项——**都在审查范围外，须 review 收口后另起一轮**，完成判据已写成可跑断言）+ 2 条 parking |
+| `docs/after/20261007201648-collect-requirements-exploration.md` | 更早的待决（未验证本 session 是否有进展） |
 
 ## 四、工作区清单（14 个未提交条目，全部保留）
 
 ```
- M docs/after/loop-stop-asking-user.md          ← R12 段二 2 修（P1-1/P2-1，3 处编辑）
+ M docs/after/20261015210914-loop-stop-asking-user.md          ← R12 段二 2 修（P1-1/P2-1，3 处编辑）
  M rules/core-working-principles.md             ← plan Task 4（适用枚举 + 落点定稿）
  M skills/review-log/assets/review-progress-template.md ← plan Task 5（「全貌确认」节）
  M skills/rule-inspector/SKILL.md               ← plan Task 2（L23 判定资产化）

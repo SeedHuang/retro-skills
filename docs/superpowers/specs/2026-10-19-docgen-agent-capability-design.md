@@ -248,12 +248,12 @@ node tools/docgen/cli.mjs baseline --write
 
 - 固定锚点：`reviewer-product` + `senior-sdet` 各 1 个的触发表数据 → 派生 description == 句式拼装结果**逐字相等**。
 - gate 增加断言 `description == 句式拼装输出`（全 14 席，防组件硬编码 description 绕过派生）。
-- **词表裁决（Q 族）**：P2 内 **13 席 + senior-sdet 的 description 全被句式机械锁定**（13 席固定句式拼装、senior-sdet 逐字复现），**词表无消费对象**——词表（禁成语/模糊词，如「大概/基本/显然/宁缺毋滥」类）落地推迟至**加席流程**（`dc-translate` skill 的 `fuzzy-word-scan.mjs`，见 `docs/after/dc-translator-design.md` §5），届时对新增席的派生产出生效。故 W4 不设词表断言；testcase TC-071 相应改判据（13 席句式锁定 + senior-sdet 逐字豁免，无词表断言）。
+- **词表裁决（Q 族）**：P2 内 **13 席 + senior-sdet 的 description 全被句式机械锁定**（13 席固定句式拼装、senior-sdet 逐字复现），**词表无消费对象**——词表（禁成语/模糊词，如「大概/基本/显然/宁缺毋滥」类）落地推迟至**加席流程**（`dc-translate` skill 的 `fuzzy-word-scan.mjs`，见 `docs/after/20261019131757-dc-translator-design.md` §5），届时对新增席的派生产出生效。故 W4 不设词表断言；testcase TC-071 相应改判据（13 席句式锁定 + senior-sdet 逐字豁免，无词表断言）。
 
 ### 8.2 W5 gate 扩容 + 新增入口
 
 - `gate` 跑两清单基线 + 重建比对（**开工基线 35 条 = 21 rule + 14 agent**，比对子集随迁移演进）。
-- **新增 1 席受控变更旅程**（dc-translator 试点，衔接 `docs/after/dc-translator-design.md` §7）：加组件数据（agentData + triggerTable，**新席 when 须与现有 14 席两两不同**——断言 10 联动）→ 生成 → 草稿 → 确认 → 替换 → `baseline --write` → gate 绿。
+- **新增 1 席受控变更旅程**（dc-translator 试点，衔接 `docs/after/20261019131757-dc-translator-design.md` §7）：加组件数据（agentData + triggerTable，**新席 when 须与现有 14 席两两不同**——断言 10 联动）→ 生成 → 草稿 → 确认 → 替换 → `baseline --write` → gate 绿。
 - **词表生效时点（N3 残留裁决）**：W5 旅程新增的 dc-translator 席 **description 同样豁免词表**（与 13 席/senior-sdet 一致，句式机械锁定）；**词表第一次生效时点 = `dc-translate` skill 落地后的加席流程**（届时 description 由 AI 翻译而非句式拼装，词表才有消费对象）——消除「加席流程 = W5」的误判。TC-071 判据按此口径（P2 内无词表断言）。
 - **终态基线随新增演进（N 族裁决）**：旅程新增 dc-translator 后 agent 清单 = 15，终态常量 = 21 rule + 15 agent = **36 条**；gate 输出 `baseline 36/36`。`baseline --write` 按 R12 渲染当前常量两清单——35 是开工基线，36 是旅程后终态，不硬编码固定值（testcase 从常量派生 N，不写死 35/35）。
 - 清单外新增任一类文件 → `UnregisteredHandwritten`；篡改任一已生成 agent → `Mismatch`。

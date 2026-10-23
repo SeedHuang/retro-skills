@@ -50,9 +50,13 @@
   - **要改的载体**：`parliament` 技能的角色面板判据（不在 review 范围内，需另起一轮）。
   - **完成判据**：对 `parliament` 的 `references/` 跑一次「确认区 ✅ 行必须含反引号命令」的检查，人工抽查 3 条确认命令能跑。
 - [ ] **`docs-convention` 给 `after/` 加一条：「写现状必须同时写时间戳或现状列」**
-  - **来源**：R10。`review-ledger-mechanical-gate.md` 的「已实测的缺口」表列的 4 条，在写进仓库的同一个 commit 里就被补完了，文档仍写成「缺口」——地基在落盘那一刻就过期了。
+  - **来源**：R10。`20261015210914-review-ledger-mechanical-gate.md` 的「已实测的缺口」表列的 4 条，在写进仓库的同一个 commit 里就被补完了，文档仍写成「缺口」——地基在落盘那一刻就过期了。
   - **要改的载体**：`rules/docs-convention.md`（改判据文件，需另起一轮）。
   - **完成判据**：`Select-String -Path rules/docs-convention.md -Pattern '现状列|时间戳'` 命中 ≥ 1 行，且该行含「不许只写现状」这类禁止句。
+- [ ] **口径二选一：`after/` 做完的条目「墓碑保留」还是「直接删」**
+  - **来源**：2026-10-24 TRAE-code-review。`skills/writing-after-docs/references/migration.md` 要求墓碑式改写（`~~事项~~` + 终点状态 + spec 路径，**不删条目**），`rules/docs-convention.md` 要求「等不到任何东西了 = 完成 = **删**」且「不许出现 ✅ 档」。
+  - **落点**：两处都是判据正文，改哪边都要走「改前 vs 改后 + 用户确认」（`rule-inspector` 硬闸门）。
+  - **完成判据**：两处对「做完的条目怎么处理」只存在一种说法——`Select-String -Path rules/docs-convention.md,skills/writing-after-docs/references/migration.md -Pattern '墓碑|不删条目|完成 = \*\*删\*\*'` 的结果能指向同一条判据，无相反表述。
 
 ## parking（已认可但押后）
 

@@ -1,0 +1,22 @@
+{
+  "metadata": {
+    "skill_name": "review-triage",
+    "timestamp": "2026-10-21T09:53:15Z",
+    "runs_per_configuration": 1
+  },
+  "runs": [
+    {
+      "eval_id": 0,
+      "eval_name": "纯勾选改动应判为可直接提交",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.3333333333333333,
+        "passed": 1,
+        "failed": 2,
+        "total": 3,
+        "errors": 0
+      }
+    }
+  ]
+}

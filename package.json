@@ -2,7 +2,8 @@
   "name": "retro-skills",
   "private": true,
   "scripts": {
-    "check": "node scripts/check-all.mjs"
+    "check": "node scripts/check-all.mjs",
+    "eval:review-triage": "node scripts/run-eval.mjs review-triage"
   },
   "engines": {
     "node": ">=22"

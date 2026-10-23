@@ -43,7 +43,7 @@
 
 - `D:\Seed\retro-skills\.session\reviews\2026-10-08-1206-9round-review-loop\progress.md`（**先读尾部**「本轮结论」+「未验证 / 无法验证的项」两节）
 - `D:\Seed\retro-skills\.session\reviews\2026-10-08-1206-9round-review-loop\problems.md`（问题漏斗，「不改」3 条 + 「误报」1 条 + 待处置若干）
-- `D:\Seed\retro-skills\docs\after\collect-requirements-exploration.md`（collect 侧未完成项，**五条待决未拍板**）
+- `D:\Seed\retro-skills\docs\after\20261007201648-collect-requirements-exploration.md`（collect 侧未完成项，**五条待决未拍板**）
 - 历史交接词：`docs/handoffs/` 内5 份，最近 `2026-09-29-session-close.md`（本session 无链式继任）
 
 ## 本次任务
@@ -75,7 +75,7 @@
 - `.session/reviews/2026-10-08-1206-9round-review-loop/progress.md` L13-25（轮次账表，含 5 个 OCR session id）、L86-92（未验证项）
 - `skills/managing-lessons-store/scripts/lessons.mjs`（本轮唯一审的代码文件）
 - 规则 `my-rules\rules\how-i-must-reason.md` §4（先判性质：漏 case vs 机制错）、§6（数字一律实测）
-- `docs/after/collect-requirements-exploration.md` §7（**只在 review 完成后**才需要看，五条待决）
+- `docs/after/20261007201648-collect-requirements-exploration.md` §7（**只在 review 完成后**才需要看，五条待决）
 
 **勿重做**（已完成的，文件级）：
 
@@ -114,7 +114,7 @@
 - `parsedFlags` 不支持嵌套括号形态（`argOf(getFlag('--x'))`）—— 来源：`problems.md` L33-35「不改」区；收敛时机：真出现该写法时。**刻意不加复杂度。**
 - `CLI_FLAGS` 全局混了 `verify record` 的单字母 flag（`--a`/`--b`/`--n`/`--p`）—— 来源：`problems.md` L21-26「不改」区；实测是「告警 + 拒记账」非静默丢字；取舍已写进 `skills/managing-lessons-store/assets/moments-template.md`。**不改。**
 - `ocr review --commit <tag>` 未实测 —— 来源：`progress.md` L90；本仓 0 个 tag（实测 `git tag|Measure-Object` = 0）；替代路径 `git rev-parse <tag>^{commit}` 换 hash。
-- 改动分类方案（按扩展名 vs 按「执行行为会不会变」）—— 来源：`docs/after/collect-requirements-exploration.md` §6，已parking；**方向已认可（用户已认可 ① 执行逻辑 ② 计算逻辑 ③ 验证 ⑤ 新增规范），④ 纯记述悬置**。触发时机：真正要用「§5 第 3 条」时。**不要走回头路按文件格式分类。**
+- 改动分类方案（按扩展名 vs 按「执行行为会不会变」）—— 来源：`docs/after/20261007201648-collect-requirements-exploration.md` §6，已parking；**方向已认可（用户已认可 ① 执行逻辑 ② 计算逻辑 ③ 验证 ⑤ 新增规范），④ 纯记述悬置**。触发时机：真正要用「§5 第 3 条」时。**不要走回头路按文件格式分类。**
 
 ## 开工前先做
 

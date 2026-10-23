@@ -35,7 +35,7 @@
 ### 6. `docs-convention` — 项目文档按生命周期状态分目录
 
 - **什么时候生效**：写 / 归类项目文档时。
-- **核心判据**：文档第一分类维度是生命周期状态——已定稿进 `specs/`、排期进 `plans/`、交接进 `handoffs/`、**未决进 `docs/after/`**、临时进 `.session/`；一主题一份，命名小写 kebab-case。
+- **核心判据**：文档第一分类维度是生命周期状态——已定稿进 `specs/`、排期进 `plans/`、交接进 `handoffs/`、**未决进 `docs/after/`**、临时进 `.session/`；一主题一份，命名小写 kebab-case；`after/` 另带 `YYYYMMDDHHmmss-` 创建时间前缀。
 - **不管什么**：技能目录语义（归 `skill-assets-convention`）。
 
 ### 7. `global-ask-before-acting` — 沟通中未获授权禁止写操作

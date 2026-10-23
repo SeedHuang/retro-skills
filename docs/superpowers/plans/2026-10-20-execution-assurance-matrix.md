@@ -40,7 +40,7 @@
 | `skills/rule-inspector/references/criteria.md` | 追加归桶索引指针（不复制判据）（改） |
 | `rules/skill-authoring-convention.md` | 追加归桶索引指针（不复制判据）（改） |
 | `rules/.inspector-annotations.json` | 追加 agent 判定键（三态）（改） |
-| `docs/after/pending-work-overview.md` | 线 E 瘦身：A/B/C 细节并入 criteria.md 后删重复（改） |
+| `docs/after/20261017210609-pending-work-overview.md` | 线 E 瘦身：A/B/C 细节并入 criteria.md 后删重复（改） |
 | `tools/docgen/README.md` 或 `docs/superpowers/plans/` | 归桶索引落地说明（⑦ 裁决 + N=3 记录） |
 
 ---
@@ -465,11 +465,11 @@ Expected: PASS（4 用例）
 ### Task 8: pending-work-overview 线 E 瘦身（判据细节并入 criteria.md 后删重复）
 
 **Files:**
-- Modify: `docs/after/pending-work-overview.md`（线 E 的 A/B/C 判据细节表删除，改为指向 `tools/execution-matrix/criteria.md`）
+- Modify: `docs/after/20261017210609-pending-work-overview.md`（线 E 的 A/B/C 判据细节表删除，改为指向 `tools/execution-matrix/criteria.md`）
 
 - [ ] **Step 1: 线 E 判据细节瘦身**
 
-`pending-work-overview.md` 线 E 中 A/B/C 三组 15 项判据的完整判定表（「agent 专属可执行性判据（草案 v2）」一节）删除，改为一行指针：判据正文单源 = `tools/execution-matrix/criteria.md`（spec §7 交付物 2）。保留：盘点表、模式表、评级、职责分离等仍活的内容。
+`20261017210609-pending-work-overview.md` 线 E 中 A/B/C 三组 15 项判据的完整判定表（「agent 专属可执行性判据（草案 v2）」一节）删除，改为一行指针：判据正文单源 = `tools/execution-matrix/criteria.md`（spec §7 交付物 2）。保留：盘点表、模式表、评级、职责分离等仍活的内容。
 
 - [ ] **Step 2: 核对「探索稿不是第二份真相」**
 

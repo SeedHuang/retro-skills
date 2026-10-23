@@ -3,14 +3,14 @@
 //
 // 为什么要有它：2026-10-20 实测——轮次账最后一轮只填起点、耗时留空，靠模板/查账表这类 AI 层规则拦不住
 // （agent 自觉失效）。本脚本把「每轮起止/耗时必填」变成机器可判，收尾时跑它，坏账本直接 exit 1。
-// 判据（待办出处：docs/after/review-ledger-mechanical-gate.md）：
+// 判据（待办出处：docs/after/20261015210914-review-ledger-mechanical-gate.md）：
 //   硬判 FAIL：轮次账每行「起止」「耗时」两列必须填——
 //     合法值 = HH:MM~HH:MM / HH:MM:SS~HH:MM:SS（起止）、N m（耗时，如 39m）、或显式「未取数」；
 //     整格留空、只填一端（如「13:41~」「~13:41」「12:39」无 ~ 分隔）、非法格式 = FAIL。
 //   软判 WARN（默认不阻断）：① 有格子填「未取数」——诚实记录合法，但不该成为常态；
 //     ② 轮次账行数 ≠ 轮次小节数——可能缺了「## 第 N 轮」独立小节。
 // 兼容两种模板：review-log（9 列）与 parliament（9 列）的轮次账——「起止」「耗时」按表头列名动态定位，不硬编码列位。
-// 为什么不挂 npm run check：.session/ 在 .gitignore，check-all ④ 段跳过它（判据见 review-ledger-mechanical-gate.md）。
+// 为什么不挂 npm run check：.session/ 在 .gitignore，check-all ④ 段跳过它（判据见 20261015210914-review-ledger-mechanical-gate.md）。
 
 import { readFileSync } from 'node:fs'
 

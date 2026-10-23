@@ -364,7 +364,7 @@ Run: Read `agents/reviewer-audit.md` 头 30 行 → frontmatter 三行齐（name
 - Rename + Modify: `skilldependencies/multi-lens-review.json` → `parliament.json`（`"skill": "parliament"`，依赖三条不变）
 - Modify: `skilldependencies/manifest.json`（skills 数组 `multi-lens-review` → `parliament`）
 - Modify: `skilldependencies/prd-to-specs.json`、`skilldependencies/review-loop.json`（依赖名替换）
-- Modify（`multi-lens-review` → `parliament`，逐字替换；guide 段落描述同步为新体系一句话）: `README.md`、`docs/guide/skills/README.md`、`skills/prd-to-specs/SKILL.md`、`skills/prd-to-specs/references/quality-gates.md`、`skills/review-loop/SKILL.md`、`skills/review-loop/references/loop.md`、`skills/review-loop/references/project-type.md`、`skills/review-loop/references/mode-all.md`、`skills/review-log/assets/review-progress-template.md`、`skills/evolving-skills/references/review-flywheel.md`、`docs/after/review-ledger-mechanical-gate.md`
+- Modify（`multi-lens-review` → `parliament`，逐字替换；guide 段落描述同步为新体系一句话）: `README.md`、`docs/guide/skills/README.md`、`skills/prd-to-specs/SKILL.md`、`skills/prd-to-specs/references/quality-gates.md`、`skills/review-loop/SKILL.md`、`skills/review-loop/references/loop.md`、`skills/review-loop/references/project-type.md`、`skills/review-loop/references/mode-all.md`、`skills/review-log/assets/review-progress-template.md`、`skills/evolving-skills/references/review-flywheel.md`、`docs/after/20261015210914-review-ledger-mechanical-gate.md`
 
 **Interfaces:**
 - Consumes: Task 1-4 的目录与技能名

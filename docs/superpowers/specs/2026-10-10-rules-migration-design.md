@@ -100,7 +100,7 @@ retro-skills/                 # 规范套件（技能 + 全局规则）
 |---|---|
 | `README.md` | L84「全局规则源（如 `my-rules/rules/`）」→「`rules/`」；「仓库结构」一节补 `rules/` 与 `docs/guide/` |
 | `docs/architecture.md` | 体系图从「三仓库」改「两线」：规范源（本仓库 rules+skills）+ 工具（aas）；§8.1 的路径表、`MY_RULES_SRC` 变量名、C1「my-rules 仓库」条目等全部实引（grep 到的 14 处） |
-| `docs/after/collect-requirements-exploration.md` | L184 提到「新增全局规则 `my-rules\rules\docs-convention.md`」——属活账本里的历史事件记录，**明确：保留不改**（改历史陈述没有收益，且 after 是活账本不是档案） |
+| `docs/after/20261007201648-collect-requirements-exploration.md` | L184 提到「新增全局规则 `my-rules\rules\docs-convention.md`」——属活账本里的历史事件记录，**明确：保留不改**（改历史陈述没有收益，且 after 是活账本不是档案） |
 
 **不改（历史快照）**：`docs/handoffs/*`、`docs/architecture-history.md`、`my-rules/README.md`（本地将删，git 历史可查）。
 

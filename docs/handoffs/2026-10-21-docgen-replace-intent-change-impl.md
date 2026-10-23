@@ -25,7 +25,7 @@
 - **验证证据**：见元信息表『验证基线』（单源，勿重复填写）
 - **提交状态**：**全部未提交，由用户自行 commit**；本 session 未执行任何 git 写操作
 - **工作树异常**（取数：`git status --porcelain`）：
-  - ` M docs/after/pending-work-overview.md` —— 上一 session 追加的「路 B 已定方向」段落，本 session 未改
+  - ` M docs/after/20261017210609-pending-work-overview.md` —— 上一 session 追加的「路 B 已定方向」段落，本 session 未改
   - `?? docs/handoffs/2026-10-21-f1-sdet-desc-trigger.md` —— 上一 session 的交接词（即本文件的「继任自」）
   - `?? docs/superpowers/specs/2026-10-21-docgen-replace-intent-change-design.md` —— 本 session 产出（spec）
   - `?? docs/superpowers/specs/2026-10-21-docgen-replace-intent-change-design-testcase.md` —— 本 session 产出（testcase v2）
@@ -53,7 +53,7 @@
 - **勿重做**：
   - spec 与 testcase 本身（已定稿；施工若发现 spec 有错，按议会流程另开一轮，不得直接改 testcase 判据）
   - 议会评审（已收口，账本见「过程记录」）
-  - `docs/after/pending-work-overview.md` 的线 F 第 1 件描述（上一 session 已写成「路 B」全套步骤；本次只在 §4 步 7 改它的结案状态）
+  - `docs/after/20261017210609-pending-work-overview.md` 的线 F 第 1 件描述（上一 session 已写成「路 B」全套步骤；本次只在 §4 步 7 改它的结案状态）
 
 ## 开放问题
 
@@ -72,7 +72,7 @@
 ## 遗留裁决与留观项
 
 - **spec §8 的六条不做项**：多基线/回滚、指纹式注解失效、B/C 组无机械校验、凭证一次性票据（`--issue`）、`suspended` 席变更通路、`DOCGEN_*` env 收紧（含「路径限 cwd 内」的中间态）、触达映射关键字单源、rule / skill 写盘通路 —— 来源：spec §8；收敛时机：后续里程碑，不在本次施工
-- **线 F-3（14 席来源行统一）**：机制就绪后可走一次变更段，不再需要「重开基线」 —— 来源：`docs/after/pending-work-overview.md` 线 F-3；收敛时机：本次施工完成后
+- **线 F-3（14 席来源行统一）**：机制就绪后可走一次变更段，不再需要「重开基线」 —— 来源：`docs/after/20261017210609-pending-work-overview.md` 线 F-3；收敛时机：本次施工完成后
 - **testcase 的 3 条弱项**（与 spec 节号撞名 / 幂等分支不校验凭证 / 触达映射与 `criteria.md` 坐标系差异） —— 来源：`.session/reviews/2026-10-21-183302-docgen-replace-intent-change/problems.md` §弱项处置；收敛时机：下次触碰 testcase 时
 
 ## 开工前先做

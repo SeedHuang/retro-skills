@@ -234,5 +234,5 @@ senior-sdet 是本仓库第一个「非议会席」的 docgen 生成 agent。P3/
 - **引用** `docs/prd/docgen-agent-generation.md` §5 W2 + §6.1–6.4 作为验收与流程源；不复制决策原文。
 - **依赖** S1 spec `2026-10-19-docgen-agent-capability-design.md`（能力地基）+ S2 spec `2026-10-19-docgen-agent-pilot-design.md`（已跑通**议会席模板**的试点闭环）。
 - **校正（2026-10-20 复核）**：S2 只验证了一套模板（议会席 `agent.md.tpl`）；`agent-handwritten.md.tpl` 至今仍是 5 节占位骨架，**第二套模板的真实性由本席首次验证**——不要把「双模板机制已验证」当既成事实，本席才是它的验证点。
-- **衔接** `docs/after/dc-translator-design.md` §7：dc-translator 是 P2 管线建成后第一个新增 agent（W5 受控变更旅程），其转录形态参照本 spec 的组件数据模式。
+- **衔接** `docs/after/20261019131757-dc-translator-design.md` §7：dc-translator 是 P2 管线建成后第一个新增 agent（W5 受控变更旅程），其转录形态参照本 spec 的组件数据模式。
 - **衔接** `docs/superpowers/specs/2026-10-20-execution-assurance-matrix-design.md`（线 E）：替换后的卡须过 A 组结构项检查（§5 末行）；两者无判据冲突（线 E 查卡文本结构，本 spec 查转录逐字节）。

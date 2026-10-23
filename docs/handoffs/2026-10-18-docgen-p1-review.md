@@ -23,13 +23,13 @@
   - 现有 PRD 只有两份：`docs/prd/docgen-index.md`（共享决策 D1–D18 + 状态 + 评审规则）、`docs/prd/docgen-rule-whole-file.md`（P1，待评审）。
   - 旧的 `docs/prd/doc-as-component.md`（v3，223 行）与两份未批准的 spike 草稿（`docs/superpowers/specs/2026-10-18-docgen-spike-design.md`、`...-testcase.md`）已删除；它们从未被 git 跟踪（当时 `git status` 显示 `?? docs/prd/`），删除后无 git 历史可考古。
   - 已落地规则/技能：`rules/spec-testcase-gate.md`（spec 必带独立 testcase）；`agents/senior-sdet.md`（测试设计者，已 `aas sync` 到用户级）；`rules/docs-convention.md` 增加 `docs/prd/` 与审查账归档；`skills/review-log/SKILL.md` 改为“处置完归档不删”。
-  - 清理：`.session/temp/` 已清空（删 7 个临时文件）；三份旧分析迁到 `docs/after/pending-work-overview.md`、`docs/after/review-loop-log-gap-analysis.md`、`docs/reports/2026-10-10-config-layering-review-accounting.md`。
+  - 清理：`.session/temp/` 已清空（删 7 个临时文件）；三份旧分析迁到 `docs/after/20261017210609-pending-work-overview.md`、`docs/after/20261012222428-review-loop-log-gap-analysis.md`、`docs/reports/2026-10-10-config-layering-review-accounting.md`。
   - testcase 命名已收敛到 `spec-testcase-gate` 规则判据 1（SKILL / 模板 / conventions / senior-sdet 全部改为引用，不再各写一份）。
 - 验证证据：见元信息表「验证基线」（单源，勿重复）。
 - 提交状态：全部未提交，由用户自行决定提交方式。
 - 工作树异常（`git status --short` 实查）：
   - 已修改：`docs/superpowers/specs/2026-10-17-systematic-repair-design.md`、`rules/docs-convention.md`、`skills/managing-lessons-store/scripts/lessons.test.mjs`、`skills/prd-to-specs/SKILL.md`、`skills/prd-to-specs/assets/spec-template.md`、`skills/prd-to-specs/references/conventions.md`、`skills/review-log/SKILL.md`
-  - 未跟踪：`agents/senior-sdet.md`、`docs/after/pending-work-overview.md`、`docs/after/review-loop-log-gap-analysis.md`、`docs/handoffs/2026-10-17-systematic-repair-mvp-spike.md`、`docs/prd/`、`docs/reports/2026-10-10-config-layering-review-accounting.md`、`docs/reports/2026-10-18-1-repair-non-convergence/`、`docs/superpowers/retro/`、`rules/spec-testcase-gate.md`、`skills/prd-to-specs/assets/testcase-template.md`
+  - 未跟踪：`agents/senior-sdet.md`、`docs/after/20261017210609-pending-work-overview.md`、`docs/after/20261012222428-review-loop-log-gap-analysis.md`、`docs/handoffs/2026-10-17-systematic-repair-mvp-spike.md`、`docs/prd/`、`docs/reports/2026-10-10-config-layering-review-accounting.md`、`docs/reports/2026-10-18-1-repair-non-convergence/`、`docs/superpowers/retro/`、`rules/spec-testcase-gate.md`、`skills/prd-to-specs/assets/testcase-template.md`
 
 ## 过程记录
 

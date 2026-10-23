@@ -20,8 +20,12 @@ const LESSONS_SRC = resolve(SKILL_DIR, 'scripts', 'lessons.mjs')           // �
  *  实测 2026-10-08：仓库 59 个 md、最深 ≤3 层、漏 0 个，所以这条防线当时是「没用上」而非「已生效」。
  *  2026-10-18 提到 4：`docs/superpowers/retro/<那一次>/retro-*.md`（docs-convention 2026-10-15 定的归档布局）
  *  正好是第 4 层，保持 3 会让新复盘文件被截断、守卫假绿（实测：议会评审复盘首次落盘即触发）。
+ *  2026-10-22 提到 6：`evals/review-triage/fixtures/repos/checkbox-demo/notes/plan.md`（技能评测工装 spec
+ *  §3.1 的 fixture 布局）所在的 `notes/` 是第 6 层目录（evals/1 → review-triage/2 → fixtures/3 →
+ *  repos/4 → checkbox-demo/5 → notes/6），它是进 git 的 markdown、参与全仓一致性校对。
+ *  实测：提到 5 仍报 truncated（漏扫 `.../checkbox-demo/notes`），提到 6 才扫到 plan.md。
  */
-function makeScanner(maxDepth = 4) {
+function makeScanner(maxDepth = 6) {
   const scan = { truncated: [] }
   // 这六个目录**刻意不扫**（`.git` / `node_modules` 一个巨大且无内容价值、一个内部结构随版本变化；
   // `.session/` 是临时过程账——不进 git、做完即删；`.superpowers/` 是 SDD 执行账本（一次性历史记录，

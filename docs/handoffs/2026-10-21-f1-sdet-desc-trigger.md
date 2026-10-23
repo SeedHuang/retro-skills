@@ -20,7 +20,7 @@ d:\Seed\retro-skills —— 一套 AI 协作工程体系（议会式多方评审
 - **已完成（本 session，全部已提交于 5b518d7）**：
   1. **docgen P2 · S4 收口**：14 席全部 `replaced`、无「停损未迁」；每席与生成物逐字节相等 + `git diff --numstat -- agents/` 无输出；120 条十键注解由独立子代理判定全 pass；gate ×2 / 冷跑 / `npm run check` 全绿；PRD §6.6 账本已逐席补登。
   2. **三轮 `TRAE-code-review` 全部闭环**：每轮均为「主审列项 → 2 个独立子代理交叉验证 → 用户选全部修复 → 改动 + 实测 → `npm run check` exit 0」。修复内容：`patternRegistry.mjs` 的 `roleSep`、`scripts/check-all.mjs` 捕获 `StateFileInvalid` 并打印被检席名、`pilot-render.test.mjs` 区间切片改行首锚定（`^## 边界$` + 断言恰一处）、testcase 判据与 plan 漂移清理。
-  3. **清账**：`docs/after/pending-work-overview.md` 线 F 更新（S4 已完成条目划掉、`剩下四件` → `剩下三件`、线 F-3 触发信号已命中）；`docs/superpowers/plans/2026-10-19-docgen-agent-capability.md` 40 个复选框全勾 + 8 处 `Step 5：提交` 标题改名；`docs/prd/docgen-agent-generation.md` §6.6 账本逐席补登。
+  3. **清账**：`docs/after/20261017210609-pending-work-overview.md` 线 F 更新（S4 已完成条目划掉、`剩下四件` → `剩下三件`、线 F-3 触发信号已命中）；`docs/superpowers/plans/2026-10-19-docgen-agent-capability.md` 40 个复选框全勾 + 8 处 `Step 5：提交` 标题改名；`docs/prd/docgen-agent-generation.md` §6.6 账本逐席补登。
   4. **线 C 关闭**（2026-10-21）：不建 `systematic-repair` 技能；三件机制中两件已有归属（review-loop 复查轮 / 议会多席独立 / `evolving-skills`），仅机制①「按病根分组的修复编排」转「候选 + 触发信号」。
   5. **线 G 新增**：历史 plan 的 git 写步骤残留盘点（见"遗留裁决与留观项"）。
 - **验证证据**：见元信息表『验证基线』（单源，勿在此重复）。
@@ -29,7 +29,7 @@ d:\Seed\retro-skills —— 一套 AI 协作工程体系（议会式多方评审
 
 ## 过程记录
 
-- `docs/after/pending-work-overview.md`（线 A–G 活账本；**先读尾部「现在的下一步」节 + 线 F 表 + 线 C + 线 G**）
+- `docs/after/20261017210609-pending-work-overview.md`（线 A–G 活账本；**先读尾部「现在的下一步」节 + 线 F 表 + 线 C + 线 G**）
 - `docs/superpowers/plans/2026-10-20-docgen-agent-batch.md`（S4 plan，30 步全勾 + 执行记录 + 三轮评审修复小节）
 - `docs/superpowers/plans/2026-10-19-docgen-agent-capability.md`（S1 plan，已批量勾选 + 执行状态块）
 - `docs/prd/docgen-agent-generation.md` §6.6（迁移状态账本，14 席逐席记录）
@@ -89,16 +89,16 @@ agents/senior-sdet.md:3（由底稿渲染而来，禁手打）
 
 ## 遗留裁决与留观项
 
-- **线 F-2**：`tools/execution-matrix/criteria.md` 的 C 组缺「模板形态适配」条款（§0.2 只覆盖 A 组）—— 来源：`docs/after/pending-work-overview.md` 线 F 表第 2 行；收敛时机：线 E 判据下次修订（属判据正文变更，走判据/规则变更流程，不顺手改）。
+- **线 F-2**：`tools/execution-matrix/criteria.md` 的 C 组缺「模板形态适配」条款（§0.2 只覆盖 A 组）—— 来源：`docs/after/20261017210609-pending-work-overview.md` 线 F 表第 2 行；收敛时机：线 E 判据下次修订（属判据正文变更，走判据/规则变更流程，不顺手改）。
 - **线 F-3**：14 席 agent 来源行只写「维护来源」没写「权威来源」（现仅 senior-sdet 有来源行，`agents/senior-sdet.md:9`，值在 `agentData.sourceLine`）—— 来源：同上第 3 行；**触发信号已命中（14 席已全 `replaced`）**；收敛时机：用户拍板后统一，若要 14 席统一属范围变更，需改 spec 重走议会。
-- **线 G**：`docs/superpowers/plans/` 下 git 写步骤残留盘点（实测：13 份 plan / 45 行 grep 命中）——其中**只有 `2026-09-29-aas-skill-deps.md` 是真正要执行的 9 组 add+commit（18 行）**，其余 12 份命中全是「禁止 git 写操作」的**声明行**（合规，不动）；`2026-10-14-review-loop-evolution.md:230` 是 review 分支内的 commit 格式指引（review-loop 是本禁令唯一例外，保留）—— 来源：`pending-work-overview.md` 线 G；收敛时机：用户拍板（只改那 1 份 / 13 份统一加免责声明）。
+- **线 G**：`docs/superpowers/plans/` 下 git 写步骤残留盘点（实测：13 份 plan / 45 行 grep 命中）——其中**只有 `2026-09-29-aas-skill-deps.md` 是真正要执行的 9 组 add+commit（18 行）**，其余 12 份命中全是「禁止 git 写操作」的**声明行**（合规，不动）；`2026-10-14-review-loop-evolution.md:230` 是 review 分支内的 commit 格式指引（review-loop 是本禁令唯一例外，保留）—— 来源：`20261017210609-pending-work-overview.md` 线 G；收敛时机：用户拍板（只改那 1 份 / 13 份统一加免责声明）。
 - **docgen 机制缺陷（已由用户裁定升格为「本次主线任务」，不再是留观项）**：`cmdReplace` 的写盘前置条件把「迁移期一次性证明」（`golden-assert.mjs:15-23` 拿 `git show <commit>:agents/<名>.md` 旧快照比 description）当成永久门槛（`cli.mjs:219-228`：`goldenAssertion!=='pass'` → `EvidenceInvalid`；`compareResult!==null` → `EvidenceInvalid`），**不支持「有意变更」**—— 来源：本 session 实测；收敛时机：**本次（路 B）**，要动 spec P2 R6/R7 + testcase TC-106。
-- **线 C 候选机制①**「按病根分组的修复编排」—— 来源：`pending-work-overview.md` 线 C（已关闭结论的低半部分）；收敛时机：真动手修 41 问题（或下一批混合债）时，以真实卡点决定落点。
+- **线 C 候选机制①**「按病根分组的修复编排」—— 来源：`20261017210609-pending-work-overview.md` 线 C（已关闭结论的低半部分）；收敛时机：真动手修 41 问题（或下一批混合债）时，以真实卡点决定落点。
 
 ## 开工前先做
 
 1. `git status --short`（应无输出）、`git log -1 --format=%h`（应为 `5b518d7`），然后跑 `npm run check` 复核基线（应 `tests 470` / `pass 470` / `fail 0`、`baseline 35/35`、`0 findings`、markdown 225 文件 / 774 表、EXIT=0）。
-2. 读 `docs/after/pending-work-overview.md` 尾部「现在的下一步」节 + 线 F 表（3 行）+ 线 C（关闭结论）+ 线 G。
+2. 读 `docs/after/20261017210609-pending-work-overview.md` 尾部「现在的下一步」节 + 线 F 表（3 行）+ 线 C（关闭结论）+ 线 G。
 3. 读 `tools/docgen/components/agentData.mjs` 第 261–265 行（要改的 `when`）与第 220–240 行（条目本体）。
 4. 读 `agents/senior-sdet.md` 第 3 行（现状 description）、第 19–23 行（三件事）、第 82 行（不参与议会裁决）。
 5. 读 `tools/docgen/acceptance/golden-assert.mjs` 第 15–23 行 + `tools/docgen/cli.mjs` 第 201–228 行，理解「写盘门槛为何在迁移后挡路」。

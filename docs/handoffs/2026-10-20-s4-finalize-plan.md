@@ -9,7 +9,7 @@
 | HEAD | `b9b1d10`（docs: 更新S4批量数据搬家spec和待办清单）；工作树：**clean**（`git status --short` 无输出，23:21 实查） |
 | 验证基线 | `npm run check` → tests **470** / pass **470** / fail **0**；baseline **35/35**；skill 守卫 **0 findings**；markdown **223 文件 / 765 表**；exit 0（**23:21:30 实跑**；本交接文档落盘后为 **224 文件 / 766 表**，测试数不变）。typecheck/build 不适用（纯 Node 仓库，无构建步骤） |
 | 继任自 | `docs/handoffs/2026-10-20-s3-plan.md` |
-| 状态 | **可直开工，无开放问题**（4 条待决已记 `docs/after/pending-work-overview.md` 线 F，不阻塞） |
+| 状态 | **可直开工，无开放问题**（4 条待决已记 `docs/after/20261017210609-pending-work-overview.md` 线 F，不阻塞） |
 
 ## 项目定位
 
@@ -37,7 +37,7 @@ d:\Seed\retro-skills —— 把议会评审 agent 的 markdown 生成物从手�
 - `.session/reviews/2026-10-20-222621-s4-batch/progress.md`（**先读 169–174 行第 5 轮终审结论**；轮次账在 14–22 行）
 - 同目录 `problems.md`（第 1 轮 17 个 F 族 + 第 2 轮 17 个 G 族；答辩统计在 §四）、`cards.md`（47 张卡；第 2 轮起为最小字段集）、`round-check.md`、`delivery-audit.md`（终局 PASS）
 - `.session/reviews/2026-10-20-192002-s3-senior-sdet/`（S3 9 轮，只看尾部结论即可）
-- `docs/after/pending-work-overview.md` 线 F（4 条待决：S4 前置、senior-sdet 卡内容缺陷、criteria C 组、agent 来源行）
+- `docs/after/20261017210609-pending-work-overview.md` 线 F（4 条待决：S4 前置、senior-sdet 卡内容缺陷、criteria C 组、agent 来源行）
 - 历史交接词链：`2026-10-19-docgen-p2-spec-split.md` → `2026-10-19-docgen-p2-s2-parliament.md` → `2026-10-20-docgen-p2-s2-task9-replace.md` → `2026-10-20-execution-matrix-execute.md` → `2026-10-20-s3-parliament.md` → `2026-10-20-s3-plan.md` →（本文件）
 
 ## 本次任务
@@ -58,7 +58,7 @@ S4 定稿 → 写 plan → 施工；流程：① 把 spec 头行状态由「待�
 
 无。
 
-> 不阻塞的待决项（已记 `docs/after/pending-work-overview.md` 线 F，施工时不改，等用户拍板）：senior-sdet 卡「评审测试策略」无对应职责（#2）、`criteria.md` C 组缺模板形态适配（#3）、agent 来源行只写维护来源（#4；触发信号 = 14 席 replaced 后统一来源行时）。
+> 不阻塞的待决项（已记 `docs/after/20261017210609-pending-work-overview.md` 线 F，施工时不改，等用户拍板）：senior-sdet 卡「评审测试策略」无对应职责（#2）、`criteria.md` C 组缺模板形态适配（#3）、agent 来源行只写维护来源（#4；触发信号 = 14 席 replaced 后统一来源行时）。
 
 ## 既定约束（不要重新讨论、不要重新选型）
 

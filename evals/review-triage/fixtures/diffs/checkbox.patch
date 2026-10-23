@@ -1,0 +1,11 @@
+diff --git a/notes/plan.md b/notes/plan.md
+index bfc44b4..ba1501f 100644
+--- a/notes/plan.md
++++ b/notes/plan.md
+@@ -2,5 +2,5 @@
+ 
+ | # | 任务 | 状态 |
+ |---|---|---|
+-| 1 | 建评测目录 | [ ] |
++| 1 | 建评测目录 | [x] |
+ | 2 | 写用例 | [ ] |

@@ -1,0 +1,35 @@
+id: 01-checkbox-mechanical
+title: 纯勾选改动应判为可直接提交
+description: 工作区里有一处未提交改动，只把一个待办勾选框从空格改成 x；不粘贴 diff，须自行实跑核对
+
+input:
+  prompt: |
+    提交前请对工作区里尚未提交的改动做分流（只分流，不要审查内容）。
+
+    要求：只输出有内容的分档，空的分档不要写出来。
+
+expect:
+  must_contain:
+    - "可直接提交"
+    - "git diff"
+    - "notes/plan.md"
+  must_not_contain:
+    - "纯文档"
+    - "低风险"
+    - "不涉及代码"
+    - "不影响代码"
+
+judge:
+  type: rule_based
+  success:
+    - output_contains:
+        all:
+          - "可直接提交"
+          - "git diff"
+          - "notes/plan.md"
+
+context:
+  repo_fixture: ../.session/eval-fixture/review-triage/checkbox-demo
+  git:
+    init: true
+    apply_diff: review-triage/fixtures/diffs/checkbox.patch

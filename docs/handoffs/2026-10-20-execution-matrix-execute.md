@@ -22,7 +22,7 @@ d:\Seed\retro-skills —— 把议会评审 agent 的 markdown 生成物从手�
   - testcase：`docs/superpowers/specs/2026-10-20-execution-assurance-matrix-design-testcase.md`（50 条 = 正 18 / 负 29 / 边 3，senior-sdet 独立编写）
   - plan：`docs/superpowers/plans/2026-10-20-execution-assurance-matrix.md`（9 任务 TDD 串行，含前置裁决表）
   - 评审账本：`.session/reviews/2026-10-20-1239-execution-assurance-matrix/`（progress/problems/submission 三文件）
-  - 线 E 素材（归桶/判据/模式表/评级草案）已由用户提交进 `docs/after/pending-work-overview.md`（commit 9d20fe5）
+  - 线 E 素材（归桶/判据/模式表/评级草案）已由用户提交进 `docs/after/20261017210609-pending-work-overview.md`（commit 9d20fe5）
 - **验证证据**：见元信息表「验证基线」（单源，勿重复）
 - **提交状态**：spec/testcase/plan 三个文件均为 untracked，**未提交**，留在工作区由用户决定提交方式
 - **工作树异常**：用户另有技能文件改动未提交——`skills/parliament/`（SKILL.md + assets/submission.md + 新增 assets/cards.md、problems.md、progress.md 账本三件套模板）、`skills/review-log/`（SKILL.md + review-progress-template.md + time.mjs）、`skills/review-loop/`（SKILL.md + loop.md）。这些不是我本 session 的产物，是用户/编辑器改动，交接时如实记录。

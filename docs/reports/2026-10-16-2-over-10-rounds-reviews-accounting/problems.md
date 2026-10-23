@@ -114,7 +114,7 @@
 | skills/managing-lessons-store/scripts/lessons.test.mjs | 6 | skills/review-log/assets/review-progress-template.md | 6 |
 | skills/review-loop/scripts/review-init.mjs | 5 | skills/review-log/SKILL.md | 6 |
 | | | scripts/check-all.mjs | 5 |
-| | | docs/after/loop-stop-asking-user.md | 4 |
+| | | docs/after/20261015210914-loop-stop-asking-user.md | 4 |
 
 **review-init.test.mjs 在 12 轮里被 commit 了 11 次**——几乎每一轮都在改它。
 
