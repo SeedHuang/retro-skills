@@ -43,5 +43,5 @@ test('TC-005：自评注释绑到条目（前 ≤15 行内含 translation-self-c
   const hit = lines
     .slice(Math.max(0, i - 15), i + 1)
     .filter((l) => l.includes('translation-self-check') && l.includes('详细') && l.includes('逻辑化'));
-  assert.ok(hit.length >= 1, '条目上方 15 行内缺自评注释');
+  assert.ok(hit.length >= 1, '条目上方窗口内缺自评注释');
 });

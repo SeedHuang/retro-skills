@@ -24,9 +24,8 @@ test('W4：锚点席（reviewer-product/senior-sdet）派生 description == 句�
   }
 });
 
-test('W5：gate 输出 baseline N/N，N 从常量派生（35 开工 / 36 新增后）', () => {
+test('W5：gate 输出 baseline N/N，N 从常量派生（不写死条数）', () => {
   const n = BASELINE_RULES.length + agentPaths().length;
-  assert.equal(n, 35);
   const r = run(['gate']);
   assert.equal(r.status, 0, r.stdout + r.stderr);
   assert.match(r.stdout, new RegExp(`baseline ${n}\\/${n}`));

@@ -17,7 +17,9 @@ import { BASELINE_RULES, agentPaths } from '../tools/docgen/components/baseline.
 import { checkBuckets } from '../tools/execution-matrix/check-buckets.mjs'
 import { checkAgentFile } from '../tools/execution-matrix/check-agent.mjs'
 // docgen 状态（哪些席已由生成器替换）——A 组检查的覆盖集从这里现算，不写死试点席
-import { readState } from '../tools/docgen/state.mjs'
+import { readState, statePath } from '../tools/docgen/state.mjs'
+// 名字集来源（C9 的 ⊇ 断言的另一头）：与 baseline / gate / check-agents 同一份 agentData
+import { agentData } from '../tools/docgen/components/agentData.mjs'
 import { checkSharedChanges } from '../tools/execution-matrix/shared-changes/check-shared-changes.mjs'
 import { checkPatternTable } from '../tools/execution-matrix/check-pattern-table.mjs'
 import { splitRow, fenceMask } from '../tools/execution-matrix/markdown-rows.mjs'
@@ -121,8 +123,10 @@ if (!bucketRes.ok) {
 // A 组 + 十键检查覆盖每个已被 docgen 替换的席（覆盖集从 state 现算：只挂试点席会让新增席静默漏检）
 let replacedSeats = []
 let stateRead = true
+let stateAgents = {}
 try {
-  replacedSeats = Object.entries(readState().agents)
+  stateAgents = readState().agents
+  replacedSeats = Object.entries(stateAgents)
     .filter(([, st]) => st === 'replaced')
     .map(([name]) => name)
     .sort()
@@ -132,6 +136,19 @@ try {
   stateRead = false
   failed = true
   console.error(`[execution-matrix] state 读取失败：${e.code ?? e.name}（A 组检查未执行）`)
+}
+// C9（spec §7.1）：state 覆盖集 ⊇ agentData 名字集，fail-closed——缺一条键、或整个 state 文件缺失都报红。
+// 为什么不放进 readState()：state 缺失返回空表是既有语义（pilot-gate.test.mjs 依赖），下沉会改语义并波及多个测试。
+// 缺键的后果是静默的：A 组与十键检查的覆盖集从 state 现算，漏登记的席不会被检查，也不会有任何红灯。
+if (!existsSync(statePath())) {
+  failed = true
+  console.error(`[execution-matrix] state 文件缺失：${statePath()}（C9 fail-closed：不得按「全量 registered」放行）`)
+} else if (stateRead) {
+  const missing = agentData.map((a) => a.name).filter((n) => !(n in stateAgents))
+  if (missing.length > 0) {
+    failed = true
+    console.error(`[execution-matrix] state 覆盖不全：缺 ${missing.join(', ')}（漏登记 state 的席会被 A 组静默跳过）`)
+  }
 }
 if (stateRead && replacedSeats.length === 0) {
   failed = true

@@ -141,5 +141,15 @@
   "detective-observer:C1": "pass",
   "detective-observer:C2": "pass",
   "detective-observer:C3": "pass",
-  "detective-observer:C4": "pass"
+  "detective-observer:C4": "pass",
+  "evidence-reader:A1": "pass",
+  "evidence-reader:A2": "pass",
+  "evidence-reader:B1": "pass",
+  "evidence-reader:B2": "pass",
+  "evidence-reader:B3": "pass",
+  "evidence-reader:B4": "pass",
+  "evidence-reader:C1": "pass",
+  "evidence-reader:C2": "pass",
+  "evidence-reader:C3": "pass",
+  "evidence-reader:C4": "pass"
 }

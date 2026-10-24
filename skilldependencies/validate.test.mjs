@@ -40,3 +40,11 @@ test('skills/ 目录与 manifest 一一对应（防新增技能漏登记）', ()
   const dirs = listSkillDirs(skillsDir).sort()
   assert.deepEqual([...m.skills].sort(), dirs)
 })
+
+// D2（spec §2 P-6）：依赖集合「恰为」parliament + prd-to-specs——多一个 / 少一个都红。
+// 只靠 schema 校验守不住「该依赖哪两个」：把依赖删掉一个，上面三条依然全绿。
+test('dev-workflow：依赖集合恰为 parliament + prd-to-specs', () => {
+  const m = readManifest(join(here, 'dev-workflow.json'))
+  const got = m.skills.map((s) => s.name).sort()
+  assert.deepEqual(got, ['parliament', 'prd-to-specs'])
+})

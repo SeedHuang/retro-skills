@@ -1,4 +1,4 @@
-// 14 席 agentData（S1 立骨架；S2/S3/S4 完成 14 席正文转录——12 席条目 8 键 = 四键只住 triggerTable，spec S4 R3）
+// 15 席 agentData（S1 立骨架 + evidence-reader；S2/S3/S4 完成其余席正文转录——12 席条目 8 键 = 四键只住 triggerTable，spec S4 R3）
 // 锚点席（reviewer-product / senior-sdet）在 S1 完整拆槽（triggerTable 有 when），供 W4 派生断言验收。
 import { patternRegistry } from './patternRegistry.mjs';
 
@@ -216,6 +216,27 @@ const SKELETON = [
     sharedBlock: 'DETECTIVE_RULES',
     outputKind: 'observation',
   },
+  // 阅读取证员（S1 新增，PRD F-17 / D-23）：不是议会席位，故带 domain（description 走「开发工作流」分支），
+  // 且用 boundary / explorePolicy 两个槽位把「只读取证、不出观点、不提问」写进卡面（C10 / C11）。
+  {
+    name: 'evidence-reader',
+    role: '阅读取证员',
+    dimension: '取证',
+    identity: '通读长文（对话记录 / 评审账 / 规范）的取证角色：只交「原文 + 行号 + 出处」的事实摘要，不出观点、不出问题卡、不参与评审、不改任何文件。',
+    fixedList: [
+      '每条摘要必须带文件 + 行号（`path:line`，相对仓库根），且行号指向的行能在源文件里 grep 到被引原句',
+      '区分「原文这么说」与「我的概括」：概括必须显式标为概括，不得混进原文摘句',
+      '找不到的项单列「未找到」并写明查了什么、为什么没找到，不得用推测填',
+      '不引用二手转述：只引原文；若只能拿到转述，必须标出转述来源与它指向的原文位置',
+      '长文超限时报告「读了多少、跳了哪些」，不得静默截断后当成读全了',
+      '只交事实：产出里不得出现「建议 / 应该 / 风险」类判断句（出现即越界）',
+    ],
+    sharedBlock: undefined,
+    outputKind: 'evidence',
+    boundary: '你是只读取证角色：不得创建、修改、删除任何文件；不出观点、不出问题卡、不参与评审、不判技术对错；只交可核对的原文与行号。',
+    explorePolicy: 'none',
+    domain: '开发工作流',
+  },
   // translation-self-check: 详细——identity 两段与 7 节正文全量保留，不省略隐含语义；逻辑化——数据槽（heading / sourceLine / identity / fixedList）与模板常量按 spec §3.1 逐行归属，关系明确。
   {
     name: 'senior-sdet',
@@ -240,7 +261,7 @@ const SKELETON = [
   },
 ].map((s) => ({ tools: s.name === 'senior-sdet' ? patternRegistry.tools.sdet : patternRegistry.tools.readOnly, ...s }));
 
-// 触发表（单一真相，§4.1）：14 席全部拆槽（S2/S3 两席 + S4 十二席）；when 逐字取自迁移前现卡 description（不含尾随「时」）
+// 触发表（单一真相，§4.1）：15 席全部拆槽（原 14 席 = S2/S3 两席 + S4 十二席，S1 新增 evidence-reader）；when 逐字取自迁移前现卡 description（不含尾随「时」）
 export const triggerTable = {
   'reviewer-audit': {
     when: '当议会评审需要过程标准核对、轮际对账或交付审计',
@@ -258,6 +279,10 @@ export const triggerTable = {
   'reviewer-actuary': { when: '当主持人调度对任意文档做成本与收益视角评审', route: 'reviewer-actuary' },
   'reviewer-reader': { when: '当主持人调度对描述性/记录型/任意文档做读者视角评审', route: 'reviewer-reader' },
   'detective-observer': { when: '每轮答辩结束后由主持人调度做行为核实', route: 'detective-observer' },
+  'evidence-reader': {
+    when: '当需要通读长文并交出可核对的原文与行号（交接取证 / 事实基线回核）',
+    route: 'evidence-reader',
+  },
   'senior-sdet': {
     when: '当需要为 PRD/spec 设计并编写测试用例（testcase.md），或专门找出被忽视的边界与失败场景',
     route: 'senior-sdet',

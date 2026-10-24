@@ -9,8 +9,11 @@ import { validateAgentData } from '../components/validateAgentData.mjs';
 import { agentData, triggerTable } from '../components/agentData.mjs';
 import { patternRegistry } from '../components/patternRegistry.mjs';
 import { cmdDraft, cmdReplace } from '../cli.mjs';
+import { BASELINE_RULES, agentPaths } from '../components/baseline.mjs';
 
 const CLI = 'tools/docgen/cli.mjs';
+// gate 打印的 baseline N/N 与两清单同源：正则从常量拼，不写死条数
+const N = BASELINE_RULES.length + agentPaths().length;
 // J3 fix：模块级单一草稿箱，after 清理，不逐调用 mkdtempSync 泄漏
 const box = mkdtempSync(join(tmpdir(), 'dg-rf-'));
 after(() => rmSync(box, { recursive: true, force: true }));
@@ -42,7 +45,7 @@ test('I1：draft/replace 对未拆槽席 → MissingComponentData（exit 2，不
 test('I3：generate --kind rule --name 精确到单对象（正：生成规则 exit 0；负：不存在 → DanglingBaselineEntry exit 2）', () => {
   const ok = run(['generate', '--kind', 'rule', '--name', 'spec-testcase-gate']);
   assert.equal(ok.status, 0, ok.stdout + ok.stderr);
-  assert.match(ok.stdout, /baseline 35\/35/);
+  assert.match(ok.stdout, new RegExp(`baseline ${N}\\/${N}`));
   const bad = run(['generate', '--kind', 'rule', '--name', 'ghost-rule']);
   assert.equal(bad.status, 2, bad.stdout + bad.stderr);
   assert.match(bad.stdout + bad.stderr, /DanglingBaselineEntry/);

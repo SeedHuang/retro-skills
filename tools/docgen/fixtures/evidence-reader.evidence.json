@@ -1,0 +1,11 @@
+{
+  "commit": "6df65c69244a8c199a2de8e227b963704256aaa8",
+  "blob": "443ac757cf6bb0c32fcd2f043361993310e811b8",
+  "hashObject": "443ac757cf6bb0c32fcd2f043361993310e811b8",
+  "sha256": "37830E00817D42613D8B6B29088176FEE927E08D4C46E4DE00A875D0242BCD1C",
+  "renderSha256": "37830E00817D42613D8B6B29088176FEE927E08D4C46E4DE00A875D0242BCD1C",
+  "lastWrittenHash": "37830E00817D42613D8B6B29088176FEE927E08D4C46E4DE00A875D0242BCD1C",
+  "goldenAssertion": "pending",
+  "compareResult": null,
+  "note": "新建席按 spec §7.1 C7 走 draft → 校验即落盘（绕过 replace 迁移段），故这里没有 goldenAssertion=pass。commit 字段 = 建卡时的仓库 HEAD（本卡尚未提交，该 commit 不含此卡）；首次提交后由 replace 流程刷新。blob / hashObject = git hash-object 的结果（工作树字节的 blob 标识）。"
+}

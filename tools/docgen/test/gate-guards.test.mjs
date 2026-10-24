@@ -14,6 +14,7 @@ test('gate：清单外新增 rules 文件 → UnregisteredHandwritten（exit 2�
   writeFileSync(join(dir, 'zz-gate-guard-tmp.md'), '# 临时\n');
   try {
     const r = run(['gate'], { DOCGEN_RULES_DIR: dir });
+    assert.ifError(r.error); // 子进程启动失败时 status 为 null，先报根因再断言
     assert.equal(r.status, 2, r.stdout + r.stderr);
     assert.match(r.stdout + r.stderr, /UnregisteredHandwritten/);
   } finally {

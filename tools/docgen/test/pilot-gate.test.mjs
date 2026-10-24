@@ -32,10 +32,10 @@ test('when 以「时」结尾 → WhenFormatViolation', () => {
   assert.throws(() => validateAgentData(agentData, table), /WhenFormatViolation/);
 });
 
-test('state 缺失 = 全量 registered；check-agents 输出 0 已接管 / 14 未迁移', () => {
+test('state 缺失 = 全量 registered；check-agents 输出 0 已接管 / 全量未迁移', () => {
   const r = run(['check-agents']);
   assert.equal(r.status, 0, r.stdout + r.stderr);
-  assert.match(r.stdout, /已接管 0，未迁移 14/);
+  assert.match(r.stdout, new RegExp(`已接管 0，未迁移 ${agentData.length}`));
 });
 
 test('state version≠1 → StateFileInvalid（exit 2）', () => {

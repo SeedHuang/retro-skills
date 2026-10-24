@@ -1,5 +1,5 @@
-// validateAgentData（§6 断言 1–14）：数据层查字段（纯数据），输出层 frontmatter 由 gate 逐字节兜底。
-import { patternRegistry } from './patternRegistry.mjs';
+// validateAgentData（§6 断言 1–15）：数据层查字段（纯数据），输出层 frontmatter 由 gate 逐字节兜底。
+import { patternRegistry, resolveDomain } from './patternRegistry.mjs';
 
 const EXIT = {
   0: [],
@@ -56,13 +56,21 @@ export function validateAgentData(data, table) {
     if (/在[^。]*中担任|时调用/.test(t.when) || t.when.endsWith('时')) fail('WhenFormatViolation', { name, when: t.when });
   }
   // 断言 8：description 派生 + 时时（对已拆槽席）
+  // domain 一致性（C5 ②）：声明了 domain 就必须是非空字符串，且派生出的 description 真的包含它。
+  // 不用 includes('') 这类恒真写法——空串 / 全空格 / 非字符串一律判 DescriptionDerivation。
   for (const [name, t] of Object.entries(table)) {
     if (!t || t.when === undefined) continue;
     const a = data.find((x) => x.name === name);
     const derived = a && a.outputKind === 'testcase'
       ? patternRegistry.description.handwritten(a.role, t.when, t.notWhen?.text ?? '')
-      : patternRegistry.description.parliament(a.role, t.when);
+      : patternRegistry.description.parliament(a.role, t.when, resolveDomain(a));
     if (derived.includes('时时')) fail('DescriptionDerivation', { name, derived });
+    if (a && 'domain' in a) {
+      if (typeof a.domain !== 'string' || a.domain.trim() === '') {
+        fail('DescriptionDerivation', { name, domain: a.domain });
+      }
+      if (!derived.includes(a.domain.trim())) fail('DescriptionDerivation', { name, domain: a.domain, derived });
+    }
   }
   // 断言 9：route 唯一且存在
   const routes = new Set();
@@ -99,9 +107,14 @@ export function validateAgentData(data, table) {
     if (!t.when) fail('MissingWhen', { name: a.name });
   }
   // 断言 15：条目不得含四键（when / notWhen / route / fallback 只住 triggerTable），且键集不超白名单
-  // 普通席 8 键；testcase 席（手写卡模板）另容 heading / sourceLine。identity / fixedList 不要求必填（施工中段骨架合法）
-  const BASE_KEYS = ['name', 'role', 'dimension', 'tools', 'identity', 'fixedList', 'sharedBlock', 'outputKind'];
+  // 普通席 8 键 + 三个可选槽位键（domain / boundary / explorePolicy，C5 ①）；
+  // testcase 席（手写卡模板）另容 heading / sourceLine。identity / fixedList 不要求必填（施工中段骨架合法）
+  const BASE_KEYS = ['name', 'role', 'dimension', 'tools', 'identity', 'fixedList', 'sharedBlock', 'outputKind',
+    'domain', 'boundary', 'explorePolicy'];
   const HANDWRITTEN_KEYS = ['heading', 'sourceLine'];
+  // 两个槽位字段只允许出现在显式声明它们的席（C5 ④）：其他席一旦带上，渲染会静默换句而不报错。
+  // 新增这样的席时同步本集合（当前仅 evidence-reader）。
+  const DECLARED_SLOT_SEATS = new Set(['evidence-reader']);
   for (const a of data) {
     for (const k of ['when', 'notWhen', 'route', 'fallback']) {
       if (k in a) fail('TriggerFieldMisplaced', { name: a.name, key: k });
@@ -109,6 +122,16 @@ export function validateAgentData(data, table) {
     const allowed = a.outputKind === 'testcase' ? [...BASE_KEYS, ...HANDWRITTEN_KEYS] : BASE_KEYS;
     const extra = Object.keys(a).filter((k) => !allowed.includes(k));
     if (extra.length) fail('TriggerFieldMisplaced', { name: a.name, extra });
+    if (('boundary' in a || 'explorePolicy' in a) && !DECLARED_SLOT_SEATS.has(a.name)) {
+      fail('DescriptionDerivation', { name: a.name, reason: '未声明槽位的席不得带 boundary / explorePolicy' });
+    }
+    // 两个槽位字段的值域（与 domain 的处理对齐）：写错会静默改卡面，而机器检查只判节名存在
+    if ('boundary' in a && (typeof a.boundary !== 'string' || a.boundary.trim() === '')) {
+      fail('DescriptionDerivation', { name: a.name, key: 'boundary', value: a.boundary });
+    }
+    if ('explorePolicy' in a && !['none', 'full'].includes(a.explorePolicy)) {
+      fail('DescriptionDerivation', { name: a.name, key: 'explorePolicy', value: a.explorePolicy });
+    }
   }
   return { ok: true };
 }

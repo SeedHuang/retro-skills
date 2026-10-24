@@ -1,9 +1,22 @@
 // 模式登记册（P2-8）：每个槽位一条模式定义。P2 内只登记不强制翻译闭环。
 export const DOMAIN = '议会评审';
 
+// 三个默认常量只在这里存一份（spec §7.1 C3）：渲染器与模板一律引用，禁止复制文本。
+// 默认值 = 改造前模板现句，故 14 席不带新字段时渲染逐字节不变（spec §7.6，由 gate 兜）。
+export const DEFAULT_BOUNDARY = '你是只读评审角色：不得创建、修改、删除任何文件；不裁决他人分歧；无中断评审的权力。';
+export const DEFAULT_EXPLORE = '固定清单之外，针对这份文档和这个项目的具体情况，现场生成 3-5 个你认为最值得问的问题（先写出来，再逐条回答）。只答固定清单 = 不合格。';
+export const DEFAULT_EXPLORE_NONE = '本节不适用：本角色只交原文与行号，不出观点、不提问题。';
+
 // ASCII 开头（首字符码 <128）的 role（UI 评委 / AI 评委）在派生式里前置一个空格，与迁移前现卡逐字一致（spec §3 派生式注）
 // 谓词与 testcase【DESC】判据同一口径 = 任意 ASCII，不限字母（原先 [A-Za-z] 会让数字开头 role 与判据分歧）
 const roleSep = (role) => (typeof role === 'string' && role.charCodeAt(0) < 128 ? ' ' : '');
+
+// domain 归一化的唯一实现（spec §7.3）：`??` 拦不住空串与全空格，非字符串会被隐式转换。
+// 回落值引用 DOMAIN 常量、不内联字面量（否则改 DOMAIN 时卡面不变，TC-D06 会抓出冲突）。
+export function resolveDomain(agent) {
+  const d = typeof agent?.domain === 'string' ? agent.domain.trim() : '';
+  return d || DOMAIN;
+}
 
 export const patternRegistry = {
   description: {
@@ -12,6 +25,6 @@ export const patternRegistry = {
   },
   identityMaster: '资深{role}，对{dim1}与{dim2}有经验直觉',
   tools: { readOnly: ['Read', 'Glob', 'Grep'], sdet: ['Read', 'Glob', 'Grep', 'Write', 'Edit'] },
-  outputKind: new Set(['issue-card', 'observation', 'audit', 'testcase']),
+  outputKind: new Set(['issue-card', 'observation', 'audit', 'testcase', 'evidence']),
   sharedBlock: new Set(['SIX_METHODS', 'DETECTIVE_RULES', 'AUDIT_RULES']),
 };

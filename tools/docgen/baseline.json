@@ -1,6 +1,7 @@
 [
   "rules/core-working-principles.md",
   "rules/data-support-triple.md",
+  "rules/dev-workflow-mainline.md",
   "rules/docs-convention.md",
   "rules/global-ask-before-acting.md",
   "rules/how-i-must-reason.md",
@@ -21,6 +22,7 @@
   "rules/ts-expect-error.md",
   "rules/vitest-queued-alternative.md",
   "agents/detective-observer.md",
+  "agents/evidence-reader.md",
   "agents/reviewer-actuary.md",
   "agents/reviewer-ai.md",
   "agents/reviewer-audit.md",

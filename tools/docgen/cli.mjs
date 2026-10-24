@@ -23,7 +23,9 @@ export { renderByName };
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const AGENTS_DIR = join(REPO_ROOT, 'agents');
-const BASELINE_PATH = join(dirname(fileURLToPath(import.meta.url)), 'baseline.json');
+// baseline 清单路径可用 DOCGEN_BASELINE_PATH 重定向（与 state / evidence / drafts 同款测试隔离位）：
+// 测试写的是临时文件，不再与非同进程的 gate 抢同一个共享文件（并发 truncate 窗口会让 gate 误报 BaselineDrift）
+const baselinePath = () => process.env.DOCGEN_BASELINE_PATH || join(dirname(fileURLToPath(import.meta.url)), 'baseline.json');
 const GENERATED_RULE = 'rules/spec-testcase-gate.md'; // 唯一生成规则（Ruling S3）
 
 // fields.message：可选人读信息（stderr 契约要写出哈希 / 下一步命令，spec §3.3）
@@ -80,8 +82,8 @@ export function cmdGenerate(args) {
 export function collectGate() {
   const drifts = [];
   validateAgentData(agentData, triggerTable);
-  const onDisk = readFileSync(BASELINE_PATH, 'utf8');
-  if (onDisk !== renderBaseline()) drifts.push({ code: 'BaselineDrift', path: BASELINE_PATH });
+  const onDisk = readFileSync(baselinePath(), 'utf8');
+  if (onDisk !== renderBaseline()) drifts.push({ code: 'BaselineDrift', path: baselinePath() });
   const tpl = readTemplate('rule');
   const target = readFileSync(join(REPO_ROOT, GENERATED_RULE), 'utf8');
   if (compareBuffers(Buffer.from(spec.render(spec.buildData(), tpl)), Buffer.from(target))) {
@@ -158,7 +160,18 @@ export function cmdCheckAgents() {
 }
 
 export function cmdBaselineWrite() {
-  writeFileSync(BASELINE_PATH, renderBaseline(), 'utf8');
+  // 原子写（与 state.mjs writeState / evidence.mjs writeEvidence 同构）：`writeFileSync` 先截断后写入，
+  // 并发读方（另一个进程的 gate）会在窗口里看到空文件 → 误报 BaselineDrift。rename 原子替换消掉该窗口。
+  const p = baselinePath();
+  mkdirSync(dirname(p), { recursive: true });
+  const tmp = `${p}.tmp-${process.pid}`;
+  try {
+    writeFileSync(tmp, renderBaseline(), 'utf8');
+    renameSync(tmp, p);
+  } catch (e) {
+    rmSync(tmp, { force: true });
+    throw e;
+  }
   console.log(`baseline.json 已写入（${BASELINE_RULES.length + agentPaths().length} 条）`);
   return 0;
 }

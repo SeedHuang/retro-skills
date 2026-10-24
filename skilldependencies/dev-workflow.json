@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "skill": "dev-workflow",
+  "dependencies": {
+    "skills": [
+      { "name": "parliament" },
+      { "name": "prd-to-specs" }
+    ]
+  }
+}

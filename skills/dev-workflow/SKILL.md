@@ -1,0 +1,57 @@
+---
+name: dev-workflow
+description: 当任务要走「需求 → 技术设计 → 计划门 → 实现 → 质量 → 交付」这条主干、需要判断现在该进哪一段或本段出口齐没齐时使用；也用于需要长文取证（只交原文 + 行号）的场合。不用于：单点代码修改或缺陷定位（走 review-loop / systematic-debugging）、议会内部流程（走 parliament）、把 PRD 拆成 spec（走 prd-to-specs）。
+---
+
+# 开发工作流主干（五段 + 两插点）
+
+本技能只做一件事：告诉你在主干上**现在该进哪一段、这段出口齐没齐、卡住了该回哪一段**。每段的具体判据在 `references/` 的段文档里，本文件只留段表、插点与三权。
+
+## 段表（唯一真相 = PRD §4，此处是逐字副本）
+
+| 段 | 名称 | 入口 | 出口判据 | 谁签 | 议会 |
+|---|---|---|---|---|---|
+| ① | PRD（需求产生 + 产品设计） | 开工前按 `references/stage-1-prd.md` 的出口判据逐条核，产出**已核清单**（`references/gate-record.md` 的表格行），缺清单不得进入下一段 | §0 四栏齐 + 依据可核；功能点清单与流程图双向一一对应 | 产品经理 + 用户；审计核 §0 | **议会 #1** |
+| ② | 技术设计 | 开工前按 `references/stage-2-tech-design.md` 的出口判据逐条核，产出**已核清单**（`references/gate-record.md` 的表格行），缺清单不得进入下一段 | spec + testcase 一件齐；差异清单留痕；内部对齐零未决 | 主 agent + sdet | **议会 #2** |
+| ②→③ | 计划门 | 开工前按 `references/stage-2b-plan-gate.md` 的三条核对逐条核，产出**已核清单**（`references/gate-record.md` 的表格行），缺清单不得进入下一段 | 功能点全覆盖 / 依赖无环 / 功能块↔testcase 一一映射 | 脚本 + **审计本人读并签字** | **无议会** |
+| ③ | 技术实现 | 开工前按 `references/stage-3-implementation.md` 的出口判据逐条核，产出**已核清单**（`references/gate-record.md` 的表格行），缺清单不得进入下一段 | 施工完成、`npm run check` 绿 | 开发 | 无 |
+| ④ | 质量保证 | 开工前按 `references/stage-4-quality.md` 的出口判据逐条核，产出**已核清单**（`references/gate-record.md` 的表格行），缺清单不得进入下一段 | testcase 全过；负例与边界条数 ≥ 正例 | sdet | 无 |
+| ⑤ | 产品交付 | 开工前按 `references/stage-5-delivery.md` 的出口判据逐条核，产出**已核清单**（`references/gate-record.md` 的表格行），缺清单不得进入下一段 | 交付审计（含数字签字项） | 审计 | 无 |
+
+**表里 6 行而叫「五段」**：`②→③` 是**门**不是段——它有独立签字人与脚本判据，塞进 ③ 的入口会把它埋掉。读表时数段请数 ①②③④⑤。
+
+**段表与 PRD §4 的关系**：本表是 PRD §4 段表的逐字副本，只多拆出「名称」「入口」两列。两者不一致时以 PRD §4 为准；改 PRD §4 必须同批改本表。
+
+## 两个议会插点
+
+议会只在两处插点：① 之后审 PRD（议会 #1）、② 之后审 spec + testcase 一件（议会 #2）。
+
+- **计划门不设议会**：脚本能查的集合比对，人不比脚本准（PRD §6）。
+- **议会有条件**：议会列的段，收口 = 出口判据齐 **且** 该议会通过（P0 = 0、必修项清零）。不通过 → 留在本段，按 `parliament` 技能的收敛规则循环，**不得带未收敛项进入下一段**；议会通过之前不得进入下一段。不通过的记录写在议会自己的评审账里，不另建第二处。
+
+## ① 的过渡口径（S2 前有效，产品经理卡落地即删）
+① 的签字人写「用户签字」；产品经理一职由主 agent 代拟，PRD 头部注明「代拟：主 agent」——代拟者不签字。「市场调研结论」入口在 S2 前由用户提供或省略。
+
+**失效条件**：S2 落地（产品经理角色卡 `agents/reviewer-product.md` 之外的专职产品经理卡存在）后，本节整段删除，① 改由产品经理签字。过渡期内代拟者一律不签字，否则三权分离在第一天就失效。
+
+## 三权总则
+
+每段的三件事必须分给不同的人（PRD §3.3），申报人不得自定性：
+
+- **申报**：产物作者申报本段出口已齐，并给出证据（命令输出首行或 `path:line`）。
+- **定性**：由该段「谁签」列的角色定性合格与否；申报人不得给自己定性。
+- **核对**：审计或独立核对者核证据本身；核对者与申报人不得是同一实例。
+
+作者定义（与 `rules/dev-workflow-mainline.md` R2 同源）：PRD→产品经理、spec→主 agent、testcase→sdet、代码→开发、审计结论→审计。
+
+## 取证调度
+
+凡引用长文（对话记录 / 评审账 / 规范原文）得出的结论，先由 `evidence-reader` 产出「原文 + 行号」，主 agent 不得直接以自读摘要作引用依据；送审 / 交接材料里每条引用都要能追到那份取证产出。
+
+**常驻 ≠ 每轮必跑**：该角色常驻在册，只在需要给长文结论取证时派；不要为每个任务默认起一个，也不要让它出观点或问题卡。
+
+## 指针
+
+- 每段判据：`references/stage-1-prd.md`、`references/stage-2-tech-design.md`、`references/stage-2b-plan-gate.md`、`references/stage-3-implementation.md`、`references/stage-4-quality.md`、`references/stage-5-delivery.md`
+- 出口核对记录表（R1–R7 的唯一证据载体）：`references/gate-record.md`
+- 强制约束：`rules/dev-workflow-mainline.md`（每轮自动加载）

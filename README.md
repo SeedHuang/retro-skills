@@ -44,6 +44,7 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 | 已有定稿 PRD，要拆成可独立开发的 spec 与路线图 | `prd-to-specs` |
 | 库未初始化 / 库要搬家 / 会话开始轮询 / 看库的规模与薄弱面 | `managing-lessons-store` |
 | 审查最近一次提交引入的冗余代码，抽取合并、出审计报告 | `dry-refactor-newadd` |
+| 要把一个需求按「PRD → 技术设计 → 计划门 → 实现 → 质量 → 交付」走完，或判断现在卡在哪一段、本段出口齐没齐 | `dev-workflow` |
 
 典型闭环：**喊入口 → 采事实 → 复盘分析 → 归置落地 → 验证（`retro-verify`）**。落地的载体（规则 / 技能 / 自动化）在活链上，**改源即生效**——下次对话自动带着，不需要任何人记得"上次学到了什么"；改完由 `retro-verify` 看**有没有真管用**。
 
@@ -51,8 +52,8 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 
 详细说明不在 README 里（避免越写越长），拆到独立指南——与上一节「场景速查」配合看：
 
-- **技能**（十八个，各自的作用与使用时机）→ [`docs/guide/skills/`](docs/guide/skills/README.md)
-- **全局规则**（二十条，各自的作用与适用范围）→ [`docs/guide/rules/`](docs/guide/rules/README.md)
+- **技能**（清单见 `skilldependencies/manifest.json`；各自的作用与使用时机见指南）→ [`docs/guide/skills/`](docs/guide/skills/README.md)
+- **全局规则**（清单见 `rules/`；各自的作用与适用范围见指南）→ [`docs/guide/rules/`](docs/guide/rules/README.md)
 
 ## 一个完整例子（真实闭环：2026-09-29 回显污染事故）
 
