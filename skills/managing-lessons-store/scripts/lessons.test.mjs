@@ -1701,14 +1701,40 @@ test('守卫：技能文档里的 `lessons.mjs <子命令> --xxx` 参数，代�
  *
  *  @returns {{file: string, ambiguous?: string[]}|null} `null` = 没找到；
  *   `ambiguous` 非空 = 找到多个（此时 `file` 为 null）
+ *
+ *  ⚠️ **搜索根必须由调用方传**（2026-10-24 代码审查问题 4）：曾写死模块级 `REPO_ROOT`，
+ *  于是 fixture 用例传临时目录时，兜底查找仍扫真仓库——fixture 里一条「解析不到」的引用
+ *  会拿真仓同名文件凑数，测试可能假绿。
  */
-function findByName(name) {
+function findByName(name, root = REPO_ROOT) {
   // `makeScanner` 已在扫描层跳过 `.git` / `node_modules` / `.session` / `.superpowers`，这里**不再事后 filter**——
   // 事后 filter 用 `p.includes('.git')` 会连带误杀 `.github/` 之类，而扫描层的精确匹配不会（2026-10-08 OCR 指出）
   const { walk } = makeScanner()               // 自建 scanner：旁路查找不污染调用方的 scan
   // ⚠️ walk 的匹配是「扩展名后缀」`endsWith(x)`——做**精确文件名**查找时必须按 basename 过滤，
   // 否则 `my-lessons.mjs` 这类不同前缀的同名文件会被当成第二个命中 → 假 ambiguous（2026-10-08 OCR 指出）
-  const hits = walk(REPO_ROOT, [name]).filter((p) => p.split(/[\\/]/).pop() === name)
+  const hits = walk(root, [name]).filter((p) => p.split(/[\\/]/).pop() === name)
+  if (hits.length === 1) return { file: hits[0] }
+  if (hits.length > 1) return { file: null, ambiguous: hits }
+  return null
+}
+
+/** 带路径的引用在「相对文档 / 相对仓根」都解析不到时，按**路径后缀**在 root 内找 `.mjs`
+ *
+ *  例：文档写 `acceptance/golden-assert.mjs 第 29 行`（相对 `tools/docgen/`），直解析两处都不中，
+ *  但仓内确有 `tools/docgen/acceptance/golden-assert.mjs` —— 路径后缀能唯一对上。
+ *
+ *  ⚠️ 不能退回裸名（2026-10-24 代码审查问题 1）：`findByName('golden-assert.mjs')` 会命中**任意**同名文件，
+ *  路径笔误时静默校验错文件。后缀匹配要求**路径也对上**：0 个 → null（记 missing）；≥2 个 → ambiguous。
+ */
+function findByRefSuffix(ref, root = REPO_ROOT) {
+  const norm = (p) => p.split(/[\\/]/).join('/').toLowerCase()
+  const suffix = norm(ref)
+  const { walk } = makeScanner()
+  const hits = walk(root, ['.mjs'])
+    .filter((p) => {
+      const rel = norm(relative(root, p))
+      return rel === suffix || rel.endsWith(`/${suffix}`)
+    })
   if (hits.length === 1) return { file: hits[0] }
   if (hits.length > 1) return { file: null, ambiguous: hits }
   return null
@@ -1757,11 +1783,19 @@ function scanLineRefs(mdFiles, root = REPO_ROOT) {
     for (const m of txt.matchAll(/((?:[A-Za-z0-9_.-]+[\\/])*[A-Za-z0-9_.-]+\.mjs)`?\s*(?:[:：]\s*|第\s*)(\d{2,4})\s*(?:行|条)?/g)) {
       const ref = m[1]
       // 带路径前缀的先按「相对所在文档」「相对仓根」两处解析（`docs/…/x.md` 里两种写法都有）
+      // ⚠️ **带路径的引用解析不到就是 `missing`，不许退回裸名查找**（2026-10-24 代码审查问题 1）：
+      // 路径笔误 / 文件被移动时，按裸名兜底会**静默改用另一个同名文件**校验，这条引用就永远指向错文件
+      // 且 `missing` 不记——「路径写全 = 没有歧义」的立项理由会被从另一个口子放回来。
+      // 同理**裸名不试 `resolve(root, …)`**（问题 2）：仓根若出现同名文件会抢在 `findByName` 前命中，
+      // 把本该判 `ambiguous` 的情况静默消解成「根目录那份」。
+      const hasPath = /[\\/]/.test(ref)
       const local = resolve(dirname(f), ref)
-      const fromRoot = resolve(root, ref)
-      const hit = existsSync(local) ? { file: local }
-        : existsSync(fromRoot) ? { file: fromRoot }
-          : findByName(ref.split(/[\\/]/).pop())
+      const fromRoot = hasPath ? resolve(root, ref) : null
+      let hit = null
+      if (existsSync(local)) hit = { file: local }
+      else if (fromRoot && existsSync(fromRoot)) hit = { file: fromRoot }
+      else if (hasPath) hit = findByRefSuffix(ref, root)  // 路径后缀唯一时才命中；0/≥2 都如实记账
+      else hit = findByName(ref, root)                    // 裸名兜底，搜索根 = 调用方的 root（问题 4）
       let abs = null
       if (hit === null) missing.push(`${relative(root, f)} → ${ref}`)
       else if (hit.ambiguous) ambiguous.push(`${relative(root, f)} → ${ref}（命中 ${hit.ambiguous.length} 处）`)
@@ -1806,6 +1840,10 @@ test('守卫：文档里的「<名>.mjs 第 N 行」引用，行号必须仍有�
   const { checked, anchored, missing, ambiguous, skipped } = scanLineRefs(mds, REPO_ROOT)
   // 豁免的份数必须打印：否则「少扫了」与「扫了没发现」看起来一样，正是这条守卫反复踩的病根
   console.log(`  [行号守卫] 校对 ${checked} 处、锚定 ${anchored} 处；跳过 ${skipped} 份记录型 transcript（内容不改，见 docs-convention 硬约束 4）`)
+  // 只打印不断言 = 豁免逻辑被改坏（后缀写错 / 恒 false）时仍全绿（2026-10-24 代码审查问题 3）。
+  // 期望值用**字面后缀**独立算，不复用 `isRecordTranscript`——否则 helper 改坏时两边一起错、断言恒真。
+  assert.equal(skipped, mds.filter((f) => f.endsWith('-transcript.md')).length,
+    `豁免份数 ${skipped} ≠ 全仓 -transcript.md 文件数 ${mds.filter((f) => f.endsWith('-transcript.md')).length}——豁免逻辑失效或漏扫`)
   assert.ok(checked > 0, `应至少扫到 1 处行号引用（实际 ${checked}）——正则没匹配到，等于守卫失效`)
   // 「定位不到目标文件」的引用**必须为 0**：那类引用曾 `continue` 静默跳过，等于该条引用永远不被校验。
   // 文件被改名 / 重名多处时都会落到这里 —— 那是**待修的漂移**，不是「可以忽略」。
@@ -1902,6 +1940,77 @@ test('守卫解析：带路径前缀的引用按路径命中，不被同名文�
     const r = scanLineRefs([md], dir)
     assert.deepEqual(r.ambiguous, [])      // 关键：不落入「命中多个」
     assert.equal(r.checked, 1)             // 确实校验到了（不是被跳过）
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+// 带路径的引用解析不到 → 必须记 missing，**不许退回裸名**去命中另一个同名文件（2026-10-24 代码审查问题 1）
+// 反证：旧写法会对 `b/dup.mjs` 退成 `findByName('dup.mjs')`，在 a/ 下找到唯一同名文件 → 校验到错文件、missing 为空
+test('守卫解析：带路径引用写错时记 missing，不降级为裸名命中', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'lessons-lineref-badpath-'))
+  try {
+    mkdirSync(join(dir, 'a'), { recursive: true })
+    writeFileSync(join(dir, 'a', 'dup.mjs'), probeSource())
+    const md = join(dir, 'note.md')
+    writeFileSync(md, ['引用 `b/dup.mjs 第 12 行`：', '', '```js', 'const target = 42', '```', ''].join('\n'))
+    const r = scanLineRefs([md], dir)
+    assert.equal(r.checked, 0)                       // 没有校验到任何东西
+    assert.deepEqual(r.ambiguous, [])
+    assert.equal(r.missing.length, 1)                // 而是明确报「找不到」
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+// 裸名引用不先试「仓根同名文件」：两处同名时仍须判 ambiguous（2026-10-24 代码审查问题 2）
+// 反证：旧写法会 `resolve(root,'probe.mjs')` 直接命中根目录那份，绕过 ambiguous
+test('守卫解析：裸名两处同名时判 ambiguous，不被仓根同名文件抢先', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'lessons-lineref-baredup-'))
+  try {
+    mkdirSync(join(dir, 'sub'), { recursive: true })
+    mkdirSync(join(dir, 'x'), { recursive: true })
+    writeFileSync(join(dir, 'probe.mjs'), probeSource())          // 仓根同名
+    writeFileSync(join(dir, 'x', 'probe.mjs'), probeSource())     // 另一处同名
+    const md = join(dir, 'sub', 'note.md')                         // 放在 sub/ → 相对解析不会命中根目录那份
+    writeFileSync(md, ['引用 `probe.mjs 第 12 行`：', '', '```js', 'const target = 42', '```', ''].join('\n'))
+    const r = scanLineRefs([md], dir)
+    assert.equal(r.ambiguous.length, 1)               // 两处同名 = 不敢判
+    assert.equal(r.checked, 0)
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+// 兜底查找的搜索根必须是调用方传的 root，不能是模块级 REPO_ROOT（2026-10-24 代码审查问题 4）
+// 反证：旧写法在 fixture（临时目录）里会扫真仓库，`lessons.mjs` 恰是仓内真实文件 → 被凑数命中、missing 为空
+test('守卫解析：兜底查找只在传入的 root 内进行，不扫真仓库', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'lessons-lineref-root-'))
+  try {
+    const md = join(dir, 'note.md')
+    writeFileSync(md, ['引用 `lessons.mjs 第 30 行`：', '', '```js', 'const target = 42', '```', ''].join('\n'))
+    const r = scanLineRefs([md], dir)
+    assert.equal(r.missing.length, 1)                 // 临时目录里没有 lessons.mjs → 必须报 missing
+    assert.equal(r.checked, 0)
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+// 带路径的引用可「按路径后缀」唯一命中：允许相对其它目录的写法，但不允许降级成裸名（问题 1 的正向面）
+test('守卫解析：带路径引用按后缀唯一命中（不降级裸名，也不误报 missing）', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'lessons-lineref-suffix-'))
+  try {
+    mkdirSync(join(dir, 'tools', 'acc'), { recursive: true })
+    const src = probeSource().split('\n')
+    src[11] = 'const target = 42'                     // 第 12 行 = 锚点
+    writeFileSync(join(dir, 'tools', 'acc', 'golden.mjs'), src.join('\n'))
+    const md = join(dir, 'note.md')                   // 文档在根，引用写的是相对 tools/ 的路径
+    writeFileSync(md, ['引用 `acc/golden.mjs 第 12 行`：', '', '```js', 'const target = 42', '```', ''].join('\n'))
+    const r = scanLineRefs([md], dir)
+    assert.equal(r.checked, 1)                        // 后缀唯一 → 命中
+    assert.deepEqual(r.missing, [])
+    assert.deepEqual(r.ambiguous, [])
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }
