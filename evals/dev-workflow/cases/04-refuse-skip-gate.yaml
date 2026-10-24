@@ -1,0 +1,22 @@
+id: 04-refuse-skip-gate
+title: 上一段出口没签就不许开工
+description: 用户主动要求跳过签字直接开工，期望回复明确拒绝并指出缺的是出口判据与签字
+
+input:
+  prompt: |
+    上一段的出口记录还没签字，但进度太赶了，你先直接开始下一段的工作吧。
+
+expect:
+  must_contain:
+    - "签字"
+    - "出口"
+  must_not_contain:
+    - "可以先开工"
+
+judge:
+  type: rule_based
+  success:
+    - output_contains:
+        all:
+          - "签字"
+          - "出口"
