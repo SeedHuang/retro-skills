@@ -1714,17 +1714,38 @@ function findByName(name) {
   return null
 }
 
-test('守卫：文档里的「<名>.mjs 第 N 行」引用，行号必须仍有效（防行号漂移）', () => {
-  // 扫全仓 md（行号引用可能出现在 skills / docs / README 任意处）
-  const { walk, scan } = makeScanner()
-  const mds = walk(REPO_ROOT, ['.md'])   // `.git` / `node_modules` 等跳过目录由 makeScanner 处理，不事后filter
+/** 记录型文件判定：basename 以 `-transcript.md` 结尾（口径对齐 scripts/doc-rename.mjs 的 DEFAULT_SKIP_FILE）
+ *
+ *  行号守卫为何豁免它：这类文件是某段会话的**原始记录**，其中的「第 N 行」是**当时的**快照；
+ *  把抄来的片段补成与真源逐字相等，等于改写历史（`rules/docs-convention.md` 硬约束 4「运行产物不改」）。
+ *  实测 2026-10-24：`docs/prd/dev-workflow-mainline/20261024074213-drawing-parliament-flow-transcript.md`
+ *  引用 `patternRegistry.mjs 第 14 行` 并抄了片段，片段少了空格 → not ok 248。
+ */
+function isRecordTranscript(file) {
+  return file.split(/[\\/]/).pop().endsWith('-transcript.md')
+}
+
+/** 行号引用守卫的扫描核心（抽成函数，才能给「豁免」与「不豁免」各写一条 fixture 用例）
+ *
+ *  @param {string[]} mdFiles 参与校对的 md 绝对路径
+ *  @param {string} root 报错信息里相对化的基准（fixture 用临时目录）
+ *  @returns {{checked:number, anchored:number, missing:string[], ambiguous:string[], skipped:number}}
+ */
+function scanLineRefs(mdFiles, root = REPO_ROOT) {
   let checked = 0
   let anchored = 0
+  let skipped = 0                           // 被豁免的记录型 transcript 份数（要打印出来，避免「静默漏扫」）
   const missing = []                        // 找不到目标文件的引用（报错要能指到是哪条）
   const ambiguous = []                      // 重名多处（修法与「找不到」不同，单列）
-  for (const f of mds) {
+  for (const f of mdFiles) {
+    if (isRecordTranscript(f)) { skipped++; continue }
     const txt = readFileSync(f, 'utf8')
     // 写法：`<名>.mjs` 第 N 行 / :N / ：N（**跨目录引用极多**，故按文件名在仓内定位，不靠相对路径）
+    //
+    // ⚠️ 前缀路径**必须一起捕获**（2026-10-24）：曾只抓 basename，于是
+    // `tools/docgen/test/validate.test.mjs 第 29 行` 被当成裸名 `validate.test.mjs` 去全仓找，
+    // 撞上 `skilldependencies/validate.test.mjs` → 假报「命中多个同名文件，不敢判」。
+    // 路径写全了就是**没有歧义**的，认不出来是守卫的缺陷，不是文档写错。
     //
     // ⚠️ 结尾的 `行|条` **必须可选**（2026-10-08 OCR 指出）：曾写成 `(?:行|条)` 必填，
     // 于是 `lessons.mjs:377` / `lessons.mjs：377` 这种**冒号写法永远匹配不上**——
@@ -1733,20 +1754,24 @@ test('守卫：文档里的「<名>.mjs 第 N 行」引用，行号必须仍有�
     //   真出现冒号写法时它也能被抓到。）
     //
     // 保留 `：` 全角形态：Windows / 中文文档里两种都常见。
-    for (const m of txt.matchAll(/([A-Za-z0-9_.-]+\.mjs)`?\s*(?:[:：]\s*|第\s*)(\d{2,4})\s*(?:行|条)?/g)) {
-      const local = resolve(dirname(f), m[1])
-      // 找不到与重名**分开记账**：前者改文档里的文件名，后者要挪文件（2026-10-08 OCR 指出）
-      const hit = existsSync(local) ? { file: local } : findByName(m[1])
+    for (const m of txt.matchAll(/((?:[A-Za-z0-9_.-]+[\\/])*[A-Za-z0-9_.-]+\.mjs)`?\s*(?:[:：]\s*|第\s*)(\d{2,4})\s*(?:行|条)?/g)) {
+      const ref = m[1]
+      // 带路径前缀的先按「相对所在文档」「相对仓根」两处解析（`docs/…/x.md` 里两种写法都有）
+      const local = resolve(dirname(f), ref)
+      const fromRoot = resolve(root, ref)
+      const hit = existsSync(local) ? { file: local }
+        : existsSync(fromRoot) ? { file: fromRoot }
+          : findByName(ref.split(/[\\/]/).pop())
       let abs = null
-      if (hit === null) missing.push(`${relative(REPO_ROOT, f)} → ${m[1]}`)
-      else if (hit.ambiguous) ambiguous.push(`${relative(REPO_ROOT, f)} → ${m[1]}（命中 ${hit.ambiguous.length} 处）`)
+      if (hit === null) missing.push(`${relative(root, f)} → ${ref}`)
+      else if (hit.ambiguous) ambiguous.push(`${relative(root, f)} → ${ref}（命中 ${hit.ambiguous.length} 处）`)
       else abs = hit.file
       // 定位不到（文件被改名 / 重名多处）曾 `continue` 静默跳过——那条引用就悄悄不校验了。
       // 改成**计数并在末尾断言为 0**，让「跳过」与「通过」可区分（2026-10-08 OCR 指出）。
       if (!abs) continue
       const lines = readFileSync(abs, 'utf8').split(/\r?\n/)
       const ln = Number(m[2])
-      assert.ok(ln <= lines.length, `${relative(REPO_ROOT, f)} 引用 ${m[1]} 第 ${ln} 行，但该文件只有 ${lines.length} 行——行号漂移了`)
+      assert.ok(ln <= lines.length, `${relative(root, f)} 引用 ${ref} 第 ${ln} 行，但该文件只有 ${lines.length} 行——行号漂移了`)
       checked++
       // **内容锚定**：只查「没超范围」不够——行号漂了但仍落在文件内时会静默通过。
       // 若引用处**紧接着有代码块**，就取那块的第 1 行当锚点，断言它确实出现在被引那一行或其注释里。
@@ -1765,12 +1790,22 @@ test('守卫：文档里的「<名>.mjs 第 N 行」引用，行号必须仍有�
       if (snippet.length < 8 || snippet.startsWith('//') || snippet.includes('...') || snippet.includes('|')) continue
       const window = lines.slice(Math.max(0, ln - 3), ln + 3).join('\n')
       assert.ok(window.includes(snippet),
-        `${relative(REPO_ROOT, f)} 引用 ${m[1]} 第 ${ln} 行，但那一行附近**没有**它引用的代码：\n`
+        `${relative(root, f)} 引用 ${ref} 第 ${ln} 行，但那一行附近**没有**它引用的代码：\n`
         + `      期望片段：${snippet}\n      实际第 ${ln} 行附近：${lines[ln - 1] ?? '(越界)'}\n`
         + `      → 行号漂了（守卫只查上界时不会报这种）`)
       anchored++
     }
   }
+  return { checked, anchored, missing, ambiguous, skipped }
+}
+
+test('守卫：文档里的「<名>.mjs 第 N 行」引用，行号必须仍有效（防行号漂移）', () => {
+  // 扫全仓 md（行号引用可能出现在 skills / docs / README 任意处）
+  const { walk, scan } = makeScanner()
+  const mds = walk(REPO_ROOT, ['.md'])   // `.git` / `node_modules` 等跳过目录由 makeScanner 处理，不事后filter
+  const { checked, anchored, missing, ambiguous, skipped } = scanLineRefs(mds, REPO_ROOT)
+  // 豁免的份数必须打印：否则「少扫了」与「扫了没发现」看起来一样，正是这条守卫反复踩的病根
+  console.log(`  [行号守卫] 校对 ${checked} 处、锚定 ${anchored} 处；跳过 ${skipped} 份记录型 transcript（内容不改，见 docs-convention 硬约束 4）`)
   assert.ok(checked > 0, `应至少扫到 1 处行号引用（实际 ${checked}）——正则没匹配到，等于守卫失效`)
   // 「定位不到目标文件」的引用**必须为 0**：那类引用曾 `continue` 静默跳过，等于该条引用永远不被校验。
   // 文件被改名 / 重名多处时都会落到这里 —— 那是**待修的漂移**，不是「可以忽略」。
@@ -1807,6 +1842,69 @@ test('守卫：文档里的「<名>.mjs 第 N 行」引用，行号必须仍有�
   // **不要求 `.git` 必须存在或必须是目录**：`git worktree` / submodule 下 .git 是个*文件*
   // （`gitdir: …`），archive/zip 检出里则完全没有 —— 那种布局下 `e.isDirectory()` 为 false，
   // 扫不到就扫不到，上面的白名单循环已经兜住了「跳过了不该跳的」（2026-10-08 OCR 指出）
+})
+
+/** fixture：目标文件 20 行，锚点片段在第 3 行——远在「第 12 行 ±3」窗口之外 */
+function probeSource() {
+  return Array.from(
+    { length: 20 },
+    (_, i) => (i === 2 ? 'const target = 42' : `const v${i + 1} = ${i + 1}`),
+  ).join('\n') + '\n'
+}
+/** fixture：引用「probe.mjs 第 12 行」，紧跟的代码块抄的却是第 3 行 → 行号漂移 */
+function mdWithDriftedRef() {
+  return ['# 记录', '', '引用 `probe.mjs 第 12 行`：', '', '```js', 'const target = 42', '```', ''].join('\n')
+}
+
+// 豁免的**正向**用例：记录型 transcript 不参与校验，且份数可观测（skipped），不是静默丢弃
+test('守卫豁免：`*-transcript.md` 里写漂移行号不报错（记录内容不改）', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'lessons-lineref-transcript-'))
+  try {
+    writeFileSync(join(dir, 'probe.mjs'), probeSource())
+    const md = join(dir, '21000101000000-some-session-transcript.md')
+    writeFileSync(md, mdWithDriftedRef())
+    const r = scanLineRefs([md], dir)
+    assert.equal(r.skipped, 1)        // 计入豁免份数
+    assert.equal(r.checked, 0)        // 完全没参与校验
+    assert.deepEqual(r.missing, [])
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+// 豁免的**反向**用例：同一条漂移行号放进普通 md 必须照旧报错——否则「记录型豁免」会漏成「全仓豁免」
+test('守卫豁免不外溢：普通 `.md` 写同一条漂移行号仍然报错', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'lessons-lineref-plain-'))
+  try {
+    writeFileSync(join(dir, 'probe.mjs'), probeSource())
+    const md = join(dir, '2026-01-01-note.md')
+    writeFileSync(md, mdWithDriftedRef())
+    assert.throws(() => scanLineRefs([md], dir), /行号漂了/)
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+// 路径写全的引用不该被判「重名多处」：同名文件在仓里有两个，裸名才会撞——这是守卫解析的覆盖，不是文档问题
+test('守卫解析：带路径前缀的引用按路径命中，不被同名文件误判为重名', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'lessons-lineref-path-'))
+  try {
+    mkdirSync(join(dir, 'a'), { recursive: true })
+    mkdirSync(join(dir, 'b'), { recursive: true })
+    // 两个同名文件都在，且「第 12 行」与片段一致（不触发漂移断言）→ 唯一变量是解析方式
+    const src = probeSource().split('\n')
+    src[11] = 'const target = 42'
+    const aligned = src.join('\n')
+    writeFileSync(join(dir, 'a', 'dup.mjs'), aligned)
+    writeFileSync(join(dir, 'b', 'dup.mjs'), aligned)
+    const md = join(dir, 'note.md')
+    writeFileSync(md, ['引用 `a/dup.mjs 第 12 行`：', '', '```js', 'const target = 42', '```', ''].join('\n'))
+    const r = scanLineRefs([md], dir)
+    assert.deepEqual(r.ambiguous, [])      // 关键：不落入「命中多个」
+    assert.equal(r.checked, 1)             // 确实校验到了（不是被跳过）
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
 })
 
 // 判定「跳过目录 ↔ .gitignore 忽略规则」的一致性（纯函数，可 fixture 测试各分支——2026-10-13 OCR 指出原逻辑在本仓恒不触发=零覆盖）
