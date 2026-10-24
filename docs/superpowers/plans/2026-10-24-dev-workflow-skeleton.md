@@ -39,13 +39,13 @@
 
 | Task | 做什么 | 验收命令 | 红则回到 |
 |---|---|---|---|
-| T0 前置 | 记录开基：`git status --porcelain` 存档；`gate` 取基线（应 `35/35`）；**只允许改动的路径白名单**（见 §6） | 存档文件存在 + gate 输出 35/35 | — |
+| T0 前置 | 记录开基：`git status --porcelain > .session/reviews/2026-10-24-110018-dev-workflow-skeleton-spec/baseline-status.txt`；`gate` 取基线（应 `35/35`） | **越界判据 = 差集**：开工后 `git status` 相对这份存档**新增**的路径必须落在 §6 白名单内；开基已有的 21 M / 2 D / 6 `??` 不参与判定 | — |
 | T1 | C2 登记规则 + 建 `rules/dev-workflow-mainline.md`（R1–R7 + 例外 + 验证） | `gate` → `baseline 36/36`（**含 C6a：`baseline --write`**） | T0 |
-| T2 | C1 数据、C3 枚举与三常量、C4 `evidence` 格式、C5 三键白名单与断言、C10/C11 槽位 | `gate --kind rule` 之类不依赖新卡的检查 + **单测里直接 `renderByName('evidence-reader')` 断言不抛 `MissingSlot`**（此时卡还没落盘，全量 `generate` 必报 `DanglingBaselineEntry`） | T1 |
-| T3 | **`draft --kind agent --name evidence-reader` 出草稿**（`generate` 只比对、要求目标已存在）→ 人工对照 → **直接落盘**（新席不走 `replace` 迁移段，见 spec C7）+ 建 `skills/dev-workflow/`（SKILL.md + 7 份 references） | 草稿与 `renderByName` 逐字节一致；落盘后由 T4 的 `check-agents` 做逐字节判定（新席在 `state=replaced` 之前 `gate` 不比对它） | T2 |
-| T4 | C7 state 登记（用 `setAgentState`）+ C8 十键 annotations | `node tools/docgen/cli.mjs check-agents` → `已接管 15，未迁移 0`；**再跑 `checkAgentFile('evidence-reader')` 无 findings**（check-agents 不读 annotations，单靠它抓不到 C8） | T3 |
+| T2 | C1 数据、C3 枚举与三常量、C4 `evidence` 格式、C5 三键白名单与断言、C10/C11 槽位 | `node tools/docgen/cli.mjs generate --kind rule` exit 0（**不要跑全量 `generate` / `gate`**：此时 15 席数据已就位但卡未落盘、`baseline.json` 仍 36 条 → 必报 `DanglingBaselineEntry` / `BaselineDrift`）+ 单测里直接 `renderByName('evidence-reader')` 断言不抛 `MissingSlot` | T1 |
+| T3 | **`draft --kind agent --name evidence-reader` 出草稿** → 人工对照 → **一条命令「校验即落盘」**（读草稿 → 与 `renderByName` 逐字节比 → 相等才 `writeFileSync('agents/evidence-reader.md')`，末尾 `draft rm --name evidence-reader`）；建 `skills/dev-workflow/`（SKILL.md + 7 份 references） | 该命令自带判据（不等即 exit 1、不写盘）；再核「落盘文件 sha256 == 草稿 sha256」 | T2 |
+| T4 | C7 state 登记 + C8 十键 annotations + **`fixtures/evidence-reader.evidence.json`**（字段见 spec C7） | `node --input-type=module -e "const m=await import('./tools/docgen/state.mjs'); m.setAgentState('evidence-reader','replaced')"`；`node tools/docgen/cli.mjs check-agents` → `已接管 15，未迁移 0`；`node --input-type=module -e "const {checkAgentFile}=await import('./tools/execution-matrix/check-agent.mjs'); const r=checkAgentFile('evidence-reader'); console.log(JSON.stringify(r)); process.exitCode=r.ok?0:1"`；`node --input-type=module -e "const e=await import('./tools/docgen/evidence.mjs'); e.readEvidence('evidence-reader'); console.log('evidence ok')"` | T3 |
 | T5 | C6b `baseline --write`；C9 在 `check-all.mjs` 加 state ⊇ 断言 | `gate` → `baseline 37/37`；人为删一条 state 键 → `npm run check` 红 | T4 |
-| T6 | §7.5 的 **12 处**计数派生化（含 `data.test.mjs:50` 注释去数字） | `npm run check` → `# fail 0`；TC-C11 三探针全 0 | T5 |
+| T6 | §7.5 的 **12 处**计数派生化（含 `data.test.mjs:50` 注释去数字） | `npm run check` → `# fail 0`（**TC-C11 的三探针属于 T6.5 的产物，本步不跑**） | T5 |
 | T6.5 | **写 5 个测试文件**，把 testcase 79 条落成断言（落点见 testlanding §1） | 五个文件里 `TC-[A-E]` 去重 ≥ 79 且全绿 | T6 |
 | T7 | P-6 登记面（manifest + `dev-workflow.json` + 三份 README 去写死数量） | `node --test skilldependencies/validate.test.mjs` exit 0 | T6.5 |
 | T8 | P-7 `aas sync` + 体检 | `aas` 体检 → `需建链接 0`；两条 `Test-Path` 为 True | T7 |
@@ -62,9 +62,9 @@
 
 | 项 | 处理 |
 |---|---|
-| 中间态必红 | 每步后跑 `gate`；T1 起每步都要求 `gate` 绿（T1 绿在 36/36） |
-| 14 席被默认值带偏 | T2 用 `generate` 做渲染比对（不是只跑 validate） |
-| 新席 replace 三件证据不可得 | 已定：新席不走上架迁移段，落盘 + `setAgentState`，证据由 `gate` 逐字节代替（spec C7） |
+| 中间态必红（**预期内**） | `gate` 只在 **T1 绿（36/36）** 与 **T5 起绿（37/37）**；**T2–T4 预期红**（先 `DanglingBaselineEntry` 后 `BaselineDrift`），这三步只跑定点单测与 T3/T4 自带判据，**不要用 `gate` 判成败** |
+| 14 席被默认值带偏 | T2 用单测 `renderByName` 比对（T4 之后 `gate` 才覆盖新席） |
+| 新席 replace 三件证据不可得 | 已定：`draft` → **校验即落盘**（不等不写）→ `setAgentState`；「卡与源一致」由 T4 后 `gate` 承担、「落盘无漂移」由那条命令承担；**首次变更**另需 T4 的 `fixtures/evidence-reader.evidence.json`（spec C7） |
 | 外部依赖 `agent-assets-sync` | S1 不修（候选 C-50）；T7 前先确认该仓在位，否则 T7 判红不算缺陷 |
 | `aas sync` 改运行时 | 不可逆外溢：T8 前存档 `git status`，sync 只增链接 |
 | 施工后 37/37 未实测 | T5 是第一次真验 |
@@ -100,3 +100,19 @@
 
 - sdet 自报的「testcase 计数不一致」**为其自身误判**（把 E23 边界算成负例）：逐行实为 **34 / 35 / 10 = 79**，与文件头一致；已在 testlanding §0 订正、§3 回填。testcase 不动。
 - **第 2 轮结论：可以开工**（sdet 原文：「改两处即可，不动 spec 结构」→ 两处已改）。
+
+### 第 3 轮（定向复核：AI 席 + 审计席，只审增量）
+
+| # | 席位 | 问题（位置） | 判定 | 处置 |
+|---|---|---|---|---|
+| 11 | AI | R4-01（P0）`gate --kind rule` 旗标不存在（`cli.mjs:544` 丢弃 rest）；且 §5「每步 gate 绿」与 T2–T4 现实冲突 | **承认** | T2 验收改 `generate --kind rule` + 单测 `renderByName`；§5 改为「T1 绿 36/36、T2–T4 预期红、T5 起 37/37」 |
+| 12 | AI | R4-02（P1）T3「草稿 == renderByName」是同义反复（草稿就是它）；落盘无命令、草稿箱会撞 `DraftNameConflict` | **承认** | T3 改「一条命令：读草稿→比对→相等才写盘」+ `draft rm` |
+| 13 | AI | R4-03（P1）绕过迁移段后 `fixtures/evidence-reader.evidence.json` 不存在 → **首次内容变更**必败（`evidence.mjs` 缺失即抛、`cli.mjs` 比 `lastWrittenHash`） | **承认** | spec C7 补「同批写 fixture + 字段」；plan T4 加验收命令 |
+| 14 | AI | R4-04（P1）「证据由 gate 代替」不成立：gate 只比 `replaced` 席，且证明的是「卡=生成物」而非「卡经人核」 | **承认** | C7 改「卡与源一致归 gate（T4 后生效）、落盘无漂移归那条命令」；V-5 加执行时点注 |
+| 15 | AI | R4-05（P2）T4「用 `setAgentState`」无 CLI 入口 | **承认** | T4 给出完整 `node --input-type=module -e` 命令 |
+| 16 | AI | R4-06（P2）C8 判者缺降级路径（无子代理时怎么办） | **承认** | C8 补「`rule-inspector` 本机判 + 送审说明标降级模式，不得定稿」 |
+| 17 | AI | R4-07（P1）T0 白名单与 §6「不提交 6 个 `??`」互相否证，开基即红 | **承认** | T0 改「差集判越界」：开基已有的 29 项不参与判定 |
+| 18 | 审计 | ① T2/T4/T6 三条命令按字面不可执行；② T6 依赖 T6.5 产物（顺序倒置）；③ T3 验收零判别力；④ 台账四件未落（cards / §九 / progress / delivery-audit） | **承认** | 前三条已按上表修；第四条本轮同批落账 |
+| 19 | AI | 建议给 `replace` 加 `--first-install` 旗标（最小替代） | **不采纳（有理由）** | 改生产 CLI ≈15 行 + 1 测试 + 一个只用一次的旗标 = 永久维护成本；「校验即落盘」已给同等强度。**理由写进 spec C7**，避免下次重开 |
+
+**第 3 轮结论：不通过 → 已修 → 待审计复核本轮台账后放行**（AI 席原话：「必须先修 R4-01 + R4-07，其余同批」）。
