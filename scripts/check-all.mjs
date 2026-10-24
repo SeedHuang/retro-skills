@@ -3,6 +3,7 @@
 //       ② 全仓测试（node --test，glob 覆盖全仓，node_modules 由 Node 自身默认排除）
 //       ③ 技能规范守卫（skill-inspector check.mjs）
 //       ④ markdown 机械检查（围栏配对 / 表格列数 / BOM / SKILL.md frontmatter）
+//       ⑤ .session 结构守卫（一级只许封闭清单档位 / tmp 收尾必须为空；无该目录则跳过）
 // 零外部依赖：只用 Node 内置模块。失败任一 → 非零退出（供脚本化调用拿失败信号）。
 import { readdirSync, readFileSync, existsSync, openSync, readSync, closeSync } from 'node:fs'
 import { join, dirname, resolve } from 'node:path'
@@ -317,6 +318,52 @@ else if (mdFindings.length > 0) {
   failed = true
   console.error(`[markdown] ${mdFindings.length} 处问题`)
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ⑤ .session 结构守卫（只查形状与临时件，不查内容）
+// 为什么要有它：docs-convention 定了两条硬规矩——「.session 一级只许有目的的文件夹」与
+//   「tmp/ 收尾必须为空」——但此前只有一句要人手动敲的命令，等于没有执行机制（规则写完靠自觉 = 会漏）。
+// 为什么不并进 ④：④ 跳过 .session 是因为「内容是个人数据、坏了也不进仓库」；这里查的是**结构**，
+//   与内容无关。.session/ 在 .gitignore 里，干净环境（克隆 / CI）根本没有该目录 → 直接通过。
+// ─────────────────────────────────────────────────────────────────────────────
+const SESSION_DIR = join(root, '.session')
+// 与 rules/docs-convention.md 的 .session 封闭清单同源；sdd-<日期>-<主题>/ 按前缀放行
+const SESSION_ALLOWED = new Set(['README.md', 'reviews', 'rule-checks', 'tmp'])
+let sessionOk = true
+if (existsSync(SESSION_DIR)) {
+  for (const entry of readdirSync(SESSION_DIR, { withFileTypes: true })) {
+    const name = entry.name
+    if (entry.isDirectory()) {
+      if (!SESSION_ALLOWED.has(name) && !name.startsWith('sdd-')) {
+        sessionOk = false
+        console.error(`[session] .session/${name}/ 不在封闭清单里（见 rules/docs-convention.md）`)
+      }
+    } else if (!SESSION_ALLOWED.has(name)) {
+      sessionOk = false
+      console.error(`[session] .session/${name} 是一级散文件（一级只许 README.md）`)
+    }
+  }
+  const tmpDir = join(SESSION_DIR, 'tmp')
+  if (existsSync(tmpDir)) {
+    const leftovers = []
+    const walk = (dir, rel) => {
+      for (const e of readdirSync(dir, { withFileTypes: true })) {
+        const r = `${rel}/${e.name}`
+        if (e.isDirectory()) walk(join(dir, e.name), r)
+        else leftovers.push(r)
+      }
+    }
+    walk(tmpDir, 'tmp')
+    for (const r of leftovers) {
+      sessionOk = false
+      console.error(`[session] .session/${r} 残留（tmp/ 收尾必须为空：该搬 docs/ 或删）`)
+    }
+  }
+  if (sessionOk) console.log('⑤ .session 结构检查通过（一级只含封闭清单档位；tmp/ 为空）')
+} else {
+  console.log('⑤ .session 结构检查跳过（无该目录：干净环境 / CI）')
+}
+if (!sessionOk) failed = true
 
 if (failed) {
   console.error('check 未通过')

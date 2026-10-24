@@ -1,5 +1,7 @@
 # Skill 行为评测工装（skill-up 本地化）实施计划
 
+> **⚠️ 2026-10-24 已停用：本功能已整体删除，本计划仅作历史记录，勿执行。** 下文步骤仍要求 `Create evals/…`、补 `eval:review-triage` script 等，这些对象已不存在；勾选框状态已无意义。停用理由、保留的校准值与恢复判据见 `docs/after/20261024154827-skill-eval-harness-parking.md`。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 在仓库内落地一套「装技能 vs 不装技能」的技能行为评测工装：`evals/review-triage/` 两条用例、离线契约脚本、runner，全部零第三方依赖、不进 `npm run check`。

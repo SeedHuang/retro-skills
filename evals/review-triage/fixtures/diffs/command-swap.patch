@@ -1,9 +1,0 @@
-diff --git a/scripts/precommit.sh b/scripts/precommit.sh
-index 2b0d5a1..9d3c7f4 100644
---- a/scripts/precommit.sh
-+++ b/scripts/precommit.sh
-@@ -1,3 +1,3 @@
- #!/usr/bin/env bash
- set -e
--npm run check
-+npm run check:all

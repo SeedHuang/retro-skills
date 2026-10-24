@@ -565,7 +565,7 @@ PRD §4 拟改名「业务流程与功能点（图 + 表 + 清单）」`[已决�
 ## 附录 A　`scripts/check-prd-graph.mjs` 伪代码（实现参考，归 S2/S4 的 spec）
 
 ```ts
-// scripts/check-prd-graph.mjs（零依赖，与 run-eval.mjs 同风格）
+// scripts/check-prd-graph.mjs（零依赖，与本仓其它零依赖脚本同风格）
 // 用法：node scripts/check-prd-graph.mjs --prd <path> [--base <git-ref>]
 
 type FunctionPoint = { id: string, name: string, stage?: string, line: number }

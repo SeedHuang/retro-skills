@@ -24,6 +24,8 @@ const LESSONS_SRC = resolve(SKILL_DIR, 'scripts', 'lessons.mjs')           // �
  *  §3.1 的 fixture 布局）所在的 `notes/` 是第 6 层目录（evals/1 → review-triage/2 → fixtures/3 →
  *  repos/4 → checkbox-demo/5 → notes/6），它是进 git 的 markdown、参与全仓一致性校对。
  *  实测：提到 5 仍报 truncated（漏扫 `.../checkbox-demo/notes`），提到 6 才扫到 plan.md。
+ *  2026-10-24：评测工装已整体删除（`evals/` 不再存在），上面这条理由随之消失；
+ *  但**保持 6 不回退**——回退只会削弱覆盖，而多扫两层的成本可忽略。
  */
 function makeScanner(maxDepth = 6) {
   const scan = { truncated: [] }
