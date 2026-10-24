@@ -8,6 +8,7 @@
 
 | 段 | 出口判据（逐条） | 核了什么（命令输出首行 或 path:line） | 申报人 | 签字人 | 结论 |
 |---|---|---|---|---|---|
+| ① | §0 四栏齐 + 依据可核；功能点清单与流程图双向一一对应 | `docs/prd/20261024073606-dev-workflow-mainline/index.md#L22-L31`（§0 四栏签署）；议会账 `.session/reviews/2026-10-24-163717-dev-workflow-mainline-prd/`（4 轮 + 2 次补充复核，P0/P1 = 0） | 产品经理（代拟：主 agent） | 用户 | **有条件通过（2026-10-24）**：P2 挂 `docs/after/20261024174253-dev-workflow-mainline-open-items.md` |
 
 ## 各列口径
 
