@@ -3,7 +3,7 @@
 > 口径声明：本轮数值为试跑校准（`origin: calibrated`），**首轮验收降级为冒烟/回归测试，不代表独立验证**。
 > 阈值单源就是下面这个 JSON 块；其他任何地方不复述数值。
 > 阈值来源留痕：本轮 `arms` / `delta` 为**声明值（未校准）**，具体来源见 `fixtures/RECORD.md`（Task 7 落）。
-> `repo_fixture` 必须指向物化副本（`../.session/eval-fixture/review-triage/<repo-name>`，相对 `evals/` 目录），否则启动前校验 ⑥ 码 4。
+> `repo_fixture` 必须指向物化副本（`../.session/eval/fixture/review-triage/<repo-name>`，相对 `evals/` 目录），否则启动前校验 ⑥ 码 4。
 > 禁词双向留痕见 `fixtures/RECORD.md`（Task 7 落）。
 
 ```json

@@ -29,7 +29,7 @@ judge:
           - "notes/plan.md"
 
 context:
-  repo_fixture: ../.session/eval-fixture/review-triage/checkbox-demo
+  repo_fixture: ../.session/eval/fixture/review-triage/checkbox-demo
   git:
     init: true
     apply_diff: review-triage/fixtures/diffs/checkbox.patch

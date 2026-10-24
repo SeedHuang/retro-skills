@@ -20,7 +20,7 @@
 - 已完成（全部在 2026-10-22 19:00–19:35）：
   - **spec 三层判据改造**（用户指令「站在全局角度、看关系逻辑是否闭环」）：L1 用例可用性（flaky）/ L2 断言可达性（手写 oracle）/ L3 技能有效性（`delta`），新增 §3.2.2 `expected.md` 机读块契约（`schema: eval-expectation/v2`）、verdict 五值（含 `INVALID_DELTA`）、run 级三态、`gate`/`probe` 分离、`origin` 状态迁移。落点：`docs/superpowers/specs/2026-10-21-skill-eval-harness-design.md`（334 行）§1.5 / §2 R5·R7·R8·R10 / §3.1 / §3.2.1 / §3.2.2 / §3.3-5~7 / §3.4 / §3.5 / §4 / §5 / §6 / §7。
   - **真 fixture 契约修正**（实测三条）：`apply_diff` 必须嵌在 `context.git` 下（顶层 `context.apply_diff` 被静默忽略）；`context.git.init` 真实存在；`git.init` 只建空仓库、不做基线提交 → fixture 须自带 baseline 提交。落点：spec §1.5 `fixture 仓库` 行、R5、§3.1、§3.2.1、§3.3-5⑥、§3.3-7 启动前失败清单、§4 步骤 0/1。
-  - **用例 01 稳定性实测**（4 次真跑 × 每次 3 迭代，每臂 12 个 run）：装 12/12 全过、不装 0/12 全过、`flaky=否`、`delta=1.000`；按 R8 已达升级门槛，按用户裁定仍保持 `probe`。证据：`.session/eval-trial/case01-stability{3,4,5,6}/iteration-*/benchmark.json`（命令与汇总见送审说明 §6）。
+  - **用例 01 稳定性实测**（4 次真跑 × 每次 3 迭代，每臂 12 个 run）：装 12/12 全过、不装 0/12 全过、`flaky=否`、`delta=1.000`；按 R8 已达升级门槛，按用户裁定仍保持 `probe`。证据：`.session/eval/trial/case01-stability{3,4,5,6}/iteration-*/benchmark.json`（命令与汇总见送审说明 §6）。
   - **testcase 重写 + 修订**：68 条（正 20 / 负 34 / 边界 14），由 `senior-sdet` 子代理在全新上下文整体重写，再按 fixture 契约定向修订；新增 TC-066/067/068。路径同目录 `...-design-testcase.md`（1030 行）。
   - **送审说明已重写**：`.session/reviews/2026-10-22-093735-skill-eval-harness/submission.md`（第 7 轮版；含 §9 必审清单 A 组 15 项 + B 组 10 项）。
 - 验证证据：见元信息表『验证基线』（单源，勿重复填写）。
@@ -34,7 +34,7 @@
 - `.session/reviews/2026-10-22-093735-skill-eval-harness/problems.md`（族级台账，第 1–6 轮）
 - `.session/reviews/2026-10-22-093735-skill-eval-harness/cards.md`（卡片全文；缺第 2/3 轮原始卡）
 - `.session/reviews/2026-10-22-093735-skill-eval-harness/round-check.md`（侦探/审计轮间核对，第 6 轮段）
-- `.session/eval-trial/case01-stability6/`（最新一次真跑的完整产物；`.session/` 不进 git）
+- `.session/eval/trial/case01-stability6/`（最新一次真跑的完整产物；`.session/` 不进 git）
 - 历史交接词：`docs/handoffs/2026-10-22-skill-eval-harness-round4.md` → 本文件（第 4 轮 → 第 7 轮）
 
 ## 本次任务

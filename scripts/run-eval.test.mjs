@@ -31,13 +31,13 @@ test('parseArgs：位置参数取技能名，其余 flag 各就各位', () => {
   const a = parseArgs([
     'review-triage', '--dry-run',
     '--eval-yaml', 'evals/review-triage/eval.yaml',
-    '--output-dir', '.session/eval-out/x',
+    '--output-dir', '.session/eval/out/x',
     '--iteration', '3',
   ])
   assert.equal(a.skill, 'review-triage')
   assert.equal(a.dryRun, true)
   assert.equal(a.evalYaml, 'evals/review-triage/eval.yaml')
-  assert.equal(a.outputDir, '.session/eval-out/x')
+  assert.equal(a.outputDir, '.session/eval/out/x')
   assert.equal(a.iteration, 3)
 })
 
@@ -61,12 +61,12 @@ test('parseArgs：带值参数后紧跟另一个 -- 项 / 缺值 → argError（
 })
 
 test('buildToolArgs：固定前缀 + --baseline 由 benchmark.enabled 决定', () => {
-  const base = { evalYaml: 'D:/repo/evals/skill/eval.yaml', outputDir: 'D:/repo/.session/eval-out/skill', iteration: 2 }
+  const base = { evalYaml: 'D:/repo/evals/skill/eval.yaml', outputDir: 'D:/repo/.session/eval/out/skill', iteration: 2 }
   assert.deepEqual(buildToolArgs({ ...base, baseline: true }), [
-    'run', 'D:/repo/evals/skill/eval.yaml', '--output-dir', 'D:/repo/.session/eval-out/skill', '--iteration', '2', '--baseline',
+    'run', 'D:/repo/evals/skill/eval.yaml', '--output-dir', 'D:/repo/.session/eval/out/skill', '--iteration', '2', '--baseline',
   ])
   assert.deepEqual(buildToolArgs({ ...base, baseline: false }), [
-    'run', 'D:/repo/evals/skill/eval.yaml', '--output-dir', 'D:/repo/.session/eval-out/skill', '--iteration', '2',
+    'run', 'D:/repo/evals/skill/eval.yaml', '--output-dir', 'D:/repo/.session/eval/out/skill', '--iteration', '2',
   ])
 })
 
@@ -104,7 +104,7 @@ test('resolvePaths：<eval.yaml 目录>/.. 末级不是 evals 时 ok=false（码
   }
 })
 
-test('resolveRunPaths：outputDir 缺省为 <repoRoot>/.session/eval-out/<技能名>，全部绝对路径', () => {
+test('resolveRunPaths：outputDir 缺省为 <repoRoot>/.session/eval/out/<技能名>，全部绝对路径', () => {
   const tmp = mkdtempSync(join(tmpdir(), 'run-eval-'))
   try {
     const dir = join(tmp, 'repo', 'evals', 'demo')
@@ -115,7 +115,7 @@ test('resolveRunPaths：outputDir 缺省为 <repoRoot>/.session/eval-out/<技能
     assert.equal(r.ok, true)
     assert.equal(r.evalsDir, resolve(tmp, 'repo', 'evals'))
     assert.equal(r.skillRoot, resolve(tmp, 'repo', 'skills', 'demo'))
-    assert.equal(r.outputDir, resolve(tmp, 'repo', '.session', 'eval-out', 'demo'))
+    assert.equal(r.outputDir, resolve(tmp, 'repo', '.session', 'eval', 'out', 'demo'))
     const r2 = resolveRunPaths({ evalYaml: yaml, outputDir: 'relative-out', skill: 'demo' })
     assert.equal(r2.outputDir, resolve('relative-out'))
   } finally {

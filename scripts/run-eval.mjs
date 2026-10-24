@@ -8,7 +8,7 @@
 // yaml 内所有相对路径（cases.files / oracle / repo_fixture / apply_diff / skills[].path）一律
 //   相对 evalsDir = <eval.yaml 所在目录>/.. 解析——与 skill-up 的兜底基准逐字一致（2026-10-23 实测）。
 // 退出码：0 / 1 / 2 / 3 / 4（工具非表内码如 5 → 原样透传）；不执行任何 git 写操作
-//   （唯一例外：物化 fixture 时在 .session/eval-fixture/** 内 git init/add/commit，该目录已 gitignore）。
+//   （唯一例外：物化 fixture 时在 .session/eval/fixture/** 内 git init/add/commit，该目录已 gitignore）。
 import { readFileSync, writeFileSync, existsSync, mkdirSync, rmSync, cpSync, readdirSync, realpathSync } from 'node:fs'
 import { join, dirname, resolve, basename, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -88,7 +88,7 @@ export function resolveRunPaths({ evalYaml, outputDir = null, skill = 'review-tr
     evalsDir: dirname(p.evalDir),
     repoRoot: p.repoRoot,
     skillRoot: join(p.repoRoot, 'skills', skill),
-    outputDir: resolve(outputDir ?? join(p.repoRoot, '.session', 'eval-out', skill)),
+    outputDir: resolve(outputDir ?? join(p.repoRoot, '.session', 'eval', 'out', skill)),
   }
 }
 
@@ -559,7 +559,7 @@ function main() {
 
   // ⑥-2 物化：所有被引用的 repo_fixture 都物化（先删后建），仓库内 fixture 不要求带 .git
   const fixtureRoot = join(evalDir, 'fixtures', 'repos')
-  const materialized = join(repoRoot, '.session', 'eval-fixture', skill)
+  const materialized = join(repoRoot, '.session', 'eval', 'fixture', skill)
   const git = (cwd, args) => spawnSync('git', ['-C', cwd, ...args], { encoding: 'utf8' })
   if (repoOwners.size > 0) {
     rmSync(materialized, { recursive: true, force: true })
@@ -693,7 +693,7 @@ function main() {
   }
 
   // 模型账（spec §3.3-7 / AI-6-04）：账本不存在 = 首次运行，不提示
-  const ledgerPath = join(repoRoot, '.session', 'eval-state', `${skill}.json`)
+  const ledgerPath = join(repoRoot, '.session', 'eval', 'state', `${skill}.json`)
   let actualModel = '未确认'
   if (existsSync(ledgerPath)) {
     let prev = null

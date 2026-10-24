@@ -27,7 +27,7 @@ judge:
           - "机器判不了"
 
 context:
-  repo_fixture: ../.session/eval-fixture/review-triage/command-swap-demo
+  repo_fixture: ../.session/eval/fixture/review-triage/command-swap-demo
   git:
     init: true
     apply_diff: review-triage/fixtures/diffs/command-swap.patch

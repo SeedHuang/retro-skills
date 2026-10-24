@@ -4,6 +4,7 @@
 > 铁律：**拿不到的证据一律写「未取证 / 未预检」，不得写成通过**。本文件中每条「通过」都附了可复算的命令与真实输出片段。
 > 另一条铁律：**不得把答案暗示写进用例 yaml 的 `description` / `input.prompt`**（本文件同理——取证结论只写在这里，不回写进用例）。
 > 取证环境：Windows / PowerShell 5.1（5.1.26100.9711）/ node v22.12.0 / git 2.55.0.windows.3；取证日期 2026-10-23。
+> **2026-10-24 目录合并注记**：评测四档已从 `.session/eval-{fixture,out,state,trial}/` 合并为 `.session/eval/{fixture,out,state,trial}/`。本文中**指向产物/夹具的路径已同步为新名**（否则点不到实物）；而 `PS>` 开头的**已执行命令与命令回显保持当时字面不变**——那是当时真实跑出来的字节，改了等于伪造记录。
 
 ## 一、离线预检
 
@@ -76,7 +77,7 @@ EXIT=0
 | # | 项 | 结果 |
 |---|---|---|
 | 1 | `apply_diff` 在 `context.git` 下 | 通过：`cases/01-checkbox-mechanical.yaml` 第 31–35 行 `context:` → `git:`（第 34 行 `init: true`，第 35 行 `apply_diff:`）；A1 未报 `FIX-1`，runner ⑥-4 通过 |
-| 2 | 物化副本有 baseline 提交 | 通过：`.session/eval-fixture/review-triage/checkbox-demo/.git` 存在，`git log --oneline` = `36db2c6 baseline` |
+| 2 | 物化副本有 baseline 提交 | 通过：`.session/eval/fixture/review-triage/checkbox-demo/.git` 存在，`git log --oneline` = `36db2c6 baseline` |
 | 3 | 临时副本实测 ` M notes/plan.md` + diff 翻转 | 通过：`git status --porcelain` 输出 ` M notes/plan.md`，`git diff` 同时出现 `-| 1 | 建评测目录 | [ ] |` 与 `+| 1 | 建评测目录 | [x] |` |
 | 4 | `git apply --check <补丁>` 退出 0 | 通过：APPLY_CHECK_EXIT=0（在 `$env:TEMP` 副本上做，仓库内 fixture 未 `git init`） |
 | 5 | 02 的 `command-swap-demo` 源目录在位且不带 `.git` | 通过：`evals/review-triage/fixtures/repos/command-swap-demo/` 含 `package.json`、`scripts/precommit.sh`；`Test-Path …/command-swap-demo/.git` = `False`；A1 未报 `FIX-*` |
@@ -115,9 +116,9 @@ PS> git -C (Join-Path $w 'checkbox-demo') diff -- notes/plan.md
 
 ## 三、路径基准正向观测（yaml 内路径相对 `evals/` 目录）
 
-- **已取证（2026-10-23 真跑）**：`skill-up validate` 打印 `falling back to D:\Seed\retro-skills\evals`，且 `loaded 2 case(s)`——说明 yaml 里的 `review-triage/cases/*.yaml` 就是在 `evals/` 基准下被加载成功。判据（工具真加载到用例、产物里出现 case-id）同时由真跑产物满足：`.session/eval-out/review-triage/iteration-1/01-checkbox-mechanical/`、`…/02-command-swap-semantic/` 两个目录都生成。
+- **已取证（2026-10-23 真跑）**：`skill-up validate` 打印 `falling back to D:\Seed\retro-skills\evals`，且 `loaded 2 case(s)`——说明 yaml 里的 `review-triage/cases/*.yaml` 就是在 `evals/` 基准下被加载成功。判据（工具真加载到用例、产物里出现 case-id）同时由真跑产物满足：`.session/eval/out/review-triage/iteration-1/01-checkbox-mechanical/`、`…/02-command-swap-semantic/` 两个目录都生成。
 - 反向对照（修复前）：同一工具在旧基准下报 `failed to read case file ../../evals/review-triage/cases/01-checkbox-mechanical.yaml: open D:\Seed\evals\…`，runner 端 `runs=0/0`、两条用例 `INVALID_ENV`。两相对照可确认基准就是差在这一层。
-- 「模型回复出现 fixture 独有内容」**已取证**：01 装技能回复里出现 `notes/plan.md` 与 `git diff`；02 装技能回复里出现 `scripts/precommit.sh` 与 `npm run check` → `check:all`（原文见 `.session/eval-out/review-triage/iteration-1/02-command-swap-semantic/with_skill/outputs/response.md`）。
+- 「模型回复出现 fixture 独有内容」**已取证**：01 装技能回复里出现 `notes/plan.md` 与 `git diff`；02 装技能回复里出现 `scripts/precommit.sh` 与 `npm run check` → `check:all`（原文见 `.session/eval/out/review-triage/iteration-1/02-command-swap-semantic/with_skill/outputs/response.md`）。
 - 仍需人工确认的一项（不冒充通过）：`actual_model=未确认`——`~/.claude/settings.json` 与 CCR 网关的模型名可能不一致，证据只到「请求值 = DeepSeek / deepseek-flash」这一层。
 
 ## 四、禁词双向留痕
@@ -178,7 +179,7 @@ assert_hash=81ab462ecea8ed07d7f42a9e0d0ff62d54fbd06ecf6834fb16997a14967274fa
 
 | 用例 | 字段 | 值 | 来源（声明值 / 实测） | 样本路径 |
 |---|---|---|---|---|
-| 执行动作替换应判为必须 review | with_skill.min_rate | 1.0 | **实测（2026-10-23 真跑，2/2 轮全过）** | `.session/eval-out/review-triage/iteration-{1,2}/02-command-swap-semantic/with_skill/grading.json` |
+| 执行动作替换应判为必须 review | with_skill.min_rate | 1.0 | **实测（2026-10-23 真跑，2/2 轮全过）** | `.session/eval/out/review-triage/iteration-{1,2}/02-command-swap-semantic/with_skill/grading.json` |
 | 执行动作替换应判为必须 review | without_skill.max_rate | 0.0 | **实测（2026-10-23 真跑，2/2 轮 0.333 → 未全过）** | `…/iteration-{1,2}/02-command-swap-semantic/without_skill/grading.json` |
 | 执行动作替换应判为必须 review | delta.min | 1.0 | **实测（1.0 − 0.333 = 0.667，声明 1.0 偏严但方向一致；见下注）** | 同两行样本 |
 
@@ -257,7 +258,7 @@ EXIT=0
 - 02 不装技能（`…/without_skill/outputs/response.md`）：「**建议提交**（本次改动意图内）—— `scripts/precommit.sh` — 把预提交脚本的检查命令从 `npm run check` 改为 `npm run check:all`」→ 分错档，`grading.json` 1/3（`必须 review` / `机器判不了` 两词均未命中）。
 - 01 装技能回复里出现 `notes/plan.md` 与 `git diff`；不装技能回复没按三档分流。
 
-**如实标注**：① 产物在 `.session/eval-out/review-triage/`（不进 git，换机器即失）；② `actual_model=未确认`——只能声称「请求值是 DeepSeek/deepseek-flash」；③ `n=2` 时 `flaky=否` 不等于已验证稳定（检出率上界 ≤ 50%）。
+**如实标注**：① 产物在 `.session/eval/out/review-triage/`（不进 git，换机器即失）；② `actual_model=未确认`——只能声称「请求值是 DeepSeek/deepseek-flash」；③ `n=2` 时 `flaky=否` 不等于已验证稳定（检出率上界 ≤ 50%）。
 
 ## 附注：一条残留风险（controller 要求明记）
 

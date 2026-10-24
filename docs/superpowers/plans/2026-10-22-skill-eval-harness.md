@@ -15,7 +15,7 @@
 
 以下每条都是 spec 原文的硬约束，逐字生效；每个任务都隐含包含：
 
-1. 不执行任何 git 写操作；改动留工作区，提交方式由用户决定。**例外**：`$env:TEMP` 下 fixture 的 `git init/add/apply`（必要时 `commit`）、runner 运行期在 `.session/eval-fixture/**` 内的 `git init/add/commit` —— 后者需用户确认后才执行。
+1. 不执行任何 git 写操作；改动留工作区，提交方式由用户决定。**例外**：`$env:TEMP` 下 fixture 的 `git init/add/apply`（必要时 `commit`）、runner 运行期在 `.session/eval/fixture/**` 内的 `git init/add/commit` —— 后者需用户确认后才执行。
 2. 不改 `skills/` 下任何技能正文；用例不通过时先怀疑用例（spec §6-1）。
 3. 不改 `scripts/check-all.mjs`；不把评测挂进 `npm run check`（spec §6-2）。
 4. 不改 `tools/`；不把 skill-up 作为仓库运行依赖（spec §6-3）。
@@ -62,7 +62,7 @@
 - Create: `evals/review-triage/fixtures/diffs/checkbox.patch`
 
 **Interfaces:**
-- Produces: `eval.yaml` 的 `cases.files` 指向 `../../evals/review-triage/cases/<id>.yaml`；用例 01 的 `context.repo_fixture` = `../../.session/eval-fixture/review-triage/checkbox-demo`；`context.git.apply_diff` = `../../evals/review-triage/fixtures/diffs/checkbox.patch`（Task 4/5/6 依赖这些字面值）。
+- Produces: `eval.yaml` 的 `cases.files` 指向 `../../evals/review-triage/cases/<id>.yaml`；用例 01 的 `context.repo_fixture` = `../../.session/eval/fixture/review-triage/checkbox-demo`；`context.git.apply_diff` = `../../evals/review-triage/fixtures/diffs/checkbox.patch`（Task 4/5/6 依赖这些字面值）。
 
 - [ ] **Step 1: 建目录并写 fixture 源文件**
 
@@ -170,7 +170,7 @@ judge:
           - "notes/plan.md"
 
 context:
-  repo_fixture: ../../.session/eval-fixture/review-triage/checkbox-demo
+  repo_fixture: ../../.session/eval/fixture/review-triage/checkbox-demo
   git:
     init: true
     apply_diff: ../../evals/review-triage/fixtures/diffs/checkbox.patch
@@ -252,22 +252,22 @@ Expected：第一条输出 ≥ 12（块列表逐项一行）；第二条**无输
 
 - [ ] **Step 3: 固化 5 份历史样本**
 
-从 `.session/eval-trial/` 复制（该目录不进 git，复制后才是可审计材料）：
+从 `.session/eval/trial/` 复制（该目录不进 git，复制后才是可审计材料）：
 
 ```powershell
-$src = '.session/eval-trial'
+$src = '.session/eval/trial'
 $dst = 'evals/review-triage/fixtures/responses'
 Get-ChildItem -Recurse $src -Include *.md | Select-Object -First 5 FullName
 ```
 
-Expected：列出候选文件。按语义把 5 份分别落到上述 5 个文件名；**若 `.session/eval-trial/` 已被清理**（该目录不进 git），则不伪造——改为按文件名语义手写等价样本，并在 `RECORD.md`（Task 7）注明「原始样本已不可得，本文件为等价重写」。
+Expected：列出候选文件。按语义把 5 份分别落到上述 5 个文件名；**若 `.session/eval/trial/` 已被清理**（该目录不进 git），则不伪造——改为按文件名语义手写等价样本，并在 `RECORD.md`（Task 7）注明「原始样本已不可得，本文件为等价重写」。
 
 - [ ] **Step 4: 固化 flaky 证据**
 
 ```powershell
 New-Item -ItemType Directory -Force evals/review-triage/fixtures/responses/flaky-evidence | Out-Null
-Copy-Item .session/eval-trial/out3/iteration-1/benchmark.json evals/review-triage/fixtures/responses/flaky-evidence/out3-iteration-1-benchmark.json
-Copy-Item .session/eval-trial/out3/iteration-2/benchmark.json evals/review-triage/fixtures/responses/flaky-evidence/out3-iteration-2-benchmark.json
+Copy-Item .session/eval/trial/out3/iteration-1/benchmark.json evals/review-triage/fixtures/responses/flaky-evidence/out3-iteration-1-benchmark.json
+Copy-Item .session/eval/trial/out3/iteration-2/benchmark.json evals/review-triage/fixtures/responses/flaky-evidence/out3-iteration-2-benchmark.json
 Select-String -Path evals/review-triage/fixtures/responses/flaky-evidence/*.json -Pattern '"passed"' | Measure-Object | Select-Object -ExpandProperty Count
 ```
 
@@ -605,7 +605,7 @@ for (const { rel, text } of caseTexts) {
   if (repo_fixture) {
     const base = repo_fixture.split('/').pop()
     if (!existsSync(join(evalDir, 'fixtures', 'repos', base))) fail('FIX-2', `${id} 的 repo_fixture basename 无对应源目录：fixtures/repos/${base}`)
-    if (!repo_fixture.includes('.session/eval-fixture/')) fail('FIX-3', `${id} 的 repo_fixture 未指向物化路径`)
+    if (!repo_fixture.includes('.session/eval/fixture/')) fail('FIX-3', `${id} 的 repo_fixture 未指向物化路径`)
   }
   if (apply_diff) {
     const patchAbs = resolve(repoRoot, 'skills', skill, apply_diff)
@@ -814,7 +814,7 @@ Expected：`# pass 6`、`# fail 0`。
 **Files:**
 - Create: `scripts/run-eval.mjs`
 - Modify: `package.json`（`scripts` 增加一行）
-- Create（运行期）：`.session/eval-out/<技能名>/`、`.session/eval-fixture/<技能名>/<repo>/`
+- Create（运行期）：`.session/eval/out/<技能名>/`、`.session/eval/fixture/<技能名>/<repo>/`
 
 **Interfaces:**
 - Consumes: Task 5 的 `classifyRun/computeArmRate/computeFlaky/pickExitCode/loadExpectation`；Task 4 的 `CONTRACT.json`；`expected.md` 机读块。
@@ -845,7 +845,7 @@ const evalYaml = resolve(opt('--eval-yaml', join(repoRootFromScript, 'evals', sk
 const evalDir = dirname(evalYaml)
 const repoRoot = resolve(evalDir, '..', '..')            // 基准只从 eval.yaml 推（spec §3.3-1）
 const skillRoot = join(repoRoot, 'skills', skill)
-const outputDir = resolve(opt('--output-dir', join(repoRoot, '.session', 'eval-out', skill)))
+const outputDir = resolve(opt('--output-dir', join(repoRoot, '.session', 'eval', 'out', skill)))
 const iteration = Number(opt('--iteration', '2'))
 
 const EXIT = { ENV: 2, CONFIG: 4, NO_CASE: 3 }
@@ -872,7 +872,7 @@ if (/benchmark:\s*\n\s*enabled:\s*false/.test(yamlText)) bail(EXIT.CONFIG, '配�
 
 // ⑥-1 源目录存在 → ⑥-2 物化（先删后建）→ ⑥-5 baseline + apply --check
 const fixtureRoot = join(evalDir, 'fixtures', 'repos')
-const materialized = join(repoRoot, '.session', 'eval-fixture', skill)
+const materialized = join(repoRoot, '.session', 'eval', 'fixture', skill)
 if (existsSync(fixtureRoot)) {
   const repos = readdirSync(fixtureRoot, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name)
   if (repos.length > 0) {
@@ -1051,8 +1051,8 @@ $env:SKILL_UP_BIN = 'C:\path\to\skill-up.exe'   # 换成真实路径
 npm run eval:review-triage -- --dry-run
 ```
 
-Expected：`dry-run 通过 ①–⑨`、`engine_version=n/a（dry-run 未执行工具）`、EXIT=0，且 `.session/eval-out/review-triage` **不存在**。
-若报 `⑧ CONTRACT.json 缺失` → 先跑 Task 4 Step 6；若报 `④ 产物目录已存在` → 删掉 `.session/eval-out/review-triage` 再跑。
+Expected：`dry-run 通过 ①–⑨`、`engine_version=n/a（dry-run 未执行工具）`、EXIT=0，且 `.session/eval/out/review-triage` **不存在**。
+若报 `⑧ CONTRACT.json 缺失` → 先跑 Task 4 Step 6；若报 `④ 产物目录已存在` → 删掉 `.session/eval/out/review-triage` 再跑。
 
 - [ ] **Step 6: 直接跑一次（无凭据则跳过）**
 

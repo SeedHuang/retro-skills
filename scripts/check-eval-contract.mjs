@@ -30,6 +30,9 @@ const evalsDir = dirname(evalDir)
 const repoRoot = resolve(evalDir, '..', '..')
 const skillRoot = join(repoRoot, 'skills', skill)
 
+// FIX-3 的物化路径前缀（相对 evals/ 目录）。改目录布局时只改这一处，别处引用本常量。
+const FIXTURE_PREFIX = '../.session/eval/fixture/'
+
 const findings = []
 const skips = []
 let ioBroken = false
@@ -286,9 +289,15 @@ for (const { text, title, id } of caseTexts) {
   const { repo_fixture, apply_diff, hasContextGit } = extractContextPaths(text)
   if (apply_diff && !hasContextGit) fail('FIX-1', `${id} 的 apply_diff 未写在 context.git 下`)
   if (repo_fixture) {
-    const base = repo_fixture.split('/').pop()
+    const fx = repo_fixture.replace(/\\/g, '/')
+    const base = fx.split('/').pop()
     if (!existsSync(join(evalDir, 'fixtures', 'repos', base))) fail('FIX-2', `${id} 的 repo_fixture basename 无对应源目录：fixtures/repos/${base}`)
-    if (!repo_fixture.includes('.session/eval-fixture/')) fail('FIX-3', `${id} 的 repo_fixture 未指向物化路径`)
+    // FIX-3 必须是「前缀 + 两段以上、无 . / .. / 空段」——单靠 includes 判子串可被 `..` 穿越绕过，
+    // 结果是把 diff 打到 git 内的 fixture 源目录（不可逆污染）也能全绿。
+    const segs = fx.startsWith(FIXTURE_PREFIX) ? fx.slice(FIXTURE_PREFIX.length).split('/') : null
+    if (!segs || segs.length < 2 || segs.some((s) => s === '' || s === '.' || s === '..')) {
+      fail('FIX-3', `${id} 的 repo_fixture 未指向物化路径（须以 ${FIXTURE_PREFIX}<技能名>/<仓库名> 开头，且不得含 . / .. / 空段）`)
+    }
   }
   if (apply_diff) {
     if (!existsSync(resolve(evalsDir, apply_diff))) fail('FIX-4', `${id} 的 apply_diff 不存在：${apply_diff}`)

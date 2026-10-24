@@ -25,7 +25,7 @@
   - `docs/after/20261022113509-skill-eval-harness-open-decisions.md`（已改写为「还没做完」的入口）、`docs/after/20261017210609-pending-work-overview.md` 线 H 状态已更新
 - 验证证据：见元信息表『验证基线』（单源，勿重复）
 - 提交状态：**全部未提交，由用户自行 commit**。`git status --short` 逐项：`M docs/after/20261017210609-pending-work-overview.md`、`M docs/superpowers/specs/2026-10-21-skill-eval-harness-design.md`、`M docs/superpowers/specs/2026-10-21-skill-eval-harness-design-testcase.md`、`M package.json`、`M skills/managing-lessons-store/scripts/lessons.test.mjs`；未跟踪 `docs/after/20261022113509-skill-eval-harness-open-decisions.md`、`docs/handoffs/2026-10-22-skill-eval-harness-mutual-test.md`、`docs/handoffs/2026-10-22-skill-eval-harness-round4.md`、`docs/handoffs/2026-10-22-skill-eval-harness-round7.md`、`docs/handoffs/2026-10-23-skill-eval-harness-task2.md`、`docs/superpowers/plans/2026-10-22-skill-eval-harness.md`、`evals/`、`scripts/check-eval-contract.mjs`、`scripts/check-eval-contract.test.mjs`、`scripts/eval-contract-core.mjs`、`scripts/run-eval-core.mjs`、`scripts/run-eval-core.test.mjs`、`scripts/run-eval.mjs`、`scripts/run-eval.test.mjs`
-- 工作树异常：`.session/eval-fixture/` 存在（dry-run 冒烟物化出的临时仓库，已 gitignore；`.session/eval-out/` 已确认**不存在**，符合 dry-run 不产产物的口径）。无其它异常。
+- 工作树异常：`.session/eval/fixture/` 存在（dry-run 冒烟物化出的临时仓库，已 gitignore；`.session/eval/out/` 已确认**不存在**，符合 dry-run 不产产物的口径）。无其它异常。
 
 ## 过程记录
 

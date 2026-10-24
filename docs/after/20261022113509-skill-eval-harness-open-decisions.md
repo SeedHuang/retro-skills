@@ -41,7 +41,7 @@
 - `skills[].path: .` **不会**被 `skill-up validate` 拒绝（实测 exit 0）——路径约束靠结构断言兜，不是工具。
 - 报告里的模型名是**配置值**（请求值），CCR 转发成什么从报告读不出——结论必须标「配置模型 + 引擎版本 + 真实后端未验证」。
 - 首轮验收是**冒烟口径**（试跑校准），不是独立验证；「事前冻结」从下一个未试跑技能起算。
-- `.session/eval-fixture/**` 内的 `git init/add/commit` 属 git 写操作禁令例外（Ruling 10）：该目录已被 gitignore，只影响临时区。
+- `.session/eval/fixture/**` 内的 `git init/add/commit` 属 git 写操作禁令例外（Ruling 10）：该目录已被 gitignore，只影响临时区。
 - **实现领先 spec（仅剩「未知 `--flag`」一处）**：runner 对未知 `--flag` 直接 `argError` → 码 4，spec §3.3-3 只写了已知参数形态，没写越界参数怎么处置（本轮未改 §3.3-3）。**`benchmark.json` 里未知 `configuration` 的处置已在 2026-10-23 补进 spec §3.3-6 ③**（归数据不完整 → `INVALID_ENV`，且 ④ 透传优先不变）；同日补进 §3.3-7 的「verdict.md 异常明细段」也已实现（`renderAnomalySection`）并由单测固定。
 - **两处已知限制（登记不修）**：① `cases.files` 抽取仍是文件级正则（任意 `- xxx.yaml` 行都会被当用例），靠 A1 的 `YAML-1` 兜底——会报错，但编号指向 cases.files 而非真正写错的地方；② 「装臂是否真装了技能」无任何可观测信号（`benchmark.json` 只有 `metadata.skill_name="evals"`、`skill_path=…\evals`），硬判等于靠路径猜真假。
 

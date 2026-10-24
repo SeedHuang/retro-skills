@@ -24,7 +24,7 @@
 3. **「已认可但细节押后」也要写进 `after/`，并标清押后理由**——**否则下次接手会当成已落地**。押后 ≠ 废弃，两者在文档里必须可区分（用「parking / 押后 / 待触发时机」这类字样）。
 4. **搬走时必须回头扫引用**——从 `after/` 迁到 `specs/` 后，指向它的指针（含 KB 索引、其它文档）要一并更新；spec / plan / handoff 里的旧路径属**历史记录，保留不改**。
    - **例外（2026-10-23 用户裁定）：整批改名时全仓统一改。** 「整批」= 目录级前缀化 / 批量迁移，一次动多个文件。此时历史记录里的旧路径**必须一起改**——不改就留下一批指向不存在文件的死链，新旧名混存等于没有索引。**允许改的只有路径字符串，不许动其中的结论与判断。**
-   - **仍然不改的一类：运行产物**。模型原始输入/输出快照（`.session/eval-trial/**` 的 `prompt.txt` / `stdout.json` / `response.md`）与 `*.log`——改它们等于改写「当时实际跑出来的字节」。判别法一句话：**这段文字是「指向某文件的链接」，还是「当时运行留下的产物」？前者改，后者不改。**
+   - **仍然不改的一类：运行产物**。模型原始输入/输出快照（`.session/eval/trial/**` 的 `prompt.txt` / `stdout.json` / `response.md`）与 `*.log`——改它们等于改写「当时实际跑出来的字节」。判别法一句话：**这段文字是「指向某文件的链接」，还是「当时运行留下的产物」？前者改，后者不改。**
 5. **探索稿不是第二份真相**——结论一旦定稿，**只保留一处**（spec），探索稿里的对应段落改为指向 spec 或直接删掉，**不并列两处说法**。
 
 ## 文件命名
@@ -85,6 +85,12 @@
 
 **为什么要有这一档**：`docs/` 五类都是长期的（specs 定稿、plans 排期、handoffs 快照、after 活账本、retro 审查复盘），**没有一档是短期的**。硬把「只在这几个小时有用」的东西塞进 `docs/`，会同时污染两类目录：长期目录里混进草稿，或为短期单开一个 `docs/xxx/` —— 后者与 `after/` 功能重复。
 
+**一级只许「有明确目的的文件夹」。** `.session/` 第一层只能是文件夹——文件夹名必须说明它装什么、什么时候能删。**散落在第一层的文件一律不合法**，唯一例外是本目录的索引 `README.md`。
+
+**判据（可机械判）**：`Get-ChildItem .session -File` 的输出只能是 `README.md` 一个；出现第二个文件即违规，必须先归入某个文件夹（或删掉）。
+
+**为什么**：第一层是「目录的目录」。散文件放在那里等于没有归属——既看不出属于哪件事，也看不出什么时候能删，于是永远留着。实测 2026-10-24：第一层曾散着 6 个文件（评测日志、注解 JSON、外部工具文档），没有一个能说出「谁在用、何时删」。
+
 ### 封闭清单（加新的前先回答「为什么塞不进已有的档」）
 
 | 落点 | 装什么 | 什么时候删 |
@@ -92,7 +98,16 @@
 | `.session/reviews/<YYYY-MM-DD-HHMM>-<kebab-case 名字>/` | **某次审查的过程账**：跑了几轮、三段各做了什么、改了什么。**三个文件**：`progress.md`（活的，每轮追加）+ `problems.md`（漏斗，修好的移走）+ `retro-*.md`（**复盘文件，0 或多个**；长的复盘独立成文件，与 progress 同级） | 该次审查全部处置完 → **整目录迁 `docs/superpowers/reviews/<同名>/`（进 git），再删 `.session/` 副本**（2026-10-18 改：不再直接删；此前实测 26 个目录从未被删，保留是有效实践）。⚠️ `retro-*.md` 仍要在本次 session 结束前先搬 `docs/superpowers/retro/`——`.session/` 不进 git，不搬就**永久丢失**（换机器即失） |
 | `docs/superpowers/reviews/<YYYY-MM-DD-HHMM>-<kebab-case 名字>/` | **已处置完的审查全过程账**（progress / problems / cards / 复盘指针）；与 `.session/reviews/` 同名同构，区别是**进 git** | **不删**；被后续审查取代时原文保留（历史记录） |
 | `.session/rule-checks/checklist-<YYYYMMDD-HHmmss>.md` | **一次「编辑 rule」动作的自查账**：rule-edit-checklist 快照（由 `rule-inspector` 技能的 `gen-rule-checklist.mjs` 从 `rule-edit-checklist-template` 展开，含 A–F 组检查项）。**为什么塞不进另两档**：它不是「某次审查的过程账」（挂在一次 rule 编辑动作上、与审查无关），也不是 README 的现状 | 该 rule 编辑动作收尾（全行「确认执行」）后即可删；对应结论已进 git（规则 / 测试断言 / spec）→ 删 |
+| `.session/eval/` | **评测与调试工作区（唯一取值：这一层只放评测相关）**。下设五档：`fixture/`（物化夹具，由 `evals/<技能>/` 生成）· `out/`（正式产物）· `trial/`（试跑与日志）· `state/`（进度状态）· `tmp/`（本次评测的一次性中间件）。**四档路径由 `scripts/run-eval.mjs` 与 `check-eval-contract.mjs` 的 FIX-3 硬编码**，不许改名 | 整个目录随时可删，重跑 `npm run eval:*` 即重建。要留证据的结论须先摘进 `docs/` 或 `specs/` |
+| `.session/eval/fixture/<技能名>/` | **评测夹具的物化结果**：`run-eval.mjs` 把 `evals/<技能>/fixtures/repos/` 检出到此，再交给被测 agent 实际操作。源头在 git（`evals/`），这里只是派生 | 随时可删，重跑即重建 |
+| `.session/eval/out/<技能名>/` | **正式评测产物**：`iteration-N/` 全量（`result.json` / `benchmark.json` / 每个用例的 `grading.json` / agent 原始输出 / 脚本生成的 `verdict.md`） | 随时可删，重跑即得 |
+| `.session/eval/trial/` | **试跑与诊断产物**：**每次试跑一个子目录**（`<试跑名>/iteration-N/`），与 `logs/`（单次命令日志）并列。与 `out/` 的区别是**不当作正式结论** | 随时可删 |
+| `.session/eval/state/<技能名>.json` | **评测进度状态**（防同一技能重复跑、记录上次请求/实测模型） | 该技能评测收尾即删 |
+| `.session/eval/tmp/` | **一次性中间产物**：命令日志、临时脚本、抓下来的原文、草稿。**判据：这次 session 结束后还用得上吗？** 用得上 → 进 `docs/`；用不上 → 进这儿 | 用完即删；不跨 session 保留 |
+| `.session/sdd-<YYYY-MM-DD>-<主题>/` | **一次 SDD 执行的账**：task brief / task report / review / progress。对应 `.superpowers/sdd/`（插件工作区）的文件化存档 | 该次执行收尾 → 结论已进 git 后**整目录删**；确需留档则迁 `docs/superpowers/sdd/<同名>/` |
 | `.session/README.md` | 这个目录现在有什么（**现状**） | 不删 |
+
+**仓库外的东西不进这里**：外部工具的参考资料、跨仓库复用的配置与草稿，放用户级目录 `C:\Users\HuangChunhua\.retro-skills\`（现有 `skillup-docs/`、`docgen-drafts/`、`reviewconfig/`、`rule-drafts/`）。**判据：这份东西换到别的项目还用得上吗？** 用得上 → 用户级目录；只对本仓库有意义 → 本仓库 `docs/` 或 `.session/`。
 
 **命名**：`reviews/` 下的目录用 **kebab-case + 时间戳**（跨平台安全 + 能排序）；**中文标题写在文件首行**，不写进路径。复盘文件用 `retro-<轮次>-<主题>.md`；`rule-checks/` 下的快照用 `checklist-<YYYYMMDD-HHmmss>.md`（时间戳定序，一次编辑一份）。
 

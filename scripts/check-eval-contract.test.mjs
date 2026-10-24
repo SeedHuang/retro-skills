@@ -66,9 +66,9 @@ test('extractScalar 取顶层标量', () => {
 })
 
 test('extractContextPaths 取 repo_fixture / apply_diff 与 context.git', () => {
-  const text = 'context:\n  repo_fixture: ../.session/eval-fixture/review-triage/checkbox-demo\n  git:\n    init: true\n    apply_diff: review-triage/fixtures/diffs/checkbox.patch\n'
+  const text = 'context:\n  repo_fixture: ../.session/eval/fixture/review-triage/checkbox-demo\n  git:\n    init: true\n    apply_diff: review-triage/fixtures/diffs/checkbox.patch\n'
   const r = extractContextPaths(text)
-  assert.equal(r.repo_fixture, '../.session/eval-fixture/review-triage/checkbox-demo')
+  assert.equal(r.repo_fixture, '../.session/eval/fixture/review-triage/checkbox-demo')
   assert.equal(r.apply_diff, 'review-triage/fixtures/diffs/checkbox.patch')
   assert.equal(r.hasContextGit, true)
   assert.equal(extractContextPaths('expect:\n  must_contain:\n    - "x"\n').hasContextGit, false)
@@ -243,6 +243,27 @@ test('同构副本基线：exit 0、0 findings、无 SKIP、写入快照', () =>
   assert.match(r.out, /findings=0/)
   assert.doesNotMatch(r.out, /\bSKIP\b/, r.out)
   assert.match(r.out, /CONTRACT\.json 已写入/)
+})
+
+test('FIX-3 合并前的一级目录名（eval-fixture）必须报：只认 .session/eval/fixture/', () => {
+  expectFail(
+    (root) => editFile(caseOf(root, '01-checkbox-mechanical.yaml'), (t) => t.replace('../.session/eval/fixture/', '../.session/eval-fixture/')),
+    'FIX-3',
+  )
+})
+
+test('FIX-3 路径里的 .. 必须报（子串 includes 不再放行穿越）', () => {
+  expectFail(
+    (root) => editFile(caseOf(root, '01-checkbox-mechanical.yaml'), (t) => t.replace('../.session/eval/fixture/', '../.session/eval/fixture/../fixture/')),
+    'FIX-3',
+  )
+})
+
+test('FIX-3 只写到技能名一层（缺 <仓库名>）必须报', () => {
+  expectFail(
+    (root) => editFile(caseOf(root, '01-checkbox-mechanical.yaml'), (t) => t.replace('../.session/eval/fixture/review-triage/checkbox-demo', '../.session/eval/fixture/checkbox-demo')),
+    'FIX-3',
+  )
 })
 
 test('YAML-2 schema_version 必须 v1alpha1', () => {
