@@ -9,8 +9,8 @@
 
 | # | 判据（义务句） | 判定方式（可机械判的部分） | 出处 |
 |---|---|---|---|
-| R1 | 进入任一阶段前，必须确认上一段出口判据已齐；不齐不得开工 | `gate-record.md` 中该段的行必须齐 6 列，「核了什么」列不得为空、不得只写「已核」（须为命令输出首行或 `path:line`）；PRD §4 段表「议会」列非空的段，额外核该次议会通过记录 | PRD §4 |
-| R2 | 不得自签出口 | 该行「签字人」≠「申报人」，且签字人必须是 PRD §4 段表该行「谁签」列所列角色；作者定义：PRD→产品经理、spec→主 agent、testcase→sdet、代码→开发、审计结论→审计 | PRD §3.3 |
+| R1 | 进入任一阶段前，必须确认上一段出口判据已齐；不齐不得开工 | `gate-record.md` 中该段的行必须齐 6 列，「核了什么」列不得为空、不得只写「已核」（须为命令输出首行或 `path:line`）；PRD §4 段表「议会」列非空的段，额外核该次议会通过记录；**旁路例外**：行内注明「旁路」且「核了什么」带审计的集合 diff 结论（PRD §4.2 两条判据同时成立）时，以它代替议会记录 | PRD §4 / §4.2 |
+| R2 | 不得自签出口 | 该行「签字人」与申报人**不得有交集**（交集 = 自签），且签字人必须是 PRD §4 段表该行「谁签」列所列角色；**旁路例外**：PRD §4.2 旁路时 ①② 行签字人 = 审计（不受「属段表谁签列」限制）；申报人定义（按段）：① 产品经理、② 主 agent + sdet、②→③ 主 agent、③ 开发、④ 开发、⑤ 主 agent；签字人定义：① 用户、② 审计、②→③ 审计、③ 审计、④ sdet、⑤ 用户 | PRD §3.3 / §4 |
 | R3 | 议会只在两处插点；计划门不设议会 | PRD §4 段表「议会」列非空的段恰为 2 个（①、②），这两段在 `gate-record.md` 中各有行且「结论」列非空；计划门行的「签字人」含「审计」且「核了什么」含命令输出或 `path:line` | PRD §4 / §6 |
 | R4 | plan 阶段发现 spec 未定义的东西，必须回流 spec 重审 | plan 文件出现 `## 新增设计决策` 节，或改动触及 spec 标记「不改」的行 → 违规（位置型判据，不靠语感） | PRD §6 |
 | R5 | 产品经理改动功能点集合 = 「功能增删」类漂移，必须回 PRD 重签 §0 | 功能点 ID 集合 diff 非空，且 PRD §0 无重签记录 → 违规 | PRD §7.2 |
@@ -49,9 +49,9 @@
 
 两条自查命令，可在仓库根直接粘贴执行：
 
-① 签字人 ≠ 申报人的行数 = 总行数（表头与分隔行不计）：
+① 签字人与申报人**无交集**的行数 = 总行数（表头与分隔行不计；两格按 `、 + ＋ ， , /` 拆词后求交集）：
 
-`node -e "const t=require('fs').readFileSync('skills/dev-workflow/references/gate-record.md','utf8');const rows=t.split(/\r?\n/).map(l=>l.trim()).filter(l=>l.startsWith('|')&&!l.includes('---')&&!l.includes('申报人'));const bad=rows.filter(l=>{const c=l.split('|').slice(1,-1).map(x=>x.trim());return !(c[3]&&c[4]&&c[3]!==c[4])});console.log('rows',rows.length,'bad',bad.length)"`
+`node -e "const t=require('fs').readFileSync('skills/dev-workflow/references/gate-record.md','utf8');const rows=t.split(/\r?\n/).map(l=>l.trim()).filter(l=>l.startsWith('|')&&!l.includes('---')&&!l.includes('申报人'));const sp=s=>String(s||'').split(/[、+＋，,\/]/).map(x=>x.trim()).filter(Boolean);const bad=rows.filter(l=>{const c=l.split('|').slice(1,-1).map(x=>x.trim());const a=sp(c[3]),b=sp(c[4]);return !(a.length&&b.length&&!a.some(x=>b.includes(x)))});console.log('rows',rows.length,'bad',bad.length)"`
 
 ② 「拆 spec 中」行数 ≤ 1：
 

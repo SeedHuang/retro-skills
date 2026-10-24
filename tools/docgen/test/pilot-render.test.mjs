@@ -84,7 +84,7 @@ test('固定必问清单渲染为 7 行表格 + tools 渲染为逗号空格', ()
   const s = renderAgent({
     agent: agent(), trigger: triggerTable['reviewer-audit'], template: tpl(), sharedBlocks, outputFormats,
   });
-  assert.match(s, /^tools: Read, Glob, Grep$/m);
+  assert.match(s, /^tools: Read, Glob, Grep, RunCommand$/m);
   assert.equal((s.match(/^\| \d+ \| .* \| 待答 \|$/gm) || []).length, 7);
 });
 

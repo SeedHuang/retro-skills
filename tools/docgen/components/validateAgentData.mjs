@@ -39,7 +39,9 @@ export function validateAgentData(data, table) {
   }
   // 断言 4：tools 只读（13 席三元组；senior-sdet 追加 Write/Edit）——须为数组且允许集 ⊆ 实际 且 实际 ⊆ 允许集（恰等，I5/J1 fix）
   for (const a of data) {
-    const allowed = a.name === 'senior-sdet' ? patternRegistry.tools.sdet : patternRegistry.tools.readOnly;
+    const allowed = a.name === 'senior-sdet' ? patternRegistry.tools.sdet
+      : (a.name === 'reviewer-audit' || a.name === 'detective-observer') ? patternRegistry.tools.command
+      : patternRegistry.tools.readOnly;
     if (!Array.isArray(a.tools) || !allowed.every((t) => a.tools.includes(t)) || !a.tools.every((t) => allowed.includes(t))) fail('ToolsViolation', { name: a.name });
   }
   // 断言 5：sharedBlock 引用枚举 + 同引用枚举同值（无 sharedBlock 席不渲染由渲染层处理）
@@ -114,7 +116,7 @@ export function validateAgentData(data, table) {
   const HANDWRITTEN_KEYS = ['heading', 'sourceLine'];
   // 两个槽位字段只允许出现在显式声明它们的席（C5 ④）：其他席一旦带上，渲染会静默换句而不报错。
   // 新增这样的席时同步本集合（当前仅 evidence-reader）。
-  const DECLARED_SLOT_SEATS = new Set(['evidence-reader']);
+  const DECLARED_SLOT_SEATS = new Set(['evidence-reader', 'reviewer-audit', 'detective-observer']);
   for (const a of data) {
     for (const k of ['when', 'notWhen', 'route', 'fallback']) {
       if (k in a) fail('TriggerFieldMisplaced', { name: a.name, key: k });

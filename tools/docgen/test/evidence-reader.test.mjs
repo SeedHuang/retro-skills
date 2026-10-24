@@ -199,8 +199,8 @@ test('TC-D08 边界句退回模板现句 → reader 卡变回「只读评审角�
 
   let diff14 = 0;
   for (const a of agentData) {
-    // senior-sdet 走另一套模板（agent-handwritten.md.tpl），与本槽位无关，不进本对照
-    if (a.name === 'evidence-reader' || a.outputKind === 'testcase') continue;
+    // 已声明 boundary 槽位的席（evidence-reader / reviewer-audit / detective-observer）与 testcase 席不参与本对照
+    if (a.boundary !== undefined || a.outputKind === 'testcase') continue;
     const t = renderAgent({ agent: a, trigger: triggerTable[a.name], template: badTpl, sharedBlocks, outputFormats });
     if (t !== readFileSync(join(ROOT, 'agents', `${a.name}.md`), 'utf8')) diff14 += 1;
   }

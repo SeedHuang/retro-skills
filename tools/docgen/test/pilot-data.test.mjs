@@ -9,7 +9,7 @@ test('reviewer-audit 八键齐，触发表四字段不混入 agentData', () => {
   const a = entry();
   assert.equal(a.role, '审计专员');
   assert.equal(a.dimension, '独立（标准核对）');
-  assert.deepEqual(a.tools, ['Read', 'Glob', 'Grep']);
+  assert.deepEqual(a.tools, ['Read', 'Glob', 'Grep', 'RunCommand']);
   assert.equal(
     a.identity,
     '资深审计专员，只审各项标准是否达到，不裁技术对错，不提新技术问题。',
@@ -40,4 +40,9 @@ test('DOMAIN 可注入且真被消费', () => {
     patternRegistry.description.parliament('审计专员', '当X'),
     '在议会评审中担任审计专员。当X时调用',
   );
+});
+
+test('detective-observer tools = command 档（Read/Glob/Grep/RunCommand）', () => {
+  const d = agentData.find((a) => a.name === 'detective-observer');
+  assert.deepEqual(d.tools, ['Read', 'Glob', 'Grep', 'RunCommand']);
 });

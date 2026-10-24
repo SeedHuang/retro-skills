@@ -6,7 +6,7 @@ description: 议会式多方评审。Use when 用户说「开议会」「议会�
 # 议会（parliament）
 
 ## 它是什么
-多方评审体系：主持人按「项目类型 × 文档类型」点将组队，评审团双清单提问（固定必问 + 自由探索），答辩方核实后作答，侦探观察三方行为，审计两档闸门收口；最多 3 轮答辩，未决项带双方摸查记录升级用户。
+多方评审体系：主持人按「项目类型 × 文档类型」点将组队，评审团双清单提问（固定必问 + 自由探索），答辩方核实后作答，侦探观察三方行为，审计两档闸门收口；**每评审轮内最多 3 轮答辩**（「评审轮」= 账本轮次一行，与答辩轮不是同一单位；评审轮 3 轮后仍有 P0/P1 → 升级用户、评审继续，见 `dev-workflow` 技能），未决项带双方摸查记录升级用户。
 
 ## 执行路径（开评前声明，报告必须标注实际走的路径）
 - **A** Trae Agent / SOLO 会话：调度用户级子代理（`~/.trae-cn/agents/` 花名册，本仓 `agents/` 经 aas 同步），点名各成员。
@@ -17,10 +17,10 @@ description: 议会式多方评审。Use when 用户说「开议会」「议会�
 ## 总流程
 0. **组队、送审与开评**：读项目类型 → 按 `references/doc-taxonomy.md` 判文档类型 → 按 `references/assembly-matrix.md` 自动点将并核覆盖矩阵零缺口 → 按 `references/submission-matrix.md` 判必带件 → 填 `assets/submission.md` 并建评审账本（**账本三件套 = `progress.md` 过程账 + `problems.md` 族级台账 + `cards.md` 原始卡，模板见本技能 `assets/`**；时间一律 HH:MM:SS，取数 `node skills/review-log/scripts/time.mjs`）→ 按 `references/host-duties.md` 定答辩组编制（架构师 7 方向选一、研发 4 人按文档类型换编制）→ **提交授权**：用户已说「提交议会审批 / 提交议会评审」= 直接开评；若只是材料就绪而未授权，先问一次「spec 和 testcase 已经准备好了，是否提交议会进行评审？」，答「是」才开评，答「否」停 → 名单零缺口自动开评（不再问名单；只有缺口、高风险或用户明确要求时才问）；送审说明第 8 节自检缺一 = 不得开评；侦探无条件常驻
 1. **评审**：被点评委并行独立出卡（每席：固定清单逐条作答 + 自由探索 3-5 问）→ 主持人汇总、去重、按族分组 → 追问轮发全体评委补视角（审 rule/skill/agents 类文档时，另对照 `references/failure-modes.md` 13 病根表逐层核对）
-2. **答辩**：答辩方小组核实问题客观性 → leader 按 `references/debate-protocol.md` 逐卡作答（承认 / 反驳带依据 / 部分承认带修法）→ ≤3 轮
+2. **答辩**：答辩方小组核实问题客观性 → leader 按 `references/debate-protocol.md` 逐卡作答（承认 / 反驳带依据 / 部分承认带修法）→ **每评审轮内 ≤3 轮答辩**（3 评审轮后仍有 P0/P1 → 升级用户、评审继续，见 `dev-workflow` 技能）
 3. **侦探**：每轮答辩后行为核对（刁难 / 回避 / 丢卡），机械判据与处置表在 `references/debate-protocol.md`
 4. **审计**：每轮填 `assets/round-check.md`（第 0 项轮际对账；不过 = 下一轮不得开始）；终局填 `assets/delivery-audit.md`（不过 = 不得宣布交付）
-5. **升级**：3 轮未决按 `assets/escalation-report.md`（双方摸查记录与各自解法必填；无摸查 = 臆想争端，侦探驳回）
+5. **升级**：3 评审轮未决（或单轮内 3 轮答辩未决）按 `assets/escalation-report.md`（双方摸查记录与各自解法必填；无摸查 = 臆想争端，侦探驳回）
 6. **修复纪律**：每修复带落点 → 重跑手法 3（跨章节一致性）→ 同族扫描 → 修复引入自查
 7. **产出**：结论先行（X 矛盾 + Y 盲点 + Z 优化）→ 分级详述（`assets/issue-card.md` 格式）→ 自洽确认区 → 团队名单与轮间变更记录 → 实际执行路径标注 → **评审产物落点按本技能账本三件套模板**进 `.session/reviews/<YYYY-MM-DD-HHMMSS>-<kebab 名字>/`（`progress.md` 过程账 + `problems.md` 族级台账 + `cards.md` 原始卡；模板见本技能 `assets/`）；`docs/reports/` 只放分析数据，不放评审结论（2026-10-17 落地，原因见本技能 KB 账本验收回填）
 

@@ -212,6 +212,7 @@ const SKELETON = [
       '评委刁难：卡缺证据字段 / 缺建议解法 / 级别与证据不匹配（无 P0 形态证据却标 P0）/ 重提已关闭问题且无新证据',
       '答辩回避：判定「反驳」但依据为空 / 依据含「感觉、应该、大概」类词 / 承诺修复但无落点 / 同一问题第 2 轮答辩无新证据仍维持原立场',
       '主持人失职：丢卡（收卡数 − 有理由关闭数 ≠ 进答辩清单数）/ 压卡（收到未进清单且无理由）/ 代填审计两表',
+      '工具越权：本轮 `git status --porcelain` 与轮初快照逐字比对，出现非预期写操作 / 跑过 `commit|push|checkout|reset|restore|rm`；命中即记「工具越权（P0 形态）」观察，交议长转卡（侦探本人不出卡）',
     ],
     sharedBlock: 'DETECTIVE_RULES',
     outputKind: 'observation',
@@ -259,7 +260,7 @@ const SKELETON = [
     sharedBlock: undefined,
     outputKind: 'testcase',
   },
-].map((s) => ({ tools: s.name === 'senior-sdet' ? patternRegistry.tools.sdet : patternRegistry.tools.readOnly, ...s }));
+].map((s) => ({ tools: s.name === 'senior-sdet' ? patternRegistry.tools.sdet : (s.name === 'reviewer-audit' || s.name === 'detective-observer') ? patternRegistry.tools.command : patternRegistry.tools.readOnly, ...(s.name === 'reviewer-audit' || s.name === 'detective-observer') ? { boundary: patternRegistry.BOUNDARY_COMMAND } : {}, ...s }));
 
 // 触发表（单一真相，§4.1）：15 席全部拆槽（原 14 席 = S2/S3 两席 + S4 十二席，S1 新增 evidence-reader）；when 逐字取自迁移前现卡 description（不含尾随「时」）
 export const triggerTable = {
