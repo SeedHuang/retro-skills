@@ -26,7 +26,7 @@ test('断言 3：name/tools 必填非空 → FrontmatterFieldMissing；when 存�
   expectFail('MissingWhen', b);
 });
 
-test('断言 4：tools 只读（13 席三元组 / senior-sdet 追加 Write/Edit）→ ToolsViolation', () => {
+test('断言 4：tools 按席分档（15 席 / 四档）→ ToolsViolation', () => {
   const a = valid(); a.data[0].tools = ['Read', 'Write'];
   expectFail('ToolsViolation', a);
 });

@@ -37,7 +37,7 @@ export function validateAgentData(data, table) {
   for (const a of data) {
     if (!a.name || (Array.isArray(a.tools) && a.tools.length === 0) || !a.tools) fail('FrontmatterFieldMissing', { name: a.name });
   }
-  // 断言 4：tools 只读（13 席三元组；senior-sdet 追加 Write/Edit）——须为数组且允许集 ⊆ 实际 且 实际 ⊆ 允许集（恰等，I5/J1 fix）
+  // 断言 4：tools 按席分档（15 席 / 四档：readOnly 12、sdet 1、command 2）——须为数组且允许集 ⊆ 实际 且 实际 ⊆ 允许集（恰等，I5/J1 fix）
   for (const a of data) {
     const allowed = a.name === 'senior-sdet' ? patternRegistry.tools.sdet
       : (a.name === 'reviewer-audit' || a.name === 'detective-observer') ? patternRegistry.tools.command

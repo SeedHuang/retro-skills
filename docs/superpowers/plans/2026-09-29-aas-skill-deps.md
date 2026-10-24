@@ -1,5 +1,7 @@
 # aas 技能依赖解析与源解析统一 — 实施计划
 
+> ⚠️ **历史记录，原文保留；其中所有 `git add` / `git commit` 步骤一律不得执行**——按 `rules/no-git-write.md` 与 `rules/dev-workflow-mainline.md`，改动一律留在工作区待用户处置。本条是 2026-10-24 追加的停用横幅，只堵误执行，不改原文任何结论与勾选框；需要执行本计划时，请把 commit 步骤替换为「改动留工作区」。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 让 aas 通过 `skilldependencies/` 依赖清单自动解析技能与 CLI 依赖，并把源解析统一为「目录 + 短名 + `--islocal` + npx 回退」。

@@ -5,8 +5,8 @@
   "hashObject": "291ec6a2ce44e12093b77346923c888ec7075189",
   "goldenAssertion": "pass",
   "compareResult": null,
-  "renderSha256": "251C6E3C38649439E3C5A839B3F4F146360E34555E6A9110581D5296BAFBE00A",
-  "lastWrittenHash": "251C6E3C38649439E3C5A839B3F4F146360E34555E6A9110581D5296BAFBE00A",
+  "renderSha256": "27BA777C7DDACCB23005E4DEE4876E3EB314296EC33363E9DEC79C6C9D340BCF",
+  "lastWrittenHash": "27BA777C7DDACCB23005E4DEE4876E3EB314296EC33363E9DEC79C6C9D340BCF",
   "changes": [
     {
       "from": "703E6DFA565E01EA2975BE971D38F873D20E091BC9A079EBA3D7E53B56B3CA16",
@@ -72,6 +72,36 @@
       "from": "596C2B3B356ABC7256BBB0A9D2CFCE74C2E299001E4C7CC94075199DDE33969D",
       "to": "251C6E3C38649439E3C5A839B3F4F146360E34555E6A9110581D5296BAFBE00A",
       "at": "2026-10-24T10:04:12.276Z",
+      "rejudged": [],
+      "judgeMode": "none",
+      "judged": [],
+      "machineChecks": {
+        "A3": "pass",
+        "A4": "pass",
+        "A5": "pass",
+        "A6": "pass",
+        "A7": "pass"
+      }
+    },
+    {
+      "from": "251C6E3C38649439E3C5A839B3F4F146360E34555E6A9110581D5296BAFBE00A",
+      "to": "AF105BB733B5F1326DF12217124526B73DF7816F22C6E46839337F4E1D77FC5B",
+      "at": "2026-10-24T10:07:15.401Z",
+      "rejudged": [],
+      "judgeMode": "none",
+      "judged": [],
+      "machineChecks": {
+        "A3": "pass",
+        "A4": "pass",
+        "A5": "pass",
+        "A6": "pass",
+        "A7": "pass"
+      }
+    },
+    {
+      "from": "AF105BB733B5F1326DF12217124526B73DF7816F22C6E46839337F4E1D77FC5B",
+      "to": "27BA777C7DDACCB23005E4DEE4876E3EB314296EC33363E9DEC79C6C9D340BCF",
+      "at": "2026-10-24T10:08:43.109Z",
       "rejudged": [],
       "judgeMode": "none",
       "judged": [],

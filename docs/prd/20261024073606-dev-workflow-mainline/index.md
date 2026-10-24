@@ -586,7 +586,7 @@ PRD §4 拟改名「业务流程与功能点（图 + 表 + 清单）」`[已决�
 | 档位 | 工具 | 给谁 |
 |---|---|---|
 | `research` | readOnly + WebSearch + WebFetch | 仅市场同学 |
-| `command` | readOnly + **RunCommand**（整档；卡面写「默认拒绝」白名单） | 审计、侦探（2026-10-24 用户裁定先落最小集）。**只允许**：读/搜、`npm run check`、`node -e` 计数、`git status|diff|show|log|reflog`、`node scripts/*.mjs`；**其余一律禁止**（`commit` / `push` / `checkout` / `reset` / `restore` / `clean` / `rm`、写文件或重定向），靠侦探轮初/轮末快照事后检测 |
+| `command` | readOnly + **RunCommand**（整档；卡面写「默认拒绝」白名单） | 审计、侦探（2026-10-24 用户裁定先落最小集）。**只允许**：读/搜、`npm run check`、`git status|diff|show|log` 与 `git reflog show`（禁 `--output`）、四个指定只读脚本、`cli.mjs gate|check-agents|diff|draft ls`；计数用 Grep 或上述脚本，**不开放 `node -e`**；**其余一律禁止**（`--output`/`--apply`/`--write`、`reflog expire|delete`、`commit`/`push`/`checkout`/`reset`/`restore`/`clean`/`rm`、写文件或重定向），靠侦探轮初/轮末快照事后检测 |
 | `producer` | readOnly + Write + Edit + RunCommand（**白名单**） | 产品经理、审计（按需）、sdet、侦探（核 `git status` 快照，S5 后） |
 
 `producer` 白名单只放只读 / 校验类：`node scripts/check-prd-graph.mjs *`、`git diff|show|log *`、`node skills/review-log/scripts/time.mjs`；禁 `git commit|push|checkout`、`rm`、任意写操作。

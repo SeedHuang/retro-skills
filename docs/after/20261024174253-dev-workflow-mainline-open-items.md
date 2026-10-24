@@ -17,6 +17,5 @@
 |---|---|---|---|
 | B-1 | `producer` / `research` 档 | S5 部分完成：`command` 档已落地（审计 / 侦探） | S5 剩余；S2 的写权依赖它 |
 | B-2 | F-22 只落一半（节点数检查进 S2，正文解释未进） | 正文解释已加 V-9（2026-10-24） | 已收口；S2 落地时核一次 |
-| B-5 | 旧措辞「13 席三元组」「14 席」 | `tools/docgen/components/validateAgentData.mjs:40`、`tools/docgen/test/validate.test.mjs:29` | S5 收口时同批清 |
-| B-6 | 档位名表两处硬编码（`agentData` 与 `validateAgentData`） | 自守卫但违单一真相 | S5 收口收进 `patternRegistry.tierBySeat` |
+| B-5 | 档位名表两处硬编码（`agentData` 与 `validateAgentData`） | 自守卫但违单一真相 | S5 收口收进 `patternRegistry.tierBySeat` |
 | B-7 | 全部改动未提交 git | 工作区改动 | 用户决定提交方式后执行 |
