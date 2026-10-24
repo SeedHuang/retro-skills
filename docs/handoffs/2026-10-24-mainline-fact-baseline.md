@@ -6,7 +6,7 @@
 |---|---|
 | 交接时间 | 2026-10-24 07:46（本机时区） |
 | 项目根 | `d:\Seed\retro-skills` |
-| HEAD | `8c0a7ca99998043927093f1d92e6bf9df33984c4`（docs: 更新文档中关于 after 目录命名的时间戳前缀规则）；工作树：2 个未跟踪项 —— `docs/handoffs/2026-10-24-dev-workflow-mainline.md`、`docs/prd/dev-workflow-mainline/`（整目录） |
+| HEAD | `8c0a7ca99998043927093f1d92e6bf9df33984c4`（docs: 更新文档中关于 after 目录命名的时间戳前缀规则）；工作树：2 个未跟踪项 —— `docs/handoffs/2026-10-24-dev-workflow-mainline.md`、`docs/prd/20261024073606-dev-workflow-mainline/`（整目录） |
 | 验证基线 | `npm run check` → 语法检查通过；node:test `# tests 607 / # pass 606 / # fail 1`；唯一红项 = `not ok 229 守卫：文档里的「<名>.mjs 第 N 行」引用，行号必须仍有效`（07:46 实跑） |
 | 继任自 | `docs/handoffs/2026-10-24-dev-workflow-mainline.md`（本 session 简版交接，内容被本份取代但按规矩保留不改） |
 | 状态 | 有 4 个开放问题（见「开放问题」节），其中 1 个为开工第一问 |
@@ -17,17 +17,17 @@
 
 ## 现状
 
-- 已完成：把 2026-10-23～10-24 连续讨论出的「开发工作流主干」落盘成 PRD 草稿 —— `docs/prd/dev-workflow-mainline/20261024073606-dev-workflow-mainline.md`，含 §0 三档标注基线与失忆清单、§1 病根、§3 三层角色与三权分离、§4 五段主干 + 两张议会插点（mermaid flowchart）、§5 两次议会差异矩阵、§6 plan 不设议会论证、§7 分歧举证路由与漂移三分类、§8 产品线补强、§9 工具档位缺口、§10 功能点清单 F-01～F-16、§11 待确认 D-01～D-22、§12 交付拆分 S1–S5、§13 自验收 V-1～V-5、附录 A `check-prd-graph.mjs` 伪代码。
+- 已完成：把 2026-10-23～10-24 连续讨论出的「开发工作流主干」落盘成 PRD 草稿 —— `docs/prd/20261024073606-dev-workflow-mainline/index.md`，含 §0 三档标注基线与失忆清单、§1 病根、§3 三层角色与三权分离、§4 五段主干 + 两张议会插点（mermaid flowchart）、§5 两次议会差异矩阵、§6 plan 不设议会论证、§7 分歧举证路由与漂移三分类、§8 产品线补强、§9 工具档位缺口、§10 功能点清单 F-01～F-16、§11 待确认 D-01～D-22、§12 交付拆分 S1–S5、§13 自验收 V-1～V-5、附录 A `check-prd-graph.mjs` 伪代码。
 - 已完成：PRD 自验收 V-4 互校 —— §10 中「进流程图＝是」的 12 项（F-01/02/03/04/05/06/07/08/09/10/11/15）在 §4 图中均有节点，图中无孤儿节点（人工核对，非脚本；脚本尚未实现）。
 - 已完成：本 session 未改任何代码、`agents/*.md`、`rules/*.md`、`skills/*`（`git status` 证据：仅两个未跟踪项）。
 - 验证证据：见元信息表『验证基线』。
 - 提交状态：未提交，由用户自行 commit（本 session 无授权，未执行任何 git 写操作）。
-- 工作树异常：`npm run check` 唯一红项由 `docs/prd/dev-workflow-mainline/20261024074213-drawing-parliament-flow-transcript.md` 触发 —— 该文件引用 `patternRegistry.mjs 第 14 行` 并附了代码片段，但片段少了空格，与真源不逐字相等（报错原文见「开放问题」第 2 条）；该文件由用户放入，非本 session 生成，未改动。
+- 工作树异常：`npm run check` 唯一红项由 `docs/prd/20261024073606-dev-workflow-mainline/userconversation.md` 触发 —— 该文件引用 `patternRegistry.mjs 第 14 行` 并附了代码片段，但片段少了空格，与真源不逐字相等（报错原文见「开放问题」第 2 条）；该文件由用户放入，非本 session 生成，未改动。
 
 ## 过程记录
 
-- `docs/prd/dev-workflow-mainline/20261024073606-dev-workflow-mainline.md`（先读 §0.1 三档标记 → §0.3 失忆清单 → §11 待确认表尾部）
-- `docs/prd/dev-workflow-mainline/20261024074213-drawing-parliament-flow-transcript.md`（用户提供的另一段会话原始记录；首问为「你能把现在整个议会的流程使用流程图的方式给我一下吗？」）
+- `docs/prd/20261024073606-dev-workflow-mainline/index.md`（先读 §0.1 三档标记 → §0.3 失忆清单 → §11 待确认表尾部）
+- `docs/prd/20261024073606-dev-workflow-mainline/userconversation.md`（用户提供的另一段会话原始记录；首问为「你能把现在整个议会的流程使用流程图的方式给我一下吗？」）
 - `docs/handoffs/2026-10-24-dev-workflow-mainline.md`（本 session 前一份简版交接）
 - 历史交接词：`docs/handoffs/2026-10-24-dev-workflow-mainline.md` → `docs/handoffs/2026-10-24-mainline-fact-baseline.md`（本份）
 
@@ -37,7 +37,7 @@
 
 ## 范围依据
 
-- 要读：`docs/prd/dev-workflow-mainline/20261024073606-dev-workflow-mainline.md` §0.1（三档标记定义）、§0.2（§0 硬门未通过的证据）、§0.3（FZ-01～FZ-07）、§10（F-01～F-16 与「进流程图」列）、§11（D-01～D-22 与建议栏）、§13（V-1～V-5）
+- 要读：`docs/prd/20261024073606-dev-workflow-mainline/index.md` §0.1（三档标记定义）、§0.2（§0 硬门未通过的证据）、§0.3（FZ-01～FZ-07）、§10（F-01～F-16 与「进流程图」列）、§11（D-01～D-22 与建议栏）、§13（V-1～V-5）
 - 要读：`docs/handoffs/2026-10-24-dev-workflow-mainline.md` §3（四行核验规则表：说过/只提议/写歪/记录里没有，四种处置）
 - 要读：`skills/parliament/references/host-duties.md` 第 1 行（「主持人与答辩方（主 agent 扮演）」＝自证病源）、第 16–38 行（答辩方编制，零产品角色）
 - 要读：`skills/parliament/references/submission-matrix.md` 第 15 行（PRD 行：读者 + 审计）、第 26 行（spec 行：`spec + testcase（一件）`）
@@ -46,7 +46,7 @@
 - 要读：`tools/docgen/test/validate.test.mjs` 第 29 行（`ToolsViolation` 断言锁，改档位必须动它）
 - 要读：`agents/reviewer-product.md` 第 4 行（`tools: Read, Glob, Grep`）、第 6 条必问（收益成功指标）
 - 要读：`skills/prd-to-specs/references/conventions.md` 第 35 行（mermaid 时序图 + 步骤表的成对先例）
-- 勿重做：`docs/prd/dev-workflow-mainline/20261024073606-dev-workflow-mainline.md` 正文已写完，核验后只做「标注升降 + 正文纠错」，不重写结构；§10 清单与 §4 图已互校通过，勿重排 ID
+- 勿重做：`docs/prd/20261024073606-dev-workflow-mainline/index.md` 正文已写完，核验后只做「标注升降 + 正文纠错」，不重写结构；§10 清单与 §4 图已互校通过，勿重排 ID
 
 ## 开放问题
 
@@ -73,8 +73,8 @@
 
 ## 开工前先做
 
-1. `git status --porcelain` 确认工作树仍只有 `docs/handoffs/2026-10-24-dev-workflow-mainline.md` 与 `docs/prd/dev-workflow-mainline/` 两个未跟踪项；再跑 `npm run check` 复核基线（当前 607 / 606 / 1，红项见元信息表）。
-2. 读 `docs/prd/dev-workflow-mainline/20261024073606-dev-workflow-mainline.md` §0.1，记住三档标记的判据后再读任何结论。
+1. `git status --porcelain` 确认工作树仍只有 `docs/handoffs/2026-10-24-dev-workflow-mainline.md` 与 `docs/prd/20261024073606-dev-workflow-mainline/` 两个未跟踪项；再跑 `npm run check` 复核基线（当前 607 / 606 / 1，红项见元信息表）。
+2. 读 `docs/prd/20261024073606-dev-workflow-mainline/index.md` §0.1，记住三档标记的判据后再读任何结论。
 3. 读 `docs/handoffs/2026-10-24-dev-workflow-mainline.md` §3 的四行核验规则表，按其处置方式核 `[已确认]`。
 4. 先解「开放问题」第 1、2 条，再进核验（第 1 条决定核验素材是否够用，第 2 条决定基线是否绿）。
 5. 核验完成前不写 S1 spec；写 S1 时同批派 `senior-sdet`，不自己顺手写用例。

@@ -1,6 +1,6 @@
 # 开发工作流主干 S1：骨架落地（skill + rule + evidence-reader）
 
-> 拆分自 `docs/prd/dev-workflow-mainline/20261024073606-dev-workflow-mainline.md` §12「S1 主干骨架」（2026-10-24）
+> 拆分自 `docs/prd/20261024073606-dev-workflow-mainline/index.md` §12「S1 主干骨架」（2026-10-24）
 > 日期：2026-10-24｜状态：待评审（spec + testcase 一起送议会）｜PRD 状态：**待评审（未定稿）**——PRD §11 已全部有结论，但 18 条为 `[已决·代裁]`，用户尚未逐条扫；用户 2026-10-24 裁定**路径 A**：允许 S1 带着「上游未过 §0」送审（送审说明须写明，见 §11）
 > 测试用例文件：`docs/superpowers/specs/2026-10-24-dev-workflow-skeleton-design-testcase.md`
 > 依赖：PRD §3.2 / §3.3（权力三分与三权分离）、§4 / §4.1（五段与功能块）、§5（两次议会与镜像判据）、§6（plan 门）、§8.4（图双判据）、§12（S1 范围）、F-17 / D-18 / D-19 / D-23
@@ -17,7 +17,7 @@ PRD 定了主干要长什么样，但**没有任何一份载体能让 agent 在�
 
 **术语（本文件首次出现即定义，避免读者中途进入时卡在词上）**：**功能块** = 一个功能完整、可独立验收、AI 在 1～1.5 小时内能做完的交付单位（PRD §4.1）；**功能点** = PRD 里带 `F-xx` 编号的需求单元（PRD §10）；**sdet** = `agents/senior-sdet.md` 那个测试开发子代理；**审计** = `agents/reviewer-audit.md` 那个独立核对子代理。
 
-> 文中出现的 PRD 决策编号（D-17 / D-18 / D-19 / D-22 / D-23）均指 `docs/prd/dev-workflow-mainline/20261024073606-dev-workflow-mainline.md` §11 的待确认清单条目。
+> 文中出现的 PRD 决策编号（D-17 / D-18 / D-19 / D-22 / D-23）均指 `docs/prd/20261024073606-dev-workflow-mainline/index.md` §11 的待确认清单条目。
 
 ## 1 全貌确认
 
@@ -307,7 +307,7 @@ C7 / C8 在 §7.1 已列，这里只写它们**特别容易漏**的原因：
 | 项 | 说明 |
 |---|---|
 | 上游 | PRD §11 的 18 条代裁（尤其 D-18 / D-19 / D-23）；PRD §12 的 S1 范围 |
-| 上游状态（送审前置，2026-10-24 用户裁定路径 A） | 本 spec 的决策源 PRD **§0 硬门未过**（市场栏与精算师签字缺）。用户允许 S1 在此状态下送审，因此**送审说明必须显式写**「决策源 = `docs/prd/dev-workflow-mainline/20261024073606-dev-workflow-mainline.md`，§0 未过门，18 条 `[已决·代裁]` 待用户扫」——不写＝送审材料不齐（审计按缺件处理） |
+| 上游状态（送审前置，2026-10-24 用户裁定路径 A） | 本 spec 的决策源 PRD **§0 硬门未过**（市场栏与精算师签字缺）。用户允许 S1 在此状态下送审，因此**送审说明必须显式写**「决策源 = `docs/prd/20261024073606-dev-workflow-mainline/index.md`，§0 未过门，18 条 `[已决·代裁]` 待用户扫」——不写＝送审材料不齐（审计按缺件处理） |
 | 下游 | S3（议会改造）等 S1 的 `evidence-reader` 与技能骨架先落地；S2 / S4 复用 `references/stage-*.md` 的段结构。**S2 / S5 的开工前置**：PRD §0 复核通过（市场依据 + 精算师签字），不在 S1 内解决 |
 | **施工顺序（必须照此序，否则中间态必红）** | ① C2（登记规则）→ **C6a（`baseline --write` 一次，把 rule 增量先落盘，否则 `BaselineDrift` 会挡住后面每一步）** → ② C1 → C3 → C4 → C5 → C10 → C11（数据与生成器就位）→ ③ **`draft --kind agent --name evidence-reader` 出草稿**（`generate` 只比对、要求目标已存在；写草稿的是 `draft`）→ 人工对照 → **直接落盘（新席不走 `replace` 迁移段，见 C7）** → ④ C7（**必须在 C1 之后**：`readState` 对未知键抛 `StateFileInvalid`）→ C8 → ⑤ C6b（再 `baseline --write`，得 37 条）→ C9 → ⑥ **12 处**计数派生化 → ⑦ P-7 `aas sync` + 体检 → ⑧ **写测试文件**（testcase 的 79 条落成断言，见 testlanding 文档；否则 V-1～V-14 没有执行体）→ ⑨ 收尾双向验证（`gate` 正常态绿 + 注入一字节必红）。**每步后跑一次 `node tools/docgen/cli.mjs gate`**，让任何中断点都能收敛 |
 | **与 S3 的交接** | S1 已改 `patternRegistry` / `validateAgentData` / `agent.md.tpl` / `state.json` / `check-all.mjs`，与 S3 的「`tools/docgen` 生成源 + 卡重生成」文件面重叠：**S3 不得与 S1 并行改同一批文件**；且 PRD §12 里 S3 的「13 张卡重生成」口径在 S1 后已是 **15 席**（含 `evidence-reader`），S3 spec 必须改这一处 |

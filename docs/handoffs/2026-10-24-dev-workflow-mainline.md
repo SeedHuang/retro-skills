@@ -5,12 +5,12 @@
 
 ## 1 唯一权威
 
-`docs/prd/dev-workflow-mainline/20261024073606-dev-workflow-mainline.md`（**已由单文件改建为目录形态**）
+`docs/prd/20261024073606-dev-workflow-mainline/index.md`（**已由单文件改建为目录形态**）
 
 | 目录内文件 | 是什么 | 谁写的 |
 |---|---|---|
-| `20261024073606-dev-workflow-mainline.md` | 流程主干 PRD 草稿：§0 事实基线 + §1–§13 + 附录 A 脚本伪代码 | 我（本 session） |
-| `20261024074213-drawing-parliament-flow-transcript.md` | 另一段会话的原始记录（「把现有议会流程画成图」那一段） | 你放入 |
+| `index.md` | 流程主干 PRD 草稿：§0 事实基线 + §1–§13 + 附录 A 脚本伪代码 | 我（本 session） |
+| `userconversation.md` | 另一段会话的原始记录（「把现有议会流程画成图」那一段） | 你放入 |
 
 > 该目录内的中文文件名不符合 `docs/` 的 kebab-case 命名规则；是否改名待你定，我没动它。
 

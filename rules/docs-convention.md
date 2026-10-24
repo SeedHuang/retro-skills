@@ -35,14 +35,14 @@
 | `plans/` | `YYYY-MM-DD-<主题>.md` | `2026-10-02-session-dir-layout.md` |
 | `handoffs/` | `YYYY-MM-DD-<主题>.md` | `2026-09-29-session-close.md` |
 | `retro/` | `YYYY-MM-DD-<那一次>/retro-<轮次>-<主题>.md` | `2026-10-14-2248-review-all-to-death/retro-07-single-source.md` |
-| **`docs/prd/`** | **`YYYYMMDDHHmmss-<主题>.md`（创建时刻，到秒；主题子目录内的文件同样适用）** | `20261024073606-dev-workflow-mainline.md` |
+| **`docs/prd/`** | **时间戳加在「主题条目」上：单文件主题 → `YYYYMMDDHHmmss-<主题>.md`；多文件主题 → 目录名 `YYYYMMDDHHmmss-<主题>/`，目录内文件用原名（不再加前缀）** | `20261024073606-dev-workflow-mainline/index.md`、`20261019093443-docgen-agent-generation.md` |
 | **`after/`** | **`YYYYMMDDHHmmss-<主题>-<阶段>.md`（小写 kebab-case；前缀 = **文件创建时间**，精确到秒）** | `20261007201648-collect-requirements-exploration.md` |
 
 **时间戳标记的是「这个事物在时间上的变动」与「当时的确定 / 快照」，不是装饰。** 由此三条总则：
 
 | 总则 | 判据 | 例子 |
 |---|---|---|
-| **只加在多版本并存处** | 会随时间产生多份并存、或需要留住起点的才加：PRD 主题文件、`after/` 活账本、`specs/`、`plans/`、`handoffs/` | `20261024073606-dev-workflow-mainline.md` |
+| **只加在多版本并存处** | 会随时间产生多份并存、或需要留住起点的才加：PRD 主题条目、`after/` 活账本、`specs/`、`plans/`、`handoffs/`；**同一主题只加一层**——主题是目录就加在目录名，主题是单文件就加在文件名 | `20261024073606-dev-workflow-mainline/`（目录） / `20261019093443-docgen-agent-generation.md`（单文件） |
 | **单份确定稿 / 配置不加** | 原地更新、不产生多版本的：`README.md`、`index.md`、`*-index.md`、`overview.md`；以及 `rules/`、`agents/`、`skills/`、`.session/`、各类配置 | `docs/prd/docgen-index.md` |
 | **父目录已带时间戳，子文件不加** | 路径上任一祖先目录名以 `YYYYMMDDHHmmss-` 或 `YYYY-MM-DD-` 开头 | `retro/2026-10-14-2248-xxx/retro-07-single-source.md` |
 

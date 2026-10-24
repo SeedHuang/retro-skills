@@ -15,8 +15,15 @@ export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 
 // 与 check-all.mjs 的 MD_SKIP_DIRS 同口径：一次性工作区 / 个人数据 / 依赖目录不参与改写
 export const DEFAULT_SKIP_DIRS = new Set(['.git', 'node_modules', '.session', '.superpowers', 'lessons', '.trae'])
-// 记录型文件默认跳过（改它等于改写历史）；日志同理
-export const DEFAULT_SKIP_FILE = (rel) => rel.endsWith('-transcript.md') || rel.endsWith('.log')
+// 记录型文件默认跳过（改它等于改写历史）；日志同理。
+// `userconversation.md` 是 PRD 目录内约定的记录文件名（改名前的名字是 `*-transcript.md`），两个都要认——
+// 否则文件一改名，「记录不参与改写」这条保护就静默失效。
+// ⚠️ 判据一律用 basename：用 `rel.endsWith('/userconversation.md')` 会漏掉直接落在扫描根的文件
+// （rel 无斜杠），同文件的 `-transcript.md` 分支就是靠 basename 才对（2026-10-24 代码审查问题 2）。
+export const DEFAULT_SKIP_FILE = (rel) => {
+  const base = rel.split(/[\\/]/).pop()
+  return base.endsWith('-transcript.md') || base === 'userconversation.md' || base.endsWith('.log')
+}
 
 const toPosix = (p) => p.split(sep).join('/')
 const CTX = 30 // 上下文各取多少字符

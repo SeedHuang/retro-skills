@@ -12,6 +12,8 @@
 //
 // 两条总则（时间戳的语义：表达「随时间产生的多版本并存 / 当时的快照」）：
 //   · 祖先目录名已带时间戳 → 子文件不再加（retro/<日期>-<那一次>/、reviews/<日期-时刻>-<名>/ 自动命中）
+//   · 同一主题只加一层：主题是**目录**时，时间戳加在目录名上（docs/prd/20261024073606-dev-workflow-mainline/），
+//     目录内文件用原名（index.md / userconversation.md）——所以 docs/prd 的直接子目录名也要过判据
 //   · 只有一份的确定版文稿 / 索引 → 不加（README / index / *-index / overview）：
 //     它们原地更新、不产生多版本，加了前缀反而让所有引用跟着动
 //
@@ -123,6 +125,36 @@ function walkMd(dir, out = []) {
   return out
 }
 
+/**
+ * 目录层检查：某个「命名规则目录」的直接子目录必须带时间戳。
+ * 只查直接子目录，不递归——「同一主题只加一层」，带戳目录内部的子目录不再要求。
+ */
+function checkRuleDirChildren({ ruleAbs, ruleRel, findings, root }) {
+  const isStamp = STAMP_DIRS.includes(ruleRel)
+  const stampRe = isStamp ? /^\d{14}-[a-z0-9][a-z0-9-]*$/ : /^\d{4}-\d{2}-\d{2}-[a-z0-9][a-z0-9-]*$/
+  for (const entry of readdirSync(ruleAbs, { withFileTypes: true })) {
+    if (!entry.isDirectory() || entry.isSymbolicLink()) continue
+    if (stampRe.test(entry.name)) continue
+    const abs = join(ruleAbs, entry.name)
+    if (needsHumanName(entry.name)) {
+      findings.push({
+        rel: `${toPosix(relative(root, abs))}/`,
+        kind: 'stamp-dir',
+        expect: '需人工起名：目录名含中文 / 空格 / 下划线',
+        suggest: '',
+      })
+      continue
+    }
+    const { at } = stampOf(abs)
+    findings.push({
+      rel: toPosix(relative(root, abs)) + '/',
+      kind: 'stamp-dir',
+      expect: isStamp ? 'YYYYMMDDHHmmss-<主题>/（目录带时间戳，内部文件用原名）' : 'YYYY-MM-DD-<主题>/',
+      suggest: `${isStamp ? fmt14(at) : fmtDate(at)}-${entry.name}/`,
+    })
+  }
+}
+
 /** 扫描一个目录，返回全部不合规项及其建议名 */
 export function checkTree(dir, root = ROOT) {
   const target = resolve(root, dir) // 相对路径按 root 解析，避免受调用方 cwd 影响
@@ -130,6 +162,18 @@ export function checkTree(dir, root = ROOT) {
     return { ok: false, findings: [{ rel: toPosix(relative(root, target)), why: '目录不存在' }] }
   }
   const findings = []
+
+  // 目录层：凡是落在扫描目标内（含目标自身）的「命名规则目录」，都要查它的直接子目录。
+  // ⚠️ 不能只判「target 恰好等于规则目录」——默认入口是 `--check docs`，那样整段检查会被静默跳过，
+  // 守卫看起来存在、实际从不触发（2026-10-24 代码审查问题 1）。
+  const parentRel = toPosix(relative(root, target))
+  for (const ruleRel of [...STAMP_DIRS, ...DATE_DIRS]) {
+    if (ruleRel !== parentRel && !ruleRel.startsWith(parentRel + '/')) continue
+    const ruleAbs = resolve(root, ruleRel)
+    if (!existsSync(ruleAbs)) continue
+    checkRuleDirChildren({ ruleAbs, ruleRel, findings, root })
+  }
+
   for (const f of walkMd(target)) {
     const r = judge(f, root)
     if (r.ok) continue

@@ -13,7 +13,7 @@ import {
 } from './support/dev-workflow-checks.mjs';
 
 const SKILL = 'skills/dev-workflow/SKILL.md';
-const PRD = 'docs/prd/dev-workflow-mainline/20261024073606-dev-workflow-mainline.md';
+const PRD = 'docs/prd/20261024073606-dev-workflow-mainline/index.md';
 const REF_DIR = 'skills/dev-workflow/references';
 const skill = readRepo(SKILL);
 const prd = readRepo(PRD);

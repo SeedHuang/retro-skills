@@ -1744,11 +1744,14 @@ function findByRefSuffix(ref, root = REPO_ROOT) {
  *
  *  行号守卫为何豁免它：这类文件是某段会话的**原始记录**，其中的「第 N 行」是**当时的**快照；
  *  把抄来的片段补成与真源逐字相等，等于改写历史（`rules/docs-convention.md` 硬约束 4「运行产物不改」）。
- *  实测 2026-10-24：`docs/prd/dev-workflow-mainline/20261024074213-drawing-parliament-flow-transcript.md`
+ *  实测 2026-10-24：`docs/prd/20261024073606-dev-workflow-mainline/userconversation.md`
  *  引用 `patternRegistry.mjs 第 14 行` 并抄了片段，片段少了空格 → not ok 248。
  */
 function isRecordTranscript(file) {
-  return file.split(/[\\/]/).pop().endsWith('-transcript.md')
+  // 记录型有两个合法文件名：老约定 `*-transcript.md`，PRD 目录内的 `userconversation.md`。
+  // 只认前者会让文件一改名，豁免就静默失效（2026-10-24 实测：改名后同一份记录又开始报红）。
+  const base = file.split(/[\\/]/).pop()
+  return base.endsWith('-transcript.md') || base === 'userconversation.md'
 }
 
 /** 行号引用守卫的扫描核心（抽成函数，才能给「豁免」与「不豁免」各写一条 fixture 用例）
@@ -1839,11 +1842,15 @@ test('守卫：文档里的「<名>.mjs 第 N 行」引用，行号必须仍有�
   const mds = walk(REPO_ROOT, ['.md'])   // `.git` / `node_modules` 等跳过目录由 makeScanner 处理，不事后filter
   const { checked, anchored, missing, ambiguous, skipped } = scanLineRefs(mds, REPO_ROOT)
   // 豁免的份数必须打印：否则「少扫了」与「扫了没发现」看起来一样，正是这条守卫反复踩的病根
-  console.log(`  [行号守卫] 校对 ${checked} 处、锚定 ${anchored} 处；跳过 ${skipped} 份记录型 transcript（内容不改，见 docs-convention 硬约束 4）`)
+  console.log(`  [行号守卫] 校对 ${checked} 处、锚定 ${anchored} 处；跳过 ${skipped} 份记录型文件（*-transcript.md / userconversation.md，内容不改，见 docs-convention 硬约束 4）`)
   // 只打印不断言 = 豁免逻辑被改坏（后缀写错 / 恒 false）时仍全绿（2026-10-24 代码审查问题 3）。
   // 期望值用**字面后缀**独立算，不复用 `isRecordTranscript`——否则 helper 改坏时两边一起错、断言恒真。
-  assert.equal(skipped, mds.filter((f) => f.endsWith('-transcript.md')).length,
-    `豁免份数 ${skipped} ≠ 全仓 -transcript.md 文件数 ${mds.filter((f) => f.endsWith('-transcript.md')).length}——豁免逻辑失效或漏扫`)
+  const recordMds = mds.filter((f) => {
+    const b = f.split(/[\\/]/).pop()
+    return b.endsWith('-transcript.md') || b === 'userconversation.md'
+  })
+  assert.equal(skipped, recordMds.length,
+    `豁免份数 ${skipped} ≠ 全仓记录型文件数 ${recordMds.length}——豁免逻辑失效或漏扫`)
   assert.ok(checked > 0, `应至少扫到 1 处行号引用（实际 ${checked}）——正则没匹配到，等于守卫失效`)
   // 「定位不到目标文件」的引用**必须为 0**：那类引用曾 `continue` 静默跳过，等于该条引用永远不被校验。
   // 文件被改名 / 重名多处时都会落到这里 —— 那是**待修的漂移**，不是「可以忽略」。
@@ -1904,6 +1911,23 @@ test('守卫豁免：`*-transcript.md` 里写漂移行号不报错（记录内�
     const r = scanLineRefs([md], dir)
     assert.equal(r.skipped, 1)        // 计入豁免份数
     assert.equal(r.checked, 0)        // 完全没参与校验
+    assert.deepEqual(r.missing, [])
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+// 豁免的**正向**用例：PRD 目录内的记录文件 `userconversation.md` 同样不参与校验
+// （只认 `-transcript.md` 时，文件一改名豁免就静默失效——2026-10-24 实测踩过）
+test('守卫豁免：`userconversation.md` 里写漂移行号不报错（记录内容不改）', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'lessons-lineref-userconv-'))
+  try {
+    writeFileSync(join(dir, 'probe.mjs'), probeSource())
+    const md = join(dir, 'userconversation.md')
+    writeFileSync(md, mdWithDriftedRef())
+    const r = scanLineRefs([md], dir)
+    assert.equal(r.skipped, 1)
+    assert.equal(r.checked, 0)
     assert.deepEqual(r.missing, [])
   } finally {
     rmSync(dir, { recursive: true, force: true })

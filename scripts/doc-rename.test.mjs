@@ -102,6 +102,30 @@ test('同名文件：plan 给出 ambiguous，apply 默认拒绝', () => {
   } finally { rmSync(root, { recursive: true, force: true }) }
 })
 
+test('记录保护覆盖根级同名文件（判据用 basename，不靠路径斜杠）', () => {
+  const root = fixture({
+    'old-name.md': '# t\n',
+    'userconversation.md': '记录：old-name.md\n',
+  })
+  try {
+    const p = plan({ root, oldPath: 'old-name.md', newPath: 'new-name.md' })
+    assert.deepEqual(p.skipped.map((h) => h.file), ['userconversation.md'])
+  } finally { rmSync(root, { recursive: true, force: true }) }
+})
+
+test('记录型两种文件名都跳过：*-transcript.md 与 userconversation.md', () => {
+  const root = fixture({
+    'docs/target/old-name.md': '# t\n',
+    'docs/prd/x/userconversation.md': '记录：old-name.md\n',
+    'docs/prd/x/some-transcript.md': '记录：old-name.md\n',
+  })
+  try {
+    const p = plan({ root, oldPath: 'docs/target/old-name.md', newPath: 'docs/target/new-name.md' })
+    const skippedFiles = p.skipped.map((h) => h.file).sort()
+    assert.deepEqual(skippedFiles, ['docs/prd/x/some-transcript.md', 'docs/prd/x/userconversation.md'])
+  } finally { rmSync(root, { recursive: true, force: true }) }
+})
+
 test('renderReport：报告含行号、上下文、跳过清单与合计', () => {
   const root = fixture(BASE)
   try {

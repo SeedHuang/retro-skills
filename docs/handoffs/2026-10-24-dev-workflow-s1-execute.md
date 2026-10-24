@@ -19,7 +19,7 @@
 
 - 已完成（本 session，按提交序）：
   - **行号守卫修复**：`skills/managing-lessons-store/scripts/lessons.test.mjs` —— 抽出 `scanLineRefs()`、按 `-transcript.md` 豁免记录型文件（口径对齐 `scripts/doc-rename.mjs` 的 `DEFAULT_SKIP_FILE`）、并把「带路径前缀的引用」按路径解析（修掉同名文件误判）。新增 3 条用例，`npm run check` 由 626/625/1 → 629/629/0（commit `a9257ea`）。
-  - **PRD 补完**：`docs/prd/dev-workflow-mainline/20261024073606-dev-workflow-mainline.md` —— §11 的 23 条 D 全部有结论（5 条用户已裁 + 18 条 `[已决·代裁]`），新增 `[已决·代裁]` 标记、§9.1 平台能力实查（`RunCommand` 无法按条白名单 → 整档授予 + 检测门）、§8.3 存量 docgen PRD 借鉴清单、§0.2 记用户「路径 A」裁定、§4 段表 4 格措辞纠错（commit `0744650`）。
+  - **PRD 补完**：`docs/prd/20261024073606-dev-workflow-mainline/index.md` —— §11 的 23 条 D 全部有结论（5 条用户已裁 + 18 条 `[已决·代裁]`），新增 `[已决·代裁]` 标记、§9.1 平台能力实查（`RunCommand` 无法按条白名单 → 整档授予 + 检测门）、§8.3 存量 docgen PRD 借鉴清单、§0.2 记用户「路径 A」裁定、§4 段表 4 格措辞纠错（commit `0744650`）。
   - **S1 spec v7**：`docs/superpowers/specs/2026-10-24-dev-workflow-skeleton-design.md` —— 三件载体（`skills/dev-workflow/`、`rules/dev-workflow-mainline.md`、`agents/evidence-reader.md`）+ C1–C11 生成器改动 + 12 处计数派生化 + F1–F22 失败面 + V-1–V-14 验收 + P-6 登记面 + P-7 `aas sync` + §11 施工顺序（含「新席不走 `replace` 迁移段」）。
   - **S1 testcase**：`docs/superpowers/specs/2026-10-24-dev-workflow-skeleton-design-testcase.md` —— **79 条**（正 34 / 负 35 / 边界 10，负+边 45 ≥ 正 34），由 `senior-sdet` 在全新上下文独立编写、两轮随 spec 修订。
   - **plan v3 + testlanding**：`docs/superpowers/plans/2026-10-24-dev-workflow-skeleton.md`（T0–T10 + T6.5，每条带验收命令）、`…-testlanding.md`（79 → 断言映射 + 负例三桶 + E06/E12/E27 构造方案）。

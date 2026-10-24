@@ -1,6 +1,6 @@
 # 开发工作流主干：五段顺序、出口签字与长文取证
 
-> 来源：PRD `docs/prd/dev-workflow-mainline/20261024073606-dev-workflow-mainline.md` §4 / §6 / §3.3；S1 spec `docs/superpowers/specs/2026-10-24-dev-workflow-skeleton-design.md` §5｜落地：2026-10-24
+> 来源：PRD `docs/prd/20261024073606-dev-workflow-mainline/index.md` §4 / §6 / §3.3；S1 spec `docs/superpowers/specs/2026-10-24-dev-workflow-skeleton-design.md` §5｜落地：2026-10-24
 > 判据锚在 PRD，本规则只写义务句与出处，不复制 PRD 正文。
 
 ## 核心判据（R1–R7）

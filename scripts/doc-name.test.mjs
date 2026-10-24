@@ -99,11 +99,13 @@ test('通用档只禁中文 / 空格 / 下划线，不误伤 README.md 这类固
 })
 
 test('checkTree 汇总违规则并给出建议名', () => {
-  const root = fixture(['docs/prd/topic/bad.md', 'docs/prd/topic/20260102030405-ok.md'])
+  // 文件层：直接放在 docs/prd 下的单文件主题没带前缀 → 报一条（目录层无子目录，不额外报）
+  const root = fixture(['docs/prd/bad.md', 'docs/prd/20260102030405-ok.md'])
   try {
     const res = checkTree('docs', root)
     assert.equal(res.ok, false)
     assert.equal(res.findings.length, 1)
+    assert.equal(res.findings[0].rel, 'docs/prd/bad.md')
     assert.match(res.findings[0].suggest, /^\d{14}-bad\.md$/)
     assert.ok(['birthtime', 'ctime'].includes(res.findings[0].stampFrom))
   } finally { rmSync(root, { recursive: true, force: true }) }
@@ -120,7 +122,37 @@ test('suggestName：stamp 类补 14 位、date 类补 YYYY-MM-DD、generic 原�
 
 test('kindOfDir 按前缀匹配，主题子目录也算', () => {
   assert.equal(kindOfDir('docs/prd'), 'stamp')
-  assert.equal(kindOfDir('docs/prd/dev-workflow-mainline'), 'stamp')
+  assert.equal(kindOfDir('docs/prd/20260101000000-topic'), 'stamp')
   assert.equal(kindOfDir('docs/handoffs'), 'date')
   assert.equal(kindOfDir('docs/guide'), 'generic')
+})
+
+test('默认入口（`--check docs`）必须能抓到 docs/prd 下未带戳的主题目录', () => {
+  // 回归：目录层检查曾只在「target 恰好是 docs/prd」时执行，默认入口传 docs → 整段被跳过
+  const root = fixture([
+    'docs/prd/bad-topic/index.md',
+    'docs/prd/20260101000000-ok/index.md',
+    'docs/after/20260101000000-ok.md',
+  ])
+  try {
+    const res = checkTree('docs', root)
+    assert.deepEqual(res.findings.map((f) => f.rel), ['docs/prd/bad-topic/'])
+    assert.equal(res.findings[0].kind, 'stamp-dir')
+  } finally { rmSync(root, { recursive: true, force: true }) }
+})
+
+test('目录层：docs/prd 直接子目录必须带时间戳；目录内文件用原名（只加一层）', () => {
+  const root = fixture([
+    'docs/prd/bad-topic/index.md',
+    'docs/prd/20260101000000-good/index.md',
+    'docs/prd/20260101000000-good/sub/plain.md',
+  ])
+  try {
+    const res = checkTree('docs/prd', root)
+    assert.equal(res.ok, false)
+    // 只有「没带时间戳的那个目录」被报；目录内文件、以及带戳目录的下层子目录都不报
+    assert.deepEqual(res.findings.map((f) => f.rel), ['docs/prd/bad-topic/'])
+    assert.equal(res.findings[0].kind, 'stamp-dir')
+    assert.match(res.findings[0].suggest, /^\d{14}-bad-topic\/$/)
+  } finally { rmSync(root, { recursive: true, force: true }) }
 })

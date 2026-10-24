@@ -71,7 +71,7 @@
 
 ## 6 提交口径（修正版）
 
-- **允许改动的路径白名单**（T0 用它判「有没有越界」）：`tools/docgen/**`、`agents/evidence-reader.md`、`rules/dev-workflow-mainline.md`、`rules/.inspector-annotations.json`、`skills/dev-workflow/**`、`skilldependencies/**`、`scripts/check-all.mjs`、`README.md`、`docs/guide/{skills,rules}/README.md`、`docs/superpowers/{specs,plans}/2026-10-24-dev-workflow-skeleton*`、`docs/prd/dev-workflow-mainline/**`。
+- **允许改动的路径白名单**（T0 用它判「有没有越界」）：`tools/docgen/**`、`agents/evidence-reader.md`、`rules/dev-workflow-mainline.md`、`rules/.inspector-annotations.json`、`skills/dev-workflow/**`、`skilldependencies/**`、`scripts/check-all.mjs`、`README.md`、`docs/guide/{skills,rules}/README.md`、`docs/superpowers/{specs,plans}/2026-10-24-dev-workflow-skeleton*`、`docs/prd/20261024073606-dev-workflow-mainline/**`。
 - **本 session 额外一件**（不属 spec 交付物，但必须一起提交）：`skills/managing-lessons-store/scripts/lessons.test.mjs` —— 行号守卫的 `-transcript.md` 豁免 + 路径前缀解析修复（`npm run check` 从 626/625/1 → 629/629/0 的那次改动）。**理由写在这里，避免下次被当成「无来源改动」**。
 - **不提交**：上一 session 遗留的 21 M / 2 D / 6 `?? scripts/doc-*.mjs`（文档改名批次产物，等用户单独处置）；`.session/`（gitignore）。
 - 提交前必跑 `npm run check` + `npm run doc:name`，两条都过才 commit。

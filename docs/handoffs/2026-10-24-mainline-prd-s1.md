@@ -17,24 +17,24 @@
 
 ## 现状
 
-- 已完成：**PRD 事实基线回核**——`docs/prd/dev-workflow-mainline/20261024073606-dev-workflow-mainline.md` §0.3 的 FZ-01～FZ-07 全部补到原文 + 行号，§0.4 给出「保留 10 处 / 降级 9 处 / 本轮新裁定 9 条」结论。
+- 已完成：**PRD 事实基线回核**——`docs/prd/20261024073606-dev-workflow-mainline/index.md` §0.3 的 FZ-01～FZ-07 全部补到原文 + 行号，§0.4 给出「保留 10 处 / 降级 9 处 / 本轮新裁定 9 条」结论。
 - 已完成：**PRD 新增 5 节**（同文件）——§3.4 议长选 A（`speaker` 独立、主持人角色作废、职责二分）、§4.1 交付单位「功能块」（滚动拆不批量）、§5.1 收敛规则（规则 2 复活 + 族映射表 + 侦探三条守恒；规则 1 不采纳；规则 3 改栏位化降级）、§8.0 精算师一票否决 + 三道保险 + 推翻须签字、§8.4 图的可读性双判据 + 一致性全量核对（替代抽查）。
 - 已完成：**PRD 改写 6 处**（同文件）——§6 plan 门转 `[已确认]`（0 评委席 + 审计本人读并签字，依赖 `producer` 档）、§8.2 产品评委重写为「#1 触发式 / #2 必选」+ 四个配套判据、§10 新增 F-18～F-22 且 F-05/F-09/F-10 转已确认、§11 标 D-01/D-02/D-03/D-08/D-11 已决、§12 S3/S4 更新、§4 图 F-05 标签同步。
 - 已完成：**两条规则**——`rules/how-i-must-reason.md` 新增 §8「提问题必须带解法」（含落点表 / 触发时机 / 验证三处联动）；`rules/docs-convention.md` 文件命名节新增 `docs/prd/` 行 + 三条时间戳总则 + 「机器判据以 `scripts/doc-name.mjs` 为准」。
 - 已完成：**三个脚本 + 三份测试**——`scripts/doc-name.mjs`（命名判据唯一实现）、`scripts/doc-rename.mjs`（改名 + 引用重写，默认 dry-run，报告带行号 / 上下文 / link·code·prose 分类）、`scripts/doc-migrate-stamps.mjs`（批量补前缀）；测试 19 条全过（`scripts/*.test.mjs`）。
-- 已完成：**文档改名 4 个**——`docs/prd/dev-workflow-mainline/` 下 PRD → `20261024073606-dev-workflow-mainline.md`、transcript → `20261024074213-drawing-parliament-flow-transcript.md`；`docs/prd/` 下 `docgen-agent-generation.md` → `20261019093443-…`、`docgen-rule-whole-file.md` → `20261018214426-…`。`docgen-index.md` **刻意不改**（单份索引，见 `rules/docs-convention.md` 三条总则）。
+- 已完成：**文档改名 4 个**——`docs/prd/20261024073606-dev-workflow-mainline/` 下 PRD → `20261024073606-dev-workflow-mainline.md`、transcript → `20261024074213-drawing-parliament-flow-transcript.md`；`docs/prd/` 下 `docgen-agent-generation.md` → `20261019093443-…`、`docgen-rule-whole-file.md` → `20261018214426-…`。`docgen-index.md` **刻意不改**（单份索引，见 `rules/docs-convention.md` 三条总则）。
 - 验证证据：见元信息表『验证基线』（单源，勿在此重复填写）。
 - 提交状态：未提交，由用户自行 commit（本 session 未执行任何 git 写操作）。
 - 工作树异常（`git status --porcelain`，09:52 实查）：
   - **M（21 项）**：`docs/after/20261019131757-dc-translator-design.md`；`docs/handoffs/` 7 份（2026-10-18-docgen-p1-review / 2026-10-18-p2-agent-generation-prd-review / 2026-10-19-docgen-p2-s1-execute / …p2-s2-execute / …p2-s2-parliament / …p2-spec-split / 2026-10-21-f1-sdet-desc-trigger）；`docs/prd/docgen-index.md`；`docs/superpowers/plans/` 2 份；`docs/superpowers/specs/` 9 份；`package.json`；`rules/docs-convention.md`；`rules/how-i-must-reason.md`——其中除后三项外，全部由 `doc-migrate --apply` 的**路径字符串重写**产生（只改路径，未改结论）。
   - **D（2 项）**：`docs/prd/docgen-agent-generation.md`、`docs/prd/docgen-rule-whole-file.md`（改名后的旧路径）。
-  - **??（8 项）**：`docs/handoffs/2026-10-24-dev-workflow-mainline.md`、`docs/handoffs/2026-10-24-mainline-fact-baseline.md`、`docs/prd/20261018214426-docgen-rule-whole-file.md`、`docs/prd/20261019093443-docgen-agent-generation.md`、`docs/prd/dev-workflow-mainline/`（整目录）、6 个 `scripts/doc-*.mjs`（3 脚本 + 3 测试）。
-  - **唯一红项**：`not ok 248` 由 `docs/prd/dev-workflow-mainline/20261024074213-drawing-parliament-flow-transcript.md` 触发——它引用了 `patternRegistry.mjs 第 14 行` 并附代码片段，片段少空格与真源不逐字相等。记录内容按规矩不改，处置方式见「开放问题」第 1 条。
+  - **??（8 项）**：`docs/handoffs/2026-10-24-dev-workflow-mainline.md`、`docs/handoffs/2026-10-24-mainline-fact-baseline.md`、`docs/prd/20261018214426-docgen-rule-whole-file.md`、`docs/prd/20261019093443-docgen-agent-generation.md`、`docs/prd/20261024073606-dev-workflow-mainline/`（整目录）、6 个 `scripts/doc-*.mjs`（3 脚本 + 3 测试）。
+  - **唯一红项**：`not ok 248` 由 `docs/prd/20261024073606-dev-workflow-mainline/userconversation.md` 触发——它引用了 `patternRegistry.mjs 第 14 行` 并附代码片段，片段少空格与真源不逐字相等。记录内容按规矩不改，处置方式见「开放问题」第 1 条。
 
 ## 过程记录
 
-- `docs/prd/dev-workflow-mainline/20261024073606-dev-workflow-mainline.md`（**先读 §0.4 回核结论 → §11 待确认表 → §8.2 / §5.1 / §4.1 / §3.4 / §8.0 / §8.4**）
-- `docs/prd/dev-workflow-mainline/20261024074213-drawing-parliament-flow-transcript.md`（3192 行原始对话记录，本 session 全部「记录 Lxxx」行号的来源）
+- `docs/prd/20261024073606-dev-workflow-mainline/index.md`（**先读 §0.4 回核结论 → §11 待确认表 → §8.2 / §5.1 / §4.1 / §3.4 / §8.0 / §8.4**）
+- `docs/prd/20261024073606-dev-workflow-mainline/userconversation.md`（3192 行原始对话记录，本 session 全部「记录 Lxxx」行号的来源）
 - `scripts/doc-name.mjs`（命名判据单源，含三类目录 + 三条总则的机器实现）
 - 历史交接词：`docs/handoffs/2026-10-24-dev-workflow-mainline.md` → `docs/handoffs/2026-10-24-mainline-fact-baseline.md` → 本份
 
@@ -44,7 +44,7 @@
 
 ## 范围依据
 
-- 要读：`docs/prd/dev-workflow-mainline/20261024073606-dev-workflow-mainline.md` §0.4（回核结论与降级原因）、§3.4（议长 A 与 `producer` 档的连带依赖）、§4.1（功能块定义与三条「不许」）、§5.1（族映射表与三条守恒、级别栏位化）、§6（plan 门：0 评委席 + 审计真读）、§8.0（精算师三道保险）、§8.2（产品评委四个配套判据）、§8.4（图双判据 + 全量对照表）、§10（F-01～F-22）、§11（D-01～D-23 与已决状态）、§12（S1–S5）。
+- 要读：`docs/prd/20261024073606-dev-workflow-mainline/index.md` §0.4（回核结论与降级原因）、§3.4（议长 A 与 `producer` 档的连带依赖）、§4.1（功能块定义与三条「不许」）、§5.1（族映射表与三条守恒、级别栏位化）、§6（plan 门：0 评委席 + 审计真读）、§8.0（精算师三道保险）、§8.2（产品评委四个配套判据）、§8.4（图双判据 + 全量对照表）、§10（F-01～F-22）、§11（D-01～D-23 与已决状态）、§12（S1–S5）。
 - 要读：`rules/docs-convention.md`「文件命名」节（三条时间戳总则 + 机器判据指向）。
 - 要读：`rules/how-i-must-reason.md` §8（提问题必须带解法：具体动作 / 取舍 / 验收）。
 - 要读：`scripts/doc-name.mjs` 顶部注释与 `judge()`（命名判据的唯一实现，文字表冲突时以它为准）。
@@ -81,7 +81,7 @@
 ## 开工前先做
 
 1. `git status --porcelain` 核对工作树仍是本份元信息表所列 30 项；再跑 `npm run check` 复核基线（应为 626 / 625 / 1，红项 = `not ok 248`）。
-2. 读 `docs/prd/dev-workflow-mainline/20261024073606-dev-workflow-mainline.md` §0.4 与 §11 全表，先分清「已决 5 条」与「仍待 17 条」，避免重开已决项。
+2. 读 `docs/prd/20261024073606-dev-workflow-mainline/index.md` §0.4 与 §11 全表，先分清「已决 5 条」与「仍待 17 条」，避免重开已决项。
 3. 读同文件 §8.2 的四个配套判据与 §5.1 的族映射表，这三处是本次讨论最晚定稿的，后续 spec 必须与之一致。
 4. 读 `docs/prd/docgen-index.md`、`docs/prd/20261019093443-docgen-agent-generation.md`、`docs/prd/20261018214426-docgen-rule-whole-file.md`，抽出可借鉴结构件（为开放问题 3 的初稿）。
 5. 写 S1 spec 时同批派 `senior-sdet` 出 testcase，路径约定：`docs/superpowers/specs/YYYY-MM-DD-dev-workflow-skeleton-design.md` + 同名 `-testcase.md`。
