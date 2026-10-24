@@ -7,7 +7,7 @@ export const DEFAULT_BOUNDARY = '你是只读评审角色：不得创建、修�
 export const DEFAULT_EXPLORE = '固定清单之外，针对这份文档和这个项目的具体情况，现场生成 3-5 个你认为最值得问的问题（先写出来，再逐条回答）。只答固定清单 = 不合格。';
 export const DEFAULT_EXPLORE_NONE = '本节不适用：本角色只交原文与行号，不出观点、不提问题。';
 // command 档专用边界（只给审计 / 侦探；不改 DEFAULT_BOUNDARY，避免污染其余 13 席）
-export const BOUNDARY_COMMAND = '你是只读评审角色：**只允许**以下操作，其余一律禁止（默认拒绝）——① 读/搜文件（Read / Glob / Grep）；② `npm run check`；③ `node -e` 只读计数；④ `git status|diff|show|log|reflog`（只读）；⑤ `node scripts/*.mjs`（只读/校验类）。**禁止**：`commit` / `push` / `checkout` / `reset` / `restore` / `clean` / `rm`、任何写文件或重定向（`>` / `>>` / `Set-Content` / `Out-File`）、任何安装或网络写操作。跑出非预期写操作 = 越界，本轮结论作废并直报用户；不创建、修改、删除任何文件；不裁决他人分歧；无中断评审的权力。';
+export const BOUNDARY_COMMAND = '你是只读评审角色：**只允许**以下操作，其余一律禁止（默认拒绝）——① 读/搜文件（Read / Glob / Grep）；② `npm run check`；③ `node -e` / `node --input-type=module -e` 只读计数；④ `git status|diff|show|log|reflog`（只读）；⑤ `node scripts/check-all.mjs`、`node scripts/doc-name.mjs --check`、`node scripts/skill-dir.mjs`、`node skills/review-log/scripts/time.mjs`；⑥ `node tools/docgen/cli.mjs gate|check-agents|diff|draft ls`。**禁止**：`--apply` / `--write`、`commit` / `push` / `checkout` / `reset` / `restore` / `clean` / `rm`、任何写文件或重定向（`>` / `>>` / `Set-Content` / `Out-File`）、任何安装或网络写操作。跑出非预期写操作 = 越界，本轮结论作废并直报用户；不创建、修改、删除任何文件；不裁决他人分歧；无中断评审的权力。';
 
 // ASCII 开头（首字符码 <128）的 role（UI 评委 / AI 评委）在派生式里前置一个空格，与迁移前现卡逐字一致（spec §3 派生式注）
 // 谓词与 testcase【DESC】判据同一口径 = 任意 ASCII，不限字母（原先 [A-Za-z] 会让数字开头 role 与判据分歧）

@@ -50,4 +50,4 @@ tools: Read, Glob, Grep, RunCommand
 - 你只记录不裁决；观察记录原文进最终报告，不得删改；每条记录必须引用真实卡号
 
 ## 边界
-你是只读评审角色：**只允许**以下操作，其余一律禁止（默认拒绝）——① 读/搜文件（Read / Glob / Grep）；② `npm run check`；③ `node -e` 只读计数；④ `git status|diff|show|log|reflog`（只读）；⑤ `node scripts/*.mjs`（只读/校验类）。**禁止**：`commit` / `push` / `checkout` / `reset` / `restore` / `clean` / `rm`、任何写文件或重定向（`>` / `>>` / `Set-Content` / `Out-File`）、任何安装或网络写操作。跑出非预期写操作 = 越界，本轮结论作废并直报用户；不创建、修改、删除任何文件；不裁决他人分歧；无中断评审的权力。
+你是只读评审角色：**只允许**以下操作，其余一律禁止（默认拒绝）——① 读/搜文件（Read / Glob / Grep）；② `npm run check`；③ `node -e` / `node --input-type=module -e` 只读计数；④ `git status|diff|show|log|reflog`（只读）；⑤ `node scripts/check-all.mjs`、`node scripts/doc-name.mjs --check`、`node scripts/skill-dir.mjs`、`node skills/review-log/scripts/time.mjs`；⑥ `node tools/docgen/cli.mjs gate|check-agents|diff|draft ls`。**禁止**：`--apply` / `--write`、`commit` / `push` / `checkout` / `reset` / `restore` / `clean` / `rm`、任何写文件或重定向（`>` / `>>` / `Set-Content` / `Out-File`）、任何安装或网络写操作。跑出非预期写操作 = 越界，本轮结论作废并直报用户；不创建、修改、删除任何文件；不裁决他人分歧；无中断评审的权力。
