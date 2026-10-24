@@ -37,7 +37,7 @@
 ## 范围依据
 
 - 要读：
-  - `docs/prd/docgen-agent-generation.md` 全文（§2 范围、§3 P2-1~P2-8、§4 接口、§5 验收 W1–W9、§6 逐步迁移、§7 交付物、§8 收口、§9 与 spec/testcase 关系——拆分提示在 §9）
+  - `docs/prd/20261019093443-docgen-agent-generation.md` 全文（§2 范围、§3 P2-1~P2-8、§4 接口、§5 验收 W1–W9、§6 逐步迁移、§7 交付物、§8 收口、§9 与 spec/testcase 关系——拆分提示在 §9）
   - `docs/prd/docgen-index.md`（§1 PRD 清单/状态、§2 D1–D18、§4 评审规则）
   - `.session/reviews/2026-10-19-0950-docgen-p2-prd/problems.md` §第 3–5 轮「P2 级遗留 P2-遗-1~9」（spec 拆分时逐条吸收）
   - `docs/after/20261019131757-dc-translator-design.md`（dc-translator = 第一个新增 agent 的试点对象，衔接 W5「新增 agent 入口」验收）
@@ -75,7 +75,7 @@
 ## 开工前先做
 
 1. `git status --short` 确认工作树 clean；`npm run check` 复核基线（应 0 findings / baseline 21/21 / ④ markdown 通过）。
-2. 读 `docs/prd/docgen-agent-generation.md` §9「与 spec / testcase 的关系」+ §5 W1–W9 + §4 错误码（拆 spec 的验收锚点与接口）。
+2. 读 `docs/prd/20261019093443-docgen-agent-generation.md` §9「与 spec / testcase 的关系」+ §5 W1–W9 + §4 错误码（拆 spec 的验收锚点与接口）。
 3. 读 `.session/reviews/2026-10-19-0950-docgen-p2-prd/problems.md` §第 3–5 轮 P2-遗-1~9（spec 拆分吸收清单）。
 4. 读 `docs/after/20261019131757-dc-translator-design.md` §7 落地时机（衔接新增 agent 入口验收）。
 5. 问用户：拆 spec 粒度（一份 vs 多份）+ testcase 覆盖范围（开放问题 1/2）。

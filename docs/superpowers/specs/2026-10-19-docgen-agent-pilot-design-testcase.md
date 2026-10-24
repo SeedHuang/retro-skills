@@ -1,6 +1,6 @@
 # 测试用例：Docgen P2 · S2 试点 1 席（reviewer-audit 数据搬家）——修订版 4 配套
 
-> 归属 spec：`docs/superpowers/specs/2026-10-19-docgen-agent-pilot-design.md`（修订版 3，split from `docs/prd/docgen-agent-generation.md` 2026-10-19）
+> 归属 spec：`docs/superpowers/specs/2026-10-19-docgen-agent-pilot-design.md`（修订版 3，split from `docs/prd/20261019093443-docgen-agent-generation.md` 2026-10-19）
 > 编写者：`senior-sdet`，实例标识 `sdet-2026-10-19-docgen-p2-s2-rev4`。
 > **独立性声明**：编写者 ≠ spec 作者（spec 由主持人在别的上下文修订），≠ 施工者（S2 施工 agent 未在本上下文出现）。本文件在全新上下文独立编写，**只依据修订版 3 spec、S1 能力 spec、PRD、黄金快照、当前实现代码与第 1/2/3 轮评审台账推导**，不从施工结果倒推判据。
 > 状态：草稿（可送议会；定稿条件 = 五要素齐 + 计数自洽 + 覆盖 38/38 + 送审说明附本文件 §0 取数输出）。
@@ -1108,7 +1108,7 @@ node -e "const fs=require('fs');const t=fs.readFileSync('docs/superpowers/specs/
 | `tools/docgen/components/compare.mjs` | TC-007、TC-014、TC-030、TC-031、TC-060、TC-067 | `compareBuffers` 签名与 `checkEnvironment` 判据 |
 | `tools/docgen/components/baseline.mjs` / `tools/docgen/baseline.json` | TC-009、TC-012、TC-013、TC-020、TC-036、TC-048、TC-071 | 清单与 baseline 字节一致 |
 | **`agents/reviewer-audit.md` 本身**（被替换目标） | TC-001、TC-009、TC-011、TC-012、TC-034、TC-045、TC-056、TC-073、TC-074 | 目标即基准与比对对象；任何改动都要重验时序与状态 |
-| `docs/prd/docgen-agent-generation.md` §6.6（账本表） | TC-001、TC-071、TC-049、TC-050 | 双哈希 / 停损 / 状态登记处 |
+| `docs/prd/20261019093443-docgen-agent-generation.md` §6.6（账本表） | TC-001、TC-071、TC-049、TC-050 | 双哈希 / 停损 / 状态登记处 |
 | 冷跑脚本 / 复制清单 | TC-048、TC-068、TC-072 | 复制完整性直接决定冷跑结论可信度 |
 | `scripts/check-all.mjs`（gate 调用与 baseline 参数化） | TC-012、TC-013 | 「`npm run check` 全绿」是巩固第 2 项 |
 

@@ -53,7 +53,7 @@
 | `tools/docgen/test/pilot-data.test.mjs` | 数据形状 / description / DOMAIN | 测试 | 1 |
 | `tools/docgen/test/pilot-render.test.mjs` | 渲染逐字节 / 模板纯度 / 数据变异 / 槽位 | 测试 | 2–3 |
 | `tools/docgen/test/pilot-gate.test.mjs` | EXIT 码 / state / check-agents / collectGate | 测试 | 5–6 |
-| `docs/prd/docgen-agent-generation.md` §6.6 | 迁移账本行（人读镜像） | 文档 | 9 |
+| `docs/prd/20261019093443-docgen-agent-generation.md` §6.6 | 迁移账本行（人读镜像） | 文档 | 9 |
 | `agents/reviewer-audit.md` | 由 docgen 替换（字节不变） | 生成物 | 9 |
 
 ---
@@ -1568,7 +1568,7 @@ git status --short rules/ skills/ agents/
 
 Expected: 两次 gate 绿（含冷跑）；草稿箱空；`npm run check` 全绿；`git status` 无输出。
 
-更新 `docs/prd/docgen-agent-generation.md` §6.6 的 `reviewer-audit` 行：状态 `已巩固`、双哈希（四值中的 SHA256/blob）、迁移日期、巩固证据（gate ×2 + 冷跑 + check 输出摘要）。
+更新 `docs/prd/20261019093443-docgen-agent-generation.md` §6.6 的 `reviewer-audit` 行：状态 `已巩固`、双哈希（四值中的 SHA256/blob）、迁移日期、巩固证据（gate ×2 + 冷跑 + check 输出摘要）。
 
 - [ ] **Step 10：改动留在工作区**
 

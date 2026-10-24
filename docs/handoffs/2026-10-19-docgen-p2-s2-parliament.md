@@ -48,7 +48,7 @@
   - `docs/superpowers/specs/2026-10-19-docgen-agent-pilot-design.md`（修订版 spec：R1–R9、§3 数据形状、§4 九步闭环、§5 W1、§6 硬约束）
   - `docs/superpowers/specs/2026-10-19-docgen-agent-pilot-design-testcase.md`（重写版 testcase：52 条）
   - `docs/superpowers/specs/2026-10-19-docgen-agent-capability-design.md`（S1 能力 spec：§5.3 拒红过滤、§6 断言、§7 退出码——S2 的依赖）
-  - `docs/prd/docgen-agent-generation.md` §5 W1 + §6.1–6.4 + §8（验收与流程源）
+  - `docs/prd/20261019093443-docgen-agent-generation.md` §5 W1 + §6.1–6.4 + §8（验收与流程源）
   - `agents/reviewer-audit.md`（黄金快照，转录源；§3 字段值已与它逐字核对一致）
   - `tools/docgen/cli.mjs`（S1 实现现状，核 R9/R6 确为遗留）
 - 勿重做：S1 能力地基（已提交）；gen-agents.mjs 已退役（`9ad91cb`，考古：`git log --oneline -- skills/parliament/scripts/gen-agents.mjs` 显示提交 9ad91cb 删除）；S2 spec/testcase 修订已完成（勿再改，除非议会打回）。

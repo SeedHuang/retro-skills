@@ -536,7 +536,7 @@ Expected: 275+ tests pass / 0 findings / 188+ 文件 / 585+ 表 / exit 0。
 ## Task 8：全量验收与结论落点
 
 **Files:**
-- Modify: `docs/prd/docgen-rule-whole-file.md` §8（三模型表）
+- Modify: `docs/prd/20261018214426-docgen-rule-whole-file.md` §8（三模型表）
 - Modify: `docs/prd/docgen-index.md`（P1 状态）
 
 - [ ] **Step 1：跑全量 13 例**

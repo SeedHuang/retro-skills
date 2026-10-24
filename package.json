@@ -3,6 +3,9 @@
   "private": true,
   "scripts": {
     "check": "node scripts/check-all.mjs",
+    "doc:name": "node scripts/doc-name.mjs --check docs",
+    "doc:rename": "node scripts/doc-rename.mjs",
+    "doc:migrate": "node scripts/doc-migrate-stamps.mjs",
     "eval:review-triage": "node scripts/run-eval.mjs review-triage"
   },
   "engines": {

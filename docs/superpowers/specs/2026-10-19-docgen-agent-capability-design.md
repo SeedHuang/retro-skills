@@ -1,6 +1,6 @@
 # Docgen P2 · S1：能力与终态（CLI 基建 / 草稿箱 / 守卫迁移 / 终态验收）
 
-> split from `docs/prd/docgen-agent-generation.md` (2026-10-19)
+> split from `docs/prd/20261019093443-docgen-agent-generation.md` (2026-10-19)
 > 日期：2026-10-19｜状态：待评审（草稿，spec + testcase 一起送议会）｜PRD 状态：已定稿（五轮评审通过，SHA256 `8C010445...`）
 > 测试用例文件：`docs/superpowers/specs/2026-10-19-docgen-agent-capability-design-testcase.md`
 > 依赖：PRD §3/§4/§5/§7/§8；P1 spec `2026-10-18-docgen-rule-whole-file-design.md`（V1–V11 迁移源）
@@ -9,7 +9,7 @@
 
 P2 把「组件 → 模板 → 生成 → 守卫」扩到 agent 一类。PRD 已定 14 个 agent 的迁移目标（P2-1~P2-8）与九步闭环（§6.2），但**能力地基**还没落成可编码设计：`tools/docgen/` 长什么样、draft/replace/gate 的命令语义、五档退出码怎么映射、gen-agents 的守卫断言迁到哪、check-all 怎么参数化、spike 的 V1–V11 怎么等价承接。没有这份 spec，S2/S3/S4 的施工者会各自发明 CLI 语义和草稿箱行为——上一轮 PRD 评审（F-B/F-06/F-07）已经证明，同一对象被两处不同口径约束时，验收必然假绿。
 
-本 spec 只做一件事：把 PRD 的序 0（能力前置）+ 序 4（能力完备）+ 序 5（终态验收）落成**可编码的模块边界、数据形状、CLI 语义、错误优先级与等价迁移表**。PRD 决策原文不复制，引用见 `docs/prd/docgen-agent-generation.md` §3/§4/§5/§6/§7/§8。
+本 spec 只做一件事：把 PRD 的序 0（能力前置）+ 序 4（能力完备）+ 序 5（终态验收）落成**可编码的模块边界、数据形状、CLI 语义、错误优先级与等价迁移表**。PRD 决策原文不复制，引用见 `docs/prd/20261019093443-docgen-agent-generation.md` §3/§4/§5/§6/§7/§8。
 
 **外部编号对照**：
 
@@ -352,7 +352,7 @@ P3（rule 六骨架）复用本 spec 的 `tools/docgen/` 管线与草稿机制�
 ## 13 与既有 spec 的关系
 
 - **不取代**任何既有 spec。
-- **引用** `docs/prd/docgen-agent-generation.md` §3/§4/§5/§6/§7/§8 作为决策源；不复制决策原文。
+- **引用** `docs/prd/20261019093443-docgen-agent-generation.md` §3/§4/§5/§6/§7/§8 作为决策源；不复制决策原文。
 - **引用** `2026-10-18-docgen-rule-whole-file-design.md`（P1）作为 V1–V11 等价迁移的源（§8.4 等价迁移表）；本 spec 的 rule 侧组件迁移自 P1，语义不变。
 - **供 S2/S3/S4 依赖**：能力地基（CLI / 草稿箱 / 守卫 / 退出码）是本份的交付，S2/S3/S4 spec 引用本 spec 的 R 编号。
 - **不触碰** `2026-10-17-parliament-design.md`（它管议会流程，与本生成器无重叠；parliament 技能目录的 gen-agents 引用清理在本 spec §8.3 覆盖）。

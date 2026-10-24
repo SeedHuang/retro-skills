@@ -1,6 +1,6 @@
 # Docgen P1：一条 rule 的整文件生成（实现设计）
 
-> 日期：2026-10-18｜状态：已定稿（内容评审通过；机械检查通过，2026-10-18）｜split from `docs/prd/docgen-rule-whole-file.md`（2026-10-18）
+> 日期：2026-10-18｜状态：已定稿（内容评审通过；机械检查通过，2026-10-18）｜split from `docs/prd/20261018214426-docgen-rule-whole-file.md`（2026-10-18）
 > PRD 状态：已定稿（五席三轮评审通过）｜本 spec 只写实现设计，不改 PRD 决策
 > 测试用例文件：`docs/superpowers/specs/2026-10-18-docgen-rule-whole-file-design-testcase.md`
 
@@ -8,7 +8,7 @@
 
 P1 的五个模型（整文件、入口基线、规则类型、纯度、可复跑）在 PRD 里已经定成 V1–V11，但 PRD 只回答「验什么」，不回答「怎么实现才验得过」。没有这份 spec，施工者会各自发明模板语法、baseline 语义和临时文件清理方式——上一轮评审已经证明，同一对象被两处不同口径约束时，验收必然假绿。
 
-本 spec 只做一件事：把 V1–V11 落成**可编码的模块边界、数据形状、算法与错误优先级**。PRD 的决策原文不复制，引用见 `docs/prd/docgen-rule-whole-file.md` §2–§8。
+本 spec 只做一件事：把 V1–V11 落成**可编码的模块边界、数据形状、算法与错误优先级**。PRD 的决策原文不复制，引用见 `docs/prd/20261018214426-docgen-rule-whole-file.md` §2–§8。
 
 **外部编号对照**（避免读者去翻 PRD）：
 
@@ -421,5 +421,5 @@ P2 做六骨架时，`rule.md.tpl` 的「一套结构」假设会被打破：不
 ## 11 与既有 spec 的关系
 
 - **不取代**任何既有 spec；本 spec 是 Docgen P1 的首份实现设计。
-- **引用** `docs/prd/docgen-rule-whole-file.md` §2–§8 作为决策源；不复制其决策原文。
+- **引用** `docs/prd/20261018214426-docgen-rule-whole-file.md` §2–§8 作为决策源；不复制其决策原文。
 - **不触碰** `2026-10-17-systematic-repair-design.md`（它管修复流程，与本生成器无重叠）。

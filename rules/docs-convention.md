@@ -35,12 +35,23 @@
 | `plans/` | `YYYY-MM-DD-<主题>.md` | `2026-10-02-session-dir-layout.md` |
 | `handoffs/` | `YYYY-MM-DD-<主题>.md` | `2026-09-29-session-close.md` |
 | `retro/` | `YYYY-MM-DD-<那一次>/retro-<轮次>-<主题>.md` | `2026-10-14-2248-review-all-to-death/retro-07-single-source.md` |
+| **`docs/prd/`** | **`YYYYMMDDHHmmss-<主题>.md`（创建时刻，到秒；主题子目录内的文件同样适用）** | `20261024073606-dev-workflow-mainline.md` |
 | **`after/`** | **`YYYYMMDDHHmmss-<主题>-<阶段>.md`（小写 kebab-case；前缀 = **文件创建时间**，精确到秒）** | `20261007201648-collect-requirements-exploration.md` |
 
-**`after/` 为什么用「创建时刻」而不是「定稿日期」**：它是**活的账本**，会被反复更新——所以前缀记的是它**出生的时刻**，不是它定型的时刻。一个主题从探索到收口始终用同一个文件名，靠前缀排序就知道先后，不必改一次名。**兄弟目录带 `YYYY-MM-DD`（定格日期：定稿 / 排期完成 / session 收尾 / 审查收尾），`after/` 带 `YYYYMMDDHHmmss`（创建时刻）——两者用途不同，不要混用。**
+**时间戳标记的是「这个事物在时间上的变动」与「当时的确定 / 快照」，不是装饰。** 由此三条总则：
+
+| 总则 | 判据 | 例子 |
+|---|---|---|
+| **只加在多版本并存处** | 会随时间产生多份并存、或需要留住起点的才加：PRD 主题文件、`after/` 活账本、`specs/`、`plans/`、`handoffs/` | `20261024073606-dev-workflow-mainline.md` |
+| **单份确定稿 / 配置不加** | 原地更新、不产生多版本的：`README.md`、`index.md`、`*-index.md`、`overview.md`；以及 `rules/`、`agents/`、`skills/`、`.session/`、各类配置 | `docs/prd/docgen-index.md` |
+| **父目录已带时间戳，子文件不加** | 路径上任一祖先目录名以 `YYYYMMDDHHmmss-` 或 `YYYY-MM-DD-` 开头 | `retro/2026-10-14-2248-xxx/retro-07-single-source.md` |
+
+**两类前缀不要混用**：兄弟目录带 `YYYY-MM-DD`（定格日期：定稿 / 排期完成 / session 收尾 / 审查收尾），`prd/` 与 `after/` 带 `YYYYMMDDHHmmss`（创建时刻）——用途不同。
+
+**机器判据**：命名合规性一律以 `scripts/doc-name.mjs` 为准（`npm run doc:name`）；文字表与脚本冲突时**以脚本为准**，改口径只改脚本与本节一处。
 
 - **前缀取值**：文件**创建那一刻**的本机时间，格式 `YYYYMMDDHHmmss`。新建文档当场取名，之后阶段变化、内容更新都**不改前缀**（改前缀等于换身份，会让所有引用同时失效）。
-- **存量与搬迁**：给存量文件补前缀，一律取该文件实际的创建时间（`Get-Item <path> | Select CreationTime` 或 `fs.statSync(...).birthtime`），不取当天日期。
+- **存量与搬迁**：给存量文件补前缀，一律取该文件实际的创建时间（`Get-Item <path> | Select CreationTime` 或 `fs.statSync(...).birthtime`），不取当天日期。批量补前缀用 `npm run doc:migrate -- --dir <目录>`（默认 dry-run，确认后加 `--apply`）；单个改名用 `npm run doc:rename -- <旧> <新> [--apply]`。
 
 ### `retro/`：审查复盘的归档位（2026-10-15 新增）
 

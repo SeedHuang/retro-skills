@@ -1,6 +1,6 @@
 # Docgen P2 · S3：senior-sdet 手写卡转录
 
-> split from `docs/prd/docgen-agent-generation.md` (2026-10-19)
+> split from `docs/prd/20261019093443-docgen-agent-generation.md` (2026-10-19)
 > 日期：2026-10-19｜修订：2026-10-20（补 heading 字段、数据槽/模板常量分配表、来源行逐字锁定、A 组结构项验收；见 §3.1 与 §5 末行）｜**修订 2（2026-10-20 议会第 1 轮答辩后）**：when/notWhen 收归 triggerTable（§3 + §6-3）、notWhen 不渲染进正文（R4 + §6-5）、§3.1 补表头/分隔行与 tools 槽位归属 + 模板纯度、九步补 evidence / generate 预期 exit 1 / 比对落点 / 崩溃恢复 / 干净口径、黄金值改为冻结快照（§5）、硬约束扩到 10 条｜**修订 3（2026-10-20 议会第 2/3 轮答辩后）**：§1④ 限定 `diffSet` 只服务步 4（generate/gate 仍整缓冲）、§4 新增「比对 helper 契约」`{raw, unallowed}`、步 3 补「替换后 exit 0」、步 7 崩溃恢复按实现重写、步 8 干净口径三项、§5 notWhen 行改为「除 `description:` 行外 + 全卡恰 1 次」、§3.1 新增「模板骨架」行并把纯度改为数据探针、§6-3 的 notWhen 必填限定 `outputKind='testcase'`、§6-9 改引用、§9 只留指针、§7 补取数命令｜**状态：已定稿（2026-10-20，议会 9 轮：后端 / 前端 / 测试 / AI 四席 PASS + 审计 A/B 两节 PASS；testcase 同批送审）**｜PRD 状态：已定稿
 > 测试用例文件：`docs/superpowers/specs/2026-10-19-docgen-agent-senior-sdet-design-testcase.md`
 > 依赖：S1 spec `2026-10-19-docgen-agent-capability-design.md`（能力地基）+ S2 spec `2026-10-19-docgen-agent-pilot-design.md`（已跑通议会席模板的试点闭环）+ PRD §5 W2 + PRD §6.1–6.4
@@ -9,7 +9,7 @@
 
 P2 的「真实内容转录工作量 = 1 个文件」（PRD §2 边界一句话）就是 senior-sdet。13 席是结构化数据搬家，senior-sdet 是**手写正文转录成组件数据**——它是 agent 侧的「手写 → 生成」试点，验证第二套模板（P2-1）和「来源声明行」唯一差异条款（W2）是否成立。转录错了，P3/P4 的 skill/rule 转录会带着同样的错搬。
 
-本 spec 只做一件事：把 `agents/senior-sdet.md`（手写角色卡）转录成 docgen 组件数据（第二套模板），走完九步闭环到巩固，并落 W2 验收。PRD 决策原文不复制，引用见 `docs/prd/docgen-agent-generation.md` §3/§5/§6。
+本 spec 只做一件事：把 `agents/senior-sdet.md`（手写角色卡）转录成 docgen 组件数据（第二套模板），走完九步闭环到巩固，并落 W2 验收。PRD 决策原文不复制，引用见 `docs/prd/20261019093443-docgen-agent-generation.md` §3/§5/§6。
 
 **外部编号对照**：
 
@@ -19,7 +19,7 @@ P2 的「真实内容转录工作量 = 1 个文件」（PRD §2 边界一句话�
 | P2-2 | senior-sdet 专属 description 句式含 notWhen 槽位 | PRD §3 |
 | P2-8 | 字段映射：position := role；非必填未声明 = 合法值 | PRD §3 |
 | W2 | senior-sdet 转录验收 | PRD §5 |
-| P2-遗-9 | 翻译质量「详细/逻辑化」由施工 AI 自评写入组件数据注释 | `docs/prd/docgen-agent-generation.md` §责任边界（第 28 行）+ 序 2（第 270 行） |
+| P2-遗-9 | 翻译质量「详细/逻辑化」由施工 AI 自评写入组件数据注释 | `docs/prd/20261019093443-docgen-agent-generation.md` §责任边界（第 28 行）+ 序 2（第 270 行） |
 
 ## 1 全貌确认
 
@@ -231,7 +231,7 @@ senior-sdet 是本仓库第一个「非议会席」的 docgen 生成 agent。P3/
 ## 10 与既有 spec 的关系
 
 - **不取代**任何既有 spec。
-- **引用** `docs/prd/docgen-agent-generation.md` §5 W2 + §6.1–6.4 作为验收与流程源；不复制决策原文。
+- **引用** `docs/prd/20261019093443-docgen-agent-generation.md` §5 W2 + §6.1–6.4 作为验收与流程源；不复制决策原文。
 - **依赖** S1 spec `2026-10-19-docgen-agent-capability-design.md`（能力地基）+ S2 spec `2026-10-19-docgen-agent-pilot-design.md`（已跑通**议会席模板**的试点闭环）。
 - **校正（2026-10-20 复核）**：S2 只验证了一套模板（议会席 `agent.md.tpl`）；`agent-handwritten.md.tpl` 至今仍是 5 节占位骨架，**第二套模板的真实性由本席首次验证**——不要把「双模板机制已验证」当既成事实，本席才是它的验证点。
 - **衔接** `docs/after/20261019131757-dc-translator-design.md` §7：dc-translator 是 P2 管线建成后第一个新增 agent（W5 受控变更旅程），其转录形态参照本 spec 的组件数据模式。

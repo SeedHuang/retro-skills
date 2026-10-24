@@ -20,7 +20,7 @@ d:\Seed\retro-skills —— 一套 AI 协作工程体系（议会式多方评审
 - **已完成（本 session，全部已提交于 5b518d7）**：
   1. **docgen P2 · S4 收口**：14 席全部 `replaced`、无「停损未迁」；每席与生成物逐字节相等 + `git diff --numstat -- agents/` 无输出；120 条十键注解由独立子代理判定全 pass；gate ×2 / 冷跑 / `npm run check` 全绿；PRD §6.6 账本已逐席补登。
   2. **三轮 `TRAE-code-review` 全部闭环**：每轮均为「主审列项 → 2 个独立子代理交叉验证 → 用户选全部修复 → 改动 + 实测 → `npm run check` exit 0」。修复内容：`patternRegistry.mjs` 的 `roleSep`、`scripts/check-all.mjs` 捕获 `StateFileInvalid` 并打印被检席名、`pilot-render.test.mjs` 区间切片改行首锚定（`^## 边界$` + 断言恰一处）、testcase 判据与 plan 漂移清理。
-  3. **清账**：`docs/after/20261017210609-pending-work-overview.md` 线 F 更新（S4 已完成条目划掉、`剩下四件` → `剩下三件`、线 F-3 触发信号已命中）；`docs/superpowers/plans/2026-10-19-docgen-agent-capability.md` 40 个复选框全勾 + 8 处 `Step 5：提交` 标题改名；`docs/prd/docgen-agent-generation.md` §6.6 账本逐席补登。
+  3. **清账**：`docs/after/20261017210609-pending-work-overview.md` 线 F 更新（S4 已完成条目划掉、`剩下四件` → `剩下三件`、线 F-3 触发信号已命中）；`docs/superpowers/plans/2026-10-19-docgen-agent-capability.md` 40 个复选框全勾 + 8 处 `Step 5：提交` 标题改名；`docs/prd/20261019093443-docgen-agent-generation.md` §6.6 账本逐席补登。
   4. **线 C 关闭**（2026-10-21）：不建 `systematic-repair` 技能；三件机制中两件已有归属（review-loop 复查轮 / 议会多席独立 / `evolving-skills`），仅机制①「按病根分组的修复编排」转「候选 + 触发信号」。
   5. **线 G 新增**：历史 plan 的 git 写步骤残留盘点（见"遗留裁决与留观项"）。
 - **验证证据**：见元信息表『验证基线』（单源，勿在此重复）。
@@ -32,7 +32,7 @@ d:\Seed\retro-skills —— 一套 AI 协作工程体系（议会式多方评审
 - `docs/after/20261017210609-pending-work-overview.md`（线 A–G 活账本；**先读尾部「现在的下一步」节 + 线 F 表 + 线 C + 线 G**）
 - `docs/superpowers/plans/2026-10-20-docgen-agent-batch.md`（S4 plan，30 步全勾 + 执行记录 + 三轮评审修复小节）
 - `docs/superpowers/plans/2026-10-19-docgen-agent-capability.md`（S1 plan，已批量勾选 + 执行状态块）
-- `docs/prd/docgen-agent-generation.md` §6.6（迁移状态账本，14 席逐席记录）
+- `docs/prd/20261019093443-docgen-agent-generation.md` §6.6（迁移状态账本，14 席逐席记录）
 - 历史交接词链：`docs/handoffs/2026-10-20-s4-finalize-plan.md` → 本文件
 
 ## 本次任务
@@ -65,7 +65,7 @@ agents/senior-sdet.md:3（由底稿渲染而来，禁手打）
 - 要读：`scripts/check-all.mjs` 第 **94–115** 行（spawn `tools/docgen/cli.mjs gate`）、第 **144** 行（`checkAgentFile`）—— 这决定 `npm run check` 实际跑什么
 - 要读：`tools/execution-matrix/criteria.md`（A1/A2/B1–B4/C1–C4 十键判据——「语义正确 + 执行力强」的现成口径）
 - 要读（路 B 新增）：`docs/superpowers/specs/2026-10-19-docgen-agent-batch-design.md` 第 **49–52** 行（R4 黄金快照锚点 = 迁移前提交 / R6 替换前双闸门 / R7 议会席卡字节不变）+ §4 步 7（第 139 行）；其 testcase `docs/superpowers/specs/2026-10-19-docgen-agent-batch-design-testcase.md` 的 **TC-106**（第 373–392 行 replace 五模式）、**TC-107**（第 394–403 行卡字节不变）、**TC-110**（第 405–413 行重跑 init-evidence 自毁）—— 这三条正是要被新机制改写/补充的对象
-- 要读（路 B 新增）：`docs/prd/docgen-agent-generation.md` §1.1（doc→code→doc 闭环）、`rules/spec-testcase-gate.md`（spec 必配 testcase 的硬门）、`rules/docs-convention.md`（spec 定稿后**原文保留不改**，新 spec 取代旧 spec）
+- 要读（路 B 新增）：`docs/prd/20261019093443-docgen-agent-generation.md` §1.1（doc→code→doc 闭环）、`rules/spec-testcase-gate.md`（spec 必配 testcase 的硬门）、`rules/docs-convention.md`（spec 定稿后**原文保留不改**，新 spec 取代旧 spec）
 - 勿重做：S1–S4 全部闭环（`tools/docgen/**`、`agents/**`，已提交于 5b518d7）；三轮 code-review 修复（`patternRegistry.mjs` 的 `roleSep`、`check-all.mjs` 的 `StateFileInvalid` 捕获、`pilot-render.test.mjs` 行首锚定切片）；线 E 产物（`tools/execution-matrix/**`）；线 C 关闭结论。
 
 ## 开放问题
@@ -83,7 +83,7 @@ agents/senior-sdet.md:3（由底稿渲染而来，禁手打）
 - **改规则 / 技能 / 卡内容前必须先给用户看改前改后 diff 并获确认**，不许只给「执行 or 不执行」二选一 —— 用户规则（实时 project_memory 明确记载）。
 - **testcase 不得由 spec 作者或施工者改写**（须独立 `senior-sdet` 子代理，全新上下文）—— 用户规则「写或修改 spec 时必须同批产出 testcase」。
 - **已定走路 B（修机制），不再讨论路 A** —— 用户 2026-10-21 当场裁定。路 A（只修内容、绕行写盘、机制缺陷记待办）已作废。
-- **成品必须由底稿渲染而来**，禁止手打 `agents/*.md` 内容 —— docgen 管线设计（`docs/prd/docgen-agent-generation.md` §1.1 doc→code→doc 闭环）。本次「写盘」＝把**渲染输出**落盘，不是手打。
+- **成品必须由底稿渲染而来**，禁止手打 `agents/*.md` 内容 —— docgen 管线设计（`docs/prd/20261019093443-docgen-agent-generation.md` §1.1 doc→code→doc 闭环）。本次「写盘」＝把**渲染输出**落盘，不是手打。
 - **落盘文件 LF / UTF-8 / 无 BOM / 末尾恰一个 `\n`** —— 仓库 `.gitattributes` = `* text=auto eol=lf` + `compare.mjs` 的 `checkEnvironment`。
 - **权威全量检查入口 = `npm run check`**（= `node scripts/check-all.mjs`）；**不要**用 `node --test <目录>`（本机 Node 22 会 `MODULE_NOT_FOUND`），要单跑用 `node --test tools/docgen/test/*.test.mjs`。
 

@@ -1,6 +1,6 @@
 # 测试用例：Docgen P1 一条 rule 的整文件生成（实现设计）
 
-> 归属 spec：`docs/superpowers/specs/2026-10-18-docgen-rule-whole-file-design.md`（split from `docs/prd/docgen-rule-whole-file.md`，2026-10-18）
+> 归属 spec：`docs/superpowers/specs/2026-10-18-docgen-rule-whole-file-design.md`（split from `docs/prd/20261018214426-docgen-rule-whole-file.md`，2026-10-18）
 > 编写者：`senior-sdet`（实例标识 `sdet-2026-10-18-docgen-p1`，全新上下文）｜**独立性声明**：编写者 ≠ spec 作者，≠ 施工者；本文件编写期间未读到任何 docgen 实现（实测 `tools/docgen-spike/` 目录在本轮不存在），用例只从 spec 全文、PRD §4/§5/§6/§8 的验收锚点推导；spec 作者只能核对覆盖与提疑问，不得自行改写本文件的判据。
 > 状态：**定稿（内容评审通过；机械检查通过，2026-10-18）**（定稿 = 每条用例五要素齐全 + 覆盖总表与 V1–V11、R1–R15 一一对应）｜最后更新：`2026-10-18`（第 7 轮：按 spec 补的三处口径同步——§5.4 哨兵常量 `SENTINEL_V4` / `SENTINEL_V10` 从 `specTestCaseGate.mjs` 导出、§7.2 涉及 check 的 e2e 在 `DOCGEN_CHECK_ACTIVE=1` 下显式 `t.skip()`、§7.3/§7.4 故障注入副本由 `run.mjs` 启动清理后自建 + 唯一临时名；本文件同步 TC-049、TC-051、TC-057、TC-070 与 §0/§4/§7/§8；**第 8 轮**按 spec 补的最后四处口径再同步——`--case` 枚举含 `V10b`、省略 `--case` 的全量为 **13** 例、`--no-clean` 的 ROOT 归属（测试内 spawn 一律带、顶层 owner 不带）、故障注入副本由 `run.mjs --case Vn` 的用例代码在启动清理后自建、TC-057 并入 §7.2 的 skip 清单且 ROOT 残片预置获 §7.3 明文例外；本文件同步 §0、TC-049/051/052/053/054/057/062/063、§1/§3/§4/§7/§8；**第 9 轮**按 spec §7.3 补的「副本归属两分」口径再同步——`--case Vn` 内的副本由用例代码在启动清理后自建，`--gate` / `--compare` 等非 `--case` 模式的副本允许在 spawn 前预置在 ROOT 内（须带 `--no-clean` + spawn 前先断言存在），同时把第 6 轮的旧断言口径标为历史记录；本文件同步 §0、TC-065、TC-069、TC-068、§7.1、§8；**用例总数不变：71 条 / 正 13 / 负 58**）
 > 第 10 轮（2026-10-18）：TC-022 的 byte 5→4（按 §6.1 逐字节复算；仅修正期望，不改输入）。

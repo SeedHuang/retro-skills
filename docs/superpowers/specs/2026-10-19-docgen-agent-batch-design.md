@@ -1,6 +1,6 @@
 # Docgen P2 · S4：余下 12 席批量数据搬家
 
-> split from `docs/prd/docgen-agent-generation.md` (2026-10-19)
+> split from `docs/prd/20261019093443-docgen-agent-generation.md` (2026-10-19)
 > 日期：2026-10-19｜**修订 3（2026-10-20，议会第 2 轮答辩后）**：影响面⑫补 `cli-gate.test.mjs`（generate 期望不得依赖迁移进度）与 `pilot-render.test.mjs` 三连空行断言收窄；§3 删 fixedList 条数列（条数只由 testcase 现算）；§4.1 明确无共享块空行只在已迁 B 席上验；§5-① 补快照 = HEAD 的等价写法、§5-⑤ 补 check-all 输出席名与降级不收口；§6 补 11–13（槽位特判、测试改写不删断言、降级只 pending）｜**修订 2（2026-10-20，议会第 1 轮答辩后）**：补「空共享块少一个空行」的渲染修复与影响面；`[CONST]` 快照改 `HEAD`（检查点不再依赖未生成的 evidence）；R6 改为双闸门（`goldenAssertion` + `compareResult`）；补四键运行时守卫、注解判定时点/判者落账/降级、12 席注解进 `check-all`；干净口径改为「预期产物之外无改动」；拆批判据补「渲染器语义缺陷 → 回炉不拆批」；常量尺寸数字改为指向 testcase 现算｜**修订 1（2026-10-20）**：数据源由 gen-agents 改为迁移前现卡、四键收归 triggerTable、补四常量/evidence/注解、新增前 3 席检查点｜状态：**已定稿（2026-10-20，议会 5 轮：QA/AI/AU PASS + 审计两表 PASS）**｜PRD 状态：已定稿
 > 测试用例文件：`docs/superpowers/specs/2026-10-19-docgen-agent-batch-design-testcase.md`
 > 依赖：S1 spec `2026-10-19-docgen-agent-capability-design.md` + S2 spec `2026-10-19-docgen-agent-pilot-design.md` + S3 spec `2026-10-19-docgen-agent-senior-sdet-design.md` + 线 E `tools/execution-matrix/criteria.md` + PRD §5 W3 + PRD §6.1–6.4
@@ -9,7 +9,7 @@
 
 试点（S2）验证了模型，S3 验证了第二套模板与「唯一允许差异」条款，余下 12 席因此是**机械重复**——但机械重复不等于可以偷懒：12 席里有 11 席连 `triggerTable.when` 都还没有，`sharedBlocks` 与 `outputFormats` 也只实现了试点那一席，且议会席模板从未走过「无共享块」这条分支。任何一席的 when 提取错位、共享常量少一个空行，都会被 W3 的逐字节比对抓到。
 
-本 spec 只做一件事：把余下 12 席逐个从**迁移前现卡**搬进 docgen 组件，逐个走完九步闭环（PRD 6.2）到巩固（PRD 6.3），落 W3 验收。PRD 决策原文不复制，引用见 `docs/prd/docgen-agent-generation.md` §3/§5/§6。
+本 spec 只做一件事：把余下 12 席逐个从**迁移前现卡**搬进 docgen 组件，逐个走完九步闭环（PRD 6.2）到巩固（PRD 6.3），落 W3 验收。PRD 决策原文不复制，引用见 `docs/prd/20261019093443-docgen-agent-generation.md` §3/§5/§6。
 
 **外部编号对照**：
 

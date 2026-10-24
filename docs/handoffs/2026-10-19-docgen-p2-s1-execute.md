@@ -18,7 +18,7 @@
 ## 现状
 
 - **已完成（本 session）**：
-  - P2 拆 spec（4 份）→ PRD §10 路线图已内嵌（`docs/prd/docgen-agent-generation.md` §10）；4 份 spec + 4 份 testcase 全部生成（senior-sdet 独立编写）。
+  - P2 拆 spec（4 份）→ PRD §10 路线图已内嵌（`docs/prd/20261019093443-docgen-agent-generation.md` §10）；4 份 spec + 4 份 testcase 全部生成（senior-sdet 独立编写）。
   - **S1（能力与终态）议会评审通过**：4 轮收敛（第 1 轮 P0 2 族 + P1 15 族 + P2 8 族 → 第 4 轮终局审计 PASS）。评审账本 `.session/reviews/2026-10-19-1430-docgen-p2-s1-spec/`。
   - **S1 施工计划已写**：`docs/superpowers/plans/2026-10-19-docgen-agent-capability.md`（8 任务：脚手架/validateAgentData/rule 侧迁移/CLI generate+gate/draft+replace/check-agents+baseline/守卫迁移+check-all 参数化/W4–W9 终态收口）。
   - **已提交**：`da2ba34`（PRD §10 + S1 spec/testcase + S1 plan + after 待办）。

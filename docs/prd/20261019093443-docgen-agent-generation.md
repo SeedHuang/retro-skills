@@ -315,6 +315,6 @@ S1 终态任务（W4/W5/W8/W9）依赖 S2/S3/S4 完成后再验收
 
 ### 注意
 
-- spec 首行保留追溯标记 `> split from docs/prd/docgen-agent-generation.md (2026-10-19)`。
+- spec 首行保留追溯标记 `> split from docs/prd/20261019093443-docgen-agent-generation.md (2026-10-19)`。
 - 每份 spec 必须同批产出独立 testcase（senior-sdet 全新上下文编写），一起送议会；缺 testcase 不得送议会、不得进 plan（`spec-testcase-gate`）。
 - shared 文件在第一个引用它的 spec 开工时创建，内容用引用指向 PRD，不抄写。

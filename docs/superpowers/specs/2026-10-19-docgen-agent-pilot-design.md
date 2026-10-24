@@ -1,6 +1,6 @@
 # Docgen P2 · S2：试点 1 席（reviewer-audit 数据搬家）
 
-> split from `docs/prd/docgen-agent-generation.md` (2026-10-19)
+> split from `docs/prd/20261019093443-docgen-agent-generation.md` (2026-10-19)
 > 日期：2026-10-19｜状态：待评审（草稿，spec + testcase 一起送议会）｜PRD 状态：已定稿
 > **修订版 3（2026-10-19）：按第 2 轮复评修复——补「对 S1 的修订清单」、证据 fixture + `lastWrittenHash`、replace 写序与幂等、generate 覆盖声明、冷跑交付清单、错误码扩展表、模板 `## 共享块` 删除与空块语义**
 > 测试用例文件：`docs/superpowers/specs/2026-10-19-docgen-agent-pilot-design-testcase.md`
@@ -10,7 +10,7 @@
 
 P2 的队列第一席是试点（PRD 6.1 序 1）。试点不是「又多搬一个文件」，它是**整个 agent 迁移模型的一次真实验证**：迁移前现文件（黄金快照）能不能反推转录成 docgen 组件数据、description 拆槽后渲染是否逐字复现原文、九步闭环走下来 gate 是否全绿。试点错了，余下 12 席（S4）会带着同样的错搬 12 次；试点对了，S4 就是机械重复。
 
-本 spec 只做一件事：把 `reviewer-audit` 这一席从「迁移前现文件（黄金快照）」转录到「docgen 组件数据 + docgen 生成」，走完九步闭环（PRD 6.2）到巩固（PRD 6.3），并落 W1 验收。PRD 决策原文不复制，引用见 `docs/prd/docgen-agent-generation.md` §3/§5/§6。
+本 spec 只做一件事：把 `reviewer-audit` 这一席从「迁移前现文件（黄金快照）」转录到「docgen 组件数据 + docgen 生成」，走完九步闭环（PRD 6.2）到巩固（PRD 6.3），并落 W1 验收。PRD 决策原文不复制，引用见 `docs/prd/20261019093443-docgen-agent-generation.md` §3/§5/§6。
 
 **外部编号对照**：
 
@@ -201,7 +201,7 @@ P2 的队列第一席是试点（PRD 6.1 序 1）。试点不是「又多搬一�
 ## 10 与既有 spec 的关系
 
 - **不取代**任何既有 spec 的全文；**对 S1 的逐条语义修订集中在 §11**（未列入 §11 的 S1 规定继续有效）。
-- **引用** `docs/prd/docgen-agent-generation.md` §5 W1 + §6.1–6.4 作为验收与流程源；不复制决策原文。
+- **引用** `docs/prd/20261019093443-docgen-agent-generation.md` §5 W1 + §6.1–6.4 作为验收与流程源；不复制决策原文。
 - **依赖** S1 spec `2026-10-19-docgen-agent-capability-design.md`（能力地基：CLI/草稿箱/守卫/退出码/拒红过滤）。
 - **供 S4 依赖**：试点验证的模板与数据形状是 S4 的复制模板。
 

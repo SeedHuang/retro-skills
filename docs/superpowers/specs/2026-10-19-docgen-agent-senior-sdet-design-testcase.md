@@ -1,6 +1,6 @@
 # 测试用例：Docgen P2 · S3 senior-sdet 手写卡转录
 
-> 归属 spec：`docs/superpowers/specs/2026-10-19-docgen-agent-senior-sdet-design.md`（split from `docs/prd/docgen-agent-generation.md` 2026-10-19；本文件对应当前 spec **2026-10-20 修订 3**）
+> 归属 spec：`docs/superpowers/specs/2026-10-19-docgen-agent-senior-sdet-design.md`（split from `docs/prd/20261019093443-docgen-agent-generation.md` 2026-10-19；本文件对应当前 spec **2026-10-20 修订 3**）
 > 编写者：`senior-sdet`｜**本次修订实例标识 `sdet-2026-10-20-docgen-p2-s3-revision6`**（初版 `sdet-2026-10-19-docgen-p2-s3`、修订 1 `sdet-2026-10-20-docgen-p2-s3-revision`、修订 2 `sdet-2026-10-20-docgen-p2-s3-revision2`、修订 3 `sdet-2026-10-20-docgen-p2-s3-revision3`、修订 4 `sdet-2026-10-20-docgen-p2-s3-revision4`、修订 5 `sdet-2026-10-20-docgen-p2-s3-revision5`）
 > **独立性声明**：编写者 ≠ spec 作者（议会答辩方），≠ 施工者；**本次修订（revision6）在全新上下文完成，仅依据 spec 全文、实现现状、评审批次记录自行核实**，不从施工结果倒推判据，也不采信任何转述结论当判据。
 > 状态：草稿（修订 6）｜最后更新 `2026-10-20`｜修订依据：第 1 轮 27 族答辩结论（`.session/reviews/2026-10-20-192002-s3-senior-sdet/problems.md`）+ 第 2 轮 6 席复核意见 30 项 + **第 3 轮复核收尾 10 项（P0 1 / P1 2 / P2 7）+ QA N4（P2）**，逐项落地；**修订 5**（P0）：§4 回归清单 `fixtures/senior-sdet.evidence.json` 行「必须重跑」栏残留裸「TC-001」（连带 001a）→ 改为「重跑 TC-001b；不得重跑 TC-001a」，并在 TC-001a 步⑤ 补「`init-evidence` 只允许在迁移前跑一次」；**修订 6**：① 文件头【diffSet 判据命令】调用方口径与末尾修订落点第 9 项，改为「spec §4 已列全四条（TC-010/014/016/021）+ TC-024 单测 helper 本体」；② TC-031 前置新增**路径存在性检查**（`git cat-file -e`），路径缺失时直接走「未提交态」兜底，并写明不得用 `git diff` 非空输出当存在性证明；用例总数与正/负/边界计数未变；**版本标签：对应当前 spec（修订 3）**
@@ -652,7 +652,7 @@ node -e "const fs=require('node:fs');const BT=String.fromCharCode(96),NL=String.
 - **步骤**：
   ① 建副本仓；注入缺陷 1（模板槽位拼装顺序错）→ 对副本跑【diffSet 判据命令】`fail` → 必须 PASS（判红）
   ② 用**新副本**注入缺陷 2（§3.1 误分配：把固定清单表头挪进数据）→ 再跑 `fail` → 必须 PASS（仍红）
-  ③ 停止：不再做第 3 次尝试；在**迁移状态账本**把该席标「停损未迁」，并写复盘（含 2 次尝试）。**账本落点 = PRD §6.6「迁移状态账本」那张表（`docs/prd/docgen-agent-generation.md` §6.6，状态口径 `未入队 / 迁移中 / 已巩固 / 停损未迁`），不是 `tools/docgen/state.json`**——`state.mjs:9` 的 `VALUES` 只接受 `replaced` / `suspended`，写 `停损未迁` 会直接 `StateFileInvalid`
+  ③ 停止：不再做第 3 次尝试；在**迁移状态账本**把该席标「停损未迁」，并写复盘（含 2 次尝试）。**账本落点 = PRD §6.6「迁移状态账本」那张表（`docs/prd/20261019093443-docgen-agent-generation.md` §6.6，状态口径 `未入队 / 迁移中 / 已巩固 / 停损未迁`），不是 `tools/docgen/state.json`**——`state.mjs:9` 的 `VALUES` 只接受 `replaced` / `suspended`，写 `停损未迁` 会直接 `StateFileInvalid`
   ④ 断言现产物没被「改到通过」：副本的 `agents/senior-sdet.md` 与冻结副本【字节比较】== EQUAL；真仓库 `git diff --numstat -- agents/senior-sdet.md` **无输出**
 - **预期**：全程只改组件/模板（且只在副本里）；**现产物不动**；2 次仍不等 → 停止、写复盘、标「停损未迁」、队列停在该对象
 - **判据**——

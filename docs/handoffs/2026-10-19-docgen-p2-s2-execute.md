@@ -73,7 +73,7 @@
 - `state.json` 是"已接管"的唯一机器载体；只有 `replace` 写；先 state 后目标；非法 version/值/键 → `StateFileInvalid`（exit 2）——spec R9/R10 / §4 步 7。
 - evidence 每席一份：`tools/docgen/fixtures/<name>.evidence.json`；字段 `commit/blob/sha256/hashObject/goldenAssertion/compareResult/renderSha256/lastWrittenHash`——spec R3/R4。
 - 测试执行模型：需 replace / `npm run check` / 冷跑 / 真实仓库改写的用例一律放 `tools/docgen/acceptance/*.mjs`；`*.test.mjs` 禁止 spawn `npm run check`——spec §7。
-- 14 席快照；W5/dc-translator 延后——PRD §6.6 依赖图（`docs/prd/docgen-agent-generation.md` 第 237 行）+ plan Global Constraints。
+- 14 席快照；W5/dc-translator 延后——PRD §6.6 依赖图（`docs/prd/20261019093443-docgen-agent-generation.md` 第 237 行）+ plan Global Constraints。
 - 不重开议会评审；仅当施工发现 spec 缺陷时才回炉——`delivery-audit.md` 已通过。
 
 ## 遗留裁决与留观项

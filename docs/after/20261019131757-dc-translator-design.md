@@ -2,7 +2,7 @@
 
 > 状态：**探索中，未定稿（设计已认可，实现押后）**｜建立：2026-10-19
 > **何时该搬走**：P2 管线建成后 → 本文档拆成「组件数据 + 草稿卡 + `skills/dc-translate/` + 两条 rule」，dc-translator 作为第一个新增 agent 走 W5 受控变更旅程；搬走后本文档「待办」迁出，瘦身为 done。
-> 关联：P2 PRD `docs/prd/docgen-agent-generation.md`（§1.1 核心理念、§3 P2-2/P2-8）、索引 D6/D9/D14、`spec-testcase-gate` 规则。
+> 关联：P2 PRD `docs/prd/20261019093443-docgen-agent-generation.md`（§1.1 核心理念、§3 P2-2/P2-8）、索引 D6/D9/D14、`spec-testcase-gate` 规则。
 
 ## 1 定位与背景
 
@@ -182,5 +182,5 @@ skills/dc-translate/
 
 - [ ] P2 管线建成（`tools/docgen/` 落位）后：建 `skills/dc-translate/`（§5 结构）+ 两条 rule（§6）→ `aas sync`
 - [ ] dc-translator 角色卡走 W5 受控变更旅程（§7）
-- [ ] **PRD 回环（第 2 轮评审 AI-N2 裁决，待决）**：PRD `docgen-agent-generation.md` P2-8 断言 e「存在声明 fallback」措辞改为 vacuous（与 S1 spec §6-13 已落地的「未声明 = 合法」对齐）——S1 spec 已按 vacuous 实现，PRD 下次修订时同步；同步后删除本行
+- [ ] **PRD 回环（第 2 轮评审 AI-N2 裁决，待决）**：PRD `20261019093443-docgen-agent-generation.md` P2-8 断言 e「存在声明 fallback」措辞改为 vacuous（与 S1 spec §6-13 已落地的「未声明 = 合法」对齐）——S1 spec 已按 vacuous 实现，PRD 下次修订时同步；同步后删除本行
 - [ ] 本文档瘦身为 done，待办迁出
