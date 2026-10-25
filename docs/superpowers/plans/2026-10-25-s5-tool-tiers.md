@@ -39,7 +39,7 @@ T7 ──→ T10 账本 P-8 ──→ T11 终局验证（gate + npm run check）
 
 - **改**：`tools` 增 `producer`（`Read/Glob/Grep/Write/Edit/RunCommand`）；新增 `tierBySeat`（`senior-sdet→sdet`、`reviewer-audit→producer`、`detective-observer→producer`）、`defaultTier='readOnly'`、`tierOf()`（`Object.hasOwn`）、`toolsForSeat()`、`boundaryBySeat`、`BOUNDARY_PRODUCER_AUDIT`、`BOUNDARY_PRODUCER_DETECTIVE`
 - **不登记** `research`（V-1）
-- **验收**：`node -e "import('./tools/docgen/components/patternRegistry.mjs').then(m=>console.log(Object.keys(m.patternRegistry.tools)))"` → 含 `producer`、不含 `research`；`node -e "import('./tools/docgen/components/patternRegistry.mjs').then(m=>console.log(JSON.stringify(m.toolsForSeat('reviewer-audit'))))"` → producer 六元组
+- **验收**：`node -e "import('./tools/docgen/components/patternRegistry.mjs').then(m=>console.log(Object.keys(m.patternRegistry.tools)))"` → 含 `producer`、不含 `research`；`node -e "import('./tools/docgen/components/patternRegistry.mjs').then(m=>console.log(JSON.stringify(m.toolsForSeat('reviewer-audit'))))"` → producer 六元组（**施工后核**：`toolsForSeat` 由本任务产出，T1 之前跑必 `TypeError`）
   （注：`tools` / `tierBySeat` 等都是 `patternRegistry` 的字段（`patternRegistry.mjs:23`），**没有**顶层 `export const tools`，命令必须走 `m.patternRegistry.tools`）
 - **对应用例**：见 §5 的 T1 行（映射单源，本节不复述 ID）
 - **依据**：spec §3.1 / §3.2（`#L68-L116`）
@@ -159,6 +159,7 @@ T7 ──→ T10 账本 P-8 ──→ T11 终局验证（gate + npm run check）
 - [x] 依赖无环（§2 图无回边）
 - [x] 功能块 ↔ testcase 一一映射（§5 表 51 条，每条恰属一个任务）
 - [x] 每步有可复算验收命令（§3 各任务「验收」行）
+- [x] **验收命令里的目标符号都核过**：导出名 / 子命令 / 文件路径已在源码 grep 到（`patternRegistry.mjs:23` `export const patternRegistry`、`agentData.mjs:263` 的 map 已注入 `tools` 字段、`agentData.mjs:294` `export const agentData`）；施工后才存在的符号（`toolsForSeat` / `tierBySeat` / `boundaryBySeat`，由 T1 产出）已在命令旁标「施工后核」
 - [x] 无 `## 新增设计决策` 节（R4）
 - [x] 未写死 baseline 计数或档位数量（V-5）
 

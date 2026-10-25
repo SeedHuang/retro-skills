@@ -15,9 +15,10 @@
 
 | # | 事项 | 现状 | 去向 |
 |---|---|---|---|
-| B-1 | `producer` / `research` 档 | S5 部分完成：`command` 档已落地（审计 / 侦探） | S5 剩余；S2 的写权依赖它 |
+| B-1a | `research` 档（`readOnly + WebSearch + WebFetch`）与市场卡 | 未开工（S5 只做 `producer`，`tools` 未登记 `research`） | S5-R：另立 spec，**触发 = S2 市场卡**；本仓 spec §3.4 已写死其范围 |
+| B-1b | 精算师（`reviewer-actuary`）取数权 | 未开工；`command` 档已保留但当期无席挂载 | S2：给精算师挂 `command`（或 `producer`），由 S2 定 |
+| B-1c | S5-B：检测脚本（`.session/` 盲区）/ CLI B3 机器门 / 账本模板改造 | 拆出项，未开工 | S5-B：另立 spec（议会 #2 第 2/3 轮的独立深水区） |
 | B-2 | F-22 只落一半（节点数检查进 S2，正文解释未进） | 正文解释已加 V-9（2026-10-24） | 已收口；S2 落地时核一次 |
-| B-5 | 档位名表两处硬编码（`agentData` 与 `validateAgentData`） | 自守卫但违单一真相 | S5 收口收进 `patternRegistry.tierBySeat` |
 | B-7 | 全部改动未提交 git | 工作区改动 | 用户决定提交方式后执行 |
 
 ## 存量待办（线 B / D / F，2026-10-24 并入）

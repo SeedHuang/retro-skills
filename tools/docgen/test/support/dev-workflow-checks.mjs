@@ -183,18 +183,24 @@ export function bareReaderRefs(text) {
   return [...text.matchAll(/(?<!evidence-)(?<!reviewer-)reader/g)].map((m) => m.index);
 }
 
+// 文本剥离的单源口径（E03/E04 与 counterProbes 共用，禁止第二套实现）：
+// stripComments 只剥行注释（用于「必须看见标题串」的判据）；stripCommentsAndStrings 连单/双引号串一起剥
+export const stripComments = (l) => l.replace(/\/\/.*$/, '');
+export const stripCommentsAndStrings = (l) => stripComments(l)
+  .replace(/'(?:[^'\\]|\\.)*'/g, '').replace(/"(?:[^"\\]|\\.)*"/g, '');
+// 档位计数判据：用剥注释、保留字符串的文本（标题是字符串，剥串会让标题里的计数逃检）；「退出码 N 档」显式排除
+export const isTierCountLine = (l) => /[四五六]档/.test(stripComments(l)) && !/退出码/.test(stripComments(l));
+
 // TC-C05~C08 / C11 / E09：12 处硬编码计数的三条探针（纯文本，供正常态与构造态共用）
 export function counterProbes(files) {
-  const noComment = (l) => l.replace(/\/\/.*$/, '');
-  const noString = (l) => noComment(l).replace(/'(?:[^'\\]|\\.)*'/g, '');
-  const baseline = [];   // 剥注释与单引号串后仍出现 35/36/37
+  const baseline = [];   // 剥注释与引号串后仍出现 35/36/37
   const seatAssert = []; // assert.* 行内出现 14/15
   for (const [file, text] of Object.entries(files)) {
     text.split(/\r?\n/).forEach((line, i) => {
-      if (/(?<![0-9])(35|36|37)(?![0-9])/.test(noString(line))) baseline.push(`${file}:${i + 1}`);
+      if (/(?<![0-9])(35|36|37)(?![0-9])/.test(stripCommentsAndStrings(line))) baseline.push(`${file}:${i + 1}`);
       // 边界用「非词字符」而非「非数字」：`diff14` 这类标识符里的数字不是席位计数（假阳性）
-      // 先剥单引号串：负例夹具把「违规写法」当字符串写在用例里，不剥会把夹具本身判成违规
-      if (/(?<![\w])assert\.(equal|strictEqual|deepEqual|match|ok)\([^\r\n]*(?<![\w])(14|15)(?![\w])/.test(noString(line))) seatAssert.push(`${file}:${i + 1}`);
+      // 先剥引号串：负例夹具把「违规写法」当字符串写在用例里，不剥会把夹具本身判成违规
+      if (/(?<![\w])assert\.(equal|strictEqual|deepEqual|match|ok)\([^\r\n]*(?<![\w])(14|15)(?![\w])/.test(stripCommentsAndStrings(line))) seatAssert.push(`${file}:${i + 1}`);
     });
   }
   return { baseline, seatAssert };

@@ -1,5 +1,5 @@
 // validateAgentData（§6 断言 1–15）：数据层查字段（纯数据），输出层 frontmatter 由 gate 逐字节兜底。
-import { patternRegistry, resolveDomain } from './patternRegistry.mjs';
+import { patternRegistry, resolveDomain, tierOf, toolsForSeat } from './patternRegistry.mjs';
 
 const EXIT = {
   0: [],
@@ -37,11 +37,10 @@ export function validateAgentData(data, table) {
   for (const a of data) {
     if (!a.name || (Array.isArray(a.tools) && a.tools.length === 0) || !a.tools) fail('FrontmatterFieldMissing', { name: a.name });
   }
-  // 断言 4：tools 按席分档（15 席 / 四档：readOnly 12、sdet 1、command 2）——须为数组且允许集 ⊆ 实际 且 实际 ⊆ 允许集（恰等，I5/J1 fix）
+  // 断言 4：tools 按席分档（档位由 toolsForSeat 单源给出，席位数与档位数一律派生、不写死）
+  // 须为数组且允许集 ⊆ 实际 且 实际 ⊆ 允许集（恰等，I5/J1 fix）
   for (const a of data) {
-    const allowed = a.name === 'senior-sdet' ? patternRegistry.tools.sdet
-      : (a.name === 'reviewer-audit' || a.name === 'detective-observer') ? patternRegistry.tools.command
-      : patternRegistry.tools.readOnly;
+    const allowed = toolsForSeat(a.name);
     if (!Array.isArray(a.tools) || !allowed.every((t) => a.tools.includes(t)) || !a.tools.every((t) => allowed.includes(t))) fail('ToolsViolation', { name: a.name });
   }
   // 断言 5：sharedBlock 引用枚举 + 同引用枚举同值（无 sharedBlock 席不渲染由渲染层处理）
@@ -115,8 +114,8 @@ export function validateAgentData(data, table) {
     'domain', 'boundary', 'explorePolicy'];
   const HANDWRITTEN_KEYS = ['heading', 'sourceLine'];
   // 两个槽位字段只允许出现在显式声明它们的席（C5 ④）：其他席一旦带上，渲染会静默换句而不报错。
-  // 新增这样的席时同步本集合（当前仅 evidence-reader）。
-  const DECLARED_SLOT_SEATS = new Set(['evidence-reader', 'reviewer-audit', 'detective-observer']);
+  // 白名单由 boundaryBySeat 派生（+ evidence-reader 自带的边界句），新增 producer 席时自动跟随。
+  const DECLARED_SLOT_SEATS = new Set(['evidence-reader', ...Object.keys(patternRegistry.boundaryBySeat)]);
   for (const a of data) {
     for (const k of ['when', 'notWhen', 'route', 'fallback']) {
       if (k in a) fail('TriggerFieldMisplaced', { name: a.name, key: k });
@@ -130,6 +129,10 @@ export function validateAgentData(data, table) {
     // 两个槽位字段的值域（与 domain 的处理对齐）：写错会静默改卡面，而机器检查只判节名存在
     if ('boundary' in a && (typeof a.boundary !== 'string' || a.boundary.trim() === '')) {
       fail('DescriptionDerivation', { name: a.name, key: 'boundary', value: a.boundary });
+    }
+    // producer 席缺 boundary（删键）/ 空串 / 全空格一律判错，不得静默退回 DEFAULT_BOUNDARY（spec §5 / D3）
+    if (tierOf(a.name) === 'producer' && (typeof a.boundary !== 'string' || a.boundary.trim() === '')) {
+      fail('DescriptionDerivation', { name: a.name, key: 'boundary', reason: 'producer 席必须声明非空 boundary' });
     }
     if ('explorePolicy' in a && !['none', 'full'].includes(a.explorePolicy)) {
       fail('DescriptionDerivation', { name: a.name, key: 'explorePolicy', value: a.explorePolicy });

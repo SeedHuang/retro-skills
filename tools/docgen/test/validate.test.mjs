@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { agentData, triggerTable } from '../components/agentData.mjs';
 import { validateAgentData, exitCodeFor } from '../components/validateAgentData.mjs';
+import { patternRegistry } from '../components/patternRegistry.mjs';
 
 const valid = () => ({ data: structuredClone(agentData), table: structuredClone(triggerTable) });
 const expectFail = (code, { data, table } = valid(), msg) => {
@@ -26,7 +27,8 @@ test('断言 3：name/tools 必填非空 → FrontmatterFieldMissing；when 存�
   expectFail('MissingWhen', b);
 });
 
-test('断言 4：tools 按席分档（15 席 / 四档）→ ToolsViolation', () => {
+// 席位数与档位数一律派生（不加档后重犯此处：本行曾被写成「15 席 / 四档」的字面量）
+test(`断言 4：tools 按席分档（${agentData.length} 席 / ${Object.keys(patternRegistry.tools).length} 档）→ ToolsViolation`, () => {
   const a = valid(); a.data[0].tools = ['Read', 'Write'];
   expectFail('ToolsViolation', a);
 });

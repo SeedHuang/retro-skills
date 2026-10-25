@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 import { validateAgentData } from '../components/validateAgentData.mjs';
 import { agentData, triggerTable } from '../components/agentData.mjs';
-import { patternRegistry } from '../components/patternRegistry.mjs';
+import { tierOf, toolsForSeat } from '../components/patternRegistry.mjs';
 import { cmdDraft, cmdReplace } from '../cli.mjs';
 import { BASELINE_RULES, agentPaths } from '../components/baseline.mjs';
 
@@ -53,7 +53,10 @@ test('I3：generate --kind rule --name 精确到单对象（正：生成规则 e
 
 test('I5：断言 4 tools 多出允许集 → ToolsViolation（恰等，不只查包含）', () => {
   const data = structuredClone(agentData);
-  data[0].tools = [...patternRegistry.tools.readOnly, 'Write']; // 普通席多带 Write
+  // 样本必须是运行时 readOnly 席：data[0] 是 reviewer-audit（producer 档），拿它当普通席会把命题换成「producer 少给工具被拒」
+  const sample = data.find((a) => a.name === 'reviewer-qa');
+  assert.equal(tierOf(sample.name), 'readOnly');
+  sample.tools = [...toolsForSeat(sample.name), 'Write']; // 普通席多带 Write
   try {
     validateAgentData(data, triggerTable);
     assert.fail('应抛 ToolsViolation');
