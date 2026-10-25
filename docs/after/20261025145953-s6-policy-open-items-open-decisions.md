@@ -17,7 +17,7 @@
 
 | # | 项 | 现状 | 触发信号 |
 |---|---|---|---|
-| B1 | 把 `doc:sweep -- --check` 接入 `npm run check` | 现在是独立命令（避免无基线的克隆环境直接红） | 基线文件随仓提交且克隆后可用时 |
+| B1 | 把 `doc:sweep -- --check` 接入 `npm run check` | 现在是独立命令（避免无基线的克隆环境直接红）；**2026-10-25 勘误**：真命令 = `node scripts/scope-sweep.mjs --check`（npm 形式在 PowerShell + npm 10.9 下丢参、恒 exit 0） | 基线文件随仓提交且克隆后可用时 |
 | B2 | 文档互引改「稳定锚点」（§/V-x/不变量 N），不再写 `文件:行号` | 本轮实测：4 次改 spec 导致 testcase 里 150+ 处行号漂移 | 下一次修订 testcase 时，随改随迁（先迁在审 3 份，共 476 处） |
 | B3 | 模板 / 配置读取失败的稳定错误面（exit 3） | 现为「导入期未捕获，不承诺码」，已登记 S6-B | 渲染改惰性求值时 |
 
@@ -35,3 +35,11 @@
 - P2 11 族（F22–F32）全部「采纳已落」，落点见 `problems.md` §十。
 - 议会 #3 的 83 张卡全部有正文、答辩记录与落点（`cards.md` / `problems.md`）。
 - 「改判回扫」机制已落：规则 R8 + `scripts/scope-sweep.mjs` + 词表 + 基线（见 `docs/mymind/20261025145125-sweep-engineering-decision.md`）。
+
+## 5 施工后新增（2026-10-25，③ 段审计的 P2 与本轮复盘）
+
+| # | 项 | 现状 | 触发信号 |
+|---|---|---|---|
+| D1 | **spec §3.5 #8 口径偏离**：实现按「允许清单里的 verb 优先于 token 交集」判席级组（否则 `draft ls`、`node scripts/*` 等 8 条合法允许命令被误判 `:verb`），与 spec 字面「token 交集为空」冲突 | 实现见 `tools/docgen/components/validatePolicy.mjs` 不变量 8 段注释；账本 `.session/reviews/2026-10-25-1723-s6-eval/checklist.md` 与 `.superpowers/sdd/2026-10-25-s6-policy-single-source/progress.md` 的 Ruling 19 | 下次触碰 `validatePolicy.mjs` 不变量 8，或改 spec §3.5 #8 时 → 回流 spec 改判（二选一：把「允许优先」写进 spec，或给席级组定一条不受 allow 豁免的规则） |
+| D2 | **`K01`–`K08`（8/78）未实现**：评估账单自检 8 条一条没落；且 `K04` 的判据就是「V-13 逐维 B≥A」，V-13 已判不通过（用户 2026-10-25 裁定**接受**、记 P2），写它必红；`K01` 还要求账单已迁 `docs/superpowers/reviews/` 并被 git 跟踪；`K05` 要求 `ab-score.md` 不出现席名（现账单按席分节） | 账本 `…-s6-eval/checklist.md` 记「K 组 0/8」，`progress.md` 的 Ruling 18 | 下一次触碰 S6 评估账本，或决定「补 K 组」时 → 需同步：匿名化 `ab-score.md`（K05）、补 `checklist.md` 的「输入清单（实例 N）」行（K05 ⑤） |
+| D3 | **旧 handoff 里的假绿命令**：`docs/handoffs/2026-10-25-s6-policy-impl.md` 第 10 / 71 行仍写 npm 形式（历史记录不改） | 规则与 plan 已改真命令（2026-10-25 勘误） | 写**下一份** handoff 时：用 `node scripts/scope-sweep.mjs --check`，并注明「旧 handoff 的 npm 形式会假绿」 |

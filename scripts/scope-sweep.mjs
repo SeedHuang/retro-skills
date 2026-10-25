@@ -76,12 +76,17 @@ export function readBaseline(root, baselinePath = DEFAULT_BASELINE) {
 }
 
 export function findImpactSheet(root) {
-  const dir = resolve(root, '.session/reviews');
-  if (!existsSync(dir)) return null;
-  const found = readdirSync(dir)
-    .filter((d) => statSync(join(dir, d)).isDirectory())
-    .map((d) => join(dir, d, 'impact-sheet.md'))
-    .filter((p) => existsSync(p));
+  // 两处都找：评估期在 `.session/reviews/`，收口后整目录迁 `docs/superpowers/reviews/`（规则 docs-convention）
+  const found = [];
+  for (const base of [resolve(root, '.session/reviews'), resolve(root, 'docs/superpowers/reviews')]) {
+    if (!existsSync(base)) continue;
+    for (const d of readdirSync(base)) {
+      const dir = join(base, d);
+      if (!statSync(dir).isDirectory()) continue;
+      const p = join(dir, 'impact-sheet.md');
+      if (existsSync(p)) found.push(p);
+    }
+  }
   if (found.length === 0) return null;
   return found.sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs)[0];
 }
@@ -106,13 +111,16 @@ export function runCheck({ root = ROOT, configPath = DEFAULT_CONFIG, baselinePat
   if (!impact || !existsSync(impact)) {
     reasons.push('找不到当次 impact-sheet.md（改判影响清单），无法核「每处有处置」');
   } else {
-    // 「当次」判定：清单必须**不早于**被扫文件（同秒抖动给 1s 容差）。否则旧评审的清单会冒充当次改判，
-    // 只要它恰好含同一批口径 ID 与文件名就能蒙过 --check（R8 会变成恒真）。
-    const scopeMtimes = res.entries.flatMap((e) => e.scope)
-      .map((rel) => resolve(root, rel)).filter((p) => existsSync(p)).map((p) => statSync(p).mtimeMs);
-    const newestScope = scopeMtimes.length ? Math.max(...scopeMtimes) : 0;
-    if (statSync(impact).mtimeMs + 1000 < newestScope) {
-      reasons.push(`impact-sheet 早于被扫文件（${relative(root, impact).replace(/\\/g, '/')}）：不是当次改判的清单`);
+    // 「当次」判定只用于**自动发现**的那份：显式 `--impact` 是声明式覆盖（用户点名「这次就用它」），不再比 mtime，
+    // 否则「改前冻结清单、改后改文档」这种常规序会永远红。自动发现时清单必须不早于被扫文件（1s 容差），
+    // 否则旧评审的清单会冒充当次改判，只要它恰好含同一批口径 ID 与文件名就能蒙过 --check（R8 会变成恒真）。
+    if (!impactPath) {
+      const scopeMtimes = res.entries.flatMap((e) => e.scope)
+        .map((rel) => resolve(root, rel)).filter((p) => existsSync(p)).map((p) => statSync(p).mtimeMs);
+      const newestScope = scopeMtimes.length ? Math.max(...scopeMtimes) : 0;
+      if (statSync(impact).mtimeMs + 1000 < newestScope) {
+        reasons.push(`impact-sheet 早于被扫文件（${relative(root, impact).replace(/\\/g, '/')}）：不是当次改判的清单（确属当次请用 --impact 显式指定）`);
+      }
     }
     const text = readFileSync(impact, 'utf8');
     const ids = new Set(res.entries.map((e) => e.id));

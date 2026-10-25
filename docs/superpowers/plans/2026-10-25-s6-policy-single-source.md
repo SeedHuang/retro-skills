@@ -1,7 +1,7 @@
 # S6 / F-24 规则单一来源化 实施计划（v2）
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
-> **版本**：v2.4（2026-10-25 施工前口径修正二：T5 Step 4a 改为显式 `--rejudge B3`；v2.3 的「省略」与「先看 diff 触达键」两处均被审计打回）｜v2.2 签字 + v2.4 复签见 `gate-record.md` 的 `②→③@S6` 行；v2.3 与 v2.4 的差异见文末「v2.3 → v2.4」
+> **版本**：v2.5（2026-10-25 勘误：**只改判据命令**——旧的 `npm run doc:sweep`（带 `-- --check`）在本机 PowerShell + npm 10.9 下会丢掉 `--` 之后参数、跑默认分支恒 exit 0（假绿），改为 `node scripts/scope-sweep.mjs --check`；判据口径与任务的判据一字未动）｜v2.4（T5 Step 4a 改为显式 `--rejudge B3`）｜v2.2 签字 + v2.4 复签见 `gate-record.md` 的 `②→③@S6` 行
 
 **Goal:** 把两份 `producer` 席边界句从「散文常量」改为「定义层数据 + 模板渲染」，判据从定义层派生，做到改一条规则只动一处数据。
 
@@ -21,7 +21,7 @@
 - **导出名以已签 testcase 为准**（v1 的 P0 错误）：`CAP.capabilities`（**小写**，`import * as CAP`）、`CMD.commandGroups` / `CMD.forbiddenGroups` / `CMD.seatGroups`（testcase 写 `CMD.*`）、`PTH.pathGroups` / `PTH.FORBIDDEN_SPEC_PLAN` / `PTH.DETECTION_BLIND_SPOTS`、`ART.artifacts`、`SEATS.SEATS` / `SEATS.SEAT_NAMES`、`TIERS`。`pathItems()` / `pathTokens()` 是**测试侧派生**（testcase §0.3），不是 `PTH` 导出。
 - **`CLAUSES` 是数组、元素是 5 字段对象** `{k, why, scope, seat?, re}`（testcase 原文）：`scope:'seg5'` 判 ⑤ 段切片、`scope:'card'` 判整卡；`assertNeedClauses()` **成功时返回 `seg`（失败即抛）**，要取「缺哪几条」用 `missingClauses()`。
 - **改 S5 testcase 不算改 S6 testcase**：S5 三条判据与本 plan 的 S6 testcase 是两份文件；S5 三条**已在本批改判完成**（T8 只复核）。
-- **硬门**：`gate` → `baseline 37/37`；`npm run check` → `# fail 0`；`npm run doc:sweep -- --check` → exit 0。
+- **硬门**：`gate` → `baseline 37/37`；`npm run check` → `# fail 0`；`node scripts/scope-sweep.mjs --check` → exit 0。
 - **卡面重出必须走 CLI**（不得手改卡）：`draft` → `diff` 取凭证（新 sha）→ `replace --expect-change <新 sha> --rejudge B3 --yes`；B3 = 「职责边界一致」，其判定对象就是边界段（`tools/execution-matrix/criteria.md:134-141`），故边界段改动必须报 B3。见 Task 5 Step 4a。
 - **B3 前置**：`replace` 在变更段要求「被报进 `--rejudge` 的每个键」注解为 `pass`/`fail`，且 `DOCGEN_JUDGED_BY` 非空（判者 ≠ 施工者）；两席 `B3` 现注解 = `pass`（`rules/.inspector-annotations.json:9` / `:139`）。**开工前须由独立实例对「新渲染的职责段 ↔ 边界段」复核一次 B3 仍成立**；注解缺失或复核不过 → 停手报用户（属 B3 重判，不在本 plan 范围）。
 
@@ -646,7 +646,7 @@ test('H07 恒真守卫：两条作弊路径都能被 H01 的断言抓到', () =>
 
 - [ ] **Step 4: 全量**
 
-Run: `node tools/docgen/cli.mjs gate`；`npm run check`；`npm run doc:sweep -- --check`
+Run: `node tools/docgen/cli.mjs gate`；`npm run check`；`node scripts/scope-sweep.mjs --check`
 Expected: `baseline 37/37`、`# fail 0`、`sweep ok`。
 
 ---
@@ -754,7 +754,7 @@ console.log(rateFromRecords({ records: records.length, zero }).level);  // 4 零
 |---|---|---|
 | `gate` | `tools/docgen/cli.mjs` 的 `cmdGate` / `gateChecks` | 既有 |
 | `npm run check` | `package.json:5` | 既有 |
-| `npm run doc:sweep -- --check` | `package.json:9` | 已落 |
+| `node scripts/scope-sweep.mjs --check` | `package.json:9` | 已落 |
 | `exitCodeFor` | `validateAgentData.mjs:19`（export） | 既有 |
 | `draft` / `replace` | `cli.mjs:318` / `:353`，`REPLACE_FLAGS` 在 `:500` | 既有；`--expect-change` / `--rejudge` / `--yes` 为必填/条件必填 |
 | `rateFromRecords` | `tools/execution-matrix/rating.mjs:3` | 既有 |

@@ -48,7 +48,8 @@ const lineOfValue = (src, seat, value) => {
   if (start < 0) return lineOf(src, String(value));
   let end = lines.length;
   for (let i = start + 1; i < lines.length; i += 1) {
-    if (/^\s{2}'[^']+'\s*:/.test(lines[i]) || /^\s{2}__default__\s*:/.test(lines[i])) { end = i; break; }
+    // 块尾 = 下一条席键（缩进无关：席键的值是数组、不是对象，故 `'x': {` 只会命中药席键）
+    if (/^\s*'[^']+'\s*:\s*\{/.test(lines[i]) || /^\s*__default__\s*:/.test(lines[i])) { end = i; break; }
   }
   const esc = String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const quoted = new RegExp("['\"`]" + esc + "['\"`]");
@@ -175,6 +176,8 @@ export function validatePolicy() {
   // 撞禁止的判定：**已登记的允许 verb 直接放行**（否则 `draft`（生成）这类单 token 禁令会误伤
   // 允许组里的 `draft ls`、`node scripts/*` 等 8 条命令，token `node` 来自 `node -e`）；
   // 其余按「禁止 verb 的 token 序列」做**连续子序列**匹配——`git commit` 撞 `commit`、`x node -e y` 撞 `node -e`
+  // 口径偏离（已知，待回流 spec §3.5 #8「token 交集为空」）：允许清单优先于 token 交集，否则误伤不可解；
+  // 代价是「允许组若误收危险命令」时席级组不再兜，靠允许组本身受审（本条不设第二道网）。
   const allowVerbs = new Set(Object.values(CMD.commandGroups).flatMap((g) => g.verbs));
   const denySeqs = Object.values(CMD.forbiddenGroups).flatMap((g) => g.verbs)
     .map((v) => String(v).split(/\s+/).filter(Boolean));
