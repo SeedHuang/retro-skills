@@ -568,7 +568,7 @@ PRD §4 拟改名「业务流程与功能点（图 + 表 + 清单）」`[已决�
 
 ## 9 工具档位缺口 `[已决·代裁]`（上一轮新发现）
 
-**现状**：`tools/docgen/components/patternRegistry.mjs` 现有三档——`readOnly`（Read/Glob/Grep）、`sdet`（+Write/Edit）、`command`（+RunCommand，2026-10-24 新增）。15 席实际取值：12 席 readOnly，`senior-sdet` 多 Write/Edit，审计与侦探多 `RunCommand`。
+**现状**（2026-10-24 S5 施工后）：`tools/docgen/components/patternRegistry.mjs` 现有四档——`readOnly`（Read/Glob/Grep）、`sdet`（+Write/Edit）、`command`（+RunCommand，**保留档**，当期无席挂载）、`producer`（+Write/Edit/RunCommand，**整档授予**）。15 席实际取值：12 席 `readOnly`，`senior-sdet` 挂 `sdet`，审计与侦探挂 `producer`。档位由 `tierBySeat` 单源给出，未登记席回落 `defaultTier`（`readOnly`）。
 
 后果清单：
 
@@ -686,7 +686,7 @@ PRD §4 拟改名「业务流程与功能点（图 + 表 + 清单）」`[已决�
 | **S3** 议会改造 | 独立议长（A）/ 答辩方子代理 / 两张矩阵 / `host-duties` 拆分 / 族映射表 / 级别栏位化 | `agents/speaker.md`、`respondent-*`、`assembly-matrix.md`、`submission-matrix.md`、`host-duties.md` → `speaker-duties.md` + `respondent-duties.md`、`assets/issue-card.md`（级别栏位）、`tools/docgen` 生成源 + 15 张卡重生成 + `test/*.test.mjs` 断言 | **未开工** | S1、S5（producer 档） |
 | **S2** PRD 阶段 | 市场同学 / 产品经理 / §0 硬门 / 精算师前移 | `agents/` 3 个新卡 + PRD 模板 §0 + `scripts/check-prd-graph.mjs`（F-15） | **未开工** | S1、S3 |
 | **S4** 技术设计段 | 功能块滚动拆 / spec ∥ testcase / 差异清单 / plan 交审计（真读 + 签字） | `skills/` 新段文档 + `scripts/check-plan.mjs` | **未开工** | S2 |
-| **S5** 工具档位 | `producer` / `research` 档 + `ToolsViolation` 断言改 | `patternRegistry.mjs`、`agentData.mjs`、`validateAgentData.mjs`、`agents/reviewer-audit.md`、`agents/detective-observer.md`、`test/pilot-data.test.mjs`、`test/pilot-render.test.mjs` | **部分完成**（`command` 档 2026-10-24 提前落地：审计 / 侦探，含边界清单与检测职责；`producer` / `research` 未开工） | 无（与 S2/S3 并行） |
+| **S5** 工具档位 | `producer` / `research` 档 + `ToolsViolation` 断言改 | `patternRegistry.mjs`、`agentData.mjs`、`validateAgentData.mjs`、`agents/reviewer-audit.md`、`agents/detective-observer.md`、`test/pilot-data.test.mjs`、`test/pilot-render.test.mjs` | **`producer` 部分完成**（2026-10-24：审计 / 侦探升 `producer` —— 整档六元组 + 两份边界句 + 检测职责，档位改为 `tierBySeat` 单源；`command` 档降为保留档。`research` 未开工 → 拆 **S5-R**；检测脚本 / CLI B3 机器门 / 账本模板改造 → 拆 **S5-B**） | 无（与 S2/S3 并行） |
 
 > **状态判据**：`已完成` = 实体文件在位 + 该份验收证据（`npm run check` 结论行或 commit）；**份级不要求 `gate-record.md` 行**（那是段级；S1 的段级出口仍待 ①② 行签字）。`进行中` = 已开工但验收证据不齐；`未开工` = 无施工产物。
 
@@ -722,7 +722,7 @@ PRD §4 拟改名「业务流程与功能点（图 + 表 + 清单）」`[已决�
 
 1. **议长由主 agent 代行**（S3 前）：程序动作照 `speaker` 设计执行，但**族映射表三条守恒必须由侦探核**，且报告标注「降级：议长未独立」。
 2. **`check-plan.mjs` 未上线**：计划门**三条照旧**，一律走 `stage-2b-plan-gate.md` 的审计手工核对表（脚本上线后改脚本 + 首行输出）；不得摘掉「功能点全覆盖」——它是 §6 认定唯一不可自愈的缺陷。白名单属 ③ 的判据，不在本门。
-3. **审计 / 侦探取数**：两席已授 `command` 档（2026-10-24，S5 部分完成），**命令自跑，代跑或代填一律判无效**；轮初快照由侦探本人在本轮开评前自跑 `git status --porcelain` 并抄原文，轮末自跑比对（写后还原的漏检由 `git log --since` + `git reflog` 补一次）。
+3. **审计 / 侦探取数**：两席已授 `producer` 档（`Read` / `Glob` / `Grep` / `Write` / `Edit` / `RunCommand` 整档授予；2026-10-24，S5 的 `producer` 部分已完成），**命令自跑，代跑或代填一律判无效**；轮初快照由侦探本人在本轮开评前自跑 `git --no-optional-locks status --porcelain` 并抄原文，轮末自跑比对（写后还原的漏检由 `git --no-optional-locks log --since` + `git --no-optional-locks reflog` 补一次）。
 4. **任务归属不进表头**：`gate-record.md` 的「段」列写成 `段@任务`（如 `③@docs/superpowers/plans/xxx.md#<sha 前 8 位>`），`@` 前必须是段表第一列的原样标记；R1 / R2 键到任务而非段——这样不改六列表头（避免 R1 的机械判据失效），又能在同一段两个任务时区分归属。
 
 > 原估算：6 agent + 1 skill + 1 rule + 1 tool + 1 script + 7 处改动 ≈ 四份 spec 的体量 `[FZ]`（记录 L3116 有同句自述，但构成未逐项核，仍不当事实）。
