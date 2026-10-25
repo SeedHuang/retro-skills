@@ -55,7 +55,7 @@ const code = (v) => `\`${v}\``;
 // 非法配置由 `validatePolicy` 统一发码（不变量在此处不判，否则导入期渲染先崩、五码发不出来）
 function capTools(caps) {
   const out = [];
-  for (const c of caps) {
+  for (const c of Array.isArray(caps) ? caps : []) {
     if (!hasOwn(CAP.capabilities, c)) { out.push(code(c)); continue; }
     out.push(...CAP.capabilities[c]);
   }
@@ -128,10 +128,13 @@ function escalationWriter(seat) {
 export function slotValues(seat) {
   const p = policyOf(seat);
   const s = seatOf(seat);
-  const caps = slotSource(p, 'capabilities', 'CAPABILITIES', []);
+  const rawCaps = slotSource(p, 'capabilities', 'CAPABILITIES', []);
+  // 配置侧形态非法（非数组 / 凑不出档）不在渲染层判红：TIER 退成空串，由 `validatePolicy` 发 `LiteralInConfig`
+  // / `UnknownPolicyRef`；否则 `patternRegistry` 在导入期就会抛 `TemplateImpure`，把配置错误指到模板上
+  const caps = Array.isArray(rawCaps) ? rawCaps : [];
   const values = {
     SEAT: s.display,
-    TIER: tierOfCapabilities(caps),
+    TIER: tierOfCapabilities(caps) ?? '',
     CAPABILITIES: capTools(caps).join(' / '),
     ARTIFACTS: slotSource(p, 'artifacts', 'ARTIFACTS', []).map(code).join('、'),
     SEAT_CLAUSE: slotSource(s, 'clause', 'SEAT_CLAUSE', ''),

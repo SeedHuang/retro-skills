@@ -106,6 +106,14 @@ export function runCheck({ root = ROOT, configPath = DEFAULT_CONFIG, baselinePat
   if (!impact || !existsSync(impact)) {
     reasons.push('找不到当次 impact-sheet.md（改判影响清单），无法核「每处有处置」');
   } else {
+    // 「当次」判定：清单必须**不早于**被扫文件（同秒抖动给 1s 容差）。否则旧评审的清单会冒充当次改判，
+    // 只要它恰好含同一批口径 ID 与文件名就能蒙过 --check（R8 会变成恒真）。
+    const scopeMtimes = res.entries.flatMap((e) => e.scope)
+      .map((rel) => resolve(root, rel)).filter((p) => existsSync(p)).map((p) => statSync(p).mtimeMs);
+    const newestScope = scopeMtimes.length ? Math.max(...scopeMtimes) : 0;
+    if (statSync(impact).mtimeMs + 1000 < newestScope) {
+      reasons.push(`impact-sheet 早于被扫文件（${relative(root, impact).replace(/\\/g, '/')}）：不是当次改判的清单`);
+    }
     const text = readFileSync(impact, 'utf8');
     const ids = new Set(res.entries.map((e) => e.id));
     const files = new Set(res.hits.map((h) => basename(h.file)));

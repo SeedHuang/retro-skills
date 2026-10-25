@@ -40,6 +40,21 @@ const lineOf = (src, needle) => {
   const i = src.indexOf(needle);
   return i < 0 ? 1 : src.slice(0, i).split('\n').length;
 };
+// 违规值所在行：先定位**席块**起点，再在块内找该值（同一字面量可能在多席重复出现，
+// 全局 `indexOf` 会把它报成第一处，红点就指错了席）
+const lineOfValue = (src, seat, value) => {
+  const lines = src.split('\n');
+  const start = lines.findIndex((l) => l.includes(`'${seat}'`));
+  if (start < 0) return lineOf(src, String(value));
+  let end = lines.length;
+  for (let i = start + 1; i < lines.length; i += 1) {
+    if (/^\s{2}'[^']+'\s*:/.test(lines[i]) || /^\s{2}__default__\s*:/.test(lines[i])) { end = i; break; }
+  }
+  const esc = String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const quoted = new RegExp("['\"`]" + esc + "['\"`]");
+  for (let i = start; i < end; i += 1) if (quoted.test(lines[i])) return i + 1;
+  return start + 1;
+};
 
 // closed-world 允许集（spec §3.7 / 不变量 2）：对象键（席 slug）与三键名不计入字面量，
 // 但原始扫串会把键一起抓出来，故仍列入允许集；`__default__` 是保留键。
@@ -93,7 +108,7 @@ export function validatePolicy() {
       if (!Array.isArray(values)) fail('LiteralInConfig', `${CFG_REL}:${lineOf(cfgSrc, `'${seat}'`)}`);
       for (const v of values) {
         // 形态：必须是合法 ID（不是 → LiteralInConfig；形态对但未登记 → 下一条 UnknownPolicyRef）
-        if (typeof v !== 'string' || !ID.test(v)) fail('LiteralInConfig', `${CFG_REL}:${lineOf(cfgSrc, String(v))}`);
+        if (typeof v !== 'string' || !ID.test(v)) fail('LiteralInConfig', `${CFG_REL}:${lineOfValue(cfgSrc, seat, v)}`);
         if (key === 'capabilities') {
           if (!hasOwn(CAP.capabilities, v)) fail('UnknownPolicyRef', `${seat}:capability=${v}`);
         } else if (key === 'allowGroups') {
@@ -142,16 +157,39 @@ export function validatePolicy() {
     }
   }
 
+  // ---- 不变量 1（槽 6 引用面）：`escalationWriter` 的 `slug` / `artifact` 必须指到已登记项 ----
+  // 缺这层时 `renderBoundary` 的 `displayOf` 会静默回落 `__default__.display`，卡面变成「默认席写 …」而无一码。
+  for (const [slug, seat] of Object.entries(SEATS.SEATS)) {
+    if (slug === '__default__' || !hasOwn(seat, 'escalationWriter')) continue;
+    const ew = seat.escalationWriter;
+    if (!ew || typeof ew !== 'object') fail('UnknownPolicyRef', `${slug}:escalationWriter=invalid`);
+    if (!hasOwn(SEATS.SEATS, ew.slug) || !seatNames.includes(ew.slug)) {
+      fail('UnknownPolicyRef', `${slug}:escalationWriter=${ew.slug ?? '(missing)'}`);
+    }
+    if (!hasOwn(ART.artifacts, ew.artifact)) {
+      fail('UnknownPolicyRef', `${slug}:escalationWriter-artifact=${ew.artifact ?? '(missing)'}`);
+    }
+  }
+
   // ---- 不变量 8：席级组内容合法（方向② 撞禁止 → `:verb`；方向① 越出允许集 → `:not-allowed`）----
+  // 撞禁止的判定：**已登记的允许 verb 直接放行**（否则 `draft`（生成）这类单 token 禁令会误伤
+  // 允许组里的 `draft ls`、`node scripts/*` 等 8 条命令，token `node` 来自 `node -e`）；
+  // 其余按「禁止 verb 的 token 序列」做**连续子序列**匹配——`git commit` 撞 `commit`、`x node -e y` 撞 `node -e`
   const allowVerbs = new Set(Object.values(CMD.commandGroups).flatMap((g) => g.verbs));
-  const denyTokens = new Set(Object.values(CMD.forbiddenGroups).flatMap((g) => g.verbs)
-    .flatMap((v) => String(v).split(/\s+/)).filter(Boolean));
+  const denySeqs = Object.values(CMD.forbiddenGroups).flatMap((g) => g.verbs)
+    .map((v) => String(v).split(/\s+/).filter(Boolean));
+  const containsSeq = (tokens, seq) => seq.length > 0
+    && tokens.some((_, i) => seq.every((t, k) => tokens[i + k] === t));
   for (const [g, def] of Object.entries(CMD.seatGroups ?? {})) {
     const m = SEAT_GROUP.exec(g);
     if (!m || !seatNames.includes(m[1])) fail('SeatNameInDefinition', `${DEF_REL}/commands.mjs`);
     const verbs = Array.isArray(def?.verbs) ? def.verbs : [];
     for (const v of verbs) {
-      if (String(v).split(/\s+/).some((t) => denyTokens.has(t))) fail('ForbiddenGroupGranted', `${m[1]}:${g}:verb`);
+      if (allowVerbs.has(v)) continue;
+      const tokens = String(v).split(/\s+/).filter(Boolean);
+      if (denySeqs.some((seq) => containsSeq(tokens, seq))) {
+        fail('ForbiddenGroupGranted', `${m[1]}:${g}:verb`);
+      }
     }
     for (const v of verbs) if (!allowVerbs.has(v)) fail('ForbiddenGroupGranted', `${m[1]}:${g}:not-allowed`);
   }

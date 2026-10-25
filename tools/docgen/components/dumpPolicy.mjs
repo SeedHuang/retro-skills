@@ -21,7 +21,8 @@ export function dumpPolicy(_dir = process.cwd()) {
     seats[slug] = { display: values.SEAT, expanded: SLOTS.map((k) => values[k]) };
   }
   return {
-    json: {
+    // 深拷贝：`dump` 是只读快照，调用方就地改 `json` 不得改到定义层（`capabilities` / `tiers` / `paths.groups` 等）
+    json: structuredClone({
       capabilities: CAP.capabilities,
       tiers: TIERS,
       commands: { ...CMD.commandGroups, ...CMD.forbiddenGroups, ...CMD.seatGroups },
@@ -30,6 +31,6 @@ export function dumpPolicy(_dir = process.cwd()) {
       detectionBlindSpots: PTH.DETECTION_BLIND_SPOTS,
       artifacts: ART.artifacts,
       seats,
-    },
+    }),
   };
 }
