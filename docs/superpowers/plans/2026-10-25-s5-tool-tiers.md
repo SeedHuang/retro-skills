@@ -1,6 +1,6 @@
 # S5 工具档位 `producer` 实施计划
 
-> 状态：**待计划门（未定稿）**｜创建：2026-10-24
+> 状态：**计划门已过（2026-10-24）· ③ 施工完成（2026-10-24）**｜创建：2026-10-24
 > 来源 spec：`docs/superpowers/specs/2026-10-25-s5-tool-tiers-design.md`（v4-t3，SHA256 `974B477A…BDACD669`）
 > 配套用例：`docs/superpowers/specs/2026-10-25-s5-tool-tiers-design-testcase.md`（51 条：22 正 / 16 负 / 13 边界，`C6E8F23B…CE61B242`）
 > 功能点：**F-16**（`docs/prd/20261024073606-dev-workflow-mainline/index.md#L640`）
