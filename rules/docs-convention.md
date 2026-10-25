@@ -101,6 +101,8 @@
 | `.session/rule-checks/checklist-<YYYYMMDD-HHmmss>.md` | **一次「编辑 rule」动作的自查账**：rule-edit-checklist 快照（由 `rule-inspector` 技能的 `gen-rule-checklist.mjs` 从 `rule-edit-checklist-template` 展开，含 A–F 组检查项）。**为什么塞不进另两档**：它不是「某次审查的过程账」（挂在一次 rule 编辑动作上、与审查无关），也不是 README 的现状 | 该 rule 编辑动作收尾（全行「确认执行」）后即可删；对应结论已进 git（规则 / 测试断言 / spec）→ 删 |
 | `.session/tmp/` | **一次性中间产物**：命令日志、临时脚本、抓下来的原文、草稿。**不得放结论 / 配置 / 任何跨 session 还有用的东西**——那三类各归 `docs/` 或 `docs/after/`。**为什么预置这一档、而不是每次按需新建**：临时件是高频需求（2026-10-24 一天内就产生 6 个临时脚本），按需新建会让同一用途长出 `tmp` / `temp` / `scratch` 多个名字——同日实测就并存在 `.session/temp/` 与 `.session/tmp/` 两个同义目录；预置一名 + 限定内容，比「每个新用途当场改一次规则」少一次决策 | **session 收尾时必须为空**；有残留 = 有东西该搬去 `docs/` 或删。用完即删；不跨 session 保留。**这条有机械判据**：`npm run check` 的 ⑤ 段会逐个报出残留文件 |
 | `.session/sdd-<YYYY-MM-DD>-<主题>/` | **一次 SDD 执行的账**：task brief / task report / review / progress。对应 `.superpowers/sdd/`（插件工作区）的文件化存档 | 该次执行收尾 → 结论已进 git 后**整目录删**；确需留档则迁 `docs/superpowers/sdd/<同名>/` |
+| `.session/temp/` | **`tmp/` 的遗留同义目录**（用户既有目录，2026-10-25 裁定保留）。**为什么塞不进已有档**：它就是上一条 `tmp/` 的同义写法，无独立语义。**新文件一律写 `tmp/`**，本档只容留存量、不再新增用途；上一行「预置一名 + 限定内容」的原则不因此改变 | 存量可随时清空；清空后该目录可删。**不构成本条先例**：再出现第三种同义名必须先归并到 `tmp/` |
+| `.session/myconversationwithai/` | **用户自有的对话归档草稿**（非审查过程账、非交接、非 SDD 账）。**为什么塞不进已有档**：`reviews/` 是审查过程账；`handoffs/` 是一次性收尾；`reports/` 要求进 git——用户 2026-10-25 明确「这个我要的」，指定留在此处。**知情风险**：`.session/` 不进 git，换机器 / 重新克隆即丢；确需长期保存时迁 `docs/reports/<主题>/` | 由用户决定；不属任何流程的清理动作。**不构成本条先例**：其它新增目录仍须先回答「为什么塞不进已有档」并经用户确认 |
 | `.session/README.md` | 这个目录现在有什么（**现状**） | 不删 |
 
 **仓库外的东西不进这里**：外部工具的参考资料、跨仓库复用的配置与草稿，放用户级目录 `C:\Users\HuangChunhua\.retro-skills\`（现有 `docgen-drafts/`、`reviewconfig/`、`rule-drafts/`）。**判据：这份东西换到别的项目还用得上吗？** 用得上 → 用户级目录；只对本仓库有意义 → 本仓库 `docs/` 或 `.session/`。

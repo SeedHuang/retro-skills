@@ -1,0 +1,80 @@
+{
+  "$comment": "改判词表：每条的 words 是「旧说法 / 该口径的关键词」，scope 必须显式列文件（禁通配）。命中数不得超过 baseline。",
+  "entries": [
+    {
+      "id": "I1",
+      "title": "卡面文字不要求一致",
+      "words": ["卡面字节不变", "要求卡面字节", "逐字节"],
+      "scope": [
+        "docs/prd/20261024073606-dev-workflow-mainline/index.md",
+        "docs/superpowers/specs/2026-10-25-docgen-policy-single-source-design.md",
+        "docs/superpowers/specs/2026-10-25-docgen-policy-single-source-design-testcase.md"
+      ]
+    },
+    {
+      "id": "I2",
+      "title": "路径三数（数组 21 / 点名 22 / 卡面 23）",
+      "words": ["21 个数组元素", "卡面成员", "= 23 项"],
+      "scope": [
+        "docs/superpowers/specs/2026-10-25-docgen-policy-single-source-design.md",
+        "docs/superpowers/specs/2026-10-25-docgen-policy-single-source-design-testcase.md"
+      ]
+    },
+    {
+      "id": "I3",
+      "title": "expanded 槽序 = 表行序",
+      "words": ["expanded[", "第 12 位"],
+      "scope": [
+        "docs/superpowers/specs/2026-10-25-docgen-policy-single-source-design.md",
+        "docs/superpowers/specs/2026-10-25-docgen-policy-single-source-design-testcase.md"
+      ]
+    },
+    {
+      "id": "I4",
+      "title": "档位四档（含 command）",
+      "words": ["TIERS", "四档"],
+      "scope": [
+        "docs/superpowers/specs/2026-10-25-docgen-policy-single-source-design.md",
+        "docs/superpowers/specs/2026-10-25-docgen-policy-single-source-design-testcase.md",
+        "tools/docgen/components/patternRegistry.mjs",
+        "tools/docgen/test/tool-tiers.test.mjs"
+      ]
+    },
+    {
+      "id": "I5",
+      "title": "network.verbs 恰三项",
+      "words": ["下载类命令"],
+      "scope": [
+        "docs/superpowers/specs/2026-10-25-docgen-policy-single-source-design.md",
+        "docs/superpowers/specs/2026-10-25-docgen-policy-single-source-design-testcase.md"
+      ]
+    },
+    {
+      "id": "I6",
+      "title": "SEATS 契约（display / clause / escalationWriter）",
+      "words": ["escalationWriter", "clause"],
+      "scope": [
+        "docs/superpowers/specs/2026-10-25-docgen-policy-single-source-design.md",
+        "docs/superpowers/specs/2026-10-25-docgen-policy-single-source-design-testcase.md"
+      ]
+    },
+    {
+      "id": "I7",
+      "title": "错误码后缀与读取失败口径",
+      "words": ["not-allowed", "TemplateReadFailed"],
+      "scope": [
+        "docs/superpowers/specs/2026-10-25-docgen-policy-single-source-design.md",
+        "docs/superpowers/specs/2026-10-25-docgen-policy-single-source-design-testcase.md"
+      ]
+    },
+    {
+      "id": "I9",
+      "title": "未登记席 / 保留键",
+      "words": ["__default__", "SEAT_NAMES"],
+      "scope": [
+        "docs/superpowers/specs/2026-10-25-docgen-policy-single-source-design.md",
+        "docs/superpowers/specs/2026-10-25-docgen-policy-single-source-design-testcase.md"
+      ]
+    }
+  ]
+}

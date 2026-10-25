@@ -116,6 +116,8 @@ export function toolsForSeat(name) {
 
 ### 3.3 `producer` 的边界句（两份，按席不同）
 
+> **已迁移（S6 / F-24）**：两份边界句与 23 / 14 项清单已迁到 `tools/docgen/policy/`，以定义层 + `node tools/docgen/cli.mjs policy --dump` 为准。本节原句按历史记录保留、不改写；判据侧以 S6 spec 为准（`docs/superpowers/specs/2026-10-25-docgen-policy-single-source-design.md` §3.6）。
+
 两份常量与 `BOUNDARY_COMMAND` 同处 `patternRegistry.mjs`；`boundaryBySeat` 只登记两席：
 
 ```js
@@ -233,6 +235,10 @@ export const patternRegistry = {
 | F14 | `research` 被误当本轮范围 | 有人在本 spec 里加 research 档 | §2 / §3.4；S5-R 接班条目 |
 
 ## 8 验收
+
+> **判据已由 S6 接管（F-24）**：`BOUNDARY_COMMAND` 已删除（当期无挂席），凡以它作判据的验收项以 S6 spec §3.6 为准——`S5-TC-E05` / `B08` / `B14` 三条已改判为 `renderBoundary` 口径。本节原句按历史记录保留、不改写。
+>
+> **口径指针（只加指针、不改上表原句）**：档位 / 命令 / 路径 / 产物 / 席数据的唯一来源是 `tools/docgen/policy/`（`definitions/*.mjs` + `seat-policy.mjs`）；本表凡涉配置与档位的现值，以 `policy --dump` 的输出为准（`node tools/docgen/cli.mjs policy --dump`）。
 
 | # | 验收项 | 判据 |
 |---|---|---|

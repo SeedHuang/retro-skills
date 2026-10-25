@@ -8,7 +8,11 @@ const EXIT = {
     'FrontmatterFieldMissing', 'ToolsViolation', 'SharedBlockMissing', 'WhenFormatViolation',
     'DescriptionDerivation', 'TriggerMissingRoute', 'TriggerConflict', 'DuplicateWhen',
     'InvalidOutputKind', 'MissingWhen', 'DraftDrift', 'DraftNameConflict', 'TargetDrift',
-    'TriggerFieldMisplaced'],
+    'TriggerFieldMisplaced',
+    // S6 配置校验五码（spec §7）：唯一发射点 = `components/validatePolicy.mjs`；
+    // 第六码 `RenderNotEquivalent` 由施工期断言发出、**不进本表**（CLI 不引入）
+    'UnknownPolicyRef', 'LiteralInConfig', 'SeatNameInDefinition', 'ForbiddenGroupGranted',
+    'TemplateImpure'],
   2: ['UnregisteredHandwritten', 'InvalidBaseline', 'InvalidBaselinePath', 'DanglingBaselineEntry',
     'BaselineDrift', 'EnvironmentEOL', 'InvalidInputPath', 'InvalidOutputPath',
     'MissingComponentData', 'UnsupportedKind', 'StateFileInvalid', 'GoldenSnapshotUnavailable',

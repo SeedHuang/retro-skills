@@ -328,7 +328,7 @@ else if (mdFindings.length > 0) {
 // ─────────────────────────────────────────────────────────────────────────────
 const SESSION_DIR = join(root, '.session')
 // 与 rules/docs-convention.md 的 .session 封闭清单同源；sdd-<日期>-<主题>/ 按前缀放行
-const SESSION_ALLOWED = new Set(['README.md', 'reviews', 'rule-checks', 'tmp'])
+const SESSION_ALLOWED = new Set(['README.md', 'reviews', 'rule-checks', 'tmp', 'temp', 'myconversationwithai'])
 let sessionOk = true
 if (existsSync(SESSION_DIR)) {
   for (const entry of readdirSync(SESSION_DIR, { withFileTypes: true })) {

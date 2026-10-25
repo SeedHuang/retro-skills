@@ -22,7 +22,7 @@
 | 8 | `npm run check` 的 A 组覆盖集 = `state.json` 中 `replaced` 的席（不是 `agentData.length`） | `scripts/check-all.mjs:124-159`、`tools/docgen/state.mjs:7` |
 | 9 | 三处流程文档现行写「已授 `command` 档」，实测行号 | `skills/parliament/references/debate-protocol.md:17`、`skills/parliament/assets/round-check.md:21`、`skills/dev-workflow/references/stage-4-quality.md:28`（与 spec §11.3 D9 行号一致） |
 | 10 | `counterProbes(files)` **已导出**，但其内部 `noComment` / `noString`（剥注释 / 剥单引号串）**未导出** | `tools/docgen/test/support/dev-workflow-checks.mjs:187-201` |
-| 11 | 侦探卡第 4 项固定清单现为裸 `git status --porcelain`；两卡边界节现为 `BOUNDARY_COMMAND`（末句含「不创建、修改、删除任何文件」） | `agents/detective-observer.md:21` / `:52-53`、`agents/reviewer-audit.md:93-94`、`patternRegistry.mjs:10` |
+| 11 | 侦探卡第 4 项固定清单现为 `git --no-optional-locks status --porcelain`；两卡边界节由 `renderBoundary(席)` 渲染（旧常量 `BOUNDARY_COMMAND` 已删，`patternRegistry` 只保留 `boundaryBySeat`，其值即渲染结果） | `agents/detective-observer.md:21` / `:52-59`、`agents/reviewer-audit.md:93-100`、`components/renderBoundary.mjs`、`components/patternRegistry.mjs:31-34` |
 
 **测试文件落点约定**：新用例聚在 `tools/docgen/test/tool-tiers.test.mjs`（spec P-6 已定名）；「改旧断言」类用例落在原文件（`pilot-data` / `pilot-render` / `validate` / `review-fixes`）。凡需改动盘上文件才能构造的场景，一律在 `withRepoCopy()` 副本内执行（`tools/docgen/test/support/dev-workflow-checks.mjs:211-230`：`withRepoCopy` / `runCli` / `runEsm`），**不得触碰真仓库**。
 
@@ -66,13 +66,13 @@
 | S5-TC-B05 | V-3 / §3.3④ / F9 | 以「**禁止**」为界：允许段白名单 + 禁止段点名（含环境变量赋值、`node -e`）+ 允许段无裸 `draft` | 正 | 集成 | 机器 | 读文件 + 正则 | P0 |
 | S5-TC-B06 | V-3 / P-2 / §4 T-4 / F9 | 侦探固定清单第 4 项含 `--no-optional-locks status`（数据侧 + 卡面） | 正 | 集成 | 机器 | 读数据 + 读文件 | P0 |
 | S5-TC-B07 | V-8 / §4「判者」/ F7 / F10 | `changes[]` 中取 `to === renderSha256` 的全部条目（≥1 条取最新）的 B3 落账四字段（三处一致归人工） | 正 | 集成 | 机器 | 读 JSON fixture | P0 |
-| S5-TC-B08 | V-3 / §3.3 / §11.3 D3 / F3 | 真实 `agentData` 的 producer 席 `boundary !== BOUNDARY_COMMAND` 且不含完整旧句 | 负 | 单元 | 机器 | 单元断言 | P0 |
+| S5-TC-B08 | V-3 / §3.3 / §11.3 D3 / F3 | 真实 `agentData` 的 producer 席 `boundary === renderBoundary(席)` 且不含完整旧句 | 负 | 单元 | 机器 | 单元断言 | P0 |
 | S5-TC-B09 | V-8 / §4「时效」/ §6 步骤 5-6 / F10 | B3 `pending` → 拒写盘；写回 `pass` 后落盘；`rejudge-<席>-B3.md` 四字段 | 负 | 集成 | 机器 | 副本内 `runCli` | P0 |
 | S5-TC-B10 | V-8 / §4「判者」/ F10 | 缺 `DOCGEN_JUDGED_BY` → `UnapprovedChange` exit 4 且不写盘 | 负 | 集成 | 机器 | 副本内 `runCli` | P0 |
 | S5-TC-B11 | V-8 / §7 F7 | 盘上已变但 `lastWrittenHash` 未更新 → `TargetDrift` exit 1 | 负 | 集成 | 机器 | 副本内 `runCli` | P1 |
 | S5-TC-B12 | §6「中途不得」/ V-8 | 盘上 == 渲染 → 幂等短路 exit 0、`changes` 不追加 | 边界 | 集成 | 机器 | 副本内 `runCli` | P0 |
 | S5-TC-B13 | V-3 假阳性 / 假阴性守卫 / §3.3② | 正文合法提及旧短语不误红；`assertBoundaryClean` / `writeScopeHalves` 与 B02/B03 共用且双向样例 | 边界 | 集成 | 机器 | 读文件 + 构造文本 | P2 |
-| S5-TC-B14 | V-3 / F3 | 半改态（tools 六元组 + `BOUNDARY_COMMAND`）渲染矛盾必须被探针抓到 | 边界 | 单元 | 机器 | 渲染 + 断言 | P0 |
+| S5-TC-B14 | V-3 / F3 | 半改态（tools 六元组 + `DEFAULT_BOUNDARY`）渲染矛盾必须被探针抓到 | 边界 | 单元 | 机器 | 渲染 + 断言 | P0 |
 | S5-TC-C01 | V-4 | `gate` exit 0 且输出 `baseline N/N`（N 由基线清单派生） | 正 | 集成 | 机器 | `runCli(gate)` | P0 |
 | S5-TC-C02 | V-6 / V-2 / P-2 | 逐席 `tools` = `toolsForSeat`；`tierOf` ∈ `tools` 键；producer 席卡面逐字 | 正 | 集成 + 单元 | 机器 | 读文件 + 单元 | P0 |
 | S5-TC-C03 | V-4 / F4 | 往卡注入一字节 → `gate` exit 1、`Mismatch` | 负 | 集成 | 机器 | 副本内 `runCli` | P0 |
@@ -95,7 +95,7 @@
 | S5-TC-E02 | V-5 / §11.3 D7 | `pilot-render.test.mjs` tools 行正则改为六元组 | 正 | 静态 | 机器 | grep + 跑文件 | P0 |
 | S5-TC-E03 | V-5 / F12 / P-6 | `validate.test.mjs` 标题去档位计数、按 `tools` 派生；`isTierCountLine` 判别力样例 | 正 | 静态 | 机器 | grep + 判别力样例 | P0 |
 | S5-TC-E04 | V-5 / F12 | 全仓测试零硬编码档位数量（同一 `isTierCountLine`）+ 旧计数注释守卫 + 样例行不自伤 | 负 | 静态 | 机器 | 全仓扫描 | P0 |
-| S5-TC-E05 | V-1 / F8 / §2「不做什么」 | `tools.command` 四元组仍在、`BOUNDARY_COMMAND` 非空 | 正 | 单元 | 机器 | 单元断言 | P0 |
+| S5-TC-E05 | V-1 / F8 / §2「不做什么」 | `tools.command` 四元组仍在、`renderBoundary('reviewer-audit')` 非空且 `=== boundaryBySeat['reviewer-audit']` | 正 | 单元 | 机器 | 单元断言 | P0 |
 | S5-TC-E06 | V-5 / V-7 / §11.3 D8 | `review-fixes` I5 样本必须是运行时 `readOnly` 席（不是 `data[0]`） | 负 | 单元 + 静态 | 机器 | 单元 + grep | P1 |
 | S5-TC-E07 | V-4 / F12 | `gate` 的 `N/N` 由基线清单派生，测试里不出现字面 `37/37` | 边界 | 集成 | 机器 | 单元 + 全仓扫描 | P1 |
 | S5-TC-E08 | V-9 / P-7 / F11 | `skills/` 全树无「已授 command 档」+ 三处流程文档含「已授 producer 档」 | 正 | 静态 | 机器 | grep | P0 |
@@ -110,16 +110,18 @@
 
 ```js
 // ── ③ 路径单源（spec §3.3③ 逐项点名，共 23 条）──────────────────────────────
-// 21 条数组 + 1 条正则 = 覆盖 23 个点名项：
-//   · `代码、测试` 合写一条（与 spec §3.3③ 原文同形）：该条覆盖 spec 的两个顿号项，故数组 21 条对应 22 个点名项；
+// **不手抄**：路径清单唯一来源 = S6 定义层 `tools/docgen/policy/definitions/paths.mjs`
+// （S6 spec §3.2 / §3.6：S5 testcase 的手抄清单改为派生，否则本文件自己就是第 4 份副本）。口径写死：
+//   **21 个数组元素 + 1 个 `pattern` 项 = 22 个定义层点名；卡面 23 项**
+//   （`代码、测试` 按 `、` 再切出两项，+ `spec / plan`）。
+//   · `代码、测试` 在定义层就合写一条（与 spec §3.3③ 原文同形），故 `FORBIDDEN_PATHS` 是 21 项而非 22 项；
 //     拆成单字「代码」「测试」会变成恒真的泛词（任何卡片正文都含这两个字），失去判别力。
-//   · `spec / plan` 不放进数组：实现若写成 `spec/plan`（无空格）时数组 `includes` 会误红，改由正则判
-//     （`/spec\s*\/\s*plan/` 对 `spec / plan` 与 `spec/plan` 都命中）。
-const FORBIDDEN_PATHS = ['代码、测试','rules/','skills/','agents/','docs/prd/','tools/','scripts/',
-  '配置与依赖清单','docs/after/','docs/handoffs/','docs/reports/','docs/superpowers/retro/','.superpowers/',
-  'lessons/','*.local.md','**/ledger.md','.trae/','skills-lock.json','node_modules/',
-  'tools/docgen-spike/.tmp-test/','其他评审目录'];
-const FORBIDDEN_SPEC_PLAN = /spec\s*\/\s*plan/;   // ③ 第 6 项，B02 / B03 各断言一次
+//   · `spec / plan` 不进数组（定义层以 `FORBIDDEN_SPEC_PLAN.pattern` 正则源串表达）：实现若写成
+//     `spec/plan`（无空格）时数组 `includes` 会误红，改由正则判。
+import { pathGroups } from '../policy/definitions/paths.mjs';   // 相对 `tools/docgen/test/tool-tiers.test.mjs`
+const FORBIDDEN_PATHS = Object.values(pathGroups).flat();      // = 21 个数组元素（定义层派生）
+const pathTokens = () => [...FORBIDDEN_PATHS.flatMap((x) => x.split('、')), 'spec / plan'];   // = 卡面 23 项
+const FORBIDDEN_SPEC_PLAN = /spec\s*\/\s*plan/;   // ③ 第 6 项，B02 / B03 各断言一次（与定义层 `FORBIDDEN_SPEC_PLAN.pattern` 同形）
 
 function assertBoundaryClean(text, label = '') {
   const marks = [...text.matchAll(/^## 边界$/gm)];
@@ -381,7 +383,7 @@ function writeScopeHalves(sec, label = '') {
 - **来源**：spec 推导（五段断言来自议会 QA-1-03；「允许写切片 / 禁止段」口径来自第 3 轮 P1：V-3 要求「含『不得写 `progress.md`』」，故不得再断言整节不含 `progress.md`）
 - **前置**：`BOUNDARY_PRODUCER_AUDIT` 已落在 `agentData` 的 `reviewer-audit` 条目，卡已重生成。
 - **步骤**：① 调 `assertBoundaryClean(card, 'reviewer-audit')`（该函数＝B02/B03/B13 共用：断言 `^## 边界$` 恰 1 处、完整旧结论句不出现、无条件裸短语「不创建、修改、删除任何文件」不出现），取回边界切片 `sec`；② 逐词断言五段要件（①档位事实 / ②写入范围 / ③明确禁止 / ④命令默认拒绝 / ⑤越权后果与限度）；③ 取 `writeScopeHalves(sec)` 的**允许写切片**（从「只允许写」到「**禁止写**」之前），断言含 `round-check`、不含 `progress.md`、不含 `新建快照`；④ 断言**禁止写段**（「**禁止写**」到节末）含「不得写 `progress.md`」与「不得写 `gate-record.md`」。
-- **预期**：①「整档授予」「平台无参数级授权」「不假装白名单」「不裁决他人分歧」「无中断评审」；②`.session/reviews/`、`docs/superpowers/reviews/`、允许写本人产出；③ 全部 23 条禁写路径（`代码`、`测试`、`rules/`、`skills/`、`agents/`、`docs/prd/`、`spec / plan`、`tools/`、`scripts/`、`配置与依赖清单`、`docs/after/`、`docs/handoffs/`、`docs/reports/`、`docs/superpowers/retro/`、`.superpowers/`、`lessons/`、`*.local.md`、`**/ledger.md`、`.trae/`、`skills-lock.json`、`node_modules/`、`tools/docgen-spike/.tmp-test/`、`其他评审目录`）、`任何写文件或重定向`、`.gitignore` 兜底；④ 见 B05 清单；⑤「越权清单」「sha256」「用户执行」「本轮结论作废」「检测限度」「`.session/`」「gitignore」。允许写切片里**只有** `round-check` / `delivery-audit` / 审计表这类本人产出，**不得出现 `progress.md`**。
+- **预期**：①「整档授予」「平台无参数级授权」「不假装白名单」「不裁决他人分歧」「无中断评审」；②`.session/reviews/`、`docs/superpowers/reviews/`、允许写本人产出；③ 全部 23 条禁写路径（**不在此内联**：清单 = 定义层 `pathGroups` 派生值 `FORBIDDEN_PATHS` 按 `、` 再切 + `spec / plan`，与下方 `pathTokens().length === 23` 同一来源；本文件若内联整份清单，自己就成了第 4 份副本）、`任何写文件或重定向`、`.gitignore` 兜底；④ 见 B05 清单；⑤「越权清单」「sha256」「用户执行」「本轮结论作废」「检测限度」「`.session/`」「gitignore」。允许写切片里**只有** `round-check` / `delivery-audit` / 审计表这类本人产出，**不得出现 `progress.md`**。
 - **判据**：
   ```js
   const sec = assertBoundaryClean(card, 'reviewer-audit');            // 与 B03 / B05 / B13 同一函数（实现见「共用前提（P0 前置）」节）
@@ -390,9 +392,15 @@ function writeScopeHalves(sec, label = '') {
   // `代码、测试` 在 FORBIDDEN_PATHS 里合写一条；`spec / plan` 单列正则（见下方 assert.match），两条都不是单字泛词判据。
   const MARKS = ['整档授予','平台无参数级授权','不假装白名单','不裁决他人分歧','无中断评审',
     '.session/reviews/','docs/superpowers/reviews/','round-check','delivery-audit',
-    '封闭清单','任何写文件或重定向', ...FORBIDDEN_PATHS, '.gitignore',
+    '封闭清单','任何写文件或重定向',
+    // 卡面 ③ 段 = 23 项口径：`代码、测试` 在卡面写作两项，故取 `pathTokens()`（定义层数组按 `、` 再切 + `spec / plan`），
+    // 不取 `FORBIDDEN_PATHS`（21 个数组元素，含合写的 `代码、测试`）——与 `tool-tiers.test.mjs` 的 `MARKS` 同一写法
+    ...pathTokens(), '.gitignore',
     '越权清单','sha256','用户执行','本轮结论作废','检测限度'];   // §3.3⑤ 原文只写「用户执行」——不要加「由」前缀（2026-10-24 的 P0 假阳性就出在这里）
   for (const w of MARKS) assert.ok(sec.includes(w), w);
+  // 卡面 ③ 段成员数口径守：`FORBIDDEN_PATHS` 是定义层派生值（21 个数组元素），按 `、` 再切 + `spec / plan` = 23 项；
+  // 定义层若多塞一个 `、` 或漏一组，此处即红（口径见「共用前提」节的注释）
+  assert.equal(pathTokens().length, 23, '卡面 ③ 段成员数 ≠ 23');
   assert.match(sec, FORBIDDEN_SPEC_PLAN, '缺 spec / plan（③ 第 6 项；正则判，避免实现写成 `spec/plan` 时误红）');
 
   const { allowed, forbidden } = writeScopeHalves(sec);               // 与 B03 / B13 同一函数
@@ -413,14 +421,14 @@ function writeScopeHalves(sec, label = '') {
 - **覆盖**：V-3 / §3.3①②③④⑤ / §4 T-3 / F3 / F13
 - **来源**：spec 推导（写入落点来自 RD-1-03；`gate-record.md` 禁写来自 SE-1-01；切片口径来自第 3 轮 P1；③ 路径单源 `FORBIDDEN_PATHS` 来自第 5 轮 QA：B02 / B03 各抄一份会漏项）
 - **前置**：`BOUNDARY_PRODUCER_DETECTIVE` 已落地，卡已重生成。
-- **步骤**：① 同 B02 调 `assertBoundaryClean(card, 'detective-observer')` 取 `sec`；② 断言侦探版五段要件（含 `detective.md`、轮初 / 轮末快照原文；③ 路径直接展开 B02 的 `FORBIDDEN_PATHS`，不在此另抄一份；`spec / plan` 同样用共用前提里的 `FORBIDDEN_SPEC_PLAN` 正则判）；③ 取允许写切片，断言含 `detective.md`、不含 `progress.md`、不含 `新建快照`；④ 断言禁止段含「不得写 `progress.md`」与「不得写 `gate-record.md`」。
+- **步骤**：① 同 B02 调 `assertBoundaryClean(card, 'detective-observer')` 取 `sec`；② 断言侦探版五段要件（含 `detective.md`、轮初 / 轮末快照原文；③ 路径直接展开 B02 的 `pathTokens()`（卡面 23 项口径），不在此另抄一份；`spec / plan` 同样用共用前提里的 `FORBIDDEN_SPEC_PLAN` 正则判）；③ 取允许写切片，断言含 `detective.md`、不含 `progress.md`、不含 `新建快照`；④ 断言禁止段含「不得写 `progress.md`」与「不得写 `gate-record.md`」。
 - **预期**：五段齐；`detective.md`、`轮初`、`轮末`、③ 全部 23 条禁写路径（与 B02 同源）、「不得写 `progress.md`」、「不得写 `gate-record.md`」、「检测限度」在位；允许写切片里**没有** `progress.md` / 新建快照文件；**不含**完整旧结论句与无条件裸短语。
 - **判据**：
   ```js
   const sec = assertBoundaryClean(card, 'detective-observer');
   for (const w of ['整档授予','平台无参数级授权','不假装白名单','不裁决他人分歧','无中断评审',
     '.session/reviews/','detective.md','轮初','轮末','封闭清单','任何写文件或重定向',
-    ...FORBIDDEN_PATHS, '.gitignore',
+    ...pathTokens(), '.gitignore',   // 同上：卡面 ③ 段 = 23 项口径（`代码、测试` 在卡面拆成两项）
     '越权清单','sha256','用户执行','本轮结论作废','检测限度'])
     assert.ok(sec.includes(w), w);
   assert.match(sec, FORBIDDEN_SPEC_PLAN, '缺 spec / plan（③ 第 6 项；与 B02 同一正则）');
@@ -601,25 +609,25 @@ function writeScopeHalves(sec, label = '') {
 - **对应测试**：`tools/docgen/test/tool-tiers.test.mjs`（待 plan Task N）
 - **不覆盖**：不判「这次判是不是真的新判的」（G-6）；不判「漏 `--rejudge` 是否被运行时拦」（spec §4「限度」明写无机器门，归 S5-B）；**`rejudge-<席>-B3.md` 与 `progress.md` 派工节的三处逐字一致归 §5 第 4 条人工核**（`.session/` 不进 git，机器用例不读它，避免克隆/CI 必红）。
 
-### S5-TC-B08 真实 `agentData` 的 producer 席 boundary 必须脱离 `BOUNDARY_COMMAND` 且不含完整旧句
+### S5-TC-B08 真实 `agentData` 的 producer 席 boundary 必须等于 `renderBoundary(席)` 且不含完整旧句
 
 - **覆盖**：V-3 / §3.3 / §11.3 D3 / F3
-- **来源**：spec 推导（议会 BE-1-03「原自证用例」）
-- **前置**：P-1 / P-2 落地（`tierBySeat` + `boundaryBySeat`）。
-- **步骤**：① 从 `tierBySeat` 派生 producer 席；② 对每席取 `agentData` 条目的 `boundary`；③ 断言它不等于 `BOUNDARY_COMMAND`、不含完整旧结论句、且等于 `boundaryBySeat[席]`。
-- **预期**：两席都换成了各自的 producer 边界句；若只改 tools 不改 boundary，本条在施工前必红、施工后必绿。
+- **来源**：spec 推导（议会 BE-1-03「原自证用例」）；**判据由 S6 改判**（S6 spec §3.6 ②：旧的边界常量为死常量已删，判据对象改为渲染结果）
+- **前置**：P-1 / P-2 落地（`tierBySeat` + `boundaryBySeat`）；S6 已落 S6 侧组件——`renderBoundary` 从 `components/renderBoundary.mjs` 导入、`boundaryBySeat` 从 `components/patternRegistry.mjs` 导入。
+- **步骤**：① 从 `tierBySeat` 派生 producer 席；② 对每席取 `agentData` 条目的 `boundary`；③ 断言它等于 `renderBoundary(席)`、不含完整旧结论句、且等于 `boundaryBySeat[席]`（后者的值由 `renderBoundary` 派生，S6 spec §3.6）。
+- **预期**：两席都换成了各自的 producer 边界句，且与 `renderBoundary(席)` 逐字相等；若只改 tools 不改 boundary，本条在施工前必红、施工后必绿。
 - **判据**：
   ```js
   const producers = Object.keys(patternRegistry.tierBySeat).filter((n) => patternRegistry.tierBySeat[n] === 'producer');
   assert.ok(producers.length >= 2);
   for (const n of producers) {
     const a = agentData.find((x) => x.name === n);
-    assert.equal(a.boundary, patternRegistry.boundaryBySeat[n], n);
-    assert.notEqual(a.boundary, patternRegistry.BOUNDARY_COMMAND, n);
+    assert.equal(a.boundary, renderBoundary(n), n);                         // 判据主体（S6 spec §3.6 ②）
+    assert.equal(a.boundary, patternRegistry.boundaryBySeat[n], n);         // 映射值同源，两者必须相等
     assert.equal(/你是只读评审角色：不得创建、修改、删除任何文件/.test(a.boundary ?? ''), false, n);
   }
   ```
-- **红绿证据**：红 = 施工前 `tierBySeat` 不存在（`TypeError`）或两席 boundary 仍是 `BOUNDARY_COMMAND`（`agentData.mjs` 尾部 map 实测就是它）；绿 = 两席各自新句。
+- **红绿证据**：红 = 施工前 `tierBySeat` 不存在（`TypeError`），或两席 boundary 与 `renderBoundary(席)` 不等（改前 `agentData.mjs` 尾部 map 实测给的是旧的边界常量，与渲染结果不等）；只改 `boundaryBySeat` 不改 `agentData` 取值 → 第二条红。绿 = 逐席 `a.boundary === renderBoundary(席)`、与映射值相等且不含完整旧句。
 - **对应测试**：`tools/docgen/test/tool-tiers.test.mjs`（待 plan Task N）
 - **不覆盖**：不判边界句语义是否覆盖职责（§5 第 1 条）。
 
@@ -733,18 +741,19 @@ function writeScopeHalves(sec, label = '') {
 - **对应测试**：`tools/docgen/test/tool-tiers.test.mjs`（待 plan Task N）；切片先例 `pilot-render.test.mjs:102-107`
 - **不覆盖**：不判边界节出现第二处 `## 边界` 的处置（判红即可）。
 
-### S5-TC-B14 半改态（tools 六元组 + `BOUNDARY_COMMAND`）渲染矛盾必须被探针抓到
+### S5-TC-B14 半改态（tools 六元组 + `DEFAULT_BOUNDARY`）渲染矛盾必须被探针抓到
 
 - **覆盖**：V-3 / F3
-- **来源**：spec 推导
-- **前置**：`BOUNDARY_COMMAND` 与默认边界常量仍可导入（§3.3 保留）。
-- **步骤**：① 构造半改态 agent（`tools = tools.producer`，`boundary = BOUNDARY_COMMAND`）；② `renderAgent` 渲染；③ 断言矛盾探针命中；④ 断言该态下 `gate` 无判别力（盘上==渲染即绿），故不能靠 `gate` 兜。
-- **预期**：渲染产物同时含 `Write` / `Edit` 与完整旧句 → 探针返回 `true`。
+- **来源**：spec 推导；**半改态的边界侧取值由 S6 改判**（S6 spec §3.6 ③：旧的边界常量为死常量已删，改用 `DEFAULT_BOUNDARY` 构造）
+- **前置**：`DEFAULT_BOUNDARY` 仍可导入（`components/patternRegistry.mjs`）；`renderBoundary` 从 `components/renderBoundary.mjs` 导入（旧的边界常量已由 S6 删除，不得再引用）。
+- **步骤**：① 构造半改态 agent（`tools = tools.producer`，`boundary = DEFAULT_BOUNDARY`）；② `renderAgent` 渲染；③ 断言矛盾探针命中；④ 断言 `renderBoundary(席) !== DEFAULT_BOUNDARY`（半改态与正确渲染不等，故探针有判别力）；⑤ 断言该态下 `gate` 无判别力（盘上==渲染即绿），故不能靠 `gate` 兜。
+- **预期**：渲染产物同时含 `Write` / `Edit` 与完整旧句（`DEFAULT_BOUNDARY` 首句即「你是只读评审角色：不得创建、修改、删除任何文件」）→ 探针返回 `true`；且正确渲染结果与该半改态不等。
 - **判据**：
   - `assert.match(rendered, /^tools: Read, Glob, Grep, Write, Edit, RunCommand$/m)`
   - `assert.ok(rendered.slice(rendered.lastIndexOf('## 边界')).includes('你是只读评审角色：不得创建、修改、删除任何文件'))`
   - `assert.equal(hasWrite && hasOldClause, true)`
-- **红绿证据**：红 = 不写探针，「改 tools 忘改 boundary」只能等 B3 人工重判，机器侧全绿；绿 = 探针命中。
+  - `assert.notEqual(renderBoundary('reviewer-audit'), DEFAULT_BOUNDARY)`
+- **红绿证据**：红 = 不写探针，「改 tools 忘改 boundary」只能等 B3 人工重判，机器侧全绿；或 `renderBoundary(席)` 退化成 `DEFAULT_BOUNDARY`（模板 / 定义层坏了）→ 最后一条红。绿 = 探针命中且渲染结果 ≠ 默认边界。
 - **对应测试**：`tools/docgen/test/tool-tiers.test.mjs`（待 plan Task N）
 - **不覆盖**：不判矛盾句该怎么改（§3.3 已给两份文本）。
 
@@ -1121,17 +1130,18 @@ function writeScopeHalves(sec, label = '') {
 - **对应测试**：`tools/docgen/test/tool-tiers.test.mjs`（待 plan Task N）
 - **不覆盖**：不禁止测试名里写「15 席」（席位数由 `agentData.length` 派生，一致性归 A04）；不判 `counterProbes` 两类探针的阈值。
 
-### S5-TC-E05 `tools.command` 四元组仍在、`BOUNDARY_COMMAND` 非空
+### S5-TC-E05 `tools.command` 四元组仍在、`renderBoundary('reviewer-audit')` 非空且等于 `boundaryBySeat` 值
 
 - **覆盖**：V-1 / F8 / §2「不做什么」
-- **来源**：spec 推导（第 2 轮 QA：删「无席挂 command」——S2 可能把精算师挂 `command`，锁当期会误红）
-- **前置**：P-1 / P-2 改完（`command` 档从「两席在用」变为「保留」）。
-- **步骤**：① 断言 `tools.command` 四元组；② 断言 `BOUNDARY_COMMAND` 非空字符串。
-- **预期**：四元组保留（实测改前 `patternRegistry.mjs:34`）；边界句非空（留给 S2 复用）。**不判当期是否有人挂 `command`**。
+- **来源**：spec 推导（第 2 轮 QA：删「无席挂 command」——S2 可能把精算师挂 `command`，锁当期会误红）；**判据由 S6 改判**（S6 spec §3.6 ①：旧的边界常量为死常量已删，改为「渲染结果非空且 === 映射值」）
+- **前置**：P-1 / P-2 改完（`command` 档从「两席在用」变为「保留」）；S6 已落 `components/renderBoundary.mjs` 与 `components/patternRegistry.mjs` 的 `boundaryBySeat` 映射（`renderBoundary` / `boundaryBySeat` 分别从这两个文件导入）。
+- **步骤**：① 断言 `tools.command` 四元组；② 断言 `renderBoundary('reviewer-audit')` 非空**且** `=== boundaryBySeat['reviewer-audit']`。
+- **预期**：四元组保留（实测改前 `patternRegistry.mjs:34`）；渲染结果非空且与映射值相等（`boundaryBySeat` 的值由 `renderBoundary` 派生，S6 spec §3.6）。**不判当期是否有人挂 `command`**。
 - **判据**：
   - `assert.deepEqual(patternRegistry.tools.command, ['Read', 'Glob', 'Grep', 'RunCommand'])`
-  - `assert.equal(typeof patternRegistry.BOUNDARY_COMMAND === 'string' && patternRegistry.BOUNDARY_COMMAND.length > 0, true)`
-- **红绿证据**：红 = 为「干净」删掉 `command` 档或 `BOUNDARY_COMMAND`（F8）；绿 = 保留。
+  - `const rendered = renderBoundary('reviewer-audit'); assert.equal(typeof rendered === 'string' && rendered.length > 0, true)`
+  - `assert.equal(rendered, patternRegistry.boundaryBySeat['reviewer-audit'])`
+- **红绿证据**：红 = 为「干净」删掉 `command` 档 → 第一条红（F8）；渲染结果为空串、或与 `boundaryBySeat['reviewer-audit']` 不等（只改定义层 / 模板 / 席位数据的一边）→ 第二、三条红。绿 = 四元组在位 + 渲染非空且与映射值相等。
 - **对应测试**：`tools/docgen/test/tool-tiers.test.mjs`（待 plan Task N）
 - **不覆盖**：不判将来该由谁挂 `command`（S2）；不判当期是否有人挂（会与 S2 决策撞车）。
 

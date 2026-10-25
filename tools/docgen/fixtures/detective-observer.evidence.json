@@ -5,8 +5,8 @@
   "hashObject": "2f8d8fdfa4dfc809abb8f6f07fca954065855149",
   "goldenAssertion": "pass",
   "compareResult": null,
-  "renderSha256": "CF0D27E0BF61F9E28375B64D85E3DAE1993E703A3A295008DDCB93A3C7A9D2D6",
-  "lastWrittenHash": "CF0D27E0BF61F9E28375B64D85E3DAE1993E703A3A295008DDCB93A3C7A9D2D6",
+  "renderSha256": "2605F25048D9316CF06CD5130DC2B64D60D80DC6818FB1B091DDB1A1E76B09CC",
+  "lastWrittenHash": "2605F25048D9316CF06CD5130DC2B64D60D80DC6818FB1B091DDB1A1E76B09CC",
   "changes": [
     {
       "from": "4364645A689E47B295C4FDD1D77E2444F90DA0185180BC9798811BDDC2C89668",
@@ -122,6 +122,54 @@
       ],
       "judgeMode": "subagent",
       "judgedBy": "reviewer-ai-2026-10-24-s5-t7-b3",
+      "judged": [
+        {
+          "key": "B3",
+          "verdict": "pass",
+          "basis": "tools/execution-matrix/criteria.md B3 + 渲染产物；重判写回 rules/.inspector-annotations.json detective-observer:B3 = pass（replace 机械转录）"
+        }
+      ],
+      "machineChecks": {
+        "A3": "pass",
+        "A4": "pass",
+        "A5": "pass",
+        "A6": "pass",
+        "A7": "pass"
+      }
+    },
+    {
+      "from": "CF0D27E0BF61F9E28375B64D85E3DAE1993E703A3A295008DDCB93A3C7A9D2D6",
+      "to": "1E6ECD84DA96AB520361A18E42BA774111DA3B026A3551437E309D6AB465C2C8",
+      "at": "2026-10-25T09:23:29.109Z",
+      "rejudged": [
+        "B3"
+      ],
+      "judgeMode": "subagent",
+      "judgedBy": "reviewer-audit-2026-10-25-b3",
+      "judged": [
+        {
+          "key": "B3",
+          "verdict": "pass",
+          "basis": "tools/execution-matrix/criteria.md B3 + 渲染产物；重判写回 rules/.inspector-annotations.json detective-observer:B3 = pass（replace 机械转录）"
+        }
+      ],
+      "machineChecks": {
+        "A3": "pass",
+        "A4": "pass",
+        "A5": "pass",
+        "A6": "pass",
+        "A7": "pass"
+      }
+    },
+    {
+      "from": "1E6ECD84DA96AB520361A18E42BA774111DA3B026A3551437E309D6AB465C2C8",
+      "to": "2605F25048D9316CF06CD5130DC2B64D60D80DC6818FB1B091DDB1A1E76B09CC",
+      "at": "2026-10-25T10:20:48.412Z",
+      "rejudged": [
+        "B3"
+      ],
+      "judgeMode": "subagent",
+      "judgedBy": "reviewer-audit-2026-10-25-b3-r2",
       "judged": [
         {
           "key": "B3",

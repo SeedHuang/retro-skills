@@ -12,6 +12,8 @@ import { BASELINE_RULES, agentPaths, renderBaseline } from './components/baselin
 import * as spec from './components/specTestCaseGate.mjs';
 import { compareBuffers, checkEnvironment } from './components/compare.mjs';
 import { renderByName } from './components/renderByName.mjs';
+import { validatePolicy } from './components/validatePolicy.mjs';
+import { dumpPolicy } from './components/dumpPolicy.mjs';
 import { readState, writeState, setAgentState, statePath } from './state.mjs';
 import { readEvidence, writeEvidence, evidencePath } from './evidence.mjs';
 // 结构层与语义键来自 check-agent；渲染器已抽到 renderByName.mjs，故 check-agent 不再 import 本文件（无环）
@@ -127,10 +129,21 @@ const BASELINE_CLASS = new Set(['BaselineDrift', 'UnregisteredHandwritten', 'Dan
 const PRIORITY = (d) => (BASELINE_CLASS.has(d.code) ? 0 : 1);
 
 export function gateChecks() {
+  // 运行时唯一防线（spec:196）：配置 / 模板非法时 gate 必须 exit 1 并给五个码之一，
+  // 不得落成 `Mismatch`、不得被静默放行；排在既有逐席比对之前（`Mismatch` 管产物漂移，两件事不互相替代）
+  validatePolicy();
   const drifts = collectGate();
   if (drifts.length === 0) return;
   const first = [...drifts].sort((a, b) => PRIORITY(a) - PRIORITY(b))[0];
   fail(first.code, first);
+}
+
+// 只读子命令（spec §5）：先跑 validatePolicy（五码唯一发射点），再输出 dumpPolicy 的 JSON，**不写盘**。
+// 接受的旗标只有 `--dump`；`--write` / `--out` / `--apply` 与任何未知旗标一律 InvalidArgs（exit 2）。
+export function cmdPolicy() {
+  validatePolicy();
+  console.log(JSON.stringify(dumpPolicy(process.cwd()).json, null, 2));
+  return 0;
 }
 
 export function cmdGate() {
@@ -499,6 +512,8 @@ const VALUE = 'value';
 const BOOL = 'bool';
 const REPLACE_FLAGS = { '--kind': VALUE, '--name': VALUE, '--draft': VALUE, '--expect-change': VALUE, '--rejudge': VALUE, '--yes': BOOL };
 const DIFF_FLAGS = { '--kind': VALUE, '--name': VALUE };
+// 只读子命令：只接受 `--dump`（`--write` / `--out` / `--apply` 落到「未知旗标」→ InvalidArgs exit 2）
+const POLICY_FLAGS = { '--dump': BOOL };
 
 function parseArgs(rest, spec, sub) {
   const out = {};
@@ -576,6 +591,11 @@ export function main(argv) {
     if (sub === 'diff') {
       const a = parseArgs(rest, DIFF_FLAGS, 'diff');
       return cmdDiff({ kind: a['--kind'] ?? 'agent', name: a['--name'] });
+    }
+    if (sub === 'policy') {
+      const a = parseArgs(rest, POLICY_FLAGS, 'policy');
+      if (a['--dump'] !== true) fail('InvalidArgs', { sub, message: 'InvalidArgs: sub=policy 只接受 --dump（本子命令只读、不写盘）' });
+      return cmdPolicy();
     }
     if (sub === 'check-agents') return cmdCheckAgents();
     if (sub === 'baseline' && rest[0] === '--write') return cmdBaselineWrite();

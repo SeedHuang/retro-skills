@@ -5,7 +5,8 @@
     "check": "node scripts/check-all.mjs",
     "doc:name": "node scripts/doc-name.mjs --check docs",
     "doc:rename": "node scripts/doc-rename.mjs",
-    "doc:migrate": "node scripts/doc-migrate-stamps.mjs"
+    "doc:migrate": "node scripts/doc-migrate-stamps.mjs",
+    "doc:sweep": "node scripts/scope-sweep.mjs"
   },
   "engines": {
     "node": ">=22"

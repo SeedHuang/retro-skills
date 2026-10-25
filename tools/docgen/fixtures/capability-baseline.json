@@ -1,0 +1,188 @@
+{
+  "sourceCommit": "a7749b27aa1ee51a91242effa375d2b7e8b1f941",
+  "seats": {
+    "reviewer-audit": {
+      "tools": [
+        "Read",
+        "Glob",
+        "Grep",
+        "Write",
+        "Edit",
+        "RunCommand"
+      ],
+      "tier": "producer",
+      "canWrite": [
+        "round-check.md",
+        "delivery-audit.md"
+      ],
+      "mustNotWrite": [
+        "progress.md"
+      ],
+      "forbiddenPaths": [
+        "代码",
+        "测试",
+        "rules/",
+        "skills/",
+        "agents/",
+        "docs/prd/",
+        "spec / plan",
+        "tools/",
+        "scripts/",
+        "配置与依赖清单",
+        "docs/after/",
+        "docs/handoffs/",
+        "docs/reports/",
+        "docs/superpowers/retro/",
+        ".superpowers/",
+        "lessons/",
+        "*.local.md",
+        "**/ledger.md",
+        ".trae/",
+        "skills-lock.json",
+        "node_modules/",
+        "tools/docgen-spike/.tmp-test/",
+        "其他评审目录"
+      ],
+      "allowCmds": [
+        "npm run check",
+        "git --no-optional-locks status --porcelain",
+        "git --no-optional-locks diff",
+        "git --no-optional-locks show",
+        "git --no-optional-locks log",
+        "git --no-optional-locks reflog show",
+        "node scripts/check-all.mjs",
+        "node scripts/doc-name.mjs --check",
+        "node scripts/skill-dir.mjs",
+        "node skills/review-log/scripts/time.mjs",
+        "node tools/docgen/cli.mjs gate",
+        "node tools/docgen/cli.mjs check-agents",
+        "node tools/docgen/cli.mjs diff --kind agent --name <席>",
+        "node tools/docgen/cli.mjs draft ls"
+      ],
+      "denyCmds": [
+        "draft",
+        "draft rm",
+        "draft ensure",
+        "baseline --write",
+        "replace",
+        "--output",
+        "--apply",
+        "--write",
+        "reflog expire",
+        "reflog delete",
+        "commit",
+        "push",
+        "checkout",
+        "reset",
+        "restore",
+        "clean",
+        "rm",
+        ">",
+        ">>",
+        "Set-Content",
+        "Out-File",
+        "node -e",
+        "安装",
+        "网络写"
+      ],
+      "envForms": [
+        "export VAR=…",
+        "$env:VAR=…",
+        "set VAR=…",
+        "setx VAR …",
+        "VAR=… node …"
+      ]
+    },
+    "detective-observer": {
+      "tools": [
+        "Read",
+        "Glob",
+        "Grep",
+        "Write",
+        "Edit",
+        "RunCommand"
+      ],
+      "tier": "producer",
+      "canWrite": [
+        "detective.md"
+      ],
+      "mustNotWrite": [
+        "progress.md"
+      ],
+      "forbiddenPaths": [
+        "代码",
+        "测试",
+        "rules/",
+        "skills/",
+        "agents/",
+        "docs/prd/",
+        "spec / plan",
+        "tools/",
+        "scripts/",
+        "配置与依赖清单",
+        "docs/after/",
+        "docs/handoffs/",
+        "docs/reports/",
+        "docs/superpowers/retro/",
+        ".superpowers/",
+        "lessons/",
+        "*.local.md",
+        "**/ledger.md",
+        ".trae/",
+        "skills-lock.json",
+        "node_modules/",
+        "tools/docgen-spike/.tmp-test/",
+        "其他评审目录"
+      ],
+      "allowCmds": [
+        "npm run check",
+        "git --no-optional-locks status --porcelain",
+        "git --no-optional-locks diff",
+        "git --no-optional-locks show",
+        "git --no-optional-locks log",
+        "git --no-optional-locks reflog show",
+        "node scripts/check-all.mjs",
+        "node scripts/doc-name.mjs --check",
+        "node scripts/skill-dir.mjs",
+        "node skills/review-log/scripts/time.mjs",
+        "node tools/docgen/cli.mjs gate",
+        "node tools/docgen/cli.mjs check-agents",
+        "node tools/docgen/cli.mjs diff --kind agent --name <席>",
+        "node tools/docgen/cli.mjs draft ls"
+      ],
+      "denyCmds": [
+        "draft",
+        "draft rm",
+        "draft ensure",
+        "baseline --write",
+        "replace",
+        "--output",
+        "--apply",
+        "--write",
+        "reflog expire",
+        "reflog delete",
+        "commit",
+        "push",
+        "checkout",
+        "reset",
+        "restore",
+        "clean",
+        "rm",
+        ">",
+        ">>",
+        "Set-Content",
+        "Out-File",
+        "node -e",
+        "安装",
+        "网络写"
+      ],
+      "envForms": [
+        "export VAR=…",
+        "$env:VAR=…",
+        "set VAR=…",
+        "setx VAR …",
+        "VAR=… node …"
+      ]
+    }
+  }
+}

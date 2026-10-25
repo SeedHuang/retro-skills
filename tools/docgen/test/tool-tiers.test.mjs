@@ -9,7 +9,11 @@ import { readFileSync, writeFileSync, readdirSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { agentData, triggerTable } from '../components/agentData.mjs';
-import { patternRegistry, tierOf, toolsForSeat, BOUNDARY_COMMAND, DEFAULT_BOUNDARY } from '../components/patternRegistry.mjs';
+import { patternRegistry, tierOf, toolsForSeat, DEFAULT_BOUNDARY } from '../components/patternRegistry.mjs';
+import { renderBoundary } from '../components/renderBoundary.mjs';
+// 判据侧一律 import 定义层、不手抄（S6 spec §3.6 / D3）：三处清单常量由定义层现算
+import { pathGroups } from '../policy/definitions/paths.mjs';
+import { commandGroups, forbiddenGroups } from '../policy/definitions/commands.mjs';
 import { validateAgentData } from '../components/validateAgentData.mjs';
 import { renderAgent } from '../components/renderAgent.mjs';
 import { sharedBlocks } from '../components/sharedBlocks.mjs';
@@ -33,10 +37,10 @@ const clone = () => structuredClone(agentData).map((a) => ({ ...a, ...(a.tools ?
 const producerSeats = () => Object.keys(patternRegistry.tierBySeat).filter((n) => patternRegistry.tierBySeat[n] === 'producer');
 
 // ── 共用前提（P0 前置）：B02 / B03 / B05 / B13 共享，模块顶层声明一次（抄进各 test() 会漏项或 ReferenceError）──
-const FORBIDDEN_PATHS = ['代码、测试', 'rules/', 'skills/', 'agents/', 'docs/prd/', 'tools/', 'scripts/',
-  '配置与依赖清单', 'docs/after/', 'docs/handoffs/', 'docs/reports/', 'docs/superpowers/retro/', '.superpowers/',
-  'lessons/', '*.local.md', '**/ledger.md', '.trae/', 'skills-lock.json', 'node_modules/',
-  'tools/docgen-spike/.tmp-test/', '其他评审目录'];
+const FORBIDDEN_PATHS = Object.values(pathGroups).flat();
+// 卡面 ③ 段成员数口径（S5 testcase §1.1）：`代码、测试` 在定义层合写一条、卡面写作两项，
+// 故卡面成员 = 定义层数组按 `、` 再切 + `spec / plan` = 23 项
+const pathTokens = () => [...FORBIDDEN_PATHS.flatMap((x) => x.split('、')), 'spec / plan'];
 const FORBIDDEN_SPEC_PLAN = /spec\s*\/\s*plan/;   // ③ 第 6 项：`spec / plan`（正则判，兼容无空格写法）
 
 function assertBoundaryClean(text, label = '') {
@@ -222,7 +226,10 @@ test('S5-TC-B02 审计边界节五段齐 + 允许写切片干净 + 禁止段两�
   const sec = assertBoundaryClean(card('reviewer-audit'), 'reviewer-audit');
   const MARKS = ['整档授予', '平台无参数级授权', '不假装白名单', '不裁决他人分歧', '无中断评审',
     '.session/reviews/', 'docs/superpowers/reviews/', 'round-check', 'delivery-audit',
-    '封闭清单', '任何写文件或重定向', ...FORBIDDEN_PATHS, '.gitignore',
+    '封闭清单', '任何写文件或重定向',
+    // 卡面 ③ 段 = **23 项**（`代码、测试` 在卡面写作两项）：S6 §3.4 渲染把该合写元素按 `、` 拆开，
+    // 故此处取 `pathTokens()`（= 卡面派生）而非定义层数组 `FORBIDDEN_PATHS`（含合写的 `代码、测试`）
+    ...pathTokens(), '.gitignore',
     '越权清单', 'sha256', '用户执行', '本轮结论作废', '检测限度'];
   for (const w of MARKS) assert.ok(sec.includes(w), w);
   assert.match(sec, FORBIDDEN_SPEC_PLAN, '缺 spec / plan（③ 第 6 项）');
@@ -239,7 +246,7 @@ test('S5-TC-B03 侦探边界节五段齐 + 允许写切片只含 detective.md + 
   const sec = assertBoundaryClean(card('detective-observer'), 'detective-observer');
   const MARKS = ['整档授予', '平台无参数级授权', '不假装白名单', '不裁决他人分歧', '无中断评审',
     '.session/reviews/', 'detective.md', '轮初', '轮末', '封闭清单', '任何写文件或重定向',
-    ...FORBIDDEN_PATHS, '.gitignore',
+    ...pathTokens(), '.gitignore',   // 同上：卡面 ③ 段 = 23 项（`代码、测试` 在卡面拆成两项）
     '越权清单', 'sha256', '用户执行', '本轮结论作废', '检测限度'];
   for (const w of MARKS) assert.ok(sec.includes(w), w);
   assert.match(sec, FORBIDDEN_SPEC_PLAN, '缺 spec / plan（③ 第 6 项）');
@@ -267,14 +274,9 @@ test('S5-TC-B04 审计卡输出格式含「已授 producer 档」、不含旧句
 });
 
 test('S5-TC-B05 以「**禁止**」为界：允许段白名单 + 禁止段点名 + 允许段无裸 draft', () => {
-  const ALLOWED = ['npm run check', 'git --no-optional-locks status --porcelain', 'git --no-optional-locks diff',
-    'git --no-optional-locks show', 'git --no-optional-locks log', 'git --no-optional-locks reflog show',
-    'node scripts/check-all.mjs', 'node scripts/doc-name.mjs --check', 'node scripts/skill-dir.mjs',
-    'node skills/review-log/scripts/time.mjs', 'cli.mjs gate',
-    'check-agents', 'diff --kind agent --name', 'draft ls'];
-  const FORBIDDEN = ['draft', 'draft rm', 'draft ensure', 'baseline --write', 'replace',
-    '--output', '--apply', '--write', 'reflog expire', 'commit', 'push', 'checkout', 'reset', 'restore',
-    'clean', 'rm', 'Set-Content', 'Out-File', 'export', '$env:', '环境变量赋值', 'node -e'];
+  // 允许 / 禁止命令清单 = 定义层 verbs 现算（S6 spec §3.6：不手抄第二份）
+  const ALLOWED = Object.values(commandGroups).flatMap((g) => g.verbs);
+  const FORBIDDEN = Object.values(forbiddenGroups).flatMap((g) => g.verbs);
 
   for (const seat of ['reviewer-audit', 'detective-observer']) {
     const sec = assertBoundaryClean(card(seat), seat);
@@ -371,13 +373,14 @@ test('S5-TC-B07 changes[] 中 to === renderSha256 的最新条 B3 落账四字�
   }
 });
 
-test('S5-TC-B08 真实 agentData 的 producer 席 boundary 已脱离 BOUNDARY_COMMAND', () => {
+test('S5-TC-B08 真实 agentData 的 producer 席 boundary 等于渲染结果', () => {
   const producers = producerSeats();
   assert.ok(producers.length >= 2);
   for (const n of producers) {
     const a = agentData.find((x) => x.name === n);
     assert.equal(a.boundary, patternRegistry.boundaryBySeat[n], n);
-    assert.notEqual(a.boundary, BOUNDARY_COMMAND, n);
+    // 判据由 S6 改判（S6 spec §3.6 ②）：边界句的唯一来源是 renderBoundary
+    assert.equal(a.boundary, renderBoundary(n), n);
     assert.equal(/你是只读评审角色：不得创建、修改、删除任何文件/.test(a.boundary ?? ''), false, n);
   }
 });
@@ -506,7 +509,7 @@ test('S5-TC-B13 正文提及旧短语不误红；两个 helper 与 B02/B03 共�
 });
 
 test('S5-TC-B14 半改态（六元组 tools + 只读边界）的渲染矛盾必须被探针抓到', () => {
-  // 半改态的真实形态是「给了写权但没写 boundary」→ 回落默认只读句（BOUNDARY_COMMAND 已被 command 档改写，不含完整旧句）
+  // 半改态的真实形态是「给了写权但没写 boundary」→ 回落默认只读句（DEFAULT_BOUNDARY 不含完整旧句）
   const half = {
     ...agentData.find((a) => a.name === 'reviewer-audit'),
     tools: [...patternRegistry.tools.producer],
@@ -570,7 +573,8 @@ test('S5-TC-C04 两卡 diff 报零差异', () => {
 
 test('S5-TC-C05 只改 producer 数组顺序（集合不变）→ 校验绿、gate 红', () => {
   withRepoCopy((dst) => {
-    patchFile(dst, 'tools/docgen/components/patternRegistry.mjs',
+    // S6 起档位表下沉到定义层（spec §3.2）：构造前提的落点随之下移，判据语义不变
+    patchFile(dst, 'tools/docgen/policy/definitions/tiers.mjs',
       "producer: ['Read', 'Glob', 'Grep', 'Write', 'Edit', 'RunCommand']",
       "producer: ['Glob', 'Read', 'Grep', 'Edit', 'Write', 'RunCommand']");
     const v = runEsm(dst, "import {validateAgentData} from './tools/docgen/components/validateAgentData.mjs'; import {agentData, triggerTable} from './tools/docgen/components/agentData.mjs'; try { validateAgentData(agentData, triggerTable); console.log('OK'); } catch (e) { console.log('THREW ' + e.code); }");
@@ -718,9 +722,12 @@ test('S5-TC-E04 全仓测试零硬编码档位数量 + 旧计数注释守卫 + �
   assert.deepEqual(counterProbes({ 'fixture.test.mjs': FIXTURE }).baseline, []);
 });
 
-test('S5-TC-E05 tools.command 四元组仍在、BOUNDARY_COMMAND 非空', () => {
+test('S5-TC-E05 tools.command 四元组仍在、渲染边界句非空且等于映射值', () => {
   assert.deepEqual(patternRegistry.tools.command, ['Read', 'Glob', 'Grep', 'RunCommand']);
-  assert.equal(typeof patternRegistry.BOUNDARY_COMMAND === 'string' && patternRegistry.BOUNDARY_COMMAND.length > 0, true);
+  // 判据由 S6 改判（S6 spec §3.6 ①）：旧的死常量已删，改为「渲染结果非空且 === boundaryBySeat 的值」
+  const rendered = renderBoundary('reviewer-audit');
+  assert.equal(typeof rendered === 'string' && rendered.length > 0, true);
+  assert.equal(rendered, patternRegistry.boundaryBySeat['reviewer-audit']);
 });
 
 test('S5-TC-E06 review-fixes I5 样本必须是运行时 readOnly 席（不是 data[0]）', () => {
