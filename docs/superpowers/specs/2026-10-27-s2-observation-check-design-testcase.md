@@ -248,7 +248,7 @@
 
 #### A04 迁入后测试全绿且总数 ≥ 71（验收命令）
 
-- **覆盖**：§10.8-2 / §10.1 R2 / PRD §8「cd tools/observation-check; node --test *.test.mjs 全绿」
+- **覆盖**：§10.8-2 / §10.1 R2 / PRD §8「仓根 `node --test "tools/observation-check/*.test.mjs"` 全绿」（命令写法按 2026-10-27 用户裁定统一为带引号 glob + 写明 cwd）
 - **来源**：spec R2 基线不退；71 是迁入基线，改造只增不减
 - **前置**：迁入 + 夹具改造 + 新增判据实现全部完成（S2 代码面收尾）。
 - **步骤**：① `Set-Location tools\observation-check; node --test`；② 解析汇总行。
@@ -1221,7 +1221,7 @@
 | A01 | 零提交裁定下它退化为「Task 2 时点快照」——时点后该目录已由后续任务新增 12 个文件，常驻必假红 | 见 §2 A01：迁入时点 `git status --porcelain tools/observation-check` 恰 11 行全 `??`、零 M/D/R（取值 = 时点输出，已记账本 / report） |
 | A02 | 常驻需读仓外草稿区目录（`C:\Users\HuangChunhua\.retro-skills\observation-check-draft\`），违反「夹具一律仓内自建」 | `node:crypto` 对草稿区 11 原件重算 sha256 → 11 条全等账本 §迁入清单 |
 | A03 | 同上（依赖仓外草稿区） | PRD §0.4 原命令 → 888；不得改按当前工作区文件计数 |
-| A04 | 总数断言常驻化会随每次新增用例变值（自证无意义）；要审的是「**迁入那一刻 71 条意图没丢**」这个时点事实 | `cd tools\observation-check; node --test *.test.mjs` → exit 0 且 `# pass ≥ 71`；零提交口径下存证 = 账本 §迁入清单 + 当时的工作区快照（`git status --porcelain`），无提交可 diff |
+| A04 | 总数断言常驻化会随每次新增用例变值（自证无意义）；要审的是「**迁入那一刻 71 条意图没丢**」这个时点事实 | 仓根 `node --test "tools/observation-check/*.test.mjs"` → exit 0 且 `# pass ≥ 71`（2026-10-27 用户裁定统一写法）；零提交口径下存证 = 账本 §迁入清单 + 当时的工作区快照（`git status --porcelain`），无提交可 diff |
 | A06 | 移走 `agents/` 文件是全局态，常驻会与并发测试互踩 | 临时移 `agents\detective-observer.md` → 全套仍绿 → **finally 恢复**；断言恢复后文件 hash 原值 |
 | A07 | `npm run check` 套内自跑 = 递归；时长 23.9s 不宜每轮 | 仓库根 `npm run check` → exit 0（迁入后、未归档态；含 expected.md 等新文件不触发其它检查段） |
 | G01 | 写盘 + move + commit 污染真工作树，常驻即每轮制造待提交改动 | §2 G01 命令序列 → ④ `npm run check` exit 0 && ⑤ `git status --porcelain -- <演练目录>` 输出为空 |

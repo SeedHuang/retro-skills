@@ -26,7 +26,7 @@ PRD §1 P-3：观察表只有 markdown、字段靠正则猜，文本校验器 9 
 
 **迁入与改造，两阶段提交**（草稿区 → `tools/observation-check/`）：
 
-- **迁入提交**：① 草稿区 11 文件复制到 `tools/observation-check/`（原样，不改一行；`git mv` 不适用：文件在仓库外）；② 提交只含新增文件，同一提交登记 sha256 清单，**取值 = 迁入瞬间草稿区 `Get-FileHash` 实算值**；**清单载体 = 该迁入提交的 commit message**（不新增第 12 个文件，A01「恰 11 个新增文件」据此成立）；③ 迁入时点的核验口径 = **仓库根** `node --test tools/observation-check/*.test.mjs` → 71/71（草稿 `root=process.cwd()` 依赖仓库根，在目录内实跑为 61 pass / 10 fail，2026-10-27 实测）；PRD §8 原命令 `cd tools\observation-check; node --test *.test.mjs` **自改造提交起为正式判据**（改造后 `root` 删参 + 夹具 `mkdtempSync` 自建，目录内应 71/71）；**测试文件落点 = `tools/observation-check/*.test.mjs`，无 `test/` 子目录**。
+- **迁入提交**：① 草稿区 11 文件复制到 `tools/observation-check/`（原样，不改一行；`git mv` 不适用：文件在仓库外）；② 提交只含新增文件，同一提交登记 sha256 清单，**取值 = 迁入瞬间草稿区 `Get-FileHash` 实算值**；**清单载体 = 该迁入提交的 commit message**（不新增第 12 个文件，A01「恰 11 个新增文件」据此成立）；③ 迁入时点的核验口径 = **仓库根** `node --test tools/observation-check/*.test.mjs` → 71/71（草稿 `root=process.cwd()` 依赖仓库根，在目录内实跑为 61 pass / 10 fail，2026-10-27 实测）；PRD §8 现命令（**仓根** `node --test "tools/observation-check/*.test.mjs"`，2026-10-27 用户裁定统一写法）**自改造提交起为正式判据**（改造后 `root` 删参 + 夹具 `mkdtempSync` 自建，目录内应 71/71）；**测试文件落点 = `tools/observation-check/*.test.mjs`，无 `test/` 子目录**。
 - **改造提交起**：证据夹具 `mkdtempSync` 自建重写（10 条假红根源解除）→ §4 判据差距补齐 → `agents/` 引用 = 0、总数 ≥ 71；终验 = 临时移走 `agents/detective-observer.md` 后仍全绿。
 
 **registeredIds 单源清单（前置交付物，PRD §8 硬前置）**：`tools/observation-check/registered-ids.mjs`（名可由 plan 定），登记本轮检查项 id 的**字符串常量数组**（不含 `check` 分类字段），首个改造提交建立；S1 落地后按 §10.6 切 `Object.keys(CHECK_ITEMS)` 派生。`InstanceMissing` 的 S2 判据依据 `items[].check === 'ai'`（该字段值透传、不校验枚举，枚举合法集归 S1）；`items` 无该字段时不触发该码，避免用「S1 未落地的 schema」当 S2 的前置条件。
@@ -76,7 +76,7 @@ S1 落地后 `registeredIds` 从单一常量文件改为 `Object.keys(CHECK_ITEM
 ### 10.8 验收锚点（= PRD §8 S2 出口判据七条）
 
 1. 原样迁入（含 sha256 清单，清单值一律经 `git show <迁入提交>:<path>` 复算）
-2. 基线不退（迁入时点以仓库根 `node --test tools/observation-check/*.test.mjs` 核验 71/71；改造起以 `cd tools\observation-check; node --test *.test.mjs` 为正式判据；改造后总数 ≥ 71 + `agents/` 零引用 + 移走 `agents/detective-observer.md` 终验）
+2. 基线不退（迁入时点以仓库根 `node --test tools/observation-check/*.test.mjs` 核验 71/71；改造起以**仓根** `node --test "tools/observation-check/*.test.mjs"` 为正式判据（2026-10-27 用户裁定统一写法：带引号 glob + 写明 cwd = 仓根；旧 `cd` 写法在缺 cwd 时 glob 不展开，得 `# tests 0` 且 exit 0 属假绿）；改造后总数 ≥ 71 + `agents/` 零引用 + 移走 `agents/detective-observer.md` 终验）
 3. 新增判据有测试（B 表 S2 组 + A 表 5 零测试码 + 三类不出码用例 + `ArtifactMissing`/`UnclassifiedArtifact` 纯函数反例）
 4. golden 基线（`observation-r3.json` + expected md）
 5. 覆盖语义（7 处 fixture + 1 探索稿指针重写，禁放宽）

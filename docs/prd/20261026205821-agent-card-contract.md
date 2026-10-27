@@ -527,7 +527,7 @@
 | 判据 | 可核方式 |
 |---|---|
 | 原样迁入 | 首个提交 diff 只有新增文件；同一提交含 11 个文件的 sha256 清单 |
-| 基线不退 | `cd tools/observation-check; node --test *.test.mjs` 全绿；**且测试对 `agents/` 的引用数 = 0**（`Select-String -Path tools\observation-check\*.test.mjs -Pattern 'agents[/\\]'` → 0）；证据夹具一律 `mkdtempSync` 自建（删掉 `agents/detective-observer.md` 后仍全绿） |
+| 基线不退 | 仓根 `node --test "tools/observation-check/*.test.mjs"` 全绿（**带引号 glob + 写明 cwd = 仓根**；2026-10-27 用户裁定统一写法：旧 `cd` 写法在缺 cwd 时 glob 不展开，得 `# tests 0` 且 exit 0 属假绿）；**且测试对 `agents/` 的引用数 = 0**（`Select-String -Path tools\observation-check\*.test.mjs -Pattern 'agents[/\\]'` → 0）；证据夹具一律 `mkdtempSync` 自建（删掉 `agents/detective-observer.md` 后仍全绿） |
 | 新增判据有测试 | §4.4 B 表 S2 组的每个码 ≥1 条反例；A 表 5 个零测试码补齐；另补三类不出码的必要用例：`skipped` 非空正例、`read > total` 反例、**含 ASCII `\|` 的字段渲染后列数 = 表头列数** |
 | golden 基线 | `observation-r3.json` + `observation-r3.expected.md`（人工写），断言 `renderObservation` 全文等于期望文件 |
 | 覆盖语义 | **7 处 fixture + 1 处探索稿指针**一次性重写（5 处 `coverage` 夹具 + 草稿 `checks.test.mjs` 的覆盖度文本断言 + 草稿 `render-check.test.mjs` 的 replace 目标 = 7 处 fixture；外加探索稿 `:686` 的 schema 片段改为指针，与 V-8 同批），**禁止放宽断言** |

@@ -84,6 +84,22 @@
         "docs/prd/20261026205821-agent-card-contract.md",
         "docs/superpowers/specs/2026-10-27-s2-observation-check-design-testcase.md"
       ]
+    },
+    {
+      "id": "I11",
+      "title": "验收命令写法（仓根 + 带引号 glob，禁裸 glob 与无 cwd 的 cd 写法）",
+      "words": ["node --test *.test.mjs"],
+      "scope": [
+        "docs/prd/20261026205821-agent-card-contract.md",
+        "docs/superpowers/specs/2026-10-27-s2-observation-check-design.md",
+        "docs/superpowers/specs/2026-10-27-s2-observation-check-design-testcase.md",
+        "docs/superpowers/specs/2026-10-27-s3-gate-wiring-design.md",
+        "docs/superpowers/specs/2026-10-27-s3-gate-wiring-design-testcase.md",
+        "docs/superpowers/plans/2026-10-27-s2-observation-check.md",
+        "docs/handoffs/2026-10-27-s2-observation-check-close.md",
+        "docs/handoffs/2026-10-27-s3-gate-wiring.md",
+        "skills/dev-workflow/references/gate-record.md"
+      ]
     }
   ]
 }
