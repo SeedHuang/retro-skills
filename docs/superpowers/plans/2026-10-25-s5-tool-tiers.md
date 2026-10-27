@@ -69,9 +69,9 @@ T7 ──→ T10 账本 P-8 ──→ T11 终局验证（gate + npm run check）
 ### T5 生成两席草稿（不写 `agents/`；草稿落仓外 `DRAFTS_DIR`）
 
 - **命令**：`node tools/docgen/cli.mjs draft --kind agent --name reviewer-audit` / `--name detective-observer`
-- **硬约束**：**两席草稿都生成后**才能做第一次 `replace`（旁席 `Mismatch` 只在草稿在位时放行，`cli.mjs:396-413`）
+- **硬约束**：**两席草稿都生成后**才能做第一次 `replace`（旁席 `Mismatch` 只在草稿在位时放行，`tools/docgen/cli.mjs:396-413`）
 - **验收**：`node tools/docgen/cli.mjs draft ls` 列出两条
-- **注**：草稿会写仓外目录 `DRAFTS_DIR`（`cli.mjs:179` / `:341`），「不落盘」仅指**不写 `agents/`**——④ 段核写盘时要按这个口径
+- **注**：草稿会写仓外目录 `DRAFTS_DIR`（`tools/docgen/cli.mjs:179` / `:341`），「不落盘」仅指**不写 `agents/`**——④ 段核写盘时要按这个口径
 - **依据**：spec §6 第 2 步（`#L202`）
 
 ### T6 两版对照 → 用户确认

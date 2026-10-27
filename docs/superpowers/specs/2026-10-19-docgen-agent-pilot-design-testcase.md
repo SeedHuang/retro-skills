@@ -323,7 +323,7 @@ node -e "const fs=require('fs');const t=fs.readFileSync('docs/superpowers/specs/
 - **步骤**：① 断言 `sharedBlocks.AUDIT_RULES` 存在且 `sharedBlock: 'AUDIT_RULES'` 可解析；② 断言 `outputFormats.audit` 存在且块内含 5 个 H2；③ 渲染后检查两区块锚点与模板结构
 - **预期**：产物含 `### 审计铁律` 与其 3 条正文（逐字），且该块**直接嵌在模板流中**（没有 `## 共享块` 包装标题）；输出格式块内含 5 个 H2：`## 核对项` 1 次、`## 结论` 2 次（轮间核对单与交付审计表各一）、`## A 节 过程闭环` 1 次、`## B 节 按 doc-taxonomy 完成判据逐交付物核对` 1 次；`{{SHARED_BLOCK}}`/`{{OUTPUT_FORMAT}}` 均被真实内容替换（产物不含 `{{`）
 - **判据**：机器 —— `sharedBlocks.AUDIT_RULES` 分为 3 条 bullet 且逐字；`outputFormats.audit` 的 H2 计数 = 5（核对项 1 + 结论 2 + A 节 1 + B 节 1）；渲染产物 `!/{{/.test(render)` 且 `!/## 共享块/`；`validateAgentData` 的 `SharedBlockMissing`（断言 5）在 `sharedBlock` 改为非法值时触发（反向自检一次）；全文 H2 计数 = 12
-- **红绿证据**：红 = 槽位被置空（现状 `cli.mjs:225-226` 就是空串）→ 产物缺块、整比红；绿 = 两区块齐且逐字
+- **红绿证据**：红 = 槽位被置空（现状 `tools/docgen/cli.mjs:225-226` 就是空串）→ 产物缺块、整比红；绿 = 两区块齐且逐字
 - **测试落点**：`tools/docgen/test/pilot-render.test.mjs`
 - **不覆盖**：其它 sharedBlock/outputKind 组合（S4）
 
@@ -780,7 +780,7 @@ node -e "const fs=require('fs');const t=fs.readFileSync('docs/superpowers/specs/
 - **步骤**：① 从导出模块具名导入（`import { collectGate, gateChecks } from '<实现选择的导出模块>'`，候选：`components/gate.mjs` / `cli.mjs`）；② 断言导出面；③ 在副本内调 `collectGate()`（函数级）；④ 断言返回值；⑤ 调 `gateChecks()` 断言抛错
 - **预期**：②两个导出均为函数（`typeof 'function'`，`collectGate.length === 0`）；③不抛；④D 含 3 个条目且文件名为上述三者；⑤`gateChecks()` 抛 baseline 类码（按 TC-059 优先级）
 - **判据**：机器 —— `typeof collectGate === 'function' && typeof gateChecks === 'function'`；`collectGate().length === 3`；条目字段含 `{code, path}`；`assert.throws(() => gateChecks())` 且 `err.code` 属 baseline 类；真实仓库零改动
-- **红绿证据**：红 = 沿用 fail-fast（`cli.mjs:74-114` 首个 `fail()` 即抛）→ 拿不到完整 D，判别子无法判定；绿 = D 完整
+- **红绿证据**：红 = 沿用 fail-fast（`tools/docgen/cli.mjs:74-114` 首个 `fail()` 即抛）→ 拿不到完整 D，判别子无法判定；绿 = D 完整
 - **测试落点**：`tools/docgen/test/pilot-gate.test.mjs`（副本内执行）
 - **不覆盖**：判别子集合判定本身（TC-023/024/035/036）
 
@@ -887,7 +887,7 @@ node -e "const fs=require('fs');const t=fs.readFileSync('docs/superpowers/specs/
 - **步骤**：① 渲染；② 提取「固定必问清单」表的数据行；③ 逐行比对
 - **预期**：恰 7 行；每行形如 `| {i} | {item} | 待答 |`，`i` 从 1 到 7；item 逐字等于 `fixedList[i-1]`；表头为 `| # | 必问 | 回答 |` + 分隔行；该表位于 `## 固定必问清单` 节内；全文 H2 计数 = 12（其中输出格式块内 5 个，与 TC-005/TC-019 同一锚点口径）
 - **判据**：机器 —— 数据行数 = 7；编号序列 `[1..7]`；每行 item `=== fixedList[i-1]`；`待答` 计数 = 7；表格所在节 = `## 固定必问清单`（前后最近 H2 判定）；全文 `/^## /gm` 计数 = 12
-- **红绿证据**：红 = 只渲染表头（现状 `cli.mjs:224` 就是只给表头）→ 数据行 0；节锚点错位或 H2 数 ≠ 12 → 结构断言红；绿 = 7 行且编号与节锚点正确
+- **红绿证据**：红 = 只渲染表头（现状 `tools/docgen/cli.mjs:224` 就是只给表头）→ 数据行 0；节锚点错位或 H2 数 ≠ 12 → 结构断言红；绿 = 7 行且编号与节锚点正确
 - **测试落点**：`tools/docgen/test/pilot-render.test.mjs`
 - **不覆盖**：fixedList 语义正确性（人工）
 
@@ -901,7 +901,7 @@ node -e "const fs=require('fs');const t=fs.readFileSync('docs/superpowers/specs/
 - **判据**：机器 —— 以 `checkEnvironment(renderBytes, 'target')` 借用同一套判据（不通过则抛 `EnvironmentEOL`）；显式三项断言亦通过
 - **红绿证据**：红 = Windows 下 CRLF / PowerShell 写 BOM → 整比红但归因困难；绿 = 三项通过
 - **测试落点**：`tools/docgen/test/pilot-render.test.mjs`
-- **不覆盖**：模板文件本身的编码——`cli.mjs` 的 `readTemplate`（`cli.mjs:27-32`）只做 `readFileSync(..., 'utf8')`，**不调用 `checkEnvironment`**；模板 BOM/CRLF 没有独立预检，会原样渲染进产物，由整文件比对（TC-007/TC-014）兜底（见 §7 缺口「模板编码未独立预检」）
+- **不覆盖**：模板文件本身的编码——`cli.mjs` 的 `readTemplate`（`tools/docgen/cli.mjs:27-32`）只做 `readFileSync(..., 'utf8')`，**不调用 `checkEnvironment`**；模板 BOM/CRLF 没有独立预检，会原样渲染进产物，由整文件比对（TC-007/TC-014）兜底（见 §7 缺口「模板编码未独立预检」）
 
 ### TC-068 冷跑隔离：无 `.git`、草稿箱重定向到副本内、不跑黄金断言
 
@@ -923,7 +923,7 @@ node -e "const fs=require('fs');const t=fs.readFileSync('docs/superpowers/specs/
 - **步骤**：① **场景 A**：在副本 `agents/` 只放新后缀残留 `.tmp-reviewer-audit-99999.part` → `gate`；② **场景 B（对照，独立副本或先移除 `.part`）**：只放旧后缀 `.tmp-reviewer-audit-99999.md` → `gate`；③ 恢复场景 A（移除旧后缀、放回新后缀），跑 `replace --yes`（草稿在箱）→ 检查残留
 - **预期**：①新后缀不触发 `UnregisteredHandwritten`（`gate` 只扫 `.md`）→ 退出码 0；②旧后缀对照触发 `UnregisteredHandwritten`（证明「扫 `.md`」属实）；③replace 启动时清理 `.tmp-reviewer-audit-*` 残留，替换成功，`agents/` 无 `.tmp-` 前缀文件
 - **判据**：机器 —— ①退出码 0 且 stderr 无 `UnregisteredHandwritten`；②退出码 2 且 stderr 含 `UnregisteredHandwritten`（**与 ① 分开跑，不共存**，否则 ① 必红）；③退出码 0 且 `readdirSync('agents').filter(f=>f.startsWith('.tmp-')).length === 0`；真实仓库零改动
-- **红绿证据**：红 = 沿用 `.md` 后缀（现状 `cli.mjs:192`）→ 中断后 gate 永久红且无清理入口；缺草稿 → 先报 `DraftNotFound` 测不到清理；绿 = 非 `.md` + 启动清理
+- **红绿证据**：红 = 沿用 `.md` 后缀（现状 `tools/docgen/cli.mjs:192`）→ 中断后 gate 永久红且无清理入口；缺草稿 → 先报 `DraftNotFound` 测不到清理；绿 = 非 `.md` + 启动清理
 - **测试落点**：`tools/docgen/acceptance/pilot-replace.acceptance.mjs`（副本内执行）
 - **不覆盖**：进程被 kill 的时序本身（不可确定性复现，改以「预置残留文件」构造）
 
@@ -935,7 +935,7 @@ node -e "const fs=require('fs');const t=fs.readFileSync('docs/superpowers/specs/
 - **步骤**：① 静态检查 draft 写入调用带 `{ flag: 'wx' }`；② 预置一个同名草稿后跑 `draft`（应先被「旧稿检查」拦，草稿数仍 1）；③ 断言既有文件字节不变
 - **预期**：①写调用带 `wx`；②`DraftNameConflict`（exit 1）；③既有草稿字节不变
 - **判据**：机器 —— 源码正则命中 `flag:\s*'wx'`（draft 写入点恰 1 处）；②退出码 1；③字节 `equals` 原值；真实草稿箱零变化
-- **红绿证据**：红 = 直接 `writeFileSync`（现状 `cli.mjs:172`）→ 同秒两实例互相覆盖、草稿不可信；绿 = `wx` + 旧稿检查双保险
+- **红绿证据**：红 = 直接 `writeFileSync`（现状 `tools/docgen/cli.mjs:172`）→ 同秒两实例互相覆盖、草稿不可信；绿 = `wx` + 旧稿检查双保险
 - **测试落点**：`tools/docgen/test/pilot-replace.test.mjs`（临时草稿箱；不执行 replace）
 - **不覆盖**：真并发撞名的行为复现（需可注入时钟；本用例以静态断言兜底，见 §9 建议 #6 与 §7 缺口）
 
@@ -1007,7 +1007,7 @@ node -e "const fs=require('fs');const t=fs.readFileSync('docs/superpowers/specs/
 - **步骤**：① 读 S2 §11 错误码表五行：`TargetDrift`→1、`StateFileInvalid`→2、`GoldenSnapshotUnavailable`→2、`EvidenceInvalid`→2、`InvalidArgs`→2；② 对 `tools/docgen/**/*.mjs` 中所有 `fail('CODE')` 与 `e.code = 'CODE'` 的 CODE 字面量逐个调 `exitCodeFor(CODE)`；③ 断言不抛且档位与 §11 表一致；④ 反向：调 `exitCodeFor('__probe_unmapped__')` 必须抛错（证明检查有判别力）
 - **预期**：五码档位正确；源码中每个已用错误码都有映射；未登记码抛错
 - **判据**：机器 —— `exitCodeFor('TargetDrift') === 1`；`exitCodeFor('StateFileInvalid') === 2`；`exitCodeFor('GoldenSnapshotUnavailable') === 2`；`exitCodeFor('EvidenceInvalid') === 2`；`exitCodeFor('InvalidArgs') === 2`；源码扫描出的每个 CODE 调 `exitCodeFor` 均不抛；`assert.throws(() => exitCodeFor('__probe_unmapped__'))`；登记落点 = **S2 §11 错误码表 + `validateAgentData.EXIT`**
-- **红绿证据**：红 = 任一新码未落 `EXIT` 表 → `exitCodeFor` 抛错、`cli.mjs:250-252` 兜底成 2，`TargetDrift` 的 exit 1 被静默改档（2 与 1 的差别被兜底掩盖）；`EvidenceInvalid`/`InvalidArgs` 未登记同理；绿 = 五码可映射且档位一致
+- **红绿证据**：红 = 任一新码未落 `EXIT` 表 → `exitCodeFor` 抛错、`tools/docgen/cli.mjs:250-252` 兜底成 2，`TargetDrift` 的 exit 1 被静默改档（2 与 1 的差别被兜底掩盖）；`EvidenceInvalid`/`InvalidArgs` 未登记同理；绿 = 五码可映射且档位一致
 - **测试落点**：`tools/docgen/test/pilot-data.test.mjs`（纯函数断言，不执行 replace）
 - **不覆盖**：各错误码的触发路径（TC-025～027、TC-037～041、TC-054/057/056）；`EvidenceInvalid` 的三条触发路径（evidence 缺失 / 字段类型非法 / `renderSha256` 与草稿不等）本轮只做码登记与档位断言，触发路径由施工自测（如需强约束应另立用例，本轮定点清单未要求加号）
 
@@ -1150,7 +1150,7 @@ node -e "const fs=require('fs');const t=fs.readFileSync('docs/superpowers/specs/
 | 第二次稳态替换被 `TargetDrift` 误拒 | 基准若固定用迁移快照 | 第一次替换成功、组件合法改动后第二次 replace 被拒 → 稳态旅程卡死 | TC-073 断言 `lastWrittenHash` 滚动更新 + 反例对照（改回快照哈希 → TargetDrift） |
 | 空共享块留下多余空行 | 空串替换不等于「整段消失」 | 无 `sharedBlock` 席渲染出 `## 通用纪律` 与 `## 边界` 之间的连续空行 → 整比红但归因困难 | TC-077 用桩席断言「无 `\n\n\n`」且对照产物含 `### 审计铁律` |
 | evidence 未回填仍判验收绿 | `"pending"` 被当成通过值 | 跳过步 4 直接替换，`compareResult` 仍是 `"pending"`，验收脚本若只查字段存在就放行 | TC-012/TC-046 要求 `goldenAssertion`/`compareResult`/`renderSha256` 不是 `"pending"` |
-| 模板编码未独立预检（假阳性来源） | 模板带 BOM / CRLF 时无专门错误码 | PowerShell 写出的 `agent.md.tpl` 带 UTF-8 BOM → 渲染产物首字节带 BOM → 整比红，但 `readTemplate`（`cli.mjs:27-32`）不调用 `checkEnvironment`，归因只能靠人 | 整文件比对（TC-007/TC-014）兜底 + §5 人工 diff 归因；建议在 `readTemplate` 处补 `checkEnvironment(buffer, 'template', path)`（属 S1 读取层，未在本轮实现） |
+| 模板编码未独立预检（假阳性来源） | 模板带 BOM / CRLF 时无专门错误码 | PowerShell 写出的 `agent.md.tpl` 带 UTF-8 BOM → 渲染产物首字节带 BOM → 整比红，但 `readTemplate`（`tools/docgen/cli.mjs:27-32`）不调用 `checkEnvironment`，归因只能靠人 | 整文件比对（TC-007/TC-014）兜底 + §5 人工 diff 归因；建议在 `readTemplate` 处补 `checkEnvironment(buffer, 'template', path)`（属 S1 读取层，未在本轮实现） |
 | 字节相同的 D6 绕过无法用 gate 区分 | 手写目标恰好等于当前渲染 | 组件已改、未走 replace，直接手写 `agents/reviewer-audit.md` = 新渲染 → `gate` 绿，与正常替换不可区分 | gate 只做字节比较；靠账本记录 + `replace --yes` 留痕 + 人工评审兜（`state.json` 只声明 replaced，不证伪） |
 
 ## 8 自由探索（本 spec 特有的 4 个角落）
@@ -1172,7 +1172,7 @@ node -e "const fs=require('fs');const t=fs.readFileSync('docs/superpowers/specs/
 | 2 | `tools/docgen/fixtures/reviewer-audit.evidence.json`（R3 / §4 步 1 与步 7） | 修订版 3 已规定八字段（含 `renderSha256`），但实现必须**真读真写**：步 4 回填 `goldenAssertion`/`compareResult`/`renderSha256`；`lastWrittenHash` 首次 = 迁移快照 SHA256、每次 replace 成功后滚动更新为草稿哈希；SHA256 统一大写 | 建了文件却不回填 / 不滚动更新 / 写成小写，验收读不到步 4 结论，第二次替换被 `TargetDrift` 误拒 | 在步 4 写回三个字段；`cmdReplace` 成功后写 `lastWrittenHash = sha256(草稿字节).toUpperCase()`；`TargetDrift` 比较对象只认该字段（TC-073 已断言滚动语义） | P0 |
 | 3 | `tools/docgen/cli.mjs:57-67`（`generate` agent 分支） | 只做存在性检查、不渲染，步 3 的「0=一致 / 1=不等」无从判定；F4 未真正修掉 | 现网 `generate` 一直绿，没人注意它从没渲染过 agent | 已拆槽席**恒**走 `renderAgent` + `compareBuffers`（`generate` 是渲染入口，不受 registered 豁免约束——步 3 时目标本就是 registered）；按 `state` 分流的只有 `gate`/`check-agents` | P0 |
 | 4 | §6-5「九步顺序不可跳」在替换前无机器闸门 | 跳过步 4 也能替换成功（`DraftDrift` 只保证「草稿 == 渲染」），只有验收阶段的证据检查能抓 | 都以为 gate 会兜，但 gate 对 registered 席不比对 | 把黄金断言内联进 `replace`（写入前用 fixture 的 blob 验一次描述），或在 `replace` 输出里强制打印步 4 证据的引用；二者取一即可机器化 | P1 |
-| 5 | `tools/docgen/components/validateAgentData.mjs:4-19`（`EXIT` 表） | 新增码 `TargetDrift` / `StateFileInvalid` / `GoldenSnapshotUnavailable` / `EvidenceInvalid` 未落表 → `exitCodeFor` 抛错，`cli.mjs:250-252` 兜底成 2，`TargetDrift` 的「应 exit 1」被静默改档；既有码 `InvalidArgs` 也需一并登记 | 兜底分支让错误码看起来正常，测试若不查 stderr 就发现不了 | 按 **S2 §11 + `validateAgentData.EXIT`** 先落表（`TargetDrift` 1；其余四码 2）再使用；TC-076 已把「每个已用码都能 `exitCodeFor` 而不抛」变成断言 | P0 |
+| 5 | `tools/docgen/components/validateAgentData.mjs:4-19`（`EXIT` 表） | 新增码 `TargetDrift` / `StateFileInvalid` / `GoldenSnapshotUnavailable` / `EvidenceInvalid` 未落表 → `exitCodeFor` 抛错，`tools/docgen/cli.mjs:250-252` 兜底成 2，`TargetDrift` 的「应 exit 1」被静默改档；既有码 `InvalidArgs` 也需一并登记 | 兜底分支让错误码看起来正常，测试若不查 stderr 就发现不了 | 按 **S2 §11 + `validateAgentData.EXIT`** 先落表（`TargetDrift` 1；其余四码 2）再使用；TC-076 已把「每个已用码都能 `exitCodeFor` 而不抛」变成断言 | P0 |
 | 6 | `tools/docgen/cli.mjs:142`（`ts()`）与 `:172`（draft 写） | 时间戳取系统时钟，同秒撞名无法确定性复现 → `wx` 分支永远测不到 | 没有注入点，测试只能靠静态断言 | 提供可注入时钟（如 `DOCGEN_FAKE_NOW`）或允许 `ts` 作为参数传入；写入改 `{ flag: 'wx' }` 并把 `EEXIST` 映射为 `DraftNameConflict` | P1 |
 | 7 | `tools/docgen/templates/agent.md.tpl:7` 与 `agent-handwritten.md.tpl:7` | 标题行 `# 角色：{{ZH_NAME}}（{{DIMENSION}}）`：senior-sdet 无 `dimension`，`renderAgent` 用 `?? ''` 会渲染出空括号 | S2 只看这一席（有 dimension），S3 才会撞上 | 第二套模板去掉 dimension 括号（或改成条件化标题）；`agent-handwritten.md.tpl:4` 的 `tools` 硬编码也应改 `{{TOOLS}}` | P2 |
 | 8 | `tools/docgen/cli.mjs:192`（tmp 后缀）与 `:110-113`（`.md` 扫描） | tmp 用 `.md` 后缀 → 中断残留被 `UnregisteredHandwritten` 判红，且无清理入口 | 中断场景少见，本地复现一次就永久红 | 后缀改 `.part`（非 `.md`），`replace` 启动先 `rm` 同前缀残留；TC-069 已按此写 | P1 |
@@ -1254,7 +1254,7 @@ pattern "^\| (R[0-9]|W1-|§)"          → 38 行（覆盖总表）
 
 | 编号 | 原因 |
 |---|---|
-| TC-042（旧：`replace` 目标在替换白名单外 → `InvalidOutputPath`） | **不在 S2 重复测（spec §11 第 4 条）**：当前 S1 实现 `cli.mjs:191` 直接 `join`、未经 `assertInside`，该分支不可达；用现状实现否定已定稿规格不可接受，必须显式记账而非静默作废。归属 = S1 实现补 `assertInside` 或 S1 spec 明确移除该分支（用户裁决）。不设替代号。 |
+| TC-042（旧：`replace` 目标在替换白名单外 → `InvalidOutputPath`） | **不在 S2 重复测（spec §11 第 4 条）**：当前 S1 实现 `tools/docgen/cli.mjs:191` 直接 `join`、未经 `assertInside`，该分支不可达；用现状实现否定已定稿规格不可接受，必须显式记账而非静默作废。归属 = S1 实现补 `assertInside` 或 S1 spec 明确移除该分支（用户裁决）。不设替代号。 |
 
 （除 TC-042 外，旧号 TC-001～TC-041、TC-043～TC-072 全部保留原含义，只修判据 / 落点；TC-073～TC-078 为近两轮新增。）
 

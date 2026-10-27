@@ -33,7 +33,7 @@
 >
 >   重建后必须跑一次 `git hash-object $frozen` == `evidence.blob`（不相等说明锚点已被破坏，属事故，不是「重建成功」）。
 > - **【numstat 口径】** `git diff --numstat -- agents/senior-sdet.md` 输出三列 `新增行<TAB>删除行<TAB>路径`。本文判据**只比前两列与第三列文件名**：替换后期望 `1<TAB>1<TAB>agents/senior-sdet.md`；引用时一律写「前两列 == `1 1`」，不写两值形态。
-> - **【草稿箱隔离】** `$env:DOCGEN_DRAFTS_DIR = Join-Path $w2 'drafts'`（`cli.mjs:161` 的 `DRAFTS_DIR()` 读该变量）；用例前后各清空一次并断言为空（`node tools/docgen/cli.mjs draft rm --name senior-sdet` 后 `node tools/docgen/cli.mjs draft ls --name senior-sdet` 无输出；**PowerShell 无裸 `draft` 命令**）。只有「正式迁移那一次」可用真实草稿箱（一次性、人工确认）。
+> - **【草稿箱隔离】** `$env:DOCGEN_DRAFTS_DIR = Join-Path $w2 'drafts'`（`tools/docgen/cli.mjs:161` 的 `DRAFTS_DIR()` 读该变量）；用例前后各清空一次并断言为空（`node tools/docgen/cli.mjs draft rm --name senior-sdet` 后 `node tools/docgen/cli.mjs draft ls --name senior-sdet` 无输出；**PowerShell 无裸 `draft` 命令**）。只有「正式迁移那一次」可用真实草稿箱（一次性、人工确认）。
 > - **【node 断言】** `node -e` 的相对说明符以 **cwd** 为基准；需要 `await` 时用 `--input-type=module`。**PS 双引号串里禁用 `\"`**（PS 的转义符是反引号，`\"` 会把命令行截断）；需要引号字符时用 `String.fromCharCode(34)` / `(39)` / `(96)`。
 > - **【diffSet 口径】** `diffSet(actualBuf, expectedBuf, ignorable)` → `{ raw, unallowed }`（spec §4「比对 helper 契约」）：
 >   - 按 `\n` 切行，行内容不含行尾 `\n`；`index` = 0 基行号；
@@ -201,7 +201,7 @@ node -e "const fs=require('node:fs');const BT=String.fromCharCode(96),NL=String.
   ⑦ 账本记：`evidence.commit` / `evidence.blob`（**黄金值的可重建锚点**）+ 冻结副本路径 + 旧卡 SHA256 + 迁移日期 + 该席类型（手写转录）
 
   **TC-001b 替换后重锁 evidence（替换后执行；不得触碰冻结副本）**
-  ① 断言 `evidence.lastWrittenHash` == `sha256(agents/senior-sdet.md)` 的**大写 64 位**（replace 成功路径已写，`cli.mjs:269`）
+  ① 断言 `evidence.lastWrittenHash` == `sha256(agents/senior-sdet.md)` 的**大写 64 位**（replace 成功路径已写，`tools/docgen/cli.mjs:269`）
   ② 断言冻结副本的 SHA256 与 TC-001a 步④ 记录值**逐字相同**（冻结副本未被改写）
   ③ 若步① 不等（只有幂等恢复以外的异常路径才会发生），按下式重锁——**只改 `lastWrittenHash`，不动 `commit`/`blob`/`sha256`/`hashObject`**：
      `node --input-type=module -e "const fs=await import('node:fs');const {createHash}=await import('node:crypto');const {readEvidence,writeEvidence}=await import('./tools/docgen/evidence.mjs');const e=readEvidence('senior-sdet');const before=[e.commit,e.blob,e.sha256,e.hashObject];e.lastWrittenHash=createHash('sha256').update(fs.readFileSync('agents/senior-sdet.md')).digest('hex').toUpperCase();writeEvidence('senior-sdet',e);const a=readEvidence('senior-sdet');const same=before.every((v,i)=>v===[a.commit,a.blob,a.sha256,a.hashObject][i]);console.log('relock lastWrittenHash='+a.lastWrittenHash+' anchor-unchanged='+same);process.exitCode=same?0:1"`
@@ -213,7 +213,7 @@ node -e "const fs=require('node:fs');const BT=String.fromCharCode(96),NL=String.
 - **红绿证据**：红 = 工作区与 HEAD 不等（步① 两值不同 → 冻结的不是迁移前最后版本）；冻结副本 hash 与 HEAD blob 不等（典型事故：用 PowerShell `>` 重定向，文件被改成 UTF-16）；evidence 照抄 `reviewer-audit.evidence.json`（三项同值 → 步 7 必 `TargetDrift`，见 §8 #11）。绿 = 两哈希稳定 + 冻结副本 hash == HEAD blob + evidence 锚点与 `lastWrittenHash`/`renderSha256` 方向正确
 - **自比退化反例**：省掉冻结、后续直接读 `agents/senior-sdet.md` 当黄金 —— replace 成功后该文件就是渲染产物，TC-010 立刻退化成「渲染 vs 渲染」恒绿
 - **对应测试**：待 plan Task N（迁移脚本内嵌账本写入）
-- **不覆盖**：commit 本身（git 写操作由用户决定）；evidence 其余字段语义（`evidence.mjs:30-38` 由 `readEvidence` 校验）
+- **不覆盖**：commit 本身（git 写操作由用户决定）；evidence 其余字段语义（`tools/docgen/evidence.mjs:30-38` 由 `readEvidence` 校验）
 
 ### TC-002 数据迁移：按 §3.1 逐行分进「数据字段 / 触发表 / 模板常量」（零改写 + 模板纯度 + 槽位 + 逐字）
 
@@ -338,9 +338,9 @@ node -e "const fs=require('node:fs');const BT=String.fromCharCode(96),NL=String.
 - **覆盖**：§4 步 3 生成 / S1 R3
 - **前置**：组件数据就位；磁盘上仍是**旧来源行**（尚未 replace）；【草稿箱隔离】已设（`$env:DOCGEN_DRAFTS_DIR`）
 - **步骤**：① `node tools/docgen/cli.mjs generate --kind agent --name senior-sdet`；② 记录 exit / stdout / stderr；③ 断言 `agents/senior-sdet.md` 未被写；④ 断言 senior-sdet 真进入比对集合
-- **预期**：**exit 1**（磁盘是旧来源行 → `compareBuffers` 报 drift → `cli.mjs:71` 返回 1）；`stdout` 恰一行、匹配 `^baseline (\d+)/\1$`（`cli.mjs:70` 只打印这一行，**不打印渲染内容**）；`stderr` 为空（空则证明不是 `MissingComponentData` 的 exit 2）；磁盘文件零改动。**用途 = 「确认除来源行外无其它漂移」，精确结论归 TC-010**
+- **预期**：**exit 1**（磁盘是旧来源行 → `compareBuffers` 报 drift → `tools/docgen/cli.mjs:71` 返回 1）；`stdout` 恰一行、匹配 `^baseline (\d+)/\1$`（`tools/docgen/cli.mjs:70` 只打印这一行，**不打印渲染内容**）；`stderr` 为空（空则证明不是 `MissingComponentData` 的 exit 2）；磁盘文件零改动。**用途 = 「确认除来源行外无其它漂移」，精确结论归 TC-010**
 - **判据**：机器——退出码 **1**；stdout 匹配 `^baseline (\d+)/\1$`；stderr 空；`git status --short agents/senior-sdet.md` 无输出
-- **静默跳过警报**：`cmdGenerate` 在 `cli.mjs:65` 对「无 `triggerTable.when`」的席 `continue` —— 一旦 when 被挪走，drift 恒 0 → **exit 0**。所以「exit 1」本身就是「senior-sdet 真被比对了」的证据；再补一条显式断言：
+- **静默跳过警报**：`cmdGenerate` 在 `tools/docgen/cli.mjs:65` 对「无 `triggerTable.when`」的席 `continue` —— 一旦 when 被挪走，drift 恒 0 → **exit 0**。所以「exit 1」本身就是「senior-sdet 真被比对了」的证据；再补一条显式断言：
   `node --input-type=module -e "const m=await import('./tools/docgen/components/agentData.mjs');const ok=!!(m.triggerTable['senior-sdet']&&m.triggerTable['senior-sdet'].when);console.log('in-compare-set='+ok);process.exitCode=ok?0:1"`
 - **红绿证据**：红 = exit 0（被静默跳过）/ exit 2（数据缺失，不是本步语义）/ 文件被写；绿 = exit 1 + stdout 单行 + stderr 空 + 文件不变
 - **对应测试**：待 plan Task N（cli 测试）
@@ -389,18 +389,18 @@ node -e "const fs=require('node:fs');const BT=String.fromCharCode(96),NL=String.
 
 - **覆盖**：§4 步 7 / 步 8 / W2 逐字节一致（巩固归 TC-013、A 组归 TC-030）
 - **前置**：
-  - `tools/docgen/fixtures/senior-sdet.evidence.json` 已按 TC-001a 建好（**缺则 replace 报 `EvidenceInvalid` exit 2**，`cli.mjs:218-221`）
+  - `tools/docgen/fixtures/senior-sdet.evidence.json` 已按 TC-001a 建好（**缺则 replace 报 `EvidenceInvalid` exit 2**，`tools/docgen/cli.mjs:218-221`）
   - **`evidence.renderSha256` 必须已由 `node tools/docgen/acceptance/golden-assert.mjs senior-sdet` 回填为渲染 SHA256**，否则 replace 报 `EvidenceInvalid`。注意：`init-evidence.mjs senior-sdet` 只写 `renderSha256='pending'`，**不能**当回填入口
   - **`golden-assert.mjs` 对本席当前「双重不兼容」，回填前必须先修**（细则见 TC-001a 步⑤，此处只列结论）：
     - **修法 1｜句式分流**：`:18` 硬编码 `patternRegistry.description.parliament(...)`，须按 `agent.outputKind` 分流——`testcase` → `patternRegistry.description.handwritten(agent.role, t.when, t.notWhen?.text ?? '')`；
     - **修法 2｜整文件比较改 `diffSet`**：`:24` / `:35` 的整文件全等对本席必红（来源行按设计差异），须改用 `diffSet` 并豁免 `{OLD_SOURCE_LINE, NEW_SOURCE_LINE}`；
     - **修法前的预期**：修法 1、2 落地前，该命令退出码 1 属预期（`renderSha256` 已在 `:29` 写盘），**不得当「回填失败」**、也不得据此判 TC-012 红。两处修法属施工改动，已在 spec §1 影响面⑤ 登记
-  - **若 `evidence.goldenAssertion === 'fail'`，replace 必须拒**（见判据 ④——W2-② 没通过就不能替换）。**该负例在 `cmdReplace` 补齐 `goldenAssertion` 校验之前不可执行**（当前实现只校验 `renderSha256`，`cli.mjs:218-221` + `evidence.mjs:35`），**登记为 plan 任务（§8 #16）**；在补齐之前跑它必然红，不得记作「本用例失败」，也不得据此放行「实现已正确」的结论
+  - **若 `evidence.goldenAssertion === 'fail'`，replace 必须拒**（见判据 ④——W2-② 没通过就不能替换）。**该负例在 `cmdReplace` 补齐 `goldenAssertion` 校验之前不可执行**（当前实现只校验 `renderSha256`，`tools/docgen/cli.mjs:218-221` + `tools/docgen/evidence.mjs:35`），**登记为 plan 任务（§8 #16）**；在补齐之前跑它必然红，不得记作「本用例失败」，也不得据此放行「实现已正确」的结论
   - 用户已确认替换；【草稿箱隔离】已设
 - **步骤**：
   ⓪ **建草稿并记录路径**（TC-011 收尾会清空草稿箱，不能复用）：
      `node tools/docgen/cli.mjs draft --kind agent --name senior-sdet`；`$draft = Join-Path $env:DOCGEN_DRAFTS_DIR (@(node tools/docgen/cli.mjs draft ls --name senior-sdet)[0])`
-  ① **先把草稿复制一份**到 `$w2\sdet-draft-copy.md`（replace 成功会 `clearDrafts` 删掉草稿，`cli.mjs:268`——**替换后已无草稿可比**）
+  ① **先把草稿复制一份**到 `$w2\sdet-draft-copy.md`（replace 成功会 `clearDrafts` 删掉草稿，`tools/docgen/cli.mjs:268`——**替换后已无草稿可比**）
   ② `node tools/docgen/cli.mjs replace --kind agent --name senior-sdet --draft $draft --yes`
   ③ 断言退出码 0
   ④ 【字节比较】`$w2\sdet-draft-copy.md` 与 `agents/senior-sdet.md` → EQUAL
@@ -422,7 +422,7 @@ node -e "const fs=require('node:fs');const BT=String.fromCharCode(96),NL=String.
 - **步骤**：
   ① `node tools/docgen/cli.mjs gate` 第 1 次，断言绿
   ② **隔目录冷跑（复用既有脚本，不自己写复制逻辑）**：`node tools/docgen/acceptance/cold-run.mjs`——它把 git 跟踪文件 + extras 复制到 `mkdtemp` 临时目录，**不含 `.git`**，跑完即删；退出 0 即等价「在另一个目录里 gate 绿」
-  ③ **崩溃恢复（复用既有脚本，跑在临时副本上）**：`node tools/docgen/acceptance/replace-scenarios.mjs` → 输出 `PASS 6/6`（S3 = rename 后崩溃的幂等恢复、S4 = rename 前崩溃的重跑收敛；两场景证明了 spec §4 步 7 的两条恢复路径，代表席为 `reviewer-audit`，替换实现是席无关的同一段代码 `cli.mjs:249-268`）
+  ③ **崩溃恢复（复用既有脚本，跑在临时副本上）**：`node tools/docgen/acceptance/replace-scenarios.mjs` → 输出 `PASS 6/6`（S3 = rename 后崩溃的幂等恢复、S4 = rename 前崩溃的重跑收敛；两场景证明了 spec §4 步 7 的两条恢复路径，代表席为 `reviewer-audit`，替换实现是席无关的同一段代码 `tools/docgen/cli.mjs:249-268`）
   ④ 核对巩固要素：gate 绿 / `npm run check` 全绿 / 干净口径（`git status --short rules/ skills/` 无输出 + numstat 前两列 `1 1`）/ **旧生成来源已退役**：`skills/parliament/scripts/gen-agents.mjs` 不存在 / 内容 = 组件渲染（人工抽查 1 处关键格）/ 草稿箱该名下已清
 - **预期**：全部要素达标才置「已巩固」；`node tools/docgen/cli.mjs draft ls --name senior-sdet` 为空
 - **判据**：机器——
@@ -450,7 +450,7 @@ node -e "const fs=require('node:fs');const BT=String.fromCharCode(96),NL=String.
   ② 对副本跑【diffSet 判据命令】`"$cp" "$frozen" fail` → 必须 `diffset-mode->PASS`（= 润色被检出为不被允许的差异）
   ③ 对副本跑 `generate`：设三个环境变量后 `node (Join-Path $cp 'tools/docgen/cli.mjs') generate --kind agent --name senior-sdet` → **退出码 1** 且 **stderr 为空**
   ④ 断言真仓库未被碰：`git status --short tools/docgen/components/agentData.mjs` 无输出
-- **预期**：任何非来源行的字节差异（措辞 / 标点 / 换行）→ 红；**「语义等价即放行」不允许**（P2 本体 = 零改写转录）。**`generate` 不产 `Mismatch` 码**——它只 `drift += 1` → exit 1、stderr 空（`cli.mjs:66-71`）
+- **预期**：任何非来源行的字节差异（措辞 / 标点 / 换行）→ 红；**「语义等价即放行」不允许**（P2 本体 = 零改写转录）。**`generate` 不产 `Mismatch` 码**——它只 `drift += 1` → exit 1、stderr 空（`tools/docgen/cli.mjs:66-71`）
 - **判据**：机器——主判据：**对副本调 `diffSet`**（【diffSet 判据命令】`<root>` = `$cp`、`<goldenPath>` = `$frozen`、`<mode>` = `fail`）退出 0 且打印 `diffset-mode->PASS`；辅判据 `generate` 退出码 1 + stderr 为空 + 真仓库零改动
 - **红绿证据**：红 = 润色样本被拦（`fail` 模式 PASS）；绿 = 还原后（副本丢弃、真仓库 `exact1` PASS）全绿
 - **自比退化反例**：与现卡比——替换后现卡 = 渲染产物，润色后的渲染和它自己相等，「转录润色」这类最隐蔽的假绿会全部放行
@@ -523,7 +523,7 @@ node -e "const fs=require('node:fs');const BT=String.fromCharCode(96),NL=String.
 - **预期**：`.code === 'TriggerConflict'`；`exitCodeFor('TriggerConflict') === 1`
 - **判据**：机器——
   `node --input-type=module -e "const d=await import('./tools/docgen/components/agentData.mjs');const v=await import('./tools/docgen/components/validateAgentData.mjs');const t=d.triggerTable['senior-sdet'];const bad={...t,notWhen:{...t.notWhen,refs:['reviewer-qa-typo']}};let code=null;try{v.validateAgentData(d.agentData,{...d.triggerTable,'senior-sdet':bad})}catch(x){code=x.code}console.log('code='+code+' exit='+(code?v.exitCodeFor(code):'n/a'));process.exitCode=(code==='TriggerConflict'&&v.exitCodeFor(code)===1)?0:1"`
-- **gate 路径同口径**：`collectGate()` 首行就是 `validateAgentData`（`cli.mjs:77`），故 go 该样本在 gate 里同样得到 `TriggerConflict` / exit 1；`Mismatch` 只属于 gate 的整缓冲比对（TC-027），**不属本用例**
+- **gate 路径同口径**：`collectGate()` 首行就是 `validateAgentData`（`tools/docgen/cli.mjs:77`），故 go 该样本在 gate 里同样得到 `TriggerConflict` / exit 1；`Mismatch` 只属于 gate 的整缓冲比对（TC-027），**不属本用例**
 - **红绿证据**：红 = 悬空 refs 被拦（`code=TriggerConflict`）；绿 = 合法 refs（TC-004）PASS
 - **对应测试**：待 plan Task N
 - **不覆盖**：fallback 静态断言（S1 §6 断言 **13**）；route 悬空（S1 §6 断言 9，见 TC-007 步③）
@@ -665,7 +665,7 @@ node -e "const fs=require('node:fs');const BT=String.fromCharCode(96),NL=String.
 ### TC-027 EOL / 尾换行 / BOM / 非法 UTF-8 边界 → 两处落点分别判（五个 violation 全覆盖）
 
 - **覆盖**：PRD §5 通用前置（`checkEnvironment`）/ W2 逐字节一致
-- **前置**：基线绿；senior-sdet 已 `replaced`（gate 只对 `state = replaced` 的席逐字节比对，`cli.mjs:98`）
+- **前置**：基线绿；senior-sdet 已 `replaced`（gate 只对 `state = replaced` 的席逐字节比对，`tools/docgen/cli.mjs:98`）
 - **步骤**：
   ① **单测直调** `checkEnvironment(buf, 'target', 'agents/senior-sdet.md')`，五个样本各只含**一种**违规：
      - A 行尾 CRLF（→ 命中 `CR`；先于后续检查）
@@ -676,7 +676,7 @@ node -e "const fs=require('node:fs');const BT=String.fromCharCode(96),NL=String.
   ② **端到端**：把任一样本贴到 `agents/senior-sdet.md`（**改完还原**）跑 `node tools/docgen/cli.mjs gate`
 - **预期**：
   ① 五个样本各抛 `EnvironmentEOL`，`violation` 分别为 `CR` / `NO_TRAILING_NEWLINE` / `BOM` / `INVALID_UTF8` / `TRAILING_NEWLINE`（`compare.mjs:100-116` 五处 `error()`）
-  ② 端到端**只会得 `Mismatch`**（exit 1）——`cli.mjs:59-68` 的 agent 分支只 `compareBuffers`，`cli.mjs:85-91` 的 `checkEnvironment` 只对 `BASELINE_RULES` 跑。**不得要求 gate 对 agent 给 `EnvironmentEOL`**
+  ② 端到端**只会得 `Mismatch`**（exit 1）——`tools/docgen/cli.mjs:59-68` 的 agent 分支只 `compareBuffers`，`tools/docgen/cli.mjs:85-91` 的 `checkEnvironment` 只对 `BASELINE_RULES` 跑。**不得要求 gate 对 agent 给 `EnvironmentEOL`**
 - **判据**：机器——① 单测断言 `.code === 'EnvironmentEOL'` 且 `violation` 逐样本匹配（5/5）；② gate 退出码非 0，`.code ∈ {Mismatch}` 即算拦下（接受 `Mismatch`）；③ 还原后 `git status --short agents/senior-sdet.md` 无输出、gate 退出 0
 - **红绿证据**：红 = 任一污染样本没被对应落点拦下（尤其 `TRAILING_NEWLINE`：只测「缺尾换行」会漏掉「多尾换行」）；绿 = 五样本各命中 + 端到端非 0 + 还原后转绿
 - **对应测试**：待 plan Task N
@@ -817,14 +817,14 @@ node -e "const fs=require('node:fs');const BT=String.fromCharCode(96),NL=String.
 | `tools/docgen/components/compare.mjs`（新增 `diffSet`） | TC-010、TC-014、TC-016、TC-021、TC-024 | 比对口径只按行内容匹配；TC-024 是该 helper 判别力的唯一防线 |
 | `tools/docgen/components/validateAgentData.mjs` | TC-004、TC-007、TC-008、TC-017、TC-018、TC-019 | 守卫断言（notWhen refs / when 格式 / 派生断言）全在它身上 |
 | `tools/docgen/components/patternRegistry.mjs`（outputKind / tools） | TC-007、TC-031 | `testcase` 是新枚举值；`tools.sdet` 变动会让 TC-002 的 tools 行断言失配 |
-| `tools/docgen/cli.mjs`（generate） | TC-009、TC-010、TC-014、TC-027 | 内存渲染 + 整缓冲比对 + 静默跳过分支（`cli.mjs:65`） |
+| `tools/docgen/cli.mjs`（generate） | TC-009、TC-010、TC-014、TC-027 | 内存渲染 + 整缓冲比对 + 静默跳过分支（`tools/docgen/cli.mjs:65`） |
 | `tools/docgen/cli.mjs`（replace） | TC-012、TC-025、TC-029 | 拒红过滤、授权位、`clearDrafts`（决定 TC-012 必须用替换前草稿副本） |
 | `tools/docgen/cli.mjs`（draft / `DRAFTS_DIR`） | TC-011、TC-012、TC-013、TC-025、TC-028、TC-029 | 草稿箱隔离与清理（`DOCGEN_DRAFTS_DIR`） |
 | `tools/docgen/evidence.mjs` / `tools/docgen/acceptance/init-evidence.mjs` | 重跑 **TC-001b**（只重锁 evidence）；**不得重跑 TC-001a**（冻结副本不可覆盖） | `lastWrittenHash`（旧卡）与 `renderSha256`（渲染）是两个不同时刻的值，写反 → 步 7 `TargetDrift`。**为什么不能重跑 TC-001a**：`init-evidence` 会把 `commit`/`blob` 重新指向「最近一次提交」，迁移后即指向新卡 → 黄金锚点当场丢失（TC-001b 步④ 已明令禁止） |
 | `tools/docgen/acceptance/golden-assert.mjs`（回填入口） | TC-012、TC-025 | `renderSha256` 的唯一回填口；**对本席双重不兼容**（句式不分流 + 整文件全等，见 TC-001a 步⑤）→ 修好前 `goldenAssertion` 恒 `fail`、`compareResult` 恒 `Mismatch` |
 | `tools/docgen/fixtures/senior-sdet.evidence.json` | **重跑 TC-001b**（只重锁 `lastWrittenHash`）；**不得重跑 TC-001a**（`init-evidence` 会把 `commit`/`blob` 指向替换后的卡，黄金锚点即失效）、TC-012、TC-025 | replace 硬读该文件；它同时是**黄金锚点**（`commit`/`blob`），丢了冻结副本也还能重建——**所以它的回归只能是「重锁 `lastWrittenHash`」，不是重建 `commit`/`blob`** |
 | `agents/senior-sdet.md`（替换后） | **TC-001b**（重锁 evidence）、TC-010（改用冻结副本，不读现卡）、TC-012、TC-013、TC-026、TC-027、TC-028、TC-030；**不得重跑 TC-001a** | 现产物变更后 `lastWrittenHash` 要重锁、numstat 口径与 A 组真卡直接受影响；重跑 TC-001a 会把冻结副本指向迁移后版本（锚点丢失） |
-| `tools/docgen/state.json`（senior-sdet 置 `replaced`） | TC-012、TC-013、TC-027、TC-028 | gate 只对 `replaced` 席做逐字节比对（`cli.mjs:98`）；TC-030 不受影响（`checkAgentFile` 不读 state） |
+| `tools/docgen/state.json`（senior-sdet 置 `replaced`） | TC-012、TC-013、TC-027、TC-028 | gate 只对 `replaced` 席做逐字节比对（`tools/docgen/cli.mjs:98`）；TC-030 不受影响（`checkAgentFile` 不读 state） |
 | `tools/execution-matrix/check-agent.mjs` / `criteria.md`（A3–A7 判据） | TC-030 | 判定词与判定口径改动直接改变 A 组结论 |
 | `scripts/check-all.mjs` / baseline agent 清单 | TC-008、TC-012、TC-013、TC-028、TC-030、TC-031 | gate 比对范围与 `baseline N/N` 的数字来源；A 组/快照守卫若挂进 check 也在此 |
 | `tools/docgen/acceptance/cold-run.mjs` / `replace-scenarios.mjs` | TC-013 | 冷跑与崩溃恢复的既有实现；改动会让「巩固」判据换口径 |
@@ -853,7 +853,7 @@ node -e "const fs=require('node:fs');const BT=String.fromCharCode(96),NL=String.
 | description 翻译闭环（完形填空） | PRD §1.1 作用域声明：P2 本体 = 数据搬家 / 零改写转录，不涉及 AI 翻译 |
 | **词表对 transcription 字段生效** | S1 已裁定 **P2 内没有词表实现**（description 全被句式锁定，无消费对象）→ 该条为「恒真豁免」，不可能因 R6 失败。TC-008 只断言「gate 绿 + 无词表族码」，TC-019 只做「机制缺席」的结构断言；一旦引入词表实现，TC-019 必须升级为真负例 |
 | 能力完备（W6/W7 草稿纪律全量） | S1 序 4；本 spec 只覆盖本席闭环触达的 replace 失败路径（TC-025/029） |
-| **senior-sdet 专属的崩溃恢复场景** | 替换实现是席无关的同一段代码（`cli.mjs:249-268`）；崩溃恢复由既有 `tools/docgen/acceptance/replace-scenarios.mjs` 的 S3/S4 以 `reviewer-audit` 为代表覆盖（TC-013 步③ 跑它）。为同一段代码再造一套 senior-sdet 版本只会多一份会漂移的副本 |
+| **senior-sdet 专属的崩溃恢复场景** | 替换实现是席无关的同一段代码（`tools/docgen/cli.mjs:249-268`）；崩溃恢复由既有 `tools/docgen/acceptance/replace-scenarios.mjs` 的 S3/S4 以 `reviewer-audit` 为代表覆盖（TC-013 步③ 跑它）。为同一段代码再造一套 senior-sdet 版本只会多一份会漂移的副本 |
 | **§3.1 末段的「模板复用定性」**（手写席 = 同形态、不同文件） | 这是**文档约定**（写给 P3/P4 看的判据方向），不是产物属性——没有可机器判的落点，也不该为它编一个。「第二席 testcase 出现且想复用议会席模板」是它的触发信号，记在 spec 账本里 |
 | **gen-agents ROLES 递减** | 该文件**当前不存在**（`Glob '**/gen-agents*'` 0 命中）→ 旧「grep 无该席」判据会指向不存在的文件（grep 报错而非无匹配，既不会红也不会绿）。改为 TC-013 的「文件不存在 = 旧来源已退役」断言 |
 | 逐字节比对「排除来源声明行」的底层实现细节 | 属 S1 gate 实现；本 spec 通过 TC-024 以单元级双样本约束其行为（只能按行内容匹配） |
@@ -880,7 +880,7 @@ node -e "const fs=require('node:fs');const BT=String.fromCharCode(96),NL=String.
 | **快照脚本自身的漏读**（前后同时少同一段 → 恒绿） | 脚本没读 `fixedList`，则删掉数据行时前后快照都不变；**更隐蔽的是探针串不唯一**——fixture 写 `['一','二']` 时，「一」本来就在 `agent.md.tpl` 正文里 → 漏读也绿 | 脚本只渲染 `identity` 不渲染 `fixedList`；fixture 标记串在模板里也出现 | TC-031 的「脚本自检」断言（fixture 各字段必须出现在产物里）+ **探针唯一性**（`SDET_FIXTURE_ROW_1` 必须在模板与产物其余位置 0 命中） |
 | **未消费槽位静默保留**（`fill()` 不报错） | 新增槽位忘写填充 → `{{XXX}}` 原样进产物，无人报错 | `renderAgent.mjs:3-6` 只做 replaceAll，不校验残留 | TC-030 的通用正则 `{{[A-Z_]+}}`（真卡）+ TC-022 步③（副本）+ TC-002(b) 的槽位清单（模板） |
 | **PowerShell 重定向 / `git show --output` 改字节** | 用 `>` / `Out-File` / `--output` 存冻结副本 → 文件变 UTF-16 或版本相关行为 → 后续 hash/比对全错但「看起来文件在」 | PS 5.1 默认 `>` 写 UTF-16LE | TC-001a 步④ 的 `git hash-object` 自校验（唯一能证明「冻结副本没被转码」的判据） |
-| **`draft ls` 不隔离就读真实草稿箱** | 评审机与施工机共用家目录 → 残留草稿让下一次 `draft` 报 `DraftNameConflict` | `cli.mjs:161` 的 `DRAFTS_DIR()` 默认 `homedir()/.retro-skills/docgen-drafts` | TC-011/012/013/025/028/029 统一 `DOCGEN_DRAFTS_DIR` + 前后清空 |
+| **`draft ls` 不隔离就读真实草稿箱** | 评审机与施工机共用家目录 → 残留草稿让下一次 `draft` 报 `DraftNameConflict` | `tools/docgen/cli.mjs:161` 的 `DRAFTS_DIR()` 默认 `homedir()/.retro-skills/docgen-drafts` | TC-011/012/013/025/028/029 统一 `DOCGEN_DRAFTS_DIR` + 前后清空 |
 | **假阳性账：TC-019 把文档提及当实现** | 注释 / 错误消息里出现「词表」→ 不剥离就判红 → 逼人删注释换绿 | `// 本席不适用词表` | TC-019 的 `strip()`（去注释、去字符串/模板字面量）后再匹配：注释里提到「词表」**必须仍绿** |
 
 ## 8 给开发的建议
@@ -899,12 +899,12 @@ node -e "const fs=require('node:fs');const BT=String.fromCharCode(96),NL=String.
 | 8 | `tools/docgen/components/renderAgent.mjs:13-15` | `fixedList` 按「拆单元格重拼」生成 `\| # \| 必问 \| 回答 \|` + `\| i \| q \| 待答 \|`，与 §3「元素 = 整行原文」及现卡 `\| # \| 必答 \|` 表头**双重不兼容**：数据改对了渲染仍必红 | 数据 / 模板 / 渲染三处，改前两处时最容易漏第三处 | `outputKind === 'testcase'` 分支改为 `fixedList.join('\n')`；其余分支保持原单元格重拼；改完必须跑 TC-031 | P0 |
 | 9 | `scripts/check-all.mjs:119` + `check-agent.mjs:162-189` | `npm run check` 只对 `reviewer-audit` 跑 `checkAgent`，senior-sdet 的 A3–A7 **无自动守卫**；直接换 `checkAgentFile('senior-sdet')` 又会被语义 pending 拖红（`ok` 恒 false） | 线 E 守卫「已落地」容易被读成「已生效」，实际只接了 1 席 | 二选一：① 补齐 senior-sdet 的 10 个 annotations 键后接入 `checkAgentFile`；② 在 check-all 加「只判 A3–A7 子集」入口并注释说明为何不看 `ok` | P0 |
 | 10 | `tools/docgen/components/agentData.mjs:35` / spec §3 | 现行 senior-sdet 条目只有 `name` / `role` / `outputKind`（`tools` 由 :36 派生）；heading / identity / fixedList / sourceLine 全缺。TC-007/002 断言的是**施工后**状态，plan 若把它们排在数据迁移之前会「预期地红」 | 验收用例天然期望终态 | plan 把 TC-002 / TC-007 排在「数据迁移」任务之后 | P2 |
-| 11 | `tools/docgen/acceptance/init-evidence.mjs:13-18` + `cli.mjs:258` + `fixtures/reviewer-audit.evidence.json` | **新发现（实现观察，阻塞步 7）**：evidence 的 `lastWrittenHash` 必须是**旧卡** SHA256、`renderSha256` 必须是**本席渲染** SHA256，二者在 S3 **必然不等**（来源行不同）。照 `reviewer-audit.evidence.json` 抄（三项同值）→ `cli.mjs:258` 判 `TargetDrift`（exit 1），提示与真正原因（证据时段混淆）无关 | S2 的席字节全等，三项同值是**正确**的；S3 一字不改地抄就成了错的 | 步 1 用 `init-evidence.mjs`（自动写 `lastWrittenHash = 旧卡 sha`、`renderSha256='pending'`），步 4 用 `golden-assert.mjs` 回填；plan 明写「本席三哈希不得同值」 | P0（**新发现**） |
+| 11 | `tools/docgen/acceptance/init-evidence.mjs:13-18` + `tools/docgen/cli.mjs:258` + `fixtures/reviewer-audit.evidence.json` | **新发现（实现观察，阻塞步 7）**：evidence 的 `lastWrittenHash` 必须是**旧卡** SHA256、`renderSha256` 必须是**本席渲染** SHA256，二者在 S3 **必然不等**（来源行不同）。照 `reviewer-audit.evidence.json` 抄（三项同值）→ `tools/docgen/cli.mjs:258` 判 `TargetDrift`（exit 1），提示与真正原因（证据时段混淆）无关 | S2 的席字节全等，三项同值是**正确**的；S3 一字不改地抄就成了错的 | 步 1 用 `init-evidence.mjs`（自动写 `lastWrittenHash = 旧卡 sha`、`renderSha256='pending'`），步 4 用 `golden-assert.mjs` 回填；plan 明写「本席三哈希不得同值」 | P0（**新发现**） |
 | 12 | `tools/docgen/components/renderAgent.mjs:3-6`（`fill`）+ spec §6-9 | **新发现（实现观察）**：`fill()` 对未实现/未消费的槽位只做 `replaceAll`，不校验残留——新增槽位忘写填充时 `{{XXX}}` 会原样进产物，而 `MissingSlot` **没有抛点**（只出现在 rule 侧 `specTestCaseGate.mjs`） | 「7 槽位断言」只查模板里有没有槽位，不查产物有没有残留 | 在 `renderAgent` 末尾加通用守卫：产物命中 `/\{\{[A-Z_]+\}\}/` 即 `MissingSlot`（exit 1） | P1（**新发现**） |
 | 13 | 判据命令层：PowerShell `>`/`Out-File`、`git show --output`、`git diff` 头 | 三条都是「命令跑过了、输出也有」的假证据形态：① PS 5.1 `>` 写 UTF-16LE；② `--output` 跨版本行为不一；③ `git diff` 含 `---/+++` 头 | 都是平台常识，但一旦落进用例就长期污染 | 冻结走 node `execFileSync` + `writeFileSync` 并 `git hash-object` 自校验；「差异仅一行」用 `--numstat` + 定向核 `-`/`+` 行 | P1（**新发现**） |
 | 14 | `tools/docgen/cli.mjs:65`（`continue` 静默跳过）+ `:66-71`（drift 计数） | 缺 `when` 的席在 `generate` 里被 `continue`，drift 恒 0 → **exit 0**，与「确实一致」在 stdout 上完全同形；且 `generate` **从不产 `Mismatch`**，只 exit 1 | 静默跳过不产生任何输出 | 加计数器 / 输出比对了哪几席（如 `compared=senior-sdet`），或对「显式 `--name` 但被跳过」直接 `MissingWhen`；TC-009 已把「exit 必须为 1」当证据，TC-014 已按「exit 1 + stderr 空」判定 | P1（**新发现**） |
 | 15 | `checkAgentFile` 不读 `state.json` | 旧 testcase 把「`state.json` 置 replaced」写成 TC-030 的**前置必要条件**，但 `check-agent.mjs:175-189` 只读 `agents/<name>.md` | 前置条件写宽了不会报错，只会让用例白等 | TC-030 前置已改「state 不是必要条件」；state 只在 TC-012/013/027/028 里必要（gate 用得到） | P2（**新发现**） |
-| 16 | `tools/docgen/cli.mjs:218-221`（evidence 校验）+ `evidence.mjs:35`（`goldenAssertion` 允许 `'fail'`） | **新发现（实现观察）**：replace 只校验 `renderSha256`，**不校验 `goldenAssertion`**——黄金断言失败（description 未逐字复现 = W2-② 红线）时仍可能替换成功 | 「evidence 已存在且哈希对」容易被当成「黄金也通过了」 | 在 `cmdReplace` 的 evidence 校验处补一条：`if (evidence.goldenAssertion !== 'pass') fail('EvidenceInvalid', {reason:'黄金断言未通过'})`；TC-012 判据 ④ 已按「必须拒」写 | P1（**新发现**） |
+| 16 | `tools/docgen/cli.mjs:218-221`（evidence 校验）+ `tools/docgen/evidence.mjs:35`（`goldenAssertion` 允许 `'fail'`） | **新发现（实现观察）**：replace 只校验 `renderSha256`，**不校验 `goldenAssertion`**——黄金断言失败（description 未逐字复现 = W2-② 红线）时仍可能替换成功 | 「evidence 已存在且哈希对」容易被当成「黄金也通过了」 | 在 `cmdReplace` 的 evidence 校验处补一条：`if (evidence.goldenAssertion !== 'pass') fail('EvidenceInvalid', {reason:'黄金断言未通过'})`；TC-012 判据 ④ 已按「必须拒」写 | P1（**新发现**） |
 | 17 | `tools/docgen/acceptance/golden-assert.mjs:18`（+ `:24` / `:35`） | **新发现（实现观察，阻塞 TC-012）**：该脚本对**本席双重不兼容**——① `:18` 硬编码 `patternRegistry.description.parliament(agent.role, t.when)`，对 `outputKind='testcase'` 的席必然算错 → `goldenAssertion` 恒 `fail`（并在 §8 #16 修好后**永久拒绝替换**）；② `:24` / `:35` 用整文件全等，本席来源行按设计必差异 → `compareResult` 恒 `Mismatch`、命令恒 exit 1（`renderSha256` 在 `:29` 已写盘，故「回填」实际成功） | 它是 S2 的脚本，S2 只有议会席（且字节全等） | ① 按 `agent.outputKind` 分流：`testcase` 走 `description.handwritten(agent.role, t.when, t.notWhen?.text ?? '')`；② 整文件比较改用 `diffSet` 并豁免 `{OLD_SOURCE_LINE, NEW_SOURCE_LINE}`；两处均已在 spec §1 影响面⑤ 登记 | P0（**新发现**） |
 | 18 | `tools/docgen/acceptance/cold-run.mjs:14-22`（extras 清单） | 冷跑副本的 extras 不含 `fixtures/senior-sdet.evidence.json`；本轮 gate 不读 evidence 故不受影响，但若将来把 replace 也纳入冷跑，副本会因 `EvidenceInvalid` 假红 | 清单是「够用就好」写的，没人回头看它是否仍然够用 | 冷跑清单加 `tools/docgen/fixtures/senior-sdet.evidence.json`；或把 extras 清单抽成共享常量（与 `replace-scenarios.mjs` 的清单同源） | P2（**新发现**） |
 

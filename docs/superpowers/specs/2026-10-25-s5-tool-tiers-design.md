@@ -201,7 +201,7 @@ export const patternRegistry = {
 ## 6 施工顺序
 
 1. 改 `patternRegistry.mjs`（P-1）→ `agentData.mjs`（P-2）→ `validateAgentData.mjs`（P-3）→ `outputFormats.mjs`（P-4）。
-2. **两席草稿必须都生成后，才能执行第一次 `replace`**：旁席 `Mismatch` 只有在草稿目录存在与 render 相同的草稿时才被放行（`cli.mjs:396-413`）。
+2. **两席草稿必须都生成后，才能执行第一次 `replace`**：旁席 `Mismatch` 只有在草稿目录存在与 render 相同的草稿时才被放行（`tools/docgen/cli.mjs:396-413`）。
 3. 把「改前 `agents/<席>.md` vs 改后草稿」两版对照展示给用户（`git diff --no-index`），**确认替换内容本身后才执行 `replace`**（`skills/parliament/SKILL.md:15`）。
 4. `node tools/docgen/cli.mjs diff --kind agent --name <席>` 取 `--expect-change <新 sha256>`。
 5. **B3 重判**：`<席>:B3` 置 `"pending"`；独立子代理按 `criteria.md:134-141` 重判，**只返回**四字段原文；主持人逐字转录进 `.session/reviews/<本次>/rejudge-<席>-B3.md`（含「转录人」），并在 `progress.md` 派工节记同一判者标识；主持人只改 `<席>:B3` 一个注解键。**无子代理 → 停，不得 replace**。
@@ -212,8 +212,8 @@ export const patternRegistry = {
 10. `npm run check` → 全绿、`0 findings`、覆盖席数 = `state.json` 中 `replaced` 席数（≥1 且 ≤ `agentData.length`）。
 11. 账本（P-8）：B-5 迁出；B-1 拆三条接班条目（`research` → S5-R / 精算师取数权 → S2 / S5-B）。
 
-**中途不得**：手改 `agents/*.md`；跳过 B3 重判；用旧 `--expect-change` 凭证重试；把 `evidence.json` 手工改哈希；在盘上 == 渲染时把 `replace` 的 exit 0 当作「拒写盘」（幂等短路在凭证 / 重判 / 判者三门前，`cli.mjs:425-432`）。
-**中断重试**：已有草稿时先 `node tools/docgen/cli.mjs draft rm --name <席> --yes`，否则 `DraftNameConflict`（`cli.mjs:339-340`）。
+**中途不得**：手改 `agents/*.md`；跳过 B3 重判；用旧 `--expect-change` 凭证重试；把 `evidence.json` 手工改哈希；在盘上 == 渲染时把 `replace` 的 exit 0 当作「拒写盘」（幂等短路在凭证 / 重判 / 判者三门前，`tools/docgen/cli.mjs:425-432`）。
+**中断重试**：已有草稿时先 `node tools/docgen/cli.mjs draft rm --name <席> --yes`，否则 `DraftNameConflict`（`tools/docgen/cli.mjs:339-340`）。
 
 ## 7 失败面
 

@@ -92,7 +92,7 @@ agents/senior-sdet.md:3（由底稿渲染而来，禁手打）
 - **线 F-2**：`tools/execution-matrix/criteria.md` 的 C 组缺「模板形态适配」条款（§0.2 只覆盖 A 组）—— 来源：`docs/after/20261017210609-pending-work-overview.md` 线 F 表第 2 行；收敛时机：线 E 判据下次修订（属判据正文变更，走判据/规则变更流程，不顺手改）。
 - **线 F-3**：14 席 agent 来源行只写「维护来源」没写「权威来源」（现仅 senior-sdet 有来源行，`agents/senior-sdet.md:9`，值在 `agentData.sourceLine`）—— 来源：同上第 3 行；**触发信号已命中（14 席已全 `replaced`）**；收敛时机：用户拍板后统一，若要 14 席统一属范围变更，需改 spec 重走议会。
 - **线 G**：`docs/superpowers/plans/` 下 git 写步骤残留盘点（实测：13 份 plan / 45 行 grep 命中）——其中**只有 `2026-09-29-aas-skill-deps.md` 是真正要执行的 9 组 add+commit（18 行）**，其余 12 份命中全是「禁止 git 写操作」的**声明行**（合规，不动）；`2026-10-14-review-loop-evolution.md:230` 是 review 分支内的 commit 格式指引（review-loop 是本禁令唯一例外，保留）—— 来源：`20261017210609-pending-work-overview.md` 线 G；收敛时机：用户拍板（只改那 1 份 / 13 份统一加免责声明）。
-- **docgen 机制缺陷（已由用户裁定升格为「本次主线任务」，不再是留观项）**：`cmdReplace` 的写盘前置条件把「迁移期一次性证明」（`golden-assert.mjs:15-23` 拿 `git show <commit>:agents/<名>.md` 旧快照比 description）当成永久门槛（`cli.mjs:219-228`：`goldenAssertion!=='pass'` → `EvidenceInvalid`；`compareResult!==null` → `EvidenceInvalid`），**不支持「有意变更」**—— 来源：本 session 实测；收敛时机：**本次（路 B）**，要动 spec P2 R6/R7 + testcase TC-106。
+- **docgen 机制缺陷（已由用户裁定升格为「本次主线任务」，不再是留观项）**：`cmdReplace` 的写盘前置条件把「迁移期一次性证明」（`golden-assert.mjs:15-23` 拿 `git show <commit>:agents/<名>.md` 旧快照比 description）当成永久门槛（`tools/docgen/cli.mjs:219-228`：`goldenAssertion!=='pass'` → `EvidenceInvalid`；`compareResult!==null` → `EvidenceInvalid`），**不支持「有意变更」**—— 来源：本 session 实测；收敛时机：**本次（路 B）**，要动 spec P2 R6/R7 + testcase TC-106。
 - **线 C 候选机制①**「按病根分组的修复编排」—— 来源：`20261017210609-pending-work-overview.md` 线 C（已关闭结论的低半部分）；收敛时机：真动手修 41 问题（或下一批混合债）时，以真实卡点决定落点。
 
 ## 开工前先做

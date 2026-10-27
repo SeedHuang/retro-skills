@@ -307,7 +307,7 @@
 - **前置**：C7 已落地。
 - **步骤**：① `node -e "console.log(require('./tools/docgen/state.json').agents['evidence-reader'])"`；② `node tools/docgen/cli.mjs check-agents`
 - **预期**：步骤① `replaced`；步骤② exit 0，输出 `OK：15 个 agent 已检查（已接管 15，未迁移 0）`。
-- **判据**：【机器】步骤①逐字 `replaced`；步骤② stdout 含 `15 个 agent` 与 `已接管 15，未迁移 0`（[cli.mjs:156](file:///d:/Seed/retro-skills/tools/docgen/cli.mjs#L156) 的两个数字都从 `agentData.length` / 现算 replaced 派生，不写死）。
+- **判据**：【机器】步骤①逐字 `replaced`；步骤② stdout 含 `15 个 agent` 与 `已接管 15，未迁移 0`（[tools/docgen/cli.mjs:156](file:///d:/Seed/retro-skills/tools/docgen/cli.mjs#L156) 的两个数字都从 `agentData.length` / 现算 replaced 派生，不写死）。
 
 ### TC-B07 annotations 十键全为 pass
 

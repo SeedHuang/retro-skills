@@ -8,8 +8,8 @@
 
 迁移闭环证明的是「**搬数据时没有改动内容**」——渲染必须与迁移前提交快照逐字节相等。这是一次性的验收证明，却在 `cmdReplace` 里被写成了**永久前置条件**：
 
-- `cli.mjs:222-224`：`evidence.goldenAssertion !== 'pass'` → `EvidenceInvalid`；
-- `cli.mjs:226-228`：`evidence.compareResult !== null` → `EvidenceInvalid`；
+- `tools/docgen/cli.mjs:222-224`：`evidence.goldenAssertion !== 'pass'` → `EvidenceInvalid`；
+- `tools/docgen/cli.mjs:226-228`：`evidence.compareResult !== null` → `EvidenceInvalid`；
 - 两者都由 `golden-assert.mjs:15-33` 产出，而它比对的是 `git show <commit>:agents/<名>.md`。
 
 **实测（2026-10-21，内存内改 `when` 后重渲染，未落盘）**：把 senior-sdet 的 `when` 去掉「评审测试策略」一个触发词，快照 description ≠ 新派生 description（`goldenAssertion` 必为 `fail`），`diffSet` 未允许差异 1 行（`compareResult` 必非 null）。双闸门同时为假，且**无法自救**：重开基线要先把改动提交进 git，而改动只能靠 `replace` 写进去——死循环。
@@ -151,7 +151,7 @@
 ### 3.5 幂等与崩溃恢复
 
 - 变更段遇「盘上 == 渲染」走幂等分支：不写盘、不追加留痕，只把 `renderSha256` / `lastWrittenHash` 更新为渲染哈希、清草稿、打印 `已替换（幂等恢复）`。
-- **state 置位次序**：`rename` 成功后才 `setAgentState(name, 'replaced')`；rename 失败必须回滚到写盘前的 state。**禁止先置 state 再写盘**——否则一次写失败就把该席从迁移段推进变更段，迁移证明被永久跳过（现有 `cli.mjs:266` 正是先置 state，施工时须调序）。
+- **state 置位次序**：`rename` 成功后才 `setAgentState(name, 'replaced')`；rename 失败必须回滚到写盘前的 state。**禁止先置 state 再写盘**——否则一次写失败就把该席从迁移段推进变更段，迁移证明被永久跳过（现有 `tools/docgen/cli.mjs:266` 正是先置 state，施工时须调序）。
 - 崩溃窗口 = 「文件已 rename、evidence 未写」。重跑落在幂等分支即收敛。**该窗口内的变更留痕会丢失一次**：这是已知取舍（留痕是审计便利，不是判据），不为此引入「预写 / 回填」两阶段状态。
 - **`changes[]` 的边界（必须写明，防审计误信）**：它是**本次变更的授权与重判记录**，**不是完整变更史**。幂等恢复、崩溃窗口后补写盘、以及「手工把卡改到与渲染一致再跑 `replace`」这三种情况都不追加 `changes`。完整变更史以 git 为准。
 

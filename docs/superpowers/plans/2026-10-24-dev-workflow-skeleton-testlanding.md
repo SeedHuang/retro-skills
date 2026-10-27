@@ -8,8 +8,8 @@
 ## §0 四条口径（先定，后文全部按它落）
 
 1. **全量门口径**：`npm run check` = `node --test **/*.test.mjs`（全仓 glob，见 [check-all.mjs:68-73](file:///d:/Seed/retro-skills/scripts/check-all.mjs#L68-L73)）→ **任何新测试文件一落盘就进全量门**，不存在「先放着以后再接」。
-2. **gate 只读**：`cmdGenerate`/`cmdGate` 只比对不写盘（[cli.mjs:41-77](file:///d:/Seed/retro-skills/tools/docgen/cli.mjs#L41-L77)），可安全当断言用。
-3. **可注入隔离位**（决定「要不要副本仓」）：`DOCGEN_STATE_PATH`（[state.mjs:7](file:///d:/Seed/retro-skills/tools/docgen/state.mjs#L7)）、`DOCGEN_EVIDENCE_DIR`（[evidence.mjs:8](file:///d:/Seed/retro-skills/tools/docgen/evidence.mjs#L8)）、`DOCGEN_DRAFTS_DIR`（[cli.mjs:166](file:///d:/Seed/retro-skills/tools/docgen/cli.mjs#L166)）；`DOCGEN_RULES_DIR`/`DOCGEN_AGENTS_DIR` **只改扫描目录、不改存在性检查**（[cli.mjs:90-120](file:///d:/Seed/retro-skills/tools/docgen/cli.mjs#L90-L120)）。
+2. **gate 只读**：`cmdGenerate`/`cmdGate` 只比对不写盘（[tools/docgen/cli.mjs:41-77](file:///d:/Seed/retro-skills/tools/docgen/cli.mjs#L41-L77)），可安全当断言用。
+3. **可注入隔离位**（决定「要不要副本仓」）：`DOCGEN_STATE_PATH`（[state.mjs:7](file:///d:/Seed/retro-skills/tools/docgen/state.mjs#L7)）、`DOCGEN_EVIDENCE_DIR`（[tools/docgen/evidence.mjs:8](file:///d:/Seed/retro-skills/tools/docgen/evidence.mjs#L8)）、`DOCGEN_DRAFTS_DIR`（[tools/docgen/cli.mjs:166](file:///d:/Seed/retro-skills/tools/docgen/cli.mjs#L166)）；`DOCGEN_RULES_DIR`/`DOCGEN_AGENTS_DIR` **只改扫描目录、不改存在性检查**（[tools/docgen/cli.mjs:90-120](file:///d:/Seed/retro-skills/tools/docgen/cli.mjs#L90-L120)）。
 4. **计数口径**：按 testcase §1 覆盖总表逐行标记重数，为 **正 34 / 负 35 / 边界 10 = 79**，与 testcase 文件头 L6「正 34 / 负 35 / 边 10」一致（A 14 正；B 11 正 + 1 边界 = L56 B09；C 5 正 + 5 负 + 1 边界 = L68 C09；D 4 正 + 4 负 + 1 边界 = L75 D05；E 26 负 + 7 边界 = L82/90/95/96/97/98/102）。**订正**：本文上一版写「负 36 / 边界 9」是**本方数错**，错因 = 把 L102 的 `TC-E23 | … | 边界` 计进了负例；testcase 各行的「类型」列与文件头计数**无一处不符**，testcase 无需改动。
 
 ## §1 79 → 断言映射表
@@ -75,7 +75,7 @@
 **E12（登记了但文件不存在）构造与复位**——必须整仓副本：
 
 - 构造：整仓 `cpSync` → 副本内 `renameSync('rules/dev-workflow-mainline.md', '...bak')`。
-- 判据：副本内 `node tools/docgen/cli.mjs gate` → exit **2**、stderr 首行 `DanglingBaselineEntry:` 且点名该路径（存在性检查用 `REPO_ROOT`，[cli.mjs:90-96](file:///d:/Seed/retro-skills/tools/docgen/cli.mjs#L90-L96)，故 env 注入无效、只有副本可行）。
+- 判据：副本内 `node tools/docgen/cli.mjs gate` → exit **2**、stderr 首行 `DanglingBaselineEntry:` 且点名该路径（存在性检查用 `REPO_ROOT`，[tools/docgen/cli.mjs:90-96](file:///d:/Seed/retro-skills/tools/docgen/cli.mjs#L90-L96)，故 env 注入无效、只有副本可行）。
 - 复位：删副本目录；真实仓零改动。
 
 **E27（只写源不 sync）**——人工，不进自动化：
@@ -103,7 +103,7 @@ plan §7（L81-L90）对本文 7 条挑刺的处置：**6 条承认、1 条部�
 | # | 第 1 轮问题 | 处置（plan 行） | 本文判定 |
 |---|---|---|---|
 | 1 | T1 必红、缺 C6a | T1 写 36/36 + C6a（L43） | 承认，闭合 |
-| 2 | `replace` 迁移段三件证据不可得 | spec C7 改「新席不走 replace」（L176）+ §11 ③（L311） | 承认，闭合（依据见 cli.mjs:370-381、405、421：新席无旧卡 → `DanglingBaselineEntry`/`TargetDrift`） |
+| 2 | `replace` 迁移段三件证据不可得 | spec C7 改「新席不走 replace」（L176）+ §11 ③（L311） | 承认，闭合（依据见 tools/docgen/cli.mjs:370-381、405、421：新席无旧卡 → `DanglingBaselineEntry`/`TargetDrift`） |
 | 3 | T2 只跑 validate 不渲染 | 改 `generate` + 三渲染测试（L44） | 承认，但见 §3.2 ① |
 | 4 | A 组落一个文件必持久红、A10 依赖本机 | 拆两文件 + A10 移出（plan §4 L58-59） | 承认，闭合 |
 | 5 | 79 条无落点 | 新增 T6.5（L49） | 承认，闭合 |
@@ -113,12 +113,12 @@ plan §7（L81-L90）对本文 7 条挑刺的处置：**6 条承认、1 条部�
 ### §3.2 第 2 轮复检：2 条仍未闭合（都是「命令能不能跑」级，非措辞）
 
 **① T2 的验收 `generate` exit 0 在 T1→T3 之间必红。**
-事实链：C1 后 `agentPaths()` 由 `agentData` 派生（[baseline.mjs:18-19](file:///d:/Seed/retro-skills/tools/docgen/components/baseline.mjs#L18-L19)）→ 15 席；`cmdGenerate` 对 agent 先做存在性检查（[cli.mjs:66-67](file:///d:/Seed/retro-skills/tools/docgen/cli.mjs#L66-L67)），新卡未落盘即 `DanglingBaselineEntry`（exit 2），**走不到渲染那行**（[cli.mjs:70](file:///d:/Seed/retro-skills/tools/docgen/cli.mjs#L70)），所以 C10/C11 的 `MissingSlot` 这条验收目标仍抓不到。
+事实链：C1 后 `agentPaths()` 由 `agentData` 派生（[baseline.mjs:18-19](file:///d:/Seed/retro-skills/tools/docgen/components/baseline.mjs#L18-L19)）→ 15 席；`cmdGenerate` 对 agent 先做存在性检查（[tools/docgen/cli.mjs:66-67](file:///d:/Seed/retro-skills/tools/docgen/cli.mjs#L66-L67)），新卡未落盘即 `DanglingBaselineEntry`（exit 2），**走不到渲染那行**（[tools/docgen/cli.mjs:70](file:///d:/Seed/retro-skills/tools/docgen/cli.mjs#L70)），所以 C10/C11 的 `MissingSlot` 这条验收目标仍抓不到。
 修法：T2 验收改 `node tools/docgen/cli.mjs generate --kind rule`（只跑规则侧 + 生成规则渲染）＋ 测试体内 `renderByName('evidence-reader')` 断言不抛；全量 `generate`（kind=all）挪到 T3 落盘之后。
 
 **② T3「`generate` 出草稿」不可执行。**
-事实链：`generate` 只比对不写盘（[cli.mjs:40-76](file:///d:/Seed/retro-skills/tools/docgen/cli.mjs#L40-L76)），写草稿的子命令是 `draft`（[cli.mjs:305-337](file:///d:/Seed/retro-skills/tools/docgen/cli.mjs#L305-L337)、[cli.mjs:545-549](file:///d:/Seed/retro-skills/tools/docgen/cli.mjs#L545-L549)）。
+事实链：`generate` 只比对不写盘（[tools/docgen/cli.mjs:40-76](file:///d:/Seed/retro-skills/tools/docgen/cli.mjs#L40-L76)），写草稿的子命令是 `draft`（[tools/docgen/cli.mjs:305-337](file:///d:/Seed/retro-skills/tools/docgen/cli.mjs#L305-L337)、[tools/docgen/cli.mjs:545-549](file:///d:/Seed/retro-skills/tools/docgen/cli.mjs#L545-L549)）。
 修法：T3 首步改 `node tools/docgen/cli.mjs draft --name evidence-reader` → 人工对照 → 草稿复制为 `agents/evidence-reader.md`。
 
-**附带（不阻塞）**：T3 的「`gate` 渲染与磁盘一致」对新席是空判——`collectGate` 只比对 `state=replaced` 的席（[cli.mjs:103-107](file:///d:/Seed/retro-skills/tools/docgen/cli.mjs#L103-L107)），此时新席尚未登记；逐字节判定实际落在 T4 的 `check-agents`（[cli.mjs:150-151](file:///d:/Seed/retro-skills/tools/docgen/cli.mjs#L150-L151)）。建议 T3 该句改成「逐字节一致由 T4 `check-agents` 判」。
+**附带（不阻塞）**：T3 的「`gate` 渲染与磁盘一致」对新席是空判——`collectGate` 只比对 `state=replaced` 的席（[tools/docgen/cli.mjs:103-107](file:///d:/Seed/retro-skills/tools/docgen/cli.mjs#L103-L107)），此时新席尚未登记；逐字节判定实际落在 T4 的 `check-agents`（[tools/docgen/cli.mjs:150-151](file:///d:/Seed/retro-skills/tools/docgen/cli.mjs#L150-L151)）。建议 T3 该句改成「逐字节一致由 T4 `check-agents` 判」。
 

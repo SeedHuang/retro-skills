@@ -14,12 +14,12 @@
 
 **实现现状基线（2026-10-21 实读，施工前）**：
 
-- `cmdReplace`（`tools/docgen/cli.mjs:201-280`）**无阶段分派**：对每个席都读 `evidence.renderSha256`（`:219-221`）、`goldenAssertion`（`:222-224`）、`compareResult`（`:226-228`）；无 `--expect-change` / `--rejudge` 解析；`main()`（`cli.mjs:300-317`）只取已知 `flag()`，**未知旗标被静默忽略**。
-- `diff` 子命令**不存在**：`main()` 对未知 sub 抛 `UnsupportedKind`（`cli.mjs:317`）。
-- `EXIT` 映射表（`components/validateAgentData.mjs:4-18`）**无** `UnapprovedChange` / `MigrationPhaseClosed`；未映射码在 `main()` 兜底为 exit 2（`cli.mjs:318-328`）。
-- cli 的错误出口写 `${code}: ${message}` 且 `message === code`（`cli.mjs:326`）⇒ **cli 路径今天已满足**「首行以 `<码>:` 开头」；`acceptance/golden-assert.mjs:56` 在 `message === code` 时**不写冒号** ⇒ 该路径今天**不满足** §3.3 契约（见 TC-507 现状）。
-- `readEvidence`（`evidence.mjs:21-41`）**不校验** `changes` / `rejudged` / `judged` / `judgeMode` / `machineChecks`；现存 evidence 份数 == 席数（现算 `$seatsAll`），均无 `changes` 字段。
-- `init-evidence`（`acceptance/init-evidence.mjs:7-18`）**无 name 校验**（`cli.mjs:164` 有）、**无阶段边界**、git 调用在最前（`:10-12`）且无 `try/catch`。
+- `cmdReplace`（`tools/docgen/cli.mjs:201-280`）**无阶段分派**：对每个席都读 `evidence.renderSha256`（`:219-221`）、`goldenAssertion`（`:222-224`）、`compareResult`（`:226-228`）；无 `--expect-change` / `--rejudge` 解析；`main()`（`tools/docgen/cli.mjs:300-317`）只取已知 `flag()`，**未知旗标被静默忽略**。
+- `diff` 子命令**不存在**：`main()` 对未知 sub 抛 `UnsupportedKind`（`tools/docgen/cli.mjs:317`）。
+- `EXIT` 映射表（`components/validateAgentData.mjs:4-18`）**无** `UnapprovedChange` / `MigrationPhaseClosed`；未映射码在 `main()` 兜底为 exit 2（`tools/docgen/cli.mjs:318-328`）。
+- cli 的错误出口写 `${code}: ${message}` 且 `message === code`（`tools/docgen/cli.mjs:326`）⇒ **cli 路径今天已满足**「首行以 `<码>:` 开头」；`acceptance/golden-assert.mjs:56` 在 `message === code` 时**不写冒号** ⇒ 该路径今天**不满足** §3.3 契约（见 TC-507 现状）。
+- `readEvidence`（`tools/docgen/evidence.mjs:21-41`）**不校验** `changes` / `rejudged` / `judged` / `judgeMode` / `machineChecks`；现存 evidence 份数 == 席数（现算 `$seatsAll`），均无 `changes` 字段。
+- `init-evidence`（`acceptance/init-evidence.mjs:7-18`）**无 name 校验**（`tools/docgen/cli.mjs:164` 有）、**无阶段边界**、git 调用在最前（`:10-12`）且无 `try/catch`。
 - `golden-assert`（`acceptance/golden-assert.mjs:13-49`）**无阶段边界**，先 `readEvidence`（`:14`）再 `git show`（`:15`），无条件回写（`:35-38`）。
 - `tools/docgen/state.json` 现为 **全部席位 `replaced`**（席位集合与条数以 `$seatsAll` 现算）——仓库内已没有「未迁移席」，迁移段场景必须在副本仓 + 临时 state 上构造。
 - 注解 `senior-sdet:*` 恰 10 键全 `pass`（`rules/.inspector-annotations.json:15-24`）；`SEMANTIC_KEYS` = 10 键（`tools/execution-matrix/check-agent.mjs` 导出的 `SEMANTIC_KEYS`），**A3–A7 不在其中**。
@@ -193,8 +193,8 @@ function Wk([string[]]$seats) {
 | TC-106 | R1（`suspended` 落迁移段）/ §8（不提供 suspended 变更通路）/ §6-4 | `suspended` 席带 `--expect-change` → 拒 | 边界 | `Guard` + `St1` | 红（`--expect-change` 被忽略，今天会照写） |
 | TC-107 | §3.4「迁移段成功：不追加 `changes`」/ R1 | 迁移段首次替换成功，`changes` 不追加 | 正 | `Arg` + `St1` + `Chg` + 内联 node（evidence 两哈希） | 绿（今天也成功且不写 `changes`） |
 | TC-108 | §3.3 末条（未知旗标白名单） | 拼错旗标 `--expect-cange` → `InvalidArgs` | 负 | `Guard` | 红（静默忽略） |
-| TC-109 | §3.5「state 置位次序」/ §6-1 | rename 失败 → state 不回退成 `replaced` | 边界 | `Guard` + `St1` + 构造自检 | 红（`cli.mjs:266` 先置 state） |
-| TC-110 | §3.3 stderr 格式契约 | 错误路径首行以 `<码>:` 开头 | 边界 | `Arg` | 绿（`cli.mjs:326` 已带冒号） |
+| TC-109 | §3.5「state 置位次序」/ §6-1 | rename 失败 → state 不回退成 `replaced` | 边界 | `Guard` + `St1` + 构造自检 | 红（`tools/docgen/cli.mjs:266` 先置 state） |
+| TC-110 | §3.3 stderr 格式契约 | 错误路径首行以 `<码>:` 开头 | 边界 | `Arg` | 绿（`tools/docgen/cli.mjs:326` 已带冒号） |
 | TC-201 | R2 / §3.1 右列 / §5③ | 正确凭证 → 写盘成功 | 正 | `Arg` + `Cmp` + `StateExp` | 红 |
 | TC-202 | R2 / §3.3 / §5③ | 缺凭证 → 拒 | 负 | `Guard` | 红 |
 | TC-203 | R2 / §3.3 / §6-2 | 错凭证 → 拒 | 负 | `Guard` | 红 |
@@ -203,13 +203,13 @@ function Wk([string[]]$seats) {
 | TC-206 | §3.5 / §3.1 末行 / §6-5 | 盘上==渲染 → 幂等分支 | 边界 | `Arg` + `Chg` + 内联 node（evidence 两哈希） | 绿 |
 | TC-207 | R7 / §3.3 / §3.6 | 凭证对但 `--rejudge` 漏 A2 | 负 | `Guard` | 红 |
 | TC-208 | §3.1（草稿字节==渲染）/ §5① | 变更段草稿漂移仍拒 | 负 | `Guard` | 绿 |
-| TC-209 | §3.5 崩溃窗口 | rename 已做、evidence 未写 → 幂等收敛 | 边界 | `Snap` + `Arg` + `Chg` | 红（撞 `cli.mjs:219` 的 `EvidenceInvalid`，见该例现状） |
-| TC-210 | §3.1（`collectGate` 两段同）/ §6-3 | 变更段非目标漂移仍被拒 | 负 | `Guard` | 红（撞 `cli.mjs:219`（若过则 `:222`），得 exit 2 而非 exit 1） |
-| TC-211 | §3.1（`TargetDrift` 两段同）/ §3.5 | 变更段盘上哈希 ≠ `lastWrittenHash` → `TargetDrift` | 负 | `Guard` | 绿（今天不分段也会先撞 `cli.mjs:265` 的 `TargetDrift`；施工后须仍绿） |
+| TC-209 | §3.5 崩溃窗口 | rename 已做、evidence 未写 → 幂等收敛 | 边界 | `Snap` + `Arg` + `Chg` | 红（撞 `tools/docgen/cli.mjs:219` 的 `EvidenceInvalid`，见该例现状） |
+| TC-210 | §3.1（`collectGate` 两段同）/ §6-3 | 变更段非目标漂移仍被拒 | 负 | `Guard` | 红（撞 `tools/docgen/cli.mjs:219`（若过则 `:222`），得 exit 2 而非 exit 1） |
+| TC-211 | §3.1（`TargetDrift` 两段同）/ §3.5 | 变更段盘上哈希 ≠ `lastWrittenHash` → `TargetDrift` | 负 | `Guard` | 绿（今天不分段也会先撞 `tools/docgen/cli.mjs:265` 的 `TargetDrift`；施工后须仍绿） |
 | TC-212 | §3.1 末行 / §6-5 | 幂等分支不校验凭证（给错凭证仍成功） | 边界 | `Arg` + `Cmp` + `Chg` | 绿（今天也会走到幂等分支，因为四道证明全过；施工后须仍绿） |
-| TC-213 | R2（凭证形状）/ §3.3 | 凭证语法非法四态 → `InvalidArgs` | 负 | `Guard` | 红（撞 `cli.mjs:222`） |
-| TC-214 | §3.3 末条 / §4 步 1 | `--expect-change` 后紧跟 `--yes` → 缺值 → `InvalidArgs` | 负 | `Guard` | 红（撞 `cli.mjs:222`） |
-| TC-215 | §3.6 定位方式（两侧行号并集）/ R7 | 删整节 + `--rejudge none` → 拒 | 负 | `Guard` | 红（撞 `cli.mjs:222`） |
+| TC-213 | R2（凭证形状）/ §3.3 | 凭证语法非法四态 → `InvalidArgs` | 负 | `Guard` | 红（撞 `tools/docgen/cli.mjs:222`） |
+| TC-214 | §3.3 末条 / §4 步 1 | `--expect-change` 后紧跟 `--yes` → 缺值 → `InvalidArgs` | 负 | `Guard` | 红（撞 `tools/docgen/cli.mjs:222`） |
+| TC-215 | §3.6 定位方式（两侧行号并集）/ R7 | 删整节 + `--rejudge none` → 拒 | 负 | `Guard` | 红（撞 `tools/docgen/cli.mjs:222`） |
 | TC-301 | R3 / §3.2 / §5② | 有差异时输出契约 | 正 | `DiffSeat` + `DiffCheck` | 红 |
 | TC-302 | R3 / §3.2 无差异分支 / §5② | 无差异：幂等提示 + exit 0 | 正 | `DiffSeat` + `DiffCheck` | 红 |
 | TC-303 | §3.2 参数档位 / §3.3 | `--kind` 非 agent | 负 | `Arg` | 假绿（与「子命令不存在」撞车） |
@@ -226,7 +226,7 @@ function Wk([string[]]$seats) {
 | TC-403 | §3.4（`changes` 可缺省） | 现存 evidence（份数 = 席数）合法 | 正 | `EvScan` | 绿 |
 | TC-404 | §3.4（`changes` 校验） | 非法 `changes` → `EvidenceInvalid` | 负 | `EvScan` | 红 |
 | TC-405 | §3.4 / R7（空 `rejudged`） | 空 `rejudged` 数组合法 | 边界 | `EvScan` + `Chg` | 绿（今天 `readEvidence` 完全不看 `changes`） |
-| TC-406 | R7 / §3.4（`machineChecks` 必填五键）/ §5⑥ | 变更成功后 `machineChecks` 五键齐全 | 正 | `Judge` | 红（变更被 `cli.mjs:222` 拦，达不到前置） |
+| TC-406 | R7 / §3.4（`machineChecks` 必填五键）/ §5⑥ | 变更成功后 `machineChecks` 五键齐全 | 正 | `Judge` | 红（变更被 `tools/docgen/cli.mjs:222` 拦，达不到前置） |
 | TC-407 | §3.4（`rejudged=[]` 三元）/ R7 | `--rejudge none` 的留痕三元定死 | 边界 | `Judge` + `Chg` | 红 |
 | TC-408 | §3.4（`machineChecks` 缺失 → `EvidenceInvalid`）/ §3.3 | 缺 `machineChecks` / 缺一键 → `EvidenceInvalid` | 负 | `EvScan` | 红（今天不被校验） |
 | TC-409 | §3.4（`rejudged` 只允 10 键）/ R7 | `rejudged` 含 `A3` → `EvidenceInvalid` | 负 | `EvScan` | 红 |
@@ -323,7 +323,7 @@ Guard 2 'EvidenceInvalid' '-' 'agents/senior-sdet.md' @('replace','--kind','agen
 ```
 
 - **红绿**：红 = 迁移段放行了「内容有差异」的席（未来新席失去迁移保护）；绿 = 被 `renderSha256` 闸门拒
-- **现状**：绿（现状对每个席都读 `renderSha256`，`cli.mjs:219-221`）；**施工后必须仍绿**——这条就是防「分派写坏」的守卫
+- **现状**：绿（现状对每个席都读 `renderSha256`，`tools/docgen/cli.mjs:219-221`）；**施工后必须仍绿**——这条就是防「分派写坏」的守卫
 
 #### TC-103 负：迁移段出现 `--expect-change` → `InvalidArgs`（exit 2）
 
@@ -342,7 +342,7 @@ Guard 2 'InvalidArgs' '-' 'agents/senior-sdet.md' @('replace','--kind','agent','
 ```
 
 - **红绿**：红 = exit 0（`--expect-change` 被静默忽略，迁移段失去「互斥」语义）；绿 = `InvalidArgs`
-- **现状**：**今天红**——`main()`（`cli.mjs:314`）只取已知旗标，未知旗标被丢弃
+- **现状**：**今天红**——`main()`（`tools/docgen/cli.mjs:314`）只取已知旗标，未知旗标被丢弃
 
 #### TC-104 负：迁移段出现 `--rejudge` → `InvalidArgs`（exit 2）
 
@@ -459,7 +459,7 @@ Guard 2 'InvalidArgs' '-' 'agents/senior-sdet.md' @('replace','--kind','agent','
 ```
 
 - **红绿**：红 = 拼错的旗标被忽略、写盘成功（用户以为声明了某件事，实际没声明）；绿 = `InvalidArgs`
-- **现状**：红（宽松解析，`cli.mjs:300-317`）
+- **现状**：红（宽松解析，`tools/docgen/cli.mjs:300-317`）
 
 #### TC-109 边界：rename 失败 → state 不得回退成 `replaced`
 
@@ -485,8 +485,8 @@ St1 'senior-sdet' 'absent'
 node -e "const fs=require('node:fs');fs.chmodSync('agents/senior-sdet.md',0o644);console.log('card-writable')"
 ```
 
-- **红绿**：红 = 写盘失败但 state 已变 `replaced`（该席从此进变更段，迁移证明被永久跳过——正是 `cli.mjs:266` 的现病）；绿 = 失败即 `WriteFailed` 且 state 未置位
-- **现状**：红（`cli.mjs:266` 在 `:267-274` 写/rename 之前先 `setAgentState`）
+- **红绿**：红 = 写盘失败但 state 已变 `replaced`（该席从此进变更段，迁移证明被永久跳过——正是 `tools/docgen/cli.mjs:266` 的现病）；绿 = 失败即 `WriteFailed` 且 state 未置位
+- **现状**：红（`tools/docgen/cli.mjs:266` 在 `:267-274` 写/rename 之前先 `setAgentState`）
 - **盲点说明**：这是「失败面」（固定清单第 3 条）里最容易漏的一条——写盘失败路径在 v1 只有 `DraftDrift` / `TargetDrift`，没有「真写失败」。
 
 #### TC-110 边界：错误路径 stderr 首行以 `<错误码>:` 开头
@@ -503,7 +503,7 @@ Arg 4 'NotAuthorized' '-' @('replace','--kind','agent','--name','senior-sdet','-
 ```
 
 - **红绿**：红 = 码不在首行或不带冒号（下游脚本按 `^<code>:` 读会读不到，18 条负例全部退化成「stderr 含某串」）；绿 = 契约成立
-- **现状**：绿（`cli.mjs:326` 的 `fail()` 出口今天写 `${code}: ${message}`，`message === code`）
+- **现状**：绿（`tools/docgen/cli.mjs:326` 的 `fail()` 出口今天写 `${code}: ${message}`，`message === code`）
 - **说明**：该契约**不是实现细节**——spec 把它写成「把宽松判读变成契约」。但同一条契约在 acceptance 工具上今天**不成立**（`golden-assert.mjs:56` 在 `message === code` 时不写冒号），见 TC-507 现状。
 
 ### 3.2 变更段：凭证、闸门次序与恒等恢复（R2 / §3.1 右列 / §3.3 / §3.5 / §5③）
@@ -644,7 +644,7 @@ node --input-type=module -e "const fs=await import('node:fs');const {createHash}
 ```
 
 - **红绿**：红 = 幂等分支要求凭证（把「无需凭证」判成必须）或追加了留痕（违反 §6-5）；绿 = 如上
-- **现状**：绿（幂等分支已存在，`cli.mjs:256-263`）；「不写盘」本身**不可从字节观察**，见 §4 缺口 4
+- **现状**：绿（幂等分支已存在，`tools/docgen/cli.mjs:256-263`）；「不写盘」本身**不可从字节观察**，见 §4 缺口 4
 
 #### TC-207 负：凭证对但 `--rejudge` 漏 A2 → 拒
 
@@ -688,7 +688,7 @@ Guard 1 'DraftDrift' '-' 'agents/senior-sdet.md' @('replace','--kind','agent','-
 ```
 
 - **红绿**：红 = 分派把草稿闸门也一起跳过了；绿 = `DraftDrift`（exit 1 档，`validateAgentData.mjs:10`）
-- **现状**：绿（草稿闸门在分段判断之前，`cli.mjs:215-217`）
+- **现状**：绿（草稿闸门在分段判断之前，`tools/docgen/cli.mjs:215-217`）
 
 #### TC-209 边界：崩溃窗口（rename 已做、evidence 未写）→ 幂等分支收敛，留痕丢一次
 
@@ -710,7 +710,7 @@ node --input-type=module -e "const fs=await import('node:fs');const {createHash}
 ```
 
 - **红绿**：红 = 崩溃后重跑要求凭证（真实崩溃后没人事先拿到凭证 → 卡死）或报了 `TargetDrift`（本该走幂等）；绿 = 幂等收敛且 `changes` 未追加
-- **现状**：**红**——今天会先撞 `cli.mjs:219` 的 `renderSha256` 闸门（fixture 里是旧渲染哈希），得到 exit 2 `EvidenceInvalid`，而不是幂等收敛
+- **现状**：**红**——今天会先撞 `tools/docgen/cli.mjs:219` 的 `renderSha256` 闸门（fixture 里是旧渲染哈希），得到 exit 2 `EvidenceInvalid`，而不是幂等收敛
 
 #### TC-210 负：变更段非目标漂移仍被拒（`collectGate` 两段同）
 
@@ -732,7 +732,7 @@ Guard 1 'Mismatch' '-' 'agents/senior-sdet.md' @('replace','--kind','agent','--n
 ```
 
 - **红绿**：红 = 变更段凭「有凭证」放过了非目标漂移；绿 = `Mismatch`
-- **现状**：**红**——今天先撞 `cli.mjs:219`（`renderSha256`），若该闸门恰好通过则撞 `cli.mjs:222`（`goldenAssertion`）；两条都产出 exit 2 `EvidenceInvalid`，而本条要 exit 1 `Mismatch`。**v1 标「绿」是误标**（v1 只对了「会被拒」，没对「被哪道闸门拒」）。
+- **现状**：**红**——今天先撞 `tools/docgen/cli.mjs:219`（`renderSha256`），若该闸门恰好通过则撞 `tools/docgen/cli.mjs:222`（`goldenAssertion`）；两条都产出 exit 2 `EvidenceInvalid`，而本条要 exit 1 `Mismatch`。**v1 标「绿」是误标**（v1 只对了「会被拒」，没对「被哪道闸门拒」）。
 
 #### TC-211 负：变更段盘上哈希 ≠ `lastWrittenHash` → `TargetDrift`（exit 1），卡字节不变
 
@@ -753,7 +753,7 @@ Cmp 'agents/senior-sdet.md' "$w2/sd.drifted.md"
 ```
 
 - **红绿**：红 = 变更段跳过 `TargetDrift`（把「盘上被别人改过」当成可写，覆盖别人的改动），或先报凭证错误（说明次序被打乱 → S2 回归会红）；绿 = exit 1 `TargetDrift`
-- **现状**：**绿**——今天不分段，但这条构造（不注入内容改动、只动盘上卡）会先撞 `cli.mjs:265` 的 `TargetDrift`，恰好就是本条期望；施工后必须仍绿（它守的是「次序不被写坏」）
+- **现状**：**绿**——今天不分段，但这条构造（不注入内容改动、只动盘上卡）会先撞 `tools/docgen/cli.mjs:265` 的 `TargetDrift`，恰好就是本条期望；施工后必须仍绿（它守的是「次序不被写坏」）
 - **盲点说明**：v1 只测了**迁移段**的 `TargetDrift`（S2 脚本覆盖），变更段这道闸门是「两段同」的，但没人写过变更段用例。
 
 #### TC-212 边界：幂等分支不校验凭证（给错凭证仍走幂等）
@@ -776,7 +776,7 @@ Cmp 'agents/senior-sdet.md' "$w2/sd.before.md"
 ```
 
 - **红绿**：红 = 幂等分支也校验凭证（崩溃恢复被多一道无意义的手动步骤挡住，§3.1 注释明说这是故意的取舍）；绿 = exit 0 + 无留痕 + 字节不变
-- **现状**：绿（今天四道证明全过 → 走到幂等分支（`cli.mjs:256-263`），且幂等分支不读凭证；`--expect-change` 被忽略）
+- **现状**：绿（今天四道证明全过 → 走到幂等分支（`tools/docgen/cli.mjs:256-263`），且幂等分支不读凭证；`--expect-change` 被忽略）
 - **说明**：本条的构造**不使用** `SetChangeEvidence`——若把 `goldenAssertion` 设成 `fail`，今天会因为「还没走到幂等分支」而红，那种红与本条要抓的缺陷（幂等分支误要凭证）无关，会污染归因。
 
 #### TC-213 负：凭证语法非法四态 → `InvalidArgs`（exit 2），卡不变
@@ -805,7 +805,7 @@ Guard 2 'InvalidArgs' '-' 'agents/senior-sdet.md' @('replace','--kind','agent','
 ```
 
 - **红绿**：红 = 非法凭证被当成「凭证不匹配」报 exit 4（用户按「去跑 diff」的提示做，实际是自己打错了），或被放行；绿 = 四次都 `InvalidArgs`
-- **现状**：红（今天撞 `cli.mjs:222` → exit 2 `EvidenceInvalid`，码不对）
+- **现状**：红（今天撞 `tools/docgen/cli.mjs:222` → exit 2 `EvidenceInvalid`，码不对）
 - **缺口提示**：spec §3.3 只明文写了「未知旗标 → `InvalidArgs`」「`--expect-change` 后紧跟 `--` 旗标 → 缺值 → `InvalidArgs`」，**未明文**写「非 hex / 长度错 → `InvalidArgs`」；本条按「参数非法归 `InvalidArgs`」的既有档位断言，并在 §5 建议 1 要求 spec 补一句。
 
 #### TC-214 负：`--expect-change` 后紧跟 `--yes` → 缺值 → `InvalidArgs`
@@ -826,7 +826,7 @@ Guard 2 'InvalidArgs' '-' 'agents/senior-sdet.md' @('replace','--kind','agent','
 ```
 
 - **红绿**：红 = `--yes` 被当凭证值（随后报 `UnapprovedChange`，退出码 4 而非 2）或直接放行；绿 = `InvalidArgs`
-- **现状**：红（`flag()` 宽松解析把下一个 token 当值，`cli.mjs:304`；今天撞 `cli.mjs:222`）
+- **现状**：红（`flag()` 宽松解析把下一个 token 当值，`tools/docgen/cli.mjs:304`；今天撞 `tools/docgen/cli.mjs:222`）
 
 #### TC-215 负：整节删除 + `--rejudge none` → 拒（§3.6 两侧行号并集）
 
@@ -849,7 +849,7 @@ Guard 4 'UnapprovedChange' '-' 'agents/senior-sdet.md' @('replace','--kind','age
 ```
 
 - **红绿**：红 = `none` 被放行（映射只按新侧定位 → 整节删除时无行可查 → 改过的判定对象沿用旧判定，正是 R1-后端问题 5 的现病）；绿 = exit 4
-- **现状**：红（今天撞 `cli.mjs:222`）
+- **现状**：红（今天撞 `tools/docgen/cli.mjs:222`）
 - **盲点说明**：这是「删掉东西」与「改掉东西」的差别——所有正向映射用例都在「新侧有行」的形态上，只有这条能证明并集定位真的落地。
 
 ### 3.3 `diff` 只读与输出契约（R3 / §3.2 / §5②）
@@ -905,7 +905,7 @@ Arg 2 'UnsupportedKind' '-' @('diff','--kind','rule','--name','senior-sdet')
 ```
 
 - **红绿**：红 = 非 agent 被当 agent 处理（越界进 rule 写盘通路）；绿 = `UnsupportedKind`
-- **现状**：**假绿**——今天 `diff` 子命令根本不存在，`main()` 抛 `UnsupportedKind`（`cli.mjs:317`），与本条期望撞车。**施工后才有判别力**，评审时不得据今天的结果判「已通过」。判别力补丁：施工后应同时断言 stderr 里的 `sub` 字段不是 `diff`（见 §5 建议 6）。
+- **现状**：**假绿**——今天 `diff` 子命令根本不存在，`main()` 抛 `UnsupportedKind`（`tools/docgen/cli.mjs:317`），与本条期望撞车。**施工后才有判别力**，评审时不得据今天的结果判「已通过」。判别力补丁：施工后应同时断言 stderr 里的 `sub` 字段不是 `diff`（见 §5 建议 6）。
 
 #### TC-304 负：名非法 → `InvalidName`（exit 1）
 
@@ -1126,7 +1126,7 @@ EvScan 'ok' ($seatsAllSp.Split(' '))
 ```
 
 - **红绿**：红 = 把「字段缺省」判成非法（`readEvidence` 一收紧，全部迁移段路径立刻挂）；绿 = `red=0`
-- **现状**：绿（`readEvidence` 今天不看 `changes`，`evidence.mjs:30-38`）
+- **现状**：绿（`readEvidence` 今天不看 `changes`，`tools/docgen/evidence.mjs:30-38`）
 
 #### TC-404 负：非法 `changes` → `EvidenceInvalid`
 
@@ -1196,7 +1196,7 @@ Judge 'senior-sdet' 'subagent' 'A2'
 ```
 
 - **红绿**：红 = `machineChecks` 缺键 / 多键 / 值域非法（A3–A7 的复检结果没有落点，等于「机器结构项没人复检」），或 `judged` 与 `rejudged` 不对齐；绿 = `Judge` exit 0
-- **现状**：红（变更被 `cli.mjs:222` 拦，达不到前置）
+- **现状**：红（变更被 `tools/docgen/cli.mjs:222` 拦，达不到前置）
 - **说明**：五键的**取值正确性**归 `check-all` / 线 E（本 spec 不测 `check-all`，见 §4 缺口 10）；本条只断「齐全 + 值域合法 + 与 `rejudged` 对齐」。
 
 #### TC-407 边界：`--rejudge none` 的留痕三元（`rejudged=[]` / `judgeMode=none` / `judged=[]`）
@@ -1220,7 +1220,7 @@ Judge 'senior-sdet' 'none' 'EMPTY'
 ```
 
 - **红绿**：红 = 把字面 `none` 写进 `rejudged`（`["none"]` 不是语义键 → 下游 `check-all` / 审计口径漂），或 `judged` 非空（没重判却留了判定）；绿 = 三元如预期
-- **现状**：红（变更被 `cli.mjs:222` 拦，达不到前置）
+- **现状**：红（变更被 `tools/docgen/cli.mjs:222` 拦，达不到前置）
 
 #### TC-408 负：缺 `machineChecks` / 缺一键 → `EvidenceInvalid`
 
@@ -1682,7 +1682,7 @@ node --input-type=module -e "const fs=await import('node:fs');const {readEvidenc
 ```
 
 - **红绿**：红 = 重判写回时多写/漏写键（键集漂移，如把 `A3` 写进注解 → 11 键）、A2 仍是 `pending`/`fail`、`judgedBy` 等于施工者、或 `judged[]` 缺键/缺 `basis`；绿 = 五条全过
-- **现状**：**半绿**——今天 `senior-sdet:A2` = `pass`、10 键齐（`rules/.inspector-annotations.json:15-24`），③④ 绿；但 ② ⑤ 依赖 `changes` 新字段，今天必然红（变更被 `cli.mjs:222` 拦，`changes` 不产生）
+- **现状**：**半绿**——今天 `senior-sdet:A2` = `pass`、10 键齐（`rules/.inspector-annotations.json:15-24`），③④ 绿；但 ② ⑤ 依赖 `changes` 新字段，今天必然红（变更被 `tools/docgen/cli.mjs:222` 拦，`changes` 不产生）
 - **修正依据**：R1-AI 问题 1/2、R1-测试问题 3——v1 只能判键值与键集，判不了「谁判的、依据是什么」；新版 spec 把落点定在 `changes[].judgedBy` / `judged[].basis`，本版据此补机器断言。
 
 ### 3.8 全量绿（§5⑧ / §7-8）
@@ -1743,7 +1743,7 @@ Arg 1 'Mismatch' '-' @('gate')
 ```
 
 - **红绿**：红 = 手改的卡被 `gate` 放过（本 spec 松了两道闸门，`gate` 必须仍守住「盘上 == 渲染」）；绿 = `Mismatch`
-- **现状**：绿（`collectGate` 对 replaced 席逐字节比对，`cli.mjs:98-102`）
+- **现状**：绿（`collectGate` 对 replaced 席逐字节比对，`tools/docgen/cli.mjs:98-102`）
 
 ### 3.9 人工验证（spec §7「只手动验证」）
 
@@ -1810,14 +1810,14 @@ AssertEq ([string]$secAfter) ([string]$secBefore) 'SECTION-COUNT-UNCHANGED'
 |---|---|---|---|---|---|
 | 1 | spec §3.3（错误码表）/ §3.6 末条 | **凭证格式非法（非 hex / 长度 ≠ 64）与「未知 `--rejudge` 键」都没明文定码**；用例只能按「参数非法 → `InvalidArgs`」推断 | 写 spec 时只想「凭证对不对」，没想到「凭证长得不对」是另一类错误；`--rejudge` 只写了「允许超报」，没写「报错键怎么办」 | §3.3 补两句：「`--expect-change` 值不是 64 位 hex → `InvalidArgs`（exit 2）」；「`--rejudge` 含 `SEMANTIC_KEYS` 之外的键 → `InvalidArgs`，stderr 列出合法键」 | P0 |
 | 2 | `tools/docgen/acceptance/golden-assert.mjs:56` | 错误出口在 `message === code` 时**不写冒号**，与 §3.3 「首行以 `<码>:` 开头」冲突 | 这个出口看起来「只是少个冒号」，但它是全部 acceptance 负面用例的判读依据 | 改为 `${e.code}: ${e.message && e.message !== e.code ? e.message : e.code}`，即**恒带冒号**；`init-evidence` 的 catch 同改 | P0 |
-| 3 | `tools/docgen/acceptance/init-evidence.mjs:7-18` | 无 `assertAgentName`、git 调用在最前、无 `try/catch` ⇒ 路径穿越 + 无 `.git` 环境先炸 ENOENT | R6 只把次序写给了 `golden-assert`（「先 `readEvidence` 再判阶段」），`init-evidence` 那条没人写 | 严格按 R6 四步：① `assertAgentName`（复用 `cli.mjs:164` 或抽公共模块）→ ② `readState()` 判 `replaced` 即打印 `MigrationPhaseClosed:` 并 exit 2 → ③（`golden-assert` 才有 `readEvidence`）→ ④ 才跑 git / `writeEvidence`；两步都包 `try/catch` 统一打印 `码: message` | P0 |
+| 3 | `tools/docgen/acceptance/init-evidence.mjs:7-18` | 无 `assertAgentName`、git 调用在最前、无 `try/catch` ⇒ 路径穿越 + 无 `.git` 环境先炸 ENOENT | R6 只把次序写给了 `golden-assert`（「先 `readEvidence` 再判阶段」），`init-evidence` 那条没人写 | 严格按 R6 四步：① `assertAgentName`（复用 `tools/docgen/cli.mjs:164` 或抽公共模块）→ ② `readState()` 判 `replaced` 即打印 `MigrationPhaseClosed:` 并 exit 2 → ③（`golden-assert` 才有 `readEvidence`）→ ④ 才跑 git / `writeEvidence`；两步都包 `try/catch` 统一打印 `码: message` | P0 |
 | 4 | `tools/docgen/cli.mjs:266`（`setAgentState` 早于 `:267-274` 的写 / rename） | 写失败后 state 已是 `replaced` ⇒ 该席永久跳过迁移证明 | 单线程脚本里「先置 state 看起来无害」（成功路径结果一样） | rename 成功后 `setAgentState(name,'replaced')`；失败路径 `try { ... } catch { rm tmp; setAgentState(name, 写前值); fail('WriteFailed') }`；写前值要显式取一次 `readState()` 并保留 | P0 |
 | 5 | `tools/docgen/cli.mjs:300-317`（`flag()` / `has()` 宽松解析） | 未知旗标被静默丢弃 ⇒「迁移段出现 `--expect-change` → `InvalidArgs`」根本落不了地；同一坑让拼错的旗标变静默放行 | 解析器为「宽松容错」而写，没人想到它会把「互斥参数」变成「不存在」 | 在指定 `sub` 下加白名单 `--kind --name --draft --yes --expect-change --rejudge`；白名单外的 `--xxx` → `InvalidArgs`；`--expect-change` 的下一个 token 以 `--` 开头 → 视为缺值 → `InvalidArgs` | P0 |
-| 6 | `tools/docgen/cli.mjs`（待新增 `cmdDiff`）；`cli.mjs:317` | `diff` 不存在；且 `main()` 最后 `throw fail('UnsupportedKind', { sub })` 会让 `diff` 的参数错误与「子命令不存在」**同码同档**（TC-303 今天因此假绿） | 「反正都是参数错误」——但这让「非 agent 被拒」与「命令没写」在日志里不可区分 | 新增 `cmdDiff`：`assertAgentName` → 条目存在（`MissingComponentData`）→ `renderByName` → 盘上卡存在（`DanglingBaselineEntry`）→ 差异算法；`main()` 里 `diff` 分支在分发链里显式列出；`UnsupportedKind` 只留给「sub 不认识」并把 `sub` 写进 stderr | P1 |
+| 6 | `tools/docgen/cli.mjs`（待新增 `cmdDiff`）；`tools/docgen/cli.mjs:317` | `diff` 不存在；且 `main()` 最后 `throw fail('UnsupportedKind', { sub })` 会让 `diff` 的参数错误与「子命令不存在」**同码同档**（TC-303 今天因此假绿） | 「反正都是参数错误」——但这让「非 agent 被拒」与「命令没写」在日志里不可区分 | 新增 `cmdDiff`：`assertAgentName` → 条目存在（`MissingComponentData`）→ `renderByName` → 盘上卡存在（`DanglingBaselineEntry`）→ 差异算法；`main()` 里 `diff` 分支在分发链里显式列出；`UnsupportedKind` 只留给「sub 不认识」并把 `sub` 写进 stderr | P1 |
 | 7 | 待新增 `cmdDiff` 的输出格式（spec §3.2） | 行数口径 / 中段行格式 / `a`、`b`、`k` 全是要被逐字断言的契约字段 | 打印给人看的输出，写实现时只想着「看得懂」 | 行数 = `split('\n')` 元素数（末尾空串计入）；中段行 = `符号 + ' ' + 原文`（用 `slice` 拼接，**禁 `trim`**）；`a`/`b` = 两侧中段行数、`k = P + 1`；`diffLines()` 与 `sha256Hex()` 抽单点供 `cmdDiff`/`cmdReplace` 共用 | P1 |
 | 8 | `tools/docgen/evidence.mjs:21-41`（`readEvidence`） | 目前**完全不看** `changes`/`rejudged`/`judged`/`judgeMode`/`machineChecks` ⇒ 坏留痕可随便写、`A3` 能进 `rejudged`、缺 `machineChecks` 也能过 | `readEvidence` 是「迁移期四字段」的老实现，新增字段没人回头补 | 按 §3.4 逐项校验：`changes` 可缺省、出现即数组；每项 `from`/`to` 64 位大写 hex、`at` ISO、`rejudged` ⊆ `SEMANTIC_KEYS`（**10 键**，从 `check-agent.mjs` 导入，不写第二份）；`rejudged` 非空 ⇒ `judged` 逐键一条 + `judgedBy` 非空 + `judgeMode ∈ {subagent, self-degraded}`；`rejudged` 为空 ⇒ `judged` 为 `[]` + `judgeMode: none`；`machineChecks` 五键 `A3`–`A7` 齐全 | P0 |
 | 9 | `tools/docgen/evidence.mjs:13-19`（`fail()` 只把 code 当 message） | §3.3 要求 `UnapprovedChange` 的 stderr 含两个 sha256、缺哪一项、下一步命令——现出口做不到 | `fail()` 是统一出口，加参数会碰所有调用点 | 给 `fail()` 加可选 `msg`（`new Error(msg ?? code)`），`UnapprovedChange` 处传「盘上=… 渲染=… 缺 --expect-change，下一步运行 node tools/docgen/cli.mjs diff --kind agent --name <名>」 | P0 |
-| 10 | `cli.mjs:256-263`（幂等分支） | 「不写盘」在字节上不可观测，写没写 rename 都能过 | 结果相同看起来「无所谓」 | 抽 `writeIfChanged()` 单点并在幂等分支直接 return（不进入写盘函数），实现层加断言「跑完 `agents/` 下无 `.tmp-<name>-*.part`」 | P2 |
+| 10 | `tools/docgen/cli.mjs:256-263`（幂等分支） | 「不写盘」在字节上不可观测，写没写 rename 都能过 | 结果相同看起来「无所谓」 | 抽 `writeIfChanged()` 单点并在幂等分支直接 return（不进入写盘函数），实现层加断言「跑完 `agents/` 下无 `.tmp-<name>-*.part`」 | P2 |
 | 11 | `tools/docgen/cli.mjs:230-255`（`allowed()` 内多次 `readState()`） | 同一次 `replace` 里 state 被读多次（`cmdReplace` 内另有 `:255`），期间被别处改动会得到前后不一致的判别 | 单线程脚本里「读多次」看起来无害 | 函数入口读一次 `const st = readState()` 全流程复用（`collectGate` 也传同一份） | P2 |
 | 12 | spec §3.6 触达映射（按节名匹配） | 节名改写（「你是谁」→「身份」）会让 `A1` 落空或误触；A3 按表头列、A4/A5 节内优先——映射与 `criteria.md` 不是同一坐标系 | 映射表按「当前卡的样子」写，没考虑节名本身会变 | 把「identity 关键字集合」放单源（与 `check-agent.mjs` 共用），映射与检查共用一份；A3 定位改为「表格表头行」而非节名 | P2 |
 | 13 | `tools/docgen/state.json`（分派键） | 手改成非 `replaced` 就能重跑 `init-evidence` 冲掉锚点（R1-后端 F3） | 视为「越权手改，不属工具通路」 | 变更段前置加一条「`evidence` 六字段齐备且非 `pending`，否则退回迁移段」；或对 `state` 写入加校验（`replaced` 不可回退到 `suspended`） | P2 |
@@ -1853,7 +1853,7 @@ AssertEq ([string]$secAfter) ([string]$secBefore) 'SECTION-COUNT-UNCHANGED'
 | B13 | state 置位次序：rename 失败后 state 仍不是 `replaced`，卡字节不变 | 已落实（新增 TC-109；含构造有效性自检，构造无效记「环境不适用」不得记绿） |
 | B14 | `diff` 的卡缺失 → `DanglingBaselineEntry` | 已落实（新增 TC-309） |
 | B15 | spec §7「只手动验证」两条的人工验证记录型用例 + 记录落点 | 已落实（新增 TC-804 + 文末 §7「人工验证记录」表） |
-| C16 | 现状列三处误标（TC-209 / TC-210 改红并写明撞哪道闸门；TC-405 改绿） | 已落实（TC-209 标红并写明 `cli.mjs:219`；TC-210 标红并写明 `cli.mjs:219`（若过则 `:222`）；TC-405 标绿并写明「今天不看 `changes`」；三条判据未动） |
+| C16 | 现状列三处误标（TC-209 / TC-210 改红并写明撞哪道闸门；TC-405 改绿） | 已落实（TC-209 标红并写明 `tools/docgen/cli.mjs:219`；TC-210 标红并写明 `tools/docgen/cli.mjs:219`（若过则 `:222`）；TC-405 标绿并写明「今天不看 `changes`」；三条判据未动） |
 | C17 | `$w2/state-empty.json` 顺序污染：每条用例开头重建 state 或独立文件名 | 已落实（改为 `StateEmpty '102'` / `StateOne '106' …` / `StateAllReplaced '506'` 等按用例号命名的独立文件；组级规则第 2 条明写「每条用例开头重建自己的 state」） |
 | C18 | 判据栏「见上 / 见步骤」自足化 | 已落实（所有代号改为函数，判据栏一律写「函数名 + 完整参数」；全文已无「见上 / 见步骤」） |
 | C19 | 文件头加执行顺序行 | 已落实（文件头「执行顺序 = 组 1→组 8；每组开头重建副本与 state，组末恢复 `$repo` 并清四个 env」+ 组级规则三条） |
@@ -1869,11 +1869,11 @@ AssertEq ([string]$secAfter) ([string]$secBefore) 'SECTION-COUNT-UNCHANGED'
 1. **TC-504 判据与新 R6 次序冲突**：v1 断「坏 evidence 先报 `EvidenceInvalid`」，而新 spec R6 把次序固定为「② 判阶段 → ③ `readEvidence`」。已把 TC-504 反向（已迁席 → 阶段码），并新增 TC-507（未迁席 → `EvidenceInvalid`）——只留一条会丢掉另一种组合的判别力。
 2. **TC-405 的构造与 §3.4 新约束冲突**：v1 构造的 `changes[0]` 没有 `machineChecks`，按新版「每次变更必填五键」会被判非法。已补 `judgeMode` / `judged` / `machineChecks` 五键，并说明它的「今天绿」是「校验未落」，不是「判别力已成立」。
 3. **`golden-assert` 的 stderr 契约今天不成立**：它不是 spec 未定义，而是实现（`golden-assert.mjs:56`）少一个冒号；已单列建议 2（P0），避免被误当成用例写错。
-4. **TC-110 的判别力边界**：`cli` 路径今天已带冒号（`cli.mjs:326`），所以 TC-110 今天绿；真正会红的是 acceptance 路径（TC-501/504/506/507），已在 TC-110 的「说明」里点明，避免读者误以为契约「已经全绿」。
+4. **TC-110 的判别力边界**：`cli` 路径今天已带冒号（`tools/docgen/cli.mjs:326`），所以 TC-110 今天绿；真正会红的是 acceptance 路径（TC-501/504/506/507），已在 TC-110 的「说明」里点明，避免读者误以为契约「已经全绿」。
 5. **TC-101 的 `PASS 6/6` 曾写死**：改为从脚本里数 `scenario('S` 出现次数（`$want`）后再与末行比对。
 6. **TC-309 与 TC-305 的混淆点**：「条目缺失（`agentData` 没这个名字）」与「卡缺失（盘上没文件）」是两个不同失败面；若 `diff` 不先查盘上文件，会打印「凭空造出的旧卡」。已在 TC-309 的「盲点说明」写明。
 7. **TC-303 的假绿仍未消除**：今天 `UnsupportedKind` 既是「非 agent」也是「子命令不存在」，两者同码。已在建议 6 要求把 `sub` 写进 stderr，并在评审说明里标注「不得据今天结果判通过」。
-8. **TC-211 的「现状」初稿标红，复核后改绿**：本条构造**不注入内容改动**（只把盘上卡追加一字节），今天会先撞 `cli.mjs:265` 的 `TargetDrift`，恰好就是期望值；初稿误以为是 `cli.mjs:222` 先拦。已改为「绿（施工后须仍绿）」——它守的是「变更段也保留 `TargetDrift`」这个不变量。
+8. **TC-211 的「现状」初稿标红，复核后改绿**：本条构造**不注入内容改动**（只把盘上卡追加一字节），今天会先撞 `tools/docgen/cli.mjs:265` 的 `TargetDrift`，恰好就是期望值；初稿误以为是 `tools/docgen/cli.mjs:222` 先拦。已改为「绿（施工后须仍绿）」——它守的是「变更段也保留 `TargetDrift`」这个不变量。
 9. **TC-212 的构造初稿用了 `SetChangeEvidence`，会把归因搅浑**：那会让 `goldenAssertion=fail`，今天因「还没走到幂等分支」而红，与本条要抓的缺陷（幂等分支误要凭证）无关。已改为**保持 fixture 原值**（四道证明全过），于今天也应绿，是干净的回归守卫。
 10. **TC-505 的泄漏断言初稿会误判**：初稿用 `Get-ChildItem $w2 -Recurse -Filter '*evil*'` 数文件，而临时证据目录名 `evil-ev` 自己也含 `evil` → 常数 ≥ 1，永远红。已改为只数 `*.json` 文件且按文件名匹配 `evil`。
 

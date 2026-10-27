@@ -416,14 +416,14 @@ node tools/docgen/cli.mjs diff --kind agent --name detective-observer
 # 3) 替换：--expect-change = 上一步的「新 渲染」sha256
 #    --rejudge 键名：边界段 = B3「职责边界一致」的判定对象（criteria.md:134-141）→ 显式报 B3。
 #    注意：diff 只输出 sha / 差异行 / 凭证，**不报触达键**；触达键只会在 replace 失败时以
-#    `UnapprovedChange: … --rejudge 漏报触达键 <键>` 出现（cli.mjs:451-457）。若报出（如渲染顺带改了
+#    `UnapprovedChange: … --rejudge 漏报触达键 <键>` 出现（tools/docgen/cli.mjs:451-457）。若报出（如渲染顺带改了
 #    description → A2、「你是谁」节 → A1），把报出的键一并加进 --rejudge，且其注解须为 pass/fail。
 $env:DOCGEN_JUDGED_BY='reviewer-audit-2026-10-25-b3'
 node tools/docgen/cli.mjs replace --kind agent --name reviewer-audit --draft "<draft 路径>" --expect-change <新sha> --rejudge B3 --yes
 node tools/docgen/cli.mjs replace --kind agent --name detective-observer --draft "<draft 路径>" --expect-change <新sha> --rejudge B3 --yes
 Remove-Item Env:DOCGEN_JUDGED_BY
 ```
-Expected: 两席 `已替换`；副作用：`tools/docgen/state.json` 与 `tools/docgen/fixtures/<席>.evidence.json` 被改写（`cli.mjs:473` 置 state、`:477-484` 写 evidence / 追加 changes）。
+Expected: 两席 `已替换`；副作用：`tools/docgen/state.json` 与 `tools/docgen/fixtures/<席>.evidence.json` 被改写（`tools/docgen/cli.mjs:473` 置 state、`:477-484` 写 evidence / 追加 changes）。
 **前置**：两席 `B3` 注解为 `pass`（`rules/.inspector-annotations.json:9` / `:139`），且施工前由独立实例对新渲染复核过 B3；否则 `replace` 报 `UnapprovedChange` → 停手报用户（B3 重判不属本 plan）。
 **验收**：读两席 `fixtures/<席>.evidence.json` 末条 `changes`：`rejudged = ["B3"]`、`judgeMode = "subagent"`、`judgedBy` 非空且 ≠ 施工者标识。
 
@@ -701,7 +701,7 @@ console.log(rateFromRecords({ records: records.length, zero }).level);  // 4 零
 
 | 复评项 | v2 问题 | v2.1 处置 |
 |---|---|---|
-| ① | `--rejudge` 缺 `DOCGEN_JUDGED_BY`，`replace` 必被 `UnapprovedChange` 拒 | T5 Step 4a 两条命令前加 `DOCGEN_JUDGED_BY=…`，并注明 `cli.mjs:278-287`；副作用行号改 `:473` |
+| ① | `--rejudge` 缺 `DOCGEN_JUDGED_BY`，`replace` 必被 `UnapprovedChange` 拒 | T5 Step 4a 两条命令前加 `DOCGEN_JUDGED_BY=…`，并注明 `tools/docgen/cli.mjs:278-287`；副作用行号改 `:473` |
 | ② | 10 个自造 helper 在 testcase 中 0 命中 | 删自造名，改为「测试侧局部 helper」节逐个给实现；探针全集按 testcase 六段并集 |
 | ③ | `CLAUSES` 标注为对象 | 改为「数组 + 5 字段对象 `{k,why,scope,seat?,re}`」；`assertNeedClauses` 改为「成功返回 seg、失败即抛」，取缺失用 `missingClauses` |
 | ④ | 导出名大小写混用 | 统一 `CAP.capabilities`（小写导出），三处改名 |
@@ -724,9 +724,9 @@ console.log(rateFromRecords({ records: records.length, zero }).level);  // 4 零
 
 | 项 | v2.3 | v2.4 | 依据 |
 |---|---|---|---|
-| 触达键获取方式 | 「先看 `diff` 报出的触达键」 | `diff` **不报**触达键（`cli.mjs:208-225` 只输出旧/新 sha、差异行、凭证；`cmdDiff` 在 `:314` 逐行打印）→ 键名只在 `replace` 失败时以 `UnapprovedChange: … --rejudge 漏报触达键 <键>` 出现（`cli.mjs:451-457`） | 审计核对表命题 4 |
+| 触达键获取方式 | 「先看 `diff` 报出的触达键」 | `diff` **不报**触达键（`tools/docgen/cli.mjs:208-225` 只输出旧/新 sha、差异行、凭证；`cmdDiff` 在 `:314` 逐行打印）→ 键名只在 `replace` 失败时以 `UnapprovedChange: … --rejudge 漏报触达键 <键>` 出现（`tools/docgen/cli.mjs:451-457`） | 审计核对表命题 4 |
 | `--rejudge` 取值 | 省略（理由：边界段通常无触达键） | 显式 `--rejudge B3`：边界段即 B3「职责边界一致」的判定对象（`tools/execution-matrix/criteria.md:134-141`）；B 组语义键「一旦判断触及，必须一并报进 `--rejudge`」（`docs/superpowers/specs/2026-10-21-docgen-replace-intent-change-design.md:181`） | 审计打回项 2 |
-| 留痕 | `judgeMode:'none'`（= 本次变更无需重判，与「B3 判定对象被改过」的事实相反） | `rejudged=['B3']`、`judgeMode:'subagent'`、`judgedBy` 非空（`cli.mjs:477-482`） | 同上 |
+| 留痕 | `judgeMode:'none'`（= 本次变更无需重判，与「B3 判定对象被改过」的事实相反） | `rejudged=['B3']`、`judgeMode:'subagent'`、`judgedBy` 非空（`tools/docgen/cli.mjs:477-482`） | 同上 |
 | 同族回扫（R8） | Global Constraints 两处、Step 4a 前置、PG-01 仍是旧口径 | 四处已同步；`grep -n 'rejudge' <本 plan>` 复核 | 审计打回项 3 |
 
 **复签要求**：v2.4 是 v2.2 签字后的第二次口径修正，`②→③@S6` 行需审计重新复签（只核本条改动）。复签前 T5 Step 4a 视为待核。
@@ -756,7 +756,7 @@ console.log(rateFromRecords({ records: records.length, zero }).level);  // 4 零
 | `npm run check` | `package.json:5` | 既有 |
 | `node scripts/scope-sweep.mjs --check` | `package.json:9` | 已落 |
 | `exitCodeFor` | `validateAgentData.mjs:19`（export） | 既有 |
-| `draft` / `replace` | `cli.mjs:318` / `:353`，`REPLACE_FLAGS` 在 `:500` | 既有；`--expect-change` / `--rejudge` / `--yes` 为必填/条件必填 |
+| `draft` / `replace` | `tools/docgen/cli.mjs:318` / `:353`，`REPLACE_FLAGS` 在 `:500` | 既有；`--expect-change` / `--rejudge` / `--yes` 为必填/条件必填 |
 | `rateFromRecords` | `tools/execution-matrix/rating.mjs:3` | 既有 |
 | `renderBoundary` / `validatePolicy` / `dumpPolicy` | 本 plan T4 / T6 | 施工后核 |
 | `factsFrom*` / `diffFacts` / `verdict` | 本 plan T1 | 施工后核 |

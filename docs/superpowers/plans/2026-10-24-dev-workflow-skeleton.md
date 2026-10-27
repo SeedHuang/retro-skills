@@ -94,9 +94,9 @@
 
 | # | sdet 指出的问题（位置） | 判定 | 处置 |
 |---|---|---|---|
-| 8 | T2 验收 `generate` 对**新席**先做存在性检查（`cli.mjs:66-67` / `:300` → `DanglingBaselineEntry`），T2 时卡还没落盘 → exit 2，走不到渲染，抓不到 `MissingSlot` | **承认** | T2 验收改「不依赖新卡的检查 + 单测里 `renderByName('evidence-reader')` 断言不抛」 |
-| 9 | `generate` 只比对不写盘；写草稿的是 `draft`（`cli.mjs:305-337`）→ spec §11 ③ 与 plan T3 的「`generate` 出草稿」不可执行 | **承认** | spec §11 ③ 与 T3 全改 `draft --kind agent --name evidence-reader` |
-| 10 | T3 的「`gate` 渲染与磁盘一致」对新席是空判（`collectGate` 只比 `replaced` 席，`cli.mjs:103-107`）；真正逐字节判定在 T4 的 `check-agents` | **承认** | T3 验收改为「草稿 == `renderByName`」；逐字节判定归 T4 |
+| 8 | T2 验收 `generate` 对**新席**先做存在性检查（`tools/docgen/cli.mjs:66-67` / `:300` → `DanglingBaselineEntry`），T2 时卡还没落盘 → exit 2，走不到渲染，抓不到 `MissingSlot` | **承认** | T2 验收改「不依赖新卡的检查 + 单测里 `renderByName('evidence-reader')` 断言不抛」 |
+| 9 | `generate` 只比对不写盘；写草稿的是 `draft`（`tools/docgen/cli.mjs:305-337`）→ spec §11 ③ 与 plan T3 的「`generate` 出草稿」不可执行 | **承认** | spec §11 ③ 与 T3 全改 `draft --kind agent --name evidence-reader` |
+| 10 | T3 的「`gate` 渲染与磁盘一致」对新席是空判（`collectGate` 只比 `replaced` 席，`tools/docgen/cli.mjs:103-107`）；真正逐字节判定在 T4 的 `check-agents` | **承认** | T3 验收改为「草稿 == `renderByName`」；逐字节判定归 T4 |
 
 - sdet 自报的「testcase 计数不一致」**为其自身误判**（把 E23 边界算成负例）：逐行实为 **34 / 35 / 10 = 79**，与文件头一致；已在 testlanding §0 订正、§3 回填。testcase 不动。
 - **第 2 轮结论：可以开工**（sdet 原文：「改两处即可，不动 spec 结构」→ 两处已改）。
@@ -105,7 +105,7 @@
 
 | # | 席位 | 问题（位置） | 判定 | 处置 |
 |---|---|---|---|---|
-| 11 | AI | R4-01（P0）`gate --kind rule` 旗标不存在（`cli.mjs:544` 丢弃 rest）；且 §5「每步 gate 绿」与 T2–T4 现实冲突 | **承认** | T2 验收改 `generate --kind rule` + 单测 `renderByName`；§5 改为「T1 绿 36/36、T2–T4 预期红、T5 起 37/37」 |
+| 11 | AI | R4-01（P0）`gate --kind rule` 旗标不存在（`tools/docgen/cli.mjs:544` 丢弃 rest）；且 §5「每步 gate 绿」与 T2–T4 现实冲突 | **承认** | T2 验收改 `generate --kind rule` + 单测 `renderByName`；§5 改为「T1 绿 36/36、T2–T4 预期红、T5 起 37/37」 |
 | 12 | AI | R4-02（P1）T3「草稿 == renderByName」是同义反复（草稿就是它）；落盘无命令、草稿箱会撞 `DraftNameConflict` | **承认** | T3 改「一条命令：读草稿→比对→相等才写盘」+ `draft rm` |
 | 13 | AI | R4-03（P1）绕过迁移段后 `fixtures/evidence-reader.evidence.json` 不存在 → **首次内容变更**必败（`evidence.mjs` 缺失即抛、`cli.mjs` 比 `lastWrittenHash`） | **承认** | spec C7 补「同批写 fixture + 字段」；plan T4 加验收命令 |
 | 14 | AI | R4-04（P1）「证据由 gate 代替」不成立：gate 只比 `replaced` 席，且证明的是「卡=生成物」而非「卡经人核」 | **承认** | C7 改「卡与源一致归 gate（T4 后生效）、落盘无漂移归那条命令」；V-5 加执行时点注 |

@@ -16,9 +16,9 @@
 | 2 | `ToolsViolation` = **集合恰等**（允许集 ⊆ 实际 且 实际 ⊆ 允许集），不是字符串/顺序相等 | `validateAgentData.mjs:40-50` |
 | 3 | 卡面 tools 行 = `tools.join(', ')`，**顺序即卡面顺序**，故顺序漂移会被 `gate` 逐字节抓住 | `renderAgent.mjs` |
 | 4 | `gate` 打 `baseline N/N`，N = `BASELINE_RULES.length + agentPaths().length`（当前 22 + 15 = 37，只作说明，不作断言常量） | `tools/docgen/components/baseline.mjs`、`scripts/check-all.mjs:101` |
-| 5 | `changes[]` 条目字段 = `from/to/at/rejudged/judgeMode/judged[/judgedBy]/machineChecks`；`judgedBy` 来自 `DOCGEN_JUDGED_BY`，缺则拒写盘 | `cli.mjs:278-300`、`:451-483` |
-| 6 | **幂等短路排在凭证 / 重判 / 判者三门前**：盘上 == 渲染 → exit 0、`changes` 不追加、不校验凭证 | `cli.mjs:425-432`（`已替换（幂等恢复）` 在 `:430`） |
-| 7 | 旁席 `Mismatch` 只有在草稿箱里存在与渲染相同的旁席草稿时才被放行 | `cli.mjs:396-413` |
+| 5 | `changes[]` 条目字段 = `from/to/at/rejudged/judgeMode/judged[/judgedBy]/machineChecks`；`judgedBy` 来自 `DOCGEN_JUDGED_BY`，缺则拒写盘 | `tools/docgen/cli.mjs:278-300`、`:451-483` |
+| 6 | **幂等短路排在凭证 / 重判 / 判者三门前**：盘上 == 渲染 → exit 0、`changes` 不追加、不校验凭证 | `tools/docgen/cli.mjs:425-432`（`已替换（幂等恢复）` 在 `:430`） |
+| 7 | 旁席 `Mismatch` 只有在草稿箱里存在与渲染相同的旁席草稿时才被放行 | `tools/docgen/cli.mjs:396-413` |
 | 8 | `npm run check` 的 A 组覆盖集 = `state.json` 中 `replaced` 的席（不是 `agentData.length`） | `scripts/check-all.mjs:124-159`、`tools/docgen/state.mjs:7` |
 | 9 | 三处流程文档现行写「已授 `command` 档」，实测行号 | `skills/parliament/references/debate-protocol.md:17`、`skills/parliament/assets/round-check.md:21`、`skills/dev-workflow/references/stage-4-quality.md:28`（与 spec §11.3 D9 行号一致） |
 | 10 | `counterProbes(files)` **已导出**，但其内部 `noComment` / `noString`（剥注释 / 剥单引号串）**未导出** | `tools/docgen/test/support/dev-workflow-checks.mjs:187-201` |
@@ -672,7 +672,7 @@ function writeScopeHalves(sec, label = '') {
 
 - **覆盖**：V-8 / §4「判者」/ F10
 - **来源**：spec 推导
-- **前置**：同 B09 的差异构造；副本注解 `reviewer-audit:B3 = "pass"`（让 `buildJudged` 先过，才轮到判者门；`cli.mjs:459` 先于 `:460` 的 `judgeId`）；调用时**删除** `DOCGEN_JUDGED_BY`。
+- **前置**：同 B09 的差异构造；副本注解 `reviewer-audit:B3 = "pass"`（让 `buildJudged` 先过，才轮到判者门；`tools/docgen/cli.mjs:459` 先于 `:460` 的 `judgeId`）；调用时**删除** `DOCGEN_JUDGED_BY`。
 - **步骤**：① 跑 `replace --rejudge B3 --yes`；② 记录卡哈希与 `changes` 长度。
 - **预期**：exit 4；报文含 `缺少判者标识`；不写盘。
 - **判据**：

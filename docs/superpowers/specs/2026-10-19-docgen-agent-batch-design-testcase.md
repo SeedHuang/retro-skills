@@ -22,8 +22,8 @@
 - `agentData` 里 12 席**都已有骨架条目**，键集只含 `tools name role dimension sharedBlock outputKind`（`agentData.mjs:23-34`）；**12 席均缺 `identity` / `fixedList`**。
 - `triggerTable` 里 12 席只有 `reviewer-product` 一条 `when`（`agentData.mjs:65`，需按现卡校准），**其余 11 席在触发表里无条目**（≠ `agentData` 无条目：12 席都有骨架条目）。
 - `sharedBlocks` 只有 `AUDIT_RULES`（`sharedBlocks.mjs:1-4`）；`outputFormats` 只有 `audit`（`outputFormats.mjs:1-51`）——四常量未落。
-- `validateAgentData` 无断言 15（条目键集）；`cmdReplace`（`cli.mjs:218-224`）未校验 `compareResult`；`scripts/check-all.mjs:119` 只对 `reviewer-audit` 单席挂钩——三者均为 spec 修订 3 待施工项。
-- `EvidenceInvalid` 的 `reason` 字段**不进 stderr**（`evidence.mjs:13-19` 把 code 当 message），故 stderr 上无法区分「字段非法 / golden 未过 / renderSha 不等」——TC-106 用 `control` 对照模式做归因（§8 建议 12）。
+- `validateAgentData` 无断言 15（条目键集）；`cmdReplace`（`tools/docgen/cli.mjs:218-224`）未校验 `compareResult`；`scripts/check-all.mjs:119` 只对 `reviewer-audit` 单席挂钩——三者均为 spec 修订 3 待施工项。
+- `EvidenceInvalid` 的 `reason` 字段**不进 stderr**（`tools/docgen/evidence.mjs:13-19` 把 code 当 message），故 stderr 上无法区分「字段非法 / golden 未过 / renderSha 不等」——TC-106 用 `control` 对照模式做归因（§8 建议 12）。
 - `pilot-render.test.mjs:91-101` 的三连空行断言作用于**整卡**，且**没有**「恰一空行」断言；`cli-gate.test.mjs:11-20` 把已拆槽席 `generate` 硬编码为 exit 1（依赖迁移进度）——两者均为 §1-⑫ 待改写项。
 - 模板槽位在 `tools/docgen/templates/agent.md.tpl:27-29`（27 = 通用纪律末条，28 = `{{SHARED_BLOCK}}`，29 = `## 边界`）；`renderAgent.mjs:4` 空值分支删掉「槽位行 + 其换行」。
 
@@ -296,7 +296,7 @@ $env:DOCGEN_EVIDENCE_DIR = Join-Path $cp 'tools/docgen/fixtures'
 
 - **覆盖**：§1 粒度与拆批判据 ①–④（含「渲染器语义缺陷 → 回炉不拆批」特例）
 - **前置**：无
-- **步骤**：① 模板/常量共用：读 `renderByName` 的分流条件（`cli.mjs:291` 只在 `outputKind === 'testcase'` 时换模板，12 席均非 testcase）；② spec 行数 ≤ 250；③ 本文件行数 ≤ 700；④「议会指出某条设计波及 12 席」由议会判定（人判）；⑤ 若检查点暴露的只是渲染器/模板语义缺陷（如 TC-017）→ 走特例，不拆批
+- **步骤**：① 模板/常量共用：读 `renderByName` 的分流条件（`tools/docgen/cli.mjs:291` 只在 `outputKind === 'testcase'` 时换模板，12 席均非 testcase）；② spec 行数 ≤ 250；③ 本文件行数 ≤ 700；④「议会指出某条设计波及 12 席」由议会判定（人判）；⑤ 若检查点暴露的只是渲染器/模板语义缺陷（如 TC-017）→ 走特例，不拆批
 - **预期**：①②③ 全过 + ④ 无 → 不拆批；任一触发（且不属于 ⑤ 特例）→ 拆两批（6+6）重新送审，且本文件同步拆
 - **判据**：`(Get-Content docs/superpowers/specs/2026-10-19-docgen-agent-batch-design.md).Count -le 250`；`(Get-Content docs/superpowers/specs/2026-10-19-docgen-agent-batch-design-testcase.md).Count -le 700`；`(Select-String -Path tools/docgen/cli.mjs -Pattern 'agent-handwritten.md.tpl' -SimpleMatch).Count -eq 2`（两处分别是 `readTemplate` 的 rule/agent 分支与 `renderByName` 的 testcase 分支，均不对 12 席生效；出现第三处 = 多了分流点）。**行数一律以命令输出为准，本文件不写死数字**
 - **红绿**：红 = 任一条触发却继续按 12 席推进；绿 = 三条机器判据全过 + 议会未提④
@@ -336,7 +336,7 @@ $env:DOCGEN_EVIDENCE_DIR = Join-Path $cp 'tools/docgen/fixtures'
 - **预期**：每席 exit 0 且 `EQUAL`（诚实边界）
 - **判据**：【WK】exit 0 `wk seats=9 red=0`；每席 generate exit 0
 - **红绿**：红 = 少一个空行/换行/字符 → `DIFF`；绿 = 全 `EQUAL`
-- **现状**：待施工后；**警告**：`generate` 对「未拆槽席」是**静默 `continue`**（`cli.mjs:64-65`），exit 0 不能证明已迁——已迁与否只认【WK】+【STATE】（见 TC-202）；测试文件侧的期望见 TC-114
+- **现状**：待施工后；**警告**：`generate` 对「未拆槽席」是**静默 `continue`**（`tools/docgen/cli.mjs:64-65`），exit 0 不能证明已迁——已迁与否只认【WK】+【STATE】（见 TC-202）；测试文件侧的期望见 TC-114
 
 #### TC-010 正：余 9 席逐席 `golden-assert` 通过
 
@@ -375,7 +375,7 @@ $env:DOCGEN_EVIDENCE_DIR = Join-Path $cp 'tools/docgen/fixtures'
 - **覆盖**：R6（`goldenAssertion==='pass'` **且** `compareResult===null`，缺一即拒）+ `DraftDrift` + `TargetDrift` + §6-5 + §6-12
 - **前置**：
   - 【副本仓】就绪；该席在副本内已拆槽可渲染；**每个模式开始前重置副本**（见步骤①）
-  - **evidence 必须来自真实产物**：把仓库 `tools/docgen/fixtures/<seat>.evidence.json`（TC-002 + TC-010 的产物）复制进 `$cp/tools/docgen/fixtures/`，或让 `DOCGEN_EVIDENCE_DIR` 指向副本 fixtures —— 副本无 `.git`、`init-evidence` 跑不了；手写 evidence 若缺 `commit`/`blob`/`sha256`/`hashObject`/`lastWrittenHash` 任一字段，`readEvidence`（`evidence.mjs:30-39`）会以「字段缺失或类型非法」拒，`mismatch` / `goldenfail` 就会**假红**（或反过来掩盖真闸门），结论作废
+  - **evidence 必须来自真实产物**：把仓库 `tools/docgen/fixtures/<seat>.evidence.json`（TC-002 + TC-010 的产物）复制进 `$cp/tools/docgen/fixtures/`，或让 `DOCGEN_EVIDENCE_DIR` 指向副本 fixtures —— 副本无 `.git`、`init-evidence` 跑不了；手写 evidence 若缺 `commit`/`blob`/`sha256`/`hashObject`/`lastWrittenHash` 任一字段，`readEvidence`（`tools/docgen/evidence.mjs:30-39`）会以「字段缺失或类型非法」拒，`mismatch` / `goldenfail` 就会**假红**（或反过来掩盖真闸门），结论作废
 - **步骤**：
   ① 每模式先重置：副本 `tools/docgen/state.json` 只含两席锚点 `replaced`（该席**不在** `replaced` 里）；按【RENDER】在副本内落一份草稿（字节 == 渲染）
   ② 以复制的真实 evidence 为底，按模式**只改指定字段**（其余字段一律保留复制值）：
@@ -387,8 +387,8 @@ $env:DOCGEN_EVIDENCE_DIR = Join-Path $cp 'tools/docgen/fixtures'
   ③ 跑 `replace --kind agent --name <seat> --draft <草稿> --yes`
 - **预期**：`control` 成功、其余四模式都被拒；四个被拒模式下副本 `agents/<seat>.md` 的 SHA256 与该模式开始前相同
 - **判据**：五条 replace 的退出码与 stderr 首词如上；`mismatch` 的 stderr **不得**含「字段缺失或类型非法」**且不得**含「renderSha256 与草稿不等」（排除式：防「evidence 抄漏字段」伪装成闸门有效）；`targetdrift` 的 stdout 不含 `幂等恢复`；非 control 的四次前后 SHA256 全同
-- **红绿**：红 = `mismatch` 被放行（只校验 `goldenAssertion`，整文件漂移可落盘，即第 1 轮 P0）；或 `mismatch` 的红来自「evidence 字段缺失」（本用例什么都没证明）；或 `targetdrift` 走进 `cli.mjs:252-259` 的幂等分支打印「已替换（幂等恢复）」；绿 = control 绿 + 四模式各按指定原因被拒
-- **现状**：待施工后；`mismatch` 模式**施工前必绿（=缺陷）**——`cli.mjs:218-224` 只校验 `renderSha256` 与 `goldenAssertion`，从不读 `compareResult`。**归因限制**：`EvidenceInvalid` 的 `reason` 不进 stderr（§8 建议 12），故必须靠 `control` 对照排除「字段非法」这条替代解释
+- **红绿**：红 = `mismatch` 被放行（只校验 `goldenAssertion`，整文件漂移可落盘，即第 1 轮 P0）；或 `mismatch` 的红来自「evidence 字段缺失」（本用例什么都没证明）；或 `targetdrift` 走进 `tools/docgen/cli.mjs:252-259` 的幂等分支打印「已替换（幂等恢复）」；绿 = control 绿 + 四模式各按指定原因被拒
+- **现状**：待施工后；`mismatch` 模式**施工前必绿（=缺陷）**——`tools/docgen/cli.mjs:218-224` 只校验 `renderSha256` 与 `goldenAssertion`，从不读 `compareResult`。**归因限制**：`EvidenceInvalid` 的 `reason` 不进 stderr（§8 建议 12），故必须靠 `control` 对照排除「字段非法」这条替代解释
 - **取证提示**：`targetdrift` 的两条构造缺一不可（① state 非 `replaced`；② 目标追加一字节），否则命中幂等恢复，看到 exit 0 误以为闸门通过
 
 #### TC-107 负：替换后卡字节变化 → `1 1` 必须判红（与 S3 口径区分）
@@ -501,7 +501,7 @@ $env:DOCGEN_EVIDENCE_DIR = Join-Path $cp 'tools/docgen/fixtures'
 - **覆盖**：§4 步 1 + `cli.mjs` 未拆槽分支（存在性检查 / `continue`）
 - **前置**：队列推进中，仍有席未拆槽（11 → 0 的过渡态）
 - **步骤**：① `gate`；② `generate --kind agent --name <未拆槽席>`；③ `check-agents`
-- **预期**：① exit 0（未拆槽席只做存在性检查，且都在 baseline 内，不得报 `UnregisteredHandwritten`）；② **静默 exit 0**（`cli.mjs:64-65` 的 `continue`）——这是**假绿陷阱**；③ exit 0 且计数里计入「未迁移」
+- **预期**：① exit 0（未拆槽席只做存在性检查，且都在 baseline 内，不得报 `UnregisteredHandwritten`）；② **静默 exit 0**（`tools/docgen/cli.mjs:64-65` 的 `continue`）——这是**假绿陷阱**；③ exit 0 且计数里计入「未迁移」
 - **判据**：① exit 0；② exit 0 且 stdout 只有 `baseline 35/35`（无该席漂移行）→ 记录为「不可作为已迁证明」；③ exit 0 且输出含 `未迁移` 字样
 - **红绿**：红 = 用 ② 的 exit 0 宣布「该席已迁」（验收失效）；绿 = 进度只用【WK】+【STATE】判
 - **现状**：今天可跑（当前 11 席无 when，正是这个状态；gate 本身是否绿由 TC-013 保证）
@@ -658,7 +658,7 @@ $env:DOCGEN_EVIDENCE_DIR = Join-Path $cp 'tools/docgen/fixtures'
 | 9 | `tools/docgen/acceptance/golden-assert.mjs:30-33`（spec §5-②） | `raw.length <= 1` + 来源行豁免是为 S3 开的；S4 席一旦补一行 `> 来源：`，这只脚会静默放行一行差异 | 「忽略一行」看着无害 | 豁免改为显式白名单（仅 `senior-sdet`），并对 S4 席断言 `ignorable.length === 0` | P2 |
 | 10 | `tools/docgen/acceptance/init-evidence.mjs:15-18`（spec §6-4） | 重跑会把 `goldenAssertion`/`renderSha256` 重置为 `pending`；R7 下锚点三项也看不出来 | 「再跑一次覆盖一下」无害直觉 | evidence 已有 `goldenAssertion==='pass'` 时拒绝重跑（除非 `--force`），并记录 `initAt` | P2 |
 | 11 | `rules/.inspector-annotations.json`（spec §6-10 / TC-013） | 12 席注解写入后 `git status rules/` 常脏；靠人记「这个 M 是预期的」必然漂移 | 干净口径写成「rules/ 零输出」会被每席的红淹没 | 落一个 `verify-clean.mjs`（允许集写成常量），TC-013 改调它 | P2 |
-| 12 | `tools/docgen/evidence.mjs:13-19` + `cli.mjs:314-325`（TC-106） | `EvidenceInvalid` 的 `reason` 只挂在 Error 对象上，`main` 的 catch 只打 code（message === code），三种拒绝原因在 stderr 上不可区分 | 退出码相同就以为「拒绝原因相同」 | `fail` 里把 `reason` 写进 message（或 catch 里补打 `e.reason`），使「字段非法 / golden 未过 / renderSha 不等」可分辨 | P2 |
+| 12 | `tools/docgen/evidence.mjs:13-19` + `tools/docgen/cli.mjs:314-325`（TC-106） | `EvidenceInvalid` 的 `reason` 只挂在 Error 对象上，`main` 的 catch 只打 code（message === code），三种拒绝原因在 stderr 上不可区分 | 退出码相同就以为「拒绝原因相同」 | `fail` 里把 `reason` 写进 message（或 catch 里补打 `e.reason`），使「字段非法 / golden 未过 / renderSha 不等」可分辨 | P2 |
 | 13 | spec §3「无共享块分支」+ `renderAgent.mjs:3-6`（TC-017 / TC-207） | 空值修法必须**只删占位符、保留该行换行**（`replaceAll(key, '')`）；若写成「值 = 单个 `\n`」，按 `fill` 的 `replaceAll(key, () => value)` 会在「通用纪律末条」与 `## 边界` 之间留下**两个**空行 | 空行肉眼难分，「1 个还是 2 个」看起来只是写法差异 | spec 修订 3 §3 已写死该修法；实现照此执行；判据一律以产物「恰一空行」为准（TC-017【NBLANK】） | P1 |
 | 14 | `tools/docgen/test/cli-gate.test.mjs:11-20`（spec §1-⑫ / §6-12 / TC-114） | 把已拆槽席 `generate` 写死为 exit 1：迁移后必红，最省事的「修法」是删断言；且测试无法区分「渲染漂移」与「还没迁」 | 写测试时该席确实未迁，exit 1 是当时的真话 | 正例改为 `generate --name <已迁席>` exit 0；负例在副本注入一字节后 exit 1；不写「锚点席未替换 → exit 1」 | P0 |
 | 15 | `tools/docgen/test/pilot-render.test.mjs:91-101`（spec §1-⑫ / §6-12 / TC-207） | 三连空行断言作用于整卡：issue-card 输出格式本身含三连换行 → 修好空行后仍会误伤；同时缺「恰一空行」断言，抓不到「少一个空行」 | 「整卡更严」是直觉，实际是越界 | 收窄到「通用纪律末条 → `## 边界`」区间（`const head = card.slice(0, card.indexOf('## 边界'))`），并新增 `assert.ok(head.endsWith('\n\n'))` + `assert.ok(!head.endsWith('\n\n\n'))`；两条都保留，不删原断言；**不锚定模板文案，改文案不假红** | P1 |

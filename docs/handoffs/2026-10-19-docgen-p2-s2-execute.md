@@ -79,7 +79,7 @@
 ## 遗留裁决与留观项
 
 - **R2-A-05**：S1 spec `docs/superpowers/specs/2026-10-19-docgen-agent-capability-design.md:4` 仍写"待评审（草稿）"，与评审账本第 4 轮 PASS 不一致——来源：`problems.md` 候选表；收敛时机：S1 spec 下次修订时更新状态行，最迟 S4 开工前。
-- **S1 §5.2 `InvalidOutputPath` 分支不可达**（`cli.mjs:191` 直接 `join`，未经 `assertInside`）——来源：`problems.md` 候选表；收敛时机：S1 实现补 `assertInside` 或 S1 spec 明确移除该分支（用户裁决）；S2 已在 spec §11 第 4 条显式记账，不静默作废。
+- **S1 §5.2 `InvalidOutputPath` 分支不可达**（`tools/docgen/cli.mjs:191` 直接 `join`，未经 `assertInside`）——来源：`problems.md` 候选表；收敛时机：S1 实现补 `assertInside` 或 S1 spec 明确移除该分支（用户裁决）；S2 已在 spec §11 第 4 条显式记账，不静默作废。
 - **`check-all.mjs:63` 未剥离 `DOCGEN_DRAFTS_DIR`**（S1 对称性遗漏）——来源：`problems.md` 候选表；收敛时机：S1 后续顺手补。
 - **replace 同秒并发 / 草稿箱跨仓库同名**——来源：第 1 轮 F17 部分承认；收敛时机：S1 后续 / S4 前补"单人单仓库、replace 串行"前提。
 - **W5 / dc-translator**：S4 之后做新增席旅程，`baseline --write` 到 36/36，届时把 S2/S3/S4 文档里的 14/13/12/11 计数同步为 15/14/13/12——来源：PRD §6.6 依赖图 + S1 spec §8.2；收敛时机：S4 收口后。
