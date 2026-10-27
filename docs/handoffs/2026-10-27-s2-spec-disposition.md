@@ -24,7 +24,7 @@ d:\Seed\retro-skills —— AI 开发工作流仓库（rules / skills / agents /
   4. **S2 testcase 产出**：`docs/superpowers/specs/2026-10-27-s2-observation-check-design-testcase.md`（约 1290 行，senior-sdet 全新上下文编写，68 条 = 26 正 / 37 负 / 5 边界；七锚点全覆盖；§0.2 有 16 项实现差距表；§7 有 13 盲点登记与判别力水位；§8 有 6 条给开发的建议）。
   5. **交叉互评闭环**：sdet→spec 出 10 条建议（P0×3 / P1×4 / P2×3）；主 agent→testcase 核对通过（覆盖对位零空行、五要素齐、负例≥正例、判据机器可判），testcase 无需返工。三条 P0 已修入 spec（用户批准「按这三条修改」），其余 5 条（P1×2 / P2×3）未落地。
   6. **用户裁定不送议会 #2**（2026-10-27 原话「我成修复就可以，不用送审」——范围含义见开放问题 1）。
-  7. **本 session 引入的门禁红已修复**：testcase 44 处草稿区文件行号引用（`checks.mjs:50-52` 等 8 个仓库外文件）改写为「`` `checks.mjs`（草稿区 行 50-52）``」形态（行号守卫 `lessons.test.mjs:1841` 要求仓库内可定位的引用 missing=0）；testcase §0.2 表第 7 行示意文本 6 个 `|` 补转义。修后 check 全绿（见元信息基线）。
+  7. **本 session 引入的门禁红已修复**：testcase 44 处草稿区文件行号引用（8 个仓库外文件，如 `checks.mjs`）改写为「`` `checks.mjs`（草稿区 行 50-52）``」形态（行号守卫 `lessons.test.mjs:1841` 要求仓库内可定位的引用 missing=0）；testcase §0.2 表第 7 行示意文本 6 个 `|` 补转义。修后 check 全绿（见元信息基线）。
 - 验证证据：见元信息表『验证基线』（单源，勿重复填写）。
 - 提交状态：3 项未提交改动由用户自行 commit（清单见元信息表『HEAD』行）。
 - 工作树异常：无（`.session/tmp/` 诊断脚本已删，⑤ 段判空）。
