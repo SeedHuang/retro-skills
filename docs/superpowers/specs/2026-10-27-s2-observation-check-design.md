@@ -1,6 +1,6 @@
 # S2 观察产物校验器（observation-check）设计
 
-> 状态：待议会 #2 签字（2026-10-27 修订第 3 版 / 议会 #2 第 2 轮修订后）｜上游：`docs/prd/20261026205821-agent-card-contract.md` §8 S2｜正文 = 自 PRD 拆出的 §10
+> 状态：已签（②@S2 @ `gate-record.md`，2026-10-27；本文件 2026-10-27 第 3 版微调后由审计做增量登记，原签不复签）｜上游：`docs/prd/20261026205821-agent-card-contract.md` §8 S2｜正文 = 自 PRD 拆出的 §10
 >
 > split from `docs/prd/20261026205821-agent-card-contract.md` (2026-10-27)
 

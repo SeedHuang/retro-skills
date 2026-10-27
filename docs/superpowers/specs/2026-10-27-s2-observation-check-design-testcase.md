@@ -7,7 +7,7 @@
 > B19 编写者 / 独立性声明：senior-sdet 子代理（第二次全新上下文，2026-10-27）；编写者 ≠ spec 作者、≠ 施工者，未参与 B19 以外任何实现
 > B20 / G06 编写者 / 独立性声明：senior-sdet 子代理（**第四次全新上下文，2026-10-27**）；编写者 ≠ spec 作者、≠ 施工者，未参与 B20 / G06 对应的任何实现（只读 PRD 代裁行 C-15 / C-16、`tools/observation-check/` 现存实现与常驻测试，用例判据按现存测试逐条对账）；本次只改本 testcase（新增 B20 负例 + G06 边界 + 全量计数与对位表同步）
 > R1 修订者 / 独立性声明：senior-sdet 子代理（**第三次全新上下文，2026-10-27**）；本次只改本 testcase（C07 前置定名 + 新增 C08 + 计数与 A01–A03 零提交口径对齐），未改 spec 正文、未改任何代码、未参与实现
-> 编写日期：2026-10-27｜版本：**v5**（v2 = 议会 #2 第 1 轮修订：行号勘误 + 口径校正（A02 内容流 hash / A03 原命令口径）+ 测试落点去 `test/` 子目录 + 补 E14 + 8-1 转「已解决」；v3 = 第 2 轮修订 + 侦探 H-01/H-02 补丁：A02 前置定死 commit message 载体、E11「不覆盖」句改指 E14、E14 判据改 node `crypto.createHash`、演练目录改 `test-obs-check-<rand>` 前缀，2026-10-27 12:13）；v4 = 议会派工 B19 补入（2026-10-27，senior-sdet 第二次全新上下文独立编写）；**v5 = R1 修订（2026-10-27，senior-sdet 第三次全新上下文）：F040 清 C07 过期占位（码名已登记 `EvidenceStructuralRow`）+ F010 补 C08 `RepoRootUnresolved` 反例 + 计数改 71 / 26 / 40 / 5 + A01–A03 按「全程零提交」裁定改锚账本 §迁入清单**；**v6 = B20 / G06 补入（2026-10-27，senior-sdet 第四次全新上下文）：B20 = PRD §0.6 C-16 / §4.2 ① 第 5 条集合语义（`skipped` 内 id 重复 → `CoverageMismatch`，message 含「重复」；B10 过期「不覆盖」句改指本条）+ G06 = PRD §5.2 :410 C-15（`<次>/attachments/` 仅一层、文件名不限 8 类）+ 计数改 73 / 26 / 41 / 6**
+> 编写日期：2026-10-27｜版本：**v5**（v2 = 议会 #2 第 1 轮修订：行号勘误 + 口径校正（A02 内容流 hash / A03 原命令口径）+ 测试落点去 `test/` 子目录 + 补 E14 + 8-1 转「已解决」；v3 = 第 2 轮修订 + 侦探 H-01/H-02 补丁：A02 前置定死 commit message 载体、E11「不覆盖」句改指 E14、E14 判据改 node `crypto.createHash`、演练目录改 `test-obs-check-<rand>` 前缀，2026-10-27 12:13）；v4 = 议会派工 B19 补入（2026-10-27，senior-sdet 第二次全新上下文独立编写）；**v5 = R1 修订（2026-10-27，senior-sdet 第三次全新上下文）：F040 清 C07 过期占位（码名已登记 `EvidenceStructuralRow`）+ F010 补 C08 `RepoRootUnresolved` 反例 + 计数改 71 / 26 / 40 / 5 + A01–A03 按「全程零提交」裁定改锚账本 §迁入清单**；**v6 = B20 / G06 补入（2026-10-27，senior-sdet 第四次全新上下文）：B20 = PRD §0.6 C-16 / §4.2 ① 第 5 条集合语义（`skipped` 内 id 重复 → `CoverageMismatch`，message 含「重复」；B10 过期「不覆盖」句改指本条）+ G06 = PRD §5.2 :410 C-15（`<次>/attachments/` 仅一层、文件名不限 8 类）+ 计数改 73 / 26 / 41 / 6**；**v7 = §10 施工期补入登记（2026-10-27，④ 段 senior-sdet 独立实例，未参与施工）：新增 11 条 = X01–X10（负 5 / 边界 5，计入类型）+ X11（现状登记，不计类型）+ 覆盖总表 11 行；计数改「已签 73（26/41/6）+ 补入 11（0/5/5 + 现状 1）」＝ 84 行；已签 73 条的任何结论句一字未动（只追加）**
 > 命名与落点：spec 文件名去掉 `-design.md` 后加 `-testcase.md`，同目录（spec-testcase-gate 判据 1）
 
 ## 0 判据基线（读用例前先认事实；全部来自仓库与草稿区现状，可复核）
@@ -75,6 +75,8 @@
 ## 1 覆盖总表
 
 执行方式说明：**常驻** = 进 `tools/observation-check/` 的 node --test 文件，随 `npm run check` 跑；**验收** = 机器命令（命令 + 退出码），因一次性提交审计 / 时长（npm run check 23.9s）/ 全局态（临时移文件）不设常驻，按「执行时点」跑。
+
+> A01–A03 的「零提交口径」是**迁入时点**的验收语境；本批最终已按 spec §10.2 落成两提交（`9f45096` 原样迁入 / `5c63c57` 改造），故其等价锚 = `9f45096`（`git show 9f45096:<path>` 逐文件 sha256 可复算，与提交信息登记值逐字相等），时点等价、判据不变（2026-10-27 补注）。
 
 | ID | 覆盖锚点（spec §10.x / PRD §x） | 一句话场景 | 类型 | 层级 | 执行方式 | 优先级 |
 |---|---|---|---|---|---|---|
@@ -151,6 +153,17 @@
 | H04 | PRD §5.3 行 12（V-6 绿例） | quote 真实但不支撑结论 → 校验过（语义归审计人） | 边界 | 单元 | 常驻 | P1 |
 | I01 | PRD §4.4 A 表注 2 | render.mjs 合并纪律三码冒烟（DuplicateStatement / OverrideWithoutReason / PointlessOverride） | 负 | 单元 | 常驻 | P2 |
 | I02 | PRD §4.4 A 表注 2 | render.mjs 必填与登记五码冒烟（MissingTrigger / MissingCriterion / MissingLanding / MissingCriterionImpl / UnknownLanding） | 负 | 单元 | 常驻 | P2 |
+| X01 | §10.8-3 / PRD §4.1 | instance 只允许 `'A'`/`'B'`/`null`，其余 → `InvalidFieldType`（含三合法值正例） | 边界 | 单元 | 常驻（`checks.test.mjs`） | P1 |
+| X02 | §10.8-3 / PRD §4.4 A 表 | `requires` 非对象项（null / 字符串 / 数组）→ `InvalidFieldType`，不抛 `TypeError` | 负 | 单元 | 常驻 | P1 |
+| X03 | §10.8-4 / PRD §4.2 ③ | 结论行由 `open` 派生：open 空 + closure=null 不得写「有补充项」 | 负 | 单元 | 常驻 | P0 |
+| X04 | §10.8-3 / PRD §4.3 第 5 道 | 骨架常量单源：渲染输出必须用到 `md-format.mjs` 的六个常量（漂移即红） | 边界 | 单元 | 常驻 | P1 |
+| X05 | §10.8-3 / PRD §4.3 第 5 道 / §4.4 B 表 | C07 第四形态：渲染器固定骨架行逐行不可作证据 | 负 | 单元 | 常驻 | P1 |
+| X06 | §10.8-3 / PRD §4.3 第 2 道 | 软链 realpath 分支：指向根外 → `EvidencePathOutside`；指向根内 → 放行 | 边界 | 单元 | 常驻 | P1 |
+| X07 | §10.8-3/4 / PRD §4.2 ③ | `findBrokenTable`：手造多一列 → 定位行号；围栏内表骨架不算、行首空格的表照判 | 负 | 单元 | 常驻 | P1 |
+| X08 | §10.8-3 / PRD §4.2 ③ | 单元格转义与列数守恒：反斜杠+竖线 / 反引号 / 多行字段（`<br>`）三形态 | 边界 | 单元 | 常驻 | P1 |
+| X09 | §10.8-4 / PRD §4.2 ③ | README 表格转义（含 `\|` 与换行）逐块列数一致；卡面散文压掉换行 | 边界 | 单元 | 常驻 | P1 |
+| X10 | §10.8-3 / PRD §4.2 ④ / §4.4 B 表 | 写盘回滚三分支：md 侧失败 / json 侧失败（有旧 md 恢复）/ json 侧失败（无旧 md 不留 md） | 负 | 集成 | 常驻 | P0 |
+| X11 | §10.8-7 / PRD §4.2 | 现状登记：`check-all` 侧 skipped 守卫**未落地**（已撤回、归 S3），不得误以为存在 | 不覆盖（现状） | — | 无测试（代码现状核对） | P2 |
 
 ### 1.1 覆盖核对（锚点/决定 → 用例对位；零行无对位）
 
@@ -1123,6 +1136,8 @@
 
 **数量硬门**：73 条 = 正例 26 / 负例 41 / 边界 6；**负例 + 边界 = 47 ≥ 正例 26**（spec-testcase-gate 判据 3）。类型逐条可复算：`Select-String -Path <本文件> -Pattern '^\| [A-I]\d{2} \|.*\| 负 \|'` → 41；`…\| 边界 \|` → 6；`…\| 正 \|` → 26。
 
+**④ 段增补（§10，2026-10-27，不计入上列 73）**：11 条 = 负 5 / 边界 5 / 现状登记 1（X11 无测试，不计类型）；下表只是上列 73 条中负例与边界的汇总，§10 的增补行见 §10 各条自述。含增补后：负 + 边界 = 47 + 10 = **57 ≥ 正 26**，硬门仍过。
+
 判读说明：**负例** = 坏构造必须出码或拒行为（0 码 = 假绿 = 本 testcase 红线）；**边界** = 合法但极易被误判的形态（含两条「故意绿」的边界钉 H03/H04——它们翻红才是缺陷）。
 
 | ID | 类型 | 打的失败面（一句话） | 为什么容易漏（机制） | 期望 |
@@ -1319,7 +1334,7 @@
 |---|---|---|
 | 1 | 文件存在 | ✓ 与 spec 同目录（`docs/superpowers/specs/`）；文件名 = spec 去 `.md` + `-testcase.md` |
 | 2 | 编写者独立 | ✓ 文件头「编写者 / 独立性声明」在位：senior-sdet 子代理**全新上下文**，≠ spec 作者、≠ 施工者；所有实现面结论来自独立实测（0.1 的 888 行 / 71+61 双跑 / 白名单在位均为本编写者复算），未从实现倒推放宽任何判据 |
-| 3 | 用例合格 | ✓ 73 条五要素齐（覆盖 / 前置 / 步骤 / 预期 / 判据）；负例 + 边界 47 ≥ 正例 26；覆盖总表 73 行每行指回 spec 节号或 PRD 锚点（§1.1 对位零空行） |
+| 3 | 用例合格 | ✓ 73 条五要素齐（覆盖 / 前置 / 步骤 / 预期 / 判据）；负例 + 边界 47 ≥ 正例 26；覆盖总表 73 行每行指回 spec 节号或 PRD 锚点（§1.1 对位零空行）；**④ 段追加 §10 的 11 条同按九项齐，计入后 84 条 / 负 + 边界 57 ≥ 正 26** |
 | 4 | spec 外链 | ✓ spec §10.4 末已写「测试用例文件：`docs/superpowers/specs/2026-10-27-s2-observation-check-design-testcase.md`」；spec 内 `^#### ` = 0（未内联）；2026-10-27 12:00 复核 |
 | 5 | 一起送审 | 待父代理执行：议会开卷清单同时列 spec + 本 testcase 两份 |
 
@@ -1328,7 +1343,8 @@
 | 项 | 值 |
 |---|---|
 | 用例总数 | **73** = A7 + B20 + C8 + D8 + E14 + F4 + G6 + H4 + I2 |
-| 正 / 负 / 边界 | 26 / 41 / 6（负 + 边界 47 ≥ 26，硬门过） |
+| 施工期补入（§10，不计入上列 73） | **11** = X10 条（负 5 / 边界 5）+ X11 现状登记 1；计入后全文 `^#### ` 标题 = **84** |
+| 正 / 负 / 边界 | 26 / 41 / 6（负 + 边界 47 ≥ 26，硬门过）；计入 §10 后 26 / 46 / 11（负 + 边界 **57** ≥ 26） |
 | 常驻 : 验收 | 65 常驻 + 8 验收命令（A01 / A02 / A03 / A04 / A06 / A07 / G01 / G02，§5） |
 | 覆盖的 spec 验收项 | §10.8 七锚点全覆盖：① sha256 原样迁入（A01-A03）② 基线不退 71/71 + agents 零引用（A04-A06）③ 新增判据有测试——B 表 S2 组 16 码逐码、A 表 5 零测试码、三类不出码、A 表并入 8 码冒烟（B/C/D/H/I 组）④ golden（D05-D07）⑤ 覆盖语义 7 处 fixture + 1 探索稿指针 + 禁放宽（F 组 + D08）⑥ CLI（E08-E14）⑦ 仓门禁不红（A07/G01/G02） |
 | 另覆盖 PRD 侧 | §5.3 V-6 S2 部分（行 1-6、8、9 + 绿例 11、12）、§9.3 M-2 S2 部分、§0.5 Q-A-05（分母闭合） |
@@ -1337,13 +1353,17 @@
 
 ### 9.3 机器自查命令（仓库根 PowerShell 粘贴；四条判据 = 输出值）
 
-① 用例数 = 73（每条用例一个四级标题）：
+① 用例数 = 84（每条用例一个四级标题；73 已签 + §10 补入 11）：
 
-`(Select-String -Path 'docs\superpowers\specs\2026-10-27-s2-observation-check-design-testcase.md' -Pattern '^#### ').Count` → `73`
+`(Select-String -Path 'docs\superpowers\specs\2026-10-27-s2-observation-check-design-testcase.md' -Pattern '^#### ').Count` → `84`
 
-② 类型计数 = 26 / 41 / 6（覆盖总表类型列）：
+② 类型计数 = 26 / 41 / 6（覆盖总表 A–I 行）：
 
-`(Select-String -Path <本文件> -Pattern '^\| [A-I]\d{2} \|.*\| 正 \|').Count` → `26`；同式换 `负` → `41`；换 `边界` → `6`（三条合计 73 = ①）
+`(Select-String -Path <本文件> -Pattern '^\| [A-I]\d{2} \|.*\| 正 \|').Count` → `26`；同式换 `负` → `41`；换 `边界` → `6`（三条合计 73 = ① − 11）
+
+②b §10 增补行的类型计数（X 前缀，不计入上面三条）：
+
+`(Select-String -Path <本文件> -Pattern '^\| X\d{2} \|.*\| 正 \|').Count` → `0`；`负` → `5`；`边界` → `5`（+ X11「不覆盖（现状）」1 行，不计类型）——② + ②b = 26 / 46 / 11，合计 84 = ①
 
 ③ 禁占位词 = 0（大小写敏感；F03 的 `test.todo` 是被扫描的 node:test API 名——小写带点，非占位词，用 `-CaseSensitive` 精确区分）：
 
@@ -1354,6 +1374,152 @@
 `Select-String -Path <本文件> -Pattern '待 plan Task'` → **3 行** = 1 行规则声明（§2 总述「唯一允许占位 = …」，声明本身不是占位实例）+ 本节 2 行命令文本自引用（④ 本行描述句 + 下列 Pattern 字样），**0 处**在判据字段。两处已关闭的真占位：A01 前置（原 `MIGRATION_COMMIT` 落值 → 零提交裁定下改锚账本 §迁入清单 11 行 sha256）、C07 前置（原「码名待登记」→ 已登记 `EvidenceStructuralRow`，PRD :355）。另 4 处「形态按 plan Task N 落地」（B 组共用夹具 / B14 预期 / B17 前置 / D01 前置；**无「待」字**）属 plan 可自决的实现点，不写在判据字段，不计入占位。
 
 > 编写者按「在输出带数据的结论前必须执行验证闸门」规则已实跑 ①-④：`73` / `26` / `41` / `6` / `0` / 3 行（其中真占位 0 处），与本节声明一致（2026-10-27 实测；同批实跑值另有 A02 的 11 条 sha256 全等、A03 的 888）。
+> **④ 段复核（2026-10-27，senior-sdet 独立实例，未参与施工；追加 §10 后重跑）**：①–④ → `84` / `26` / `41` / `6` / `0` / 3 行；②b 增补行 → `0` / `5` / `5`；A02 的 11 条 sha256 与草稿区原件逐条相等（11/11）、A03 的 `888` 不变；`node --test tools/observation-check/*.test.mjs` → `# tests 166 / # pass 166 / # fail 0 / # skipped 0`。
+
+## 10 施工期补入（2026-10-27，不计入 ② 已签的 73 条）
+
+> 出处与边界：本节由 ④ 段质量门（senior-sdet 独立实例，`agents/senior-sdet.md` 角色卡 path B 贴入，未参与施工）在逐条执行 testcase 时补写；**只追加，不改已签 73 条的任何结论句**。对位对象 = 施工期（③ 段之后）新增的判据与测试：③ 送审材料记 **148** 条 test block（`docs/handoffs/2026-10-27-s2-observation-check-close.md`§7「148/148/0」），交付树实测 **166** 条（`node --test tools/observation-check/*.test.mjs` → `# tests 166`），差 18 条。本节只登记其中「有独立判据、既有用例文字未覆盖」的 10 条 + 1 条现状登记，其余增量见 §10.2。
+> 编号前缀 `S2-OC-X`；本节条目与 §1 覆盖总表末 11 行一一对应。
+
+### 10.1 用例明细
+
+#### X01 instance 枚举：只允许 `'A'` / `'B'` / `null`
+
+- **覆盖**：§10.8-3 / PRD §4.1（`instance` 三值枚举）/ §4.4 A 表 `InvalidFieldType`
+- **来源**：施工期补（④ 段登记）——迁入版对 `instance` 零校验（`git show 9f45096:tools/observation-check/checks.mjs` 无 instance 分支），非法枚举值静默通过，双实例产物可写出第三形态
+- **前置**：`tools/observation-check/checks.mjs:77-79` 枚举守卫在位（`undefined` / 缺省按 `null` 处理）
+- **步骤**：① `validateObservation({…docBase, instance:'C'})`；② `instance:123`；③ 正例循环 `[null, 'A', 'B']`
+- **预期**：①② errors 含 `InvalidFieldType`；③ 零 errors
+- **判据**：`codes(...).includes('InvalidFieldType')` 两次为真；`deepEqual(codes(...), [])` 三次为真（逐形态断言，不合并计数）
+- **红绿证据**：红 = 迁入版无该分支（`'C'` / `123` 零错误 = 假绿）；绿 = 现出码（`checks.test.mjs` 两条 `ok`）
+- **对应测试**：`checks.test.mjs:138`「instance 枚举：C 与数字 → InvalidFieldType（PRD §4.1）」、`checks.test.mjs:143`「instance 枚举正例：null / A / B → 零错误」
+- **不覆盖**：`instance` 派生文件名（`-a` / `-b` 小写形态归 E01）；`check:'ai'` 条目的成对文件（B17 / B18）；`instance` 与 `round` 的组合语义（`RoundMismatch` 归 E02）
+
+#### X02 `requires` 非对象项 → `InvalidFieldType`（不得抛 `TypeError`）
+
+- **覆盖**：§10.8-3 / PRD §4.4 A 表 `InvalidFieldType` + §4.2 异常纪律「类型 / IO 异常收敛为码，不得冒泡」
+- **来源**：施工期补——迁入版 `checkPrerequisites` 的 `requires.forEach` 直接 `Object.keys(r)`，`requires:[null]` 抛 `TypeError`（`git show 9f45096:tools/observation-check/checks.mjs` 该函数段无类型守卫）
+- **前置**：`checks.mjs:243-246`「非对象项（`null` / 字符串 / 数组）→ 收敛为码」分支在位
+- **步骤**：`checkPrerequisites([null], [])` / `checkPrerequisites(['x'], [])` / `checkPrerequisites([[]], [])`
+- **预期**：三次 `ok:false` 且 errors 含 `InvalidFieldType`；调用方无 try 也拿得到返回值
+- **判据**：`r.errors.some((e) => e.code === 'InvalidFieldType')` 三次为真
+- **红绿证据**：红 = 迁入版 `Object.keys(null)` 抛类型错误（代码事实：该行无守卫）；绿 = 收敛为码、`ok:false`
+- **对应测试**：`checks.test.mjs:149`「requires 非对象项（null / 字符串）→ InvalidFieldType，且不抛 TypeError」
+- **不覆盖**：`requires` 整体非数组；`must` 非布尔（adversarial A12 / A13 既有断言）；`requires` 未知字段（`UnknownField`，A12）
+
+#### X03 结论行由 `open` 派生（open 空 + closure=null 不得写「有补充项」）
+
+- **覆盖**：§10.8-4 / PRD §4.2 ③（md 是唯一给人读的投影）
+- **来源**：施工期补——迁入版固定写「有补充项，无总体结论」（`git diff 9f45096 HEAD -- tools/observation-check/checks.mjs` 的 minus 行：`结论：${closure === null || undefined ? '有补充项，无总体结论' : closure}`），open 为空时与事实相反
+- **前置**：`checks.mjs:179-183` 结论由 `doc.open.length` 派生
+- **步骤**：`renderObservation(docBase({ open: [], closure: null }))`
+- **预期**：md 含「结论：无补充项」；不含「有补充项」
+- **判据**：`assert.match(md, /结论：无补充项/)` **且** `assert.doesNotMatch(md, /有补充项/)`——两向断言，缺一不算
+- **红绿证据**：红 = 迁入版（open 空也写「有补充项」）；绿 = 派生正确
+- **对应测试**：`checks.test.mjs:157`「渲染：open 为空 + closure=null → 结论不得声称「有补充项」」
+- **不覆盖**：`closure:'blocked'` / `'no-findings'` 的文案自由度（枚举归 B06 / adversarial A5）；open 非空 + `no-findings` 的矛盾（`ContradictoryClosure`，A6）
+
+#### X04 骨架常量单源（渲染输出必须用到 `md-format.mjs` 的常量）
+
+- **覆盖**：§10.8-3 / PRD §4.3 第 5 道（结构行判据的常量来源）/ §4.2 ③
+- **来源**：施工期补——骨架常量原先两侧各写一份（渲染侧内联字面量、校验侧另拼），格式改一处即漂移，漂移后果是「自己产出的常量又能当证据」（与 X05 同一根因的两面）
+- **前置**：`tools/observation-check/md-format.mjs:4-12` 六常量（`MD_BANNER` / `MD_TITLE` / `MD_OPEN_SECTION` / `MD_NONE` / `MD_ITEMS_HEADER` / `MD_OPEN_HEADER`）+ 聚合常量 `MD_SKELETON`；校验侧 `tools/observation-check/evidence.mjs:37` 取同一份
+- **步骤**：① 渲染 closed 形态（open 空、closure=null）→ 断言五个常量逐字在输出内；② 渲染 open 非空形态 → 断言 `MD_OPEN_HEADER` 在输出内
+- **预期**：六常量逐条命中（缺一即红）
+- **判据**：`closed.includes(line)` 五次 + `withOpen.includes(MD_OPEN_HEADER)` 一次，逐条独立断言（失败消息带行名）
+- **红绿证据**：红 = 渲染侧内联字面量（改格式忘改常量 → 校验侧仍拿旧常量匹配 = 假绿）；绿 = 六常量全在
+- **对应测试**：`checks.test.mjs:170`「骨架常量与渲染输出同源（改格式必须同批改 md-format.mjs）」
+- **不覆盖**：常量的措辞美学；`MD_SKELETON` 逐行不可作证据（归 X05）
+
+#### X05 C07 第四形态：渲染器固定骨架行逐行不可作证据
+
+- **覆盖**：§10.8-3 / PRD §4.3 第 5 道（四类结构行之第四类）/ §4.4 B 表 `EvidenceStructuralRow`
+- **来源**：施工期补——三形态实现后，`hit` 改引渲染器自己写的横幅（`<!-- observation-md v1 -->`）仍四段全绿：证据闭环于被证明者自身（C07 第四形态，2026-10-27 登记于本文件 C07）
+- **前置**：`tools/observation-check/evidence.mjs:116`（`STRUCTURAL_ROW.some(...) || SKELETON_SET.has(cited)`）；`SKELETON_SET` 由 `md-format.mjs` 的 `MD_SKELETON` 派生（`tools/observation-check/evidence.mjs:37`）
+- **步骤**：`MD_SKELETON.forEach` 逐行构造证据件（`skeleton-0..5`），各行整行为 quote
+- **预期**：六行逐行 → `EvidenceStructuralRow`；其中「无。」2 字先被长度道拦下（`EvidenceQuoteTooShort` 亦算红）
+- **判据**：每行 `code === 'EvidenceStructuralRow' || code === 'EvidenceQuoteTooShort'`（逐行断言，行名带进失败消息）
+- **红绿证据**：红 = 骨架行判据未接常量（横幅 / 表头 / 「无。」可当证据）；绿 = 六行全拦
+- **对应测试**：`evidence.test.mjs:213`「C07 补充：渲染器固定骨架行逐行不可作证据」
+- **不覆盖**：与本工具无关的零信息行（语义归审计人）；围栏内 ≥10 字正文（可作证据——C07 不覆盖条款原文）
+
+#### X06 软链 realpath 分支：指向根外 → `EvidencePathOutside`；指向根内 → 放行
+
+- **覆盖**：§10.8-3 / PRD §4.3 第 2 道（`path` 解析后必须落在根内）/ §4.4 B 表 `EvidencePathOutside`
+- **来源**：施工期补——`realpath` 分支此前零覆盖：`resolve` 只防 `..`，防不了软链逃逸；D17 曾记「断链软链无法稳定构造」，故改测「链指向根外」这一可稳定构造的形态（junction 在 Windows 无需管理员）
+- **前置**：`tools/observation-check/evidence.mjs:59-67` realpath 收敛分支在位
+- **步骤**：① 仓库内夹具目录建 junction → 指向 `os.tmpdir()` 下根外目录（内含真实 md），证据 path = `<夹具>/link-out/x.md`；② 同夹具建 junction → 指向夹具内子目录（根内），证据 path = `link-in/y.md`；③ 用完只删链接、不碰目标
+- **预期**：① `EvidencePathOutside` 且 detail 含「软链」；② `ok:true`
+- **判据**：① `r.code === 'EvidencePathOutside'` 且 `/软链/.test(r.detail)`；② `r.ok === true`——两向断言，只拒根外不够（会把根内一起拒 = 过度拒绝）
+- **红绿证据**：红 = 无 realpath 分支（软链逃逸放行）；绿 = 根外拒 / 根内放行
+- **对应测试**：`evidence.test.mjs:224`「C02-b 软链指向根外 → EvidencePathOutside（realpath 分支，不是 resolve 分支）」、`evidence.test.mjs:239`「C02-c 软链指向根内 → 正常解析（不过度拒绝）」
+- **不覆盖**：断链软链的 `existsSync` 先拦形态（D17：需可注入 fs，归 S4）；junction 以外的 symlink 类型（Windows 需开发者模式，判据同一份）
+
+#### X07 `findBrokenTable` 判别力 + 围栏感知
+
+- **覆盖**：§10.8-3/4 / PRD §4.2 ③「转义后每行列数 = 表头列数，用同一 splitRow 复算」
+- **来源**：施工期补——列数守卫若只比「渲染 vs 期望文本」，两边同错仍绿（自洽 ≠ 正确）；`findBrokenTable` 必须有独立判别力，且「什么算表格行」与 `check-all` 同源（围栏内不算表、行首空格的表照算）
+- **前置**：`checks.mjs:199` `findBrokenTable`（内部用 `fenceMask` 掩码围栏）；写盘入口同判（`artifact.mjs:137`）
+- **步骤**：① 手造 `| a | b |` / `|---|---|` / `| 1 | 2 | 3 |`；② 合法三行；③ 围栏包住的坏表；④ 行首两空格的坏表
+- **预期**：① `{ line: 3, want: 2, got: 3 }`（定位到行号）；② `null`；③ `null`（不吃围栏内骨架）；④ `{ line: 3, want: 2, got: 3 }`
+- **判据**：①④ `deepEqual(..., { line:3, want:2, got:3 })`；②③ `=== null`——四条独立断言
+- **红绿证据**：红 = 只返回布尔（定位不到行号）或把围栏内当表（误报）；绿 = 行号可定位 + 口径与 check-all 一致
+- **对应测试**：`render-check.test.mjs:153`（D12 判别力）、`render-check.test.mjs:158`（D13 围栏与行首空格）
+- **不覆盖**：`tools/execution-matrix/markdown-rows.mjs` 自身的列数检查（既有门禁回归面）；写盘入口 → `RenderMismatch` 的联动（E0x 面）
+
+#### X08 单元格转义与列数守恒：反斜杠+竖线 / 反引号 / 多行字段
+
+- **覆盖**：§10.8-3 / PRD §4.2 ③
+- **来源**：施工期补——D03 只测裸竖线一种：`a\|b`（反斜杠 + 竖线）与代码跨度内竖线两种形态在转义不互逆时会静默切列；多行字段不压 `<br>` 会留孤行（逐块比列数看不出孤行）
+- **前置**：转义单源 `tools/execution-matrix/markdown-rows.mjs:41` `escapeCell`（`checks.mjs:148` 直接用）；换行压 `<br>` 在渲染侧
+- **步骤**：① `reason = 'a' + 反斜杠 + '|b'` → 渲染 → 逐行 `splitRow` 比列数 + `checkRendered(doc, md).ok`；② `reason = '见 \`a|b\` 片段'` → 同判列数；③ `reason = '第一句\n第二句'`、`impact = '影响一\n影响二'` → 断言压成 `<br>`，并断言无「不以 `|` 开头、又不属骨架行」的孤行
+- **预期**：三形态全过
+- **判据**：`colsOk`（逐行列数相等）三次 + `checkRendered().ok === true` + `deepEqual(orphans, [])`
+- **红绿证据**：红 = 转义与 splitRow 不互逆（字段被切出多余列 / 换行留孤行）；绿 = 列数守恒 + 无孤行。**判别力实测（④ 段变异，见 quality-4）**：把 `escapeCell` 换成恒等函数 → D03 / D09 / D04 转红，**D10 / D11 仍绿**（`\|` 被 splitRow 当转义竖线、代码跨度内竖线本就不切列）→ 本条两个 D10 / D11 形态对「漏转义」无判别力，见 §10.2 缺口 1
+- **对应测试**：`render-check.test.mjs:114`（D09）、`:140`（D10）、`:148`（D11）
+- **不覆盖**：全角 `｜`（不转义、不破列，归 H01-5）；`<br>` 以外的换行策略（不作判据）
+
+#### X09 README 表格转义 / 卡面散文压换行
+
+- **覆盖**：§10.8-4 / PRD §4.2 ③（README 表格投影与校验侧同源转义）
+- **来源**：施工期补——README 是给人读的另一张表，动作文本含 `|` / 换行会破表；卡面是散文，换行不压会把一条 bullet 截成两行
+- **前置**：`render.mjs:7` `const cell = escapeCell;`（与 checks 同源）；`renderReadme` 两张表列数不同（动作 7 列 / 覆盖记录 5 列）
+- **步骤**：① 追加动作（`trigger: 'T | 触发'`、`text: 'A | B\n第二行'`）→ `renderReadme` → 按连续 `|` 行块分组，逐块与本块表头比列数；② 追加含换行的动作 → `renderCard` → 断言压成同行
+- **预期**：① ≥2 个表块、每块每行列数 = 本块表头列数、md 含 `<br>`；② md 含 `第一行 第二行`、不含裸换行
+- **判据**：逐块 `filter(l => splitRow(l).length !== width)` 为空 + `md.includes('<br>')` + `includes('第一行 第二行')` + `!includes('第一行\n第二行')`
+- **红绿证据**：红 = 用全局首行当宽度（两张表列数不同 → 永远红 / 或写宽成永远绿，Ruling #5 / #12-O2 的形态）或未压换行；绿 = 逐块比 + 换行压掉
+- **对应测试**：`render.test.mjs:44`（I03）、`render.test.mjs:64`（I04）
+- **不覆盖**：README / 卡面文案措辞；docgen 侧生成物（本工具只渲染自己那两张表）
+
+#### X10 写盘回滚三分支
+
+- **覆盖**：§10.8-3 / PRD §4.2 ④「全成功再 rename；任一失败回滚」（写盘四纪律）/ §4.4 B 表 `WriteFailed`
+- **来源**：施工期补——E06 只覆盖「md 侧失败（json 尚未落地）」一支；json 侧失败时 md 已 rename 落地 → 半写态（有 md 无 json）两支未测
+- **前置**：`artifact.mjs:146-175` `atomicWritePair`：先写两个 tmp → 旧 md 备份成 `.bak-<pid>` → md 先 rename、json 后 rename → catch 里清 tmp / 删已落地 md / 恢复 `.bak-`；`:159` 只备份普通文件（目录占位不挪）
+- **步骤**：① md 目标被同名目录占位 → 写盘（E06 面）；② 先写一次成功（产生旧 md），再把 `observation-r3.json` 位置换成同名目录 → 再写一次；③ 无旧 md + json 位置为同名目录 → 写盘
+- **预期**：① `WriteFailed` + json 不落地 + 零 `.tmp-`；② `WriteFailed` + 盘上 md 逐字 === 旧 md + 零 `.tmp-` / `.bak-`；③ `WriteFailed` + md 不存在 + 零 `.tmp-` / `.bak-`
+- **判据**：三支各 `errors.includes('WriteFailed')`；② `readFileSync(md) === oldMd`；③ `!existsSync(md)`；②③ `readdirSync` 过滤 `.tmp-` / `.bak-` 为空
+- **红绿证据**：红 = 两文件各自 tmp+rename（第一个成功、第二个失败 → 半写态；迁入版 `artifact.mjs` 即此形态，0.2 #12）；绿 = 三支全回滚。**④ 段实测**：`ok 163 / 164 / 165`（E06 / E06b / E06c）
+- **对应测试**：`write.test.mjs:173`（E06，已签）、`write.test.mjs:186`（E06b）、`write.test.mjs:208`（E06c）
+- **不覆盖**：check-all 侧 skipped 守卫（见 X11）；进程被 kill 级别的原子性（OS 层，不属本工具判据）；`.bak-` 恢复失败分支（catch 内 catch，失败不冒泡）
+
+#### X11 现状登记：`check-all` 侧 skipped 守卫**未落地**（不设用例）
+
+- **覆盖**：§10.8-7 / PRD §4.2（仓门禁是否给「被 skip 掉的测试」留后门）
+- **来源**：施工期做过一版「`check-all` 侧 `# skipped > 0` 即红」的守卫，**该守卫已撤回、归 S3**；④ 段登记时不设用例、不设断言，只把现状写下来
+- **前置**：`scripts/check-all.mjs:86-93` 现状只回读 `# tests N`（零匹配 / 为 0 判红），**不读 `# skipped`**
+- **步骤**：只读核对——`Select-String -Path scripts/check-all.mjs -Pattern 'skipped|skip'` → 0 命中
+- **预期**：0 命中（确认无守卫）
+- **判据**：命中数 = 0。**若日后命中数 > 0**，说明守卫重新落地 → 必须补正例 / 反例两条用例，本行随之改类型
+- **红绿证据**：不适用（本行是现状登记，不是判据）；留它只为防「后人以为有守卫」
+- **对应测试**：无（代码现状核对；`scripts/check-all.mjs:86-93`）
+- **不覆盖**：S3 的 skipped 守卫设计（触发条件 / 白名单 / 是否连带 `only` / `todo`）——归 S3 落地时补用例；仓内当前 2 条 `# skipped`（`npm run check` 输出）是否为历史遗留，不在此行裁
+
+### 10.2 本节边界与已知缺口（④ 段实测）
+
+1. **D10 / D11 对「漏转义」无判别力（P2）**：变异实测（把 `checks.mjs:148` 的 `escapeCell` 换成恒等函数）后 `render-check.test.mjs` 的 D03 / D09 / D04 转红，而 D10（`a\|b`）与 D11（反引号）仍绿——两者断言的形态本身已被 `splitRow` 的转义 / 代码跨度语义兜住。建议补一条「渲染输出含 `a\\\|b` 逐字」类断言，否则这两条读起来像覆盖了「转义互逆」，实际没有。
+2. **4 条增量无独立 ID**：`checks.test.mjs:61/62`（open 缺 `category` / 缺 `evidence`）、`checks.test.mjs:68`（`closure:'blocked'` 正例）、`evidence.test.mjs:259`（`repoRoot` 来源子进程钉）分别落在 B03 / B06 / C08 的行为面内，未另立 ID；若后续要给独立判据，按本节点格式补 X12+ 并同步 §3 / §9.2 / §9.3 计数。
+3. **③ 送审材料与交付树的数字差**：`docs/handoffs/2026-10-27-s2-observation-check-close.md`§7 记 148 条 test block，交付树 166 条（差 18）；本节只登记其中 10 条 + 1 条现状，其余增量属上一条。③ 侧材料需在 ④→⑤ 交接时勘误（不属本文件可改范围）。
 
 
 
