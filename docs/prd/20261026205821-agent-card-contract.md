@@ -125,6 +125,8 @@
 | C-12 | 仓外证据一律「快照进 `reviews/<那次>/attachments/` 后引用仓内副本」；不得加额外 root / 绝对路径 / skip 开关 | 证据七道锁仓内，而本 PRD 自身核心证据在仓外（F-W） | 用户裁定放宽 |
 | C-13 | `LANDING_VARS` 为**封闭清单**（`review.dir` / `round.no`），新增须同批改 §3.8 该行 | 原写「等」= 开放集，`UnboundLanding` 无从判（AI-2-01 残余） | 用户裁定扩表 |
 | C-14 | 归档门禁按「扫描根 = `docs/superpowers/reviews/*/`，一子目录 = 一轮评审」做**三态判定**（有产物 / 存量白名单 / 缺产物） | `ArtifactMissing`、零产物绿、`UnclassifiedArtifact` 三条原互斥，存量现状即触发（QA-R2-02） | 用户另定扫描根 |
+| C-15 | §5.2「允许文件名类」补 `<次>/attachments/` 子层（仅一层文件名、不得再嵌套），与 C-12 / §4.3 的仓外证据通道对齐 | 原 §5.2 只列根层与 `cards/`，照 C-12 归档的快照必被判 `UnclassifiedArtifact`——**通道开着、门却锁着**（S2 施工期发现，2026-10-27） | 用户裁定不允许仓外证据入仓 |
+| C-16 | §4.2 ① 第 5 条 `skipped ⊆ registeredIds` 按**集合语义**判：`skipped` 内 id 不得重复（重复 → `CoverageMismatch`） | 重复项让 `read + skipped.length === total` 算术「看起来平」，实际有 id 既未判也未跳 → 静默通过（S2 施工期发现，2026-10-27） | 用户裁定 `skipped` 允许重复 |
 
 ---
 
@@ -311,7 +313,7 @@
 
 | 段 | 做什么 | 不过时 |
 |---|---|---|
-| ① 结构 | 类型 / 必填 / 枚举 / `closure` 与 `open` 对账 + **七条覆盖对账**：`items.id` 唯一、`items.id ⊆ registeredIds`、`items.length === coverage.read`、`read + skipped.length === total`、`skipped ⊆ registeredIds`、`items.id ∩ skipped = ∅`、`total === registeredIds.length` | 逐条报错，不继续比渲染（避免级联噪声） |
+| ① 结构 | 类型 / 必填 / 枚举 / `closure` 与 `open` 对账 + **七条覆盖对账**：`items.id` 唯一、`items.id ⊆ registeredIds`、`items.length === coverage.read`、`read + skipped.length === total`、`skipped ⊆ registeredIds`（**集合语义**：其中 id 不得重复，重复 → `CoverageMismatch`，C-16）、`items.id ∩ skipped = ∅`、`total === registeredIds.length` | 逐条报错，不继续比渲染（避免级联噪声） |
 | ② 证据可解析 | 路径白名单 → 存在 → 可读 → 行号 → 该行含 quote → quote 足够长 → **不敏感**（路径名单 + 内容正则） | 逐条报错 |
 | ③ 渲染一致 | `mdPath` **必填**；md 必须逐行等于 `renderObservation(doc)`；**渲染最小信息集**：每个 `hit` 行必须含 `path:line`，每个 `open` 行必须含 evidence；单元格内 ASCII 竖线必须转义（口径与 `tools/execution-matrix/markdown-rows.mjs` **共用单源**），并断言**转义后每行列数 = 表头列数**（用同一 `splitRow` 复算） | `RenderMismatch` + 首个差异行号；缺 md → `MdMissing`（**缺省不得跳过**） |
 | ④ 写盘 | 前三段全过才落盘；先全部渲染/序列化到内存 → 各写 tmp → 全成功再逐个 rename → 任一失败清 tmp 并返回 `{ok:false,wrote:false,errors}` | **一个字都不写**；失败码 `WriteFailed` / `InvalidWriteTarget` |
@@ -321,10 +323,10 @@
 ### 4.3 证据七道 `[已确认 A-6]` + `[已决·代裁 C-03]`
 
 1. `path` 必须是**相对路径**（绝对 / 盘符相对 / UNC → `EvidencePathAbsolute`）；反斜杠作分隔符按 `/` 归一（Windows 写法的正当输入，不得判死）。
-2. 解析根**唯一来源 = 仓库根**（`git rev-parse --show-toplevel`），**不接受传参**；解析后（含软链 realpath）必须落在根内（`EvidencePathOutside`）；根取不到 → fail-closed。
+2. 解析根**唯一来源 = 仓库根**（`git rev-parse --show-toplevel`），**不接受传参**；解析后（含软链 realpath）必须落在根内（`EvidencePathOutside`）；根取不到 → fail-closed（`RepoRootUnresolved`）。
 3. 文件可读（指向目录等 → `EvidenceUnreadable`，不得抛异常打崩校验器）。
 4. `line` 在文件行数内且该行包含 `quote`（空白归一后比较）。
-5. `quote` 长度二选一：归一化后 **≥10 字**，或 **≥4 字且占该行内容 50% 以上**（`EvidenceQuoteTooShort`）。字数按**码点**计（`[...s].length`）；纯结构行（`---`、表格分隔行、围栏行）不可作证据。
+5. `quote` 长度二选一：归一化后 **≥10 字**，或 **≥4 字且占该行内容 50% 以上**（`EvidenceQuoteTooShort`）。字数按**码点**计（`[...s].length`）；**纯结构行**不可作证据（`EvidenceStructuralRow`），四类 = `---`、表格分隔行、围栏行、**渲染器无条件写入且不含数据的固定骨架行**（版本横幅 `<!-- observation-md vN -->`、`# 观察表`、`## 补充项`、`无。`、两张表头；常量单源 = `tools/observation-check/md-format.mjs`）。**第四类 2026-10-27 补登记**：原三形态被实测绕过——`hit` 直接引用本工具自己产出的横幅即四段全绿，证据链闭环于被证明者自身。
 6. **敏感路径**（`EvidenceSensitivePath`）：`path` 按 `/`、`\` 拆段，任一段命中 `.env*` / `*.pem` / `*.key` / `*.p12` / `id_rsa*` / `id_ed25519*` / `.npmrc` / `.netrc` / `credentials*` / `*secret*` → 红。
 7. **敏感内容**（`EvidenceQuoteSensitive`）：`quote` 命中 `-----BEGIN [A-Z ]*PRIVATE KEY-----` / `AKIA[0-9A-Z]{16}` / `ghp_[A-Za-z0-9]{36}` / `https?://[^/@\s]+:[^/@\s]+@` → 红。
 
@@ -341,10 +343,12 @@
 | 结构 | `InvalidDocument` `InvalidFieldType` `MissingItems` `UnknownItem` `UnknownVerdict` `MissingReason` `MissingOpenField` `MissingCoverage` `InvalidCoverage` `UnknownClosure` `ContradictoryClosure` `UnknownField` |
 | 证据 | `EvidencePathAbsolute` `EvidencePathOutside` `EvidenceNotFound` `EvidenceUnreadable` `EvidenceLineOutOfRange` `EvidenceQuoteMismatch` `EvidenceQuoteTooShort` |
 | 渲染 | `RenderMismatch` `MdMissing` |
+| 渲染·合并 | `MissingTrigger` `MissingCriterion` `MissingLanding` `MissingCriterionImpl` `UnknownLanding` `DuplicateStatement` `OverrideWithoutReason` `PointlessOverride` |
 | 入口 | `JsonNotFound` `InvalidJson` |
 
-> A 表当前有 **5 个码有实现但零测试**：`InvalidDocument` `MissingItems` `MissingOpenField` `MissingReason` `UnknownClosure` —— S2 的出口判据要求补测（见 §8）。
-> A 表当前有 **8 个已实现但未列**的码（来自 `render.mjs`）：`MissingTrigger` `MissingCriterion` `MissingLanding` `MissingCriterionImpl` `UnknownLanding` `DuplicateStatement` `OverrideWithoutReason` `PointlessOverride` —— S2 收进时并入本表。
+> A 表 5 个结构码 `InvalidDocument` `MissingItems` `MissingOpenField` `MissingReason` `UnknownClosure` 原为「有实现但零测试」，S2 出口判据（见 §8）要求补测；已于 2026-10-27 由 S2 施工批次补测（`tools/observation-check/checks.test.mjs:87-99`）。
+
+> A 表 `渲染·合并` 行的 8 个码 `MissingTrigger` `MissingCriterion` `MissingLanding` `MissingCriterionImpl` `UnknownLanding` `DuplicateStatement` `OverrideWithoutReason` `PointlessOverride` 已由同批次落冒烟测试（`tools/observation-check/render.test.mjs:10-30`）。
 
 **B 表：本轮新增 / 待实现（每行：码 → 可执行判据）**
 
@@ -352,6 +356,8 @@
 |---|---|---|
 | S2 新增（产物侧） | `CoverageMismatch` `DuplicateItem` `UnregisteredIdsMissing` `RoundMismatch` `InstanceMissing` `MissingEvidence` `WriteFailed` `InvalidWriteTarget` `ArtifactPathOutside` `ArtifactMissing` `UnclassifiedArtifact` | §4.1 / §4.5 / §5.2；`InstanceMissing` = `items` 含 `check:'ai'` 条目却无 `-a`/`-b` 两份；`MissingEvidence` = `hit` 无 `evidence` |
 | S2 新增（证据侧） | `EvidenceSensitivePath` `EvidenceQuoteSensitive` `MdUnreadable` | §4.3 第 6/7 道、§4.2 ③ |
+| S2 新增（证据侧） | `EvidenceStructuralRow` | §4.3 第 5 道附带判据：被引用的行本身是纯结构行（`---` / 表格分隔行 / 围栏行 / 渲染器固定骨架行，四类见 §4.3 第 5 道）→ 红；与 `EvidenceQuoteTooShort` 分界（结构行可以 ≥10 字） |
+| S2 新增（根） | `RepoRootUnresolved` | §4.3 第 2 道：`git rev-parse --show-toplevel` 取不到仓库根 → fail-closed；不得以 `process.cwd()` 或传参兜底 |
 | S1 待实现（模型层，**当前零实现**） | `UnverifiableOutput` `FalseScriptCheck` `EmptyOpenWithoutReason` `WeakReason`(manual) `OutOfScopeOpenItem` `DuplicateAsOpen` `MissingPrerequisite` `UnboundLanding` `SubjectMismatch` `AmbiguousCriterion` `MissingAiAudit` `DuplicateCheckItem` `CrossSubjectSharedItem` `InlineTermList` `InlineThreshold` `PointerToElsewhere` `ProceduralWordOutsideParliament` `MixedTermInCard` `HardcodedCount` `VagueReferent` `SubjectiveLabel` `MissingSubject` `UnreadableExpression` `NestingTooDeep` `MultiMomentInOneEntry` `UnknownSignalType` `MissingSignal` `UnobservableSignal` `SignalProliferation` `FreeTextEnum` `DuplicateScene` `UnusedScene` `ScenePromotionRequired` `MissingSceneRationale` `MissingRationale` `DisagreementOpen` | 逐码判据见 §3.4 / §3.5 / §3.6 / §3.8；`DisagreementOpen` = 双实例 verdict 不一致 |
 | 门禁（S3） | `UntrackedArtifact` `ArtifactDirty` `ArtifactNamingOff` | §5.2 |
 
@@ -401,7 +407,7 @@
 | 无产物且不在白名单 | 其余 | `ArtifactMissing` 红 |
 | 有非产物文件 | 文件既非 `observation-r<N>(-[ab])?.json\|md`，也不在「允许文件名类」或 9 个精确路径白名单内 | `UnclassifiedArtifact` 红（与上三态并列，非替代） |
 
-- **允许文件名类（限 `<次>/` 根层与 `<次>/cards/` 子层）**：`progress.md` / `cards.md` / `problems.md` / `submission.md` / `impact-sheet.md` / `detective.md` / `round-check.md` / `delivery-audit.md`——评审账本本身就是归档内容，不得因「不是 observation」被判红。
+- **允许文件名类（限 `<次>/` 根层、`<次>/cards/` 子层与 `<次>/attachments/` 子层）**：`progress.md` / `cards.md` / `problems.md` / `submission.md` / `impact-sheet.md` / `detective.md` / `round-check.md` / `delivery-audit.md`——评审账本本身就是归档内容，不得因「不是 observation」被判红。`<次>/attachments/` 子层 `[已决·代裁 C-15]` 只许**一层文件名**（`attachments/<file>`，不得再嵌套），承载 §4.3 C-12 的仓外证据快照；其**文件名不限 8 类**（快照保留原文件名，否则「快照进仓」还要为每条证据改名，通道等于虚设）。
 - **存量目录白名单（按目录名，一次性）**：`2026-10-25-1723-s6-eval`。
 - **非产物文件白名单（按精确相对路径，一次性）**：`2026-10-25-1723-s6-eval/ab-score.md`、`…/capability-diff.md`、`…/checklist.md`、`…/impact-sheet.md`、`…/rubric.md`、`…/cards/card-01.md`、`…/cards/card-02.md`、`…/cards/card-03.md`、`…/cards/card-04.md`（9 个；取数：`Get-ChildItem docs\superpowers\reviews -Recurse -File` → 9）。白名单**只到精确路径**，新增须同批改本行。
 - **审查过程目录**（`.session/reviews/…`）：只做四段校验，不做 git 断言（`.session/` 在 `.gitignore` 里，断言必然假红）。

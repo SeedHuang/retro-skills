@@ -35,6 +35,17 @@ export function splitRow(line) {
   return cells;
 }
 
+// 单元格转义（splitRow 的**逆**）：换行压成 <br>；反斜杠双写；竖线与反引号加反斜杠。
+// 顺序不可换：必须先双写反斜杠、再补 `\|`，才可逆（反过来会把新加的转义符再吃掉一半）。
+// 为什么与 splitRow 同文件：转义与切分是一对互逆口径，分开放必漂移——实测漏转反斜杠时该行被切出 4 列。
+export function escapeCell(v) {
+  return String(v ?? '—')
+    .replace(/\r\n|\r|\n/g, '<br>')
+    .replace(/\\/g, '\\\\')
+    .replace(/\|/g, '\\|')
+    .replace(/`/g, '\\`');
+}
+
 // 围栏识别：`^\s*` 未收紧到 CommonMark 的 `^ {0,3}`——4 空格缩进的 ``` 仍按围栏处理。
 // 闭合判定不要求 info string 为空（CommonMark 规定闭合围栏不得带 info string，本仓不采纳）：
 // 本仓文档有意用同字符嵌套围栏展示内嵌示例，强制 info 为空会把合规文档判成「围栏未闭合」。

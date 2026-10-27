@@ -1,5 +1,12 @@
 // 一份数据 → 两个投影：卡面（句子，给 AI）/ README（表格 + 覆盖记录，给人）
+import { pathToFileURL } from 'node:url';
+import { escapeCell } from '../execution-matrix/markdown-rows.mjs';
 import { SHARED_ACTIONS, SEATS, PREDICATES, LANDINGS } from './data.mjs';
+
+// 表格单元格与 checks.mjs 同源（转义必须与 splitRow 互逆，见 markdown-rows.mjs）
+const cell = escapeCell;
+// 散文行（卡面 bullet / 职责句）只需压掉换行：表格外竖线不切列，转义反而会把反斜杠显示出来
+const oneLine = (s) => String(s ?? '').replace(/\r\n|\r|\n/g, ' ');
 
 const CODE = {
   MissingTrigger: '缺少触发条件',
@@ -53,7 +60,7 @@ const BANNER = (src) => `> 本文件由 \`${src}\` 生成，请改数据源，�
 
 const dutyLine = (seat) => {
   const { trigger, categories, action, constraint } = seat.duty;
-  return `${trigger}：对「${categories.join('、')}」共 ${categories.length} 类${action}；${constraint}。`;
+  return `${oneLine(trigger)}：对「${categories.map(oneLine).join('、')}」共 ${categories.length} 类${oneLine(action)}；${oneLine(constraint)}。`;
 };
 
 export function renderCard(seat) {
@@ -71,19 +78,19 @@ export function renderCard(seat) {
     '## 一定会（缺一条 = 不合格）',
     ...must.filter((a) => !conflict.includes(a)).map((a) => {
       const { c } = labelOf(a);
-      return `- ${a.trigger}：${a.text}。（判定：${c}）`;
+      return `- ${oneLine(a.trigger)}：${oneLine(a.text)}。（判定：${c}）`;
     }),
     '',
     '## 禁止',
     ...never.map((a) => {
       labelOf(a);
-      return `- ${a.trigger}，不得${a.text}。`;
+      return `- ${oneLine(a.trigger)}，不得${oneLine(a.text)}。`;
     }),
     '',
     '## 冲突裁决',
     ...conflict.map((a) => {
       labelOf(a);
-      return `- ${a.text}`;
+      return `- ${oneLine(a.text)}`;
     }),
     '',
     '## 边界',
@@ -98,7 +105,7 @@ export function renderReadme(seat) {
   const rows = actions.map((a) => {
     const { c, l } = labelOf(a);
     const src = a.scope === '本席覆盖' ? `**本席覆盖**（改动：${a.changed.join('、')}）` : a.scope;
-    return `| ${a.id} | ${a.kind === 'must' ? '一定会' : '禁止'} | ${a.trigger} | ${a.text} | ${c}（\`${a.criterion}\`） | ${l}（\`${a.landing}\`） | ${src} |`;
+    return `| ${cell(a.id)} | ${a.kind === 'must' ? '一定会' : '禁止'} | ${cell(a.trigger)} | ${cell(a.text)} | ${cell(c)}（\`${cell(a.criterion)}\`） | ${cell(l)}（\`${cell(a.landing)}\`） | ${cell(src)} |`;
   });
   const ov = overrides.length
     ? [
@@ -107,7 +114,7 @@ export function renderReadme(seat) {
         '',
         '| 编号 | 原条落点 | 本席落点 | 改动字段 | 理由 |',
         '|---|---|---|---|---|',
-        ...overrides.map((o) => `| ${o.id} | ${LANDINGS[o.base.landing] ?? o.base.landing} | ${LANDINGS[actions.find((a) => a.id === o.id).landing]} | ${o.changed.join('、')} | ${o.reason} |`),
+        ...overrides.map((o) => `| ${cell(o.id)} | ${cell(LANDINGS[o.base.landing] ?? o.base.landing)} | ${cell(LANDINGS[actions.find((a) => a.id === o.id).landing])} | ${cell(o.changed.join('、'))} | ${cell(o.reason)} |`),
       ]
     : [];
   return [
@@ -124,9 +131,13 @@ export function renderReadme(seat) {
   ].join('\n');
 }
 
-for (const seat of SEATS) {
-  console.log('================ 卡面（给 AI）================');
-  console.log(renderCard(seat));
-  console.log('================ README（给人）================');
-  console.log(renderReadme(seat));
+// demo：只在直接执行本文件时打印（import 时不产生噪声）
+const invokedDirectly = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (invokedDirectly) {
+  for (const seat of SEATS) {
+    console.log('================ 卡面（给 AI）================');
+    console.log(renderCard(seat));
+    console.log('================ README（给人）================');
+    console.log(renderReadme(seat));
+  }
 }

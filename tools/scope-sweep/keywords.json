@@ -75,6 +75,15 @@
         "docs/superpowers/specs/2026-10-25-docgen-policy-single-source-design.md",
         "docs/superpowers/specs/2026-10-25-docgen-policy-single-source-design-testcase.md"
       ]
+    },
+    {
+      "id": "I10",
+      "title": "纯结构行四类（含渲染器固定骨架行）",
+      "words": ["围栏行）不可作证据", "围栏行）→ 红"],
+      "scope": [
+        "docs/prd/20261026205821-agent-card-contract.md",
+        "docs/superpowers/specs/2026-10-27-s2-observation-check-design-testcase.md"
+      ]
     }
   ]
 }

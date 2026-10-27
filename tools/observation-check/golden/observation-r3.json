@@ -1,0 +1,14 @@
+{
+  "round": 3,
+  "instance": null,
+  "items": [
+    { "id": "k01", "verdict": "hit", "evidence": { "path": "docs/prd/20261026205821-agent-card-contract.md", "line": 337, "quote": "§4.4 A 表" } },
+    { "id": "k02", "verdict": "miss", "reason": "未找到对应判据行" },
+    { "id": "k03", "verdict": "na", "reason": "本条不适用于本轮" }
+  ],
+  "open": [
+    { "object": "C07 码名归属", "impact": "结构行判据无专属码", "suggestion": "登记 EvidenceStructuralRow", "evidence": { "path": "docs/prd/20261026205821-agent-card-contract.md", "line": 400, "quote": "§4.3 第 5 道" } }
+  ],
+  "coverage": { "read": 3, "total": 4, "skipped": ["k04"] },
+  "closure": null
+}

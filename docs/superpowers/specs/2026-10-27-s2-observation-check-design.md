@@ -16,7 +16,7 @@ PRD §1 P-3：观察表只有 markdown、字段靠正则猜，文本校验器 9 
 |---|---|---|
 | R1 | 草稿**原样迁入** `tools/observation-check/`（迁入提交：diff 只有新增文件，不改一行）；同一提交登记 11 个文件的 sha256，**取值 = 迁入瞬间草稿区 `Get-FileHash` 实算值**（三方基准 = 草稿区实算值 / 仓库文件 / 清单登记值；清单登记值此后一律经 `git show <迁入提交>:<path>` 复算，换机不失，防「清单与仓库文件自记自证」绕过） | 迁入即审计锚：改动历史可追、内容可与草稿区三方对账（PRD §8 S2 出口判据「原样迁入」） |
 | R2 | 改造提交后基线不退：仓库根测试全绿且**总数 ≥ 71**（71 = 迁入基线数，新增测试另计）；**测试对 `agents/` 的引用数 = 0**（证据夹具一律 `mkdtempSync` 自建——迁入时点 10 条依赖 `agents/` 的用例在仓库根反而绿，属已知情状态，改造提交重写夹具解除）；终验 = 临时移走 `agents/detective-observer.md` 后仍全绿 | 引用仓库文件的测试换机即假红（PRD §8 S2 出口判据「基线不退」+ 终验命令；§0.3 校验实现测试条） |
-| R3 | §4.4 B 表 **S2 组**每个错误码至少 1 条反例；A 表 5 个零测试码补齐；三类不出码用例（`skipped` 非空正例、`read > total` 反例、含 ASCII `\|` 字段渲染后列数 = 表头列数）必须有 | 零测试的码 = 拦不住不知道；零测试码列表见 PRD §4.4 A 表注（PRD §8 S2 出口判据「新增判据有测试」） |
+| R3 | §4.4 B 表 **S2 组**每个错误码至少 1 条反例；A 表 5 个零测试码补齐；三类不出码用例（`skipped` 非空正例、`read > total` 反例、含 ASCII `\|` 字段渲染后列数 = 表头列数）必须有 | 零测试的码 = 拦不住不知道；零测试码列表见 PRD §4.4 A 表注（PRD §8 S2 出口判据「新增判据有测试」）；结构行码名 = `EvidenceStructuralRow`、根取不到码名 = `RepoRootUnresolved`（见 PRD §4.4 B 表，2026-10-27 登记） |
 | R4 | golden 基线：`observation-r3.json` + `observation-r3.expected.md`（人工写），断言 `renderObservation` 全文等于期望文件 | 渲染器改一行、全仓历史 md 全红；golden 是唯一防回归手段（PRD §8 S2 出口判据「golden 基线」） |
 | R5 | `node tools/observation-check/cli.mjs <json>` 能单件校验；`rewrite` 只重渲染 md | 门禁之外必须有单件入口，否则排查只能跑全量（PRD §8 S2 出口判据「CLI 可用」；F-20） |
 | R6 | 覆盖语义一次性重写：7 处 fixture + 1 处探索稿指针（探索稿 `:686` schema 片段改为指向 PRD 的指针），禁止放宽断言；**机械判据** = 改造提交 diff 中「被删除且含 `assert`」的行数 = 0，且测试文件名集合 ⊇ 迁入集（`git diff <迁入提交>..<改造提交> -- diff-filter=D` 为空 + `git ls-tree` 文件名超集） | `coverage` 三字段语义是议会 #1 改判口径，旧 fixture 按旧语义会假绿（PRD §8 S2 出口判据「覆盖语义」；C-02） |

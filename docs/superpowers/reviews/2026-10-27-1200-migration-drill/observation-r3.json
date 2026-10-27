@@ -1,0 +1,12 @@
+{
+  "round": 3,
+  "instance": null,
+  "items": [
+    { "id": "k01", "verdict": "na", "reason": "演练：本件仅验证写盘与迁移路径，未做实质判定" },
+    { "id": "k02", "verdict": "na", "reason": "演练" },
+    { "id": "k03", "verdict": "miss", "reason": "演练" }
+  ],
+  "open": [],
+  "coverage": { "read": 3, "total": 3, "skipped": [] },
+  "closure": "no-findings"
+}

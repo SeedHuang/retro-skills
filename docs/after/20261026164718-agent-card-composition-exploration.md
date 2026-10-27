@@ -683,7 +683,8 @@ k14: { label: '观察记录缺卡号',   subject: 'observation', … }
   round: 3,
   items: [{ id: 'k01', verdict: 'hit'|'miss'|'na', evidence: { path, line, quote }, reason }],
   open: [{ …五列 + 证据 }],
-  coverage: { read, total, skipped: [] },
+// coverage 语义以 docs/prd/20261026205821-agent-card-contract.md §4.1 为唯一来源（2026-10-27 起）；
+// 本行原为 schema 片段，已改为指针，避免第二份真相漂移。
   closure: null | 'no-findings' | 'blocked'
 }
 ```
@@ -705,7 +706,7 @@ k14: { label: '观察记录缺卡号',   subject: 'observation', … }
 
 为什么不用单一字数下限：卡面真实引用里有一类正当短引用（`# 角色：侦探`，7 字，占该行 13 字的 54%）。单一 ≥10 会把它判死，逼人往引用里塞相邻文字，反而更假。
 
-**证据路径白名单**：只接受相对路径（绝对 / `C:x` 盘符相对 / UNC → `EvidencePathAbsolute`）；解析后（含软链 realpath）越出根目录 → `EvidencePathOutside`；根默认当前目录（fail-closed），校验与读盘用同一绝对路径（避免"校验的是 A、读的是 B"）。
+**证据路径白名单**：只接受相对路径（绝对 / `C:x` 盘符相对 / UNC → `EvidencePathAbsolute`）；解析后（含软链 realpath）越出根目录 → `EvidencePathOutside`；校验与读盘用同一绝对路径（避免"校验的是 A、读的是 B"）。根解析口径以 `docs/prd/20261026205821-agent-card-contract.md` §4.3 第 2 道为准（根唯一来源 = `git rev-parse --show-toplevel`，不接受传参、不得 `process.cwd()` 兜底；本文旧写法「根默认当前目录（fail-closed）」作废）。
 同族顺带修：`path` 指向目录会让 `readFileSync` 抛 EISDIR 把校验器打崩 → 收敛为 `EvidenceUnreadable`。
 
 ### 14.6 实跑数据（71/71 绿）

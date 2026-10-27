@@ -4,7 +4,10 @@
 > 验收锚点：spec §10.8 七条 = PRD §8 S2 出口判据表（判据与取数命令以 PRD 为准）
 > 编写者：senior-sdet 子代理，全新上下文编写
 > 独立性声明：编写者 ≠ spec 作者、≠ 施工者；只读 spec / PRD / 草稿区实现与测试，未参与任何实现；业务代码、spec、rule、skill、agent 一律未改动
-> 编写日期：2026-10-27｜版本：**v3**（v2 = 议会 #2 第 1 轮修订：行号勘误 + 口径校正（A02 内容流 hash / A03 原命令口径）+ 测试落点去 `test/` 子目录 + 补 E14 + 8-1 转「已解决」；v3 = 第 2 轮修订 + 侦探 H-01/H-02 补丁：A02 前置定死 commit message 载体、E11「不覆盖」句改指 E14、E14 判据改 node `crypto.createHash`、演练目录改 `test-obs-check-<rand>` 前缀，2026-10-27 12:13）
+> B19 编写者 / 独立性声明：senior-sdet 子代理（第二次全新上下文，2026-10-27）；编写者 ≠ spec 作者、≠ 施工者，未参与 B19 以外任何实现
+> B20 / G06 编写者 / 独立性声明：senior-sdet 子代理（**第四次全新上下文，2026-10-27**）；编写者 ≠ spec 作者、≠ 施工者，未参与 B20 / G06 对应的任何实现（只读 PRD 代裁行 C-15 / C-16、`tools/observation-check/` 现存实现与常驻测试，用例判据按现存测试逐条对账）；本次只改本 testcase（新增 B20 负例 + G06 边界 + 全量计数与对位表同步）
+> R1 修订者 / 独立性声明：senior-sdet 子代理（**第三次全新上下文，2026-10-27**）；本次只改本 testcase（C07 前置定名 + 新增 C08 + 计数与 A01–A03 零提交口径对齐），未改 spec 正文、未改任何代码、未参与实现
+> 编写日期：2026-10-27｜版本：**v5**（v2 = 议会 #2 第 1 轮修订：行号勘误 + 口径校正（A02 内容流 hash / A03 原命令口径）+ 测试落点去 `test/` 子目录 + 补 E14 + 8-1 转「已解决」；v3 = 第 2 轮修订 + 侦探 H-01/H-02 补丁：A02 前置定死 commit message 载体、E11「不覆盖」句改指 E14、E14 判据改 node `crypto.createHash`、演练目录改 `test-obs-check-<rand>` 前缀，2026-10-27 12:13）；v4 = 议会派工 B19 补入（2026-10-27，senior-sdet 第二次全新上下文独立编写）；**v5 = R1 修订（2026-10-27，senior-sdet 第三次全新上下文）：F040 清 C07 过期占位（码名已登记 `EvidenceStructuralRow`）+ F010 补 C08 `RepoRootUnresolved` 反例 + 计数改 71 / 26 / 40 / 5 + A01–A03 按「全程零提交」裁定改锚账本 §迁入清单**；**v6 = B20 / G06 补入（2026-10-27，senior-sdet 第四次全新上下文）：B20 = PRD §0.6 C-16 / §4.2 ① 第 5 条集合语义（`skipped` 内 id 重复 → `CoverageMismatch`，message 含「重复」；B10 过期「不覆盖」句改指本条）+ G06 = PRD §5.2 :410 C-15（`<次>/attachments/` 仅一层、文件名不限 8 类）+ 计数改 73 / 26 / 41 / 6**
 > 命名与落点：spec 文件名去掉 `-design.md` 后加 `-testcase.md`，同目录（spec-testcase-gate 判据 1）
 
 ## 0 判据基线（读用例前先认事实；全部来自仓库与草稿区现状，可复核）
@@ -39,7 +42,7 @@
 | 4 | registeredIds 必填（§4.1，缺失 → UnregisteredIdsMissing） | `checks.mjs`（草稿区 行 28） 默认 `registeredIds = []`，缺参静默 | B15 对位 |
 | 5 | hit 无 evidence → MissingEvidence（§4.4 B 表） | 现报 InvalidFieldType（`checks.mjs`（草稿区 行 14-15）） | 码细分未做（B16 对位；adversarial A7 断言须同批改） |
 | 6 | 证据第 6/7 道：敏感路径 / 敏感内容（§4.3） | `evidence.mjs` 七道中 1-5 道已实现，第 6/7 道零实现 | C01-C05 对位 |
-| 7 | 纯结构行不可作证据（§4.3 第 5 道附带判据） | 零实现；「\| --- \| --- \| --- \|」13 字可过长度下限（假绿） | C07 对位；**PRD 未给该判据专属码名**（缺口 G-8） |
+| 7 | 纯结构行不可作证据（§4.3 第 5 道附带判据） | 零实现；「\| --- \| --- \| --- \|」13 字可过长度下限（假绿） | C07 对位；**码名已登记 `EvidenceStructuralRow`（PRD :355，2026-10-27）**，G-8 闭合 |
 | 8 | md 读失败收敛 MdUnreadable 不冒泡（§4.2 ②/③） | `artifact.mjs`（草稿区 行 22-38） 的 `readFileSync(mdPath)` 无 try-catch，mdPath 为目录时 EISDIR 冒泡 | C06 对位 |
 | 9 | ASCII 竖线转义 + splitRow 单源复算列数（§4.2 ③） | `renderObservation` 直接模板拼接，零转义 | D03/D04 对位 |
 | 10 | 唯一写盘入口签名 `{ jsonDir, registeredIds }` + 文件名派生 + 目的地正则 + RoundMismatch + 归档只读（§4.5） | `artifact.mjs`（草稿区 行 49-55） 现签名 `{ jsonPath, mdPath, registeredIds, root }` 接收任意路径；目的地判据零实现 | E01-E05/E13/E14 对位；G-3 已解决（spec §10.2 v2 两态标注，见 §8-1） |
@@ -61,7 +64,7 @@
 |---|---|---|
 | 1 | 谁用、从哪进？ | 产物生产者（侦探席/议会）走 `writeObservation`；复核与门禁走 `cli.mjs` 单件校验；读产物的是议会人 + AI。正例沿这三个入口各铺一条（E01/E05、E08、G01） |
 | 2 | 每个验收锚点有正例吗？ | spec §10.8 七锚点逐个有正例：锚点1→A01-A03；锚点2→A04-A06；锚点3→B14/B18/C03/C05；锚点4→D05；锚点5→F01/F02/F04；锚点6→E08/E12；锚点7→G01/G02 |
-| 3 | 每个错误码有负例吗？ | B 表 S2 组 14 码逐码 ≥1 反例（§1.1 对位表）；A 表 5 零测试码 B01-B06；A 表并入 8 码 I01/I02 |
+| 3 | 每个错误码有负例吗？ | B 表 S2 组 16 码逐码 ≥1 反例（§1.1 对位表，含 `EvidenceStructuralRow`→C07、`RepoRootUnresolved`→C08）；A 表 5 零测试码 B01-B06；A 表并入 8 码 I01/I02 |
 | 4 | 边界测了吗？ | quote 长度边界（4/9/10 字，已有测试保留）；read=total 恰等、skipped=total−read（B14）；instance 成对（B18）；CRLF/幂等（保留）；md 被目录占位（E06）；删 agents 文件后全绿（A06）；拦不住的两类合谋（H03/H04） |
 | 5 | 失败可定位吗？ | RenderMismatch 带行号（保留）；每负例断言错误码逐字；CLI 退出码 0/1 + stdout 码清单（E09） |
 | 6 | 假阳性守卫有吗？ | 敏感判据不误报（C03/C05）；合法跳过不判红（B14）；全角 ｜ 是内容不转义且不破列（H01-5）；含 ASCII \| 的合法产物全链路绿（D04）；存量白名单不误伤（G05） |
@@ -75,9 +78,9 @@
 
 | ID | 覆盖锚点（spec §10.x / PRD §x） | 一句话场景 | 类型 | 层级 | 执行方式 | 优先级 |
 |---|---|---|---|---|---|---|
-| A01 | §10.8-1 / §10.1 R1 / PRD §8 | 首个迁入提交 diff 只有新增文件（11 个 A、零 M/D） | 正 | 集成 | 常驻（固定 hash） | P0 |
-| A02 | §10.8-1 / §10.1 R1 / PRD §8 | 11 文件 sha256 重算 === 同提交登记清单 | 正 | 集成 | 常驻（固定 hash） | P0 |
-| A03 | §10.8-1 / PRD §0.3-0.4 | 首提交版本 11 文件合计行数 = 888（原样性对账） | 正 | 集成 | 常驻（固定 hash） | P1 |
+| A01 | §10.8-1 / §10.1 R1 / PRD §8 | 迁入后 11 文件全为新增（`git status --porcelain` 恰 11 行 `??`、零 M/D/R） | 正 | 集成 | 验收（一次性，零提交口径） | P0 |
+| A02 | §10.8-1 / §10.1 R1 / PRD §8 | 11 文件 sha256（对草稿区原件重算）=== 账本 §迁入清单 11 行 | 正 | 集成 | 验收（一次性，零提交口径） | P0 |
+| A03 | §10.8-1 / PRD §0.3-0.4 | 草稿区 11 原件合计行数 = 888（原样性对账，PRD §0.4 口径） | 正 | 集成 | 验收（一次性，零提交口径） | P1 |
 | A04 | §10.8-2 / §10.1 R2 / PRD §8 | 迁入后（夹具改造完）测试全绿且总数 ≥ 71 | 正 | e2e | 验收（收尾） | P0 |
 | A05 | §10.8-2 / §10.1 R2 / PRD §8 | 测试对 `agents/` 引用 = 0（Select-String） | 正 | 静态 | 常驻 | P0 |
 | A06 | §10.8-2 / PRD §8 | 临时移走 `agents/detective-observer.md` 后测试仍全绿（复核夹具自建） | 边界 | e2e | 验收（收尾一次性，全局态） | P0 |
@@ -100,13 +103,16 @@
 | B16 | §10.8-3 / PRD §4.4 B 表 | hit 无 evidence → MissingEvidence；hit evidence 非对象 → InvalidFieldType（分界） | 负 | 单元 | 常驻 | P0 |
 | B17 | §10.8-3 / PRD §4.1 / §4.4 B 表 | items 含 check:'ai' 条目却无 -a/-b 成对文件 → InstanceMissing | 负 | 集成 | 常驻 | P1 |
 | B18 | §10.8-3 / PRD §4.1 | -a / -b 成对双实例 → 双双通过（B17 对照正例） | 正 | 集成 | 常驻 | P1 |
+| B19 | §10.8-3 / PRD §4.1 | 删 registeredIds 一个 id（分母缩水）而 coverage.total 不变 → CoverageMismatch（单源清单对账） | 负 | 单元 | 常驻 | P2 |
+| B20 | §10.8-3 / PRD §4.2 ① / §0.6 C-16 | skipped 内 id 重复（数组长度虚增掩盖集合语义）→ CoverageMismatch（message 含「重复」） | 负 | 单元 | 常驻 | P0 |
 | C01 | §10.8-3 / PRD §4.3 第 6 道 / §4.4 B 表 | 证据路径命中敏感名单逐类 → EvidenceSensitivePath | 负 | 单元 | 常驻 | P0 |
 | C02 | §10.8-3 / PRD §4.3 第 6 道 | 分隔符拆段：`dir\.env` 反斜杠写法同样命中 | 负 | 单元 | 常驻 | P1 |
 | C03 | §10.8-3 / PRD §4.3 第 6 道 | 普通路径（.md / .mjs）不误报（假阳性守卫） | 正 | 单元 | 常驻 | P0 |
 | C04 | §10.8-3 / PRD §4.3 第 7 道 / §4.4 B 表 | quote 含 AKIA / ghp_ / BEGIN PRIVATE KEY / URL 带凭据四形态 → EvidenceQuoteSensitive | 负 | 单元 | 常驻 | P0 |
 | C05 | §10.8-3 / PRD §4.3 第 7 道 | 无凭据 URL 与普通文本不误报 | 正 | 单元 | 常驻 | P0 |
 | C06 | §10.8-3 / PRD §4.2 ② / §4.4 B 表 | md 存在但不可读（目录占位）→ MdUnreadable 收敛不冒泡 | 负 | 单元 | 常驻 | P0 |
-| C07 | §10.8-3 / PRD §4.3 第 5 道 | 纯结构行（`\| --- \| --- \|`，13 字过长度下限）不可作证据 → 红 | 负 | 单元 | 常驻 | P1 |
+| C07 | §10.8-3 / PRD §4.3 第 5 道 / §4.4 B 表 | 纯结构行（`\| --- \| --- \|`，13 字过长度下限）不可作证据 → EvidenceStructuralRow | 负 | 单元 | 常驻 | P1 |
+| C08 | §10.8-3 / PRD §4.3 第 2 道 / §4.4 B 表 | 进程所在目录不在任何 git 仓库内 → RepoRootUnresolved（fail-closed，不退化为 `process.cwd()`） | 负 | 单元 | 常驻（子进程） | P0 |
 | D01 | §10.8-3/4 / PRD §4.2 ③ | hit 行渲染含 `path:line`（当前输出 `[object Object]`，本条必红） | 正 | 单元 | 常驻 | P0 |
 | D02 | §10.8-3/4 / PRD §4.2 ③ | open 表每行渲染含 evidence 的 path 与 line | 正 | 单元 | 常驻 | P1 |
 | D03 | §10.8-3 三类不出码 / PRD §4.2 ③ | 字段含 ASCII `\|` 转义后 splitRow 每行列数 = 表头列数 | 边界 | 单元 | 常驻 | P0 |
@@ -138,6 +144,7 @@
 | G03 | §10.8-3 / PRD §5.2 / §4.4 B 表 | 归档子目录无产物且不在白名单 → ArtifactMissing | 负 | 单元 | 常驻 | P1 |
 | G04 | §10.8-3 / PRD §5.2 / §4.4 B 表 | 归档子目录含非产物文件且不在白名单 → UnclassifiedArtifact | 负 | 单元 | 常驻 | P1 |
 | G05 | §10.8-3 / PRD §5.2 三态绿分支 | 存量白名单目录 + 允许文件名类 8 类 → 判绿（三态判定正例） | 正 | 单元 | 常驻 | P1 |
+| G06 | §10.8-3 / PRD §5.2 :410（C-15） | `attachments/` 子层：一层快照零码、两层嵌套与根层同名 → UnclassifiedArtifact | 边界 | 单元 | 常驻 | P1 |
 | H01 | §10.8-3 / PRD §0.5 Q-A-05 / §4.4 B 表注 | 原文本版 8 条具名攻击的结构化映射矩阵（0 绕过） | 负 | 单元 | 常驻 | P0 |
 | H02 | §10.8-3 / PRD §0.5 Q-A-05 | 对抗分母唯一口径：常量登记 + 0 绕过计数（Q-A-05 闭合载体） | 边界 | 单元 | 常驻 | P0 |
 | H03 | PRD §5.3 行 11（V-6 绿例） | json+md 同改且一致 → 校验过（钉「本机无锚」边界） | 边界 | 单元 | 常驻 | P1 |
@@ -151,7 +158,7 @@
 |---|---|
 | §10.8-1 原样迁入（sha256 清单） | A01、A02、A03 |
 | §10.8-2 基线不退（71/71 + agents 零引用） | A04、A05、A06 |
-| §10.8-3 B 表 S2 组 14 码 | CoverageMismatch→B08/B09/B10/B11/B12；DuplicateItem→B07；UnregisteredIdsMissing→B15；RoundMismatch→E02；InstanceMissing→B17/B18；MissingEvidence→B16；WriteFailed→E06；InvalidWriteTarget→E07；ArtifactPathOutside→E03/E04/E05/E13；ArtifactMissing→G03；UnclassifiedArtifact→G04；EvidenceSensitivePath→C01/C02/C03；EvidenceQuoteSensitive→C04/C05；MdUnreadable→C06 |
+| §10.8-3 B 表 S2 组 16 码 | CoverageMismatch→B08/B09/B10/B11/B12/B19/B20；DuplicateItem→B07；UnregisteredIdsMissing→B15；RoundMismatch→E02；InstanceMissing→B17/B18；MissingEvidence→B16；WriteFailed→E06；InvalidWriteTarget→E07；ArtifactPathOutside→E03/E04/E05/E13；ArtifactMissing→G03；UnclassifiedArtifact→G04/G06；EvidenceSensitivePath→C01/C02/C03；EvidenceQuoteSensitive→C04/C05；MdUnreadable→C06；EvidenceStructuralRow→C07；RepoRootUnresolved→C08 |
 | §10.8-3 A 表 5 零测试码 | InvalidDocument→B01；MissingItems→B02；MissingOpenField→B03；MissingReason→B04/B05；UnknownClosure→B06 |
 | §10.8-3 三类不出码 | skipped 非空正例→B14；read > total 反例→B13；ASCII \| 列数→D03 |
 | §10.8-3 A 表并入 8 码（冒烟） | I01、I02 |
@@ -160,7 +167,7 @@
 | §10.8-6 CLI | E08、E09、E10、E11、E12、E13、E14 |
 | §10.8-7 仓门禁不红 | A07、G01、G02 |
 | PRD §5.3 V-6（S2 部分：行 1-6、8、9 + 绿例 11、12） | 行1→保留用例+D07；行2-3→保留（EvidenceNotFound/Mismatch/TooShort/PathOutside）；行4→C01/C02；行5→C04；行6→E03/E04；行8→G04；行9→G03；绿例11→H03；绿例12→H04 |
-| PRD §9.3 M-2（S2 部分） | H01、H02、C01-C07、B07-B12 |
+| PRD §9.3 M-2（S2 部分） | H01、H02、C01-C08、B07-B12 |
 | PRD §0.5 Q-A-05 | H01、H02（口径见 §0.3-2） |
 
 范围外（行 7 ArtifactDirty / 行 10 UntrackedArtifact / 零产物分支 / 15 卡豁免）：见 §6 不测第 2 条。
@@ -168,16 +175,16 @@
 ### 1.2 测试文件落点与夹具约定
 
 - **落点**（plan 可微调文件名，不得改判据）：
-  - `baseline.test.mjs`（新）：A01、A02、A03、A05、F01、F02、F04（静态断言 + 固定 commit hash 审计）
+  - `baseline.test.mjs`（新）：A05、F01、F02、F04（静态断言；A01–A03 按「全程零提交」裁定降为一次性验收，不设常驻、不设 `MIGRATION_COMMIT` 常量）
   - `checks.test.mjs`（增补）：B01-B06、B15、B16
-  - `coverage.test.mjs`（新）：B07-B14、F03
+  - `coverage.test.mjs`（新）：B07-B14、F03、B19、B20
   - `artifact.test.mjs`（增补）：B17、B18、C06
-  - `evidence.test.mjs`（增补）：C01-C05、C07
+  - `evidence.test.mjs`（增补）：C01-C05、C07、C08
   - `render-check.test.mjs`（增补）：D01-D04、D08
   - `golden.test.mjs`（新）：D05-D07；golden 夹具 `observation-r3.json` + `observation-r3.expected.md` 与测试同目录或 `fixtures/` 子目录
   - `write.test.mjs`（增补）：E01-E07
   - `cli.test.mjs`（新）：E08-E14
-  - `gate-scan.test.mjs`（新）：G03-G05（目录三态判定纯函数，§0.3-1 口径）
+  - `gate-scan.test.mjs`（新）：G03-G06（目录三态判定纯函数，§0.3-1 口径）
   - `adversarial.test.mjs`（增补）：H01-H04
   - `render.test.mjs`（新）：I01、I02
 - **夹具约定**（0.2 #11 的连带改造）：root 不传参（唯一来源 git 顶层）后，全部证据夹具 = `mkdtempSync(join(repoRoot, '.session/reviews/test-obs-check-'))` 自建、用完 `rmSync`；产物目的地夹具 = 仓库内 `.session/reviews/<test-次>/`（自建自清）。**选 `.session/reviews/` 而非 `.session/tmp/` 的理由**：门禁 ⑤ 段要求 `.session/tmp/` 收尾为空，夹具建在那里会与门禁判据互踩（每轮测试都留残留 → `npm run check` ⑤ 段红）；`.session/reviews/<test-*>/` 不在 tmp 清空判据内，且与本组过程目录/destination 正则（E03/E04/E05）同族。**任何测试不得引用仓库既有文件作为证据**（A05 静态断言 + A06 行为复核双保险）。
@@ -190,41 +197,41 @@
 
 ### A 组：迁入与基线（锚点 1、2）
 
-#### A01 首个迁入提交 diff 只有新增文件
+#### A01 迁入后 11 文件全为新增（零提交口径）
 
-- **覆盖**：§10.8-1 / §10.1 R1 / PRD §8「首个提交 diff 只有新增文件」
-- **来源**：spec R1 原样迁入决定（迁入与改造分提交，原样性才可审计）
-- **前置**：迁入提交已完成，其 hash 记入 `baseline.test.mjs` 常量 `MIGRATION_COMMIT`（待 plan Task N 落值）。
-- **步骤**：① `git diff --name-status MIGRATION_COMMIT^ MIGRATION_COMMIT`；② 统计状态列。
-- **预期**：变更清单 = 恰 11 个 `A`（tools/observation-check/ 下的 11 个 .mjs，新增测试改造不在本提交）；`M`/`D`/`R` 均为 0。
-- **判据**：输出行集与固定 11 文件名清单逐字相等；`git diff --name-status <c>^ <c> | Select-String -Pattern '^[MDR]'` 命中数 = 0。
-- **红绿证据**：红 = 提交里混入对既有文件的修改或 sha256 清单漏登（状态列出现 M）；绿 = 11 行全 A。
-- **对应测试**：`baseline.test.mjs`（子进程 `git diff` 断言）
-- **不覆盖**：不判后续改造提交（归 A02/F 组）；不判提交 message（归 plan）。
+- **覆盖**：§10.8-1 / §10.1 R1 / PRD §8「首个提交 diff 只有新增文件」——按账本 Ruling #1（全程零提交）等价改写为「迁入时点 11 文件全为新增、零 M/D/R」
+- **来源**：spec R1 原样迁入决定（迁入与改造分提交，原样性才可审计）；Ruling #1-2 把 A01 降为 Task 2 时点的**一次性验收证据**（A01′）
+- **前置**：迁入已完成且**全程零提交**（`.superpowers/sdd/2026-10-27-s2-observation-check/progress.md` Ruling #1：HEAD 保持 `f2c7393`，不产生任何 commit）——无迁入提交 hash 可引；锚点 = 同账本 §迁入清单的 11 行 sha256（迁入瞬间实算值）。
+- **步骤**：① Task 2 时点执行 `git status --porcelain tools/observation-check`；② 统计状态列与文件名集。
+- **预期**：恰 11 行、逐行状态 `??`（未跟踪 = 全新增）、`M`/`D`/`R` 均 0；文件名集 = 草稿区 11 个 `.mjs` 的同名副本。
+- **判据**：输出恰 11 行且逐行以 `?? ` 开头；`Select-String -Pattern '^.[MADR]'` 命中数 = 0。**复跑口径**：本条是**时点事实**——S2 后续任务已在该目录新增 12 个文件（`baseline` / `cli` / `coverage` / `golden` / `gate-scan` / `render` 等测试与 `golden/` 夹具），现在复跑输出 ≠ 11 行**不构成红**；验收取值 = Task 2 时点的输出（贴进账本 / report）。
+- **红绿证据**：红 = 迁入时漏文件 / 多文件，或有人把其中任一文件纳管（状态列出现 M/A/D/R）；绿 = 11 行全 `??`。
+- **对应测试**：验收命令（一次性；`baseline.test.mjs` 不设 A01 常驻——零提交裁定下它退化为「git status 快照」，无回归判别力）
+- **不覆盖**：不判后续任务的合法新增（归 F 组与 §4 回归清单）；不判 commit message（零提交，无对象）。
 
-#### A02 11 文件 sha256 清单重算对账
+#### A02 11 文件 sha256 清单重算对账（零提交口径）
 
-- **覆盖**：§10.8-1 / §10.1 R1 / PRD §8「同一提交含 11 个文件的 sha256 清单」
-- **来源**：spec R1；清单是「原样迁入」的唯一数字锚，hash 变 = 有人动过
-- **前置**：**清单载体 = 迁入提交的 commit message**（spec §10.2 定死，不新增第 12 个文件；A02 从 commit message 逐行解析 11 条 `path  sha256` 记录）；清单登记值写入 `MIGRATION_COMMIT` 常量。
-- **步骤**：① `git show MIGRATION_COMMIT:tools/observation-check/<f>` 取每个文件的**迁入提交内容流**（11 个），对流算 sha256；② 与登记清单逐条比对。
-- **预期**：11/11 全等；每个文件的内容流 sha256 与清单登记值逐字符相等。
-- **判据**：对账脚本输出 `11/11 ok`，任一不等输出差异文件名并 exit 1；判据对象 = `git show <迁入提交>:tools/observation-check/<file>` 的内容流 sha256 == 清单登记值。**不得用工作区 `Get-FileHash` 取 hash**：改造提交会改写 10/11 个文件（夹具改造），按工作区比会永久红——「工作区现值 == 清单」不是原样性判据。
-- **红绿证据**：红 = 迁入后任一文件被就地改动（哪怕一个字符）且改动进了迁入提交（内容流 sha256 变）；绿 = 11 条 hash 全等。
-- **对应测试**：`baseline.test.mjs`（常驻；hash 基准值 = 迁入时点快照，经 `git show MIGRATION_COMMIT:<path>` 复算——不带 `git show` 而按工作区重算 = 自记自证，改造提交后必假红）
-- **不覆盖**：不判清单载体是否美观（plan 自决）；不判后续合法改造后的文件状态（那是 G01/回归清单的事）。
+- **覆盖**：§10.8-1 / §10.1 R1 / PRD §8「同一提交含 11 个文件的 sha256 清单」——零提交下等价为「清单可复算、与草稿区原件逐字相等」
+- **来源**：spec R1；清单是「原样迁入」的唯一数字锚，hash 变 = 有人动过原件
+- **前置**：**清单载体 = 账本 §迁入清单**（`.superpowers/sdd/2026-10-27-s2-observation-check/progress.md` 的 11 行 `<name>  <HEX>`，Ruling #1-1 定死；零提交下无 commit 可挂，故不再依赖 commit message）+ 草稿区原件仍在（`C:\Users\HuangChunhua\.retro-skills\observation-check-draft\*.mjs`，11 个）。
+- **步骤**：① 用 `node:crypto` 对草稿区 11 个原件逐个算 sha256（`createHash('sha256').update(readFileSync(f)).digest('hex').toUpperCase()`）；② 与账本 §迁入清单逐条比对。
+- **预期**：11/11 全等（本文件编写时实跑：11 条 hash 与清单逐字符相等，草稿区仍为 11 个文件）。
+- **判据**：对账脚本输出 11 条全等，任一不等输出差异文件名并 exit 1。**不得用当前工作区 `tools/observation-check/` 的文件算 hash 作判据**：改造批次（Task 3-12）已就地改写其中 10 个文件，按工作区比会永久红——「工作区现值 == 清单」不是原样性判据（与 A03「不得按当前文件算行数」同一条纪律）。
+- **红绿证据**：红 = 清单与草稿原件对不上（清单被手改 / 抄错 / 原件被替换）；绿 = 11 条 hash 全等。
+- **对应测试**：验收命令（一次性；常驻需依赖仓外草稿区目录，违反 §1.2「夹具一律仓内自建」）
+- **不覆盖**：不判清单载体是否美观（plan 自决）；不判后续合法改造后的文件状态（那是 G01 / 回归清单的事）。
 
-#### A03 首提交版本 11 文件合计行数 = 888
+#### A03 草稿区 11 原件合计行数 = 888（原样性对账）
 
 - **覆盖**：§10.8-1 / PRD §0.3-§0.4（11 文件 / 888 行基线）
-- **来源**：spec R1 的「原样」判据需要独立于 hash 清单的第二道账（行数对账 PRD §0.4 已实测登记）
-- **前置**：MIGRATION_COMMIT 常量在位（A01）。
-- **步骤**：① 用 PRD §0.4 原命令 `(Get-Content <草稿区>\*.mjs | Measure-Object -Line).Lines` 复算草稿区基线；② 对 `git show MIGRATION_COMMIT:tools/observation-check/<f>` 的内容流按**同一语义**（`Measure-Object -Line`，不计空行）逐文件计数求和。
-- **预期**：① = 888（PRD §0.4 原命令口径）；② 合计 = 888，与 ① 逐值对账相等。
-- **判据**：① === 888 && ② === 888。**口径说明**：该命令语义 = **不计空行**；草稿区物理行合计为 1015（`(Get-Content <草稿区>\*.mjs).Count`，每行都计），两者不可混用——把 1015 当判据 = 换口径造红。
-- **红绿证据**：红 = 迁入时丢文件 / 多文件 / 行内容与草稿不一致（同口径行数变）；绿 = ①② 双双 888。
-- **对应测试**：`baseline.test.mjs`
-- **不覆盖**：不判行级内容一致（A02 的 hash 已覆盖）；888 是 PRD 原命令口径下的总量账，不锁单文件行数；物理行总数 1015 不作任何判据。
+- **来源**：spec R1 的「原样」判据需要独立于 hash 清单的第二道账（行数对账 PRD §0.4 已实测登记）；Ruling #1-2 的 A03′
+- **前置**：同 A02（清单与原件在位）；草稿区目录仍在。
+- **步骤**：用 PRD §0.4 原命令 `(Get-Content <草稿区>\*.mjs | Measure-Object -Line).Lines` 复算。
+- **预期**：888（PRD §0.4 原命令口径）。
+- **判据**：输出 === 888。**口径说明**：该命令语义 = **不计空行**；草稿区物理行合计为 1015（`(Get-Content <草稿区>\*.mjs).Count`，每行都计），两者不可混用——把 1015 当判据 = 换口径造红。**不得按当前 `tools/observation-check/` 的文件算行数**：改造批次已改写内容，当前值必然 ≠ 888。
+- **红绿证据**：红 = 草稿原件丢文件 / 多文件 / 内容被改（同口径行数变）；绿 = 888。
+- **对应测试**：验收命令（一次性；依赖仓外草稿区目录，理由同 A02）
+- **不覆盖**：不判行级内容一致（A02 的 hash 已覆盖）；888 是原命令口径下的总量账，不锁单文件行数；物理行总数 1015 不作任何判据。
 
 #### A04 迁入后测试全绿且总数 ≥ 71（验收命令）
 
@@ -396,7 +403,7 @@
 - **判据**：`codes.includes('CoverageMismatch')` ×2；error 文案含 `read + skipped` 字样。
 - **红绿证据**：红 = 草稿现状（skipped 只判数组类型，不做加法）；绿 = 两向齐码。
 - **对应测试**：`coverage.test.mjs`
-- **不覆盖**：skipped 含重复 id（skipped 是清单语义，重复即与 items 对账/自身唯一性冲突——由 B12 与 G 组白名单语义兜，不单独设码）。
+- **不覆盖**：skipped 含重复 id —— **已由 B20 单独覆盖**（码名同为 `CoverageMismatch`、message 含「重复」，依据 PRD §0.6 C-16）。本条只管「数组长度加法」，B20 管「集合语义去重」：两条判据同码不同分支，判据侧必须靠 message 区分（B20 有说明）。
 
 #### B11 CoverageMismatch：skipped 含未登记 id
 
@@ -494,6 +501,30 @@
 - **对应测试**：`artifact.test.mjs`（增补）
 - **不覆盖**：-a/-b 两份 items 不一致（同一 id 两实例判得不同——PRD 未禁止，语义属议会记录层，不设）。
 
+#### B19 registeredIds 单源清单：删一个 id 即对账红
+
+- **覆盖**：§10.8-3 / PRD §4.1（registeredIds 单一来源）/ §4.2 ①（七条对账之 total === registeredIds.length）
+- **来源**：议会 problems.md §2 派工项——分母若允许各调用点自拼，对账「总分母」这条判据等于没有；必须钉住「唯一来源 = `registered-ids.mjs` 的 `REGISTERED_IDS`」
+- **前置**：`tools/observation-check/registered-ids.mjs` 已导出 `REGISTERED_IDS`（Task 3 落地）；`validateObservation` 七条对账已实现（Task 4 落地）
+- **步骤**：① 读 `REGISTERED_IDS` 断言为非空字符串数组；② 构造 doc：`coverage.total = REGISTERED_IDS.length`、`coverage.skipped` 含 k02、items 为 k01/k03；③ 以 `REGISTERED_IDS.filter((id) => id !== 'k02')` 作 `registeredIds` 调 `validateObservation`
+- **预期**：① 断言通过；②/③ `errors` 含 `CoverageMismatch`（`total` 3 ≠ 分母 2；且 skipped 的 k02 不在分母内）
+- **判据**：`errors.some((e) => e.code === 'CoverageMismatch')` 为真（逐字码名）
+- **红绿证据**：红 = 分母各调用点自拼、与 `coverage.total` 脱钩（删一个 id 校验仍绿）；绿 = 删一个 id 立刻对账红
+- **对应测试**：`coverage.test.mjs`（B19 落地时新建；该文件现同时承载 B07-B14 / F03 / B20，落点见 §1.2）
+- **不覆盖**：`REGISTERED_IDS` 内容本身是否等价于 PRD 登记清单（那是数据正确性，属 S2 登记面，不在此用例）
+
+#### B20 CoverageMismatch：skipped 内 id 重复（集合语义）
+
+- **覆盖**：§10.8-3 / PRD §4.2 ① 第 5 条「`skipped ⊆ registeredIds`（**集合语义**：其中 id 不得重复）」/ PRD §0.6 C-16（代裁行，2026-10-27 施工期补）/ §4.4 B 表 `CoverageMismatch`
+- **来源**：Ruling #15（施工期发现）——`skipped` 是「未判项 id 清单」，只有按**集合**读，C-02 的 `read + skipped.length === total` 才是真对账；允许重复项时**数组长度虚增**，加法道「看起来平」，而去重后集合少一个 id → 有 id **既未判也未跳**、静默通过。C-16 把这条判据明确进 §4.2 ① 第 5 条；实现对账函数补独立分支（`tools/observation-check/checks.mjs:47-50`：`const dup = skipped.filter((id, i) => skipped.indexOf(id) !== i)` → message `skipped 内 id 重复：…`）
+- **前置**：`checkCoverageReconciliation` 含重复分支（已落地）；夹具走 `tools/observation-check/fixtures.mjs` 的 `docBase`（`read = items.length`、`total = REGISTERED_IDS.length`（= 3）、`skipped = 差集`），证据 = `mkdtempSync` 自建件（§1.2 夹具约定）
+- **步骤**：① 取 `items = [k01 hit（带自建证据）, k02 na（带 reason）]` 的合法基具（read=2、total=3、skipped 天然 = `['k03']`）；② 覆写 `doc.coverage.skipped = ['k03','k03']`（原 2 个、去重 1 个）；③ `validateObservation(doc, { registeredIds: IDS })`
+- **预期**：`errors` 中**至少一条** `CoverageMismatch` 的 message 含「重复」并点名重复 id（`k03`）。本条**不判「只有这一条错」**：本夹具下 `read + skipped.length` = 2+2 = 4 ≠ 3 的加法分支**同时**命中——同码、不同分支、不同判据
+- **判据**：`errors.some((e) => e.code === 'CoverageMismatch' && /重复/.test(e.message))` 为真。**必须按 message 定锚，不得只判码名**——只判 `codes.includes('CoverageMismatch')` 会被加法道的红顶替（把重复分支删掉仍绿 = 假绿），这正是本条与 B10 的分界
+- **红绿证据**：红 = 无重复分支（构造「假平」件 `read=1`、`skipped=['k03','k03']`、`total=3`：加法道 1+2=3 通过，去重后 read 1 + 去重 1 = 2 ≠ 3，k02 既未判也未跳 → 静默通过）；绿 = 重复 id 立刻报码并点名重复项
+- **对应测试**：`coverage.test.mjs`「B20 CoverageMismatch：skipped 内 id 重复 → CoverageMismatch（message 含「重复」）」（夹具 `items = two()`、`doc.coverage.skipped = ['k03','k03']`、断言 `/重复/`）
+- **不覆盖**：skipped 含未登记 id（B11）；skipped 与 items 相交（B12）；`skipped` 元素非字符串（`InvalidFieldType` 既有判据）；`items.id` 自身重复（`DuplicateItem`，B07）；「假平」形态（`read=1` + 重复 2 个）本身不作独立断言——它是红绿证据里的失败面推演，判据落在现存常驻测试的单一形态上
+
 ### C 组：证据段（锚点 3——B 表证据侧 3 码 + §4.3 第 5-7 道）
 
 共用夹具：`mkdtempSync(join(repoRoot, '.session/reviews/test-obs-check-'))` 自建证据文件（内容按需写；用完 `rmSync`）；root 不传参（git 顶层派生，PRD §4.3 第 2 道）。
@@ -573,15 +604,30 @@
 
 #### C07 纯结构行不可作证据
 
-- **覆盖**：§10.8-3 / PRD §4.3 第 5 道（「纯结构行——`---`、表格分隔行、围栏行——不可作证据」）
-- **来源**：spec R3 + **编写者独立发现**——`\| --- \| --- \| --- \|` 归一化后 13 字（≥10 字下限），且该行确实包含 quote，长度道与命中道全过 → **结构行假绿**（盲点 G-8；PRD 有判据但未给码名）
-- **前置**：S2 已实现结构行判据；**码名待 plan Task N 登记**（归 EvidenceQuoteMismatch 或新码，登记后本条断言按登记码逐字写死；该字样全文共 3 处真占位——本条与 A01 前置 MIGRATION_COMMIT 落值，另一处为 §2 总述规则声明，逐处见 §9.3-④；PRD §4.4 A/B 表须同步登记所选码——改判按 R8 回扫）。
-- **步骤**：① 夹具文件某行为 `| --- | --- | --- |`，quote = 整行（13 字过长度）；② 再测围栏行 ``` ``` ```（3 字——本形态预期被长度道拦，证明结构行判据与长度道的层次：9 字以下不用结构行判据也红）；③ 标题分隔行 `---`（3 字，同②）。
-- **预期**：① 红（结构行判据命中）；②③ 红（长度道命中——结构行不是逃逸通道的证明）。
-- **判据**：①②③ `errors.length > 0`；① 的码 = plan 登记码（逐字断言）；②③ `codes.includes('EvidenceQuoteTooShort')`。
-- **红绿证据**：红 = ①在草稿现状通过（13 字结构行假绿——这正是缺口）；②③拦住但那是长度道的功劳，不能宣称结构行判据已存在。绿 = ① 按登记码红。
-- **对应测试**：`evidence.test.mjs`（增补）
-- **不覆盖**：围栏行内的真实内容行（围栏内一行 ≥10 字的正文——按 PRD 判据「围栏行」本身才是结构行，内容行可作证据；此边界判读若 plan 有异议，回扫本条）。
+- **覆盖**：§10.8-3 / PRD §4.3 第 5 道（纯结构行不可作证据；**四类** = `---`、表格分隔行、围栏行、渲染器固定骨架行——第四类 2026-10-27 补登记）
+- **来源**：spec R3 + **编写者独立发现**——`\| --- \| --- \| --- \|` 归一化后 13 字（≥10 字下限），且该行确实包含 quote，长度道与命中道全过 → **结构行假绿**（盲点 G-8；PRD 有判据但未给码名）。**第四类来源（2026-10-27 复核）**：三形态实现完成后，`hit` 改引渲染器自己写的横幅（`<!-- observation-md v1 -->`）仍四段全绿——证据闭环于被证明者自身，故把「本工具无条件写入且不含数据的固定行」并入同一码
+- **前置**：S2 已实现结构行判据（命中即返回该码）；**码名已登记 `EvidenceStructuralRow`（与 `EvidenceQuoteTooShort` 的分界 = 结构行可以 ≥10 字）**；骨架常量单源 = `tools/observation-check/md-format.mjs`（渲染侧与校验侧同取这一份）
+- **步骤**：① 夹具文件某行为 `| --- | --- | --- |`，quote = 整行（13 字过长度）；② 再测围栏行 ``` ``` ```（3 字——本形态预期被长度道拦，证明结构行判据与长度道的层次：9 字以下不用结构行判据也红）；③ 标题分隔行 `---`（3 字，同②）；④ 渲染器固定骨架行逐行（`MD_SKELETON` 六项：横幅 / `# 观察表` / `## 补充项` / `无。` / 两张表头），各取整行为 quote。
+- **预期**：① 红（结构行判据命中）；②③ 红（长度道命中——结构行不是逃逸通道的证明）；④ 红（结构行判据；其中「无。」2 字先被长度道拦，同属红）。
+- **判据**：①②③④ `errors.length > 0`；①④ 的码逐字 === `EvidenceStructuralRow`（④ 中 2 字的「无。」允许为 `EvidenceQuoteTooShort`）；②③ `codes.includes('EvidenceQuoteTooShort')`。
+- **红绿证据**：红 = ①在草稿现状通过（13 字结构行假绿——这正是缺口）；②③拦住但那是长度道的功劳，不能宣称结构行判据已存在；④在四类落地前返回 `ok:true`（自产常量可作证据）。绿 = ①④ 出 `EvidenceStructuralRow`。
+- **对应测试**：`evidence.test.mjs`（C07 / C07 补充 ×2）
+- **不覆盖**：围栏行内的真实内容行（围栏内一行 ≥10 字的正文——按 PRD 判据「围栏行」本身才是结构行，内容行可作证据；此边界判读若 plan 有异议，回扫本条）；任意「与本工具无关的零信息行」（语义归审计人，机械判据只认骨架常量与三类结构行）。
+
+#### C08 RepoRootUnresolved：根解析失败必须 fail-closed（不退化为 `process.cwd()`）
+
+- **覆盖**：§10.8-3 / PRD §4.3 第 2 道（`git rev-parse --show-toplevel` 取不到仓库根 → fail-closed；**不得以 `process.cwd()` 或传参兜底**）/ §4.4 B 表 S2 组 `RepoRootUnresolved`（PRD :356）
+- **来源**：PRD :527「§4.4 B 表 S2 组的**每个码** ≥1 条反例」——该码在 `tools/observation-check/*.test.mjs` 现命中 **0**（S2 出口的唯一缺口）；只断言「出码」而不断言「换 cwd 仍出码」的话，`process.cwd()` 兜底实现照样能过（在任意目录跑都「合法」），等于判据没了。
+- **前置**：
+  - S2 已实现两处：`tools/observation-check/evidence.mjs:35-47`（`repoRoot()`：`execFileSync('git', ['rev-parse','--show-toplevel'])` 失败 → 抛 `e.code='RepoRootUnresolved'`）、`tools/observation-check/evidence.mjs:75`（`checkEvidence` 捕获后返回 `{ok:false, code:'RepoRootUnresolved'}`）。
+  - `repoRoot()` 带模块级缓存 `cachedRoot`——**必须在全新子进程里跑**：同进程若先跑过任一其它证据用例，缓存已填，根解析不再走 git，本条恒绿（假绿）。
+  - 构造目录必须**不在任何 git 仓库内**：`os.tmpdir()` 下 `mkdtempSync` 建空目录（不 `git init`），并在其中再建一层子目录，确保「向上找不到 `.git`」。
+- **步骤**：① `mkdtempSync(join(os.tmpdir(), 'obs-check-nogit-'))` → 目录 D；`mkdirSync(join(D,'a','b'), { recursive: true })`；② 预检 `git -C D rev-parse --show-toplevel` 必须**非 0**（若本机 tmpdir 恰落在某个仓库工作树内，本条不可构造：记下环境并注明跳过，不得改判据）；③ 起子进程 `node --input-type=module --eval "<import 语句>"`、`cwd = D`，import 目标用仓库绝对路径（`file:///…/tools/observation-check/evidence.mjs`），调 `checkEvidence({ path: 'x', line: 1, quote: '0123456789' })` 并 `console.log(JSON.stringify(…))`；④ 解析 ③ 的 stdout JSON；⑤ 用完 `rmSync(D, { recursive: true, force: true })`。
+- **预期**：③ 退出码 0；stdout JSON 的 `ok === false` 且 `code === 'RepoRootUnresolved'`；**不得**出现 `EvidenceNotFound`（那说明根被解析成了 cwd）。
+- **判据**：`JSON.parse(stdout).code === 'RepoRootUnresolved'` && `JSON.parse(stdout).ok === false`（单条断言，机器判）。stderr 里 git 自己的 `fatal: not a git repository` 行**不作判据**——它是被捕获的异常文本。**反例判据（判别力）**：把 `repoRoot()` 的 catch 分支改成 `return process.cwd()` 兜底后重跑本条，必须转红（此时根 = D → `confine` 过 → `D/x` 不存在 → 返回 `EvidenceNotFound`）；该改法**只作一次性判别力演练、不许合入**，演练结论记入 §4 回归清单。
+- **红绿证据**：红 = 实现拿 `process.cwd()`（或入参）兜底 → 返回 `EvidenceNotFound` 甚至 `ok:true`；绿 = `code === 'RepoRootUnresolved'`（本文件编写时实跑确认：`{"ok":false,"code":"RepoRootUnresolved",…}`、node exit 0）。
+- **对应测试**：`evidence.test.mjs`（由测试代理落地；预期测试名 `C08 RepoRootUnresolved：子进程 cwd 不在任何 git 仓库内 → fail-closed（不退化为 process.cwd）`）
+- **不覆盖**：`tools/observation-check/artifact.mjs:30-31` 的同类转码（写盘入口的根解析失败，属写盘段 E 组）；「传参兜底」路径（接口已不接受 root，签名层面由 §1.2 夹具约定 + G-13 兜住）；`git` 可执行文件缺失（`execFileSync` ENOENT 同归本码，与「不在仓库内」同码同判据，另造一遍无判别力）。
 
 ### D 组：渲染段与 golden（锚点 3 渲染最小信息集 + 锚点 4）
 
@@ -907,7 +953,7 @@
 
 ### G 组：仓门禁与三态判定（锚点 7 + PRD §5.2 三态）
 
-前置总述：G03-G05 的测试载体按 §0.3-1 口径 = **S2 提供的目录三态判定纯函数**（入参 = 子目录文件清单，内置 PRD §5.2 三态表 + 存量目录白名单常量 `2026-10-25-1723-s6-eval` + 允许文件名类 8 类 + 非产物精确路径白名单 9 个）；check-all.mjs 接线与 git 断言（UntrackedArtifact / ArtifactDirty）归 S3。G01/G02 为锚点 7 的收尾验收命令，非常驻测试（理由见各条「不覆盖」）。
+前置总述：G03-G06 的测试载体按 §0.3-1 口径 = **S2 提供的目录三态判定纯函数**（入参 = 子目录文件清单，内置 PRD §5.2 三态表 + 存量目录白名单常量 `2026-10-25-1723-s6-eval` + 允许文件名类 8 类 + C-15 的 `attachments/` 一层子层 + 非产物精确路径白名单 9 个）；check-all.mjs 接线与 git 断言（UntrackedArtifact / ArtifactDirty）归 S3。G01/G02 为锚点 7 的收尾验收命令，非常驻测试（理由见各条「不覆盖」）。
 
 #### G01 归档演练：writeObservation → move → git add → npm run check 绿 → commit
 
@@ -968,6 +1014,18 @@
 - **红绿证据**：红 = 允许文件名类漏一类 / 目录白名单常量抄错（存量归档误红）；或白名单写宽成前缀匹配（G03 已反向锁，本条正例侧再钉）；绿 = 三态绿分支全通。
 - **对应测试**：`gate-scan.test.mjs`
 - **不覆盖**：白名单「只到精确路径」的收紧方向（G03/G04 反例锁）；产物态目录里的产物内容合法性（四段校验的事，B/C/D/E 组覆盖）。
+
+#### G06 attachments/ 子层边界：一层快照不误报、两层嵌套与根层同名判红
+
+- **覆盖**：§10.8-3 / PRD §5.2 :410（C-15：允许文件名类补 `<次>/attachments/` 子层——只许**一层文件名**、不得再嵌套，且该层文件名**不限 8 类**）/ §4.4 B 表 `UnclassifiedArtifact` / PRD §0.2 C-12
+- **来源**：C-12 通道（仓外证据快照进 `<次>/attachments/`）原先被 §5.2 的允许文件名类漏列 → 照 C-12 归档必被判 `UnclassifiedArtifact`（「通道开着、门却锁着」，S2 施工期发现，2026-10-27）；C-15 补列后本条钉住「**通道走通 + 边界不放大**」：只许一层（防无底洞嵌套）、只在 `attachments/` 子层（防豁免泛化到 `<次>/` 根层）、文件名不限 8 类（快照保留原名，否则「快照进仓」还要逐条改名，通道等于虚设）
+- **前置**：`tools/observation-check/gate-scan.mjs` 已导出 `ATTACHMENT_RE = /^attachments\/[^/]+$/`（`:8`）且在 `stray` 判定里先判 `attachments/` 前缀（`:30`：`if (f.startsWith('attachments/')) return !ATTACHMENT_RE.test(f);`）；三态判定纯函数与存量白名单常量在位（同 G03）
+- **步骤**：调 `scanReviewDir(dirName, files)` 三夹具：① 目录 `2026-10-20-0000-ok`、`files = ['observation-r1.json','observation-r1.md','attachments/niku-detection.md']`（C-12 合规写法：快照保留原名，不在 8 类允许名内）；② 同目录把快照换成 `attachments/a/b.md`（两层嵌套）；③ 同文件名放根层 `files = ['observation-r1.json','niku-detection.md']`
+- **预期**：① 零码（通道走通）；② 含 `UnclassifiedArtifact`（只许一层）；③ 含 `UnclassifiedArtifact`（根层不享受 `attachments/` 豁免）
+- **判据**：① `codes.length === 0` && ② `codes.includes('UnclassifiedArtifact')` && ③ `codes.includes('UnclassifiedArtifact')`——三条各自独立断言，不合并计数（合并后 ① 与 ②/③ 会互相遮蔽）
+- **红绿证据**：红 = 正则写宽成 `/^attachments\//`（两层嵌套也放行 → 归档目录成无底洞）或把豁免扩成「任意 `.md` 免检」（根层同名文件放行）；反向红 = 漏列 attachments 层时 ① 被 G04 同族判红（C-12 通道被自家门禁锁死）；绿 = 三夹具各归其位
+- **对应测试**：`gate-scan.test.mjs`「G06 attachments/ 子层（PRD §5.2 C-15）：一层快照不误报，两层嵌套与根层同名判红」（三条断言顺序对应上列 ①/②/③）
+- **不覆盖**：`attachments/` 内文件的**内容**合法性（`path:line` 真实性与敏感判据由证据七道管，C 组）；「过程期 `.session/reviews/<次>/attachments/` 临时副本、归档前必须搬入 docs 侧」（C-12 的流程义务，机器不判）；`attachments/` 目录本身为空（空目录不在 `files` 清单内，属 S3 扫描根接线）
 
 ### H 组：对抗与边界钉（Q-A-05 闭合 + V-6 两条绿例）
 
@@ -1063,7 +1121,7 @@
 
 ## 3 负例与边界汇总
 
-**数量硬门**：69 条 = 正例 26 / 负例 38 / 边界 5；**负例 + 边界 = 43 ≥ 正例 26**（spec-testcase-gate 判据 3）。类型逐条可复算：`Select-String -Path <本文件> -Pattern '^\| [A-I]\d{2} \|.*\| 负 \|'` → 38；`…\| 边界 \|` → 5；`…\| 正 \|` → 26。
+**数量硬门**：73 条 = 正例 26 / 负例 41 / 边界 6；**负例 + 边界 = 47 ≥ 正例 26**（spec-testcase-gate 判据 3）。类型逐条可复算：`Select-String -Path <本文件> -Pattern '^\| [A-I]\d{2} \|.*\| 负 \|'` → 41；`…\| 边界 \|` → 6；`…\| 正 \|` → 26。
 
 判读说明：**负例** = 坏构造必须出码或拒行为（0 码 = 假绿 = 本 testcase 红线）；**边界** = 合法但极易被误判的形态（含两条「故意绿」的边界钉 H03/H04——它们翻红才是缺陷）。
 
@@ -1085,11 +1143,14 @@
 | B15 | 负 | 不传 registeredIds | 调用方忘传 → 对账无分母静默通过（`checks.mjs`（草稿区 行 28） 默认 `[]`） | 报 `UnregisteredIdsMissing` |
 | B16 | 负 | hit 无 evidence；evidence 非对象 | 缺失与类型错两态混报排障瞎；现实现只报 InvalidFieldType（0.2 #5） | 两态分界：`MissingEvidence` / `InvalidFieldType` |
 | B17 | 负 | check:'ai' 条目无 -a/-b 成对 | 双实例对账仅 AI 条目触发，低频路径 | 报 `InstanceMissing` |
+| B19 | 负 | registeredIds 分母被删一个 id（调用点自拼） | 分母与 `coverage.total` 脱钩 = 「总分母」对账判据等于没有（单源清单未钉死） | 报 `CoverageMismatch` |
+| B20 | 负 | skipped 内 id 重复（`['k03','k03']`） | 数组长度虚增让 `read + skipped.length === total`「看起来平」，去重后集合少一个 id → 有 id 既未判也未跳（C-16） | 报 `CoverageMismatch` 且 message 含「重复」 |
 | C01 | 负 | 证据路径命中敏感名单（逐类） | .env / 密钥 / 凭据路径作证据 = 泄密通道，第 6 道零实现（G-5） | 逐类全报 `EvidenceSensitivePath` |
 | C02 | 负 | 反斜杠拆段 `dir\.env` 绕朴素匹配 | 字符串写法变体绕过 includes 语义 | 报 `EvidenceSensitivePath` |
 | C04 | 负 | quote 含 AKIA / ghp_ / BEGIN PRIVATE KEY / 带凭据 URL | 内容侧四形态，第 7 道零实现（G-5） | 逐形态报 `EvidenceQuoteSensitive` |
 | C06 | 负 | md 不可读（目录占位） | IO 异常冒泡 = 崩溃不是码（artifact.mjs（草稿区 行 22-38） 无 try-catch） | 收敛报 `MdUnreadable` |
-| C07 | 负 | 纯结构行（`\| --- \| …`）作证据 | 13 字过长度下限、quote 也真——长度道命中道全过（G-8） | 红（码名待登记，§8-5） |
+| C07 | 负 | 纯结构行（`\| --- \| …`）作证据 | 13 字过长度下限、quote 也真——长度道命中道全过（G-8 已闭合） | 红（`EvidenceStructuralRow`，PRD :355） |
+| C08 | 负 | 进程 cwd 不在任何 git 仓库内（根解析失败） | 取不到根时最省事的兜底就是 `process.cwd()` / 入参——一兜底，「任意目录跑」都合法了 | 报 `RepoRootUnresolved`（fail-closed），不得退化为 `EvidenceNotFound` / `ok:true` |
 | D07 | 负 | golden expected.md 手改一字 | golden 无反例 = 摆设：改实现没人发现（已知风险①） | 报 `RenderMismatch`（带行号） |
 | E02 | 负 | 路径 r5 + 内容 round=3 | 文件名与内容脱钩 | 报 `RoundMismatch` |
 | E03 | 负 | jsonDir = tools/ | 写盘越界 = 覆盖源码通道，目的地判据零实现（G-3） | `ArtifactPathOutside` + 零写盘 |
@@ -1112,6 +1173,7 @@
 | H02 | 边界 | 分母常量自洽（30 全实 + 0 空转） | 分母两处记载必漂移——Q-A-05 本体 | 唯一取数源 + `bypassed 0/30` |
 | H03 | 边界 | json+md 同改一致 → 校验**过** | 无锚面被「修过头」= 正常一致改动误报 | 零错误码（翻红即越权） |
 | H04 | 边界 | quote 真实但不支撑结论 → 校验**过** | 语义判定 = 词表猜测回归（8/9 被绕的教训） | 零错误码（翻红即越权） |
+| G06 | 边界 | `attachments/` 子层嵌套两层 / 同名文件放 `<次>/` 根层 | 豁免写宽 = 无底洞（任意嵌套免检）或泛化到根层（任何文件免检） | 一层零码；两层与根层均报 `UnclassifiedArtifact` |
 
 ## 4 回归清单（改什么 → 必跑哪些）
 
@@ -1121,13 +1183,13 @@
 |---|---|---|
 | `checks.mjs`（validateObservation：结构 + 七条对账） | B 组全量 + F03 | 结构与对账判据全在这层；F03 防「改实现顺手删负例」 |
 | `checks.mjs`（renderObservation / checkRendered） | D01-D08 + F02 + D05-D07（golden） | 渲染一字变 → golden 必红（已知风险①的防回归主闸） |
-| `evidence.mjs` | C01-C07 + H01 第 2/5 行 | 证据七道；adversarial A10/A11 的承接面 |
+| `evidence.mjs` | C01-C08 + H01 第 2/5 行 | 证据七道 + 根解析 fail-closed；adversarial A10/A11 的承接面 |
 | `artifact.mjs`（writeObservation / atomicWrite） | E01-E07 + B17/B18 + C06 | 写盘链四纪律 + 双实例 + md 读收敛 |
 | `cli.mjs` | E08-E14 | CLI 六态（正例 / 全报 / 缺件 / rewrite 边界 / 归档件改写路径） |
 | `render.mjs`（personalActions / labelOf） | I01/I02 + D 组全量 | 数据源渲染动一字，产物投影全变 |
 | `data.mjs`（SEATS / PREDICATES / LANDINGS） | I01/I02 | 登记表内容变更直接改五码触发面 |
 | `tools/execution-matrix/markdown-rows.mjs`（splitRow，仓级单源） | D03/D04 + H01 第 5 行 | 列切口径一动，转义断言与全角竖线断言同批红 |
-| 三态判定白名单常量（目录白名单 / 8 类允许名 / 9 精确路径） | G03/G04/G05 | 白名单一改，三态正反两侧都要重证 |
+| 三态判定白名单常量（目录白名单 / 8 类允许名 / 9 精确路径 / `attachments/` 层） | G03/G04/G05/G06 | 白名单一改，三态正反两侧都要重证 |
 | registeredIds 供给方式 / 常量 | B15 + B17/B18 + F01 | 分母一变，对账与夹具同批 |
 | 渲染器升级（含历史归档 md 兼容） | D05-D07 + §8-2（R-7 横幅同批） | 已知风险①：升级使历史 md 全红——golden 抓回归、横幅管存量声明 |
 | 新增对抗向量 | H02（分母常量 + 0 空转）+ R8 回扫 | 分母变值 = 判据级口径变更，登记与回扫同批 |
@@ -1137,11 +1199,14 @@
 
 ## 5 验收命令清单（无「纯手动验证」一档）
 
-本 testcase **没有纯手动项**：每条判据都是「命令 + 退出码 + 关键输出」。但有 5 条因「一次性提交审计 / 全局态 / 基线快照依赖」**不设常驻测试**（常驻 = 进 node --test 文件随 `npm run check` 跑），定义为收尾验收命令——在 plan 的收尾任务里执行并把输出贴进 gate-record。
+本 testcase **没有纯手动项**：每条判据都是「命令 + 退出码 + 关键输出」。但有 8 条因「一次性时点事实 / 全局态 / 基线快照依赖 / 仓外路径依赖」**不设常驻测试**（常驻 = 进 node --test 文件随 `npm run check` 跑），定义为收尾验收命令——在 plan 的收尾任务里执行并把输出贴进 gate-record。
 
 | ID | 为何非常驻 | 命令与判据 |
 |---|---|---|
-| A04 | 总数断言常驻化会随每次新增用例变值（自证无意义）；要审的是「**迁入那一刻 71 条意图没丢**」这个时点事实 | `cd tools\observation-check; node --test *.test.mjs` → exit 0 且 `# pass ≥ 71`；git diff 存证迁入+改批两提交 |
+| A01 | 零提交裁定下它退化为「Task 2 时点快照」——时点后该目录已由后续任务新增 12 个文件，常驻必假红 | 见 §2 A01：迁入时点 `git status --porcelain tools/observation-check` 恰 11 行全 `??`、零 M/D/R（取值 = 时点输出，已记账本 / report） |
+| A02 | 常驻需读仓外草稿区目录（`C:\Users\HuangChunhua\.retro-skills\observation-check-draft\`），违反「夹具一律仓内自建」 | `node:crypto` 对草稿区 11 原件重算 sha256 → 11 条全等账本 §迁入清单 |
+| A03 | 同上（依赖仓外草稿区） | PRD §0.4 原命令 → 888；不得改按当前工作区文件计数 |
+| A04 | 总数断言常驻化会随每次新增用例变值（自证无意义）；要审的是「**迁入那一刻 71 条意图没丢**」这个时点事实 | `cd tools\observation-check; node --test *.test.mjs` → exit 0 且 `# pass ≥ 71`；零提交口径下存证 = 账本 §迁入清单 + 当时的工作区快照（`git status --porcelain`），无提交可 diff |
 | A06 | 移走 `agents/` 文件是全局态，常驻会与并发测试互踩 | 临时移 `agents\detective-observer.md` → 全套仍绿 → **finally 恢复**；断言恢复后文件 hash 原值 |
 | A07 | `npm run check` 套内自跑 = 递归；时长 23.9s 不宜每轮 | 仓库根 `npm run check` → exit 0（迁入后、未归档态；含 expected.md 等新文件不触发其它检查段） |
 | G01 | 写盘 + move + commit 污染真工作树，常驻即每轮制造待提交改动 | §2 G01 命令序列 → ④ `npm run check` exit 0 && ⑤ `git status --porcelain -- <演练目录>` 输出为空 |
@@ -1152,7 +1217,7 @@
 | # | 不测项 | 理由（一句话） | 兜底（谁管） |
 |---|---|---|---|
 | 1 | S1 模型层错误码（模型 / 场景 / 信号 / 前置层校验，PRD §8 S1 行） | **零实现**——对空气测不出任何东西；S1 尚未排期 | S1 spec 自带 testcase（spec-testcase-gate 同规则约束 S1 的 testcase 编写者） |
-| 2 | S3 门禁接入（check-all.mjs 增段；git 断言 `UntrackedArtifact` :434 / `ArtifactDirty` :431；零产物分支 `ArtifactNamingOff` + 「0 件跳过」:408；15 卡豁免窗口 :410） | 接线对象（扫描根接线、git 子进程断言）归 S3 spec；S2 只义务「判定函数 + 不红」 | 三态判定**纯函数**已钉在 S2（G03-G05）；接线测试归 S3 testcase；G02/A07 证「接入后不红」 |
+| 2 | S3 门禁接入（check-all.mjs 增段；git 断言 `UntrackedArtifact` :434 / `ArtifactDirty` :431；零产物分支 `ArtifactNamingOff` + 「0 件跳过」:408；15 卡豁免窗口 :410） | 接线对象（扫描根接线、git 子进程断言）归 S3 spec；S2 只义务「判定函数 + 不红」 | 三态判定**纯函数**已钉在 S2（G03-G06）；接线测试归 S3 testcase；G02/A07 证「接入后不红」 |
 | 3 | S4 渲染层（三投影 / 全席重生成 / merge 输出 `overrides[]` 结构 / PREDICATES-LANDINGS **内容**正确性） | PRD §8 S4 行未落地，渲染层重构未排期 | I01/I02 冒烟锁「会抛对码」；数据正确性归 S4 全席重生成的验收 |
 | 4 | 探索稿其余 V-8 指针（`:236` / `:394` / `:400-401` / `:746`，PRD §9 V-8 :559） | 锚点 5（PRD :527）只义务 `:686` 一处；四处是 V-8 的定稿动作，判据 PRD 已定（manual + `Select-String` 对照） | V-8 定稿批次（S4 spec / 议会收口）执行并自证；F04 已把 S2 义务钉死 |
 | 5 | Windows 软链 / 越权实盘构造（`EvidencePathOutside` 的逃逸判据含软链语义） | Windows 建软链需开发者模式 / 管理员，测试环境不稳定（本仓 Node ≥22 无需提权可建 junction，但 junction 语义 ≠ symlink，构造即分叉） | 判定面已锁：路径白名单正例（仓内真路径）+ 出仓路径反例（C 组承接保留用例）；「唯一 root + 白名单」机制本身（PRD C-03）是语义保证 |
@@ -1174,7 +1239,7 @@
 | G-5 | 证据第 6/7 道（敏感路径 / 敏感内容）零实现（`evidence.mjs` 1-5 道已实现） | C01-C05 |
 | G-6 | atomicWrite 半写态——`artifact.mjs`（草稿区 行 53-54） 两文件各自 tmp+rename，一成一败即脏产物；tmp 残留无清理断言 | E06（全成功再 rename + 零 tmp 残留） |
 | G-7 | R-7 版本横幅（`<!-- observation-md v1 -->`）不在 S2 出口判据与 spec R4 内——渲染器升级时存量归档 md 无版本声明（0.2 #15） | §8-2（同批建议）+ §4 回归清单「渲染器升级」行 |
-| G-8 | 纯结构行判据 PRD 未给专属码名（0.2 #7）——「有判据无码名」= 测试断言写不出唯一锚 | C07 按「红」设计 + §8-5（码名登记 + R8 回扫） |
+| G-8 | 纯结构行判据 PRD 未给专属码名（0.2 #7）——「有判据无码名」= 测试断言写不出唯一锚 | **已闭合（2026-10-27）**：B 表登记 `EvidenceStructuralRow`（PRD :355）+ 实现（`tools/observation-check/evidence.mjs:102-103`）+ C07 逐字断言；见 §8-5 状态行 |
 | G-9 | InvalidWriteTarget 只有码名无细分判据（0.2 #13） | E07 采设计判据（目标非法 vs 写失败分界）+ plan 落地改口径须回扫本条 |
 | G-10 | A 表并入 8 码已实现零测试（0.2 #16） | I01/I02 冒烟 |
 | G-11 | ArtifactMissing / UnclassifiedArtifact 的 S2/S3 归属歧义（spec R3 字面 vs PRD F-17/F-19） | §0.3-1 判读口径（按字面义务覆盖）+ G03/G04 + **移交条款**（挪 S3 须回议会改判，不得静默缩小） |
@@ -1188,12 +1253,12 @@
 | 1 | **「单删负例」机器拦不全**：A04 拦批量删（总数跌破 71）、F03 拦「删对账负例」、H02-② 拦「删承接测试」；但**其它组的单条负例被删**机器无判据 | git diff 人审 + §4 回归清单；这是三层联防，不是全防 |
 | 2 | **迁入即红的负例**（B05 / B16 / C01-C04 / C06 / C07 / D01 / E03-E07 / I 组）：本 testcase 的负例对象是 PRD 判据（含未实现面，0.2 表），实现落地前跑 = 红，**这是设计意图**（红色驱动），不是缺陷 | plan 任务排序必须「实现 → 夹具改批 → 全绿验收」；不能先跑测试再实现 |
 | 3 | **rewrite 对假证据件的行为未裁**：「先校验再拒」vs「直接重渲染」plan 定（E12 不覆盖条款）；若裁决「必须先校验」 | 回扫 E12 加断言——本条是已登记的回扫义务，不是悬空 |
-| 4 | **C07 码名未定**（G-8）：施工前须在 B 表登记码名并 R8 回扫；本文件按「红 + 错误码数组含该码」设计占位 | plan 落地把占位换成定名；**判据不放宽**（占位期断言的是「必红」这一语义，与码名无关） |
+| 4 | **C07 码名已定**（G-8 已闭合，2026-10-27：`EvidenceStructuralRow`，PRD :355）：残余水位 = 若有人把结构行判据并回 `EvidenceQuoteTooShort` 或另起码名，C07 立刻红（这正是要的） | 码名属命名类判据级口径——变更须 R8 同批回扫 PRD §4.3 / §4.4 + 本文件 C07 / §1.1 / §3-表；§8-5 已记录登记证据 |
 | 5 | **验收命令类的判别力依赖收尾真的跑**：A04 / A06 / A07 / G01 / G02 不进常驻——不跑 = 没有 | 执行义务落 plan 收尾任务 + 输出贴 gate-record（「核了什么」列 = 命令输出首行） |
 
 ## 8 给开发（plan / 施工）的建议
 
-> 六条全部带位置 / 风险 / 改法 / 取舍 / 验收 / 优先级（8-1 已由 spec v2 修订解决，改为「已解决 / 保留为观察」并保留下次回滚判据）。**本 testcase 不因建议未采纳而放宽判据**——除 §8-5（C07 断言定名的字面前置）外，其余建议不落地时对应用例按现有判据跑，红 = 如实红。
+> 六条全部带位置 / 风险 / 改法 / 取舍 / 验收 / 优先级（8-1 已由 spec v2 修订解决，改为「已解决 / 保留为观察」并保留下次回滚判据；8-5 已落地，见其状态行）。**本 testcase 不因建议未采纳而放宽判据**——除 §8-5（C07 断言定名的字面前置，已落地）外，其余建议不落地时对应用例按现有判据跑，红 = 如实红。
 
 ### 8-1 spec §10.2「已实现」声明与草稿现状不符 → 两态标注【已解决 / 保留为观察】
 
@@ -1216,7 +1281,7 @@
 - **位置**：`render.mjs`（草稿区 行 127）（`for (const seat of SEATS)`，import 即执行）。
 - **风险**：任何 import render.mjs 的测试 / 工具都执行 demo（console 输出，演进后可能写盘）——I01/I02 冒烟测试输出混噪声，测试间互相污染的种子。
 - **改法**：**剥除** demo（或加 `import.meta.url === pathToFileURL(process.argv[1]).href` main 守卫）；推荐剥除——demo 的使命在草稿期已终结。
-- **取舍**：否掉「保留 demo + 守卫」——迁入即定稿件，死路径留着 = 下次体检的扣分项；剥除后 A03 行数对账的差值（888 为草稿基线）在迁入提交的说明里可解释，不算原样性破坏（A03 的判据对象是首提交版本内容，剥除发生在改造提交）。
+- **取舍**：否掉「保留 demo + 守卫」——迁入即定稿件，死路径留着 = 下次体检的扣分项；剥除发生在**改造批**（零提交口径下即 Task 3-12 的就地改写），不在迁入时点，故不影响 A03（判据对象 = **草稿区 11 原件**，888 为草稿基线），不算原样性破坏。
 - **验收**：`node -e "import('./render.mjs')"` 零输出零写盘；I01/I02 正常跑。
 - **优先级**：P1。
 
@@ -1228,8 +1293,9 @@
 - **验收**：A 表逐码有行；`node scripts/scope-sweep.mjs --check` exit 0。
 - **优先级**：P1。
 
-### 8-5 C07 码名登记 + R8 回扫（G-8）【P0】
+### 8-5 C07 码名登记 + R8 回扫（G-8）【已落地 2026-10-27】
 
+- **状态**：**已落地（2026-10-27）**。证据三条：① PRD §4.4 B 表登记 `EvidenceStructuralRow`（`docs/prd/20261026205821-agent-card-contract.md:355`）；② 实现 `tools/observation-check/evidence.mjs:102-103` 命中即返回该码；③ `evidence.test.mjs` 的 C07 用例按该码断言，本文件 C07 前置 / 判据 / §1 覆盖总表 / §3 表 / §1.1 对位表已全部改为定名。R8 回扫的**退出码义务**归实现批（`node scripts/scope-sweep.mjs --check`），本条不代跑。
 - **位置**：PRD §4.4 B 表新增一行（或裁决复用第 5 道既有码）；本文件 C07 / §7.2-4。
 - **风险**：「纯结构行不可作证据」有判据无码名——C07 断言写不出唯一锚（「断言红」可行，但错误清单认不出它，排障者无法 grep）；这是**唯一阻塞本 testcase 可执行性的建议**。
 - **改法**：B 表登记新码（建议名 `EvidenceStructuralRow`，对齐 `Evidence*` 前缀族）；属命名类判据级口径 → R8 同批回扫 PRD §4.3 / §4.4 / 本文件 C07 三处。
@@ -1253,7 +1319,7 @@
 |---|---|---|
 | 1 | 文件存在 | ✓ 与 spec 同目录（`docs/superpowers/specs/`）；文件名 = spec 去 `.md` + `-testcase.md` |
 | 2 | 编写者独立 | ✓ 文件头「编写者 / 独立性声明」在位：senior-sdet 子代理**全新上下文**，≠ spec 作者、≠ 施工者；所有实现面结论来自独立实测（0.1 的 888 行 / 71+61 双跑 / 白名单在位均为本编写者复算），未从实现倒推放宽任何判据 |
-| 3 | 用例合格 | ✓ 69 条五要素齐（覆盖 / 前置 / 步骤 / 预期 / 判据）；负例 + 边界 43 ≥ 正例 26；覆盖总表 69 行每行指回 spec 节号或 PRD 锚点（§1.1 对位零空行） |
+| 3 | 用例合格 | ✓ 73 条五要素齐（覆盖 / 前置 / 步骤 / 预期 / 判据）；负例 + 边界 47 ≥ 正例 26；覆盖总表 73 行每行指回 spec 节号或 PRD 锚点（§1.1 对位零空行） |
 | 4 | spec 外链 | ✓ spec §10.4 末已写「测试用例文件：`docs/superpowers/specs/2026-10-27-s2-observation-check-design-testcase.md`」；spec 内 `^#### ` = 0（未内联）；2026-10-27 12:00 复核 |
 | 5 | 一起送审 | 待父代理执行：议会开卷清单同时列 spec + 本 testcase 两份 |
 
@@ -1261,33 +1327,33 @@
 
 | 项 | 值 |
 |---|---|
-| 用例总数 | **69** = A7 + B18 + C7 + D8 + E14 + F4 + G5 + H4 + I2 |
-| 正 / 负 / 边界 | 26 / 38 / 5（负 + 边界 43 ≥ 26，硬门过） |
-| 常驻 : 验收 | 64 常驻 + 5 验收命令（A04 / A06 / A07 / G01 / G02，§5） |
-| 覆盖的 spec 验收项 | §10.8 七锚点全覆盖：① sha256 原样迁入（A01-A03）② 基线不退 71/71 + agents 零引用（A04-A06）③ 新增判据有测试——B 表 S2 组 14 码逐码、A 表 5 零测试码、三类不出码、A 表并入 8 码冒烟（B/C/D/H/I 组）④ golden（D05-D07）⑤ 覆盖语义 7 处 fixture + 1 探索稿指针 + 禁放宽（F 组 + D08）⑥ CLI（E08-E14）⑦ 仓门禁不红（A07/G01/G02） |
+| 用例总数 | **73** = A7 + B20 + C8 + D8 + E14 + F4 + G6 + H4 + I2 |
+| 正 / 负 / 边界 | 26 / 41 / 6（负 + 边界 47 ≥ 26，硬门过） |
+| 常驻 : 验收 | 65 常驻 + 8 验收命令（A01 / A02 / A03 / A04 / A06 / A07 / G01 / G02，§5） |
+| 覆盖的 spec 验收项 | §10.8 七锚点全覆盖：① sha256 原样迁入（A01-A03）② 基线不退 71/71 + agents 零引用（A04-A06）③ 新增判据有测试——B 表 S2 组 16 码逐码、A 表 5 零测试码、三类不出码、A 表并入 8 码冒烟（B/C/D/H/I 组）④ golden（D05-D07）⑤ 覆盖语义 7 处 fixture + 1 探索稿指针 + 禁放宽（F 组 + D08）⑥ CLI（E08-E14）⑦ 仓门禁不红（A07/G01/G02） |
 | 另覆盖 PRD 侧 | §5.3 V-6 S2 部分（行 1-6、8、9 + 绿例 11、12）、§9.3 M-2 S2 部分、§0.5 Q-A-05（分母闭合） |
 | 未覆盖 | §6 七条（S1 / S3 接线 / S4 / V-8 其余四处 / Windows 软链实盘 / 语义判定 / 逐名比对），逐条带兜底 |
 | 盲点 | 13 条（G-1 ～ G-13，§7.1），全部有对位处置 |
 
 ### 9.3 机器自查命令（仓库根 PowerShell 粘贴；四条判据 = 输出值）
 
-① 用例数 = 69（每条用例一个四级标题）：
+① 用例数 = 73（每条用例一个四级标题）：
 
-`(Select-String -Path 'docs\superpowers\specs\2026-10-27-s2-observation-check-design-testcase.md' -Pattern '^#### ').Count` → `69`
+`(Select-String -Path 'docs\superpowers\specs\2026-10-27-s2-observation-check-design-testcase.md' -Pattern '^#### ').Count` → `73`
 
-② 类型计数 = 26 / 38 / 5（覆盖总表类型列）：
+② 类型计数 = 26 / 41 / 6（覆盖总表类型列）：
 
-`(Select-String -Path <本文件> -Pattern '^\| [A-I]\d{2} \|.*\| 正 \|').Count` → `26`；同式换 `负` → `38`；换 `边界` → `5`（三条合计 69 = ①）
+`(Select-String -Path <本文件> -Pattern '^\| [A-I]\d{2} \|.*\| 正 \|').Count` → `26`；同式换 `负` → `41`；换 `边界` → `6`（三条合计 73 = ①）
 
 ③ 禁占位词 = 0（大小写敏感；F03 的 `test.todo` 是被扫描的 node:test API 名——小写带点，非占位词，用 `-CaseSensitive` 精确区分）：
 
 `(Select-String -Path <本文件> -Pattern 'TB[D]|TO[D]O|稍后补[充]' -CaseSensitive).Count` → `0`
 
-④ 合法占位（「待 plan Task N」）逐条可核、无一处用作判据：
+④ 合法占位（「待 plan Task N」）逐条可核、无一处用作判据——**当前真占位 0 处**（两处已在 2026-10-27 关闭：A01 前置、C07 前置）：
 
-`Select-String -Path <本文件> -Pattern '待 plan Task'` → **5 行** = 3 行真占位（§2 总述（规则声明）、A01 前置（MIGRATION_COMMIT 落值）、C07 前置（码名登记））+ 本节 2 行命令文本自引用（④ 的描述句与本行 Pattern 字样，非占位）——3 行真占位全部位于「前置 / 声明」语境，0 处在「判据」字段。
+`Select-String -Path <本文件> -Pattern '待 plan Task'` → **3 行** = 1 行规则声明（§2 总述「唯一允许占位 = …」，声明本身不是占位实例）+ 本节 2 行命令文本自引用（④ 本行描述句 + 下列 Pattern 字样），**0 处**在判据字段。两处已关闭的真占位：A01 前置（原 `MIGRATION_COMMIT` 落值 → 零提交裁定下改锚账本 §迁入清单 11 行 sha256）、C07 前置（原「码名待登记」→ 已登记 `EvidenceStructuralRow`，PRD :355）。另 4 处「形态按 plan Task N 落地」（B 组共用夹具 / B14 预期 / B17 前置 / D01 前置；**无「待」字**）属 plan 可自决的实现点，不写在判据字段，不计入占位。
 
-> 编写者按「在输出带数据的结论前必须执行验证闸门」规则已实跑 ①-④：`69` / `26` / `38` / `5` / `0` / 5 行（其中真占位 3 处），与本节声明一致（2026-10-27 实测）。
+> 编写者按「在输出带数据的结论前必须执行验证闸门」规则已实跑 ①-④：`73` / `26` / `41` / `6` / `0` / 3 行（其中真占位 0 处），与本节声明一致（2026-10-27 实测；同批实跑值另有 A02 的 11 条 sha256 全等、A03 的 888）。
 
 
 
