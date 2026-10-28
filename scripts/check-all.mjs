@@ -24,6 +24,10 @@ import { agentData } from '../tools/docgen/components/agentData.mjs'
 import { checkSharedChanges } from '../tools/execution-matrix/shared-changes/check-shared-changes.mjs'
 import { checkPatternTable } from '../tools/execution-matrix/check-pattern-table.mjs'
 import { splitRow, fenceMask } from '../tools/execution-matrix/markdown-rows.mjs'
+// ⑥ 段（观察产物门禁）与 ② 段 skip 守卫的判据单源：本文件只调用，不内联文案
+import { runObservationGate, formatGateLine } from '../tools/observation-check/gate-run.mjs'
+import { EXPIRY_EVENT, EXPIRY_LANDED, disposeCardFindings } from '../tools/observation-check/card-exempt.mjs'
+import { SKIP_ALLOWLIST } from './test-skip-allowlist.mjs'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -41,6 +45,13 @@ function collectMjs(dir, out = []) {
 }
 
 let failed = false
+
+// ⑥ 段总旁路（R6）：唯一开关，只跳 ⑥ 段；未开启时不打印任何 BYPASS 行（留痕可被审计看见）
+let bypass = false
+if (process.env.CHECK_BYPASS === '1') {
+  bypass = true
+  console.log(`BYPASS: ${process.env.CHECK_BYPASS_REASON || '(未提供原因)'}`)
+}
 
 // ① 语法检查：node --check 逐个（只查语法，不执行）
 const skillsDir = join(root, 'skills')
@@ -91,6 +102,32 @@ if (t.error) {
   } else if (Number(testsLine[1]) === 0) {
     failed = true
     console.error('[测试] 用例总数为 0，测试未实际执行（glob 零匹配？）')
+  }
+}
+
+// ② 段续：静默 skip / todo 守卫（R9）——只按用例名白名单核，不比较条数。
+// 解析形态定死为 TAP 内联指令（名字取第 1 捕获组、reason 丢弃）；不存在独立的 `# SKIP <名>` 行。
+if (!t.error && t.stdout) {
+  const TAP_DIRECTIVE = /^\s*(?:not )?ok\s+\d+\s+-\s+(.*?)\s+#\s+(SKIP|TODO)\b/
+  const parsed = { SKIP: [], TODO: [] }
+  for (const line of t.stdout.split(/\r?\n/)) {
+    const m = line.match(TAP_DIRECTIVE)
+    if (m) parsed[m[2]].push(m[1].trim())
+  }
+  for (const kind of ['SKIP', 'TODO']) {
+    const label = kind === 'SKIP' ? 'skip' : 'todo'
+    for (const name of parsed[kind]) {
+      if (!SKIP_ALLOWLIST.includes(name)) {
+        failed = true
+        console.error(`[测试] 名单外 ${label}：${name}`)
+      }
+    }
+    // fail-closed：计数 >0 但解析不出任何名字 = TAP 形态漂移，守卫已失能
+    const counted = new RegExp(`^\\s*#\\s*${label}\\s+(\\d+)\\s*$`, 'm').exec(t.stdout)
+    if (counted && Number(counted[1]) > 0 && parsed[kind].length === 0) {
+      failed = true
+      console.error(`[测试] # ${label} ${counted[1]} 但解析不出用例名（TAP 形态漂移，守卫失能）`)
+    }
   }
 }
 
@@ -364,6 +401,22 @@ if (existsSync(SESSION_DIR)) {
   console.log('⑤ .session 结构检查跳过（无该目录：干净环境 / CI）')
 }
 if (!sessionOk) failed = true
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ⑥ 观察产物门禁（S3）：归档三态 + 反向清单 + git 断言 + 过程侧四段 + F-24 窗口状态行
+// 文案唯一来源 = formatGateLine(res)；本文件只 console.log，不内联逐条前缀 / 计数行字面量。
+// ─────────────────────────────────────────────────────────────────────────────
+if (bypass) {
+  console.log('⑥ 观察产物门禁跳过（BYPASS）')
+} else {
+  const gateRes = runObservationGate()
+  console.log(formatGateLine(gateRes))
+  if (gateRes.findings.length > 0) failed = true
+  // 卡面 findings 源在 S1（本期零实现，R7）：n/w/b 全部取自实跑值，不写字面量
+  const cardFindings = []
+  const disposed = disposeCardFindings(cardFindings)
+  console.log(`[豁免窗口] 15 张角色卡只告警（到期 = S4 首次重生成，EXPIRY_EVENT=${EXPIRY_EVENT} / EXPIRY_LANDED=${EXPIRY_LANDED}）；卡面 findings ${cardFindings.length} / 告警 ${disposed.warnings.length} / 阻断 ${disposed.blockers.length}（S1 未上线：非达标证据）`)
+}
 
 if (failed) {
   console.error('check 未通过')
