@@ -117,11 +117,6 @@ function planText(opts = {}) {
 const specLines = (n, sep = '\n', trailing = true) =>
   Array.from({ length: n }, (_, i) => `第 ${i} 行`).join(sep) + (trailing ? sep : '')
 const tcIds = (n) => Array.from({ length: n }, (_, i) => `#### P${String(i + 1).padStart(2, '0')}\n`).join('')
-const planFixture = (over = {}) => planText(over)
-
-// 常用组合：PRD-A + PLAN-A + TC-A
-const std = (over = {}, prd = PRD_A, tc = TC_A) =>
-  withRoot({ 'prd.md': prd, 'plan.md': planFixture(over), 'tc.md': tc }, (root) => ({ root }))
 
 const coverage = (root, stage = 'S4') =>
   run(root, ['coverage', '--plan', R(root, 'plan.md'), '--prd', R(root, 'prd.md'), '--stage', stage])
@@ -700,4 +695,81 @@ test('P76 coverage 三类红 + 一类绿：四种首行两两不同，且「首�
   for (const x of [A, B, C, D]) assert.ok(redByFirstLine(firstLine(x), x.status), firstLine(x))
   assert.ok(/ => ok$/.test(firstLine(D)))
   assert.ok(!/ => fail$/.test(firstLine(D)))
+})
+
+// ── J 组（2026-10-28 代码审查 #1 / #2 / #3 的守门用例：P77–P79） ──────────
+test('P77 围栏代码块内的 ## Task / Consumes 不算真实结构（#1：与 check-all 的「围栏内表格不算」同口径）', () => {
+  const plan = [
+    '# 夹具 plan',
+    '',
+    '**Testcase:** `tc.md`',
+    '',
+    '## Task 1: a',
+    '',
+    '## Task 2: b',
+    '- Consumes: Task 1',
+    '',
+    '```md',
+    '## Task 9: 示例（不是真任务）',
+    '- Consumes: Task 1',
+    '```',
+    '',
+  ].join('\n')
+  withRoot({ 'plan.md': plan, 'tc.md': TC_A }, (root) => {
+    const x = deps(root)
+    assert.strictEqual(firstLine(x), 'deps: cycle 0 dangling 0（nodes 2 / edges 1） => ok')
+    assert.strictEqual(x.status, 0)
+  })
+})
+
+test('P78 附录 A 内有子标题时仍取到落点表（#2：节边界 = 同级或更高级标题）', () => {
+  const plan = [
+    '# 夹具 plan',
+    '',
+    '**Testcase:** `tc.md`',
+    '',
+    '## Task 1: a',
+    '',
+    '## 附录 A：落点',
+    '',
+    '### 说明',
+    '',
+    '下表是落点。',
+    '',
+    '| ID | 类型 | 落点 |',
+    '|---|---|---|',
+    '| P01 | 正 | Task 1 |',
+    '| P02 | 正 | Task 2 |',
+    '',
+  ].join('\n')
+  withRoot({ 'plan.md': plan, 'tc.md': '#### P01\n#### P02\n' }, (root) => {
+    const x = map(root)
+    assert.strictEqual(x.status, 0)
+    assert.strictEqual(firstLine(x), 'map: missing 0 dangling 0（cases 2 / mapped 2） => ok')
+  })
+})
+
+test('P79 相邻表格不得被并成一张（#3：第二张表的 ID 行不得计入附录 A）', () => {
+  const plan = [
+    '# 夹具 plan',
+    '',
+    '**Testcase:** `tc.md`',
+    '',
+    '## Task 1: a',
+    '',
+    '## 附录 A：落点',
+    '',
+    '| ID | 类型 | 落点 |',
+    '|---|---|---|',
+    '| P01 | 正 | Task 1 |',
+    '| P02 | 正 | Task 2 |',
+    '| Q07 | 旧 | — |',
+    '|---|---|---|',
+    '',
+  ].join('\n')
+  withRoot({ 'plan.md': plan, 'tc.md': '#### P01\n#### P02\n' }, (root) => {
+    const x = map(root)
+    assert.strictEqual(firstLine(x), 'map: missing 0 dangling 0（cases 2 / mapped 2） => ok')
+    assert.strictEqual(x.status, 0)
+  })
 })

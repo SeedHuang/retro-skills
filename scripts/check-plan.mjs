@@ -11,7 +11,7 @@
 //   · 首行一律以 ` => <ok|fail>` 收尾，且 `fail` ⇔ exit 1（门行只贴首行即可判通过与否）。
 import { readFileSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { splitRow } from '../tools/execution-matrix/markdown-rows.mjs'
+import { splitRow, fenceMask } from '../tools/execution-matrix/markdown-rows.mjs'
 
 const SPEC_MAX = 350
 const TC_MAX = 80
@@ -78,11 +78,26 @@ function readInput(label, arg, cwd) {
 const isTableLine = (line) => line.trim().startsWith('|')
 const isSeparator = (cells) => cells.length > 0 && cells.every((c) => /^:?-{3,}:?$/.test(c))
 
-// 连续 `|` 行 = 一张表；第一行当表头，分隔行跳过
-function tables(lines) {
+// 围栏掩码：围栏内是**示例**，不是真实结构（与 `check-all` 的「围栏内表格不算」同一条单源口径）。
+// 不掩码会把 plan 里用来展示格式的 ```## Task 9``` / ```| F-07 | Task 1 |``` 当成真节点与真映射，
+// 凭空造出 dangling / 环 / 虚高的用例条数（2026-10-28 代码审查 #1）。
+function contentLines(text) {
+  const lines = String(text ?? '').split(/\r?\n/)
+  return { lines, mask: fenceMask(lines).mask }
+}
+
+// 连续 `|` 行 = 一张表；第一行当表头，分隔行跳过。
+// 两张表**相邻且无空行**时，第二张的表头会先被当成上一张的数据行——见到第二个分隔行就把上一行
+// 还原成新表表头（2026-10-28 代码审查 #3：否则会让覆盖率/映射判据假红）。
+function tables(lines, mask = null) {
   const out = []
   let cur = null
-  for (const line of lines) {
+  for (let i = 0; i < lines.length; i++) {
+    if (mask && mask[i]) {
+      cur = null
+      continue
+    }
+    const line = lines[i]
     if (!isTableLine(line)) {
       cur = null
       continue
@@ -93,7 +108,14 @@ function tables(lines) {
       out.push(cur)
       continue
     }
-    if (isSeparator(cells)) continue
+    if (isSeparator(cells)) {
+      if (cur.rows.length > 0) {
+        const header = cur.rows.pop()
+        cur = { header, rows: [] }
+        out.push(cur)
+      }
+      continue
+    }
     cur.rows.push(cells)
   }
   return out
@@ -160,16 +182,22 @@ function parseConsumes(line) {
 // 任务块：节点标题（`^#{2,4}\s*(?:Task|T)\s*(\d+)`）到下一个 ATX 标题为止
 // 节点集合**先全扫一遍**再取边——否则「Task 2 依赖后文声明的 Task 3」会被误判成 dangling。
 function parseTasks(text) {
-  const lines = text.split(/\r?\n/)
+  const { lines, mask } = contentLines(text)
   const nodes = new Set()
-  for (const line of lines) {
-    const m = /^#{2,4}\s*(?:Task|T)\s*(\d+)/.exec(line)
+  for (let i = 0; i < lines.length; i++) {
+    if (mask[i]) continue
+    const m = /^#{2,4}\s*(?:Task|T)\s*(\d+)/.exec(lines[i])
     if (m) nodes.add(Number(m[1]))
   }
   const edges = new Set()
   const dangling = []
   let current = null
-  for (const line of lines) {
+  for (let i = 0; i < lines.length; i++) {
+    if (mask[i]) {
+      current = null
+      continue
+    }
+    const line = lines[i]
     if (/^#{1,6}\s/.test(line)) {
       const m = /^#{2,4}\s*(?:Task|T)\s*(\d+)/.exec(line)
       current = m ? Number(m[1]) : null
@@ -186,10 +214,13 @@ function parseTasks(text) {
   return { nodes, edges, dangling }
 }
 
-// 用例 ID：两种载体并集去重（R5 / Q5）
+// 用例 ID：两种载体并集去重（R5 / Q5）；围栏内的示例 ID 不计（#1）
 function testcaseIds(text) {
+  const { lines, mask } = contentLines(text)
   const ids = new Set()
-  for (const line of text.split(/\r?\n/)) {
+  for (let i = 0; i < lines.length; i++) {
+    if (mask[i]) continue
+    const line = lines[i]
     const a = /^#{3,4}\s+([A-Z][\w-]*?\d{2})\b/.exec(line)
     if (a) {
       ids.add(a[1])
@@ -211,15 +242,21 @@ function runCoverage(args, cwd) {
   const stage = args['--stage']
   if (!/^S\d+$/.test(stage)) usage(`--stage 必须是 S<数字>（接到「${stage}」）`)
 
-  const prdLines = prdText.split(/\r?\n/)
-  const fsTable = tables(prdLines).find((t) => (t.header[0] ?? '').includes('F') && (t.header[1] ?? '').includes('S'))
+  const prd = contentLines(prdText)
+  const fsTable = tables(prd.lines, prd.mask).find((t) => (t.header[0] ?? '').includes('F') && (t.header[1] ?? '').includes('S'))
   if (!fsTable) usage('未找到 F→S 覆盖表')
 
   const hits = fsTable.rows.filter((r) => (r[1] ?? '').match(/S\d+/g)?.includes(stage))
   const prdFeatures = new Set()
   for (const r of hits) for (const f of expandFeatures(r[0] ?? '')) prdFeatures.add(f)
 
-  const planTextFeatures = new Set(planText.match(/F-\d{2}/g) ?? [])
+  // plan 侧功能点同样只认围栏外的记号（围栏内的示例不算覆盖，见 #1）
+  const plan = contentLines(planText)
+  const planTextFeatures = new Set()
+  for (let i = 0; i < plan.lines.length; i++) {
+    if (plan.mask[i]) continue
+    for (const f of plan.lines[i].match(/F-\d{2}/g) ?? []) planTextFeatures.add(f)
+  }
   const violated = []
   if (hits.length === 0) violated.push(`stage ${stage} 在 F→S 表里 0 命中`)
 
@@ -230,7 +267,7 @@ function runCoverage(args, cwd) {
   // 覆盖第二半：功能点→任务映射表（按单元格值识别，不按表头；两特征合取，Q21 / Q22）
   const { nodes } = parseTasks(planText)
   const hasTaskCell = (row) => row.some((c) => /Task\s*\d+|T\d+/.test(c))
-  const mapTable = tables(planLines(planText)).find((t) => t.rows.some((r) => /F-\d{2}/.test(r[0] ?? '')) && t.rows.some(hasTaskCell))
+  const mapTable = tables(plan.lines, plan.mask).find((t) => t.rows.some((r) => /F-\d{2}/.test(r[0] ?? '')) && t.rows.some(hasTaskCell))
   let stepsOk = true
   if (!mapTable) {
     stepsOk = false
@@ -263,8 +300,6 @@ function runCoverage(args, cwd) {
   const body = `coverage: gap ${gapSet.length}（prd ${prdFeatures.size} / plan ${inter.length}）steps ${stepsOk ? 'ok' : 'fail'}`
   return { first: verdictLine(body, ok), violations: violated, ok }
 }
-
-const planLines = (text) => text.split(/\r?\n/)
 
 // ── deps ─────────────────────────────────────────────────────────────────
 function runDeps(args, cwd) {
@@ -315,17 +350,23 @@ function runMap(args, cwd) {
   if (!tcLine) usage('plan 缺 **Testcase:** 行（结构缺失）')
   const tcText = readInput('**Testcase:**', tcLine[1], cwd)
 
-  const lines = planLines(planText)
-  const start = lines.findIndex((l) => /^#{1,6}\s*附录 A/.test(l))
+  const { lines, mask } = contentLines(planText)
+  const headRe = /^(#{1,6})\s*附录 A/
+  const start = lines.findIndex((l, i) => !mask[i] && headRe.test(l))
   if (start < 0) usage('plan 无「附录 A」节（结构缺失）')
+  // 节边界 = 下一个**同级或更高级**标题（与 testcase P61 的「`## 附录 A` 到下一个 `## `」同口径）。
+  // 原来遇任意标题即截断，附录 A 里一有 `### 说明` 就会把落点表丢掉 → 假 exit 2（2026-10-28 代码审查 #2）。
+  const level = headRe.exec(lines[start])[1].length
   let end = lines.length
   for (let i = start + 1; i < lines.length; i++) {
-    if (/^#{1,6}\s/.test(lines[i])) {
+    if (mask[i]) continue
+    const m = /^(#{1,6})\s/.exec(lines[i])
+    if (m && m[1].length <= level) {
       end = i
       break
     }
   }
-  const appendix = tables(lines.slice(start + 1, end))
+  const appendix = tables(lines.slice(start + 1, end), mask.slice(start + 1, end))
   const idRe = /^([A-Z][\w-]*?\d{2})$/
   const idTable = appendix.find((t) => t.rows.some((r) => idRe.test((r[0] ?? '').trim())))
   if (!idTable) usage('「附录 A」节内首列不是用例 ID（结构缺失）')

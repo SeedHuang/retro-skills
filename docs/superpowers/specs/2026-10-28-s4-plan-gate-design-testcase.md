@@ -7,7 +7,8 @@
 > 判据出处（用来核 spec 有没有把判据写漏）：`skills/dev-workflow/references/stage-2b-plan-gate.md:12-32`（三条核对原文）、`:40-46`（三权）
 > 编写者：**senior-sdet 子代理**（角色卡 `agents/senior-sdet.md`，全新上下文）
 > 独立性声明：**未参与本 spec 的写作与设计**，判据只取自 spec 与 PRD 原文；未参与 `scripts/check-plan.mjs` 的任何设计与实现（该文件当前不存在，§0.1-1）；**只创建本文件，未改 spec、未改代码、未执行任何 git 写操作**。
-> 编写日期：**2026-10-28**｜版本：**v11（v9 之后：计划阶段回流 D15 / Q31——P62 / P63 的活文档计数不写死）**｜条数：**76**
+> 编写日期：**2026-10-28**｜版本：**v12（代码审查回流 D16：围栏掩码 / 附录 A 节边界 / 相邻表边界——新增 P77–P79）**｜条数：**79**
+> **v12 改动（2026-10-28 代码审查 #1/#2/#3 修完后的守门用例；判据源 = spec `D16`）**：新增 **P77**（围栏代码块内的 `## Task` / `Consumes` 不计数 → `nodes 2 / edges 1`）、**P78**（附录 A 内有 `### 说明` 仍取到落点表 → `map` exit 0）、**P79**（相邻两表不得缝成一张 → `mapped 2` 不把第二张表的 ID 行算成悬空）；§1 总表 / §3 计数 / §1.1 对位同步（76 → **79**：负 31 / 边界 32）。**三条都是「不计数」的守卫**，判据强度只增不减。
 > **v11 改动（计划阶段回流，2026-10-28；来源 = 本文件 `:1164` 自身的指令「行数真的变了 → 先核是不是新增了行，再改本条，不得直接放宽」）**：① **P62** 由「`②→③` 行总数 = 4」改为**段值锁定**四条历史行（`②→③` / `@S6` / `@S2` / `@S3`；本段新增的 `@S4` 行不计入总数）；② **P63** 由「`rows = 19`」改为「`rows` = 独立现算的数据行数（以 `|` 开头行数 − 2）」；③ **P65** 由「`tc 84/80`」改为「`tc` = **R5 双载体并集**、现算（当前 88）」——`84` 是 `####`-only 口径，与 R5 的并集定义冲突（D15 / Q31）；④ §1 总表 P62 / P63 / P65 三行与 §1.1 新增 `Q31` 对位行同步；⑤ 条数不变（76）。**判据强度不变**（`bad 0`、`tc > 80` 必红、「历史四条仍含历史措辞」原样），只把「必然漂移的总数」改成现算。
 > **v9 改动（议会 #2 第 1 轮；只对齐 spec v2，未改判据来源）**：① P02 翻面（`steps ok` + 只报「缺 F-13」——`spec` Q29 定「第二半遍历集合 = PRD∩plan」）；② P50 重写（`live` = 三条现行命令 `includes` 全真）、P53 改「`当前适用` = 0 且 `（脚本上线前，历史二选一）` = 3」、P52 增两条标签断言；③ P63 改 `rows = 19`；④ P16 增「`Consumes: 无（…）` 不产生边」（`edges 1`）；⑤ P20 增四种破折号同值；⑥ P38 增 `--rounds` 非法值三例；⑦ P67 改 `Task 2、Task 9`（钉「每一个编号都要存在」）；⑧ P04 增反引号内竖线夹具（钉 `splitRow`）；⑨ P08 / P09 / P30 / P43 补「无计数行」的 stdout 断言；⑩ P54 / P55 改结构断言（同小节 + 同一行）；⑪ P61 标「一次性交付验收」；⑫ §0.1-9c / §0.5-2 / §0.4-3 / §0.2-9 / §0.2-12 / C-16 / §10.1-②⑦ 消除残留旧口径；⑬ P64 的 `cases / mapped / tc` 由 74 改 76。
 > v2 改动（只对齐 spec，未改任何判据）：① 新增 **P66 / P67 / P68**（覆盖第二半「功能点→任务映射表」，spec §4.2 `:80` + D10 `:119`）；② 改写 **P01 / P03**（`plan <b>` = 交集数，R7 `:51` + Q13）、**P15**（dangling 不计入 `edges`，§4.2 `:82` + Q14）、**P31 / P32**（S2/S5 形态与缺附录 A 节 → exit 2，D9 `:118` + Q15）、**P41**（`size` 0 条不红，Q17 `:141`，并与 P28 成对照）、**P42 / P07**（exit 2 不打印计数行，§4.1 `:69` + Q19）、**P61**（未勾选 38，R10 `:54` + Q20）、**P44**（路径基准 `process.cwd()`，Q18 `:142`）；③ §0.3 由「需澄清」改为「已澄清 + spec 落点」。
@@ -161,7 +162,7 @@ for (const ev of ['已核对 2026-10-28T10:30', '已核对 2026-10-28T10:30:45',
 | 6 | 回归资产（改哪些文件必须重跑哪些） | 改 `check-plan.mjs` → A–E 全组；改 `check-gate-record.mjs` / `ANCHOR_RE` → G 组；改 `planGateReport` / `stage-2b` / `stage-2-tech-design` / `stage-4-quality` → F 组；改 `commands.mjs` → P47 |
 | 7 | 判别力（假阳性 / 假阴性各一例） | 假阳性例 = P59（含 ISO 串但**同时有**反引号命令，不得误红）；假阴性例 = P28（testcase 0 条 ID 若不报红 = 恒绿）、P58（ISO 串被当锚点 = P2 假阴性，实测已成立） |
 | 8 | 盲点雷达（脏状态接管 / 中断恢复 / 幂等 / 顺序依赖 / 跨平台） | 跨平台 = P39（CRLF）与 P05（全角字符）；顺序依赖 = P22（任务块外的 `Consumes:` 提及不得算边）；幂等 = P45（跑四条命令前后文件树不变）；脏状态 = 不适用（无状态） |
-| 9 | 覆盖账 | R1–R10 / Q1–Q30 / C-1–C-28 全对位（§1.1 无零行）；负例 + 边界 **60** ≥ 正例 **16**；条数 76 ≤ 80（PRD `:301`）；P61 属一次性交付验收（不落常驻），仍按「边界」计入比例 |
+| 9 | 覆盖账 | R1–R10 / Q1–Q30 / C-1–C-28 全对位（§1.1 无零行）；负例 + 边界 **63** ≥ 正例 **16**；条数 79 ≤ 80（PRD `:301`）；P61 属一次性交付验收（不落常驻），仍按「边界」计入比例 |
 
 ### 0.5 自由探索（现场找的 5 个「最可能出事、但没人写进用例」的角落）
 
@@ -240,7 +241,7 @@ for (const ev of ['已核对 2026-10-28T10:30', '已核对 2026-10-28T10:30:45',
 | P61 | 边界 | R10②（`spec:59`）/ §4.4（`spec:117`）/ Q11（`spec:152`）/ Q20（`spec:161`）/ Q30 | **一次性交付验收**：S3 plan 全部勾选（`- [ ]` = 0、`- [x]` = 38）且 `Consumes:` / 附录 A / 行数零位移（不落常驻测试） |
 | P62 | 边界 | D7（`spec:129`）/ R10② 「不改已签结论」/ **D15 + Q31** | 已签 `②→③` 的 **4 条历史行**（段值锁定）的「脚本未落地」结论句不得被改写成脚本输出；本段新增的 `@S4` 行不计入总数 |
 | P63 | 正 | R10① 的回归半段（`spec:116`）/ **D15 + Q31** | 改 `ANCHOR_RE` 后真 `gate-record.md` 仍 `reasons = []`，且 `rows` = **独立现算数据行数**（不写死数字；改判不得把既有行判红） |
-| P64 | 正 | R7 / §4.1 交付证据（`spec:63-80`）/ R8 半段 / C-18 | **验收**：S4 自身 plan 跑四条子命令 → 首行全绿（`cases 76 / mapped 76`、`tc 76/80 rounds <k>/3`，数字现算）；`cli.mjs gate` 仍 exit 0 |
+| P64 | 正 | R7 / §4.1 交付证据（`spec:63-80`）/ R8 半段 / C-18 | **验收**：S4 自身 plan 跑四条子命令 → 首行全绿（`cases 79 / mapped 79`、`tc 79/80 rounds <k>/3`，数字现算）；`cli.mjs gate` 仍 exit 0 |
 | P65 | 边界 | R6 / D2（`spec:124`）/ C-18 / **D15 + Q31** | **验收**：对存量超限样本跑 `size --rounds <n>` → exit 1、`tc` = **双载体并集**（现算 88，非 `####`-only 的 84）/80（「不追溯」是执行范围，脚本无白名单） |
 | P66 | 正 | 覆盖第二半机械载体：§4.2 映射行（`spec:90`）+ D10（`spec:132`）+ C-23 | plan 内有「功能点→任务映射表」且每个 F 都指向存在的 Task → exit 0、首行 `gap 0（…）steps ok` |
 | P67 | 负 | §4.2 映射行（`spec:90`「每一个编号都要存在」）+ D10（`spec:132`）+ Q4 同口径 | 表里某 F 指向 `Task 2、Task 9`（9 不存在）→ exit 1、首行 `gap 0（…）steps fail`、stderr 只点名 `Task 9` |
@@ -253,6 +254,9 @@ for (const ev of ['已核对 2026-10-28T10:30', '已核对 2026-10-28T10:30:45',
 | P74 | 边界 | R4 区间展开（`spec:53`）+ 边集 / dangling（`spec:92`）/ **C-26** | `Task 8–9`（节点只有 1–7）→ 展开为 2 条引用、**各自计 dangling**（`dangling 2`）、`edges 0`、exit 1 |
 | P75 | 边界 | R6 行数公式的 `text === ''` 分支（`spec:55`）/ C-25 | **纯 `\n` 的 1 字节文件 → `spec 1/350`**（钉住特例没有写成过宽判断，如 `< 100` 或「空行不计」） |
 | P76 | 边界 | R7 总则「门行只贴首行即可判通过与否」（`spec:56`）/ C-23 / **C-28** | **三类红 + 一类绿四段**：第一半红 `gap 1…steps ok => fail`、第二半红 `gap 0…steps fail => fail`、空输入类红 `gap 0（prd 0 / plan 0）steps ok => fail`、全绿 `… => ok`；四种首行两两不同且「首行说红 ⇔ exit 1」 |
+| P77 | 负 | **D16①**（`spec` §5）/ Q32 / R4 节点与边（`spec:53`） | **围栏代码块内**的 `## Task 9` 与 `- Consumes: Task 1` 不计数 → `deps: cycle 0 dangling 0（nodes 2 / edges 1） => ok`（不掩码会得 `3 / 2`，甚至造假环 / 假 dangling） |
+| P78 | 边界 | **D16②** / §4.2 附录 A（`spec:95`）/ Q15 | `## 附录 A` 内出现 `### 说明` 子标题 → 节边界仍到下一个**同级**标题，`map` 正常计数（不掩码式截断会假 exit 2「首列不是用例 ID」） |
+| P79 | 边界 | **D16③** / R5 映射（`spec:54`）/ Q24 | 附录 A 表**紧跟**第二张表（无空行）→ 各自成表，`mapped 2`、`dangling 0`（缝成一张会把第二张的 ID 行算成悬空） |
 
 ## 1.1 覆盖核对（spec 项 → 用例对位；零对位项单独交代）
 
@@ -305,6 +309,7 @@ for (const ev of ['已核对 2026-10-28T10:30', '已核对 2026-10-28T10:30:45',
 | **Q29 第二半遍历集合 = PRD∩plan（`spec:170`）** | **P02**（缺 F 只报「缺」，不报落点）、P66 / P76-runA（同一形态下「落点」只查交集内） |
 | **Q30 指纹口径（`spec:172`）** | P61（一次性验收）；指纹值复算 → §10.1-⑦ |
 | **Q31 活文档计数不写死（`spec:173`）** | P62（段值锁定历史四条）、P63（`rows` 独立现算） |
+| **D16 解析边界三处（`spec` §5）+ Q32** | P77（围栏不计数）、P78（节边界 = 同级标题）、P79（相邻两表各自成表） |
 | Q11 勾选动指纹走审计增量登记（`spec:152`） | P61（结构零位移半段）；「增量登记」属签字动作 → §10 人工兜 |
 | Q12 agent-card 形态可读（`spec:153`） | P04 |
 | Q13 `plan <b>` = 交集数（`spec:154`） | P01、P03、P10（含 `gap = prd − plan` 自洽断言） |
@@ -354,12 +359,12 @@ for (const ev of ['已核对 2026-10-28T10:30', '已核对 2026-10-28T10:30:45',
 
 | 落点文件 | 用例 | 形态 |
 |---|---|---|
-| `scripts/check-plan.test.mjs`（**新**） | P01–P47 + **P66 / P67 / P68 / P69 / P70**（A–E 组 52 条） | **常驻**，随 `npm run check` 的 ② 段 `**/*.test.mjs` glob 跑；全部 `mkdtempSync` 自建 + 子进程调 CLI |
+| `scripts/check-plan.test.mjs`（**新**） | P01–P47 + **P66 / P67 / P68 / P69 / P70**（A–E 组 52 条） | **常驻**（本文件合计常驻 **61 条**），随 `npm run check` 的 ② 段 `**/*.test.mjs` glob 跑；全部 `mkdtempSync` 自建 + 子进程调 CLI |
 | `tools/docgen/test/dev-workflow-files.test.mjs`（**改 + 增**） | P48–P56（F 组 9 条） | 常驻；`planGateReport` 三态改义即在 `TC-A09` / `TC-E26` 体内改，其余为本文件新增 `TC-*` |
 | `scripts/check-gate-record.test.mjs`（**改 + 增**） | P57–P60、P63（5 条） | 常驻；P57–P60 只调纯函数 `checkGateRecord`（不碰文件），P63 读真 `gate-record.md` |
 | `tools/docgen/test/dev-workflow-files.test.mjs`（**增**） | P62（1 条） | 常驻；读仓内 `gate-record.md`（**被测对象本身**，非夹具） |
 | **一次性交付验收（不落 `*.test.mjs`）** | **P61、P64、P65** | 交付时点跑一次即止（P61 = S3 plan 勾选与零位移；P64 / P65 = 验收命令）；**不写进常驻脚本体**（Q30） |
-| `scripts/check-plan.test.mjs`（**同上文件，增**） | **P71、P72、P73、P74、P75、P76**（I 组 6 条） | **常驻**；P71 造附录 A 重复行、P72 造目录夹具、P73 造无尾换行夹具、P75 造 1 字节夹具、P76 造两套对照夹具（均 `mkdtempSync` 自建） |
+| `scripts/check-plan.test.mjs`（**同上文件，增**） | **P71、P72、P73、P74、P75、P76**（I 组 6 条）＋ **P77、P78、P79**（J 组 3 条） | **常驻**；P71 造附录 A 重复行、P72 造目录夹具、P73 造无尾换行夹具、P75 造 1 字节夹具、P76 造两套对照夹具、P77 造围栏代码块夹具、P78 造带 `### 说明` 的附录 A 夹具、P79 造相邻两表夹具（均 `mkdtempSync` 自建） |
 
 **夹具构造（统一助手，写在 `scripts/check-plan.test.mjs` 内；不新增生产模块）**：
 ```js
@@ -408,7 +413,7 @@ const runWith = (root, mutate) => run(root, mutate())
 
 ## 2 用例明细
 
-编号 `P01`–`P76` 连续不跳号，每条只测一件事，五要素齐（覆盖 / 前置 / 步骤 / 预期 / 判据）。「取法」行只在 §0.2 / §0.3 有口径分歧处出现；「构造与复位」只对**会写全局态或要动仓内文件**的用例单列——纯文本 / 纯读用例的构造写在「前置」里，复位 = 无副作用（全程不写仓内文件）。**物理位置**：P01–P10（A 组）、P11–P23（B）、P24–P32（C）、P33–P41（D）、P42–P47（E）、P48–P56（F）、P57–P63（G）、P64–P65（H「验收」）、P71–P76（I 组）；**P66–P70、P73–P76 紧随 A 组 / P70 之后的补入块**（编号按写作顺序，不按物理相邻）。
+编号 `P01`–`P79` 连续不跳号，每条只测一件事，五要素齐（覆盖 / 前置 / 步骤 / 预期 / 判据）。「取法」行只在 §0.2 / §0.3 有口径分歧处出现；「构造与复位」只对**会写全局态或要动仓内文件**的用例单列——纯文本 / 纯读用例的构造写在「前置」里，复位 = 无副作用（全程不写仓内文件）。**物理位置**：P01–P10（A 组）、P11–P23（B）、P24–P32（C）、P33–P41（D）、P42–P47（E）、P48–P56（F）、P57–P63（G）、P64–P65（H「验收」）、P71–P76（I 组）、**P77–P79（J 组）**；**P66–P70、P73–P76 紧随 A 组 / P70 之后的补入块**（编号按写作顺序，不按物理相邻）。
 
 **共用前置**：① 被测入口 = `node scripts/check-plan.mjs <子命令> …`（子进程；§0.2-1）；② 一切输入文件在 `mkdtempSync` 临时根内（§1.2），路径传绝对路径（§0.2-2）；③ 首行 = `x.stdout.split(/\r?\n/)[0]`；违规行在 **stderr**（`spec:78`）；④ 临时根 `finally` `rmSync(recursive, force)`。
 
@@ -637,6 +642,35 @@ const runWith = (root, mutate) => run(root, mutate())
 - **构造与复位**：构造 = 四套夹具分别 `mkRoot`（互不干扰）；复位 = 各自重建。
 - **判别力**：① 行尾位只写 `ok` 不写 `fail` → 判据 2 / 4 在 A / B / C 上同时红；② **空输入类漏掉行尾 `fail`（N-5 的原始形态）** → C 的首行会是 `… => ok` 却 exit 1，判据 3 / 4 在 C 上红；③ 把 `steps` 当总结论（第二半红时行尾仍 `ok`）→ B 的判据 2 / 4 红；④ 全绿写成 `=> fail` → D 的判据 4 / 5 红。
 - **不覆盖**：`deps` 的 0 节点（P23 单独钉，同一行尾位换子命令）；`map` 的 0 条（P28）；`size` 的三种越限（P35–P37 / P65）。
+
+### J 组：解析边界（D16；2026-10-28 代码审查 #1 / #2 / #3 的守门用例）
+
+#### P77 负例：围栏代码块内的 `## Task` / `Consumes` 不计数（D16①）
+
+- **覆盖**：**D16①**（spec §5）＋ Q32 ＋ R4 节点与边（`spec:53`）
+- **前置**：plan 含真节点 `## Task 1`、`## Task 2`（`- Consumes: Task 1`）；另有一个 ``` 围栏，围栏内写 `## Task 9: 示例` 与 `- Consumes: Task 1`（**示例，不是真任务**）。
+- **步骤**：`node scripts/check-plan.mjs deps --plan <plan>`。
+- **预期**：`status === 0`；首行 `deps: cycle 0 dangling 0（nodes 2 / edges 1） => ok`（围栏内的节点与边都不计）。
+- **判据**：`assert.strictEqual(firstLine(x), 'deps: cycle 0 dangling 0（nodes 2 / edges 1） => ok')` && `assert.strictEqual(x.status, 0)`。
+- **判别力**：不做围栏掩码的实现会得 `nodes 3 / edges 2`（本仓 `check-all.mjs` 早已按「围栏内表格不算」处理，`fenceMask` 在 `markdown-rows.mjs:61`）；更严重的是围栏内写反向依赖可造出**假环**、写 `Task 9` 可造出**假 dangling**——朝假红方向出错。
+
+#### P78 边界：附录 A 内有子标题仍取到落点表（D16②）
+
+- **覆盖**：**D16②** ＋ §4.2 附录 A 行（`spec:95`）＋ Q15
+- **前置**：plan 含 `## 附录 A：落点`，其后一行 `### 说明`，再后是首列 `P01` / `P02` 的落点表；`**Testcase:**` 指向含 `#### P01` / `#### P02` 的 tc。
+- **步骤**：`node scripts/check-plan.mjs map --plan <plan>`。
+- **预期**：`status === 0`；首行 `map: missing 0 dangling 0（cases 2 / mapped 2） => ok`。
+- **判据**：`assert.strictEqual(x.status, 0)` && `assert.strictEqual(firstLine(x), 'map: missing 0 dangling 0（cases 2 / mapped 2） => ok')`。
+- **判别力**：节边界若取「任意标题」，`### 说明` 就把节截断 → 假 exit 2（`「附录 A」节内首列不是用例 ID`）；这与本文件 P61 自述的切片口径「`## 附录 A` 到下一个 `## `」互相矛盾。
+
+#### P79 边界：相邻两表不得缝成一张（D16③）
+
+- **覆盖**：**D16③** ＋ R5 映射口径（`spec:54`）＋ Q24
+- **前置**：附录 A 的落点表（`P01` / `P02`）**紧跟**第二张表（无空行，第二张首行 `| Q07 | 旧 | — |` 后接分隔行）；tc = `#### P01` / `#### P02`。
+- **步骤**：`node scripts/check-plan.mjs map --plan <plan>`。
+- **预期**：`status === 0`；首行 `map: missing 0 dangling 0（cases 2 / mapped 2） => ok`（第二张表不参与 `附录 A` 首列计数）。
+- **判据**：`assert.strictEqual(firstLine(x), 'map: missing 0 dangling 0（cases 2 / mapped 2） => ok')` && `assert.strictEqual(x.status, 0)`。
+- **判别力**：缝成一张时 `Q07` 会被算成附录 A 首列 → 假 `dangling 1`（实测可复现）；空一行则看不出差别，故必须用**无空行**的夹具。
 
 ### B 组：`deps`（R4 / Q3 / Q4 / R7）
 
@@ -1181,8 +1215,8 @@ const runWith = (root, mutate) => run(root, mutate())
   3. `node scripts/check-plan.mjs map --plan <同上>`
   4. `node scripts/check-plan.mjs size --spec docs\superpowers\specs\2026-10-28-s4-plan-gate-design.md --testcase docs\superpowers\specs\2026-10-28-s4-plan-gate-design-testcase.md --rounds <本轮实际轮数>`
   5. `node tools/docgen/cli.mjs gate`（R8：确认没顺手加 verb）
-- **预期**：① `coverage: gap 0（prd 4 / plan 4）steps ok => ok` exit 0；② `deps: cycle 0 dangling 0（nodes N / edges M） => ok` exit 0（N/M 现算）；③ `map: missing 0 dangling 0（cases 76 / mapped 76） => ok` exit 0（**现算**：本 testcase `^#### P\d\d` 条数 = 76 = 附录 A 首列 ID 集合大小）；④ `size: spec <n>/350 tc 76/80 rounds <k>/3` exit 0（`n`、`k` 现算）；⑤ `gate` exit 0。**`<k>` 的取法 = Q26**（本块议会 `progress.md` 轮次账最大值）；**若 `k > 3`：如实贴 `rounds k/3 => fail` + 门行附「超限裁定 / 拆块结论」，不得改小成 3**（此时本条的第 ④ 项判据换成 `=> fail` 且 exit 1，其余四项不变）。
-- **判据**（机器）：五条命令均 exit 0（**唯一例外 = `k > 3`：第 ④ 项按上句改判 `=> fail` + exit 1，其余四项不变**），且首行匹配 `/^coverage: gap 0（prd 4 \/ plan 4）steps ok => ok$/`、`/^deps: cycle 0 dangling 0（nodes \d+ \/ edges \d+） => ok$/`、`/^map: missing 0 dangling 0（cases 76 \/ mapped 76） => ok$/`、`/^size: spec \d{1,3}\/350 tc 76\/80 rounds \d+\/3 => (ok|fail)$/`；`gate` 输出末行含通过字样。
+- **预期**：① `coverage: gap 0（prd 4 / plan 4）steps ok => ok` exit 0；② `deps: cycle 0 dangling 0（nodes N / edges M） => ok` exit 0（N/M 现算）；③ `map: missing 0 dangling 0（cases 79 / mapped 79） => ok` exit 0（**现算**：本 testcase `^#### P\d\d` 条数 = 79 = 附录 A 首列 ID 集合大小）；④ `size: spec <n>/350 tc 79/80 rounds <k>/3` exit 0（`n`、`k` 现算）；⑤ `gate` exit 0。**`<k>` 的取法 = Q26**（本块议会 `progress.md` 轮次账最大值）；**若 `k > 3`：如实贴 `rounds k/3 => fail` + 门行附「超限裁定 / 拆块结论」，不得改小成 3**（此时本条的第 ④ 项判据换成 `=> fail` 且 exit 1，其余四项不变）。
+- **判据**（机器）：五条命令均 exit 0（**唯一例外 = `k > 3`：第 ④ 项按上句改判 `=> fail` + exit 1，其余四项不变**），且首行匹配 `/^coverage: gap 0（prd 4 \/ plan 4）steps ok => ok$/`、`/^deps: cycle 0 dangling 0（nodes \d+ \/ edges \d+） => ok$/`、`/^map: missing 0 dangling 0（cases 79 \/ mapped 79） => ok$/`、`/^size: spec \d{1,3}\/350 tc 79\/80 rounds \d+\/3 => (ok|fail)$/`；`gate` 输出末行含通过字样。
 - **判别力**：这是「脚本对**自己这份交付物**也成立」的自证（若 map 在这里红，说明本 testcase 与 plan 的附录 A 对不上，验收项等于没落）。**数字不写死过期值**：`cases/mapped/tc` 三项在跑之前用 `(Select-String -Path <本文件> -Pattern '^#### P\d\d').Count` 现算一次，与首行比对；不一致即红（本文件条数一改，本条自然跟着变）。
 - **复位**：无（只读命令）。R9 的 `impact-sheet.md` 登记（Q10）不由本用例验，见 §10。
 
@@ -1233,17 +1267,17 @@ const runWith = (root, mutate) => run(root, mutate())
 | 类型 | 条数 | 用例 |
 |---|---|---|
 | 正 | **16** | P01、P04、P11、P12、P24、P33、P45、P48、P54、P55、P59、P60、P63、P64、P66、P69 |
-| 负 | **30** | P02、P06、P07、P08、P09、P10、P13、P14、P15、P23、P26、P27、P28、P29、P30、P35、P36、P37、P38、P42、P43、P46、P47、P49、P50、P53、P57、P58、P67、P68 |
-| 边界 | **30** | P03、P05、P16、P17、P18、P19、P20、P21、P22、P25、P31、P32、P34、P39、P40、P41、P44、P51、P52、P56、P61、P62、P65、P70、P71、P72、P73、P74、**P75**、**P76** |
-| **合计** | **76** | 负 + 边界 **60** ≥ 正 **16**（判据 3 成立）；76 ≤ 80（PRD `:301`） |
+| 负 | **31** | P02、P06、P07、P08、P09、P10、P13、P14、P15、P23、P26、P27、P28、P29、P30、P35、P36、P37、P38、P42、P43、P46、P47、P49、P50、P53、P57、P58、P67、P68、**P77** |
+| 边界 | **32** | P03、P05、P16、P17、P18、P19、P20、P21、P22、P25、P31、P32、P34、P39、P40、P41、P44、P51、P52、P56、P61、P62、P65、P70、P71、P72、P73、P74、**P75**、**P76**、**P78**、**P79** |
+| **合计** | **79** | 负 + 边界 **63** ≥ 正 **16**（判据 3 成立）；79 ≤ 80（PRD `:301`） |
 
 **机器自查命令**（cwd = 仓根，PowerShell；四条判据 = 输出值）：
 ```powershell
 $f = 'docs\superpowers\specs\2026-10-28-s4-plan-gate-design-testcase.md'
-"总数: " + (Select-String -Path $f -Pattern '^#### P\d\d').Count                    # → 76
+"总数: " + (Select-String -Path $f -Pattern '^#### P\d\d').Count                    # → 79
 "正:   " + (Select-String -Path $f -Pattern '^\| P\d\d \| 正 \|').Count            # → 16
-"负:   " + (Select-String -Path $f -Pattern '^\| P\d\d \| 负 \|').Count            # → 30
-"边界: " + (Select-String -Path $f -Pattern '^\| P\d\d \| 边界 \|').Count          # → 30
+"负:   " + (Select-String -Path $f -Pattern '^\| P\d\d \| 负 \|').Count            # → 31
+"边界: " + (Select-String -Path $f -Pattern '^\| P\d\d \| 边界 \|').Count          # → 32
 "五要素缺项: " + ((Select-String -Path $f -Pattern '^#### P\d\d' | ForEach-Object {
   $body = (Get-Content $f | Select-Object -Skip $_.LineNumber -First 40) -join "`n"
   $miss = @('覆盖','前置','步骤','预期','判据') | Where-Object { $body -notmatch "- \*\*$_\*\*" }
