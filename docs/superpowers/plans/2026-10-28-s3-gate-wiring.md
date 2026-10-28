@@ -155,13 +155,13 @@ SKIP_ALLOWLIST: string[]       // 现 2 条精确用例名
 - Consumes: 无（判据全在 spec §11.2 F-24 表 `spec:119-126`）
 - Produces: 四出口（`EXEMPT_CARDS` / `EXPIRY_EVENT` / `EXPIRY_LANDED` / `disposeCardFindings`），供 Task 9 的 ⑥ 段豁免状态行消费；`EXPIRY_LANDED` 是 S4 到期的唯一开关（`spec:224`）
 
-- [ ] **Step 1: 建 `card-exempt.mjs`（四出口逐字）**
+- [x] **Step 1: 建 `card-exempt.mjs`（四出口逐字）**
 
 `EXEMPT_CARDS` = 15 个精确相对路径 `agents/<name>.md`，名单以 `Get-ChildItem agents\*.md` 实跑（2026-10-28 15 名，升序）：`detective-observer`、`evidence-reader`、`reviewer-actuary`、`reviewer-ai`、`reviewer-audit`、`reviewer-backend`、`reviewer-frontend`、`reviewer-interaction`、`reviewer-ops`、`reviewer-product`、`reviewer-qa`、`reviewer-reader`、`reviewer-security`、`reviewer-ui`、`senior-sdet`。
 `EXPIRY_EVENT = 's4-first-regeneration'`；`EXPIRY_LANDED = false`（本期）。
 `disposeCardFindings(findings, { landed = EXPIRY_LANDED } = {})`：`file ∈ EXEMPT_CARDS && !landed` → 进 `warnings`，否则进 `blockers`；纯函数、无 IO；`landed` 只供测试注入（生产不传，Q9 `spec:208`）。
 
-- [ ] **Step 2: 建 `card-exempt.test.mjs`（H41 常驻半段 + H42 / H43 / H44）**
+- [x] **Step 2: 建 `card-exempt.test.mjs`（H41 常驻半段 + H42 / H43 / H44）**
 
 | ID | 断言（判据出处） |
 |---|---|
@@ -172,7 +172,7 @@ SKIP_ALLOWLIST: string[]       // 现 2 条精确用例名
 
 finding 夹具形状 = `{ file: 'agents/<name>.md', code: 'X', message: '…' }`（本文件内自建，**不引用任何仓内文件**）。
 
-- [ ] **Step 3: 跑测试与仓门禁**
+- [x] **Step 3: 跑测试与仓门禁**
 
 ```powershell
 node --test "tools/observation-check/card-exempt.test.mjs"; "exit=$LASTEXITCODE"
@@ -194,7 +194,7 @@ Expected：`exit=0`；套件 `# fail 0`、`# tests ≥ 166 + 4`；仓门禁 `exi
 - Consumes: 无（判据在 spec §11.2 打印形态 `spec:83-86` + Q6 `spec:205`）
 - Produces: `formatGateLine(res)`——⑥ 段唯一文案来源，Task 9 的 `check-all` 只 `console.log` 它的返回值
 
-- [ ] **Step 1: 实现 `formatGateLine(res)`（四条分支）**
+- [x] **Step 1: 实现 `formatGateLine(res)`（四条分支）**
 
 输入结构固定 `{ scannedDirs, archivePairs, processPairs, findings }`：
 1. `findings.length > 0` → 每条渲染一行 `[observation] <code>: <path> —— <message>`，多条用 `"\n"` 连接，**顺序 = 数组顺序**（不排序、不去重、不聚合，`spec:80` / Q5）；
@@ -202,7 +202,7 @@ Expected：`exit=0`；套件 `# fail 0`、`# tests ≥ 166 + 4`；仓门禁 `exi
 3. 其余无 findings → `⑥ 观察产物门禁：扫描 <scannedDirs> 个子目录 / 归档 <archivePairs> 对 / 过程 <processPairs> 对 / findings 0`；
 4. 本函数**不读进程状态、不读磁盘**（纯函数）。
 
-- [ ] **Step 2: 写 H01①（四形态逐字，不 spawn、不碰真仓）**
+- [x] **Step 2: 写 H01①（四形态逐字，不 spawn、不碰真仓）**
 
 | 形态 | 输入 | 期望（逐字） |
 |---|---|---|
@@ -213,7 +213,7 @@ Expected：`exit=0`；套件 `# fail 0`、`# tests ≥ 166 + 4`；仓门禁 `exi
 
 判据出处：`testcase:280-309`（H01 三段之①）。长度/空格/破折号一律逐字，不得改全角。
 
-- [ ] **Step 3: 跑测试**
+- [x] **Step 3: 跑测试**
 
 ```powershell
 node --test "tools/observation-check/gate-run.test.mjs"; "exit=$LASTEXITCODE"
@@ -233,7 +233,7 @@ Expected：`exit=0`、`# fail 0`（本任务只有 H01①）。
 - Consumes: Task 2（`formatGateLine` + 模块骨架）
 - Produces: `runObservationGate()` 返回四字段结构；根不可用与扫描根不可用两类 finding 收敛路径
 
-- [ ] **Step 1: 实现骨架与两条「不可用」分支**
+- [x] **Step 1: 实现骨架与两条「不可用」分支**
 
 1. 根：`repoRoot()`（`tools/observation-check/evidence.mjs:40`）；抛错（含 spawn 失败 / 超时）→ `findings=[{code:'RepoRootUnresolved', path:'<repoRoot 不可得时留空串>', message}]` 并**直接返回**（不抛栈，`spec:75`）；
 2. 扫描根 = `join(root, 'docs', 'superpowers', 'reviews')`；不存在 / `readdirSync` 抛错（含路径是文件）→ `ArtifactNamingOff`（`spec:101`）；
@@ -242,7 +242,7 @@ Expected：`exit=0`、`# fail 0`（本任务只有 H01①）。
 5. 计数：`scannedDirs` = 归档侧被枚举的子目录数（不含过程目录）；`archivePairs` = 已存在且成对的 json + 同名 md 组数（`-a`/`-b` 各自成对，Q14 `spec:213`）；`processPairs` 本任务恒 `0`（Task 7 落）；
 6. **零产物分支成立条件**：`scannedDirs === 0` **且**根层无散文件（`spec:99`）。
 
-- [ ] **Step 2: 写测试（10 条，一律子进程注入）**
+- [x] **Step 2: 写测试（10 条，一律子进程注入）**
 
 夹具与驱动按 testcase §1.2（`testcase:225-263`）逐字实现：`mkRepo()`（临时 git 仓 + 两空根目录 + `commit --allow-empty`）、`runGate(repo)`（spawn `process.execPath` + `--input-type=module -e <DRIVER>`）、`norm()`。**本任务起每个 gate 用例一律走子进程**（`repoRoot()` 有缓存，Q13 `spec:212`）。
 
@@ -259,7 +259,7 @@ Expected：`exit=0`、`# fail 0`（本任务只有 H01①）。
 | H25 | 子进程 `env` 的 `PATH` 置空（不改正进程）→ spawn `ENOENT` → `RepoRootUnresolved`（`testcase:603`） |
 | H54 | 根层散文件 + 0 子目录 → 仍 `UnclassifiedArtifact`，**不是**「0 件，跳过」（`testcase:971`） |
 
-- [ ] **Step 3: 跑测试与仓门禁**
+- [x] **Step 3: 跑测试与仓门禁**
 
 ```powershell
 node --test "tools/observation-check/gate-run.test.mjs" 2>&1 | Select-String -Pattern '^# (tests|pass|fail)'
@@ -280,13 +280,13 @@ Expected：`# fail 0`；`exit=0`。
 - Consumes: Task 3（枚举与三态骨架）
 - Produces: 杂件码 / 允许类豁免 / 子层裁剪 / 大写后缀三条边界的接线判据
 
-- [ ] **Step 1: 接线要点（不另立判据）**
+- [x] **Step 1: 接线要点（不另立判据）**
 
 1. 每个归档子目录的 `files` 入参 = 该 `<次>/` 下**全部相对路径**（POSIX），子层（`cards/`、`attachments/`）一并传入——由 `scanReviewDir` 内部的 `ALLOWED_FILE_RE` / `ATTACHMENT_RE` / `STOCK_FILE_WHITELIST` 判定，门禁侧**不裁剪、不重算**（R4）；
 2. 纯函数返回值（`{code, message}[]`）逐条转成 finding：`path` = `<次>/` 的仓内相对路径（`docs/superpowers/reviews/<次>/`），**杂件文件名留在 `message`**（S2 无 `path`，禁止解析 message 反推路径，`spec:81`）；
 3. 大写后缀（`observation-r1-A.json`）**不报** `ArtifactNamingOff`，按三态后果判（`ArtifactMissing` + `UnclassifiedArtifact`，Q8/Q12）。
 
-- [ ] **Step 2: 写测试（6 条）**
+- [x] **Step 2: 写测试（6 条）**
 
 | ID | 断言（判据出处） |
 |---|---|
@@ -297,7 +297,7 @@ Expected：`# fail 0`；`exit=0`。
 | H13 | `attachments/a/b.md` 两层 → 恰 1 条 `UnclassifiedArtifact`（文件名在 message，`testcase:455`） |
 | H20 | `observation-r1-A.json` → `ArtifactMissing` + `UnclassifiedArtifact`，且**无** `ArtifactNamingOff`（`testcase:541`） |
 
-- [ ] **Step 3: 跑测试**
+- [x] **Step 3: 跑测试**
 
 ```powershell
 node --test "tools/observation-check/gate-run.test.mjs" 2>&1 | Select-String -Pattern '^# (tests|pass|fail)'
@@ -317,14 +317,14 @@ Expected：`# fail 0`。
 - Consumes: Task 3（归档枚举与 `archivePairs` 计数）
 - Produces: 归档侧「以 json 为锚逐个四段校验」路径；孤立 md 与 `MdMissing` 的分界
 
-- [ ] **Step 1: 实现**
+- [x] **Step 1: 实现**
 
 1. 归档侧以 **json 为锚**：每个 `observation-r<N>(-[ab])?.json` 调 `validateArtifact(jsonPath, { registeredIds: REGISTERED_IDS })`，错误对象（`{code, message, path?}`）逐条转 finding（`path` 用文件仓内相对路径，优先实现返回的 `path`、缺省用锚点路径）；
 2. 孤立 md（md 在、无同名 json）→ `JsonNotFound`（`spec:97` / D2）；
 3. md 缺 → 由 `validateArtifact` 判 `MdMissing`（S2 内部，**不重写**）；
 4. 四段码一律原样透传（R8），不改码名、不合并。
 
-- [ ] **Step 2: 写测试（5 条）**
+- [x] **Step 2: 写测试（5 条）**
 
 | ID | 断言（判据出处） |
 |---|---|
@@ -336,7 +336,7 @@ Expected：`# fail 0`。
 
 合法产物按 testcase §0.2-5 构造（全 `na` items + `renderObservation(doc)` 派生 md）。
 
-- [ ] **Step 3: 跑测试**
+- [x] **Step 3: 跑测试**
 
 ```powershell
 node --test "tools/observation-check/gate-run.test.mjs" 2>&1 | Select-String -Pattern '^# (tests|pass|fail)'
@@ -356,7 +356,7 @@ Expected：`# fail 0`。
 - Consumes: Task 5（成对判定与四段校验）
 - Produces: 文件级 git 两码；`ArtifactDirty` / `UntrackedArtifact` 的粒度判据
 
-- [ ] **Step 1: 实现三条命令（R5）**
+- [x] **Step 1: 实现三条命令（R5）**
 
 | 命令（`cwd = repoRoot()`、`timeout: 30000`） | 非 0 / 异常 → 码 |
 |---|---|
@@ -368,7 +368,7 @@ Expected：`# fail 0`。
 2. 粒度：**每个产物文件每条命令最多一条** finding，不去重、不聚合；`path` = 该文件仓内 POSIX 相对路径（Q5 `spec:80`）；
 3. `git add -N`（intent-to-add）态 → `ls-files` exit 0、`diff` exit 1 → 报 `ArtifactDirty`（**不识别 `-N`**，既定取舍 `spec:113`；备忘写进测试注释，不新增用例）。
 
-- [ ] **Step 2: 写测试（5 条）**
+- [x] **Step 2: 写测试（5 条）**
 
 | ID | 断言（判据出处） |
 |---|---|
@@ -378,7 +378,7 @@ Expected：`# fail 0`。
 | H23 | 已 commit 后手改（追加换行、四段仍绿）→ `ArtifactDirty`（`testcase:579`） |
 | H26 | json 已跟踪干净、md 未跟踪 → `UntrackedArtifact` 的 path **逐字** = `<次>/observation-r1.md`（`testcase:615`） |
 
-- [ ] **Step 3: 跑测试与仓门禁**
+- [x] **Step 3: 跑测试与仓门禁**
 
 ```powershell
 node --test "tools/observation-check/gate-run.test.mjs" 2>&1 | Select-String -Pattern '^# (tests|pass|fail)'
@@ -399,13 +399,13 @@ Expected：`# fail 0`；`exit=0`。
 - Consumes: Task 3（目录枚举）、Task 6（四段 + git 路径已成型）
 - Produces: `processPairs` 计数与过程侧「无三态 / 无成对 / 无 git」口径；码字面集合闭合的静态判据
 
-- [ ] **Step 1: 实现过程侧**
+- [x] **Step 1: 实现过程侧**
 
 1. 过程根 = `join(root, '.session', 'reviews')`；**不存在 → `processPairs 0`、不报码**（与 `check-all` ⑤ 段同口径）；存在但不可读（非 ENOENT 的 IO 错）→ `RepoRootUnresolved`（`spec:101`）；
 2. 只对每个 `<次>/` **根层** `observation-r*.json` 逐个 `validateArtifact`；不做三态、不做成对（只有 md 无 json 不报码，Q7）、不做 git（R3）；
 3. `processPairs` = 过程侧成对组数（json + 同名 md 都在）。
 
-- [ ] **Step 2: 写测试（7 条）**
+- [x] **Step 2: 写测试（7 条）**
 
 | ID | 断言（判据出处） |
 |---|---|
@@ -417,7 +417,7 @@ Expected：`# fail 0`；`exit=0`。
 | H53 | 静态：`gate-run.mjs` 的码字面 ⊆ 门禁侧 **4 码** `{ArtifactNamingOff, RepoRootUnresolved, UntrackedArtifact, ArtifactDirty}` ∪ S2 源已出现码（`ArtifactMissing` / `UnclassifiedArtifact` / `JsonNotFound` 出自 `tools/observation-check/gate-scan.mjs`）+ 四段透传码；**自造码 = 0**（`testcase:958-962`） |
 | H55 | `mkRepo({ session: false })`（不建 `.session/reviews`）→ `processPairs 0`、`findings === []`、**无** `ArtifactNamingOff`（`testcase:987`） |
 
-- [ ] **Step 3: 跑测试与仓门禁**
+- [x] **Step 3: 跑测试与仓门禁**
 
 ```powershell
 node --test "tools/observation-check/gate-run.test.mjs" 2>&1 | Select-String -Pattern '^# (tests|pass|fail)'
@@ -438,7 +438,7 @@ Expected：`# fail 0`；`exit=0`。
 - Consumes: Task 6（git 两码）
 - Produces: 「步骤 1 报码属预期」的可复现证据；「gate 零 git 写」断言
 
-- [ ] **Step 1: 写测试（5 条，全部在 `mkRepo()` 内构造）**
+- [x] **Step 1: 写测试（5 条，全部在 `mkRepo()` 内构造）**
 
 | ID | 断言（判据出处） |
 |---|---|
@@ -450,7 +450,7 @@ Expected：`# fail 0`；`exit=0`。
 
 > H32 的 message 要求「属预期 / `git add`」在 `UntrackedArtifact` 的 message 里——该文案由 `gate-run` 生成（不是 S2 码），实现时对 `UntrackedArtifact` 的 message 固定写「归档件未进 git 索引（迁移步骤 1 属预期，下一步 `git add`）」；同一条文案在 H22/H26 里不断言全文，只断言码与 path。
 
-- [ ] **Step 2: 跑测试**
+- [x] **Step 2: 跑测试**
 
 ```powershell
 node --test "tools/observation-check/gate-run.test.mjs" 2>&1 | Select-String -Pattern '^# (tests|pass|fail)'
@@ -471,22 +471,22 @@ Expected：`# fail 0`（含 H36 的 0 git 写断言）。
 - Consumes: Task 1（`card-exempt.mjs` 四出口）、Task 2–7（`gate-run.mjs` 全部出口）
 - Produces: ⑥ 段（唯一打印出口 = `formatGateLine`）；`BYPASS:` 首行；② 段 skip 守卫
 
-- [ ] **Step 1: 建 `scripts/test-skip-allowlist.mjs`（R9 单源）**
+- [x] **Step 1: 建 `scripts/test-skip-allowlist.mjs`（R9 单源）**
 
 `SKIP_ALLOWLIST` = 2 条精确用例名（`tools/docgen/test/dev-workflow-files.test.mjs:100` / `:262`，2026-10-28 实测）：
 `'TC-A10 运行时就位：两条 Test-Path 为 True（aas sync 后本机验）'`、`'TC-E27 只写源不 aas sync → 本机 Test-Path 为 False（探针式，不碰 dev-workflow 本体）'`。
 
-- [ ] **Step 2: ② 段 skip 守卫（插在 `scripts/check-all.mjs:95` 后）**
+- [x] **Step 2: ② 段 skip 守卫（插在 `scripts/check-all.mjs:95` 后）**
 
 1. 解析形态定死为 TAP 内联指令：`/^\s*(?:not )?ok\s+\d+\s+-\s+(.*?)\s+#\s+(SKIP|TODO)\b/`（名字取第 1 捕获组、reason 丢弃；**不存在独立 `# SKIP <名>` 行**）；
 2. 判据只按名字：名字 ⊄ `SKIP_ALLOWLIST` → `failed = true` 且 `console.error('[测试] 名单外 skip：<用例名>')` / `('[测试] 名单外 todo：<用例名>')`；
 3. **`# skipped M`（M>0）但该正则解析出 0 个名字 → fail-closed 红**；**不比较条数**（Q19 `spec:218`）。
 
-- [ ] **Step 3: 顶部 bypass 首行（插在 `scripts/check-all.mjs:43` 后）**
+- [x] **Step 3: 顶部 bypass 首行（插在 `scripts/check-all.mjs:43` 后）**
 
 `process.env.CHECK_BYPASS === '1'` → `console.log(\`BYPASS: ${process.env.CHECK_BYPASS_REASON || '(未提供原因)'}\`)` 并置 `bypass = true`；未开启时**不打印任何** `BYPASS:` 行（H40）。
 
-- [ ] **Step 4: ⑥ 段（插在 `scripts/check-all.mjs:366` 与 `:368` 之间）**
+- [x] **Step 4: ⑥ 段（插在 `scripts/check-all.mjs:366` 与 `:368` 之间）**
 
 1. `bypass` → `console.log('⑥ 观察产物门禁跳过（BYPASS）')`，不判，其余段照跑且仍可红；
 2. 否则 `const res = runObservationGate()`；`console.log(formatGateLine(res))`（**唯一打印出口**，不得内联 ⑥ 段字面量）；
@@ -495,7 +495,7 @@ Expected：`# fail 0`（含 H36 的 0 git 写断言）。
    `[豁免窗口] 15 张角色卡只告警（到期 = S4 首次重生成，EXPIRY_EVENT=<EXPIRY_EVENT> / EXPIRY_LANDED=<EXPIRY_LANDED>）；卡面 findings <n> / 告警 <w> / 阻断 <b>（S1 未上线：非达标证据）`
    其中 `n` = 传入 findings 数组长度（本期 `[]`.length = 0）、`w` = `disposeCardFindings(...).warnings.length`、`b` = `.blockers.length`（`disposeCardFindings` 只返回 `{warnings, blockers}` 两字段，`spec:126`），**不写字面量**；「**卡面**」限定词必须保留（Q20）。
 
-- [ ] **Step 5: 写 H05（静态 + 集成）**
+- [x] **Step 5: 写 H05（静态 + 集成）**
 
 | 断言（`testcase:346`） |
 |---|
@@ -504,7 +504,7 @@ Expected：`# fail 0`（含 H36 的 0 git 写断言）。
 | `scripts/check-all.mjs` **必须**含 `formatGateLine(`，且**不得**含 ⑥ 段字面量（计数行前缀 `⑥ 观察产物门禁：扫描` 与 `[observation]` 前缀两种都不得出现） |
 | 扫描根由 `repoRoot()` 派生：子目录 `cwd` 下跑 gate 仍扫到仓根归档目录（子进程注入，行为断言） |
 
-- [ ] **Step 6: 跑测试与仓门禁（本任务是第一次让真仓 `npm run check` 走 ⑥ 段）**
+- [x] **Step 6: 跑测试与仓门禁（本任务是第一次让真仓 `npm run check` 走 ⑥ 段）**
 
 ```powershell
 node --test "tools/observation-check/gate-run.test.mjs" 2>&1 | Select-String -Pattern '^# (tests|pass|fail)'
@@ -536,7 +536,7 @@ Expected：`# fail 0`；`exit=0` 且末行 `check 全部通过`；⑥ 行形如 
 | H39 | Step 3 | H52 | Step 7 |
 | H45 | Step 4 | H41② | Step 8 |
 
-- [ ] **Step 1: H49 仓门禁全绿 + ⑥ 计数行 + 段序（⑤ 在 ⑥ 之前）+ H51 套件基线**
+- [x] **Step 1: H49 仓门禁全绿 + ⑥ 计数行 + 段序（⑤ 在 ⑥ 之前）+ H51 套件基线**
 
 ```powershell
 $env:DW_RUNTIME_CHECK = $null
@@ -546,7 +546,7 @@ node --test "tools/observation-check/*.test.mjs" 2>&1 | Select-String -Pattern '
 
 Expected：`npm run check` exit 0、`⑤` 行在 `⑥` 行**之前**、`⑥` 行可被 `/过程 \d+ 对/` 解析且**过程 0 对**，**不断言 `# skipped` 条数**（Q19）；套件 `# tests ≥ 166`、`# fail 0`、`# pass + # skipped === # tests`（H51）。
 
-- [ ] **Step 2: H37 旁路 + reason / H38 无 reason / H40 未开启无 `BYPASS:` 行**
+- [x] **Step 2: H37 旁路 + reason / H38 无 reason / H40 未开启无 `BYPASS:` 行**
 
 ```powershell
 $env:CHECK_BYPASS='1'; $env:CHECK_BYPASS_REASON='演练：校验器自身故障'; npm run check 2>&1 | Select-Object -First 3; "exit=$LASTEXITCODE"
@@ -556,7 +556,7 @@ Remove-Item Env:CHECK_BYPASS; npm run check 2>&1 | Select-String -Pattern 'BYPAS
 
 Expected：①首行 `BYPASS: 演练：校验器自身故障`、含 `⑥ 观察产物门禁跳过（BYPASS）`、exit 0（H37）；②首行 `BYPASS: (未提供原因)`、仍跳过（H38）；③`BYPASS` 命中 0 行、exit 0（H40）。
 
-- [ ] **Step 3: H39 旁路只跳 ⑥（⑤ 段构造红 → exit 1）**
+- [x] **Step 3: H39 旁路只跳 ⑥（⑤ 段构造红 → exit 1）**
 
 ```powershell
 $env:CHECK_BYPASS='1'; $env:CHECK_BYPASS_REASON='演练：只跳 ⑥'
@@ -570,7 +570,7 @@ git status --porcelain -- .session docs/superpowers/reviews tools/observation-ch
 
 Expected：`exit=1` 且输出含 `[session] .session/zz-bypass-probe.md 是一级散文件`（⑤ 段仍可红）；清理后 `Test-Path` → `False`、scoped `git status` 输出**空串**（`.session/` 被 gitignore，故以 `Test-Path` 为主判；`git status` 不带 scope 会因本 plan 文档未入库而恒非空）。
 
-- [ ] **Step 4: H45 豁免窗口常量 + 状态行模板**
+- [x] **Step 4: H45 豁免窗口常量 + 状态行模板**
 
 ```powershell
 node --input-type=module -e "import {EXEMPT_CARDS,EXPIRY_EVENT,EXPIRY_LANDED,disposeCardFindings} from './tools/observation-check/card-exempt.mjs'; console.log(JSON.stringify({n:EXEMPT_CARDS.length,EXPIRY_EVENT,EXPIRY_LANDED,dispose:disposeCardFindings([])}))"
@@ -579,7 +579,7 @@ npm run check 2>&1 | Select-String -Pattern '^\[豁免窗口\]'
 
 Expected：`n` = 15、`EXPIRY_EVENT` = `s4-first-regeneration`、`EXPIRY_LANDED` = `false`、`dispose` = `{"warnings":[],"blockers":[]}`；状态行含 `卡面 findings 0 / 告警 0 / 阻断 0` + `（S1 未上线：非达标证据）` 且三个数分别等于「传入 findings 长度 / `warnings.length` / `blockers.length`」（非字面量）。
 
-- [ ] **Step 5: H46 skip 守卫正例 / H47 名单外 skip 红 / H48 名单外 todo 红**
+- [x] **Step 5: H46 skip 守卫正例 / H47 名单外 skip 红 / H48 名单外 todo 红**
 
 ```powershell
 node --input-type=module -e "import {SKIP_ALLOWLIST} from './scripts/test-skip-allowlist.mjs'; import {spawnSync} from 'node:child_process'; const e={...process.env}; delete e.DW_RUNTIME_CHECK; const x=spawnSync(process.execPath,['--test','**/*.test.mjs'],{cwd:process.cwd(),encoding:'utf8',maxBuffer:64*1024*1024,env:e}); const R=/^\s*(?:not )?ok\s+\d+\s+-\s+(.*?)\s+#\s+(SKIP|TODO)\b/; const names=[...x.stdout.matchAll(new RegExp(R.source,'gm'))].filter(m=>m[2]==='SKIP').map(m=>m[1].trim()); const m=/# skipped (\d+)/.exec(x.stdout); console.log(JSON.stringify({skipped:m?Number(m[1]):null,parsed:names.length,outside:names.filter(n=>!SKIP_ALLOWLIST.includes(n))}))"
@@ -594,7 +594,7 @@ git status --porcelain -- tools/observation-check
 
 Expected：①`skipped` = 2 且 `parsed` ≥ 2、`outside` = `[]`（⊆ 名单；`skipped>0` 且 `parsed=0` 才 fail-closed，`testcase:869`）；②`[测试] 名单外 skip：probe-skip-X 名单外` + `exit=1`（H47）；③`[测试] 名单外 todo：probe-todo-Y 名单外` + `exit=1`（H48）；清理后 scoped `git status` 输出**空串**。
 
-- [ ] **Step 6: H50 真仓全扫 + H01③ 只移演练件**
+- [x] **Step 6: H50 真仓全扫 + H01③ 只移演练件**
 
 ```powershell
 node --input-type=module -e "import {runObservationGate} from './tools/observation-check/gate-run.mjs'; console.log(JSON.stringify(await runObservationGate()))"
@@ -608,7 +608,7 @@ git status --porcelain -- docs/superpowers/reviews
 Expected：①`findings` = `[]`、`scannedDirs ≥ 2`、`archivePairs ≥ 1`、`processPairs` = 0、**无** `ArtifactMissing`，且 `docs/superpowers/reviews/2026-10-25-1723-s6-eval` 与 `…/2026-10-27-1200-migration-drill` 均在位（按名断言，计数只打印不判，H50 `testcase:919`）；②移走演练件后 `⑥ 观察产物门禁：扫描 1 个子目录 / 归档 0 对 / 过程 0 对 / findings 0` 且该行**不含**「（归档 0 件，跳过）」、exit 0（H01③）；③移回后 `git status --porcelain` 空串。
 **禁止**暂存到 `.session/tmp/`（⑤ 段必红）与本仓其它目录；**禁止**移走 `2026-10-25-1723-s6-eval`（`tools/docgen/test/policy-pure-source.test.mjs:1580` 断言 `*-s6-eval` 恰 1 个）。
 
-- [ ] **Step 7: H52 塞一个缺产物目录 → exit 1 + 打印形态**
+- [x] **Step 7: H52 塞一个缺产物目录 → exit 1 + 打印形态**
 
 ```powershell
 New-Item -ItemType Directory docs\superpowers\reviews\zz-probe-missing | Out-Null
@@ -620,7 +620,7 @@ git status --porcelain -- docs/superpowers/reviews
 
 Expected：`exit=1`；输出含 `[observation] ArtifactMissing: docs/superpowers/reviews/zz-probe-missing/ —— <msg>`（**恰 1 条**，账本-only 仍红 = D9 / Q18，`testcase:943`）；清理后 `git status --porcelain -- docs/superpowers/reviews` 空串。
 
-- [ ] **Step 8: H41② 集合与 `agents/*.md` 实跑相等（交付时点一次性核）**
+- [x] **Step 8: H41② 集合与 `agents/*.md` 实跑相等（交付时点一次性核）**
 
 ```powershell
 node --input-type=module -e "import {readdirSync} from 'node:fs'; import {EXEMPT_CARDS} from './tools/observation-check/card-exempt.mjs'; const real=readdirSync('agents').filter(f=>f.endsWith('.md')).map(f=>'agents/'+f).sort(); console.log(JSON.stringify({equal:JSON.stringify(real)===JSON.stringify([...EXEMPT_CARDS].sort()),real:real.length,listed:EXEMPT_CARDS.length}))"
@@ -628,7 +628,7 @@ node --input-type=module -e "import {readdirSync} from 'node:fs'; import {EXEMPT
 
 Expected：`equal` = `true`、`real` = `listed` = 15（输出键名 `equal` 与已签 testcase 判据逐字一致，`testcase:814`）。
 
-- [ ] **Step 9: 门禁三连（③ 段出口证据）**
+- [x] **Step 9: 门禁三连（③ 段出口证据）**
 
 ```powershell
 node scripts/scope-sweep.mjs --check; "sweep=$LASTEXITCODE"

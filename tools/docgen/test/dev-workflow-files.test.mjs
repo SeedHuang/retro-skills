@@ -80,12 +80,11 @@ test('TC-A08 六份 stage-*.md 都有三权归属口径（申报 / 定性 / 核�
   }
 });
 
-test('TC-A09 计划门三条核对各含「判据 + 二选一证据」，且写明脚本上线前由审计手工核对', () => {
+test('TC-A09 计划门三条核对各含「判据 + 二选一证据」，且三条现行命令逐字在位（`live`，R9②）', () => {
   const r = planGateReport(readRepo(`${REF_DIR}/stage-2b-plan-gate.md`));
   assert.deepEqual(r.checks, [true, true, true], '三条核对名必须齐');
+  assert.equal(r.live, true, 'live = 三条现行命令逐字在位（R9② 的唯一通过条件）');
   assert.ok(r.commands >= 3, `命令原文应 ≥ 3 条，实为 ${r.commands}`);
-  assert.equal(r.manual, true, '必须写「审计手工核对表」');
-  assert.equal(r.preScript, true, '必须写脚本上线前的分支（S1 阶段脚本不存在）');
   assert.equal(r.audit, true);
   assert.ok(r.criteria >= 3, `「判据」应 ≥ 3 处，实为 ${r.criteria}`);
   assert.ok(r.evidence >= 3, `「证据」应 ≥ 3 处，实为 ${r.evidence}`);
@@ -248,15 +247,15 @@ test('TC-E25 裸名 reader 不存在、且 SKILL.md / 规则里没有裸名派�
   assert.deepEqual(bareReaderRefs(readRepo('rules/dev-workflow-mainline.md')), [], '规则出现裸名 reader');
 });
 
-test('TC-E26 计划门只写命令、删掉「上线前手工核对」说明 → 手工核对计数为 0（强信号）', () => {
+test('TC-E26 计划门删掉三条现行命令 → `live` 为 false（强信号，R9③ 改义后）', () => {
   const gateDoc = readRepo(`${REF_DIR}/stage-2b-plan-gate.md`);
-  assert.ok((gateDoc.match(/手工核对/g) ?? []).length >= 1, '正常态必须有手工核对说明');
+  assert.equal(planGateReport(gateDoc).live, true, '正常态必须 live');
   const stripped = gateDoc
     .split(/\r?\n/)
-    .filter((l) => !/手工核对|脚本上线前|脚本未落地|归 S4/.test(l))
+    .filter((l) => !/check-plan\.mjs/.test(l))
     .join('\n');
   const r = planGateReport(stripped);
-  assert.equal(r.manual, false, '构造态应已无「手工核对」');
+  assert.equal(r.live, false, '构造态应已无三条现行命令');
 });
 
 test('TC-E27 只写源不 aas sync → 本机 Test-Path 为 False（探针式，不碰 dev-workflow 本体）', { skip: RUNTIME_SKIP }, () => {
@@ -306,4 +305,89 @@ test('TC-E33 ① 段删掉「代拟者不签字」→ 三命中变两命中，S2
   assert.deepEqual(r.hits, [true, true, false]);
   assert.deepEqual(r.missing, ['代拟者不签字']);
   assert.equal(r.hasS2, true, 'S2 不应被连带删除（证明红只来自三要素）');
+});
+
+// ── S4（P48–P56 / P62）：`live` 语义、段文档切换与两份段文档补全 ────────────
+const GATE_DOC = () => readRepo(`${REF_DIR}/stage-2b-plan-gate.md`);
+
+test('P48 `live` 正例：现行 stage-2b 文本 → live 且四标志仍真', () => {
+  const r = planGateReport(GATE_DOC());
+  assert.equal(r.live, true);
+  assert.ok(r.commands >= 3);
+  assert.equal(r.audit, true);
+  assert.ok(r.criteria >= 3);
+  assert.ok(r.evidence >= 3);
+  assert.equal(r.signWithOutput, true);
+});
+
+test('P49 `live` 负例：删掉三条现行命令那一批行 → live 为 false', () => {
+  const stripped = GATE_DOC().split(/\r?\n/).filter((l) => !/check-plan\.mjs/.test(l)).join('\n');
+  assert.equal(planGateReport(stripped).live, false);
+});
+
+test('P50 `live` 是合取：只删其中一条命令也 false（两条构造）', () => {
+  const doc = GATE_DOC();
+  const dropOne = (needle) => doc.split(/\r?\n/).filter((l) => !l.includes(needle)).join('\n');
+  assert.equal(planGateReport(dropOne('coverage --plan <plan 文件>')).live, false, '只删 coverage');
+  assert.equal(planGateReport(dropOne('node scripts/check-plan.mjs deps')).live, false, '只删 deps');
+  assert.equal(planGateReport(GATE_DOC()).live, true, '原文档仍真（证明两条构造没连带毁掉别的）');
+});
+
+test('P51 删「手工核对」→ manual 为 false，但 live 仍 true（历史分支不再是条件）', () => {
+  const mutated = GATE_DOC().split('手工核对').join('审计逐条核对');
+  assert.notEqual(mutated, GATE_DOC());
+  const r = planGateReport(mutated);
+  assert.equal(r.manual, false);
+  assert.equal(r.live, true);
+});
+
+test('P52 stage-2b 三条现行命令逐字在位 + 两个标签已切 + 历史分支仍在', () => {
+  const doc = GATE_DOC();
+  for (const cmd of [
+    'node scripts/check-plan.mjs coverage --plan <plan 文件> --prd <PRD 文件> --stage <S#>',
+    'node scripts/check-plan.mjs deps --plan <plan 文件>',
+    'node scripts/check-plan.mjs map --plan <plan 文件>',
+  ]) assert.ok(doc.includes(cmd), `缺现行命令：${cmd}`);
+  assert.equal((doc.match(/（现行命令，S4 起）/g) ?? []).length, 3);
+  assert.equal((doc.match(/（脚本上线前，历史二选一）/g) ?? []).length, 3);
+  assert.ok(doc.includes('手工核对'), '历史分支的手工核对字样必须保留（旁路逃生口 + P51 的 manual 信号）');
+  assert.ok(doc.includes('贴 stdout 首行'));
+});
+
+test('P53 stage-2b 的「当前适用」清零、历史标签恰 3、现行命令 ≥ 3 次', () => {
+  const doc = GATE_DOC();
+  assert.equal((doc.match(/当前适用/g) ?? []).length, 0);
+  assert.equal((doc.match(/（脚本上线前，历史二选一）/g) ?? []).length, 3);
+  assert.ok((doc.match(/node scripts\/check-plan\.mjs/g) ?? []).length >= 3);
+});
+
+test('P54 stage-2-tech-design 三项补全在位（阈值 / 滚动拆 / 独立编写可核句）', () => {
+  const doc = readRepo(`${REF_DIR}/stage-2-tech-design.md`);
+  for (const k of ['350', '80', '3', '滚动拆', '为什么拆', '不提前批量拆']) assert.ok(doc.includes(k), `缺 ${k}`);
+  assert.ok(doc.includes('编写者 ≠ spec 作者 ≠ 施工者'), '独立编写必须是可核句');
+});
+
+test('P55 stage-4-quality 漂移三分类在位（三型 + 两列判据 + 三权）', () => {
+  const doc = readRepo(`${REF_DIR}/stage-4-quality.md`);
+  for (const k of ['细节偏差', '行为偏差', '功能增删', '功能点集合', '判据', '申报', '定性', '核对']) {
+    assert.ok(doc.includes(k), `缺 ${k}`);
+  }
+});
+
+test('P56 两份段文档不再写「按 ### TC- 落盘」，改为「### TC-* 或 #### <ID> 任一」', () => {
+  for (const f of ['stage-2-tech-design.md', 'stage-4-quality.md']) {
+    const doc = readRepo(`${REF_DIR}/${f}`);
+    assert.ok(!doc.includes('按 `### TC-` 落盘'), `${f} 仍写旧载体口径`);
+    assert.ok(doc.includes('`### TC-*` 或 `#### <ID>`'), `${f} 缺新载体口径`);
+  }
+});
+
+test('P62 gate-record 的 4 条历史 ②→③ 行不得被改写成脚本输出（段值锁定，不按总数）', () => {
+  const rows = readRepo(`${REF_DIR}/gate-record.md`)
+    .split(/\r?\n/)
+    .filter((l) => /^\|\s*②→③/.test(l));
+  const historical = rows.filter((l) => /^\|\s*②→③(@S6|@S2|@S3)?\s*\|/.test(l));
+  assert.equal(historical.length, 4, '历史四条（②→③ / @S6 / @S2 / @S3）必须在位');
+  assert.ok(historical.every((r) => /脚本未落地|手工/.test(r)), '历史措辞必须保留');
+  assert.ok(historical.every((r) => !/coverage: gap|deps: cycle|map: missing/.test(r)), '历史行不得贴脚本首行');
 });

@@ -100,6 +100,39 @@
         "docs/handoffs/2026-10-27-s3-gate-wiring.md",
         "skills/dev-workflow/references/gate-record.md"
       ]
+    },
+    {
+      "id": "I12",
+      "title": "计划门验收命令写法（`coverage` 必带 `--stage`）",
+      "words": ["check-plan.mjs coverage --plan"],
+      "scope": [
+        "skills/dev-workflow/references/stage-2b-plan-gate.md",
+        "skills/dev-workflow/references/stage-2-tech-design.md",
+        "skills/dev-workflow/references/stage-4-quality.md",
+        "tools/docgen/test/support/dev-workflow-checks.mjs"
+      ]
+    },
+    {
+      "id": "I13",
+      "title": "`preScript` 不再是通过条件（字段保留、条件撤除）",
+      "words": ["preScript"],
+      "scope": [
+        "skills/dev-workflow/references/stage-2b-plan-gate.md",
+        "skills/dev-workflow/references/stage-2-tech-design.md",
+        "skills/dev-workflow/references/stage-4-quality.md",
+        "tools/docgen/test/support/dev-workflow-checks.mjs"
+      ]
+    },
+    {
+      "id": "I14",
+      "title": "用例落盘载体（`### TC-*` 或 `#### <ID>` 任一，不再只认 `### TC-`）",
+      "words": ["按 `### TC-` 落盘"],
+      "scope": [
+        "skills/dev-workflow/references/stage-2b-plan-gate.md",
+        "skills/dev-workflow/references/stage-2-tech-design.md",
+        "skills/dev-workflow/references/stage-4-quality.md",
+        "tools/docgen/test/support/dev-workflow-checks.mjs"
+      ]
     }
   ]
 }

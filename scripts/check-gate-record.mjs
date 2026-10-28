@@ -20,7 +20,10 @@ const MIN_EVIDENCE = 4 // 「核了什么」字数下限（兜底；主判据是
 // **`→` 不算锚点**：单独一个箭头会让「已全部核对 → 通过」这类空话照样合格（第 4 轮 sdet P1）；
 // **`path:line` 支要求冒号前含字母 / `.` / `/` / `\`**：否则「已核对 2026-10-28 10:30」「已核对 1:1」
 // 会把时间串与纯数字比当锚点（第 5 轮审计 P1）。现存的「`cmd` → 结论」写法本就含反引号，不受影响。
+// **ISO 时间串**（`2026-10-28T10:30`）：`T` 属字母 → 会被 `path:line` 支误当锚点（第 6 轮 P2）。
+// 判前先把 ISO 时间串替换成空格再测（R10①）；只改使用点，不动 ANCHOR_RE 本体。
 const ANCHOR_RE = /`[^`]+`|#L\d+|[^\s:：]*[A-Za-z_./\\][^\s:：]*:\d+/
+const ISO_TS_RE = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/g
 
 const cellsOf = (line) => splitRow(line)
 const isSeparator = (cells) => cells.length > 0 && cells.every((c) => /^:?-{3,}:?$/.test(c))
@@ -51,7 +54,7 @@ export function checkGateRecord(text) {
     if (cells.length !== 6) issues.push(`${at}：列数 ${cells.length} ≠ 6`)
     const evidence = cells[2] ?? ''
     if (!evidence.trim()) issues.push(`${at}：「核了什么」为空（R1）`)
-    else if (!ANCHOR_RE.test(evidence)) issues.push(`${at}：「核了什么」无可复算锚点（R1，「${evidence.trim().slice(0, 20)}」）`)
+    else if (!ANCHOR_RE.test(evidence.replace(ISO_TS_RE, ' '))) issues.push(`${at}：「核了什么」无可复算锚点（R1，「${evidence.trim().slice(0, 20)}」）`)
     else if ([...evidence.trim()].length < MIN_EVIDENCE) issues.push(`${at}：「核了什么」过短（R1，只写「${evidence}」）`)
     const verdict = cells[5] ?? ''
     if (!verdict.trim() || verdict.trim() === '—') issues.push(`${at}：结论为空（R3 / 表口径「留空 = 未收口」）`)

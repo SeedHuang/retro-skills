@@ -106,13 +106,23 @@ export function missingPowers(text) {
   return ['申报', '定性', '核对'].filter((k) => !text.includes(k));
 }
 
+// 计划门的三行「现行命令」（R9②：`live` 的唯一定义 = 文档逐字包含这三行）
+export const LIVE_COMMANDS = [
+  'node scripts/check-plan.mjs coverage --plan <plan 文件> --prd <PRD 文件> --stage <S#>',
+  'node scripts/check-plan.mjs deps --plan <plan 文件>',
+  'node scripts/check-plan.mjs map --plan <plan 文件>',
+]
+
 // TC-A09 / E24 / E26：计划门「判据 + 二选一证据」
+// R9②：通过条件由 `manual + preScript + commands ≥ 3` 改为 `live`；后三字段**保留、均不再是条件**
+// （删字段会让另一条断言 TypeError），`audit` / `criteria` / `evidence` / `signWithOutput` 四标志原判。
 export function planGateReport(text) {
   return {
     checks: ['功能点全覆盖', '依赖无环', '一一映射'].map((w) => text.includes(w)),
     commands: (text.match(/\bnode\s+\S+/g) ?? []).length,
     manual: /手工核对/.test(text),
     preScript: /脚本上线前|脚本未落地|归 S4/.test(text),
+    live: LIVE_COMMANDS.every((c) => text.includes(c)),
     audit: /审计/.test(text),
     criteria: (text.match(/判据/g) ?? []).length,
     evidence: (text.match(/证据/g) ?? []).length,

@@ -1,7 +1,12 @@
 // check-gate-record 测试：按单元格判表头（不按整行子串）、R1 空证据、R2 自签、R6 计数
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { checkGateRecord } from './check-gate-record.mjs'
+import { readFileSync } from 'node:fs'
+import { resolve, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { checkGateRecord, RECORD_PATH } from './check-gate-record.mjs'
+
+const HERE = dirname(fileURLToPath(import.meta.url))
 
 const HEAD = [
   '| 段 | 出口判据（逐条） | 核了什么（命令输出首行 或 path:line） | 申报人 | 签字人 | 结论 |',
@@ -70,4 +75,34 @@ test('R6：「拆 spec 中」出现 2 次 → 报出来；1 次 → 不报', () 
   assert.deepEqual(one.reasons, [])
   const two = checkGateRecord(`${HEAD}\n${ok()}\n状态 = 拆 spec 中\n状态 = 拆 spec 中\n`)
   assert.match(two.reasons.join('\n'), /R6/)
+})
+
+// ── S4 / R10①：ISO 时间串不得被当锚点（P57–P60 / P63） ────────────────────
+const rowWith = (evidence) => `| ③@X | 判据 | ${evidence} | 开发 | 审计 | 过 |`
+const reasonsOf = (evidence) => checkGateRecord(`${HEAD}\n${rowWith(evidence)}\n`).reasons.join('\n')
+
+test('P57 ISO 时间串（分钟）不得当锚点 → 必报 R1', () => {
+  assert.match(reasonsOf('已核对 2026-10-28T10:30'), /无可复算锚点（R1/)
+})
+
+test('P58 ISO 时间串（带秒）同样必报 R1', () => {
+  assert.match(reasonsOf('已核对 2026-10-28T10:30:45'), /无可复算锚点（R1/)
+})
+
+test('P59 含反引号命令的证据里带 ISO 时间串 → 仍放行（不得误伤）', () => {
+  assert.deepEqual(checkGateRecord(`${HEAD}\n${rowWith('`npm run check` → 2026-10-28T10:30 通过')}\n`).reasons, [])
+})
+
+test('P60 合法锚点（path:line / #L7）仍放行', () => {
+  for (const ev of ['已核对 `docs/x.md:12`', '见 #L7']) {
+    assert.deepEqual(checkGateRecord(`${HEAD}\n${rowWith(ev)}\n`).reasons, [], ev)
+  }
+})
+
+test('P63 改判后真 gate-record.md 仍全绿（rows 现算，不写死数字）', () => {
+  const doc = readFileSync(resolve(HERE, '..', RECORD_PATH), 'utf8')
+  const r = checkGateRecord(doc)
+  assert.deepEqual(r.reasons, [])
+  const expected = doc.split(/\r?\n/).filter((l) => l.trim().startsWith('|')).length - 2 // 表头 + 分隔行
+  assert.strictEqual(r.rows, expected)
 })
