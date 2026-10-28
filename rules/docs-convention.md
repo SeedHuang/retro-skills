@@ -40,7 +40,7 @@
 | `handoffs/` | `YYYY-MM-DD-<主题>.md` | `2026-09-29-session-close.md` |
 | `retro/` | `YYYY-MM-DD-<那一次>/retro-<轮次>-<主题>.md` | `2026-10-14-2248-review-all-to-death/retro-07-single-source.md` |
 | **`docs/prd/`** | **时间戳加在「主题条目」上：单文件主题 → `YYYYMMDDHHmmss-<主题>.md`；多文件主题 → 目录名 `YYYYMMDDHHmmss-<主题>/`，目录内文件用原名（不再加前缀）** | `20261024073606-dev-workflow-mainline/index.md`、`20261019093443-docgen-agent-generation.md` |
-| **`docs/research/`** | **一个课题一个目录：目录名 `YYYYMMDDHHmmss-<课题>/`（课题启动那一刻），目录内文件用原名（`index.md` 不加前缀）** | `20261025133825-review-scope-and-sweep/index.md` |
+| **`docs/research/`** | **一个课题一个目录：目录名 `YYYYMMDDHHmmss-<课题>/`（课题启动那一刻），目录内文件用原名（`index.md` 不加前缀）；根层不放散文件（含 `index.md` / `README.md`）——不属于任何课题的稿子先收进课题目录** | `20261025133825-review-scope-and-sweep/index.md` |
 | **`after/`** | **`YYYYMMDDHHmmss-<主题>-<阶段>.md`（小写 kebab-case；前缀 = **文件创建时间**，精确到秒）** | `20261007201648-collect-requirements-exploration.md` |
 
 **时间戳标记的是「这个事物在时间上的变动」与「当时的确定 / 快照」，不是装饰。** 由此三条总则：

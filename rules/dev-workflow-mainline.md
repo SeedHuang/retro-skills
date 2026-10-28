@@ -51,18 +51,16 @@
 
 两条自查命令，可在仓库根直接粘贴执行：
 
-① 签字人与申报人**无交集**的行数 = 总行数（表头与分隔行不计；两格按 `、 + ＋ ， , /` 拆词后求交集）：
+① 签字人与申报人**无交集**的行数 = 总行数（表头与分隔行不计；两格按 `、 + ＋ ， , /` 拆词后求交集）+ ② 「拆 spec 中」行数 ≤ 1——两条合并为一个脚本：
 
-`node -e "const t=require('fs').readFileSync('skills/dev-workflow/references/gate-record.md','utf8');const rows=t.split(/\r?\n/).map(l=>l.trim()).filter(l=>l.startsWith('|')&&!l.includes('---')&&!l.includes('申报人'));const sp=s=>String(s||'').split(/[、+＋，,\/]/).map(x=>x.trim()).filter(Boolean);const bad=rows.filter(l=>{const c=l.split('|').slice(1,-1).map(x=>x.trim());const a=sp(c[3]),b=sp(c[4]);return !(a.length&&b.length&&!a.some(x=>b.includes(x)))});console.log('rows',rows.length,'bad',bad.length)"`
+`node scripts/check-gate-record.mjs`
 
-② 「拆 spec 中」行数 ≤ 1：
+（**为什么不再用内联 `node -e`**：旧命令按「整行含『申报人』即当表头丢弃」过滤，正文里提到该词的数据行会被静默漏核 → 自检恒绿〔2026-10-28 代码审查 P1〕；脚本改为按**单元格**判表头，并复用 `markdown-rows.mjs` 的 `splitRow` 切分单元格。）
 
-`node -e "const t=require('fs').readFileSync('skills/dev-workflow/references/gate-record.md','utf8');console.log('splitting',(t.match(/拆 spec 中/g)||[]).length)"`
-
-③ 改判回扫（R8）——改过任一判据级口径后必须绿：
+② 改判回扫（R8）——改过任一判据级口径后必须绿：
 
 `node scripts/scope-sweep.mjs --check`
 
 （**不要**写 `npm run doc:sweep -- --check`：PowerShell + npm 10.9 会吞掉 `--` 后参数，跑默认分支恒 exit 0，判据等于没有。）
 
-三条的判据：① `bad 0`；② `splitting` ≤ 1；③ exit 0（`sweep ok`）。任一不满足即本规则未过，不得进入下一段。
+判据：① `rows N bad 0` 且末行 `gate-record ok`；② exit 0（`sweep ok`）。任一不满足即本规则未过，不得进入下一段。

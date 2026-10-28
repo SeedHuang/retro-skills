@@ -20,14 +20,19 @@
 import { resolve, relative, basename, dirname, join, sep } from 'node:path'
 import { realpathSync, readdirSync, readFileSync, writeFileSync, existsSync, renameSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { ROOT, judge, stampOf, suggestName, needsHumanName, STAMP_DIRS, DATE_DIRS, fmt14, fmtDate } from './doc-name.mjs'
+import { ROOT, judge, stampOf, suggestName, needsHumanName, STAMP_DIRS, DATE_DIRS, fmt14, fmtDate, DIR_STAMP_RE } from './doc-name.mjs'
 import {
   plan, applyPlan, walkMdFiles, findSameBasename,
   DEFAULT_SKIP_DIRS, DEFAULT_SKIP_FILE,
 } from './doc-rename.mjs'
 
 const toPosix = (p) => p.split(sep).join('/')
-const DIR_STAMP_RE = /^(\d{14}|\d{4}-\d{2}-\d{2})-/
+
+// 只能人工处置的 kind：改名解决不了（给的是「该怎么放」，不是「该叫什么」）。
+// 必须落 skipped——静默 continue 会让 `doc-name --check` 红、而迁移工具不列任何条目（两工具不自洽）。
+const NO_AUTO_FIX = new Map([
+  ['loose-in-research', '无自动修法：课题目录根层只放课题目录，请人工收进 YYYYMMDDHHmmss-<课题>/'],
+])
 
 // 批量迁移本身不跳过记录型文件（见文件头）；「记录内部引用不重写」由 DEFAULT_SKIP_FILE 保证
 export const DEFAULT_SKIP_FILE_MIGRATE = () => false
@@ -105,6 +110,10 @@ export function collect({ root, dirs, skipFile = DEFAULT_SKIP_FILE_MIGRATE, getS
       const r = judge(f, root)
       if (r.ok) continue
       if (skipFile(rel)) { skipped.push({ rel, why: '记录型文件（内部引用不改）' }); continue }
+      if (NO_AUTO_FIX.has(r.kind)) {
+        skipped.push({ rel, why: NO_AUTO_FIX.get(r.kind) })
+        continue
+      }
       if (r.kind === 'generic' || needsHumanName(basename(f))) {
         skipped.push({ rel, why: '需人工起名：含中文 / 空格 / 下划线' })
         continue

@@ -154,7 +154,10 @@ export function ruleVerifyReport(ruleText) {
   const i = ruleText.indexOf('## 验证');
   const s = i > -1 ? ruleText.slice(i) : '';
   return {
-    commands: (s.match(/node -e/g) ?? []).length,
+    // 「可粘贴命令」= **独占一行**、以 node 开头的单行反引号命令；排除禁用形态 `node -e`。
+    // 旧实现只认 `node -e`（内联形式）；第一轮放宽成「任意反引号 node …」又太松——散文里提及一条
+    // 命令就能凑数（第二轮审查 P1）。这里两头收紧：独占一行 + 排除 `-e`。
+    commands: (s.match(/^`node (?!-e\b)[^`]*`$/gm) ?? []).length,
     signDiff: /签字人[\s\S]{0,40}申报人/.test(s),
     splitting: /拆 spec 中/.test(s),
   };

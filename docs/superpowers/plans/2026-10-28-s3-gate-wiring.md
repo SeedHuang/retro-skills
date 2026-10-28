@@ -632,12 +632,12 @@ Expected：`equal` = `true`、`real` = `listed` = 15（输出键名 `equal` 与�
 
 ```powershell
 node scripts/scope-sweep.mjs --check; "sweep=$LASTEXITCODE"
-node -e "const t=require('fs').readFileSync('skills/dev-workflow/references/gate-record.md','utf8');const rows=t.split(/\r?\n/).map(l=>l.trim()).filter(l=>l.startsWith('|')&&!l.includes('---')&&!l.includes('申报人'));const sp=s=>String(s||'').split(/[、+＋，,\/]/).map(x=>x.trim()).filter(Boolean);const bad=rows.filter(l=>{const c=l.split('|').slice(1,-1).map(x=>x.trim());const a=sp(c[3]),b=sp(c[4]);return !(a.length&&b.length&&!a.some(x=>b.includes(x)))});console.log('rows',rows.length,'bad',bad.length)"
-node -e "const t=require('fs').readFileSync('skills/dev-workflow/references/gate-record.md','utf8');console.log('splitting',(t.match(/拆 spec 中/g)||[]).length)"
+node scripts/check-gate-record.mjs; "gate=$LASTEXITCODE"
 npm run check; "exit=$LASTEXITCODE"
 ```
 
-Expected：`sweep=0`；`bad 0`；`splitting ≤ 1`；`exit=0`。
+Expected：`sweep=0`；`gate=0`（首行 `rows N bad 0`、末行 `gate-record ok`）；`exit=0`。
+（`check-gate-record.mjs` 取代原先两条内联 `node -e` 自查：内联写法按「整行含表头词即丢弃」过滤，正文提到该词的行会被静默漏核；脚本按单元格判表头并复用 `markdown-rows.splitRow`。）
 
 ---
 

@@ -36,6 +36,29 @@ test('collectDirs：docs/prd 直接子目录没带时间戳 → 目录层任务�
   } finally { rmSync(root, { recursive: true, force: true }) }
 })
 
+test('collect：research 根层散文件无自动修法 → 落 skipped（不静默丢弃，与 doc-name --check 自洽）', () => {
+  const root = fixture({
+    'docs/research/loose-note.md': '# loose\n',
+    'docs/research/plain-topic/index.md': '# p\n',
+  })
+  try {
+    const { tasks, skipped } = collect({ root, dirs: ['docs/research'], getStamp })
+    // 散文件不能进改名任务（改名解决不了「该放哪」）
+    assert.equal(tasks.some((t) => t.rel === 'docs/research/loose-note.md'), false, JSON.stringify(tasks))
+    const s = skipped.find((x) => x.rel === 'docs/research/loose-note.md')
+    assert.ok(s, JSON.stringify(skipped))
+    assert.match(s.why, /课题目录/)
+  } finally { rmSync(root, { recursive: true, force: true }) }
+})
+
+test('collectDirs：docs/research 与 docs/prd 同判据（课题目录缺戳 → 目录层任务）', () => {
+  const root = fixture({ 'docs/research/plain-topic/index.md': '# p\n' })
+  try {
+    const { tasks } = collectDirs({ root, dirs: ['docs/research'], getStamp })
+    assert.deepEqual(tasks.map((t) => t.rel), ['docs/research/plain-topic/'])
+  } finally { rmSync(root, { recursive: true, force: true }) }
+})
+
 test('collect：进了目录层任务的目录，内部文件不再进文件层（避免双重改名）', () => {
   const root = fixture({
     'docs/prd/plain-topic/index.md': '# p\n',

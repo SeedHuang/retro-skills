@@ -25,6 +25,16 @@ test('TC-A07 规则五段结构齐 + R1–R7 七条 + 例外节（存量豁免 +
   assert.equal(v.splitting, true, '验证节须含「拆 spec 中」计数自查');
 });
 
+test('TC-A07b（本批新增）「可粘贴命令」判据收紧：散文中提及不计数、删一条真命令必降', () => {
+  const v = ruleVerifyReport(rule);
+  assert.equal(v.commands, 2, `验证节现应恰 2 条可粘贴命令，实为 ${v.commands}`);
+  const lines = rule.split('\n');
+  const i = lines.findIndex((l) => l.startsWith('`node scripts/scope-sweep.mjs --check`'));
+  assert.ok(i > -1, '验证节应有 scope-sweep 那条命令');
+  const mutated = [...lines.slice(0, i), ...lines.slice(i + 1)].join('\n');
+  assert.equal(ruleVerifyReport(mutated).commands, 1, '删掉一条真命令后必须降为 1（防散文凑数）');
+});
+
 test('TC-E04 规则不复制 PRD 判据正文（禁句零命中），且以 PRD § 节号引用 ≥ 6 处', () => {
   const r = ruleCopyReport(rule);
   assert.deepEqual(r.bannedHits, [], '规则里出现了 PRD 判据正文原句（两处维护必漂）');

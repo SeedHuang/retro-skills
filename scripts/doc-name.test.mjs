@@ -18,18 +18,25 @@ function fixture(files) {
 
 test('创建时刻类：docs/prd 与 docs/after 必须 14 位时间戳前缀（含主题子目录）', () => {
   const root = fixture([
-    'docs/prd/topic/20260102030405-ok.md',
+    'docs/prd/20260102030405-topic/ok.md',
     'docs/prd/topic/bad.md',
     'docs/after/20260102030405-fine.md',
     'docs/after/nope.md',
   ])
   try {
-    assert.equal(judge(join(root, 'docs/prd/topic/20260102030405-ok.md'), root).ok, true)
+    // 带戳主题目录内的文件用原名（stamped-parent）
+    assert.equal(judge(join(root, 'docs/prd/20260102030405-topic/ok.md'), root).ok, true)
+    // 缺戳主题目录内的文件不在文件层报红——正解是给目录加戳，由 checkTree 的目录层报
     const prd = judge(join(root, 'docs/prd/topic/bad.md'), root)
-    assert.equal(prd.ok, false)
-    assert.equal(prd.kind, 'stamp')
+    assert.equal(prd.ok, true)
+    assert.equal(prd.kind, 'pending-dir')
     assert.equal(judge(join(root, 'docs/after/nope.md'), root).ok, false)
     assert.equal(judge(join(root, 'docs/after/20260102030405-fine.md'), root).ok, true)
+    // 目录层仍红：缺戳的 docs/prd/topic/ 报 1 条；其内的 bad.md 不再被文件层重复报
+    const res = checkTree('docs', root)
+    assert.deepEqual(res.findings.map((f) => f.rel), ['docs/prd/topic/', 'docs/after/nope.md'])
+    assert.equal(res.findings[0].kind, 'stamp-dir')
+    assert.ok(!res.findings.some((f) => f.rel.endsWith('prd/topic/bad.md')), JSON.stringify(res.findings))
   } finally { rmSync(root, { recursive: true, force: true }) }
 })
 
@@ -135,6 +142,90 @@ test('docs/research：课题目录必须带 14 位戳；带戳后目录内文件
     assert.equal(res.ok, false)
     assert.deepEqual(res.findings.map((f) => f.rel), ['docs/research/plain-topic/'])
     assert.match(res.findings[0].expect, /YYYYMMDDHHmmss-<主题>\//)
+  } finally { rmSync(root, { recursive: true, force: true }) }
+})
+
+test('research 课题目录缺戳：文件层不报（不与目录级双报，也不给「改文件名」建议）', () => {
+  const root = fixture([
+    'docs/research/plain-topic/index.md',
+    'docs/research/plain-topic/detail.md',
+  ])
+  try {
+    assert.equal(judge(join(root, 'docs/research/plain-topic/detail.md'), root).kind, 'pending-dir')
+    const res = checkTree('docs', root)
+    assert.deepEqual(res.findings.map((f) => f.rel), ['docs/research/plain-topic/'])
+    assert.equal(res.findings[0].kind, 'stamp-dir')
+  } finally { rmSync(root, { recursive: true, force: true }) }
+})
+
+test('research 根层散文件：红，但不误导为「给文件加戳」，提示收进课题目录', () => {
+  const root = fixture(['docs/research/loose-note.md'])
+  try {
+    const res = checkTree('docs', root)
+    assert.equal(res.findings.length, 1)
+    assert.equal(res.findings[0].kind, 'loose-in-research')
+    assert.match(res.findings[0].expect, /课题目录/)
+    assert.equal(res.findings[0].suggest, '')
+  } finally { rmSync(root, { recursive: true, force: true }) }
+})
+
+test('research 根层连 index.md / README.md 也必须收进课题目录（singleton 不短路）', () => {
+  const root = fixture([
+    'docs/research/index.md',
+    'docs/research/README.md',
+    'docs/research/foo-index.md',
+  ])
+  try {
+    const res = checkTree('docs/research', root)
+    assert.deepEqual(res.findings.map((f) => f.rel).sort(), [
+      'docs/research/README.md',
+      'docs/research/foo-index.md',
+      'docs/research/index.md',
+    ])
+    assert.ok(res.findings.every((f) => f.kind === 'loose-in-research'), JSON.stringify(res.findings))
+  } finally { rmSync(root, { recursive: true, force: true }) }
+})
+
+test('根入口 `--check .` 也能报缺戳课题目录（不因 entry 为空串而静默）', () => {
+  const root = fixture(['docs/research/plain-topic/x.md'])
+  try {
+    assert.deepEqual(checkTree('.', root).findings.map((f) => f.rel), ['docs/research/plain-topic/'])
+  } finally { rmSync(root, { recursive: true, force: true }) }
+})
+
+test('把文件路径传给 checkTree：收敛为「不是目录」，不抛 ENOTDIR', () => {
+  const root = fixture(['docs/research/plain-topic/x.md'])
+  try {
+    const res = checkTree('docs/research/plain-topic/x.md', root)
+    assert.equal(res.ok, false)
+    assert.equal(res.findings[0].why, '不是目录')
+  } finally { rmSync(root, { recursive: true, force: true }) }
+})
+
+test('日期类目录不做主题层判定：缺日期主题目录只报文件层，不额外报 stamp-dir', () => {
+  const root = fixture(['docs/superpowers/specs/t3/x.md'])
+  try {
+    const rels = checkTree('docs/superpowers/specs/t3', root).findings.map((f) => f.rel)
+    assert.deepEqual(rels, ['docs/superpowers/specs/t3/x.md'])
+  } finally { rmSync(root, { recursive: true, force: true }) }
+})
+
+test('research 课题目录缺戳：换任何入口（课题层 / 内层）都能报，不因入口不同而假绿', () => {
+  const root = fixture([
+    'docs/research/plain-topic/index.md',
+    'docs/research/plain-topic/sub/deep.md',
+  ])
+  try {
+    for (const t of ['docs', 'docs/research', 'docs/research/plain-topic', 'docs/research/plain-topic/sub']) {
+      assert.deepEqual(checkTree(t, root).findings.map((f) => f.rel), ['docs/research/plain-topic/'], t)
+    }
+    // 带戳课题：任何入口都 0 条（内层目录不再要求加戳）
+    const ok = fixture(['docs/research/20260102030405-topic/sub/deep.md'])
+    try {
+      for (const t of ['docs', 'docs/research', 'docs/research/20260102030405-topic/sub']) {
+        assert.deepEqual(checkTree(t, ok).findings.map((f) => f.rel), [], t)
+      }
+    } finally { rmSync(ok, { recursive: true, force: true }) }
   } finally { rmSync(root, { recursive: true, force: true }) }
 })
 

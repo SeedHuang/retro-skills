@@ -24,16 +24,26 @@ import { fileURLToPath } from 'node:url'
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 
-const STAMP_RE = /^\d{14}-[a-z0-9][a-z0-9-]*\.md$/
-const DATE_RE = /^\d{4}-\d{2}-\d{2}-[a-z0-9][a-z0-9-]*\.md$/
+const STAMP_FILE_RE = /^\d{14}-[a-z0-9][a-z0-9-]*\.md$/
+const DATE_FILE_RE = /^\d{4}-\d{2}-\d{2}-[a-z0-9][a-z0-9-]*\.md$/
 // 目录名是否带时间戳：YYYYMMDDHHmmss- 或 YYYY-MM-DD-
-const DIR_STAMP_RE = /^(\d{14}|\d{4}-\d{2}-\d{2})-/
+export const DIR_STAMP_RE = /^(\d{14}|\d{4}-\d{2}-\d{2})-/
+// 「带戳目录名」的严格形态（目录层判据）：按规则类选 14 位 / 日期
+const STAMP_DIR_NAME_RE = /^\d{14}-[a-z0-9][a-z0-9-]*$/
+const DATE_DIR_NAME_RE = /^\d{4}-\d{2}-\d{2}-[a-z0-9][a-z0-9-]*$/
+const stampDirNameRe = (isStamp) => (isStamp ? STAMP_DIR_NAME_RE : DATE_DIR_NAME_RE)
 const BAD_GENERIC_RE = /[\u3400-\u9fff\s_]/
 // 单份确定版：原地更新、不产生多版本 → 不加时间戳
 const SINGLETON_RE = /^(README|index|overview)\.md$|^[a-z0-9-]+-index\.md$/
 
-export const STAMP_DIRS = ['docs/prd', 'docs/after', 'docs/research']
+// 课题目录制：一个课题一个目录，根层不放散文件
+const RESEARCH_DIR = 'docs/research'
+export const STAMP_DIRS = ['docs/prd', 'docs/after', RESEARCH_DIR]
 export const DATE_DIRS = ['docs/superpowers/specs', 'docs/superpowers/plans', 'docs/handoffs']
+
+// 直接躺在课题目录制根层的 .md（不属于任何课题）
+const isResearchRootFile = (rel) => rel.startsWith(RESEARCH_DIR + '/')
+  && rel.slice(RESEARCH_DIR.length + 1).split('/').length === 1
 
 // 含中文 / 空白 / 下划线的名字，脚本不自动起名（转写会造出看不懂的名字，交人定主题名）
 export const needsHumanName = (name) => BAD_GENERIC_RE.test(name)
@@ -59,15 +69,29 @@ export function judge(absPath, root = ROOT) {
   const name = basename(absPath)
   if (!name.endsWith('.md')) return { ok: true, kind: 'non-md', rel }
   if (BAD_GENERIC_RE.test(name)) return { ok: false, kind: 'generic', rel, expect: '禁中文 / 空格 / 下划线' }
+  // 课题目录制根层：只允许「一个课题一个目录」，任何平铺 .md（含 index.md）都要收进课题
+  if (isResearchRootFile(rel)) {
+    return {
+      ok: false,
+      kind: 'loose-in-research',
+      rel,
+      expect: 'research 根层只放课题目录：请收进 YYYYMMDDHHmmss-<课题>/',
+    }
+  }
   if (isSingletonDoc(name)) return { ok: true, kind: 'singleton', rel }
   if (hasStampedAncestor(rel)) return { ok: true, kind: 'stamped-parent', rel }
-  if (STAMP_DIRS.some((d) => under(rel, d))) {
-    return STAMP_RE.test(name)
+  const stampDir = STAMP_DIRS.find((d) => under(rel, d))
+  if (stampDir) {
+    const rest = rel.slice(stampDir.length + 1).split('/')
+    // 主题目录缺戳：问题在目录名上（checkTree 的目录层会报 stamp-dir），文件层不再给「改文件名」建议——
+    // 规范是「目录带戳、目录内文件用原名」，照文件级建议改名仍会红，且同一目录会被报两条。
+    if (rest.length > 1 && !DIR_STAMP_RE.test(rest[0])) return { ok: true, kind: 'pending-dir', rel }
+    return STAMP_FILE_RE.test(name)
       ? { ok: true, kind: 'stamp', rel }
       : { ok: false, kind: 'stamp', rel, expect: 'YYYYMMDDHHmmss-<主题>.md（创建时刻，到秒）' }
   }
   if (DATE_DIRS.some((d) => under(rel, d))) {
-    return DATE_RE.test(name)
+    return DATE_FILE_RE.test(name)
       ? { ok: true, kind: 'date', rel }
       : { ok: false, kind: 'date', rel, expect: 'YYYY-MM-DD-<主题>.md（定稿 / 排期日期）' }
   }
@@ -129,29 +153,32 @@ function walkMd(dir, out = []) {
  * 目录层检查：某个「命名规则目录」的直接子目录必须带时间戳。
  * 只查直接子目录，不递归——「同一主题只加一层」，带戳目录内部的子目录不再要求。
  */
+function pushDirViolation({ abs, name, isStamp, findings, root }) {
+  if (needsHumanName(name)) {
+    findings.push({
+      rel: `${toPosix(relative(root, abs))}/`,
+      kind: 'stamp-dir',
+      expect: '需人工起名：目录名含中文 / 空格 / 下划线',
+      suggest: '',
+    })
+    return
+  }
+  const { at } = stampOf(abs)
+  findings.push({
+    rel: toPosix(relative(root, abs)) + '/',
+    kind: 'stamp-dir',
+    expect: isStamp ? 'YYYYMMDDHHmmss-<主题>/（目录带时间戳，内部文件用原名）' : 'YYYY-MM-DD-<主题>/',
+    suggest: `${isStamp ? fmt14(at) : fmtDate(at)}-${name}/`,
+  })
+}
+
 function checkRuleDirChildren({ ruleAbs, ruleRel, findings, root }) {
   const isStamp = STAMP_DIRS.includes(ruleRel)
-  const stampRe = isStamp ? /^\d{14}-[a-z0-9][a-z0-9-]*$/ : /^\d{4}-\d{2}-\d{2}-[a-z0-9][a-z0-9-]*$/
+  const re = stampDirNameRe(isStamp)
   for (const entry of readdirSync(ruleAbs, { withFileTypes: true })) {
     if (!entry.isDirectory() || entry.isSymbolicLink()) continue
-    if (stampRe.test(entry.name)) continue
-    const abs = join(ruleAbs, entry.name)
-    if (needsHumanName(entry.name)) {
-      findings.push({
-        rel: `${toPosix(relative(root, abs))}/`,
-        kind: 'stamp-dir',
-        expect: '需人工起名：目录名含中文 / 空格 / 下划线',
-        suggest: '',
-      })
-      continue
-    }
-    const { at } = stampOf(abs)
-    findings.push({
-      rel: toPosix(relative(root, abs)) + '/',
-      kind: 'stamp-dir',
-      expect: isStamp ? 'YYYYMMDDHHmmss-<主题>/（目录带时间戳，内部文件用原名）' : 'YYYY-MM-DD-<主题>/',
-      suggest: `${isStamp ? fmt14(at) : fmtDate(at)}-${entry.name}/`,
-    })
+    if (re.test(entry.name)) continue
+    pushDirViolation({ abs: join(ruleAbs, entry.name), name: entry.name, isStamp, findings, root })
   }
 }
 
@@ -161,6 +188,10 @@ export function checkTree(dir, root = ROOT) {
   if (!existsSync(target)) {
     return { ok: false, findings: [{ rel: toPosix(relative(root, target)), why: '目录不存在' }] }
   }
+  // 传了文件路径：收敛为一条 finding，不让 readdir 抛 ENOTDIR 冒栈
+  if (!statSync(target).isDirectory()) {
+    return { ok: false, findings: [{ rel: toPosix(relative(root, target)), why: '不是目录' }] }
+  }
   const findings = []
 
   // 目录层：凡是落在扫描目标内（含目标自身）的「命名规则目录」，都要查它的直接子目录。
@@ -168,10 +199,20 @@ export function checkTree(dir, root = ROOT) {
   // 守卫看起来存在、实际从不触发（2026-10-24 代码审查问题 1）。
   const parentRel = toPosix(relative(root, target))
   for (const ruleRel of [...STAMP_DIRS, ...DATE_DIRS]) {
-    if (ruleRel !== parentRel && !ruleRel.startsWith(parentRel + '/')) continue
+    const isStamp = STAMP_DIRS.includes(ruleRel)
     const ruleAbs = resolve(root, ruleRel)
-    if (!existsSync(ruleAbs)) continue
-    checkRuleDirChildren({ ruleAbs, ruleRel, findings, root })
+    // ① 目标就是规则目录、规则目录在目标之内（含 `--check .` 的根入口 parentRel === ''）→ 查直接子目录
+    if (parentRel === '' || ruleRel === parentRel || ruleRel.startsWith(parentRel + '/')) {
+      if (existsSync(ruleAbs)) checkRuleDirChildren({ ruleAbs, ruleRel, findings, root })
+      continue
+    }
+    // ② 目标落在**带戳类**规则目录之内 → 只看「主题层」这一级：主题缺戳必须仍报，
+    //    不论入口是主题层还是更深的内层（否则换个入口就静默看不到）；主题已带戳则内层目录自由。
+    //    日期类（specs/plans/handoffs）本无主题目录形态，不做这条，避免同一文件既报 date 又报 stamp-dir。
+    if (!isStamp || !parentRel.startsWith(ruleRel + '/')) continue
+    const rest = parentRel.slice(ruleRel.length + 1).split('/')
+    if (stampDirNameRe(true).test(rest[0])) continue
+    pushDirViolation({ abs: resolve(root, ruleRel, rest[0]), name: rest[0], isStamp: true, findings, root })
   }
 
   for (const f of walkMd(target)) {
@@ -182,7 +223,8 @@ export function checkTree(dir, root = ROOT) {
       rel: r.rel,
       kind: r.kind,
       expect: r.expect,
-      suggest: suggestName({ kind: r.kind, name: basename(f), at }),
+      // loose-in-research 的正解是「收进课题目录」，不给改名建议（suggestName 只会回原名）
+      suggest: r.kind === 'loose-in-research' ? '' : suggestName({ kind: r.kind, name: basename(f), at }),
       stampFrom: from,
     })
   }
