@@ -13,9 +13,12 @@
 | `docs/superpowers/plans/` | **已排期**的执行步骤 | 勾选框 + 进度表 | 全部执行完 → 勾选，**不搬走** |
 | `docs/handoffs/` | 某次 session 的**收尾交接** | 一次性 | 永不改写（**路径字符串同步属例外，见硬约束 4**）；新 session 另起一份 |
 | **`docs/after/`** | **未完成 / 待决 / 悬置** | 明确写「未决」 | 做完了 → 把结论并入 spec，条目迁出 |
+| **`docs/research/`** | **研究课题的成果**：一个问题 → 调研 + 结论 + 工程化方案 + 成本实测；一个课题一个目录（`index.md` 为入口，其余分册按需） | 不标定稿 / 未决，但**不得被当规范引用**——可执行部分必须已落到 `rules/` / `skills/` / `specs/` | 不搬走；被后续课题取代时原文保留（历史记录） |
 | 仓库根 | 体系总图、README | 长期 | — |
 
 **`docs/prd/` 为什么单列一档**：PRD 与 spec 的生命周期不同——PRD 允许未定稿（正在被议会审），spec 必须定稿。把未定稿 PRD 放 `after/` 会让它随「待办清账」消失，放 `specs/` 又会让读者误当定稿。判据是「需求定义 vs 实现设计」，不是「定没定稿」。
+
+**`docs/research/` 与 `docs/reports/` 怎么分**：`research/` 是**活的课题研究**——同一个课题会有续篇、会被后续课题修订，所以它被列进「历史类」前缀（`scripts/scope-sweep.mjs` 的 `HISTORY_PREFIXES`），改口径时**不回头改它**；`reports/` 是**一次性产出记录**（某次评审报告 / 某轮记账），写完即封存。判据：**这份东西将来还会被同一个课题续写或修订吗？** 会 → `research/`；不会 → `reports/`。
 
 ## 硬约束
 
@@ -37,17 +40,18 @@
 | `handoffs/` | `YYYY-MM-DD-<主题>.md` | `2026-09-29-session-close.md` |
 | `retro/` | `YYYY-MM-DD-<那一次>/retro-<轮次>-<主题>.md` | `2026-10-14-2248-review-all-to-death/retro-07-single-source.md` |
 | **`docs/prd/`** | **时间戳加在「主题条目」上：单文件主题 → `YYYYMMDDHHmmss-<主题>.md`；多文件主题 → 目录名 `YYYYMMDDHHmmss-<主题>/`，目录内文件用原名（不再加前缀）** | `20261024073606-dev-workflow-mainline/index.md`、`20261019093443-docgen-agent-generation.md` |
+| **`docs/research/`** | **一个课题一个目录：目录名 `YYYYMMDDHHmmss-<课题>/`（课题启动那一刻），目录内文件用原名（`index.md` 不加前缀）** | `20261025133825-review-scope-and-sweep/index.md` |
 | **`after/`** | **`YYYYMMDDHHmmss-<主题>-<阶段>.md`（小写 kebab-case；前缀 = **文件创建时间**，精确到秒）** | `20261007201648-collect-requirements-exploration.md` |
 
 **时间戳标记的是「这个事物在时间上的变动」与「当时的确定 / 快照」，不是装饰。** 由此三条总则：
 
 | 总则 | 判据 | 例子 |
 |---|---|---|
-| **只加在多版本并存处** | 会随时间产生多份并存、或需要留住起点的才加：PRD 主题条目、`after/` 活账本、`specs/`、`plans/`、`handoffs/`；**同一主题只加一层**——主题是目录就加在目录名，主题是单文件就加在文件名 | `20261024073606-dev-workflow-mainline/`（目录） / `20261019093443-docgen-agent-generation.md`（单文件） |
+| **只加在多版本并存处** | 会随时间产生多份并存、或需要留住起点的才加：PRD 主题条目、`after/` 活账本、**研究课题目录**、`specs/`、`plans/`、`handoffs/`；**同一主题只加一层**——主题是目录就加在目录名，主题是单文件就加在文件名 | `20261024073606-dev-workflow-mainline/`（目录） / `20261019093443-docgen-agent-generation.md`（单文件） |
 | **单份确定稿 / 配置不加** | 原地更新、不产生多版本的：`README.md`、`index.md`、`*-index.md`、`overview.md`；以及 `rules/`、`agents/`、`skills/`、`.session/`、各类配置 | `docs/prd/docgen-index.md` |
 | **父目录已带时间戳，子文件不加** | 路径上任一祖先目录名以 `YYYYMMDDHHmmss-` 或 `YYYY-MM-DD-` 开头 | `retro/2026-10-14-2248-xxx/retro-07-single-source.md` |
 
-**两类前缀不要混用**：兄弟目录带 `YYYY-MM-DD`（定格日期：定稿 / 排期完成 / session 收尾 / 审查收尾），`prd/` 与 `after/` 带 `YYYYMMDDHHmmss`（创建时刻）——用途不同。
+**两类前缀不要混用**：兄弟目录带 `YYYY-MM-DD`（定格日期：定稿 / 排期完成 / session 收尾 / 审查收尾），`prd/`、`after/` 与 `research/` 带 `YYYYMMDDHHmmss`（创建时刻）——用途不同。
 
 **机器判据**：命名合规性一律以 `scripts/doc-name.mjs` 为准（`npm run doc:name`）；文字表与脚本冲突时**以脚本为准**，改口径只改脚本与本节一处。
 

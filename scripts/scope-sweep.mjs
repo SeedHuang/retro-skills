@@ -16,13 +16,15 @@ export const DEFAULT_CONFIG = 'tools/scope-sweep/keywords.json';
 export const DEFAULT_BASELINE = 'tools/scope-sweep/baseline.json';
 
 // 历史类路径：命中可保留原句（按 docs-convention「历史记录不改」）
+// 注：本分类只作 `--verbose` 清单里的标签（不参与 --check 判红，见 runCheck）；
+//     加目录前先确认它是「记录型」而不是「活结论」——活文档错标成历史会被当成不用改。
 export const HISTORY_PREFIXES = [
   'docs/handoffs/',
   'docs/superpowers/plans/',
   'docs/superpowers/reviews/',
   'docs/superpowers/retro/',
   'docs/after/',
-  'docs/mymind/',
+  'docs/research/',
 ];
 const REF_MARKS = [/§/, /\bV-\d+\b/, /不变量\s*\d/];
 

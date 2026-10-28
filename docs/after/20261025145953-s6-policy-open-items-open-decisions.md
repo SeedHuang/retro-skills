@@ -34,7 +34,7 @@
 
 - P2 11 族（F22–F32）全部「采纳已落」，落点见 `problems.md` §十。
 - 议会 #3 的 83 张卡全部有正文、答辩记录与落点（`cards.md` / `problems.md`）。
-- 「改判回扫」机制已落：规则 R8 + `scripts/scope-sweep.mjs` + 词表 + 基线（见 `docs/mymind/20261025145125-sweep-engineering-decision.md`）。
+- 「改判回扫」机制已落：规则 R8 + `scripts/scope-sweep.mjs` + 词表 + 基线（见 `docs/research/20261025133825-review-scope-and-sweep/sweep-engineering-decision.md`）。
 
 ## 5 施工后新增（2026-10-25，③ 段审计的 P2 与本轮复盘）
 

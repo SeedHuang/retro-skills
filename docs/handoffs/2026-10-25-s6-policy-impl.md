@@ -31,7 +31,7 @@
 - `.session/reviews/2026-10-25-111619-s6-policy-parliament/progress.md`（**先读尾部**，含四轮与增量复核的结论、未取数项）
 - 同目录：`cards.md`（83 卡全文 + 答辩）、`problems.md`（五态漏斗 / P2 逐卡落态 / F33–F53 增量卡）、`evidence.md`、`submission.md`（送审基线两 SHA）、`impact-sheet.md`（改判影响清单：只改 / 已改 / 不改 / 将来得改）、`round-check.md`、`delivery-audit.md`、`detective.md`、`plan-gate.md`（**含「v2 返工与终审」节**）
 - 历史交接词链：`docs/handoffs/2026-10-25-s6-policy-parliament.md` → 本文件
-- 议会账本收口后迁移规则：整目录迁 `docs/superpowers/reviews/2026-10-25-111619-s6-policy-parliament/`（进 git），再删 `.session/` 副本（见 `docs/mymind/20261025133825-review-scope-and-sweep-decisions.md` 的落点约定）
+- 议会账本收口后迁移规则：整目录迁 `docs/superpowers/reviews/2026-10-25-111619-s6-policy-parliament/`（进 git），再删 `.session/` 副本（见 `docs/research/20261025133825-review-scope-and-sweep/index.md` 的落点约定）
 
 ## 本次任务
 

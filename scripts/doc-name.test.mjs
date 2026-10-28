@@ -120,9 +120,29 @@ test('suggestName：stamp 类补 14 位、date 类补 YYYY-MM-DD、generic 原�
   assert.equal(fmtDate(at), '2026-01-02')
 })
 
+test('docs/research：课题目录必须带 14 位戳；带戳后目录内文件用原名（index.md 不加前缀）', () => {
+  const root = fixture([
+    'docs/research/20260102030405-topic/index.md',
+    'docs/research/20260102030405-topic/detail.md',
+    'docs/research/plain-topic/index.md',
+  ])
+  try {
+    // 带戳目录内：index.md 是单份索引，detail.md 靠 stamped-parent，都不要求前缀
+    assert.equal(judge(join(root, 'docs/research/20260102030405-topic/index.md'), root).kind, 'singleton')
+    assert.equal(judge(join(root, 'docs/research/20260102030405-topic/detail.md'), root).kind, 'stamped-parent')
+    // 目录层：不带戳的课题目录要红（index.md 本身合法，文件层判不出，只能靠目录层）
+    const res = checkTree('docs', root)
+    assert.equal(res.ok, false)
+    assert.deepEqual(res.findings.map((f) => f.rel), ['docs/research/plain-topic/'])
+    assert.match(res.findings[0].expect, /YYYYMMDDHHmmss-<主题>\//)
+  } finally { rmSync(root, { recursive: true, force: true }) }
+})
+
 test('kindOfDir 按前缀匹配，主题子目录也算', () => {
   assert.equal(kindOfDir('docs/prd'), 'stamp')
   assert.equal(kindOfDir('docs/prd/20260101000000-topic'), 'stamp')
+  assert.equal(kindOfDir('docs/research'), 'stamp')
+  assert.equal(kindOfDir('docs/research/20260101000000-topic'), 'stamp')
   assert.equal(kindOfDir('docs/handoffs'), 'date')
   assert.equal(kindOfDir('docs/guide'), 'generic')
 })

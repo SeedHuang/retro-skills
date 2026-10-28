@@ -5,7 +5,7 @@
 // 供 doc-rename / doc-migrate-stamps 复用；以后接进 `npm run check` 也只用改这一处。
 //
 // 判据分三类（与 docs-convention 的目录语义对齐）：
-//   ① 创建时刻类：docs/prd、docs/after —— `YYYYMMDDHHmmss-<主题>.md`（到秒）
+//   ① 创建时刻类：docs/prd、docs/after、docs/research —— `YYYYMMDDHHmmss-<主题>.md`（到秒）
 //   ② 定稿日期类：specs / plans / handoffs —— `YYYY-MM-DD-<主题>.md`
 //   ③ 其余 docs 文档：只禁中文 / 空白 / 下划线（不强制前缀，也不强求全小写——
 //      README.md / SKILL.md 这类固定名大量存在，强行小写化只会制造假阳）
@@ -32,7 +32,7 @@ const BAD_GENERIC_RE = /[\u3400-\u9fff\s_]/
 // 单份确定版：原地更新、不产生多版本 → 不加时间戳
 const SINGLETON_RE = /^(README|index|overview)\.md$|^[a-z0-9-]+-index\.md$/
 
-export const STAMP_DIRS = ['docs/prd', 'docs/after']
+export const STAMP_DIRS = ['docs/prd', 'docs/after', 'docs/research']
 export const DATE_DIRS = ['docs/superpowers/specs', 'docs/superpowers/plans', 'docs/handoffs']
 
 // 含中文 / 空白 / 下划线的名字，脚本不自动起名（转写会造出看不懂的名字，交人定主题名）

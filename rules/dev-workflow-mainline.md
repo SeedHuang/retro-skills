@@ -16,7 +16,7 @@
 | R5 | 产品经理改动功能点集合 = 「功能增删」类漂移，必须回 PRD 重签 §0 | 功能点 ID 集合 diff 非空，且 PRD §0 无重签记录 → 违规 | PRD §7.2 |
 | R6 | 功能块按块滚动拆，不提前批量拆 | `gate-record.md`（或计划表）中「状态 = 拆 spec 中」的行数 ≤ 1（计数型判据） | PRD §4.1 |
 | R7 | 引用长文的结论必须来自 `evidence-reader` 的取证摘要 | 送审 / 交接材料里引用了对话记录、评审账、规范原文的结论，必须带 `path:line` 且能追到一份 `evidence` 产出；无出处 = 违规 | PRD §10 F-17 |
-| R8 | **改判必须同批回扫上游与同族文档**：改任一条「判据级口径」（验收判据 / 权限语义 / 错误码 / 计数口径 / 命名）时，必须在本批 diff 内给出该口径在**上游签字件（PRD / 已签 spec）与同族文档**中的全部命中的处置（改 / 改引用 / 标历史保留） | 改判词表登记在 `tools/scope-sweep/keywords.json`；`node scripts/scope-sweep.mjs --check` 必须 exit 0（四条：无 baseline → 红；任一口径命中数 > baseline → 红；命中处未进当次 `impact-sheet.md` → 红；scope 文件缺失 → 红）。**判据侧只认命令退出码，不认「我看过了」** | 用户 2026-10-25 裁定（议会 #3 的 9 张 P0 同一机制）；方案见 `docs/mymind/20261025145125-sweep-engineering-decision.md`；**命令勘误 2026-10-25**：旧写 `npm run doc:sweep -- --check` 在 PowerShell + npm 10.9 下会丢掉 `--` 之后的参数、跑默认分支恒 exit 0（假绿） |
+| R8 | **改判必须同批回扫上游与同族文档**：改任一条「判据级口径」（验收判据 / 权限语义 / 错误码 / 计数口径 / 命名）时，必须在本批 diff 内给出该口径在**上游签字件（PRD / 已签 spec）与同族文档**中的全部命中的处置（改 / 改引用 / 标历史保留） | 改判词表登记在 `tools/scope-sweep/keywords.json`；`node scripts/scope-sweep.mjs --check` 必须 exit 0（四条：无 baseline → 红；任一口径命中数 > baseline → 红；命中处未进当次 `impact-sheet.md` → 红；scope 文件缺失 → 红）。**判据侧只认命令退出码，不认「我看过了」** | 用户 2026-10-25 裁定（议会 #3 的 9 张 P0 同一机制）；方案见 `docs/research/20261025133825-review-scope-and-sweep/sweep-engineering-decision.md`；**命令勘误 2026-10-25**：旧写 `npm run doc:sweep -- --check` 在 PowerShell + npm 10.9 下会丢掉 `--` 之后的参数、跑默认分支恒 exit 0（假绿） |
 
 **规则的边界**：R1–R8 只管「主干怎么走」。不写「怎么评审」（调用 `parliament` 技能）、不写「怎么拆 spec」（调用 `prd-to-specs` 技能）、不写「怎么写 testcase」（判据以 `spec-testcase-gate` 规则为准）——重复即漂移。
 

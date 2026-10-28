@@ -2,8 +2,8 @@
 
 > 状态：**待工程化**（本文件是决策与需求记录，不是已完成项）｜创建：2026-10-25 13:38:25
 > 来源：用户 2026-10-25 在议会 #3（F-24 / S6）期间的口头裁定 + 主 agent 结论 + 精算席实测
-> 落点：本目录（`docs/mymind/`，用户指定）；工程化产物分别进 `scripts/`、`skills/parliament/`、`rules/`
-> 续篇：[改判回扫：起因、经过、结果与工程化方案](file:///d:/Seed/retro-skills/docs/mymind/20261025145125-sweep-engineering-decision.md)（E1 / E3 / E6 的方案与成本结论，以那篇为准）
+> 落点：本目录（`docs/research/20261025133825-review-scope-and-sweep/`）；工程化产物分别进 `scripts/`、`skills/parliament/`、`rules/`
+> 续篇：[改判回扫：起因、经过、结果与工程化方案](./sweep-engineering-decision.md)（E1 / E3 / E6 的方案与成本结论，以那篇为准）
 
 ## 1 用户原话与本意（逐条）
 
