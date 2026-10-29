@@ -1,6 +1,7 @@
 // 开放项 scope 派生与三码校验（spec §3 :42 / §5 :132-133 / §7 :197-199 / §10-D7 :266 / §10-D14 :273）。
 // `SCOPES` 只在此 re-export（字面写死在 enums.mjs，不做第二份）。
 import { SCOPES } from './enums.mjs';
+import { registeredIdsOf } from './validateCardModel.mjs';
 
 export { SCOPES };
 
@@ -37,6 +38,14 @@ export function validateOpenItems(doc, env, cards) {
   }
   if (!env || !env.registeredIds) {
     return errorsOf('UnverifiableOutput', 'env.registeredIds', 'env.registeredIds 缺失（§6 :143）');
+  }
+  // §6 :154 registeredIds 单源：调用方给了 `cards` 就必须与 `registeredIdsOf(cards)` 一致
+  if (Array.isArray(cards)) {
+    const derived = registeredIdsOf(cards);
+    const equal = env.registeredIds.size === derived.size && [...env.registeredIds].every((x) => derived.has(x));
+    if (!equal) {
+      return errorsOf('UnverifiableOutput', 'env.registeredIds', 'env.registeredIds ≠ registeredIdsOf(cards)（§6 :154）');
+    }
   }
   const open = Array.isArray(doc.open) ? doc.open : [];
   // 组 7 顺序 ①：`object` 与任一 `registeredIds` 成员**逐字**相等（§7 :199）

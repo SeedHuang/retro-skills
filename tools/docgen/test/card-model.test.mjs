@@ -70,8 +70,7 @@ const baseEnv = (p = {}) => ({
   predicates: new Set(['ledger.row.exists']),
   landings: new Set(['deliverable.body', 'ledger.round.reflect']), // 真值见 observation-check/data.mjs 的 14–20 行
   subjects: M.SUBJECTS, // spec §5 :131：SUBJECTS 由 index.mjs 导出
-  // Task 4 起切到派生单源：`M.registeredIdsOf([baseCard()])`（spec §6 :154）
-  registeredIds: new Set(['k01']),
+  registeredIds: M.registeredIdsOf([baseCard()]), // spec §6 :154：由派生得到（**单源**）
   available: new Set(['question-card.md']),
   unboundVars: new Set(),
   parliamentSeats: new Set([PARL]),
@@ -354,7 +353,9 @@ test('S1-TC-H05 开放项五列齐 + scope 派生一致 → 绿（F-06 正向）
   delete d4.open[0].scope;
   assert.deepEqual(codes(M.validateOpenItems(d4, baseEnv())), ['OutOfScopeOpenItem'],
     `缺 scope → 只应报 OutOfScopeOpenItem（§7 :198），实得 ${codes(M.validateOpenItems(d4, baseEnv())).join('|')}`);
-  // ⑤ 缺列码归 S2：S1 的 36 码表里不得有它（Task 4 起 M.CARD_MODEL_CODES 才存在）
+  // ⑤ 缺列码归 S2：S1 的 36 码表里不得有它
+  assert.equal(Object.keys(M.CARD_MODEL_CODES).includes('MissingOpenField'), false,
+    '§7 :208：缺列码 MissingOpenField 归 S2，不进 S1 的 36 码');
 });
 
 test('S1-TC-H06 validateOpenItems 只判三码：缺列在 S1 侧不报码（MissingOpenField 归 S2）', () => {
@@ -371,7 +372,8 @@ test('S1-TC-H06 validateOpenItems 只判三码：缺列在 S1 侧不报码（Mis
   only(runDoc((d) => { d.open = []; d.openEmptyReason = '   '; }), 'EmptyOpenWithoutReason');
   only(runDoc((d) => { d.open = [openItem('agents/detective-observer.md', 'code')]; }), 'OutOfScopeOpenItem', 'open[0].scope');
   only(runDoc((d) => { d.open = [openItem('k01', 'repo')]; }), 'DuplicateAsOpen', 'open[0].object');
-  // ④ 缺列码不在 S1 码表（Task 4 起断言）
+  // ④ 缺列码不在 S1 码表
+  assert.equal(Object.keys(M.CARD_MODEL_CODES).includes('MissingOpenField'), false, '§7 :208：S1 的 36 码不含 MissingOpenField（否则 H05 ③ 必红）');
 });
 
 test('S1-TC-K03 open[].evidence 的内容本段不判（边界划在 S1/S2 之间）', () => {
@@ -402,4 +404,153 @@ test('S1-TC-J02 合并族：OVERRIDABLE_FIELDS 精确集合 + 三码各一构造
   assert.ok(good.overrides[0].changed.includes('kind'), 'kind 必须算可覆盖字段（PRD :187 明文，S2 旧表缺它）');
   assert.equal(typeof MG.mergeActions, 'function', '合并码只能由 mergeActions 发出（入口对照表 :218 末行）');
   // ④ 分离纪律 + ⑤ validateCardModel 不返回合并码 —— 依赖 Task 4 的 CARD_MODEL_CODES 与发射点，Task 5 收尾时补齐
+});
+
+test('S1-TC-B05 最小合法卡 → {ok:true, errors:[]}', () => {
+  const c = baseCard();
+  assert.ok(c.must.length > 0 && c.checkItems.length > 0 && Object.keys(c.duty).length > 0, '基线卡必须先非空（防止空对象恒绿）');
+  assert.ok(String(SUB.SUBJECTS[c.checkItems[0].subject].display).trim(), '基线卡的 subject 必须有 display（否则 MissingSubject 恒真）');
+  green(run());
+});
+
+test('S1-TC-C02 M1：同一次返回内 path 唯一', () => {
+  const multi = run((c) => {
+    c.rationale = '  ';
+    c.scenes.push({ id: 'local.dead', label: '局部', why: 'x' });
+    c.must[0].objects = ['上述'];
+    c.checkItems[0].label = `${SUB.SUBJECTS[pickSubject(0)].display}、${ST.subjectiveTerms[0]}`;
+  });
+  assert.equal(multi.errors.length, 4, `多问题卡应报 4 条（不同 path 的多问题是正常多头），实得 ${codes(multi)}`);
+  assert.equal(new Set(pathsOf(multi)).size, 4);
+  // ① 「遍历 TABLE 全部构造」在 Task 6 追加（§0.4 的登记向量随码表落地）
+});
+
+test('S1-TC-D01 深冻结 card + env 后调用成功、两次结果相等', () => {
+  const c = deepFreeze(baseCard());
+  const e = deepFreeze(baseEnv());
+  assert.ok(Object.isFrozen(c) && Object.isFrozen(c.must[0]) && Object.isFrozen(e), '前置：必须真的冻结到嵌套层');
+  const r1 = M.validateCardModel(c, e);
+  const r2 = M.validateCardModel(c, e);
+  green(r1);
+  assert.deepEqual(r1, r2, '纯函数：同输入两次结果必须逐字相等');
+  const bad = deepFreeze((() => { const x = baseCard(); x.rationale = '  '; return x; })());
+  assert.deepEqual(codes(M.validateCardModel(bad, e)), ['MissingRationale'], '冻结的非法卡也必须能判红（不得因冻结抛 TypeError）');
+});
+
+test('S1-TC-D02 入参不被改写（调用前后快照逐字相等）', () => {
+  const snap = (o) => JSON.stringify(o, (k, v) => (v instanceof Set ? [...v].sort() : v));
+  const c = baseCard();
+  const before = snap(c);
+  const beforeEnv = snap(baseEnv());
+  assert.deepEqual(codes(M.validateCardModel(c, baseEnv())), []);
+  assert.equal(snap(c), before, '入参卡被改写');
+  assert.equal(snap(baseEnv()), beforeEnv, '入参 env 被改写');
+  const bad = baseCard();
+  bad.must[0].objects = ['上述'];
+  const b2 = snap(bad);
+  assert.deepEqual(codes(M.validateCardModel(bad, baseEnv())), ['VagueReferent']);
+  assert.equal(snap(bad), b2, '报错路径上同样不得改写入参');
+});
+
+test('S1-TC-D03 异常收敛为 UnverifiableOutput 且不中止后续判定', () => {
+  const throwing = new Set(['ledger.row.exists']);
+  throwing.has = () => { throw new Error('boom: predicates 不可用'); };
+  const c = baseCard();
+  c.never = [];
+  c.rationale = '   ';
+  let r;
+  assert.doesNotThrow(() => { r = M.validateCardModel(c, baseEnv({ predicates: throwing })); }, '异常不得冒泡中止');
+  assert.deepEqual([...codes(r)].sort(), ['MissingRationale', 'UnverifiableOutput'], `应双码并存，实得 ${codes(r)}`);
+  const u = r.errors.find((e) => e.code === 'UnverifiableOutput');
+  assert.ok(String(u.message).includes('boom'), `message 应取异常首行，实得 ${u.message}`);
+  // ④ 畸形入参：§6 :153 写死「card / doc 非对象同此码」
+  for (const bad of [null, undefined, 'not-a-card', 42]) {
+    let rb;
+    assert.doesNotThrow(() => { rb = M.validateCardModel(bad, baseEnv()); }, `card=${String(bad)} 不得冒泡`);
+    assert.deepEqual(codes(rb), ['UnverifiableOutput'], `card 非对象应只报 UnverifiableOutput，实得 ${codes(rb)}`);
+  }
+});
+
+test('S1-TC-D04 errors 顺序稳定且合 §6 固定序', () => {
+  const mk = (reorder) => {
+    const c = baseCard();
+    c.rationale = '  ';
+    c.scenes.push({ id: 'local.dead', label: '局部', why: 'x' });
+    c.must[0].objects = ['上述'];
+    c.checkItems[0].label = `${SUB.SUBJECTS[pickSubject(0)].display}、${ST.subjectiveTerms[0]}`;
+    if (reorder) return { checkItems: c.checkItems, must: c.must, signals: c.signals, scenes: c.scenes, rationale: c.rationale, ...c };
+    return c;
+  };
+  const order1 = codes(M.validateCardModel(mk(false), baseEnv()));
+  const order2 = codes(M.validateCardModel(mk(true), baseEnv()));
+  assert.equal(order1.length, 4, `应 4 条，实得 ${order1}`);
+  assert.deepEqual(order1, ['MissingRationale', 'UnusedScene', 'VagueReferent', 'SubjectiveLabel'], `顺序不合 §6：${order1}`);
+  assert.deepEqual(order2, order1, '字段声明顺序不得影响 errors 顺序');
+});
+
+test('S1-TC-K01 env 11 键接口逐键对账 + 缺键 → UnverifiableOutput（path env.<键>）+ registeredIds 单源', () => {
+  assert.deepEqual(Object.keys(baseEnv()).sort(), [...ENV_KEYS].sort(),
+    'baseEnv 必须与 §6 :143-144 的 11 键双向相等（缺一 = 少注入，多一 = 私自扩接口）');
+  assert.equal(ENV_KEYS.length, 11, `§6 的 env 应为 11 键，实得 ${ENV_KEYS.length}`);
+  // ② 缺键 → UnverifiableOutput，path = env.<键>
+  const emptyEnv = {}; // 全缺：每个键各报一条，证明逐键判而不是「第一个缺键就停」
+  let rAll;
+  assert.doesNotThrow(() => { rAll = M.validateCardModel(baseCard(), emptyEnv); }, 'env 全缺不得冒泡');
+  assert.equal(rAll.ok, false, 'env 缺键必须 fail-closed（不得默认全绿）');
+  for (const key of ENV_KEYS) {
+    const miss = rAll.errors.filter((e) => e.code === 'UnverifiableOutput' && String(e.path) === `env.${key}`);
+    assert.ok(miss.length >= 1, `缺 ${key} 应报 path=env.${key} 的 UnverifiableOutput，实得 ${JSON.stringify(rAll.errors.map((e) => [e.code, e.path]))}`);
+  }
+  assert.deepEqual([...new Set(codes(M.validateCardModel(baseCard(), {})))].sort(), ['UnverifiableOutput'],
+    'env 全缺时只允许 UnverifiableOutput（不得夹带别的码，也不得用 undefined 兜底把别的码放过）');
+  // ③ 继续判（不 fail-fast）：缺 predicates + rationale 空白 → 两码并存
+  const bothGap = baseCard();
+  bothGap.rationale = '   ';
+  const eNoPred = baseEnv(); delete eNoPred.predicates;
+  assert.deepEqual([...new Set(codes(M.validateCardModel(bothGap, eNoPred)))].sort(), ['MissingRationale', 'UnverifiableOutput'],
+    'env 缺键后必须继续判后续条目（spec :153「并继续判」）');
+  // ④ registeredIds 单源（:154）：与派生不一致 → UnverifiableOutput（path env.registeredIds）
+  only(M.validateOpenItems(baseDoc(), baseEnv({ registeredIds: new Set(['k01', 'ghost-id']) }), [baseCard()]),
+    'UnverifiableOutput', 'env.registeredIds');
+  green(run());
+});
+
+test('S1-TC-K02 §4 已列 cmd?/impl? 可注入，未列字段不做 closed-world', () => {
+  green(run((c) => { c.checkItems[0] = { ...c.checkItems[0], check: 'script', cmd: 'node tools/docgen/cli.mjs gate' }; }));
+  green(run((c) => { c.checkItems[0] = { ...c.checkItems[0], check: 'script', impl: 'ledger.row.exists' }; }));
+  // 两者都缺 → FalseScriptCheck（Task 6 追加）
+  green(run((c) => { c.checkItems[0] = { ...c.checkItems[0], check: 'script', cmd: 'x', evidenceRequired: true }; }));
+});
+
+test('S1-TC-K04 四入口各自只报自己那族码（§6 入口分工）', () => {
+  const leaky = baseCard();
+  leaky.open = [];
+  leaky.openEmptyReason = '   ';
+  assert.deepEqual(codes(M.validateCardModel(leaky, baseEnv())), [],
+    '开放项不属卡片数据（spec :77-78）：validateCardModel 不得报开放项族码（入口分工 :158）');
+  // ①b open-world（:155）：本 spec 未列的字段一律忽略，不得判红
+  const unknownField = baseCard();
+  unknownField.evidenceRequired = true;
+  unknownField.openEmptyReason = '   ';
+  assert.deepEqual(codes(M.validateCardModel(unknownField, baseEnv())), [],
+    'Card 上的未列字段必须忽略不判（§6 :155 open-world）；若判红说明实现做了 closed-world 字段检查');
+  const cardish = { items: [{ id: 'k01', objectType: 'artifact.report', verdict: 'hit' }], open: [], openEmptyReason: '无补充' };
+  const rDoc = M.validateOpenItems(cardish, baseEnv(), [baseCard()]);
+  assert.ok(!codes(rDoc).includes('MissingRationale'), `validateOpenItems 不得报卡级码，实得 ${codes(rDoc)}`);
+  assert.ok(!codes(rDoc).includes('SubjectMismatch'), `SubjectMismatch 不归 open 入口，实得 ${codes(rDoc)}`);
+  const rCmp = M.compareVerdicts(cardish, { items: [{ id: 'k01', objectType: 'artifact.report', verdict: 'hit' }], open: [] }, baseEnv());
+  assert.ok(!codes(rCmp).includes('SubjectMismatch'), `compareVerdicts 不得报 SubjectMismatch（由 verdictAllowed 单独判，spec :141），实得 ${codes(rCmp)}`);
+  // ③b 第四个入口各自只报自己的族
+  const rVa = SUB.verdictAllowed(pickSubject(0), 'artifact.report', 'hit');
+  assert.deepEqual(codes(rVa), ['SubjectMismatch'], `verdictAllowed 只应报 SubjectMismatch，实得 ${codes(rVa).join('|') || '(空)'}`);
+  for (const k of ['MissingRationale', 'EmptyOpenWithoutReason', 'DuplicateScene', 'VagueReferent']) {
+    assert.ok(!codes(rVa).includes(k), `verdictAllowed 不得报 ${k}（四入口分工，spec :158 / :47-48）`);
+  }
+  // ④ 合并不经四入口（:147）：含覆盖动作的卡，validateCardModel 也绝不返回合并码
+  const cover = baseCard();
+  cover.must.push({ ...cover.must[0], id: 'observe', objects: ['y.md'], reason: '改宾语' });
+  for (const c of MERGE_CODES) {
+    assert.ok(!codes(M.validateCardModel(cover, baseEnv())).includes(c),
+      `validateCardModel 不执行合并（:147）：不得返回 ${c}`);
+  }
 });

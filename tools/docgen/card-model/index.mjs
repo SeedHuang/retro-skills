@@ -21,3 +21,5 @@ export { resolveLanding } from './landings.mjs';
 export { SUBJECTS, SUBJECT_VALIDATORS, verdictAllowed, compareVerdicts } from './subjects.mjs';
 export { validateOpenItems } from './open-items.mjs';
 export { mergeActions } from './merge.mjs';
+export { SCAN_FIELDS } from './enums.mjs';
+export { CARD_MODEL_CODES, registeredIdsOf, validateCardModel } from './validateCardModel.mjs';
