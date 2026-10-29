@@ -45,8 +45,9 @@ export function operatorDepth(expr) {
 }
 
 // `scanCriterionText(text)`：返回三个命中面（termHits / thresholdHits / unitHits，§7 :193-195 与 §4.2 :106）。
-// 阈值探针 = 「数字 + 单位字符」；命中映射外单位时 `key === null`（调用方一律判红）。
-const THRESHOLD_RE = /([0-9０-９]+|[零一二三四五六七八九十百千万]+)\s*([^\s\d０-９，。、；：！？（）()\[\]{}])/g;
+// 阈值探针 = 「数字 + 单位」，**单位集按 §7 :194 的原文正则 `(次|条|字|个|轮|处|%)` 枚举**（不猜任意汉字，
+// 否则「同一问题卡」里的「一」会被当成数量词）；`N` 的字符面 = 半角 + 全角 + 汉字数字（同 `HardcodedCount` 口径）。
+const THRESHOLD_RE = /([0-9０-９]+|[零一二三四五六七八九十百千万]+)\s*(次|条|字|个|轮|处|%)/g;
 
 export function scanCriterionText(text) {
   const s = typeof text === 'string' ? text : '';

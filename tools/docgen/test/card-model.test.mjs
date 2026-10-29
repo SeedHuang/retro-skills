@@ -353,6 +353,18 @@ test('S1-TC-A05 词表全成员对账 + 单位 / 程序词 / 指针词逐条必�
   const critWords = cutVocab(202, '起步 6 词'); // 判据词：处置 / 依据 / 充分 / 合理 / 及时 / 适当
   assert.equal(critWords.length, 6, `PRD :202 的起步判据词应为 6 个，实得 ${critWords.length}`);
   assert.deepEqual(CT.criterionTerms, critWords, `vocab/criterion-terms.mjs 必须与 PRD :202 逐字相等，实得 ${CT.criterionTerms}`);
+  // ② InlineThreshold：7 个单位**从 spec §7 :194 原文切**（§0.3 的 `UNIT_KEY` / `THRESHOLD_UNITS`），缺 params 逐条必红
+  assert.ok(THRESHOLD_UNITS.length === 7, `前置：spec :194 应切出 7 个单位，实得 ${THRESHOLD_UNITS.length}（${THRESHOLD_UNITS.join('/')}）`);
+  assert.ok(THRESHOLD_UNITS.includes('次'), '前置：`次` 必须在该单位表内（否则探针错位）');
+  for (const u of THRESHOLD_UNITS) {
+    only(run((c) => { c.checkItems[0].criterion = `少于 3 ${u} 即算通过`; delete c.checkItems[0].params; }), 'InlineThreshold', 'checkItems[0].criterion');
+  }
+  // ③ 程序词：从 spec §7 :190 原文切（§0.3 的 PROC_WORDS），逐条必红（非议会席 SEAT）
+  assert.ok(PROC_WORDS.length === 5, `前置：spec :190 应切出 5 个程序词，实得 ${PROC_WORDS.length}（${PROC_WORDS.join('/')}）`);
+  for (const w of PROC_WORDS) only(run((c) => { c.duty.action = `${w}并记录`; }), 'ProceduralWordOutsideParliament');
+  // ④ 指针词：从 spec §7 :188 原文切（§0.3 的 POINTER_WORDS），逐条必红（散文只进 rationale，故卡文本面里的指针词必须报）
+  assert.ok(POINTER_WORDS.length === 5, `前置：spec :188 应切出 5 个指针词，实得 ${POINTER_WORDS.length}（${POINTER_WORDS.join('/')}）`);
+  for (const w of POINTER_WORDS) only(run((c) => { c.duty.action = `给出观察记录（${w} 3）`; }), 'PointerToElsewhere');
 });
 
 test('S1-TC-A01 8 张表数量逐项 + 值全过 id 谓词 + 各表同一引用', () => {
@@ -566,8 +578,8 @@ test('S1-TC-C02 M1：同一次返回内 path 唯一', () => {
   });
   assert.equal(multi.errors.length, 4, `多问题卡应报 4 条（不同 path 的多问题是正常多头），实得 ${codes(multi)}`);
   assert.equal(new Set(pathsOf(multi)).size, 4);
-  // ① 遍历 TABLE 全部构造（Task 6 起覆盖 36 码；本任务先覆盖已落地的族）
-  for (const row of TABLE.filter((r) => ['场景', '信号', '动作', '开放项', '三态', '审计'].includes(r.fam))) {
+  // ① 遍历 TABLE 全部构造（36 码）
+  for (const row of TABLE) {
     const r = row.kind === 'fn' ? row.fn() : (() => { const c = baseCard(); row.mutate?.(c); return M.validateCardModel(c, baseEnv(row.env || {})); })();
     const ps = pathsOf(r);
     assert.equal(new Set(ps).size, ps.length, `${row.code}：同 path 出现多码 → 违 M1（${ps.join(',')}）`);
@@ -667,7 +679,7 @@ test('S1-TC-K01 env 11 键接口逐键对账 + 缺键 → UnverifiableOutput（p
 test('S1-TC-K02 §4 已列 cmd?/impl? 可注入，未列字段不做 closed-world', () => {
   green(run((c) => { c.checkItems[0] = { ...c.checkItems[0], check: 'script', cmd: 'node tools/docgen/cli.mjs gate' }; }));
   green(run((c) => { c.checkItems[0] = { ...c.checkItems[0], check: 'script', impl: 'ledger.row.exists' }; }));
-  // 两者都缺 → FalseScriptCheck（Task 6 追加）
+  only(run((c) => { c.checkItems[0] = { ...c.checkItems[0], check: 'script' }; }), 'FalseScriptCheck', 'checkItems[0]');
   green(run((c) => { c.checkItems[0] = { ...c.checkItems[0], check: 'script', cmd: 'x', evidenceRequired: true }; }));
 });
 
@@ -718,7 +730,7 @@ test('S1-TC-B02 场景族 + 信号族 10 码最小红点', () => {
 test('S1-TC-B03 动作族 + 检查项族 13 码最小红点', () => {
   const rows = rowsOf('动作', '检查项');
   assert.equal(rows.length, 13, `动作+检查项应为 13 码，实得 ${rows.length}`);
-  for (const row of rowsOf('动作')) execRow(row); // 检查项族 8 条在 Task 6 收尾补齐
+  for (const row of rows) execRow(row);
   assert.equal(rows.filter((r) => r.path === null).length, 4, 'spec 未定义 path 的卡级文本码应为 4 个（写死数量防止日后偷改成 null 绕过 path 断言）');
 });
 
@@ -812,7 +824,28 @@ test('S1-TC-F03 MissingCriterionImpl 的两个判定面与 FalseScriptCheck 的�
   const both = run((c) => { delete c.must[0].criterion; c.checkItems[0].check = 'script'; delete c.checkItems[0].declarer; });
   assert.deepEqual([...codes(both)].sort(), ['FalseScriptCheck', 'MissingCriterionImpl']);
   assert.equal(new Set(pathsOf(both)).size, 2, '两码必须落在不同 path（否则违 M1，也说明「同一 CheckItem 上互斥」被误实现成同 path）');
-  // ④ v5 新增的 CheckItem 面 + ⑤ 两处各报一次 + ⑥⑦ 豁免不外溢 —— 归 Task 6
+  // ④ 新增的 CheckItem 面：非 manual 条目缺 criterion 也报同码；manual 条目缺 criterion 仍豁免
+  only(run((c) => { c.checkItems[0].check = 'script'; c.checkItems[0].cmd = 'node tools/docgen/cli.mjs gate'; delete c.checkItems[0].criterion; }),
+    'MissingCriterionImpl', 'checkItems[0].criterion'); // 非 manual（script + cmd）→ 报
+  green(run((c) => { delete c.checkItems[0].criterion; })); // manual → 豁免（不报）
+  // ⑤ 两处 path 不同 → 同一次返回里同码报两次、互不抑制（§6 :157 只要求同 path 唯一，M1 允许）
+  const twice = run((c) => {
+    delete c.must[0].criterion;
+    c.checkItems[0].check = 'script'; c.checkItems[0].cmd = 'node tools/docgen/cli.mjs gate';
+    delete c.checkItems[0].criterion;
+  });
+  assert.deepEqual(codes(twice), ['MissingCriterionImpl', 'MissingCriterionImpl'],
+    `两处各报一次（§6 顺序：must 先于 checkItems），实得 ${codes(twice).join('|') || '(空)'}`);
+  assert.equal(new Set(pathsOf(twice)).size, 2, `两条 path 必须不同（must[0].criterion / checkItems[0].criterion），实得 ${pathsOf(twice).join('|')}`);
+  assert.ok(String(pathsOf(twice)[0]).startsWith('must[0].criterion') && String(pathsOf(twice)[1]).startsWith('checkItems[0].criterion'),
+    `path 顺序应为 must 先、checkItems 后（§6 :156 固定序），实得 ${pathsOf(twice).join('|')}`);
+  // ⑥ Action.criterion 未登记 + 同卡有 manual CheckItem → Action 侧仍必报（豁免不外溢到 Action）
+  const spill = run((c) => { c.must[0].criterion = 'ledger.unknown.predicate'; }); // 该 id 不在 baseEnv().predicates
+  assert.deepEqual(codes(spill), ['MissingCriterionImpl'], `Action.criterion 未登记 → 必报（即使同卡有 manual 条目），实得 ${codes(spill).join('|')}`);
+  assert.ok(String(pathsOf(spill)[0]).startsWith('must[0].criterion'), `path 必须落 must[0].criterion，实得 ${pathsOf(spill)[0]}`);
+  // ⑦ 反向对照：把 manual 写进 Action 的契约外 check 字段也不构成豁免（§7 :181「动作条目没有 check 字段」）
+  const fake = run((c) => { c.must[0].criterion = 'ledger.unknown.predicate'; c.must[0].check = 'manual'; });
+  assert.deepEqual(codes(fake), ['MissingCriterionImpl'], `Action 上的 check 字段不得成为豁免载体，实得 ${codes(fake).join('|')}`);
 });
 
 test('S1-TC-F04 动作六字段齐 + requires:[] + 落点合法 → 绿', () => {
@@ -835,7 +868,315 @@ test('S1-TC-F05 两个 criterion 的分形：Action.criterion 是谓词 id，Che
   assert.deepEqual(codes(r1), ['MissingCriterionImpl'], `Action.criterion 未登记 → 只应报 MissingCriterionImpl（§4.1），实得 ${codes(r1).join('|')}`);
   for (const k of SCAN_CODES) assert.ok(!codes(r1).includes(k), `Action.criterion（谓词 id 面）不得扫出 ${k}（§4.2 :106）`);
   assert.ok(String(pathsOf(r1)[0]).startsWith('must[0].criterion'), `path 应落 must[0].criterion，实得 ${pathsOf(r1)[0]}`);
-  // ② 假阴性守卫（CheckItem.criterion 面）归 Task 6
+  // ② 假阴性守卫：同一句进 CheckItem.criterion 必须报 InlineTermList，且不得串成动作码
+  const r2 = run((c) => { c.checkItems[0].criterion = three; delete c.checkItems[0].definitions; });
+  assert.deepEqual(codes(r2), ['InlineTermList'], `CheckItem.criterion 命中 ≥3 个不同词表词 → 只应报 InlineTermList（§8 组 3 先报规则），实得 ${codes(r2).join('|')}`);
+  assert.ok(!codes(r2).includes('MissingCriterionImpl'), 'CheckItem.criterion 是文本面，不得报 MissingCriterionImpl（该码只判 Action.criterion）');
+  assert.ok(String(pathsOf(r2)[0]).startsWith('checkItems[0].criterion'), `path 应落 checkItems[0].criterion，实得 ${pathsOf(r2)[0]}`);
   // ③ 配齐侧：两侧各守自己的面 → 绿
   green(run((c) => { c.must[0].criterion = 'ledger.row.exists'; }));
+});
+
+test('S1-TC-B01 登记向量完备性：TABLE / S1_CODES / CARD_MODEL_CODES 三方相等 + 每行执行 1 次', () => {
+  assert.equal(TABLE.length, S1_CODES.length, `TABLE 行数应等于码数，实得 ${TABLE.length}`);
+  const tableCodes = TABLE.map((r) => r.code);
+  assert.equal(new Set(tableCodes).size, tableCodes.length, `TABLE 有重复码：${tableCodes.filter((c, i) => tableCodes.indexOf(c) !== i)}`);
+  assert.deepEqual([...tableCodes].sort(), [...S1_CODES].sort(), 'TABLE 码集必须与 §7 表的码双向相等（缺一多一都红）');
+  const keySet = Object.keys(M.CARD_MODEL_CODES);
+  assert.equal(keySet.length, S1_CODES.length, `CARD_MODEL_CODES 键数必须与 §7 码数一致，实得 ${keySet.length}`);
+  assert.deepEqual([...keySet].sort(), [...S1_CODES].sort(), 'CARD_MODEL_CODES 键集必须与 §7 的码双向相等（V-2 的唯一完备性判据）');
+  for (const notCode of ['WeakReason', ...MERGE_CODES]) {
+    assert.ok(!keySet.includes(notCode), `${notCode} 不得进脚本码表（V-5 / §7 末：manual 与合并码都不计入）`);
+  }
+  // ⑥ §6 :147 值形态 = 判定面字段引用（不写行号）：ASCII 字段引用 + 不含 `:`
+  const FIELD_REF = /^[A-Za-z_][A-Za-z0-9_.[\]-]*$/; // must[] / checkItems[].label / SEAT_SCENES / checkItems 都过
+  let shaped = 0;
+  for (const [k, v] of Object.entries(M.CARD_MODEL_CODES)) {
+    assert.equal(typeof v, 'string', `${k} 的值必须是字符串（§6 :147 值 = 判定面字段引用）`);
+    assert.ok(v.trim().length > 0, `码表值不得为空（§6 :147），${k} 的值为 "${v}"`);
+    assert.ok(!/[:：]/.test(v), `${k} 的值不得写行号（含 : / ：即违 §6 :147 / §10-D21），实得 "${v}"`);
+    assert.ok(FIELD_REF.test(v.trim()), `${k} 的值必须是字段引用形态（如 must[].criterion），实得 "${v}"（散文 / 中文面名都不过，§6 :147）`);
+    shaped += 1;
+  }
+  assert.equal(shaped, S1_CODES.length, `所有值都必须过形态断言（禁止抽样），实得 ${shaped}`);
+  // 非恒真自证：把任一值改成行号写法 → 形态断言必抛（副本不写回源码表）
+  const tampered = { ...M.CARD_MODEL_CODES, UnusedScene: ':180' };
+  assert.throws(() => {
+    assert.ok(!/[:：]/.test(tampered.UnusedScene) && FIELD_REF.test(tampered.UnusedScene.trim()));
+  }, '副本把 UnusedScene 写成 ":180" 时形态断言必红（证明上式不是恒真）');
+  EXECUTED = 0;
+  for (const row of TABLE) execRow(row);
+  assert.equal(EXECUTED, TABLE.length, '每行必须执行恰 1 次（禁止抽样）');
+  const broken = TABLE.filter((r) => r.code !== 'UnusedScene').map((r) => r.code);
+  assert.notDeepEqual([...broken].sort(), [...S1_CODES].sort(), '删一行后码集必须不齐（本断言证明上式不是恒真）');
+});
+
+test('S1-TC-B04 表达式 + 开放项 + 三态 + 审计 13 码最小红点', () => {
+  const rows = rowsOf('表达式', '开放项', '三态', '审计');
+  assert.equal(rows.length, 13, `表达式+开放项+三态+审计应为 13 码，实得 ${rows.length}`);
+  assert.equal(rows.filter((r) => r.kind === 'fn').length, 5,
+    'fn 型行应为 5（开放项 3 + SubjectMismatch + DisagreementOpen），且都返回 {ok, errors[]} 同形');
+  for (const row of rows) execRow(row);
+});
+
+test('S1-TC-C01 §8 八组逐组「多码候选构造」→ 只返回该组先报码（7 组真双命中 + 组 6 误实现对位）', () => {
+  assert.ok(ST.subjectiveTerms.length >= 1, '前置：subjective-terms 至少 1 词（组 3 / 组 8 的构造依赖它，否则 SubjectiveLabel 判据恒真）');
+  assert.ok(CT.criterionTerms.length >= 3, '前置：criterion-terms 至少 3 词（组 3 的 InlineTermList 候选依赖它）');
+  const pairs = [
+    // 组1 枚举字段取值（:230）：含 / 的串必然不在表内 → FreeTextEnum 先于 UnknownSignalType
+    () => { const c = baseCard(); c.signals[0].type = 'event.arrive/diff.hit'; return M.validateCardModel(c, baseEnv()); },
+    // 组2 动作触发（:231）：三键缺 → MissingSignal 先于 MultiMomentInOneEntry
+    () => { const c = baseCard(); delete c.must[0].trigger.scene; c.must[0].trigger.moment = '结束时之前'; return M.validateCardModel(c, baseEnv()); },
+    // 组3 判据文本（:232，checkItems[].criterion 面，四码）
+    () => {
+      const c = baseCard();
+      c.checkItems[0].criterion = `${ST.subjectiveTerms[0]} ${CT.criterionTerms[0]}与${CT.criterionTerms[1]}且${CT.criterionTerms[2]} 少于 3 次`;
+      delete c.checkItems[0].definitions;
+      delete c.checkItems[0].params;
+      return M.validateCardModel(c, baseEnv());
+    },
+    // 组4 表达式结构（:233）：键 foo ∉ ALLOWED_OPS 且深度 2 → 两码候选，先报「不可读」
+    () => { const c = baseCard(); c.must[0].expr = { and: [{ foo: [] }] }; return M.validateCardModel(c, baseEnv()); },
+    // 组5 场景（:234）：两条局部 id、均无 why、均零引用 → DuplicateScene / MissingSceneRationale / UnusedScene 三码候选
+    () => { const c = baseCard(); c.scenes = [{ id: 'issue.card' }, { id: 'local.dup' }, { id: 'local.dup' }]; return M.validateCardModel(c, baseEnv()); },
+    // 组6 信号定义（:235）：两码定义互斥 → 验「实现必须读 SEAT_SIGNALS」
+    () => { const c = baseCard(); c.signals[0].type = 'signal.local'; return M.validateCardModel(c, baseEnv({ seatSignals: { [SEAT]: ['signal.local'] } })); },
+    // 组7 开放项（:236）：本不该是开放项 + scope 错 → 先报 DuplicateAsOpen
+    () => M.validateOpenItems({ items: [{ id: 'k01', verdict: 'hit' }], open: [openItem('k01', 'code')] }, baseEnv(), [baseCard()]),
+    // 组8 subject / label 面（:237）：subject 未登记 + label 命中主观词 → 先报 UnverifiableOutput
+    () => {
+      const c = baseCard();
+      c.checkItems[0].subject = 'artifact.not-registered';
+      c.checkItems[0].label = ST.subjectiveTerms[0];
+      return M.validateCardModel(c, baseEnv());
+    },
+  ];
+  assert.equal(pairs.length, 8, '§8 必须是八组、逐组一构造（:230-237）');
+  const got = pairs.map((f) => codes(f()));
+  assert.deepEqual(got[0], ['FreeTextEnum'], '组1：含 / 先于「不在表内」（:230）');
+  assert.deepEqual(got[1], ['MissingSignal'], '组2：三键缺时无从判多时刻（:231）');
+  assert.deepEqual(got[2], ['SubjectiveLabel'], '组3：判据文本四码按 :232 的顺序，先报主观词');
+  assert.deepEqual(got[3], ['UnreadableExpression'], '组4：不可读优先于过深（:233）');
+  assert.deepEqual(got[4], ['DuplicateScene'], '组5：三码候选（重复 / 缺 why / 零引用）先报「能否成为合法条目」（:234；按 :226 的判定面粒度，不同下标不推翻）');
+  assert.deepEqual(got[5], ['SignalProliferation'], '组6：已登记的席局部类型只被 1 场景引用 → 走 :235 的下半段（Unknown 不命中）');
+  assert.deepEqual(got[6], ['DuplicateAsOpen'], '组7：先判「本不该是开放项」（:236）');
+  assert.deepEqual(got[7], ['UnverifiableOutput'], '组8：先判「这个 subject 有没有校验器」（:237；同判定面 `checkItems`，按 :226 只返回先报那一个）');
+  // 组3 的另两条相邻优先对（只补断言，不改组数）：InlineThreshold 先于 AmbiguousCriterion
+  const g3Threshold = run((c) => {
+    c.checkItems[0].criterion = `${CT.criterionTerms[0]}${CT.criterionTerms[1]}少于 3 次`;
+    delete c.checkItems[0].definitions;
+    delete c.checkItems[0].params;
+  });
+  assert.deepEqual(codes(g3Threshold), ['InlineThreshold'],
+    `组3 相邻对①：2 词 + 阈值无 params → 先报 InlineThreshold（:232 顺序），实得 ${codes(g3Threshold).join('|') || '(空)'}`);
+  assert.ok(String(pathsOf(g3Threshold)[0]).startsWith('checkItems[0].criterion'), '组3 相邻对① path 应落 checkItems[0].criterion');
+  const g3Ambiguous = run((c) => {
+    c.checkItems[0].criterion = `${CT.criterionTerms[0]}${CT.criterionTerms[1]}`; // 去掉「3 次」→ 阈值候选不存在
+    delete c.checkItems[0].definitions;
+    delete c.checkItems[0].params;
+  });
+  assert.deepEqual(codes(g3Ambiguous), ['AmbiguousCriterion'],
+    `组3 相邻对②：2 词无阈值无 definitions → 只报 AmbiguousCriterion（:232 末位），实得 ${codes(g3Ambiguous).join('|') || '(空)'}`);
+  // 组6 的另一端（同组顺序的反向守卫）：未登记且不在任何表 → 只报 UnknownSignalType
+  assert.deepEqual(codes(run((c) => { c.signals[0].type = 'signal.nowhere'; })),
+    ['UnknownSignalType'], '组6 顺序：不在任何表优先于「局部新造」（:235）');
+});
+
+test('S1-TC-C03 表达式族两码分工：不可读优先于过深（§8 组 4，:233）', () => {
+  const onlyUnreadable = run((c) => { c.must[0].expr = { and: [{ foo: [] }] }; });
+  assert.deepEqual(codes(onlyUnreadable), ['UnreadableExpression'], '不可读优先：同 path 至多一码且必须先报不可读');
+  assert.equal(pathsOf(onlyUnreadable).length, 1, `M1：同 path 至多一码，实得 ${pathsOf(onlyUnreadable).join('|')}`);
+  assert.ok(String(pathsOf(onlyUnreadable)[0]).startsWith('must[0].expr'));
+  const deep = run((c) => { c.must[0].expr = { and: [{ or: [{ '==': [1, 1] }] }] }; });
+  assert.deepEqual(codes(deep), ['NestingTooDeep'], '可读但算子嵌算子 → 只报过深，不得同时报不可读');
+  const flatOp = Object.keys(EX.ALLOWED_OPS)[0];
+  assert.ok(flatOp, '前置：ALLOWED_OPS 必须非空（否则第 3 组恒真）');
+  green(run((c) => { c.must[0].expr = { [flatOp]: [{ var: 'x' }] }; }));
+});
+
+test('S1-TC-G01 MissingSubject 两子面', () => {
+  only(run((c) => { delete c.checkItems[0].subject; }), 'MissingSubject', 'checkItems[0].subject');
+  only(run((c) => { c.checkItems[0].label = '观察表含证据行'; }), 'MissingSubject', 'checkItems[0].label');
+  assert.ok(String(SUB.SUBJECTS[pickSubject(0)].display).trim(), '前置：display 非空（否则上式恒真）');
+  green(run((c) => { c.checkItems[0].label = `${SUB.SUBJECTS[pickSubject(0)].display}含证据行`; }));
+});
+
+test('S1-TC-G02 DuplicateCheckItem / CrossSubjectSharedItem 与同 id 同 subject 的边界', () => {
+  only(run((c) => { c.checkItems.push({ ...c.checkItems[0], id: 'k02' }); }), 'DuplicateCheckItem', 'checkItems[1]');
+  only(run((c) => {
+    const s1 = pickSubject(1);
+    c.checkItems.push({ ...c.checkItems[0], subject: s1, label: `${SUB.SUBJECTS[s1].display}X` });
+  }), 'CrossSubjectSharedItem', 'checkItems[1].id');
+  const same = run((c) => { c.checkItems.push({ ...c.checkItems[0], criterion: '观察表每行带路径与行号且可回指' }); });
+  assert.ok(!codes(same).includes('CrossSubjectSharedItem'), `同 id 同 subject 不得报 CrossSubjectSharedItem，实得 ${codes(same)}`);
+});
+
+test('S1-TC-G03 SubjectiveLabel：5 词 × 4 种分隔符', () => {
+  assert.ok(ST.subjectiveTerms.length >= 5, `subjective-terms 起步 5 词，实得 ${ST.subjectiveTerms.length}`);
+  const d = SUB.SUBJECTS[pickSubject(0)].display;
+  for (const w of ST.subjectiveTerms.slice(0, 5)) {
+    only(run((c) => { c.checkItems[0].label = `${d}、${w}`; }), 'SubjectiveLabel', 'checkItems[0].label');
+  }
+  for (const sep of ['，', '/', ' ']) {
+    only(run((c) => { c.checkItems[0].label = `${d}${sep}${ST.subjectiveTerms[0]}`; }), 'SubjectiveLabel', 'checkItems[0].label');
+  }
+  only(run((c) => { c.categories[0].label = ST.subjectiveTerms[0]; }), 'SubjectiveLabel', 'categories');
+});
+
+test('S1-TC-G04 MissingAiAudit：6 形态必红 + 合法 ai 条目绿', () => {
+  const aiCard = () => {
+    const c = baseCard();
+    c.checkItems[0] = {
+      id: 'k01', subject: pickSubject(0), label: `${SUB.SUBJECTS[pickSubject(0)].display}观察表含证据行`,
+      criterion: '观察表每行带路径与行号', check: 'ai',
+      rubric: {
+        positive: [{ text: '有 path:line', source: 'agents/detective-observer.md:12' }],
+        negative: [{ text: '只写结论', source: 'agents/detective-observer.md:20' }],
+        boundary: [{ text: '一行为空', source: 'agents/detective-observer.md:30' }],
+      },
+      audit: { sample: '每轮每条 ≥1', command: 'node tools/docgen/cli.mjs gate' },
+    };
+    return c;
+  };
+  green(M.validateCardModel(aiCard(), baseEnv()));
+  for (const [name, mut] of [
+    ['positive 空', (c) => { c.checkItems[0].rubric.positive = []; }],
+    ['negative 空', (c) => { c.checkItems[0].rubric.negative = []; }],
+    ['boundary 空', (c) => { c.checkItems[0].rubric.boundary = []; }],
+    ['source 值不是 path:line', (c) => { c.checkItems[0].rubric.negative[0].source = '看到就行'; }],
+    ['缺 source 键（PRD :262 收口）', (c) => { delete c.checkItems[0].rubric.positive[0].source; }],
+    ['audit.sample 缺', (c) => { delete c.checkItems[0].audit.sample; }],
+    ['audit.command 缺', (c) => { delete c.checkItems[0].audit.command; }],
+  ]) {
+    const c = aiCard(); mut(c);
+    const r = M.validateCardModel(c, baseEnv());
+    assert.deepEqual(codes(r), ['MissingAiAudit'], `${name}：应只报 MissingAiAudit，实得 ${codes(r)}`);
+  }
+  // 收口断言（§10-D16）：rubric 缺 source **不得**报成 AmbiguousCriterion（PRD :262 的旧写法在此作废）
+  const noSource = aiCard();
+  delete noSource.checkItems[0].rubric.positive[0].source;
+  assert.ok(!codes(M.validateCardModel(noSource, baseEnv())).includes('AmbiguousCriterion'),
+    'PRD :262 的「缺 source → AmbiguousCriterion」已由 §10-D16 收口到 MissingAiAudit（不得同形态双码）');
+});
+
+test('S1-TC-G05 判据配齐（definitions + params）时三码均不报（F-07 正向）', () => {
+  green(run((c) => {
+    c.checkItems[0].criterion = `${CT.criterionTerms[0]}${CT.criterionTerms[1]}`;
+    c.checkItems[0].definitions = { [CT.criterionTerms[0]]: '按 agents/detective-observer.md:12 的口径' };
+  }));
+  green(run((c) => {
+    c.checkItems[0].criterion = '同一问题卡少于 3 次观察';
+    c.checkItems[0].params = { times: 3 };
+  }));
+  green(run((c) => {
+    assert.ok(CT.criterionTerms.length >= 3);
+    c.checkItems[0].criterion = `见 criterion-terms 全部成员（已进数组物料）`.replace('见 ', '');
+    c.checkItems[0].definitions = Object.fromEntries(CT.criterionTerms.slice(0, 3).map((t) => [t, '已登记口径']));
+  }));
+  // ④ spec §7 :194 的「单位 → 键」映射：逐个配齐 → 绿（映射来自 §0.3 从 :194 原文切，不与自身字面 deepEqual）
+  assert.equal(Object.keys(UNIT_KEY).length, 7, `前置：spec :194 应切出 7 个单位→键映射，实得 ${JSON.stringify(UNIT_KEY)}`);
+  assert.equal(UNIT_KEY['处'], 'spots', '前置：`处→spots` 必须能从 :194 切出（改 spec 该映射 → 本行即红，这正是「不许自比自」的探针）');
+  for (const [unit, key] of Object.entries(UNIT_KEY)) {
+    green(run((c) => { c.checkItems[0].criterion = `少于 3 ${unit} 即算通过`; c.checkItems[0].params = { [key]: 3 }; }),
+      `单位 ${unit} 的对应键 ${key} 在位时不得报 InlineThreshold`);
+  }
+});
+
+test('S1-TC-G06 PointerToElsewhere 假阳性守卫：真实合法句「遇意见冲突」', () => {
+  const realLine = readFileSync(join(REPO, 'tools/observation-check/data.mjs'), 'utf8').split(/\r?\n/)[26];
+  assert.ok(realLine.includes('遇意见冲突'), `前置：:27 应含真实句，实得 ${realLine}`);
+  const realPhrase = realLine.match(/遇意见冲突/)[0];
+  assert.ok(realPhrase.includes('见'), '前置：该真实句确实含「见」字（否则本守卫无判别力）');
+  green(run((c) => { c.duty.constraint = realPhrase; }));
+  only(run((c) => { c.duty.action = '给出观察记录（见 §3）'; }), 'PointerToElsewhere');
+  green(run((c) => { c.rationale = '理由见 §3 的判据口径。'; }));
+});
+
+test('S1-TC-G07 HardcodedCount 五形态（含全角 / 汉字数字）+ rationale 豁免（扫描面边界）', () => {
+  // ① 五形态：半角 / 全角 / 汉字数字 + 「缺一X」+「全部」（§7 :187 的 N 字符面 + 三条正则）
+  for (const text of ['给出共 3 条观察', '给出共３条观察', '给出共三条观察', '少写缺一项就算完成', '全部命中时收尾']) {
+    only(run((c) => { c.duty.action = text; }), 'HardcodedCount');
+  }
+  // ② 全角 / 汉字形态在另两个卡文本面字段上同样必红（§4.2 :107 的扫描面逐字段列名）
+  only(run((c) => { c.duty.constraint = '共３条以内'; }), 'HardcodedCount', 'duty.constraint');
+  only(run((c) => { c.checkItems[0].label = `${SUB.SUBJECTS[pickSubject(0)].display}共三条`; }), 'HardcodedCount', 'checkItems[0].label');
+  // ③ 豁免面保留：rationale 不在卡文本面（§4.2 :107 的「不扫」列）
+  for (const text of ['本条不写数量（共 3 条属反例）', '全部命中时收尾', '共３条、共三条都属反例']) {
+    green(run((c) => { c.rationale = text; }));
+  }
+});
+
+test('S1-TC-G08 MixedTermInCard / ProceduralWordOutsideParliament：议会席豁免', () => {
+  only(run((c) => { c.duty.action = '主持人调度时记录'; c.duty.constraint = '与议长口径一致'; }), 'MixedTermInCard');
+  green(run((c) => { c.duty.action = '主持人调度时记录'; }));
+  only(run((c) => { c.duty.action = '收卡'; }), 'ProceduralWordOutsideParliament');
+  green(run((c) => { c.duty.action = '收卡'; }, { parliamentSeats: new Set([SEAT]) }));
+});
+
+test('S1-TC-G09 SCAN_FIELDS 扫描面边界：rationale / description / scenes[].why 三处「不扫」与卡文本面「必扫」', () => {
+  // ①②③⑦：三处「不在扫描面」的字段 —— 写了违规词也不得报码
+  green(run((c) => { c.rationale = '详见 §3 的口径（散文只进此处）'; })); // ① rationale 不扫指针词
+  green(run((c) => { c.description = '每轮答辩结束后开始观察（共 3 条）'; })); // ② description 不扫数量词
+  green(run((c) => { // ③ scenes[].why 不扫数量词
+    c.scenes = [{ id: 'local.why', label: '局部场景', why: '全部命中时记录' }];
+    c.must[0].trigger.scene = 'local.why';
+    c.never[0].trigger.scene = 'local.why';
+  }));
+  green(run((c) => { c.description = '主持人调度，议长口径'; })); // ⑦ description 不扫混称词
+  // ④⑤：卡文本面内同一违规词必须报
+  only(run((c) => { c.duty.constraint = '共 3 条以内'; }), 'HardcodedCount', 'duty.constraint');
+  only(run((c) => { c.checkItems[0].label = `${SUB.SUBJECTS[pickSubject(0)].display}见 §3`; }), 'PointerToElsewhere', 'checkItems[0].label');
+  // ⑥⑧：∪ rationale 的两码 —— rationale 里的违规词必须报
+  only(run((c) => { c.rationale = '收卡'; }), 'ProceduralWordOutsideParliament');
+  only(run((c) => { c.duty.action = '主持人调度时记录'; c.rationale = '与议长口径一致'; }), 'MixedTermInCard');
+  // ⑨ 常量侧对账（§4.2 :112 键形态写死：键 = 8 个码名、逐码一项、不合并成 4 组键）
+  const SF = EN.SCAN_FIELDS;
+  assert.ok(SF && typeof SF === 'object' && !Array.isArray(SF), 'enums.mjs 必须导出 SCAN_FIELDS 对象（§3 :37 / §4.2 :112）');
+  assert.equal(Object.keys(SF).length, 8, `SCAN_FIELDS 必须恰 8 个键（逐码一项），实得 ${Object.keys(SF).length}：${Object.keys(SF).join('|')}`);
+  const TEXT_CODES = ['SubjectiveLabel', 'InlineTermList', 'InlineThreshold', 'AmbiguousCriterion',
+    'PointerToElsewhere', 'HardcodedCount', 'MixedTermInCard', 'ProceduralWordOutsideParliament'];
+  assert.deepEqual(Object.keys(SF).sort(), [...TEXT_CODES].sort(),
+    'SCAN_FIELDS 的键集必须逐字等于这 8 个文本类码名（不得合并成「扫描面相同」的 4 组键，§4.2 :112）');
+  for (const k of TEXT_CODES) assert.ok(Object.prototype.hasOwnProperty.call(SF, k), `SCAN_FIELDS 必须为 ${k} 写扫描面（§4.2 八键表）`);
+  const flat = (v) => [...(v instanceof Set ? v : Array.isArray(v) ? v : Object.keys(v || {}))].join('|'); // Set / Array / Object 三形态都归一
+  const hasR = (k) => flat(SF[k]).includes('rationale');
+  assert.equal(hasR('MixedTermInCard'), true, '§4.2 :108：MixedTermInCard 扫 卡文本面 ∪ rationale');
+  assert.equal(hasR('ProceduralWordOutsideParliament'), true, '§4.2 :108：ProceduralWordOutsideParliament 扫 卡文本面 ∪ rationale');
+  for (const k of ['SubjectiveLabel', 'InlineTermList', 'InlineThreshold', 'AmbiguousCriterion', 'PointerToElsewhere', 'HardcodedCount']) {
+    assert.equal(hasR(k), false, `§4.2：${k} 不扫 rationale`);
+  }
+  assert.equal(flat(SF.InlineTermList).includes('criterion'), true, '§4.2 :106：三码仅扫 checkItems[].criterion');
+  assert.equal(flat(SF.SubjectiveLabel).includes('categories'), true, '§4.2 :105：SubjectiveLabel 扫 categories[].label');
+});
+
+test('S1-TC-I03 UnverifiableOutput 的第二个判定面：subject ∉ SUBJECT_VALIDATORS', () => {
+  const bad = run((c) => { c.checkItems[0].subject = 'artifact.not-registered'; });
+  assert.ok(codes(bad).includes('UnverifiableOutput'), `subject 未登记应报 UnverifiableOutput，实得 ${codes(bad)}`);
+  assert.ok(!codes(bad).includes('MissingSubject'), `不得同时报 MissingSubject（同一 subject 面归一码），实得 ${codes(bad)}`);
+  const ok = run((c) => { c.checkItems[0].subject = pickSubject(0); });
+  green(ok);
+});
+
+test('S1-TC-I04 WeakReason 不进脚本码表（V-5，第三方：PRD 原文）', () => {
+  const prd = readFileSync(join(REPO, 'docs/prd/20261026205821-agent-card-contract.md'), 'utf8').split(/\r?\n/);
+  assert.ok(prd[215].includes('manual') && prd[215].includes('WeakReason'), `PRD :216 应明写 WeakReason 是 manual；实得 ${prd[215]}`);
+  const keySet = Object.keys(M.CARD_MODEL_CODES);
+  assert.equal(keySet.length, S1_CODES.length, `前置：码表键数必须与 §7 码数一致，实得 ${keySet.length}`);
+  assert.ok(!keySet.includes('WeakReason'), `脚本码表不得含 WeakReason，实得 ${keySet.filter((k) => /Weak/.test(k))}`);
+  const tampered = [...keySet, 'WeakReason'];
+  assert.ok(tampered.includes('WeakReason'), '副本注入后必含（证明上式不是恒真）');
+  assert.equal(S1_CODES.includes('WeakReason'), false);
+});
+
+test('S1-TC-J01 全字段卡正向（F-01 / F-04）', () => {
+  const rich = baseCard();
+  rich.scenes.push({ id: 'local.extra', label: '局部场景', why: '本席专用' });
+  const sig = Object.keys(M.SIGNALS)[1];
+  rich.signals.push({ type: sig, observer: '轮末快照', match: '产物出现' });
+  rich.must.push({ ...rich.must[0], id: 'observe2', trigger: { scene: 'local.extra', moment: Object.keys(M.MOMENTS)[1], repeat: Object.keys(M.REPEATS)[1] } });
+  rich.categories.push({ key: 'observe2', label: '补充观察项' });
+  rich.checkItems.push({ id: 'k02', subject: pickSubject(0), label: `${SUB.SUBJECTS[pickSubject(0)].display}补充行`, criterion: '补充行带路径与行号', check: 'script', cmd: 'node tools/docgen/cli.mjs gate' });
+  const r = M.validateCardModel(rich, baseEnv());
+  green(r);
+  for (const s of rich.scenes) assert.ok(M.SHARED_SCENES[s.id] || s.why, `局部场景 ${s.id} 必须带 why`);
 });

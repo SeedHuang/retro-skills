@@ -3,11 +3,15 @@
 // 三个合并码与 `WeakReason`（manual）**不在**本常量（V-5 / §6 :147）。
 // `SCAN_FIELDS` 只在 `enums.mjs` 写死一份，本文件 import 消费（不另写第二份）。
 // 纯函数：零 IO、零环境依赖（全部经 `env` 注入）、不改入参（§6 :151）。
-import { SHARED_SCENES, MOMENTS, VAGUE_TERMS, SCAN_FIELDS } from './enums.mjs';
+import {
+  SHARED_SCENES, MOMENTS, VAGUE_TERMS, HARDCODED_COUNT, POINTER_WORDS, PROC_WORDS, MIXED_PAIR, SCAN_FIELDS,
+} from './enums.mjs';
 import { subjectiveTerms } from './vocab/subjective-terms.mjs';
 import { resolveLanding } from './landings.mjs';
 import { duplicateScene, promotionCheck, unusedScene } from './scenes.mjs';
 import { unknownSignalType, signalProliferation } from './signals.mjs';
+import { isJsonLogic, operatorDepth, scanCriterionText } from './expression.mjs';
+import { SUBJECT_VALIDATORS } from './subjects.mjs';
 
 export const CARD_MODEL_CODES = Object.freeze({
   // 场景（5）
@@ -76,6 +80,7 @@ const tokensOf = (text) => (typeof text === 'string' ? text.split(TOKEN_SPLIT).m
 const subjectiveHit = (text) => tokensOf(text).some((t) => subjectiveTerms.includes(t));
 const hasSlash = (v) => typeof v === 'string' && (v.includes('/') || v.includes('／'));
 const blank = (v) => typeof v !== 'string' || v.trim() === '';
+const own = (obj, key) => obj !== null && typeof obj === 'object' && Object.prototype.hasOwnProperty.call(obj, key);
 
 // `moment` 的「多时刻」计数（§7 :177：数组长 > 1；或字符串同时命中 ≥2 个 `MOMENTS` 成员 id / label）
 function momentInfo(moment) {
@@ -88,6 +93,47 @@ function momentInfo(moment) {
     }
   }
   return { isArray: Array.isArray(moment), length: texts.length, members: members.size };
+}
+
+// 指针词按「词 + 后随章节号」判（裸子串会把真实句「遇意见冲突」判死，G06 的假阳性守卫）
+function pointerHit(text) {
+  return POINTER_WORDS.some((w) => (w === '按 §'
+    ? text.includes('按 §')
+    : new RegExp(`${w}\\s*[§#]?\\s*[0-9０-９]`).test(text)));
+}
+
+// `SCAN_FIELDS` 驱动的卡文本面解析：字段引用 → 具体路径 + 文本（路径用于 `errors[].path`）
+function surfaceTexts(card, refs) {
+  const out = [];
+  const push = (path, t) => { if (typeof t === 'string' && t.trim() !== '') out.push({ path, text: t }); };
+  const each = (arr, fn) => (Array.isArray(arr) ? arr : []).forEach(fn);
+  for (const ref of refs || []) {
+    if (ref === 'duty.trigger') push('duty.trigger', card.duty && card.duty.trigger);
+    else if (ref === 'duty.categories[]') each(card.duty && card.duty.categories, (t, i) => push(`duty.categories[${i}]`, t));
+    else if (ref === 'duty.action') push('duty.action', card.duty && card.duty.action);
+    else if (ref === 'duty.constraint') push('duty.constraint', card.duty && card.duty.constraint);
+    else if (ref === 'Action.objects[]') {
+      for (const [list, arr] of [['must', card.must], ['never', card.never]]) {
+        each(arr, (a, i) => each(a && a.objects, (o, j) => push(`${list}[${i}].objects[${j}]`, o)));
+      }
+    } else if (ref === 'CheckItem.label' || ref === 'checkItems[].label') each(card.checkItems, (it, i) => push(`checkItems[${i}].label`, it && it.label));
+    else if (ref === 'checkItems[].criterion') each(card.checkItems, (it, i) => push(`checkItems[${i}].criterion`, it && it.criterion));
+    else if (ref === 'categories[].label') each(card.categories, (c, i) => push(`categories[${i}].label`, c && c.label));
+    else if (ref === 'rationale') push('rationale', card.rationale);
+  }
+  return out;
+}
+
+// `MissingAiAudit`（§7 :196 + §10-D16 :275）：`check === 'ai'` 且 rubric 三组任一组 < 1 条、
+// 任一条 source 无 `path:line`（含缺 source 键）、`audit.sample` / `audit.command` 缺。
+function aiAuditBad(it) {
+  const groups = ['positive', 'negative', 'boundary'];
+  const rubric = it.rubric;
+  if (rubric === null || typeof rubric !== 'object') return true;
+  if (groups.some((g) => !Array.isArray(rubric[g]) || rubric[g].length < 1)) return true;
+  if (groups.some((g) => rubric[g].some((x) => !x || typeof x.source !== 'string' || !/:\d+/.test(x.source)))) return true;
+  const audit = it.audit;
+  return !audit || blank(audit.sample) || blank(audit.command);
 }
 
 export function validateCardModel(card, env) {
@@ -120,12 +166,49 @@ export function validateCardModel(card, env) {
   if (blank(card.rationale)) {
     emit('MissingRationale', 'rationale', 'rationale 缺或去空白为空（§7 :201）');
   }
+  try {
+    // `MixedTermInCard`（§7 :189）：卡文本面 ∪ `rationale` 同时出现两词
+    const mixedTexts = surfaceTexts(card, SCAN_FIELDS.MixedTermInCard);
+    if (MIXED_PAIR.every((w) => mixedTexts.some((t) => t.text.includes(w)))) {
+      emit('MixedTermInCard', 'card', `同一张卡同时出现「${MIXED_PAIR[0]}」与「${MIXED_PAIR[1]}」（§7 :189）`);
+    }
+    // `ProceduralWordOutsideParliament`（§7 :190）：席 ∉ `parliamentSeats` 且命中程序词
+    if (ready('parliamentSeats', 'seat') && !e.parliamentSeats.has(e.seat)) {
+      const procTexts = surfaceTexts(card, SCAN_FIELDS.ProceduralWordOutsideParliament);
+      for (const t of procTexts) {
+        const hit = PROC_WORDS.find((w) => t.text.includes(w));
+        if (hit) {
+          emit('ProceduralWordOutsideParliament', t.path, `非议会席出现程序词「${hit}」（§7 :190）`);
+          break;
+        }
+      }
+    }
+    // `PointerToElsewhere`（§7 :188）：卡面文本命中指针词（散文只进 rationale）
+    const ptrTexts = surfaceTexts(card, SCAN_FIELDS.PointerToElsewhere);
+    for (const t of ptrTexts) {
+      if (pointerHit(t.text)) {
+        emit('PointerToElsewhere', t.path, '卡面文本命中指针词（§7 :188）');
+        break;
+      }
+    }
+    // `HardcodedCount`（§7 :187）：三条正则 + `N` 的字符面（半角 / 全角 / 汉字数字）
+    const countTexts = surfaceTexts(card, SCAN_FIELDS.HardcodedCount);
+    for (const t of countTexts) {
+      const re = HARDCODED_COUNT.find((r) => r.test(t.text));
+      if (re) {
+        emit('HardcodedCount', t.path, '卡面文本出现硬编码数量（§7 :187）');
+        break;
+      }
+    }
+  } catch (err) {
+    emit('UnverifiableOutput', 'card', firstLine(err));
+  }
 
   // ── 场景段（§8 组 1 的 scene 面 + 组 5 的三码，同判定面 `scenes` 按组序只报一个） ──
   const scenes = Array.isArray(card.scenes) ? card.scenes : [];
   scenes.forEach((s, i) => {
     try {
-      if (s && hasSlash(s.id)) emit('FreeTextEnum', `scenes[${i}].id`, 'scene.id 含 / 的多条件串（§7 :172）');
+      if (s && hasSlash(s.id)) emit('FreeTextEnum', `scenes[${i}].id`, 'scene.id 含 / 的多条件串（§7 :172）', 'scenes.id');
     } catch (err) {
       emit('UnverifiableOutput', `scenes[${i}].id`, firstLine(err));
     }
@@ -246,10 +329,28 @@ export function validateCardModel(card, env) {
           emit('UnverifiableOutput', `${p}.requires`, firstLine(err));
         }
       }
+      // ⑥ 表达式（组 4：不可读优先于过深，§8 :233）
+      try {
+        if (a.expr !== undefined) {
+          if (!isJsonLogic(a.expr)) emit('UnreadableExpression', `${p}.expr`, '表达式不是 JSON Logic（§7 :191）', 'Action.expr');
+          else if (operatorDepth(a.expr) > 1) emit('NestingTooDeep', `${p}.expr`, '算子嵌算子（§7 :192）', 'Action.expr');
+        }
+      } catch (err) {
+        emit('UnverifiableOutput', `${p}.expr`, firstLine(err));
+      }
     });
   }
 
-  // ── 检查项段（label 面主观词 + 脚本入口 + 声明者） ──────────────────────────────
+  // ── 检查项段 ──────────────────────────────────────────────────────────────────
+  // `SubjectiveLabel` 的 categories 面（`SCAN_FIELDS` 消费）
+  (Array.isArray(card.categories) ? card.categories : []).forEach((c, i) => {
+    try {
+      if (c && subjectiveHit(c.label)) emit('SubjectiveLabel', `categories[${i}].label`, 'label 命中主观词表（§7 :186）', 'categories[].label');
+    } catch (err) {
+      emit('UnverifiableOutput', `categories[${i}].label`, firstLine(err));
+    }
+  });
+
   const items = Array.isArray(card.checkItems) ? card.checkItems : [];
   items.forEach((it, i) => {
     const p = `checkItems[${i}]`;
@@ -257,20 +358,76 @@ export function validateCardModel(card, env) {
       emit('UnverifiableOutput', p, `${p} 非对象（§6 :153）`);
       return;
     }
+    // 跨条目两码（同 subject+criterion 重复 / 同 id 异 subject）
+    const earlier = items.slice(0, i).filter((x) => x && typeof x === 'object');
+    if (earlier.some((x) => x.subject === it.subject && x.criterion === it.criterion)) {
+      emit('DuplicateCheckItem', p, `同 subject + criterion 出现 2 次（§7 :184）`, 'CheckItem');
+    }
+    if (earlier.some((x) => x.id === it.id && x.subject !== it.subject)) {
+      emit('CrossSubjectSharedItem', `${p}.id`, '同一 id 被 2 个不同 subject 引用（§7 :185）', 'CheckItem.id');
+    }
+    // `check` 的枚举面
     try {
-      // `SubjectiveLabel` 的 label 面（`SCAN_FIELDS` 消费；criterion 面与组 3 四码在 Task 6 接）
-      if (Array.isArray(SCAN_FIELDS.SubjectiveLabel) && SCAN_FIELDS.SubjectiveLabel.some((f) => f === 'checkItems[].label')
-        && subjectiveHit(it.label)) {
-        emit('SubjectiveLabel', `${p}.label`, 'label 命中主观词表（§7 :186）', 'CheckItem.label');
+      if (hasSlash(it.check)) emit('FreeTextEnum', `${p}.check`, 'check 含 / 的多条件串（§7 :172）', 'CheckItem.check');
+    } catch (err) {
+      emit('UnverifiableOutput', `${p}.check`, firstLine(err));
+    }
+    // 组 8：subject → label 派生 → 主观词（同判定面，先到先得）
+    if (ready('subjects')) {
+      try {
+        if (blank(it.subject)) {
+          emit('MissingSubject', `${p}.subject`, 'subject 缺/空（§7 :183）', 'CheckItem.subject');
+        } else if (!SUBJECT_VALIDATORS[it.subject]) {
+          emit('UnverifiableOutput', `${p}.subject`, `subject「${it.subject}」没有校验器（§7 :203）`, 'CheckItem.subject');
+        } else {
+          const sub = e.subjects[it.subject];
+          const display = sub && typeof sub.display === 'string' ? sub.display : '';
+          if (!display || !String(it.label || '').includes(display)) {
+            emit('MissingSubject', `${p}.label`, `label 不含 subject 的 display「${display}」（§7 :183）`, 'CheckItem.subject');
+          } else if (subjectiveHit(it.label)) {
+            emit('SubjectiveLabel', `${p}.label`, 'label 命中主观词表（§7 :186）', 'CheckItem.subject');
+          }
+        }
+      } catch (err) {
+        emit('UnverifiableOutput', `${p}.subject`, firstLine(err));
+      }
+    }
+    // 组 3 + `MissingCriterionImpl` 的 `CheckItem` 面（criterion 文本面）
+    try {
+      const c = it.criterion;
+      if (blank(c)) {
+        if (it.check !== 'manual') emit('MissingCriterionImpl', `${p}.criterion`, 'CheckItem.criterion 缺/空且非 manual（§7 :181）', 'CheckItem.criterion');
+      } else {
+        const scan = scanCriterionText(c);
+        if (subjectiveHit(c)) emit('SubjectiveLabel', `${p}.criterion`, 'criterion 命中主观词表（§7 :186）', 'CheckItem.criterion');
+        else if (scan.termHits.length >= 3) emit('InlineTermList', `${p}.criterion`, '≥3 个判据词未进数组物料（§7 :193）', 'CheckItem.criterion');
+        else if (scan.thresholdHits.some((h) => h.key === null || !own(it.params, h.key))) {
+          emit('InlineThreshold', `${p}.criterion`, '判据文本含数字阈值且 params 无对应键（§7 :194）', 'CheckItem.criterion');
+        } else if (scan.termHits.length >= 1 && !it.definitions) {
+          emit('AmbiguousCriterion', `${p}.criterion`, '1–2 个判据词且无 definitions（§7 :195）', 'CheckItem.criterion');
+        }
       }
     } catch (err) {
-      emit('UnverifiableOutput', `${p}.label`, firstLine(err));
+      emit('UnverifiableOutput', `${p}.criterion`, firstLine(err));
     }
-    // `FalseScriptCheck`（§7 :182）：`check === 'script'` 且 `cmd` 与 `impl` 均缺
+    // 表达式（组 4）
+    try {
+      if (it.expr !== undefined) {
+        if (!isJsonLogic(it.expr)) emit('UnreadableExpression', `${p}.expr`, '表达式不是 JSON Logic（§7 :191）', 'CheckItem.expr');
+        else if (operatorDepth(it.expr) > 1) emit('NestingTooDeep', `${p}.expr`, '算子嵌算子（§7 :192）', 'CheckItem.expr');
+      }
+    } catch (err) {
+      emit('UnverifiableOutput', `${p}.expr`, firstLine(err));
+    }
+    // `MissingAiAudit`（§7 :196）
+    if (it.check === 'ai' && aiAuditBad(it)) {
+      emit('MissingAiAudit', `${p}.rubric`, 'ai 条目 rubric / audit 不完整（§7 :196）', 'CheckItem.rubric');
+    }
+    // `FalseScriptCheck`（§7 :182）
     if (it.check === 'script' && !it.cmd && !it.impl) {
-      emit('FalseScriptCheck', p, 'script 条目既无 cmd 也无 impl（§7 :182）', 'CheckItem');
+      emit('FalseScriptCheck', p, 'script 条目既无 cmd 也无 impl（§7 :182）');
     }
-    // `UnobservableSignal`（§7 :175）：`check === 'manual'` 且 `declarer` 缺 / 去空白为空
+    // `UnobservableSignal`（§7 :175）
     if (it.check === 'manual' && blank(it.declarer)) {
       emit('UnobservableSignal', `${p}.declarer`, 'manual 条目缺宣告者（§7 :175）', 'CheckItem.declarer');
     }
