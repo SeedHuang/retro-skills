@@ -153,6 +153,145 @@ const cutList = (lineNo, from, to) => {
 const PROC_WORDS = cutList(190, '文本命中', ' |'); // 程序词五：收卡 / 丢卡 / 压卡 / 点名 / 判结束
 const POINTER_WORDS = cutList(188, '命中', '（'); // 指针词五：见 / 详见 / 参见 / 参考 / 按 §
 
+// ── §0.4 登记向量（36 码表驱动：一张 `TABLE`，一次写死、三处复用） ──────────────
+const PRD_S1_CODES = [ // PRD §4.4 :361 的 35 个脚本码（原文顺序，去 WeakReason(manual)）
+  'UnverifiableOutput', 'FalseScriptCheck', 'EmptyOpenWithoutReason', 'OutOfScopeOpenItem',
+  'DuplicateAsOpen', 'MissingPrerequisite', 'UnboundLanding', 'SubjectMismatch',
+  'AmbiguousCriterion', 'MissingAiAudit', 'DuplicateCheckItem', 'CrossSubjectSharedItem',
+  'InlineTermList', 'InlineThreshold', 'PointerToElsewhere', 'ProceduralWordOutsideParliament',
+  'MixedTermInCard', 'HardcodedCount', 'VagueReferent', 'SubjectiveLabel', 'MissingSubject',
+  'UnreadableExpression', 'NestingTooDeep', 'MultiMomentInOneEntry', 'UnknownSignalType',
+  'MissingSignal', 'UnobservableSignal', 'SignalProliferation', 'FreeTextEnum', 'DuplicateScene',
+  'UnusedScene', 'ScenePromotionRequired', 'MissingSceneRationale', 'MissingRationale',
+  'DisagreementOpen',
+];
+// spec §7 :166-204 表 = 35 + MissingCriterionImpl（A 表 :346 复用，§10-D4）；口径由 §7 :164 写死
+const S1_CODES = [...PRD_S1_CODES, 'MissingCriterionImpl'];
+assert.equal(PRD_S1_CODES.length, 35, 'PRD :361 的脚本码必须是 35 个');
+assert.equal(S1_CODES.length, 36, 'spec §7 写死 36 = 35（PRD）+ 1（MissingCriterionImpl）');
+assert.equal(S1_CODES.includes('WeakReason'), false, 'WeakReason 是 manual，不进脚本码表（spec :204 / V-5）');
+for (const c of MERGE_CODES) assert.equal(S1_CODES.includes(c), false, `合并码 ${c} 不计入 36（spec :206）`);
+
+const TABLE = [
+  // ── 场景（5）
+  { fam: '场景', code: 'DuplicateScene', path: 'scenes', kind: 'card',
+    mutate: (c) => { c.scenes.push({ id: 'issue.card' }); } },
+  { fam: '场景', code: 'ScenePromotionRequired', path: null, kind: 'env',
+    env: { seatScenes: { [SEAT]: ['local.scene'], 'other-seat': ['local.scene'] } } },
+  { fam: '场景', code: 'UnusedScene', path: 'scenes', kind: 'card',
+    mutate: (c) => { c.scenes.push({ id: 'local.unused', label: '局部场景', why: '本席专用' }); } },
+  { fam: '场景', code: 'MissingSceneRationale', path: 'scenes', kind: 'card',
+    mutate: (c) => { c.scenes.push({ id: 'local.bare', label: '局部场景' }); } },
+  { fam: '场景', code: 'FreeTextEnum', path: 'signals[0].type', kind: 'card',
+    mutate: (c) => { c.signals[0].type = 'event.arrive/diff.hit'; } },
+  // ── 信号（5）
+  { fam: '信号', code: 'MissingSignal', path: 'must[0].trigger', kind: 'card',
+    mutate: (c) => { delete c.must[0].trigger.repeat; } },
+  { fam: '信号', code: 'UnknownSignalType', path: 'signals[0].type', kind: 'card',
+    mutate: (c) => { c.signals[0].type = 'event.unknown'; } },
+  { fam: '信号', code: 'UnobservableSignal', path: 'checkItems[0].declarer', kind: 'card',
+    mutate: (c) => { delete c.checkItems[0].declarer; } },
+  { fam: '信号', code: 'SignalProliferation', path: 'signals[0].type', kind: 'env',
+    mutate: (c) => { c.signals[0].type = 'signal.local'; },
+    env: { seatSignals: { [SEAT]: ['signal.local'] } } },
+  { fam: '信号', code: 'MultiMomentInOneEntry', path: 'must[0].trigger', kind: 'card',
+    mutate: (c) => { c.must[0].trigger.moment = '结束时之前'; } },
+  // ── 动作（5）
+  { fam: '动作', code: 'VagueReferent', path: 'must[0].objects', kind: 'card',
+    mutate: (c) => { c.must[0].objects = ['上述']; } },
+  { fam: '动作', code: 'MissingPrerequisite', path: 'must[0].requires', kind: 'env',
+    env: { available: new Set([]) } },
+  { fam: '动作', code: 'UnboundLanding', path: 'must[0].landing', kind: 'card',
+    mutate: (c) => { c.must[0].landing = 'other.landing'; } },
+  { fam: '动作', code: 'MissingCriterionImpl', path: 'must[0].criterion', kind: 'card',
+    mutate: (c) => { delete c.must[0].criterion; } },
+  { fam: '动作', code: 'FalseScriptCheck', path: 'checkItems[0]', kind: 'card',
+    mutate: (c) => { c.checkItems[0].check = 'script'; delete c.checkItems[0].declarer; } },
+  // ── 检查项（8）
+  { fam: '检查项', code: 'MissingSubject', path: 'checkItems[0].subject', kind: 'card',
+    mutate: (c) => { delete c.checkItems[0].subject; } },
+  { fam: '检查项', code: 'DuplicateCheckItem', path: 'checkItems[1]', kind: 'card',
+    mutate: (c) => { c.checkItems.push({ ...c.checkItems[0], id: 'k02' }); } },
+  { fam: '检查项', code: 'CrossSubjectSharedItem', path: 'checkItems[1].id', kind: 'card',
+    mutate: (c) => {
+      const s1 = pickSubject(1); // 先断前置：需 ≥2 个带 display 的 subject
+      c.checkItems.push({ ...c.checkItems[0], subject: s1, label: `${SUB.SUBJECTS[s1].display}观察表含证据行` });
+    } },
+  { fam: '检查项', code: 'SubjectiveLabel', path: 'checkItems[0].label', kind: 'card',
+    mutate: (c) => {
+      assert.ok(ST.subjectiveTerms.length > 0, 'subjective-terms 不得为空（否则本码判据恒绿）');
+      c.checkItems[0].label = `${SUB.SUBJECTS[pickSubject(0)].display}、${ST.subjectiveTerms[0]}`;
+    } },
+  { fam: '检查项', code: 'HardcodedCount', path: null, kind: 'card',
+    mutate: (c) => { c.duty.action = '给出共 3 条观察'; } },
+  { fam: '检查项', code: 'PointerToElsewhere', path: null, kind: 'card',
+    mutate: (c) => { c.duty.action = '给出观察记录（见 3）'; } },
+  { fam: '检查项', code: 'MixedTermInCard', path: null, kind: 'card',
+    mutate: (c) => { c.duty.action = '主持人调度时记录'; c.duty.constraint = '与议长口径一致'; } },
+  { fam: '检查项', code: 'ProceduralWordOutsideParliament', path: null, kind: 'card',
+    mutate: (c) => { c.duty.action = '收卡'; } },
+  // ── 表达式（6）
+  { fam: '表达式', code: 'UnreadableExpression', path: 'must[0].expr', kind: 'card',
+    mutate: (c) => { c.must[0].expr = 'a && b'; } },
+  { fam: '表达式', code: 'NestingTooDeep', path: 'must[0].expr', kind: 'card',
+    mutate: (c) => { c.must[0].expr = { and: [{ or: [{ '==': [1, 1] }] }] }; } },
+  { fam: '表达式', code: 'InlineTermList', path: 'checkItems[0].criterion', kind: 'card',
+    mutate: (c) => {
+      assert.ok(CT.criterionTerms.length >= 3, 'criterion-terms 至少 3 词才能构造本码（起步 6 词）');
+      c.checkItems[0].criterion = `${CT.criterionTerms[0]}与${CT.criterionTerms[1]}且${CT.criterionTerms[2]}`;
+    } },
+  { fam: '表达式', code: 'InlineThreshold', path: 'checkItems[0].criterion', kind: 'card',
+    mutate: (c) => { c.checkItems[0].criterion = '少于 3 次'; delete c.checkItems[0].params; } },
+  { fam: '表达式', code: 'AmbiguousCriterion', path: 'checkItems[0].criterion', kind: 'card',
+    mutate: (c) => {
+      assert.ok(CT.criterionTerms.length >= 2, 'criterion-terms 至少 2 词才能构造本码');
+      c.checkItems[0].criterion = `${CT.criterionTerms[0]}${CT.criterionTerms[1]}`;
+      delete c.checkItems[0].definitions;
+    } },
+  { fam: '表达式', code: 'MissingAiAudit', path: 'checkItems[0].rubric', kind: 'card',
+    mutate: (c) => {
+      c.checkItems[0].check = 'ai';
+      c.checkItems[0].rubric = { positive: [{ text: '有证据行', source: 'agents/detective-observer.md:12' }], negative: [], boundary: [] };
+      c.checkItems[0].audit = { sample: '每轮每条 ≥1', command: 'node tools/docgen/cli.mjs gate' };
+    } },
+  // ── 开放项（3，fn 型：产物侧入口 validateOpenItems(doc, env, cards)，§6 :139；第三参必传）
+  { fam: '开放项', code: 'EmptyOpenWithoutReason', path: null, kind: 'fn',
+    fn: () => M.validateOpenItems({ items: [{ id: 'k01', verdict: 'hit' }], open: [], openEmptyReason: '   ' }, baseEnv(), [baseCard()]) },
+  { fam: '开放项', code: 'OutOfScopeOpenItem', path: 'open[0].scope', kind: 'fn',
+    fn: () => M.validateOpenItems({ items: [{ id: 'k01', verdict: 'hit' }], open: [openItem('agents/detective-observer.md', 'code')] }, baseEnv(), [baseCard()]) },
+  { fam: '开放项', code: 'DuplicateAsOpen', path: 'open[0].object', kind: 'fn',
+    fn: () => M.validateOpenItems({ items: [{ id: 'k01', verdict: 'hit' }], open: [openItem('k01', 'repo')] }, baseEnv(), [baseCard()]) },
+  // ── 三态（1，fn 型：verdictAllowed 三位置参，§6 :141）
+  { fam: '三态', code: 'SubjectMismatch', path: null, kind: 'fn',
+    fn: () => SUB.verdictAllowed(pickSubject(0), 'artifact.report', 'hit') },
+  // ── 审计（3）
+  { fam: '审计', code: 'MissingRationale', path: 'rationale', kind: 'card',
+    mutate: (c) => { c.rationale = '   '; } },
+  { fam: '审计', code: 'DisagreementOpen', path: null, kind: 'fn',
+    fn: () => M.compareVerdicts( // §6 :140 写死的入口名
+      { items: [{ id: 'k01', verdict: 'hit' }], open: [] },
+      { items: [{ id: 'k01', verdict: 'miss' }], open: [] }, baseEnv()) },
+  { fam: '审计', code: 'UnverifiableOutput', path: 'must[0].criterion', kind: 'env',
+    mutate: (c) => { c.never = []; }, // 只留一个判据入口，保证「只报一码」
+    env: { predicates: (() => { const p = new Set(['ledger.row.exists']); p.has = () => { throw new Error('boom: predicates 不可用'); }; return p; })() } },
+];
+
+let EXECUTED = 0;
+function execRow(row) {
+  EXECUTED += 1;
+  let r;
+  if (row.kind === 'fn') r = row.fn();
+  else {
+    const c = baseCard();
+    if (row.mutate) row.mutate(c);
+    r = M.validateCardModel(c, baseEnv(row.env || {}));
+  }
+  assert.deepEqual(codes(r), [row.code], `${row.code}：应只报本码，实得 ${codes(r).join('|') || '(空)'}`);
+  if (row.path !== null) assert.ok(String(pathsOf(r)[0] || '').startsWith(row.path), `${row.code}：path 应以 ${row.path} 开头，实得 ${pathsOf(r)[0]}`);
+  return r;
+}
+const rowsOf = (...fams) => TABLE.filter((r) => fams.includes(r.fam));
+
 test('S1-TC-A02 表内容逐项等于期望集合（塞一条「其他」即红）', () => {
   assert.deepEqual(Object.keys(M.SHARED_SCENES), ['session', 'parliament.round', 'issue.card', 'defense', 'deliverable', 'command', 'handoff', 'criterion']);
   assert.deepEqual(Object.keys(M.MOMENTS), ['start', 'end', 'before', 'after', 'during', 'on-fail', 'on-receive', 'on-change']);
@@ -403,7 +542,10 @@ test('S1-TC-J02 合并族：OVERRIDABLE_FIELDS 精确集合 + 三码各一构造
   for (const k of good.overrides[0].changed) assert.ok(MG.OVERRIDABLE_FIELDS.includes(k), `changed 含不可覆盖字段 ${k}`);
   assert.ok(good.overrides[0].changed.includes('kind'), 'kind 必须算可覆盖字段（PRD :187 明文，S2 旧表缺它）');
   assert.equal(typeof MG.mergeActions, 'function', '合并码只能由 mergeActions 发出（入口对照表 :218 末行）');
-  // ④ 分离纪律 + ⑤ validateCardModel 不返回合并码 —— 依赖 Task 4 的 CARD_MODEL_CODES 与发射点，Task 5 收尾时补齐
+  // ④ 分离纪律（§6 :147 / :218）：3 个合并码都不在唯一码表里
+  for (const c of MERGE_CODES) {
+    assert.ok(!Object.keys(M.CARD_MODEL_CODES).includes(c), `合并码 ${c} 不得进 CARD_MODEL_CODES（spec :147）`);
+  }
 });
 
 test('S1-TC-B05 最小合法卡 → {ok:true, errors:[]}', () => {
@@ -422,7 +564,12 @@ test('S1-TC-C02 M1：同一次返回内 path 唯一', () => {
   });
   assert.equal(multi.errors.length, 4, `多问题卡应报 4 条（不同 path 的多问题是正常多头），实得 ${codes(multi)}`);
   assert.equal(new Set(pathsOf(multi)).size, 4);
-  // ① 「遍历 TABLE 全部构造」在 Task 6 追加（§0.4 的登记向量随码表落地）
+  // ① 遍历 TABLE 全部构造（Task 6 起覆盖 36 码；本任务先覆盖已落地的族）
+  for (const row of TABLE.filter((r) => ['场景', '信号', '动作', '开放项', '三态', '审计'].includes(r.fam))) {
+    const r = row.kind === 'fn' ? row.fn() : (() => { const c = baseCard(); row.mutate?.(c); return M.validateCardModel(c, baseEnv(row.env || {})); })();
+    const ps = pathsOf(r);
+    assert.equal(new Set(ps).size, ps.length, `${row.code}：同 path 出现多码 → 违 M1（${ps.join(',')}）`);
+  }
 });
 
 test('S1-TC-D01 深冻结 card + env 后调用成功、两次结果相等', () => {
@@ -553,4 +700,140 @@ test('S1-TC-K04 四入口各自只报自己那族码（§6 入口分工）', () 
     assert.ok(!codes(M.validateCardModel(cover, baseEnv())).includes(c),
       `validateCardModel 不执行合并（:147）：不得返回 ${c}`);
   }
+});
+
+test('S1-TC-B02 场景族 + 信号族 10 码最小红点', () => {
+  const rows = rowsOf('场景', '信号');
+  assert.equal(rows.length, 10, `场景+信号应为 10 码，实得 ${rows.length}`);
+  // 前置：每行的 code / mutate|fn 都必须是非空实体（否则 execRow 的「只报本码」会在空构造上恒真）
+  assert.equal(rows.filter((r) => typeof r.code === 'string' && r.code.trim()).length, 10,
+    '前置：10 行都必须带非空 code 字面（删掉原 `rows.every((r) => r.code)` 那句恒真断言——空行集上 every 恒真）');
+  assert.equal(rows.filter((r) => typeof r.mutate === 'function' || typeof r.fn === 'function' || r.env).length, 10,
+    '前置：10 行都必须有构造（mutate / fn / env —— env 型行以 env patch 构造，同样不是「无构造的空行」）');
+  for (const row of rows) execRow(row); // execRow 内含「只报本码」+ path 前缀断言
+});
+
+test('S1-TC-B03 动作族 + 检查项族 13 码最小红点', () => {
+  const rows = rowsOf('动作', '检查项');
+  assert.equal(rows.length, 13, `动作+检查项应为 13 码，实得 ${rows.length}`);
+  for (const row of rowsOf('动作')) execRow(row); // 检查项族 8 条在 Task 6 收尾补齐
+  assert.equal(rows.filter((r) => r.path === null).length, 4, 'spec 未定义 path 的卡级文本码应为 4 个（写死数量防止日后偷改成 null 绕过 path 断言）');
+});
+
+test('S1-TC-E01 UnboundLanding 五个子面（含最长已登记前缀 + 第三档两形态）', () => {
+  only(run((c) => { delete c.must[0].landing; }), 'UnboundLanding', 'must[0].landing'); // (a) 缺
+  only(run((c) => { c.must[0].landing = 'no.such.landing'; }), 'UnboundLanding', 'must[0].landing'); // (b) 最长前缀无命中
+  green(run((c) => { c.must[0].landing = 'deliverable.body/row'; })); // (c) 登记值 + 子段
+  only(run((c) => { c.must[0].landing = 'deliverable.body/row'; }, { unboundVars: new Set(['row']) }), // (d) 子段未赋值（按 / 逐段判）
+    'UnboundLanding', 'must[0].landing');
+  // (e) §7 :180 第三档第一形态：命中的**登记值本身**未赋值（LANDING_VARS 的 'review.dir'）
+  only(run((c) => { c.must[0].landing = 'review.dir'; }, { unboundVars: new Set(['review.dir']) }),
+    'UnboundLanding', 'must[0].landing'); // 变量本身未赋值
+  assert.ok(Object.prototype.hasOwnProperty.call(LD.LANDING_VARS, 'review.dir'), '前置：`review.dir` 必须是 LANDING_VARS 的登记值（否则 (e) 构造不成立）');
+});
+
+test('S1-TC-E02 UnusedScene：共用 8 场景未声明不判红', () => {
+  assert.ok(Object.keys(M.SHARED_SCENES).length === 8);
+  const declared = baseCard().scenes.map((s) => s.id);
+  assert.equal(declared.length, 1, '基线卡只声明 1 个共用场景（其余 7 个未声明 → 不得判红）');
+  green(run());
+  only(run((c) => { c.scenes.push({ id: 'local.dead', label: '局部', why: '本席专用' }); }), 'UnusedScene', 'scenes');
+});
+
+test('S1-TC-E03 MissingSceneRationale：共用可省两字段，局部 why 白空格必红', () => {
+  green(run());
+  only(run((c) => { c.scenes.push({ id: 'local.bare', label: '局部场景', why: '   ' }); }), 'MissingSceneRationale', 'scenes');
+  // testcase:1030 的第三条 green（局部场景无引用仍绿）与 E02 ②/§7 :170 冲突，按 plan Task 5 行文取 ①②，冲突记入 impl-3.md
+});
+
+test('S1-TC-E04 MultiMomentInOneEntry 的「子串命中」边界', () => {
+  assert.ok(String(M.MOMENTS.end.label).includes('结束') && String(M.MOMENTS.before.label).includes('之前'));
+  green(run((c) => { c.must[0].trigger.moment = M.MOMENTS.end.label; })); // 「结束」单命中
+  only(run((c) => { c.must[0].trigger.moment = `${M.MOMENTS.end.label}${M.MOMENTS.before.label}`; }), 'MultiMomentInOneEntry', 'must[0].trigger');
+  green(run((c) => { c.must[0].trigger.moment = ['start']; }));
+  only(run((c) => { c.must[0].trigger.moment = ['start', 'end']; }), 'MultiMomentInOneEntry', 'must[0].trigger');
+});
+
+test('S1-TC-E05 SignalProliferation 阈值 2 的正向与反向', () => {
+  const twoScenes = (c) => {
+    c.scenes.push({ id: 'local.a', label: '局部A', why: 'x' }, { id: 'local.b', label: '局部B', why: 'y' });
+    c.signals[0].type = 'signal.local';
+    c.must.push({ ...c.must[0], id: 'observe-b', trigger: { scene: 'local.b', moment: 'start', repeat: 'once' } });
+    c.must[0].trigger.scene = 'local.a';
+  };
+  green(run(twoScenes, { seatSignals: { [SEAT]: ['signal.local'] } }));
+  only(run((c) => { c.signals[0].type = 'signal.local'; }, { seatSignals: { [SEAT]: ['signal.local'] } }), 'SignalProliferation', 'signals[0].type');
+});
+
+test('S1-TC-E06 DuplicateScene 两子面 + ScenePromotionRequired', () => {
+  only(run((c) => { c.scenes = [{ id: 'issue.card' }, { id: 'issue.card' }]; }), 'DuplicateScene', 'scenes');
+  only(run((c) => {}, { seatScenes: { [SEAT]: ['issue.card'] } }), 'DuplicateScene');
+  only(run((c) => {}, { seatScenes: { [SEAT]: ['local.scene'], 'other-seat': ['local.scene'] } }), 'ScenePromotionRequired');
+  green(run((c) => {}, { seatScenes: { [SEAT]: ['local.mine'] } }));
+});
+
+test('S1-TC-E07 落点正向：landings 已登记值 + LANDING_VARS 成员均绿', () => {
+  assert.ok(Object.keys(LD.LANDING_VARS).length === 2, 'LANDING_VARS 必须恰两项（封闭，C-13）');
+  for (const landing of ['deliverable.body', 'deliverable.body/row', 'review.dir', 'round.no', 'review.dir/x']) {
+    green(run((c) => { c.must[0].landing = landing; c.never[0].landing = landing; }));
+  }
+  only(run((c) => { c.must[0].landing = 'no.such.landing'; }), 'UnboundLanding', 'must[0].landing');
+});
+
+test('S1-TC-F01 MissingPrerequisite 报文与 must:false 豁免', () => {
+  const r = run((c) => {}, { available: new Set([]) });
+  only(r, 'MissingPrerequisite', 'must[0].requires');
+  assert.ok(/缺\s*question-card\.md\s*，\s*未开始/.test(r.errors[0].message), `报文应为固定句式，实得 ${r.errors[0].message}`);
+  green(run((c) => { c.must[0].requires = [{ id: 'question-card.md', kind: 'artifact', must: false }]; }, { available: new Set([]) }));
+  assert.ok(baseCard().never[0].requires.length === 0, '前置：`requires` 允许空数组（§4）');
+});
+
+test('S1-TC-F02 VagueReferent：5 个模糊词 + 缺 / 空 objects', () => {
+  const VAGUE = ['该内容', '上述', '相关', '前述', '该项'];
+  for (const w of VAGUE) only(run((c) => { c.must[0].objects = [w]; }), 'VagueReferent', 'must[0].objects');
+  only(run((c) => { delete c.must[0].objects; }), 'VagueReferent', 'must[0].objects');
+  only(run((c) => { c.must[0].objects = []; }), 'VagueReferent', 'must[0].objects');
+  assert.ok(baseCard().must[0].objects.length > 0);
+  green(run((c) => { c.must[0].objects = ['question-card.md', 'observation.md']; }));
+});
+
+test('S1-TC-F03 MissingCriterionImpl 的两个判定面与 FalseScriptCheck 的实体分工', () => {
+  // 前置（§7 :181 的形式前提）：Action 形状没有 check 字段 → manual 豁免在动作侧无载体
+  assert.equal('check' in baseCard().must[0], false, 'Action 不得有 check 字段（spec §4 :68-72）');
+  assert.equal(baseCard().checkItems[0].check, 'manual', '前置：基线 CheckItem 必须是 manual（豁免承载面，§4 :73-74）');
+  assert.ok(baseEnv().predicates.has('ledger.row.exists'), '前置：基线动作的谓词 id 已登记（否则第 1 组不成立）');
+  // ① Action 缺 criterion → 本码（path must[i].criterion）
+  only(run((c) => { delete c.must[0].criterion; }), 'MissingCriterionImpl', 'must[0].criterion');
+  // ② CheckItem 走 script 且 cmd/impl 均缺 → 脚本入口码
+  only(run((c) => { c.checkItems[0].check = 'script'; delete c.checkItems[0].declarer; }), 'FalseScriptCheck', 'checkItems[0]');
+  // ③ 两者同时 → 两码共存（不同 path，M1 允许）
+  const both = run((c) => { delete c.must[0].criterion; c.checkItems[0].check = 'script'; delete c.checkItems[0].declarer; });
+  assert.deepEqual([...codes(both)].sort(), ['FalseScriptCheck', 'MissingCriterionImpl']);
+  assert.equal(new Set(pathsOf(both)).size, 2, '两码必须落在不同 path（否则违 M1，也说明「同一 CheckItem 上互斥」被误实现成同 path）');
+  // ④ v5 新增的 CheckItem 面 + ⑤ 两处各报一次 + ⑥⑦ 豁免不外溢 —— 归 Task 6
+});
+
+test('S1-TC-F04 动作六字段齐 + requires:[] + 落点合法 → 绿', () => {
+  const SIX = ['id', 'kind', 'trigger', 'objects', 'criterion', 'landing'];
+  const a = baseCard().must[0];
+  for (const k of SIX) assert.ok(k in a, `动作条目缺字段 ${k}`);
+  assert.deepEqual(Object.keys(a.trigger).sort(), ['moment', 'repeat', 'scene'], 'trigger 必须三键齐');
+  green(run());
+  assert.deepEqual(baseCard().never[0].requires, []);
+  green(run((c) => { c.never[0].trigger.repeat = 'once'; }));
+});
+
+test('S1-TC-F05 两个 criterion 的分形：Action.criterion 是谓词 id，CheckItem.criterion 才是文本扫描面', () => {
+  assert.ok(CT.criterionTerms.length >= 3, '前置：criterion-terms 至少 3 词（否则 InlineTermList 判据恒真）');
+  assert.ok(baseEnv().predicates.has('ledger.row.exists'), '前置：第 3 组的谓词 id 必须已登记（否则「配齐即绿」不成立）');
+  const three = `${CT.criterionTerms[0]}与${CT.criterionTerms[1]}且${CT.criterionTerms[2]}`;
+  const SCAN_CODES = ['InlineTermList', 'InlineThreshold', 'AmbiguousCriterion'];
+  // ① 假阳性守卫：Action.criterion 是谓词 id，不是文本扫描面（§4.2 :106 的「不扫」列）
+  const r1 = run((c) => { c.must[0].criterion = three; });
+  assert.deepEqual(codes(r1), ['MissingCriterionImpl'], `Action.criterion 未登记 → 只应报 MissingCriterionImpl（§4.1），实得 ${codes(r1).join('|')}`);
+  for (const k of SCAN_CODES) assert.ok(!codes(r1).includes(k), `Action.criterion（谓词 id 面）不得扫出 ${k}（§4.2 :106）`);
+  assert.ok(String(pathsOf(r1)[0]).startsWith('must[0].criterion'), `path 应落 must[0].criterion，实得 ${pathsOf(r1)[0]}`);
+  // ② 假阴性守卫（CheckItem.criterion 面）归 Task 6
+  // ③ 配齐侧：两侧各守自己的面 → 绿
+  green(run((c) => { c.must[0].criterion = 'ledger.row.exists'; }));
 });
