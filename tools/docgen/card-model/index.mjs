@@ -18,3 +18,5 @@ export {
 export { subjectiveTerms } from './vocab/subjective-terms.mjs';
 export { criterionTerms } from './vocab/criterion-terms.mjs';
 export { resolveLanding } from './landings.mjs';
+export { SUBJECTS, SUBJECT_VALIDATORS, verdictAllowed, compareVerdicts } from './subjects.mjs';
+export { validateOpenItems } from './open-items.mjs';
