@@ -13,6 +13,8 @@ import * as SC from '../card-model/scenes.mjs';
 import * as SIG from '../card-model/signals.mjs';
 import * as SUB from '../card-model/subjects.mjs';
 import * as OI from '../card-model/open-items.mjs';
+import * as EX from '../card-model/expression.mjs';
+import * as MG from '../card-model/merge.mjs';
 import * as ST from '../card-model/vocab/subjective-terms.mjs';
 import * as CT from '../card-model/vocab/criterion-terms.mjs';
 
@@ -36,6 +38,9 @@ const only = (r, code, path) => {
 // spec §6 :143-144 的 11 键（K01 双向对账用：既要逐键在位，也不许私自增键）
 const ENV_KEYS = ['seat', 'sharedScenes', 'seatScenes', 'seatSignals', 'predicates', 'landings',
   'subjects', 'registeredIds', 'available', 'unboundVars', 'parliamentSeats'];
+
+// §0.4 的合并码清单（A 表复用，不计入 36，§7 :206）
+const MERGE_CODES = ['DuplicateStatement', 'OverrideWithoutReason', 'PointlessOverride'];
 
 const deepFreeze = (o) => {
   if (o && typeof o === 'object' && !Object.isFrozen(o)) {
@@ -373,4 +378,28 @@ test('S1-TC-K03 open[].evidence 的内容本段不判（边界划在 S1/S2 之�
   const mk = (evidence) => (d) => { d.open = [{ ...openItem(), evidence }]; };
   green(runDoc(mk('随便一句话，没有行号')));
   green(runDoc(mk('agents/detective-observer.md:12')));
+});
+
+test('S1-TC-J02 合并族：OVERRIDABLE_FIELDS 精确集合 + 三码各一构造（F-03）', () => {
+  assert.deepEqual(MG.OVERRIDABLE_FIELDS, ['kind', 'trigger', 'objects', 'criterion', 'landing', 'requires'],
+    'PRD §3.3 :187 要求含 kind；S2 render.mjs 的 39 行 的旧表缺 kind/objects（登记 §11-1，本段不修）');
+  const base = { id: 'a01', kind: 'must', trigger: { scene: 'issue.card', moment: 'start', repeat: 'once' }, objects: ['x.md'], criterion: 'ledger.row.exists', landing: 'review.dir', requires: [] };
+  // ② 三码 + 返回形状（§6 :142 写死 {ok, errors}）
+  const dup = MG.mergeActions([base], [{ ...base }]);
+  assert.deepEqual(dup.errors.map((e) => e.code), ['DuplicateStatement']);
+  assert.equal(dup.ok, false, 'mergeActions 返回 {ok, errors}（spec :142）：有合并码时 ok 必须为 false');
+  const noReason = MG.mergeActions([base], [{ ...base, objects: ['y.md'] }]);
+  assert.deepEqual(noReason.errors.map((e) => e.code), ['OverrideWithoutReason']);
+  assert.equal(noReason.ok, false, '同上：{ok, errors} 形状');
+  const pointless = MG.mergeActions([base], [{ ...base, reason: '改了' }]);
+  assert.deepEqual(pointless.errors.map((e) => e.code), ['PointlessOverride']);
+  assert.equal(pointless.ok, false, '同上：{ok, errors} 形状');
+  const good = MG.mergeActions([base], [{ ...base, kind: 'never', reason: '升级为禁止' }]);
+  assert.deepEqual(good.errors, []);
+  assert.equal(good.ok, true, '无合并码时 ok 必须为 true');
+  assert.ok(good.overrides.length === 1 && good.overrides[0].changed.length >= 1);
+  for (const k of good.overrides[0].changed) assert.ok(MG.OVERRIDABLE_FIELDS.includes(k), `changed 含不可覆盖字段 ${k}`);
+  assert.ok(good.overrides[0].changed.includes('kind'), 'kind 必须算可覆盖字段（PRD :187 明文，S2 旧表缺它）');
+  assert.equal(typeof MG.mergeActions, 'function', '合并码只能由 mergeActions 发出（入口对照表 :218 末行）');
+  // ④ 分离纪律 + ⑤ validateCardModel 不返回合并码 —— 依赖 Task 4 的 CARD_MODEL_CODES 与发射点，Task 5 收尾时补齐
 });
