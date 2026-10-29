@@ -1,9 +1,9 @@
 // 常驻回归测试（本段测试不是 testcase 文件：编写者 = 施工者，写进 `**/*.test.mjs` 全仓 glob 自动回归）。
-// helper 逐字取自 testcase §0.3（:64-216）；56 条用例逐条对应 testcase §1 的 S1-TC-XX（计数口径 = 本文件 `test(` 块个数）。
+// helper 逐字取自 testcase §0.3（:64-216）；58 条用例逐条对应 testcase §1 的 S1-TC-XX（计数口径 = 本文件 `test(` 块个数）。
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as M from '../card-model/index.mjs'; // 对外出口（spec §3 :48）
@@ -1179,4 +1179,79 @@ test('S1-TC-J01 全字段卡正向（F-01 / F-04）', () => {
   const r = M.validateCardModel(rich, baseEnv());
   green(r);
   for (const s of rich.scenes) assert.ok(M.SHARED_SCENES[s.id] || s.why, `局部场景 ${s.id} 必须带 why`);
+});
+
+test('S1-TC-J03 registeredIdsOf() 并集去重 + S2 常量未被改（V-8）', () => {
+  const a = baseCard();
+  const b = baseCard();
+  b.checkItems = [{ ...b.checkItems[0], id: 'k02' }, { ...b.checkItems[0], id: 'k01', criterion: '另一条判据文本' }];
+  const ids = M.registeredIdsOf([a, b]);
+  const want = ['k01', 'k02'];
+  assert.deepEqual([...ids].sort(), want, `并集去重应为 ${want}，实得 ${[...ids]}`);
+  assert.ok(ids.has('k01') && ids.has('k02'));
+  // ② 单源对账（§6 :154）：env 里的 registeredIds 与派生结果必须集合相等
+  assert.deepEqual([...baseEnv().registeredIds].sort(), [...M.registeredIdsOf([baseCard()])].sort(),
+    'env.registeredIds 必须由 registeredIdsOf(本轮全部卡) 构造（单源，spec :154）');
+  // ③ 不一致 → UnverifiableOutput（path env.registeredIds），而不是「静默用 env 的错值」
+  const wrongEnv = baseEnv({ registeredIds: new Set(['k01', 'ghost-id']) });
+  only(M.validateOpenItems(baseDoc(), wrongEnv, [baseCard()]), 'UnverifiableOutput', 'env.registeredIds');
+  // ④ S2 常量未被改（§11-3）
+  const s2 = readFileSync(join(REPO, 'tools/observation-check/registered-ids.mjs'), 'utf8');
+  assert.ok(/REGISTERED_IDS\s*=\s*\[\s*'k01'\s*,\s*'k02'\s*,\s*'k03'\s*\]/.test(s2), 'S2 的 REGISTERED_IDS 不得被本段改动（§11-3：S1 只提供派生，不切常量）');
+});
+
+test('S1-TC-J04 registeredIdsOf() 三边界（空集为期望值，不是空集上 every）', () => {
+  assert.deepEqual([...M.registeredIdsOf([baseCard()])], ['k01']);
+  const empty = baseCard();
+  empty.checkItems = [];
+  const r = M.registeredIdsOf([empty]);
+  assert.equal(r.size, 0, '无检查项时必须显式得到空集（不得靠「空集上 every 恒真」蒙过）');
+  assert.equal(typeof r.has, 'function', '返回必须是 Set 形（否则下游 `.has` 调用点全崩）');
+  const dupe = baseCard();
+  dupe.checkItems = [{ ...dupe.checkItems[0] }, { ...dupe.checkItems[0] }];
+  assert.equal(M.registeredIdsOf([dupe]).size, 1, '重复 id 必须去重');
+});
+
+test('S1-TC-J05 与 S6 双向零耦合（V-6）', () => {
+  const walk = (dir, out = []) => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      const p = join(dir, e.name);
+      if (e.isDirectory()) walk(p, out);
+      else if (e.name.endsWith('.mjs')) out.push(p);
+    }
+    return out;
+  };
+  const cmFiles = walk(CM_DIR);
+  assert.ok(cmFiles.length >= 9, `前置：card-model 至少 9 个模块（spec §3），实得 ${cmFiles.length}`);
+  const importLines = (p) => readFileSync(p, 'utf8').split(/\r?\n/).filter((l) => /^\s*(import|export)\s/.test(l));
+  for (const p of cmFiles) {
+    const bad = importLines(p).filter((l) => /policy\//.test(l));
+    assert.deepEqual(bad, [], `${p} 不得 import policy/**（V-6 单向）`);
+  }
+  const polFiles = walk(join(REPO, 'tools/docgen/policy'));
+  assert.ok(polFiles.length >= 7, `前置：policy 下至少 7 个模块，实得 ${polFiles.length}`);
+  for (const p of polFiles) {
+    const bad = importLines(p).filter((l) => /card-model/.test(l));
+    assert.deepEqual(bad, [], `${p} 不得反向 import card-model（V-6 双向）`);
+  }
+});
+
+test('S1-TC-J06 依赖方向：只 node: 与自身，不碰 S2 与 components/', () => {
+  const walk = (dir, out = []) => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      const p = join(dir, e.name);
+      if (e.isDirectory()) walk(p, out);
+      else if (e.name.endsWith('.mjs')) out.push(p);
+    }
+    return out;
+  };
+  const specs = (p) => [...readFileSync(p, 'utf8').matchAll(/from\s+['"]([^'"]+)['"]/g)].map((m) => m[1]);
+  for (const p of walk(CM_DIR)) {
+    for (const s of specs(p)) {
+      const okNode = s.startsWith('node:');
+      const resolved = s.startsWith('.') ? join(dirname(p), s) : null;
+      const okSelf = resolved && resolved.startsWith(CM_DIR);
+      assert.ok(okNode || okSelf, `${p}: 依赖 ${s} 越界（只许 node: 标准库与 card-model 内相对路径）`);
+    }
+  }
 });

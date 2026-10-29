@@ -1,8 +1,8 @@
 // 对外 barrel（spec §3 :48）。**纯 re-export，不重新实现**（防两份实现）。
-// 终态出口面 = 18 项：8 张表 + `SUBJECTS` / `SUBJECT_VALIDATORS` + 四入口
+// 出口面恰 18 项：8 张表 + `SUBJECTS` / `SUBJECT_VALIDATORS` + 四入口
 // （`validateCardModel` / `validateOpenItems` / `compareVerdicts` / `verdictAllowed`）
 // + `CARD_MODEL_CODES` + `SCAN_FIELDS` + `mergeActions` + `registeredIdsOf`。
-// 本文件按 Task 逐块增长；**不得**写成「先空后补占位函数」。
+// 词表物料与 `resolveLanding` 等内部面**不经 barrel**（各自从模块取，避免出口面多出非契约项）。
 
 export {
   SHARED_SCENES,
@@ -15,9 +15,6 @@ export {
   LANDING_VARS,
 } from './enums.mjs';
 
-export { subjectiveTerms } from './vocab/subjective-terms.mjs';
-export { criterionTerms } from './vocab/criterion-terms.mjs';
-export { resolveLanding } from './landings.mjs';
 export { SUBJECTS, SUBJECT_VALIDATORS, verdictAllowed, compareVerdicts } from './subjects.mjs';
 export { validateOpenItems } from './open-items.mjs';
 export { mergeActions } from './merge.mjs';
