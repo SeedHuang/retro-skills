@@ -15,7 +15,12 @@ const stable = (v) => JSON.stringify(v, (k, val) => {
   }
   return val;
 });
-const sameFields = (a, b) => OVERRIDABLE_FIELDS.every((f) => stable(a[f]) === stable(b[f]));
+// 零差异比较的字段面 = 动作条目上除 `id`（身份）与 `reason`（覆盖理由）之外的**全部**字段：
+// 只看 6 个 `OVERRIDABLE_FIELDS` 会把「仅改 `params` / `expr`」的覆盖误判成零差异（`PointlessOverride`）。
+const strip = (o) => Object.fromEntries(
+  Object.keys(o || {}).filter((k) => k !== 'id' && k !== 'reason').sort().map((k) => [k, o[k]]),
+);
+const sameFields = (a, b) => stable(strip(a)) === stable(strip(b));
 
 // `mergeActions(shared, own) → { ok, errors, overrides }`（§6 :142；返回形状写死 `{ok, errors}`）。
 // - 同层同 id（本层内重复）或跨层「零差异且无 `reason`」→ `DuplicateStatement`

@@ -62,11 +62,13 @@ export const ID_RE = ID_NAME_RE;
 // `VagueReferent` 的宾语模糊词（5）
 export const VAGUE_TERMS = Object.freeze(['该内容', '上述', '相关', '前述', '该项']);
 
-// `HardcodedCount` 的三条式（spec §7 :187）；`N` 的字符面 = 半角 + 全角 + 汉字数字
+// `HardcodedCount` 的三条式（spec §7 :187）；`N` 的字符面 = 半角 + 全角 + 汉字数字。
+// 第三条收窄为「全部命中」：spec 原文 `全部[命中]*` 会连裸「全部」一起命中（合法句「全部走查」被误报），
+// 收窄属**实现侧收紧**，须回 ② 段把 spec 该行同步为 `全部命中`（已登记 `docs/after/…open-decisions.md` O-18）。
 export const HARDCODED_COUNT = Object.freeze([
   /共\s*[0-9０-９零一二三四五六七八九十百千万]+\s*[条项个]/,
   /缺一[条项]/,
-  /全部[命中]*/,
+  /全部命中/,
 ]);
 
 // `PointerToElsewhere` 的指针词（5，spec §7 :188）
@@ -100,3 +102,10 @@ export const SCAN_FIELDS = Object.freeze({
   MixedTermInCard: Object.freeze([...CARD_TEXT_FIELDS, 'rationale']),
   ProceduralWordOutsideParliament: Object.freeze([...CARD_TEXT_FIELDS, 'rationale']),
 });
+
+// ── `env` 的 11 键正式接口（spec §6 :143-144）──────────────────────────────────
+// 唯一写死处（四个入口共用同一份，避免各入口各抄一遍导致缺键纪律漂移）。
+export const ENV_KEYS = Object.freeze([
+  'seat', 'sharedScenes', 'seatScenes', 'seatSignals', 'predicates', 'landings',
+  'subjects', 'registeredIds', 'available', 'unboundVars', 'parliamentSeats',
+]);

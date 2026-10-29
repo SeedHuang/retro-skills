@@ -1,7 +1,7 @@
 // 主语登记表与三态入口（spec §3 :41 / §5 :131 / §6 :140-141 / §7 :184-185 / :200 / :202）。
 // `SUBJECTS` 是**登记表、不是第 9 张封闭枚举**（§5 :131）：迁移起点 = PRD `:293` 的两项，S4 扩到 15 席。
 // `SUBJECT_VALIDATORS` = `SUBJECTS` 的 `validator` 投影（供 `UnverifiableOutput` 判「有没有校验器」）。
-import { VERDICTS } from './enums.mjs';
+import { VERDICTS, ENV_KEYS } from './enums.mjs';
 
 const nonEmptyObject = (v) => v !== null && typeof v === 'object' && Object.keys(v).length > 0;
 
@@ -42,7 +42,8 @@ export function verdictAllowed(subject, objectType, verdict) {
 // `compareVerdicts(docA, docB, env) → { ok, errors }`（§6 :140）。
 // 同 `id` 两实例 `verdict` 不同 → 一条 `DisagreementOpen`（不取多数、不改判，§7 :202 / PRD :203）；
 // `verdict` 含 `/` → 只报 `FreeTextEnum`（§7 :219 的入口归属），且不构成分歧。
-export function compareVerdicts(docA, docB) {
+// 缺键纪律与其他三入口同（§6 :153）：`env` 缺任一键 → 每键一条 `UnverifiableOutput`（path `env.<键名>`）并继续判。
+export function compareVerdicts(docA, docB, env) {
   const errors = [];
   const seen = new Set();
   const push = (e) => {
@@ -50,6 +51,10 @@ export function compareVerdicts(docA, docB) {
     seen.add(e.path);
     errors.push(e);
   };
+  const e = env !== null && typeof env === 'object' ? env : {};
+  for (const k of ENV_KEYS) {
+    if (e[k] === undefined) push({ code: 'UnverifiableOutput', path: `env.${k}`, message: `env 缺键 ${k}（§6 :153）` });
+  }
   const itemsOf = (d) => (d && Array.isArray(d.items) ? d.items : []);
   const a = itemsOf(docA);
   const b = itemsOf(docB);

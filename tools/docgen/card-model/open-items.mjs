@@ -8,12 +8,12 @@ export { SCOPES };
 // 顺序敏感的**最长前缀**映射表（§5 :132：「为什么必须是最长前缀」见 :133）。
 // 写死在本文件，不读配置（D7）。
 const SCOPE_PREFIXES = Object.freeze([
-  ['docs/superpowers/reviews/', 'process'],
-  ['.session/', 'process'],
-  ['agents/', 'card'],
-  ['tools/', 'code'],
-  ['scripts/', 'code'],
-  ['docs/', 'doc'],
+  ['docs/superpowers/reviews/', SCOPES.process],
+  ['.session/', SCOPES.process],
+  ['agents/', SCOPES.card],
+  ['tools/', SCOPES.code],
+  ['scripts/', SCOPES.code],
+  ['docs/', SCOPES.doc],
 ]);
 
 // `deriveScope(object)`：先 `\` → `/` 归一（§5 :132），再自上而下取首个命中前缀；其余 → `repo`。
@@ -22,10 +22,11 @@ export function deriveScope(object) {
   for (const [prefix, scope] of SCOPE_PREFIXES) {
     if (p.startsWith(prefix)) return scope;
   }
-  return 'repo';
+  return SCOPES.repo;
 }
 
 const errorsOf = (code, path, message) => ({ ok: false, errors: [{ code, path, message }] });
+const firstLine = (err) => String((err && err.message) || err).split(/\r?\n/)[0];
 
 // `validateOpenItems(doc, env, cards) → { ok, errors }`（§6 :139）。
 // **只判三码**（§7 :208）：`DuplicateAsOpen` → `OutOfScopeOpenItem` → `EmptyOpenWithoutReason`
@@ -48,27 +49,33 @@ export function validateOpenItems(doc, env, cards) {
     }
   }
   const open = Array.isArray(doc.open) ? doc.open : [];
-  // 组 7 顺序 ①：`object` 与任一 `registeredIds` 成员**逐字**相等（§7 :199）
-  for (let i = 0; i < open.length; i += 1) {
-    const it = open[i] || {};
-    if (env.registeredIds.has(it.object)) {
-      return errorsOf('DuplicateAsOpen', `open[${i}].object`, `「${it.object}」是固定项 id，不得登记为开放项（§7 :199）`);
+  // 异常纪律（§6 :152，四入口共用）：判定内部抛异常（如 `env.registeredIds` 不是 Set 时 `.has` TypeError）
+  // → 收敛为 `UnverifiableOutput`，不冒泡。
+  try {
+    // 组 7 顺序 ①：`object` 与任一 `registeredIds` 成员**逐字**相等（§7 :199）
+    for (let i = 0; i < open.length; i += 1) {
+      const it = open[i] || {};
+      if (env.registeredIds.has(it.object)) {
+        return errorsOf('DuplicateAsOpen', `open[${i}].object`, `「${it.object}」是固定项 id，不得登记为开放项（§7 :199）`);
+      }
     }
-  }
-  // 组 7 顺序 ②：`scope` ≠ `deriveScope(object)`（§7 :198；`scope` 缺失同此码，H05 ④）
-  for (let i = 0; i < open.length; i += 1) {
-    const it = open[i] || {};
-    const want = deriveScope(it.object);
-    if (it.scope !== want) {
-      return errorsOf('OutOfScopeOpenItem', `open[${i}].scope`, `scope「${it.scope}」≠ 派生值「${want}」（§7 :198）`);
+    // 组 7 顺序 ②：`scope` ≠ `deriveScope(object)`（§7 :198；`scope` 缺失同此码，H05 ④）
+    for (let i = 0; i < open.length; i += 1) {
+      const it = open[i] || {};
+      const want = deriveScope(it.object);
+      if (it.scope !== want) {
+        return errorsOf('OutOfScopeOpenItem', `open[${i}].scope`, `scope「${it.scope}」≠ 派生值「${want}」（§7 :198）`);
+      }
     }
-  }
-  // 组 7 顺序 ③：`open` 空且 `openEmptyReason` 缺 / 去空白为空（§7 :197）
-  if (open.length === 0) {
-    const reason = doc.openEmptyReason;
-    if (typeof reason !== 'string' || reason.trim() === '') {
-      return errorsOf('EmptyOpenWithoutReason', 'open', 'open 为空且未给可核理由（§7 :197）');
+    // 组 7 顺序 ③：`open` 空且 `openEmptyReason` 缺 / 去空白为空（§7 :197）
+    if (open.length === 0) {
+      const reason = doc.openEmptyReason;
+      if (typeof reason !== 'string' || reason.trim() === '') {
+        return errorsOf('EmptyOpenWithoutReason', 'open', 'open 为空且未给可核理由（§7 :197）');
+      }
     }
+  } catch (err) {
+    return errorsOf('UnverifiableOutput', 'open', firstLine(err));
   }
   return { ok: true, errors: [] };
 }

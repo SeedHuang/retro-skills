@@ -4,7 +4,8 @@
 // `SCAN_FIELDS` 只在 `enums.mjs` 写死一份，本文件 import 消费（不另写第二份）。
 // 纯函数：零 IO、零环境依赖（全部经 `env` 注入）、不改入参（§6 :151）。
 import {
-  SHARED_SCENES, MOMENTS, VAGUE_TERMS, HARDCODED_COUNT, POINTER_WORDS, PROC_WORDS, MIXED_PAIR, SCAN_FIELDS,
+  ENV_KEYS, CHECK_KINDS, SHARED_SCENES, MOMENTS, VAGUE_TERMS, HARDCODED_COUNT, POINTER_WORDS, PROC_WORDS,
+  MIXED_PAIR, SCAN_FIELDS,
 } from './enums.mjs';
 import { subjectiveTerms } from './vocab/subjective-terms.mjs';
 import { resolveLanding } from './landings.mjs';
@@ -70,9 +71,6 @@ export function registeredIdsOf(cards) {
   }
   return ids;
 }
-
-const ENV_KEYS = ['seat', 'sharedScenes', 'seatScenes', 'seatSignals', 'predicates', 'landings',
-  'subjects', 'registeredIds', 'available', 'unboundVars', 'parliamentSeats'];
 
 const firstLine = (err) => String((err && err.message) || err).split(/\r?\n/)[0];
 const TOKEN_SPLIT = /[、，,/\s]+/;
@@ -141,12 +139,16 @@ export function validateCardModel(card, env) {
   const paths = new Set();
   const faces = new Set();
   // M1（§8 :224）：同一次返回内 `path` 唯一 —— 先到先得（`errors[].path` 仍带下标）。
-  // M2 / D20（§8 :226）：**判定面（face）粒度**——同组多码落同一判定面时按组序抑制；
-  // 判定面与输出 path 解耦（例：`must[0].landing` / `never[0].landing` 同属 `Action.landing` 面，只报一条）。
+  // M2 / D20（§8 :226）：**判定面（face）粒度**只对「§8 组表内、同判定面」成立；
+  // 组表外的码（VagueReferent / MissingPrerequisite / MissingCriterionImpl 的 Action 面 / 各 CheckItem 条码）
+  // 一律按 **path** 去重 → 同一码落在不同条目（must[0] 与 never[0]）时**各报一次**（§8 :239「不同 path 多码属正常」）。
+  // 仅两个面保留「全返回内只报一条」：`scenes`（组 5 三码同面）与 `Action.landing`（已签用例 E01(e) 要求）。
+  const GLOBAL_FACES = new Set(['scenes', 'Action.landing']);
   const emit = (code, path, message, face = path) => {
-    if (paths.has(path) || faces.has(face)) return;
+    const global = GLOBAL_FACES.has(face);
+    if (paths.has(path) || (global && faces.has(face))) return;
     paths.add(path);
-    faces.add(face);
+    if (global) faces.add(face);
     errors.push({ code, path, message });
   };
 
@@ -279,7 +281,8 @@ export function validateCardModel(card, env) {
         const t = a.trigger && typeof a.trigger === 'object' ? a.trigger : null;
         if (t && hasSlash(t.scene)) emit('FreeTextEnum', `${p}.trigger.scene`, 'trigger.scene 含 / 的多条件串（§7 :172）', 'trigger');
         else if (!t || !('scene' in t) || !('moment' in t) || !('repeat' in t)) emit('MissingSignal', `${p}.trigger`, 'trigger 缺 scene / moment / repeat 任一键（§7 :173）', 'trigger');
-        else if (hasSlash(t.moment) || hasSlash(t.repeat)) emit('FreeTextEnum', `${p}.trigger.moment`, 'trigger.moment / repeat 含 / 的多条件串（§7 :172）', 'trigger');
+        else if (hasSlash(t.moment)) emit('FreeTextEnum', `${p}.trigger.moment`, 'trigger.moment 含 / 的多条件串（§7 :172）', 'trigger');
+        else if (hasSlash(t.repeat)) emit('FreeTextEnum', `${p}.trigger.repeat`, 'trigger.repeat 含 / 的多条件串（§7 :172）', 'trigger');
         else {
           const m = momentInfo(t.moment);
           if ((m.isArray && m.length > 1) || m.members >= 2) emit('MultiMomentInOneEntry', `${p}.trigger`, '一行写两个时刻（§7 :177）', 'trigger');
@@ -396,7 +399,7 @@ export function validateCardModel(card, env) {
     try {
       const c = it.criterion;
       if (blank(c)) {
-        if (it.check !== 'manual') emit('MissingCriterionImpl', `${p}.criterion`, 'CheckItem.criterion 缺/空且非 manual（§7 :181）', 'CheckItem.criterion');
+        if (it.check !== CHECK_KINDS.manual) emit('MissingCriterionImpl', `${p}.criterion`, 'CheckItem.criterion 缺/空且非 manual（§7 :181）', 'CheckItem.criterion');
       } else {
         const scan = scanCriterionText(c);
         if (subjectiveHit(c)) emit('SubjectiveLabel', `${p}.criterion`, 'criterion 命中主观词表（§7 :186）', 'CheckItem.criterion');
@@ -420,15 +423,15 @@ export function validateCardModel(card, env) {
       emit('UnverifiableOutput', `${p}.expr`, firstLine(err));
     }
     // `MissingAiAudit`（§7 :196）
-    if (it.check === 'ai' && aiAuditBad(it)) {
+    if (it.check === CHECK_KINDS.ai && aiAuditBad(it)) {
       emit('MissingAiAudit', `${p}.rubric`, 'ai 条目 rubric / audit 不完整（§7 :196）', 'CheckItem.rubric');
     }
     // `FalseScriptCheck`（§7 :182）
-    if (it.check === 'script' && !it.cmd && !it.impl) {
+    if (it.check === CHECK_KINDS.script && !it.cmd && !it.impl) {
       emit('FalseScriptCheck', p, 'script 条目既无 cmd 也无 impl（§7 :182）');
     }
     // `UnobservableSignal`（§7 :175）
-    if (it.check === 'manual' && blank(it.declarer)) {
+    if (it.check === CHECK_KINDS.manual && blank(it.declarer)) {
       emit('UnobservableSignal', `${p}.declarer`, 'manual 条目缺宣告者（§7 :175）', 'CheckItem.declarer');
     }
   });
