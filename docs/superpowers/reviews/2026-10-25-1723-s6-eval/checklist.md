@@ -12,9 +12,24 @@
 | 取数命令（能力计数） | `node --test tools/docgen/test/policy-pure-source.test.mjs`（A04/A06/B01/C06/C08/F02 逐项派生，不写死条数） |
 | 置信度 | **`mid`**（`tools/execution-matrix/rating.mjs` 口径：4 条记录、出现回归 → 非 `high`）；取数：`ab-score.md` 第 1/2 轮均存在 B < A 的维 |
 | golden 是否换代 | **已换代**：`fixtures/boundary-golden.json` 追加 `reviewer-audit@2` = `bb06aee7…`、`detective-observer@2` = `ee0e6731…`（键名 `<席>@<轮次>`、轮次为数字，按 testcase:942 / spec:198 的 `/@\d+$/` 口径）；旧键（`reviewer-audit` / `detective-observer` = 改造前）**保留不删**，作 V-2 定位线索 |
-| V-13 结论 | **不通过（`QualityRegression`）**，2 轮用尽；**用户 2026-10-25 裁定「接受」**（记 P2，不开第 3 轮）→ S6 状态 = 施工完成、验收未过（原委见 `ab-score.md`「判定」节） |
+| V-13 结论 | **不通过（`QualityRegression`）**，2 轮用尽；**用户 2026-10-25 裁定「接受」**（记 P2，不开第 3 轮）→ S6 状态 = 施工完成、验收未过（原委见 `ab-score.md`「判定」节）。**状态注（2026-10-29）**：用户当日本裁定 **`V-13` 不在本期**，S6 本体验收 = **V-1～V-12**（A–J 组 70/70 通过）；本行的「验收未过」**只对 V-13 成立**，S6 整体状态见 `skills/dev-workflow/references/gate-record.md` 的 `⑤@S6` 行；V-13 转独立课题 `docs/after/20261029100942-s6-v13-ab-eval-rebuild-open-decisions.md` |
 | H07a（基线恒真守卫 ①②） | **已转绿**：`641a7e7` 提交后 HEAD 已含 `tools/docgen/policy`，该条不再跳过；`policy-pure-source` 现 71/71（0 skipped；见「最近一次实跑」） |
 | 未提交 | 本批全部改动留在工作树，由用户统一 commit（仓约定） |
+
+## 评测者与盲评隔离（V-13；K05 ②–⑤ 的取数位）
+
+| # | 项 | 判据（怎么算合格） | 取值 / 证据 |
+|---|---|---|---|
+| 1 | 评测者身份 | **2 个全新上下文子代理**（非 spec 作者、非施工者） | 四次独立 dispatch，各实例只读两张匿名卡（见下方「输入清单」） |
+| 2 | 盲评隔离 | 每个实例**只看两张匿名卡**（`card-0N`），**顺序打乱** | 实例 1 与实例 2 的卡序相反（见下方两行） |
+| 3 | 评的切片 | 评的是**「边界五段」切片**，不是整卡 | `rubric.md` 八维的判定对象 = 边界段；噪声项（身份 / 触发）不入分 |
+| 4 | 轮次上限 | **至多 2 轮**（第 3 轮起记 P2 交用户裁） | 2 轮已用尽，见 `ab-score.md`「判定」 |
+| 5 | 输入清单（逐实例） | 逐实例列出**实际读到的文件名**（各 2 个卡文件） | 见下方两行 `输入清单（实例 N）`；不得出现 `mapping.sealed.md` |
+| 6 | 映射封存位置 | 映射在 `.session/reviews/2026-10-25-1723-s6-eval-sealed/mapping.sealed.md`，**不得**在评测账目录内 | 目录实测：评测账目录（`docs/superpowers/reviews/2026-10-25-1723-s6-eval/`）内无 `mapping.sealed.md` |
+
+- 输入清单（实例 1）：cards/card-01.md、cards/card-02.md
+- 输入清单（实例 2）：cards/card-02.md、cards/card-01.md
+- 补充（卡组 2 = 侦探席 A/B 的两个实例，同一规则）：实例 1 读 `cards/card-03.md`、`cards/card-04.md`；实例 2 读 `cards/card-04.md`、`cards/card-03.md`
 
 ## 取数命令原文（可复制）
 

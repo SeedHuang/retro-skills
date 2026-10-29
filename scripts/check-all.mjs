@@ -84,7 +84,7 @@ if (!failed) console.log('① 语法检查通过')
 // maxBuffer 要给足：下面要回读 "# tests N" 判定测试是否真跑，输出被截断会误报成「解析不出用例总数」
 const testEnv = { ...process.env, DOCGEN_CHECK_ACTIVE: '1' }
 for (const key of ['DOCGEN_TMP_ROOT', 'DOCGEN_RULES_DIR', 'DOCGEN_BASELINE_PATH', 'DOCGEN_TEST_MODE', 'DOCGEN_NESTED', 'NODE_TEST_CONTEXT']) delete testEnv[key]
-const t = spawnSync(process.execPath, ['--test', '**/*.test.mjs'], { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, env: testEnv })
+const t = spawnSync(process.execPath, ['--test', '--test-reporter=tap', '**/*.test.mjs'], { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, env: testEnv })
 console.log(t.stdout)
 if (t.error) {
   failed = true

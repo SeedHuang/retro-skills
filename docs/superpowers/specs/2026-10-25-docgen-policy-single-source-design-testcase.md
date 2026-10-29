@@ -425,12 +425,17 @@ function parseTable(text) {
   return lines.slice(2).map((l) => Object.fromEntries(l.split('|').slice(1, -1).map((s, i) => [cols[i], s.trim()])));
 }
 const rowsOf = (file) => parseTable(readFileSync(file.includes('/') ? file : join(evalDir(), file), 'utf8'));
-// ab-score.md 的读法（K01 的固定列不变；4 条记录 = 4 个小节，每节标题「卡 k · 实例 i」，节内是六列表）
+// ab-score.md 的读法（K01 的固定列不变；4 条记录 = **最后一轮**的 4 个小节，每节标题「卡组 k · 实例 i」）
+// 两处口径必须与账本一致：① 小节标题 = `### 卡组 1 · 实例 1`（**不带席名、不带 card 映射括注**——映射只留 sealed 文件）；
+// ② 账本并存 `## 第 1 轮` / `## 第 2 轮` 两轮 → **只取最后一轮**（两轮 8 节全收会得到 8 条记录，与「2 卡 × 2 实例 = 4」不符）
 function abSections() {
   const text = readFileSync(join(evalDir(), 'ab-score.md'), 'utf8');
+  // 先按**顶层** `## ` 切轮次（`###` 小节不切），再在轮内按小节切——只取最后一轮
+  const rounds = text.split(/\r?\n(?=##[ \t])/).filter((c) => /^##\s*第\s*\d+\s*轮/.test(c));
+  assert.ok(rounds.length > 0, 'ab-score.md 缺「## 第 N 轮」轮次标题，无法定位评分小节');
   const out = [];
-  for (const c of text.split(/\r?\n(?=#{2,4}\s)/)) {
-    const m = c.match(/^#{2,4}\s*卡\s*([12])\s*[·・\-—:：]?\s*实例\s*([12])/);
+  for (const c of rounds[rounds.length - 1].split(/\r?\n(?=#{2,4}\s)/)) {
+    const m = c.match(/^#{2,4}\s*卡组\s*([12])\s*[·・\-—:：]?\s*实例\s*([12])/);
     if (m) out.push({ card: `卡 ${m[1]}`, instance: `实例 ${m[2]}`, rows: parseTable(c) });
   }
   return out;
@@ -2816,7 +2821,19 @@ const hasRerunStamp = (row) => /重评|重跑|rerun/i.test(Object.values(row).jo
 - **对应测试**：同上（待 plan Task N）。
 - **不覆盖**：改写后是否「更精准」（K 组盲评）。
 
-### S6-TC-K01 四本账单在位且列齐（V-13）
+### S6-TC-K01 四本账单在位且列齐（V-13 · **不在本期**）
+
+> **K 组整体状态：不在本期（2026-10-29 用户裁定）**
+>
+> 本组 8 条（`K01`–`K08`）验的是 **V-13 A/B 盲评的评估账本与其纪律**，不是 S6 交付物的功能验收。2026-10-29 裁定：**S6 本体验收 = V-1～V-12（A–J 组 70 条，④ 段实测 70/70 通过）**；K 组 8 条**不在本期**，转独立课题。
+>
+> **裁定依据**（`docs/superpowers/specs/2026-10-25-docgen-policy-single-source-design.md` §8 表后注，逐条可复算）：
+> 1. **K03 ↔ K05① 结构性互斥**：K03 要求「每分必带卡内原文行」，K05① 要求「不得出现席名」；卡面原文本身写有「审计 / 侦探」→ 抄原文必然泄漏席名，两条不可同时满足。
+> 2. **另 3 条红同属工具侧**：K04 / K07 缺第三人复评记录、K08 的 `gitLogCountAfter` 默认 pathspec = `.`（数全仓 commit 恒 > 0）。
+>
+> **保留而非删除**：本组 8 条原文**一字不删**，作为独立课题的输入。课题落点 `docs/after/20261029100942-s6-v13-ab-eval-rebuild-open-decisions.md`。
+>
+> **对下游的约束**：④ / ⑤ 门行与交接材料**不得**写「A/B 盲评通过」或「质量不降」；只能写「V-1～V-12 通过，K 组不在本期」。
 
 - **覆盖**：**V-13** / §9.2 四本账单 / 议会 #3 F28
 - **来源**：spec 推导（`spec:241`：**评估期落 `.session/reviews/<…>-s6-eval/`，收口后整目录迁 `docs/superpowers/reviews/<同名>/` 进 git**，缺一本 = 不得声明完成）
@@ -2838,7 +2855,16 @@ const hasRerunStamp = (row) => /重评|重跑|rerun/i.test(Object.values(row).jo
     'checklist.md': ['阶段','项','判据','状态','证据'] };
   for (const [f, cols] of Object.entries(COLS)) {
     assert.ok(tracked.includes(`${rel}/${f}`), `${f}: 迁移后未进 git`);
-    const head = readFileSync(join(dir, f), 'utf8').split(/\r?\n/).find((l) => l.trim().startsWith('|'));
+    // 表头取法：**首个「表头首格 = 该文件固定列首格」的表**（不是「首个以 | 起首的行」）——
+    // checklist.md 顶部有一张「交付说明」表（`| 项 | 内容 |`），固定列表在其后；
+    // 另三本账的首表即是固定列表（rubric/ab-score → `维度`、capability-diff → `段`）
+    const lines = readFileSync(join(dir, f), 'utf8').split(/\r?\n/);
+    let head;
+    for (let i = 0; i + 1 < lines.length && !head; i++) {
+      if (!lines[i].trim().startsWith('|') || !lines[i + 1].trim().startsWith('|')) continue;
+      if (lines[i].split('|').slice(1, -1)[0].trim() === cols[0]) head = lines[i];
+    }
+    assert.ok(head, `${f}: 未找到表头首格为「${cols[0]}」的表（表头无法定位）`);
     assert.deepEqual(head.split('|').slice(1, -1).map((s) => s.trim()), cols, `${f}: 列不全`);
   }
   assert.equal(existsSync(join('.session', 'reviews', dirs[0])), false, '评估期目录仍在 .session/ → 迁移没做（只复制）');
@@ -2847,7 +2873,7 @@ const hasRerunStamp = (row) => /重评|重跑|rerun/i.test(Object.values(row).jo
 - **对应测试**：同上（待 plan Task N）。
 - **不覆盖**：分数是否正确（K03 / K04）。
 
-### S6-TC-K02 rubric 冻结版结构与复用出处
+### S6-TC-K02 rubric 冻结版结构与复用出处（**不在本期**）
 
 - **覆盖**：**V-13** / §9.1 rubric / §9.2「复用」
 - **来源**：spec 推导（§9.1 八维写死 + §9.2 五处复用出处写死）
@@ -2857,10 +2883,12 @@ const hasRerunStamp = (row) => /重评|重跑|rerun/i.test(Object.values(row).jo
 - **判据**：
   ```js
   const rb = readFileSync(join(evalDir(),'rubric.md'),'utf8');
-  const rows = rb.split(/\r?\n/).filter((l)=>/^\|\s*[PE][1-4]\s*\|/.test(l));
+  // 行锚允许首格带维度描述（`P1 歧义词`）：`[PE][1-4]` 之后接一个空白 + 任意非 `|` 内容再收竖线
+  const rows = rb.split(/\r?\n/).filter((l)=>/^\|\s*[PE][1-4]\s[^|]*\|/.test(l));
   assert.equal(rows.length, 8);
   // ⑥ 8 维 ID 深比较（与 spec §9.1 逐字一致；缺 / 重 / 拼错即红）
-  assert.deepEqual(rows.map((l) => l.split('|').slice(1, -1)[0].trim()),
+  // 首格带描述 → 切出首格后取**第一个词**再深比较（不是整格比较，否则 `P1 歧义词` 永不等于 `P1`）
+  assert.deepEqual(rows.map((l) => l.split('|').slice(1, -1)[0].trim().split(/\s+/)[0]),
     ['P1','P2','P3','P4','E1','E2','E3','E4']);
   for (const l of rows) { const c = l.split('|').slice(1,-1).map((s)=>s.trim());
     for (const i of [1,2,3]) assert.ok(c[i].length >= 4, `0/1/2 定义缺：${l}`);
@@ -2872,7 +2900,7 @@ const hasRerunStamp = (row) => /重评|重跑|rerun/i.test(Object.values(row).jo
 - **对应测试**：同上（待 plan Task N）。
 - **不覆盖**：阈值是否合理（AI 判，走 K07 分歧渠道）。
 
-### S6-TC-K03 每分必带卡内原文行；无证据记 `pending`
+### S6-TC-K03 每分必带卡内原文行；无证据记 `pending`（**不在本期**）
 
 - **覆盖**：**V-13** 证据链 / §9.2「任一分无卡内原文行 → 记 pending」
 - **来源**：spec 推导（「既不是 0 分也不是通过」是 pending 的定义）
@@ -2898,7 +2926,7 @@ const hasRerunStamp = (row) => /重评|重跑|rerun/i.test(Object.values(row).jo
 - **对应测试**：同上（待 plan Task N）。
 - **不覆盖**：分数本身是否合理（AI 判 + K07 仲裁）。
 
-### S6-TC-K04 通过判据 = 逐维 B ≥ A 且至少一维 B > A；总分不作判据
+### S6-TC-K04 通过判据 = 逐维 B ≥ A 且至少一维 B > A；总分不作判据（**不在本期**）
 
 - **覆盖**：**V-13** / §9.2 评分规则
 - **来源**：spec 推导（「总分只作参考，不作通过判据；总分高但单维下降仍判不过（防总分掩盖）」）
@@ -2925,12 +2953,12 @@ const hasRerunStamp = (row) => /重评|重跑|rerun/i.test(Object.values(row).jo
 - **对应测试**：同上（待 plan Task N）。
 - **不覆盖**：`pending` 的补齐流程（K03 + K07）；各维权重（spec 未设权重，8 维等权——见 §10.4 第 7 条）。
 
-### S6-TC-K05 盲评双实例 + 顺序打乱 + 封存解封
+### S6-TC-K05 盲评双实例 + 顺序打乱 + 封存解封（**不在本期**）
 
 - **覆盖**：**V-13** 盲评流程 / `spec:216` V-13 / §9.2 封存与**盲评隔离**（`spec:252`）/ 议会 #3 F16
-- **来源**：spec 推导（`spec:216`：**评「边界五段」切片**，不是整卡；**评测者 = 2 个全新上下文子代理（非 spec 作者 / 非施工者）**，每席 2 个独立实例、顺序打乱；**至多 2 轮**。`spec:252`：**评测实例的输入只有两张卡文件（A/B 各一），不得读仓内其他文件、不得读 `mapping.sealed.md`；`mapping.sealed.md` 存 `.session/reviews/<…>-s6-eval/`（不进 git），评完解封**）
+- **来源**：spec 推导（`spec:216`：**评「边界五段」切片**，不是整卡；**评测者 = 2 个全新上下文子代理（非 spec 作者 / 非施工者）**，每席 2 个独立实例、顺序打乱；**至多 2 轮**。`spec:252`：**评测实例的输入只有两张卡文件（A/B 各一），不得读仓内其他文件、不得读 `mapping.sealed.md`；`mapping.sealed.md` 存 `.session/reviews/<…>-s6-eval-sealed/`（不进 git），评完解封**）
 - **前置**：K01 绿（四本账已迁 `docs/superpowers/reviews/<…>-s6-eval/`）。
-- **步骤**：① 断言 `ab-score.md` **不出现席名**（`reviewer-audit` / `detective-observer` / `审计` / `侦探`），只出现「卡 1 / 卡 2」；② **盲评隔离**：`mapping.sealed.md` **不得**出现在评测账目录（`evalDir()`）内，只在 `.session/reviews/<同名>/`，含「卡 ↔ 席 ↔ A/B」映射与「解封」字段；③ 断言 checklist 记了评测者身份（2 个全新上下文子代理、非作者 / 非施工）；④ 断言评的是「边界五段」切片、轮次上限「至多 2 轮」、两实例记录在位；⑤ **每个评测实例的输入清单恰 2 个文件**（checklist 固定行 `输入清单（实例 N）：<卡 A 文件>、<卡 B 文件>`，按 `、` 切 = 2 项，且不得含 `mapping.sealed.md`）。
+- **步骤**：① 断言 `ab-score.md` **不出现席名**（`reviewer-audit` / `detective-observer` / `审计` / `侦探`），只出现「卡组 1 / 卡组 2」（小节标题统一为 `卡组 k · 实例 i`，不带席名、不带 card 映射括注）；② **盲评隔离**：`mapping.sealed.md` **不得**出现在评测账目录（`evalDir()`）内，只在 `.session/reviews/<同名>-sealed/`，含「匿名卡 ↔ 真实来源 ↔ A/B」映射与「解封」字段；③ 断言 checklist 记了评测者身份（2 个全新上下文子代理、非作者 / 非施工）；④ 断言评的是「边界五段」切片、轮次上限「至多 2 轮」、两实例记录在位；⑤ **每个评测实例的输入清单恰 2 个文件**（checklist 固定行 `输入清单（实例 N）：<卡 A 文件>、<卡 B 文件>`，按 `、` 切 = 2 项，且不得含 `mapping.sealed.md`）。
 - **预期**：①–⑤ 全绿（⑤ 任一项数 ≠ 2 即红：≤1 = 盲评只剩一侧；≥3 = 多读了仓内文件）。
 - **判据**：
   ```js
@@ -2944,13 +2972,14 @@ const hasRerunStamp = (row) => /重评|重跑|rerun/i.test(Object.values(row).jo
   assert.match(ck, /边界五段|边界\s*5\s*段/, '未写明评「边界五段」切片');
   assert.match(ck, /至多\s*2\s*轮|≤\s*2\s*轮/, '未写轮次上限（至多 2 轮）');
   assert.match(ck, /实例\s*[12]/, '缺两实例记录');
-  // ② 盲评隔离（spec:252）：mapping 只在 .session 评估目录，评测账目录内**不存在**
+  // ② 盲评隔离（spec:252）：mapping 只在 .session 的**封存目录**（<同名>-sealed），评测账目录内**不存在**
   assert.equal(existsSync(join(evalDir(), 'mapping.sealed.md')), false,
-    'mapping.sealed.md 不得进评测账目录（它不进 git，只存 .session/reviews/<…>-s6-eval/）');
-  const sealed = join('.session', 'reviews', basename(evalDir()), 'mapping.sealed.md');
+    'mapping.sealed.md 不得进评测账目录（它不进 git，只存 .session/reviews/<…>-s6-eval-sealed/）');
+  const sealed = join('.session', 'reviews', basename(evalDir()) + '-sealed', 'mapping.sealed.md');
   assert.ok(existsSync(sealed), `mapping.sealed.md 必须在 ${sealed}`);
   const map = readFileSync(sealed, 'utf8');
-  assert.match(map, /卡\s*1/); assert.match(map, /卡\s*2/); assert.match(map, /解封/);
+  // sealed 记的是**匿名卡 ↔ 真实来源**（card-01 / card-02 …），不含「卡 1 / 卡 2」这类评分小节名
+  assert.match(map, /card-0[1-4]/); assert.match(map, /解封/);
   // ⑤ 每个实例的输入清单恰 2 个文件（A/B 各一）
   for (const n of [1, 2]) {
     const m = ck.match(new RegExp(`输入清单（实例 ${n}）：([^\\n]+)`));
@@ -2965,21 +2994,24 @@ const hasRerunStamp = (row) => /重评|重跑|rerun/i.test(Object.values(row).jo
 - **对应测试**：同上（待 plan Task N）。
 - **不覆盖**：打乱是否真随机（机器不可判，留 §5 人工项）。
 
-### S6-TC-K06 置信度：4 条记录且零回归 → 按 `rating.mjs` 标 `high`
+### S6-TC-K06 置信度：4 条记录且零回归 → 按 `rating.mjs` 标 `high`（**不在本期**）
 
 - **覆盖**：**V-13** / `spec:256` 置信度 / `tools/execution-matrix/rating.mjs`
 - **来源**：spec 推导（`spec:256`：**4 条记录（2 席 × 2 实例）全部零回归 → `high`；出现回归 → `mid`**；阈值来自 `rating.mjs:2-7`「records ≥ 3 && zero === records → high」——议会 #3 F17 纠正了旧口径「≥5 才 high」）
 - **前置**：K05 绿（实例记录可取）。
-- **步骤**：① **先把 `ab-score.md` 的 16 行（2 卡 × 2 实例 × 8 维）折叠成 4 条记录**（每条记录 = 某卡某实例的 8 维，`abRecords()`），记录数 n = 4；② 逐记录判「零回归」：该记录 8 维**两侧均为数字**且 `B ≥ A` → 计 1 条；**任一维含 `pending`（非数字）→ 该记录不算零回归**（`zeroRecords()`）；③ 直接调用 `rating.mjs` 的 `rateFromRecords({ records: n, zero })` 取档位（**不复制阈值**，否则阈值一改本用例静默漂移；**分母统一为记录数 n，不得混用 16 行 / 4 条两个分母**）；④ 断言交付说明写出的档位与该现算值一致（**不硬编码 `2*2`**）；⑤ 含非数字维时额外断言档位 **≠ `high`**。
+- **步骤**：① **先把** `ab-score.md` **最后一轮**的评分行（**行数 = `abSections()` 的小节数 × 8，由 helpers 现算、不写死**）折叠成 4 条记录（每条记录 = 某卡某实例的 8 维，`abRecords()`），记录数 n = 4；② 逐记录判「零回归」：该记录 8 维**两侧均为数字**且 `B ≥ A` → 计 1 条；**任一维含 `pending`（非数字）→ 该记录不算零回归**（`zeroRecords()`）；③ 直接调用 `rating.mjs` 的 `rateFromRecords({ records: n, zero })` 取档位（**不复制阈值**，否则阈值一改本用例静默漂移；**分母统一为记录数 n，不得混用「评分行数 / 4 条」两个分母**）；④ 断言交付说明写出的档位与该现算值一致（**不硬编码 `2*2`**）；⑤ 含非数字维时额外断言档位 **≠ `high`**。
 - **预期**：n=4 且 4 条零回归 → `high`；有回归 → `mid`；n=0 → `low`；含 `pending` 的记录不计零回归 → 档位不得为 `high`；交付说明与现算一致。
 - **判据**：
   ```js
-  // ① 记录 = 4 条（每条 = 某卡某实例的 8 维）；16 行不得直接当记录，4 也不得直接当 16 行的分母
+  // ① 记录 = 4 条（每条 = 某卡某实例的 8 维）；评分行（= abSections() 小节数 × 8，现算）不得直接当记录，
+  //    4 也不得直接当「评分行数」的分母
   const records = abRecords();
   const n = records.length;
+  const scoreRows = abSections().reduce((k, s) => k + s.rows.length, 0);
+  assert.equal(scoreRows, abSections().length * 8, `每条记录必须恰 8 行评分（实得 ${scoreRows} 行 / ${abSections().length} 节）`);
   assert.equal(n, 4, '应有 4 条记录（2 卡 × 2 实例），每条记录 = 该实例的 8 维');
   assert.equal(records.every((r) => r.cells.length === 8), true,
-    '每条记录必须折叠成 8 维（把 16 行当记录或每条只装 1 维都算折叠错误）');
+    '每条记录必须折叠成 8 维（把评分行当记录或每条只装 1 维都算折叠错误）');
   // ② 零回归 = 记录级判定：pending（非数字）→ 该记录不算零回归
   const zero = zeroRecords(records);
   const anyNonNumeric = records.some((r) => r.cells.some((c) => !isNumericScore(c.a) || !isNumericScore(c.b)));
@@ -3005,7 +3037,7 @@ const hasRerunStamp = (row) => /重评|重跑|rerun/i.test(Object.values(row).jo
 - **对应测试**：同上（待 plan Task N）。
 - **不覆盖**：阈值本身是否合理（复用既有 `rating.mjs` 口径，不在本轮讨论）。
 
-### S6-TC-K07 分歧仲裁（AI 判；机器只核「分歧被记录 + 终值合法 + 证据可回指」）
+### S6-TC-K07 分歧仲裁（AI 判；机器只核「分歧被记录 + 终值合法 + 证据可回指」）（**不在本期**）
 
 - **覆盖**：**V-13** 双实例一致性 / §9.2「改分纪律」前置
 - **来源**：spec 推导（§8 V-13「两份各 2 个独立实例」）+ 实现观察（补充：spec **未写**两份结果不一致时的仲裁规则 → §10.4 第 4 条；本条给出最小可执行口径：第三人复评 + 未收敛记 `pending`）
@@ -3014,6 +3046,8 @@ const hasRerunStamp = (row) => /重评|重跑|rerun/i.test(Object.values(row).jo
 - **预期**：分歧必被记录；终值 ∈ `{0,1,2,pending}`。
 - **判据**：
   ```js
+  // 前置：必须先解析出 4 个评分小节，否则下面的 `for` 循环是**空过**（恒真）——分数解析器失效时本用例不得静默判绿
+  assert.equal(abSections().length, 4, 'K07：须先解析出 4 个评分小节，否则后面的循环是空过');
   for (const c of ['卡 1','卡 2']) for (const dim of DIMS) {
     const a = scoresOf(c, dim, 'A');                        // A 侧两个实例的原始分
     const b = scoresOf(c, dim, 'B');                        // B 侧两个实例的原始分
@@ -3029,7 +3063,7 @@ const hasRerunStamp = (row) => /重评|重跑|rerun/i.test(Object.values(row).jo
 - **不覆盖**：仲裁人的判断对不对（语义，归议会测试席 / 用户）；分歧阈值 1 分是否合适（spec 未定，§10.4 第 4 条）。
 - **⚠️ 判据性质声明**：**本条的评分与仲裁是 AI 判**——机器只核「分歧是否被记录 + 终值合法 + 证据行可回指」。**不得**把「某维分数 = X」写成机器断言（那会把 AI 判伪装成机器判，必然恒真）。
 
-### S6-TC-K08 改分纪律：rubric 冻结后改分必须记 P2 + 全量重跑
+### S6-TC-K08 改分纪律：rubric 冻结后改分必须记 P2 + 全量重跑（**不在本期**）
 
 - **覆盖**：**V-13** / §9.2「改分纪律」
 - **来源**：spec 推导（「`rubric.md` 冻结后任何人不得改分；发现 rubric 有缺陷 → 记 P2，**重跑全部打分**，不许只改一处」）

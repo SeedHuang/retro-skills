@@ -16,7 +16,7 @@
 
 - **不 commit**：每个任务停在「测试绿 + 未提交」，由用户 commit。
 - **不改权限语义**：谁挂哪档、能跑哪些命令、能写哪些文件一条不变（V-1 集合 diff 空差）。
-- **不以字节相等为验收**：通过判据 = V-1 + V-13；字节只作定位线索。
+- **不以字节相等为验收**：通过判据 = **V-1～V-12**（`V-13` 自用户 2026-10-29 裁定起**不在本期**，见 `docs/after/20261029100942-s6-v13-ab-eval-rebuild-open-decisions.md`）；字节只作定位线索。
 - **spec / testcase 不再改**：实现中若发现 spec 缺定义 → 停手回流 spec（R4 禁止 plan 新增设计）。
 - **导出名以已签 testcase 为准**（v1 的 P0 错误）：`CAP.capabilities`（**小写**，`import * as CAP`）、`CMD.commandGroups` / `CMD.forbiddenGroups` / `CMD.seatGroups`（testcase 写 `CMD.*`）、`PTH.pathGroups` / `PTH.FORBIDDEN_SPEC_PLAN` / `PTH.DETECTION_BLIND_SPOTS`、`ART.artifacts`、`SEATS.SEATS` / `SEATS.SEAT_NAMES`、`TIERS`。`pathItems()` / `pathTokens()` 是**测试侧派生**（testcase §0.3），不是 `PTH` 导出。
 - **`CLAUSES` 是数组、元素是 5 字段对象** `{k, why, scope, seat?, re}`（testcase 原文）：`scope:'seg5'` 判 ⑤ 段切片、`scope:'card'` 判整卡；`assertNeedClauses()` **成功时返回 `seg`（失败即抛）**，要取「缺哪几条」用 `missingClauses()`。
@@ -95,7 +95,7 @@
 **Interfaces:**
 - Produces: `factsFromBaselineText(text)`、`factsFromText(text, dict)`、`factsFromDump(json, seat, dict)`、`diffFacts(before, after)`、`verdict({minus,plus})`、`baseJson()`、`cardBoundary(text)`（卡内边界节，供黄金键用）、`emit(args)`（CLI 出口）
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```js
 import test from 'node:test';
@@ -119,21 +119,21 @@ test('恒真守卫：同输入判 pass，少一项判 fail', () => {
 });
 ```
 
-- [ ] **Step 2: 跑失败**
+- [x] **Step 2: 跑失败**
 
 Run: `node --test tools/docgen/test/support/capability-baseline.test.mjs`
 Expected: FAIL（模块不存在）
 
-- [ ] **Step 3: 实现两入口（不得 import `policy/`）**
+- [x] **Step 3: 实现两入口（不得 import `policy/`）**
 
 算法不在此重写：**逐字搬 testcase §0.4 的 `factsFromBaselineText` / `factsFromText` / `factsFromDump` / `diffFacts` 实现**（8 字段切分正则、成员存在性匹配、集合 diff），再补一个 `cardBoundary(text)`（取卡内边界节，供黄金键用；testcase §0.3 同名 helper 可直接从本模块 import）。
 
-- [ ] **Step 4: 跑通过**
+- [x] **Step 4: 跑通过**
 
 Run: `node --test tools/docgen/test/support/capability-baseline.test.mjs`
 Expected: PASS（2 tests）
 
-- [ ] **Step 5: 生成基线三件（可执行命令，替换 v1 的伪代码）**
+- [x] **Step 5: 生成基线三件（可执行命令，替换 v1 的伪代码）**
 
 ```powershell
 # 1) 取改造前 commit（PowerShell 5 用 Set-Content，避免 UTF-16 写出）
@@ -148,7 +148,7 @@ node --input-type=module -e "import {readFileSync,writeFileSync} from 'node:fs';
 ```
 Expected: 两个 fixture 生成；第二个打印 `golden keys 8`。
 
-- [ ] **Step 6: 记回滚锚（写进 T10 的 checklist「交付说明」节）**
+- [x] **Step 6: 记回滚锚（写进 T10 的 checklist「交付说明」节）**
 
 5 条复原命令（本任务只记录，T10 回填）：`git show <rev>:tools/docgen/components/patternRegistry.mjs` / `agents/reviewer-audit.md` / `agents/detective-observer.md` / `tools/docgen/state.json` / `tools/docgen/fixtures/<席>.evidence.json`。
 
@@ -165,7 +165,7 @@ Expected: 两个 fixture 生成；第二个打印 `golden keys 8`。
 **Interfaces:**
 - Produces: `capabilities`（小写）、`TIERS` + `tierOfCapabilities(caps)`、`commandGroups` / `forbiddenGroups` / `seatGroups`、`pathGroups` / `FORBIDDEN_SPEC_PLAN` / `DETECTION_BLIND_SPOTS`、`artifacts`、`SEATS` / `SEAT_NAMES`
 
-- [ ] **Step 1: 写失败测试**（A02–A05、A07、A08；`A01` 因要断言 `patternRegistry.tools === TIERS` 移到 T5）
+- [x] **Step 1: 写失败测试**（A02–A05、A07、A08；`A01` 因要断言 `patternRegistry.tools === TIERS` 移到 T5）
 
 ```js
 import * as CAP from '../policy/definitions/capabilities.mjs';
@@ -185,9 +185,9 @@ test('A04 路径：21 个数组元素 + 1 pattern = 22 点名；卡面 23', () =
 });
 ```
 
-- [ ] **Step 2: 跑失败** — `node --test tools/docgen/test/policy-pure-source.test.mjs` → FAIL
+- [x] **Step 2: 跑失败** — `node --test tools/docgen/test/policy-pure-source.test.mjs` → FAIL
 
-- [ ] **Step 3: 落定义层（值逐字取自现卡 / testcase §0.2）**
+- [x] **Step 3: 落定义层（值逐字取自现卡 / testcase §0.2）**
 
 ```js
 // capabilities.mjs —— 导出名小写（与 testcase 的 `import * as CAP` 一致）
@@ -205,7 +205,7 @@ export function tierOfCapabilities(caps) {
 }
 ```
 
-- [ ] **Step 4: 跑通过** — 同命令 → PASS（6 tests）
+- [x] **Step 4: 跑通过** — 同命令 → PASS（6 tests）
 
 ---
 
@@ -213,7 +213,7 @@ export function tierOfCapabilities(caps) {
 
 **Files:** Create `tools/docgen/policy/seat-policy.mjs`；Test `B01` `B02` `B11` `B12` `B13`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```js
 test('B01 三席 + __default__；capabilities 展开 ≡ TIERS[tier]', () => {
@@ -227,7 +227,7 @@ test('B12 未登记席 / 原型链键回落 __default__', () => {
 });
 ```
 
-- [ ] **Step 2: 跑失败 → Step 3: 落配置**
+- [x] **Step 2: 跑失败 → Step 3: 落配置**
 
 ```js
 export const SEAT_POLICY = {
@@ -238,7 +238,7 @@ export const SEAT_POLICY = {
 };
 ```
 
-- [ ] **Step 4: 跑通过**（5 tests；每一步红/绿分别跑，不合并）
+- [x] **Step 4: 跑通过**（5 tests；每一步红/绿分别跑，不合并）
 
 ---
 
@@ -248,7 +248,7 @@ export const SEAT_POLICY = {
 
 **Interfaces:** `renderBoundary(seat) → string`；`validatePolicy() → void`；`SLOTS`（12 个，顺序 = spec §3.4 表行序）
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```js
 test('A06 卡面切片顺序 = 定义层组内顺序（按出现位置单调，不切片重排）', () => {
@@ -295,7 +295,7 @@ test('C08 分隔符：组间 、/；、组内 ` / `；DENY 剔除 env.assign', (
 });
 ```
 
-- [ ] **Step 2: 跑失败 → 写模板（五段；⑨⑩ 两句职责经 `{{SEAT_CLAUSE}}` 承接；⑤ 段含 `round-check.md` 实例）**
+- [x] **Step 2: 跑失败 → 写模板（五段；⑨⑩ 两句职责经 `{{SEAT_CLAUSE}}` 承接；⑤ 段含 `round-check.md` 实例）**
 
 ```
 ① 档位事实：你是{{SEAT}}席，档位 {{TIER}}，可使用 {{CAPABILITIES}}。
@@ -307,7 +307,7 @@ test('C08 分隔符：组间 、/；、组内 ` / `；DENY 剔除 env.assign', (
 ```
 `seats.mjs` 的 `clause` 必须显式承接：审计「、审计表；你在 `round-check.md` 核转录逐字一致」/ 侦探「（轮初 / 轮末快照原文、观察记录、比对结论），且本席不核签」。
 
-- [ ] **Step 3: 实现渲染器（单趟替换）**
+- [x] **Step 3: 实现渲染器（单趟替换）**
 
 ```js
 export function renderBoundary(seat) {
@@ -319,7 +319,7 @@ export function renderBoundary(seat) {
 }
 ```
 
-- [ ] **Step 4: 实现 validatePolicy（五码唯一发射点，归码优先级：形态 → 存在性 → 禁止）**
+- [x] **Step 4: 实现 validatePolicy（五码唯一发射点，归码优先级：形态 → 存在性 → 禁止）**
 
 ```js
 export function validatePolicy() {
@@ -328,14 +328,14 @@ export function validatePolicy() {
 }
 ```
 
-- [ ] **Step 5: 跑通过 + 写黄金 4 键（用**改造前**文本）**
+- [x] **Step 5: 跑通过 + 写黄金 4 键（用**改造前**文本）**
 
 ```powershell
 node --input-type=module -e "import {execFileSync} from 'node:child_process';import {createHash} from 'node:crypto';import {writeFileSync,readFileSync} from 'node:fs';import {cardBoundary} from './tools/docgen/test/support/capability-baseline.mjs';const rev=readFileSync('.session/tmp/s6-source-commit.txt','utf8').trim();const sha=s=>createHash('sha256').update(s).digest('hex');const card=s=>execFileSync('git',['show',rev+':agents/'+s+'.md'],{encoding:'utf8'});const {DEFAULT_BOUNDARY}=await import('./tools/docgen/components/patternRegistry.mjs');const {agentData}=await import('./tools/docgen/components/agentData.mjs');const er=agentData.find(a=>a.name==='evidence-reader');const g={'reviewer-audit':sha(cardBoundary(card('reviewer-audit')).trim()),'detective-observer':sha(cardBoundary(card('detective-observer')).trim()),'default-boundary':sha(DEFAULT_BOUNDARY.trim()),'evidence-reader-boundary':sha(String(er.boundary).trim())};writeFileSync('tools/docgen/fixtures/boundary-golden.json',JSON.stringify(g,null,2)+'\n');console.log('golden keys',Object.keys(g).length)"
 ```
 Expected: `golden keys 4`。**口径**：两席取 `cardBoundary(git show <rev>:…).trim()` 的 sha（testcase §0.3 同名 helper），不是整卡哈希；`default-boundary` / `evidence-reader-boundary` 同样 `.trim()`。
 
-- [ ] **Step 6: checkpoint（不绿不得往下）**
+- [x] **Step 6: checkpoint（不绿不得往下）**
 
 Run: `node tools/docgen/cli.mjs gate` → `baseline 37/37`；`npm run check` → `# fail 0`
 Expected: 双绿（此时尚未接卡，卡面未变）。
@@ -354,7 +354,7 @@ Expected: 双绿（此时尚未接卡，卡面未变）。
 
 **Interfaces:** Consumes `renderBoundary`、`TIERS`、`SEAT_POLICY`；Produces `patternRegistry.boundaryBySeat`（渲染结果）、`tierBySeat`（派生）、无 `BOUNDARY_COMMAND`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```js
 test('A01 不变量 9：patternRegistry.tools === TIERS（同引用，不深拷贝）', () => {
@@ -373,7 +373,7 @@ test('D06 gate 侧接线：配置非法 → exit 1 且不是 Mismatch', () => {
 });
 ```
 
-- [ ] **Step 2: 改 `patternRegistry`（含 `tools: TIERS` 同引用）**
+- [x] **Step 2: 改 `patternRegistry`（含 `tools: TIERS` 同引用）**
 
 ```js
 import { TIERS, tierOfCapabilities } from '../policy/definitions/tiers.mjs';
@@ -390,19 +390,19 @@ export const tierBySeat = Object.fromEntries(
 ```
 `patternRegistry.tools` 指向 `TIERS`（同一对象；删三常量与 `BOUNDARY_COMMAND` 导出）。
 
-- [ ] **Step 3: 同批改 `tool-tiers.test.mjs`（三处手抄 → 定义层派生）**
+- [x] **Step 3: 同批改 `tool-tiers.test.mjs`（三处手抄 → 定义层派生）**
 
 ```js
 import { pathGroups } from '../policy/definitions/paths.mjs';
 const FORBIDDEN_PATHS = Object.values(pathGroups).flat();
 ```
 
-- [ ] **Step 4: 跑测试 + 看 gate 红在哪（预期 Mismatch，因卡面未重出）**
+- [x] **Step 4: 跑测试 + 看 gate 红在哪（预期 Mismatch，因卡面未重出）**
 
 Run: `node --test tools/docgen/test/tool-tiers.test.mjs`；`node tools/docgen/cli.mjs gate`
 Expected: 前者绿；`gate` → `Mismatch: agents/reviewer-audit.md`（**这是预期的**，下一步重出）。
 
-- [ ] **Step 4a: 重出两卡（v1 漏掉的 P0 步骤，必须走 CLI）**
+- [x] **Step 4a: 重出两卡（v1 漏掉的 P0 步骤，必须走 CLI）**
 
 ```powershell
 # 1) 生成草稿（打印草稿路径）
@@ -427,12 +427,12 @@ Expected: 两席 `已替换`；副作用：`tools/docgen/state.json` 与 `tools/
 **前置**：两席 `B3` 注解为 `pass`（`rules/.inspector-annotations.json:9` / `:139`），且施工前由独立实例对新渲染复核过 B3；否则 `replace` 报 `UnapprovedChange` → 停手报用户（B3 重判不属本 plan）。
 **验收**：读两席 `fixtures/<席>.evidence.json` 末条 `changes`：`rejudged = ["B3"]`、`judgeMode = "subagent"`、`judgedBy` 非空且 ≠ 施工者标识。
 
-- [ ] **Step 5: gate 复跑**
+- [x] **Step 5: gate 复跑**
 
 Run: `node tools/docgen/cli.mjs gate`
 Expected: `baseline 37/37`。
 
-- [ ] **Step 6: 跑 D/E/G 组测试**
+- [x] **Step 6: 跑 D/E/G 组测试**
 
 Run: `node --test tools/docgen/test/policy-pure-source.test.mjs`
 Expected: D 6 / E 7 / G 5 绿（G01 只要求「差异可追」，不是零差异）。
@@ -445,7 +445,7 @@ Expected: D 6 / E 7 / G 5 绿（G01 只要求「差异可追」，不是零差�
 
 **Interfaces:** stdout `{capabilities,tiers,commands,seatGroups,paths:{groups,patterns},detectionBlindSpots,artifacts,seats:{席:{display,expanded[12]}}}`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```js
 test('F01 顶层键齐；expanded 恰 12 项；commands = 允许 3 ∪ 禁止 5 ∪ seatGroups', () => {
@@ -486,7 +486,7 @@ test('F06 dump 与 renderBoundary 同源：改定义一处两者同变', () => {
 });
 ```
 
-- [ ] **Step 2: 跑失败 → Step 3: 实现子命令 + `gateChecks` 首行调用**
+- [x] **Step 2: 跑失败 → Step 3: 实现子命令 + `gateChecks` 首行调用**
 
 ```js
 // cli.mjs：在 gateChecks() 首行插入一行（其余原实现不动）
@@ -503,7 +503,7 @@ if (sub === 'policy') {
 }
 ```
 
-- [ ] **Step 4: 跑通过**（7 tests）
+- [x] **Step 4: 跑通过**（7 tests）
 
 ---
 
@@ -511,7 +511,7 @@ if (sub === 'policy') {
 
 **Files:** Modify 新测试文件；Test `I01`–`I03` `J01`–`J03`（6 条）
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```js
 test('I01 允许集逐项「用不被拦」（14 命令 / 可写产物 / 6 工具，按 capability 选席）', () => {
@@ -548,18 +548,18 @@ test('J01 ⑤ 段 8 条子句 + 卡级 2 条职责句', () => {
 });
 ```
 
-- [ ] **Step 2–4: 跑失败 → 补实现缺口（探针按 capability 选席）→ 跑通过（6 tests）**
+- [x] **Step 2–4: 跑失败 → 补实现缺口（探针按 capability 选席）→ 跑通过（6 tests）**
 
 ---
 
 ### Task 8: S5 指针与 PRD 口径（步骤 7 / 7b）—— **本批已完成**
 
-- [ ] **Step 1: 复核（不重复改）**
+- [x] **Step 1: 复核（不重复改）**
 
 Run: `Select-String -Path docs/superpowers/specs/2026-10-25-s5-tool-tiers-design.md -Pattern '已迁移（S6|判据已由 S6 接管'`
 Expected: 2 处（L119 / L239 附近）。
 
-- [ ] **Step 2: 复核 S5 testcase 三条已改判（已在本批完成，不重改）**
+- [x] **Step 2: 复核 S5 testcase 三条已改判（已在本批完成，不重改）**
 
 Run: `Select-String -Path docs/superpowers/specs/2026-10-25-s5-tool-tiers-design-testcase.md -Pattern 'renderBoundary|DEFAULT_BOUNDARY' | Measure-Object`
 Expected: 命中 ≥ 3（`E05` / `B08` / `B14` 三处均含新判据）；`grep 'assert.*BOUNDARY_COMMAND'` = 0。
@@ -570,7 +570,7 @@ Expected: 命中 ≥ 3（`E05` / `B08` / `B14` 三处均含新判据）；`grep 
 
 **Files:** Modify 新测试文件；Test `A09` `H01`–`H07`（8 条）
 
-- [ ] **Step 1: A09（CRLF/BOM）两副本 + H03–H05（少项必红 / 多项必红）**
+- [x] **Step 1: A09（CRLF/BOM）两副本 + H03–H05（少项必红 / 多项必红）**
 
 ```js
 test('A09 卡面 CRLF / BOM → gate 报 Mismatch（不静默归一化）', () => {
@@ -614,7 +614,7 @@ test('H06 V-2 降级判定表：结论只由 diff 决定（哈希不参与）', 
 });
 ```
 
-- [ ] **Step 2: H02 空差（改造后取渲染文本）**
+- [x] **Step 2: H02 空差（改造后取渲染文本）**
 
 ```js
 test('H02 两席 ①–④ 段集合 diff 空差（改造后 = 渲染文本）', () => {
@@ -623,7 +623,7 @@ test('H02 两席 ①–④ 段集合 diff 空差（改造后 = 渲染文本）',
 });
 ```
 
-- [ ] **Step 3: H01 / H07 完整复核（v1 的 PG-07 处置：放这里，不放 T1）**
+- [x] **Step 3: H01 / H07 完整复核（v1 的 PG-07 处置：放这里，不放 T1）**
 
 ```js
 test('H01 基线可复算：sourceCommit 上无 policy/、抽取器不 import policy、可重现', () => {
@@ -644,18 +644,20 @@ test('H07 恒真守卫：两条作弊路径都能被 H01 的断言抓到', () =>
 });
 ```
 
-- [ ] **Step 4: 全量**
+- [x] **Step 4: 全量**
 
 Run: `node tools/docgen/cli.mjs gate`；`npm run check`；`node scripts/scope-sweep.mjs --check`
 Expected: `baseline 37/37`、`# fail 0`、`sweep ok`。
 
 ---
 
-### Task 10: A/B 盲评 + 四本账单（步骤 9 / 10）
+### Task 10: A/B 盲评 + 四本账单（步骤 9 / 10）—— **`V-13` 不在本期（用户 2026-10-29 裁定）**
+
+> **状态注（2026-10-29）**：本 Task 的 **K 组 8 条与 V-13 已不在本期**，转独立课题 `docs/after/20261029100942-s6-v13-ab-eval-rebuild-open-decisions.md`。四本账单已按 ④ 段审计清单做过格式返工并保留为历史快照，**不再作验收依据**。本 Task 的步骤保留原文，供下期课题参考。
 
 **Files:** Create `.session/reviews/<YYYY-MM-DD-HHMM>-s6-eval/{rubric,capability-diff,ab-score,checklist}.md` + `mapping.sealed.md`；Test `K01`–`K08`
 
-- [ ] **Step 1: 建四本账单（列名照 spec §9.2 逐字；rubric 8 维等权、不设权重列）**
+- [x] **Step 1: 建四本账单（列名照 spec §9.2 逐字；rubric 8 维等权、不设权重列）**
 
 ```markdown
 | 维度 | A 分 | B 分 | 差 | A 证据行 | B 证据行 |
@@ -663,11 +665,11 @@ Expected: `baseline 37/37`、`# fail 0`、`sweep ok`。
 | P1 | | | | | |
 ```
 
-- [ ] **Step 2: 取 A/B 两组卡（A = `git show <sourceCommit>:agents/<席>.md`；B = 改造后渲染）**，并写 `mapping.sealed.md`（`.session/...`，不进 git）。
+- [x] **Step 2: 取 A/B 两组卡（A = `git show <sourceCommit>:agents/<席>.md`；B = 改造后渲染）**，并写 `mapping.sealed.md`（`.session/...`，不进 git）。
 
-- [ ] **Step 3: 派 4 个盲评实例（2 席 × 2 实例；输入只有两张卡，禁读 `mapping.sealed.md`）**，回收 16 行 → 折叠 4 条记录。
+- [x] **Step 3: 派 4 个盲评实例（2 席 × 2 实例；输入只有两张卡，禁读 `mapping.sealed.md`）**，回收 16 行 → 折叠 4 条记录。
 
-- [ ] **Step 4: 判据（逐维 B ≥ A 且至少一维 B > A；pending 存在即不通过；总分不作判据）＋置信度现算**
+- [x] **Step 4: 判据（逐维 B ≥ A 且至少一维 B > A；pending 存在即不通过；总分不作判据）＋置信度现算**
 
 ```js
 // H06 ⑤：账单不得把哈希当通过判据
@@ -680,7 +682,7 @@ const zero = zeroRecords(records);           // 任一维非数字 → 该记录
 console.log(rateFromRecords({ records: records.length, zero }).level);  // 4 零回归 → high
 ```
 
-- [ ] **Step 5: 账单归档**：评估期留 `.session/`；收口后整目录迁 `docs/superpowers/reviews/<同名>/`（进 git）。
+- [x] **Step 5: 账单归档**：评估期留 `.session/`；收口后整目录迁 `docs/superpowers/reviews/<同名>/`（进 git）。
 
 ---
 

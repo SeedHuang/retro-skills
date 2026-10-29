@@ -1,12 +1,14 @@
 # S6 能力差异账单（capability-diff）
 
+> **状态注（2026-10-29）**：本账为 **V-13 历史快照，不作验收依据**（用户 2026-10-29 裁定 V-13 不在本期，S6 本体验收 = V-1～V-12）。重启该课题见 `docs/after/20261029100942-s6-v13-ab-eval-rebuild-open-decisions.md`。
+
 > 生命期：评估期留 `.session/reviews/<本次>/`（本文件）；收口后整目录迁 `docs/superpowers/reviews/<同名>/`（plan T10 Step 5）。
 > 判据：V-1（①–④ 段集合 diff **空差**）；**哈希不是通过判据**，只作定位线索（V-2）。
 > 取数命令：见 `checklist.md`「取数命令原文」；基线 = `fixtures/capability-baseline.json`（`sourceCommit = a7749b27…`，该 commit 无 `policy/`）。
 
 ## 一、逐段能力矩阵（V-1）
 
-| 段 | 项 | 改造前（基线） | 改造后（渲染） | 差 | 取数命令 |
+| 段 | 项 | 改造前 | 改造后 | 差 | 取数命令 |
 |---|---|---|---|---|---|
 | ① 档位事实 | tools 集合 = `Read,Glob,Grep,Write,Edit,RunCommand`（6） | 6 | 6 | `=` | `factsFromText(...).tools.length` |
 | ① 档位事实 | 档位名 = `producer` | `producer` | `producer` | `=` | `.tier` |
