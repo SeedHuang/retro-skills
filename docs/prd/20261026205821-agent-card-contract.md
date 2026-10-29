@@ -199,7 +199,7 @@
 | `evidence` | `evidenceRequired: true` |
 | `audit` | `{sample:'每轮每条 ai 条目 ≥1 条', command:'<可跑命令>'}`；**不设比例，只设下限：每轮每条 ≥1** |
 
-`rubric` / `criterion` 命中未定义词表（`policy/criterion-terms.json`，起步 6 词：处置 / 依据 / 充分 / 合理 / 及时 / 适当）而无 `definitions` → `AmbiguousCriterion`。
+`rubric` / `criterion` 命中未定义词表（`tools/docgen/card-model/vocab/criterion-terms.mjs`，起步 6 词：处置 / 依据 / 充分 / 合理 / 及时 / 适当）而无 `definitions` → `AmbiguousCriterion`。
 `check:'ai'` 条目**双实例独立判**：两份 verdict 不一致 → 不取多数、不许任一方改判，落一条 `DisagreementOpen` 到 `open`，并把该条目打回改口径。
 
 ### 3.5 三态、`subject` 与完备性 `[已决·代裁 C-01 / C-06]`
@@ -236,7 +236,7 @@
 | 本席清单 | `CHECK_ITEMS`（类别 + 条目表） | 类别 label + 条目 id + `criterion` 文字 + `check` 类型 |
 | 边界 | 权限物料 | 只写 / 禁写两类清单 |
 
-> **单源**：本表的字段清单与 §9.2 P-B 的扫描判据同源于 `tools/docgen/policy/card-must-fields.json`（S4 建）——两处不得各写一份，改字段只改该文件与本节行数。
+> **单源**：本表的字段清单与 §9.2 P-B 的扫描判据同源于 `tools/docgen/card-model/vocab/card-must-fields.mjs`（S4 建）——两处不得各写一份，改字段只改该文件与本节行数。
 
 **数据源落点** `[已决·代裁 C-11]`：15 席的数据在 `tools/docgen/components/agentData.mjs`（+ `triggerTable`）；`agents/*.md` 是**生成物**。手改 `agents/*.md` 会在下次重生成时被静默覆盖——S4 落地前允许过渡期手改（截止 = S4 首次重生成）；S4 落地后手改由 `node tools/docgen/cli.mjs gate` 报红。
 
@@ -267,11 +267,11 @@
 
 | 码 | 判据 |
 |---|---|
-| `SubjectiveLabel` | label 命中 `tools/docgen/policy/subjective-terms.json`（起步词：自省 / 客观 / 诚实 / 宽松 / 严格） |
+| `SubjectiveLabel` | label 命中 `tools/docgen/card-model/vocab/subjective-terms.mjs`（起步词：自省 / 客观 / 诚实 / 宽松 / 严格） |
 | `MissingSubject` | 条目无 `subject`，或 label 不是「subject + 谓词」派生 |
 | `DuplicateCheckItem` | 同一 `subject + criterion` 出现两次 |
 | `CrossSubjectSharedItem` | 同一 checkItem id 被两个不同 `subject` 引用（即「主语不同不许共用」） |
-| `InlineTermList` | `criterion` 文本内出现枚举词表（≥3 个同类词并列），未放进 `policy/*.json` 数组物料 |
+| `InlineTermList` | `criterion` 文本内出现枚举词表（≥3 个同类词并列），未放进 `tools/docgen/card-model/vocab/*.mjs` 数组物料 |
 | `InlineThreshold` | `criterion` 文本内出现数字阈值（K / 次数 / 字数），未放进 `params` |
 | `UnreadableExpression` | 表达式不是 JSON Logic（含 `&&`、`||` 或自由文本） |
 | `NestingTooDeep` | 表达式 AST 深度 > 1 |
