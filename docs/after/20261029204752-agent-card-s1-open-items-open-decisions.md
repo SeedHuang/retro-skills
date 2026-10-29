@@ -17,6 +17,7 @@
 | O-6 | `S1-G-19` `validateOpenItems` 的 `cards` 完全不传 | 已签 testcase H05 ③/④ 即**以两参形态**调用并断绿，故缺参不报码 | 下次修订 spec §6 `:139` / 该 testcase 时 |
 | O-7 | `S1-G-22` `compareVerdicts` 的 `FreeTextEnum` 条数 | 本实现按 `errors[].path` 去重 → 同一 `id` 至多 1 条；口径仍待 spec 写死（「至多 1 条」或「两处各判一半」） | 下次修订 §8 `:241` 时 |
 | O-8 | `S1-G-4` 的 `scenes[].label` 归码 | spec 只给 `why` 配了码（`:171`），局部 scene 缺 `label` 无码可报 | 下次修订 spec §4 `:83` / §7 时 |
+| O-19 | `mergeActions` 的「零差异」字段面（spec §7 `:206` 只写「覆盖后零差异」，未说是哪几个字段） | 代码审查（2026-10-29）把实现改为「除 `id` / `reason` 外**全部**字段」比较（`tools/docgen/card-model/merge.mjs:18-23`）：`params` / `expr` 差异不再被判零差异（收紧），但「只改契约外字段」的覆盖也因此不再报 `PointlessOverride`（放宽）——**口径未落在 spec 上** | 下次修订 spec §7 `:206` 时写死「零差异比较字段面 = 除 `id` / `reason` 外全部字段」，或另立封闭字段表 |
 
 ## 2 本段接受 / 不回流的残余（登记，不新增动作）
 

@@ -1,6 +1,6 @@
 # agent-card S1 定义层（卡面内容模型 + 校验器，F-01～F-08）实施计划
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 >
 > 状态：**已过计划门（`②→③@S1` 通过，2026-10-29）、待开工 ③**——签行原文在 `gate-record.md` 的 `②→③@S1` 行（本文不复抄，防两处维护漂移）。
 > **单块**：本功能块**不再拆**——spec 301 行 ≤ 350、testcase 58 条 ≤ 80、议会 #2 已跑满 **3 轮**（`.session/reviews/2026-10-29-1501-agent-card-s1-parliament/round-check.md`）；再拆须按 `skills/dev-workflow/references/stage-2-tech-design.md:43` 对第二块重送议会 #2 并占 R6 名额，用户 2026-10-29 已确认「**plan 单块不再拆**」。
@@ -202,33 +202,33 @@ index.mjs            8 张表 + SUBJECTS / SUBJECT_VALIDATORS + 四入口 + CARD
 - Consumes: 无（判据全在 spec §5 `:115-133`、§7 `:168-190`、§4.2 `:101-112`）
 - Produces: 8 张冻结表 + `ID_NAME_RE` + 文本扫描常量 + 两个词表数组 + `resolveLanding()` + `SEAT_SCENES` / `SEAT_SIGNALS`（空集）+ 场景/信号对账 helper（供 Task 5 / 6 调用）+ `index.mjs` 的可增长 barrel（供 Task 2–7 追加导出）
 
-- [ ] **Step 1: `enums.mjs` 的 8 张表逐项写死**
+- [x] **Step 1: `enums.mjs` 的 8 张表逐项写死**
 
 按 spec §5 `:117-126` 逐项（值一字不差）：`SHARED_SCENES` 8（`session` / `parliament.round` / `issue.card` / `defense` / `deliverable` / `command` / `handoff` / `criterion`）、`MOMENTS` 8、`REPEATS` 4、`SIGNALS` 5、`VERDICTS` 3、`CHECK_KINDS` 3、`SCOPES` 5、`LANDING_VARS` 2（`review.dir` / `round.no`）。带 label 的 3 张表（`SHARED_SCENES` / `MOMENTS` / `SIGNALS`）用 `{ id, label }` 数组形态，其余为 id 字符串数组（A02 按此口径断「只有 id 字面」）。全部 `Object.freeze`；**不得**出现「等 / 其他」这类开放条目（V-1）。
 
-- [ ] **Step 2: `enums.mjs` 的 ID 谓词与文本扫描常量**
+- [x] **Step 2: `enums.mjs` 的 ID 谓词与文本扫描常量**
 
 `ID_NAME_RE = /^[a-z][a-z0-9.:-]*$/`（§5 `:130`，与 S6 spec §3.4 同形，仓内不引 S6 模块）。文本常量按 §7 逐行写死：`VAGUE_TERMS` 5（该内容 / 上述 / 相关 / 前述 / 该项，`:178`）、`HARDCODED_COUNT` 三条式（`共\s*N\s*[条项个]` / `缺一[条项]` / `全部[命中]*`，`:187`；`N` 的字符面 = 半角 + 全角 + 汉字数字）、`POINTER_WORDS` 5（见 / 详见 / 参见 / 参考 / `按 §`，`:188`）、`PROC_WORDS` 5（收卡 / 丢卡 / 压卡 / 点名 / 判结束，`:190`）、`MIXED_PAIR = ['议长','主持人']`（`:189`）。
 
 **`SCAN_FIELDS` 也写在 `enums.mjs`**（8 键 = 8 个文本类码名、值 = 该码要扫的字段引用数组，§4.2 `:101-112`；**不按「扫描面相同」合并成 4 组键**，`:112`）。理由：§3 `:37` 把 `enums.mjs` 定为「文本扫描常量」的**唯一写死处**，且已签 testcase 直接断言 `EN.SCAN_FIELDS`（`testcase:1486-1494`）；写进 `validateCardModel.mjs` 会让 G09 ⑨ 必红。
 
-- [ ] **Step 3: 两个词表物料**
+- [x] **Step 3: 两个词表物料**
 
 `vocab/subjective-terms.mjs` 导出 `subjectiveTerms` 数组 = **自省 / 客观 / 诚实 / 宽松 / 严格**（PRD `:270`，5 词，与 PRD 原文逐字）；`vocab/criterion-terms.mjs` 导出 `criterionTerms` = **处置 / 依据 / 充分 / 合理 / 及时 / 适当**（PRD `:202`，6 词）。**不 import 任何模块**（纯数组物料），`Object.freeze`。
 
-- [ ] **Step 4: `landings.mjs`**
+- [x] **Step 4: `landings.mjs`**
 
 `export { LANDING_VARS } from './enums.mjs'` + `resolveLanding(landing, landings, unboundVars) → { ok, reason? }`：实现 §7 `:180` 三档——① `landing` 缺/空 → 不通过；② 按**最长已登记前缀**匹配（登记集 = `landings` ∪ `LANDING_VARS`，允许 `<登记值>/<子段>` 形态，子段按 `/` 逐段判、任一段 ∈ `unboundVars` 即红）；③ 命中的**登记值本身** ∈ `unboundVars` → 红（`landing = 'review.dir'` 这一形态）。**`resolveLanding` 不发射错误码**（码由 Task 5 的发射点发），只给判定结果。
 
-- [ ] **Step 5: `scenes.mjs` / `signals.mjs` 与两张席局部登记表**
+- [x] **Step 5: `scenes.mjs` / `signals.mjs` 与两张席局部登记表**
 
 `scenes.mjs`：re-export `SHARED_SCENES`；`SEAT_SCENES = Object.freeze({})` —— **它只是默认空集**，已签 testcase 直接断它恒空（`testcase:524`「本轮必须是空集，内容由 S4 填」）；**判定的真实输入是 `env.seatScenes`**（`testcase:1087-1089` 三构造全部经 env 注入）。三个对账 helper 实现 §7 的场景码判据（`DuplicateScene` 两子面 `:168` / `ScenePromotionRequired` `:169` / `UnusedScene` `:170`），入参必须收 `env.seatScenes`。`signals.mjs`：`SIGNALS` re-export；`SEAT_SIGNALS = Object.freeze({})` 同为默认空集（`testcase:525`），**判定输入 = `env.seatSignals`**（`testcase:1059` / `:1071`）；`unknownSignalType()`（`:174`，只认「全局 5 类 ∪ 本席登记」）与 `signalProliferation()`（`:176`，局部 type 被 < 2 个场景引用即红）。**读模块常量而非 `env` 的实现在 E05 / E06 / C01 组 6 上必红**（`testcase:1073` 明写「不读 `env.seatSignals` → 被 `UnknownSignalType` 顶掉」）。
 
-- [ ] **Step 6: `index.mjs` v1（可增长 barrel）**
+- [x] **Step 6: `index.mjs` v1（可增长 barrel）**
 
 v1 只导出：8 张表 + `ID_NAME_RE` + 两个词表数组 + `resolveLanding` + `SUBJECTS` 之外的已建面。**头部注释写死**：最终出口面 = §3 `:48` 的 18 项，T2–T7 逐任务追加；**任何任务不得把 barrel 写成「先空后补占位函数」**。
 
-- [ ] **Step 7: 测试文件 helper（testcase §0.3 逐字）+ A 组 4 条**
+- [x] **Step 7: 测试文件 helper（testcase §0.3 逐字）+ A 组 4 条**
 
 按 `testcase:64-216` 逐字落 §0.3 的 helper（`codes` / `pathsOf` / `green` / `only` / `pickSubject` / `baseEnv` / `ENV_KEYS` / `baseCard` / `run` / `baseDoc` / `runDoc` / `openItem` / `deepFreeze` / `SPEC_LINES` / `specLine` / `UNIT_KEY` / `THRESHOLD_UNITS` / `cutList` / `PROC_WORDS` / `POINTER_WORDS`）——**import 段只列本任务已存在的模块**，T2–T7 逐任务补（末态必须等于 §0.3 的 11 条 card-model import（`M` + 10 个模块；`testcase:73-83` 实测 11 条），Task 7 核对）。`baseEnv()` / `baseCard()` 依赖 `M.SUBJECTS` / `registeredIdsOf`，本任务先以 `SUB.SUBJECTS` 与本任务已建的 8 表构造，`M.` 入口在 Task 2 / Task 4 各自到位后切回（见对应 Task 的 Step）。
 
@@ -239,7 +239,7 @@ v1 只导出：8 张表 + `ID_NAME_RE` + 两个词表数组 + `resolveLanding` +
 | A04 | 8 个 scene label / 8 个 moment label / 5 个 signal label 与 PRD 原文逐字相等（**第三方通道**：读 `PRD:249-259` 切分，`testcase:372` / §4 `:2099`） |
 | A05① | 词表全成员对账：`PRD:270`（5 主观词）/ `PRD:202`（6 判据词）原文切词 `deepEqual` 到 `vocab/*` 两数组（逐条必红半在 Task 6，`testcase:373`） |
 
-- [ ] **Step 8: 跑测试与仓门禁**
+- [x] **Step 8: 跑测试与仓门禁**
 
 ```powershell
 node --test "tools/docgen/test/card-model.test.mjs"; "exit=$LASTEXITCODE"
@@ -262,19 +262,19 @@ Expected：`exit=0`、`# fail 0`、`# pass + # skipped === # tests`；本文件 
 - Consumes: Task 1（8 张表里的 `SCOPES`、`VERDICTS`、`ID_NAME_RE`）
 - Produces: `SUBJECTS`（登记表，**不是第 9 张封闭枚举**，§5 `:131`）+ `SUBJECT_VALIDATORS`（`validator` 投影）+ `verdictAllowed` / `compareVerdicts`（`{ ok, errors }` 形状，spec §6 `:141`）+ `deriveScope()` + `validateOpenItems()`（只判三码）
 
-- [ ] **Step 1: `subjects.mjs` 登记表与三入口**
+- [x] **Step 1: `subjects.mjs` 登记表与三入口**
 
 `SUBJECTS = { 'reviewer-detective.card': { display, validator }, 'artifact.observation': { display, validator } }`（迁移起点 = PRD `:293` 两项，S4 扩到 15 席——本段**只放这两项**，不预铺）；`SUBJECT_VALIDATORS = SUBJECTS 的 validator 投影`（precomputed，供 `UnverifiableOutput` 判「有没有校验器」）。`subjectMatches(subject, objectType)`（缺省 `objectType` 沿用 `subject`）；`verdictAllowed(subject, objectType, verdict) → { ok, errors }`（`SubjectMismatch` 只在 `verdict ∈ {hit, miss}` 且类型不符时报；`na` 允许，§7 `:200`）；`compareVerdicts(docA, docB, env) → { ok, errors }`（同 `id` 两实例 `verdict` 不同 → 一条 `DisagreementOpen`，不取多数、不改判，`:202`）。
 
-- [ ] **Step 2: `open-items.mjs` 的 `deriveScope()`**
+- [x] **Step 2: `open-items.mjs` 的 `deriveScope()`**
 
 re-export `SCOPES`；`deriveScope(object)` 按 §5 `:132-133` 实现：先 `object.replace(/\\/g, '/')` 归一，再按下表**自上而下**取首个命中的**最长前缀**——`docs/superpowers/reviews/`→`process`；`.session/`→`process`；`agents/`→`card`；`tools/`、`scripts/`→`code`；`docs/`→`doc`；其余→`repo`。映射表**写死在本文件**，不读配置。
 
-- [ ] **Step 3: `validateOpenItems(doc, env, cards)` 只判三码**
+- [x] **Step 3: `validateOpenItems(doc, env, cards)` 只判三码**
 
 `EmptyOpenWithoutReason`（`open` 空且 `openEmptyReason` 缺/白空格，§7 `:197`）/ `OutOfScopeOpenItem`（`scope` ≠ `deriveScope(object)`，`:198`）/ `DuplicateAsOpen`（`object` 逐字等于任一 `registeredIds` 成员，`:199`）。**不复判缺列**（`MissingOpenField` 归 S2 `checks.mjs`，§7 `:208` + §10-D14 `:273`）；第三参 `cards` 必传（spec §6 `:139`），未传按 `env.registeredIds` 对账 fail-closed（`UnverifiableOutput`，与 Task 4 的缺键纪律同形）。**纯函数**：不改 `doc` / `cards`。
 
-- [ ] **Step 4: 写测试（10 条：A01 + I01、I02 + H01–H06 + K03）**
+- [x] **Step 4: 写测试（10 条：A01 + I01、I02 + H01–H06 + K03）**
 
 | ID | 断言（判据出处） |
 |---|---|
@@ -289,7 +289,7 @@ re-export `SCOPES`；`deriveScope(object)` 按 §5 `:132-133` 实现：先 `obje
 | H06 | 缺 `impact`/`suggestion` 在 S1 侧**不报任何码**；三码仍各报；`CARD_MODEL_CODES` 不含 `MissingOpenField`；S2 实现按**内容锚**定位（不锁行号）（`testcase:412`） |
 | K03 | `open[].evidence` 写不可解析串 → 本段不报任何码（`testcase:425`） |
 
-- [ ] **Step 5: 跑测试与仓门禁**
+- [x] **Step 5: 跑测试与仓门禁**
 
 ```powershell
 node --test "tools/docgen/test/card-model.test.mjs"; "exit=$LASTEXITCODE"
@@ -312,15 +312,15 @@ Expected：`exit=0`、`# fail 0`；本文件 `test('S1-TC-` 累计 = **14**；`c
 - Consumes: Task 1（`HARDCODED_COUNT` / `POINTER_WORDS` 一类文本常量、`criterionTerms`）
 - Produces: `isJsonLogic()` / `operatorDepth()` / `scanCriterionText()`（供 Task 4–6 消费）+ `OVERRIDABLE_FIELDS`（6 字段）+ `mergeActions()`（3 合并码，**不入 `CARD_MODEL_CODES`**）
 
-- [ ] **Step 1: `expression.mjs` 的算子集与三个探针**
+- [x] **Step 1: `expression.mjs` 的算子集与三个探针**
 
 `ALLOWED_OPS` = JSON Logic 标准算子集（spec §7 `:191` 只写「键 ∉ `ALLOWED_OPS`（JSON Logic 算子集）」，**未枚举**）——**清单写死在 `expression.mjs` 一处、按 JSON Logic 规范取全集**，plan 不在此复列（复列即第二处口径，必漂）；`isJsonLogic(expr)`（出现 `&&` / `||` 串、对象节点键数 ≠ 1、键 ∉ `ALLOWED_OPS` → 不可读）；`operatorDepth(expr)`（算子嵌算子 = 深度 > 1）；`scanCriterionText(text)` 返回三个命中面（`termHits` / `thresholdHits` / `unitHits`），`UNIT_KEY` 映射写死七项（次→`times` / 条→`count` / 字→`chars` / 个→`items` / 轮→`rounds` / 处→`spots` / %→`percent`，§7 `:194`；映射外单位一律红）。**只做判定、不发码**（码在 Task 6）。
 
-- [ ] **Step 2: `merge.mjs` 的 6 字段与 3 合并码**
+- [x] **Step 2: `merge.mjs` 的 6 字段与 3 合并码**
 
 `OVERRIDABLE_FIELDS = ['kind','trigger','objects','criterion','landing','requires']`（§7 `:206`；PRD `:187` 要求含 `kind`；S2 `tools/observation-check/render.mjs:39` 的旧表缺 `kind`/`objects` 属 §11-1 已登记副本，**本段不修**）。`mergeActions(shared, own) → { ok, errors }`：`DuplicateStatement`（同层同 id）/ `OverrideWithoutReason`（跨层覆盖无 `reason`）/ `PointlessOverride`（覆盖后与原件逐字段无差异）。**三码不写进 `CARD_MODEL_CODES`**，`errors[].code` 用本文件局部常量。
 
-- [ ] **Step 3: 写测试（1 条：J02）**
+- [x] **Step 3: 写测试（1 条：J02）**
 
 | ID | 断言（判据出处） |
 |---|---|
@@ -328,7 +328,7 @@ Expected：`exit=0`、`# fail 0`；本文件 `test('S1-TC-` 累计 = **14**；`c
 
 > J02 的第四半（`validateCardModel` 不返回合并码）依赖 Task 4 / 5 的发射点，本任务先写前三半，**Task 5 收尾时补齐第四半并复跑**（同一 `test()` 内追加断言，计数不变）。
 
-- [ ] **Step 4: 跑测试与仓门禁**
+- [x] **Step 4: 跑测试与仓门禁**
 
 ```powershell
 node --test "tools/docgen/test/card-model.test.mjs"; "exit=$LASTEXITCODE"
@@ -350,27 +350,27 @@ Expected：`exit=0`、`# fail 0`；本文件 `test('S1-TC-` 累计 = **15**；`c
 - Consumes: Task 1（`enums.mjs` 全部常量）、Task 2（`subjects` / `open-items`）、Task 3（`expression` / `merge`）
 - Produces: `CARD_MODEL_CODES`（36 键，值 = 判定面字段引用）、`registeredIdsOf(cards)`、`validateCardModel(card, env)`（本任务先只做契约层与顺序/纯性，族判定由 Task 5 / 6 填）+ `index.mjs` 完整 barrel。**`SCAN_FIELDS` 不是本任务产出**：只在 Step 2 里消费 Task 1 在 `enums.mjs` 写死的那一份（本文件不得重新定义）
 
-- [ ] **Step 1: 码表常量 `CARD_MODEL_CODES`（36 键）**
+- [x] **Step 1: 码表常量 `CARD_MODEL_CODES`（36 键）**
 
 键 = §7 `:168-203` 的 36 个脚本码（35 = PRD `:361` S1 组去 `WeakReason` + `MissingCriterionImpl`），**值 = 该码的判定面字段引用**（如 `must[].criterion` / `checkItems[].label`，**不写行号**，spec §6 `:147` + §10-D21 `:280`）。三合并码与 `WeakReason` **不得**出现在本常量里。
 
-- [ ] **Step 2: `SCAN_FIELDS` 的消费（**不另写一份**）**
+- [x] **Step 2: `SCAN_FIELDS` 的消费（**不另写一份**）**
 
 `SCAN_FIELDS` 已在 Task 1 Step 2 写死在 `enums.mjs`（8 键 = `SubjectiveLabel` / `InlineTermList` / `InlineThreshold` / `AmbiguousCriterion` / `PointerToElsewhere` / `HardcodedCount` / `MixedTermInCard` / `ProceduralWordOutsideParliament`）。本任务只 `import { SCAN_FIELDS } from './enums.mjs'` 并按它决定「每个文本码扫哪些字段」；**不得在本文件重新定义**（两种实现 = G09 ⑨ 的键集断言必红，且 `index.mjs` 会出现两份来源）。
 
-- [ ] **Step 3: `registeredIdsOf(cards)`**
+- [x] **Step 3: `registeredIdsOf(cards)`**
 
 = 入参全部卡的 `checkItems[].id` **并集去重**（§4 `:90`）；空集是**期望值**不是恒真（J04 的边界口径）。
 
-- [ ] **Step 4: 契约纪律（四入口共用）**
+- [x] **Step 4: 契约纪律（四入口共用）**
 
 ① `env` 11 键**逐键**在位检查：缺任一 → `UnverifiableOutput`（`path = env.<键名>`）并**继续判**；`card` / `doc` 非对象 → 同码（§6 `:153`）；② 判定内部抛异常 → 收敛 `UnverifiableOutput`（`message` = 异常首行）并继续判（`:152`）；③ open-world：`Card` 上未列字段忽略不判（`:155`）；④ `env.registeredIds` ≠ `registeredIdsOf(cards)` → `UnverifiableOutput`（`path = env.registeredIds`，`:154`）；⑤ `errors` 顺序固定：卡级 → `scenes` → `signals` → `must`/`never`（数组序）→ `checkItems`（`:156`）；⑥ 同一次返回内 `path` 唯一（`:157`）。
 
-- [ ] **Step 5: `index.mjs` 补到 §3 `:48` 的 18 项**
+- [x] **Step 5: `index.mjs` 补到 §3 `:48` 的 18 项**
 
 8 张表 + `SUBJECTS` / `SUBJECT_VALIDATORS` + **四入口** + `CARD_MODEL_CODES` + `SCAN_FIELDS` + `mergeActions` + `registeredIdsOf`。**只 re-export，不重新实现**（防两份实现）。
 
-- [ ] **Step 6: 写测试（9 条：B05 + C02 + D01–D04 + K01 / K02 / K04）**
+- [x] **Step 6: 写测试（9 条：B05 + C02 + D01–D04 + K01 / K02 / K04）**
 
 | ID | 断言（判据出处） |
 |---|---|
@@ -384,7 +384,7 @@ Expected：`exit=0`、`# fail 0`；本文件 `test('S1-TC-` 累计 = **15**；`c
 | K02 | `script` 条目带 `cmd` 或 `impl` → 绿；`Card` 上未列字段 → 忽略不判（open-world）；两者都缺 → 红（后者由 Task 6 的 `FalseScriptCheck` 断言，本任务先写前三半）（`testcase:424`） |
 | K04 | 四入口各自只报自己那族码：非卡片数据字段一律不判；`validateOpenItems` 不报卡级码；`compareVerdicts` 不报 `SubjectMismatch`；`verdictAllowed` 不报卡级码；`validateCardModel` 不返回合并码（`testcase:426`） |
 
-- [ ] **Step 7: 跑测试与仓门禁**
+- [x] **Step 7: 跑测试与仓门禁**
 
 ```powershell
 node --test "tools/docgen/test/card-model.test.mjs"; "exit=$LASTEXITCODE"
@@ -405,19 +405,19 @@ Expected：`exit=0`、`# fail 0`；本文件 `test('S1-TC-` 累计 = **24**；`c
 - Consumes: Task 4（骨架 / 契约层 / 码表 / 落点接入）、Task 1（`enums.mjs` 的 `VAGUE_TERMS` / `PROC_WORDS` / `MOMENTS` 等文本与枚举常量）——`SCAN_FIELDS` 由 `enums.mjs` 写死（Task 4 只 import 转手），本任务不新增来源
 - Produces: 场景 5 码、信号 5 码、动作 5 码（含 `MissingCriterionImpl` 的 `Action` 面）的实际发射逻辑；`resolveLanding` 接入
 
-- [ ] **Step 1: 场景族（5 码）**
+- [x] **Step 1: 场景族（5 码）**
 
 `DuplicateScene`（同 id 在 `card.scenes` 出现 2 次；**或** 同 id 已在 `SHARED_SCENES` 又出现在 **`env.seatScenes[seat]`**）/ `ScenePromotionRequired`（同席局部 id 出现 ≥2 席登记表，读 `env.seatScenes`）/ `UnusedScene`（**只判本席声明过**的场景，共用 8 个未声明者不判，§10-D5 `:264`）/ `MissingSceneRationale`（非共用 id 缺 `why` 或去空白为空）/ `FreeTextEnum`（`scene.id` / `trigger.moment` / `trigger.repeat` / `signals[].type` / `check` 的取值含 `/`）。
 
-- [ ] **Step 2: 信号族（5 码）**
+- [x] **Step 2: 信号族（5 码）**
 
 `MissingSignal`（`trigger` 缺三键任一；或信号条目缺 `observer` / `match`，path 区分两处）/ `UnknownSignalType`（`type` ∉ `SIGNALS` 且 ∉ **`env.seatSignals[seat]`**）/ `UnobservableSignal`（`check === 'manual'` 且 `declarer` 缺/白空格）/ `SignalProliferation`（局部 type 被 < 2 个场景引用，§10-D6 `:265`）/ `MultiMomentInOneEntry`（`moment` 数组长 > 1，或字符串同时命中 ≥2 个 `MOMENTS` 成员 id 或 label）。
 
-- [ ] **Step 3: 动作族（5 码）+ 落点**
+- [x] **Step 3: 动作族（5 码）+ 落点**
 
 `VagueReferent`（`objects` 缺/空或任一项 ∈ `VAGUE_TERMS`）/ `MissingPrerequisite`（`requires` 中 `must:true` 的 id ∉ `env.available`，报文固定「缺 `<id>`，未开始」）/ `UnboundLanding`（调 `resolveLanding`，三档见 §7 `:180`）/ `MissingCriterionImpl`（`Action` 面：`criterion` 缺/空 **或** id ∉ `env.predicates`；**动作条目没有 `check` 字段 → 无 `manual` 豁免**，`CheckItem` 面在 Task 6）/ 带 `never` 同口径。
 
-- [ ] **Step 4: 写测试（14 条：B02 / B03 + E01–E07 + F01–F05）**
+- [x] **Step 4: 写测试（14 条：B02 / B03 + E01–E07 + F01–F05）**
 
 | ID | 断言（判据出处） |
 |---|---|
@@ -436,7 +436,7 @@ Expected：`exit=0`、`# fail 0`；本文件 `test('S1-TC-` 累计 = **24**；`c
 | F04 | 六字段齐 + `requires: []` + landing ∈ 并集 → 绿（`testcase:396`） |
 | F05 | 3 个词表词放 `Action.criterion` → 只报 `MissingCriterionImpl`、**不报** `InlineTermList`；同文本放 `CheckItem.criterion` → 只报 `InlineTermList`（后半归 Task 6）（`testcase:397`） |
 
-- [ ] **Step 5: 补齐 J02 第四半并跑测试与仓门禁**
+- [x] **Step 5: 补齐 J02 第四半并跑测试与仓门禁**
 
 ```powershell
 node --test "tools/docgen/test/card-model.test.mjs"; "exit=$LASTEXITCODE"
@@ -457,19 +457,19 @@ Expected：`exit=0`、`# fail 0`；本文件 `test('S1-TC-` 累计 = **38**；`c
 - Consumes: Task 5（场景 / 信号 / 动作族的发射点与 `errors` 顺序骨架）、Task 3（`expression` / `merge`）、Task 1（`subjectiveTerms` / `criterionTerms` / `SCAN_FIELDS` / `HARDCODED_COUNT`）、Task 2（`SUBJECTS` / `SUBJECT_VALIDATORS`）
 - Produces: 检查项 8 码 + 表达式 5 码 + 审计 3 码的实际发射逻辑；§8 的 8 组抑制表接入；`CARD_MODEL_CODES` 的 36 键全部可达
 
-- [ ] **Step 1: 检查项族（8 码）**
+- [x] **Step 1: 检查项族（8 码）**
 
 `MissingSubject`（`subject` 缺/空；或 `label` 不含 `SUBJECTS[subject].display`；**`subject` ∉ `SUBJECTS` → 只报 `UnverifiableOutput`**，§7 `:183`）/ `DuplicateCheckItem` / `CrossSubjectSharedItem` / `SubjectiveLabel`（按 `、`/`，`/`/`/空格 切分后有整项 ∈ `subjectiveTerms`）/ `HardcodedCount`（按 §4.2 扫描面 + `N` 三字符面）/ `PointerToElsewhere` / `MixedTermInCard` / `ProceduralWordOutsideParliament`（席 ∉ `env.parliamentSeats` 且命中程序词）。
 
-- [ ] **Step 2: 表达式族（5 码）+ 审计族（3 码）**
+- [x] **Step 2: 表达式族（5 码）+ 审计族（3 码）**
 
 `UnreadableExpression` / `NestingTooDeep`（调 `expression.mjs`）；`InlineTermList`（`criterion-terms` 命中**不同**词 ≥ 3）/ `InlineThreshold`（命中单位式且 `params` 无对应键，映射外单位一律红）/ `AmbiguousCriterion`（命中 1–2 词且无 `definitions`）；`MissingRationale`（`rationale` 缺/白空格）；`MissingAiAudit`（`check === 'ai'` 且 rubric 三组任一组 < 1 条，或任一条无 `path:line`，或 `audit.sample` / `audit.command` 缺；**rubric 缺 `source` 归本码**，§10-D16 `:275`）；`UnverifiableOutput`（`subject` ∉ `SUBJECT_VALIDATORS` 或异常收敛）。
 
-- [ ] **Step 3: 接入 §8 的 8 组抑制（M2 粒度 = 判定面）**
+- [x] **Step 3: 接入 §8 的 8 组抑制（M2 粒度 = 判定面）**
 
 按 `:230-237` 的组序表实现「同组内先命中先报、命中即停」；**同组多个码落在同一判定面**时按组序抑制，`errors[].path` 仍按 §6 输出带下标的定位串（`:226` / §10-D20 `:279`）。组 6 的两个码定义互斥（`UnknownSignalType` ∉ 席局部表、`SignalProliferation` ∈ 席局部表），**必须读 `env.seatSignals` 才判得出**（模块常量 `SEAT_SIGNALS` 恒空，只作默认值）。
 
-- [ ] **Step 4: 写测试（16 条：A05② / B01 / B04 / C01 / C03 / G01–G09 / I03 / I04 / J01）**
+- [x] **Step 4: 写测试（16 条：A05② / B01 / B04 / C01 / C03 / G01–G09 / I03 / I04 / J01）**
 
 | ID | 断言（判据出处） |
 |---|---|
@@ -491,7 +491,7 @@ Expected：`exit=0`、`# fail 0`；本文件 `test('S1-TC-` 累计 = **38**；`c
 | I04 | `CARD_MODEL_CODES` 不含 `WeakReason`；注入副本码表即红（**第三方**：PRD `:216` 原文对账）（`testcase:416` / V-5 `:251`） |
 | J01 | 全字段卡（局部 scene 带 label+why、三型 checkItem、categories、signals）→ 绿（`testcase:417` / F-01 / F-04） |
 
-- [ ] **Step 5: 补齐 Task 3–5 的剩余半并跑测试与仓门禁**
+- [x] **Step 5: 补齐 Task 3–5 的剩余半并跑测试与仓门禁**
 
 补齐：`A05②`（本任务 Step 4）、`B03` 的检查项族 8 条、`F03` 的 ④–⑦、`F05` 的后半、`K02` 的 `FalseScriptCheck` 半。
 
@@ -514,15 +514,15 @@ Expected：`exit=0`、`# fail 0`；本文件 `test('S1-TC-` 累计 = **54**；`c
 - Consumes: Task 1–6（全部模块与测试）
 - Produces: 出口面终态、`registeredIdsOf` 的边界断言、与 S6 的**双向零耦合**静态守卫
 
-- [ ] **Step 1: `index.mjs` 出口面逐项核**
+- [x] **Step 1: `index.mjs` 出口面逐项核**
 
 按 §3 `:48` 核 18 项：8 张表 + `SUBJECTS` / `SUBJECT_VALIDATORS` + 四入口 + `CARD_MODEL_CODES` + `SCAN_FIELDS` + `mergeActions` + `registeredIdsOf`。**只 re-export**；`Object.keys(M)` 不得出现多余导出（对应 testcase §0.3 的 11 条 card-model import 只消费这 18 项）。
 
-- [ ] **Step 2: import 段与 testcase §0.3 逐字对齐**
+- [x] **Step 2: import 段与 testcase §0.3 逐字对齐**
 
 `testcase:73-83` 的 11 条 card-model import（`M` + `EN` / `LD` / `SC` / `SIG` / `SUB` / `OI` / `EX` / `MG` / `ST` / `CT`；另 4 条为 `node:` 标准库）必须逐条在位且路径一致；helper 的函数体与 `:84-216` 逐字（`SPEC_LINES` / `cutList` 等从 spec 原文切的常量不得改成字面常量）。
 
-- [ ] **Step 3: 写测试（4 条：J03 / J04 / J05 / J06）**
+- [x] **Step 3: 写测试（4 条：J03 / J04 / J05 / J06）**
 
 | ID | 断言（判据出处） |
 |---|---|
@@ -531,7 +531,7 @@ Expected：`exit=0`、`# fail 0`；本文件 `test('S1-TC-` 累计 = **54**；`c
 | J05 | `card-model/**` 无 `policy/` 引用，`policy/**` 无 `card-model` 引用（双向，前置两目录非空）（`testcase:421` / V-6 `:252`） |
 | J06 | `card-model/**` 只 import `node:` 标准库与自身（不 import `observation-check/**` / `components/**`）（`testcase:422` / §3 `:52`） |
 
-- [ ] **Step 4: 跑测试与仓门禁**
+- [x] **Step 4: 跑测试与仓门禁**
 
 ```powershell
 node --test "tools/docgen/test/card-model.test.mjs"; "exit=$LASTEXITCODE"
@@ -552,7 +552,7 @@ Expected：`exit=0`、`# fail 0`；本文件 `test('S1-TC-` 累计 = **58**（= 
 - Consumes: Task 1–7（全部产物已落地）
 - Produces: `③@S1` 门行的全部证据（本任务只取数，签行由审计在 ④ 前另签）
 
-- [ ] **Step 1: 四条计划门命令复跑（结构零位移）**
+- [x] **Step 1: 四条计划门命令复跑（结构零位移）**
 
 ```powershell
 node scripts/check-plan.mjs coverage --plan docs\superpowers\plans\2026-10-29-agent-card-s1-card-model.md --prd docs\prd\20261026205821-agent-card-contract.md --stage S1; "exit=$LASTEXITCODE"
@@ -563,7 +563,7 @@ node scripts/check-plan.mjs size --spec docs\superpowers\specs\2026-10-29-agent-
 
 Expected：`coverage: gap 0（prd 8 / plan 8）steps ok => ok`（exit 0）/ `deps: cycle 0 dangling 0（nodes 8 / edges 24） => ok`（exit 0）/ `map: missing 0 dangling 0（cases 66 / mapped 66） => ok`（exit 0）/ `size: spec 301/350 tc 66/80 rounds 3/3 => ok`（exit 0）。
 
-- [ ] **Step 2: 全仓门禁与 R8 回扫**
+- [x] **Step 2: 全仓门禁与 R8 回扫**
 
 ```powershell
 node --test "tools/docgen/test/card-model.test.mjs"; "exit=$LASTEXITCODE"
@@ -574,11 +574,11 @@ node scripts/check-gate-record.mjs; "gate=$LASTEXITCODE"
 
 Expected：`# tests ≥ 1039 + 58`、`# pass + # skipped === # tests`、`# fail 0`；`check` 末行 `check 全部通过`（本段只产 `.mjs`，**`④ markdown` 的文件 / 表数应与基线持平**——若涨了，说明多写了文档，属越界，须清掉）；`sweep ok`（exit 0）；`gate-record ok`（行数 = 本段门行写入后的现值，**不写死**）。
 
-- [ ] **Step 3: 遗留处置留痕（不单开任务）**
+- [x] **Step 3: 遗留处置留痕（不单开任务）**
 
 逐条判：`L-4` 的 6 条 P2 缺口 → 本段**采纳 / 不采纳**各写一句（采纳 = 改用例须派**新 sdet 实例**，施工者不得代改 testcase；不采纳 = 写明理由与触发信号）；`L-1` → 若 `CheckItem.criterion` 与 S6 `criteria.md` 三态冲突，**回 ② 段**（不得在 ③ 段改判据）。
 
-- [ ] **Step 4: 收口证据落盘**
+- [x] **Step 4: 收口证据落盘**
 
 把 Step 1–3 的命令与输出首行写进 `.session/reviews/2026-10-29-1813-agent-card-s1-plan-gate/impl-3.md`（**最后写**，mtime 必须晚于所有被扫文件），供 ③ 门行引用。
 
