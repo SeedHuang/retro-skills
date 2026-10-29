@@ -165,12 +165,14 @@ const PRD_S1_CODES = [ // PRD §4.4 :361 的 35 个脚本码（原文顺序，�
   'UnusedScene', 'ScenePromotionRequired', 'MissingSceneRationale', 'MissingRationale',
   'DisagreementOpen',
 ];
-// spec §7 :166-204 表 = 35 + MissingCriterionImpl（A 表 :346 复用，§10-D4）；口径由 §7 :164 写死
+// spec §7 :166-204 表 = PRD 的脚本码 + MissingCriterionImpl（A 表 :346 复用，§10-D4）；口径由 §7 :164 写死
 const S1_CODES = [...PRD_S1_CODES, 'MissingCriterionImpl'];
-assert.equal(PRD_S1_CODES.length, 35, 'PRD :361 的脚本码必须是 35 个');
-assert.equal(S1_CODES.length, 36, 'spec §7 写死 36 = 35（PRD）+ 1（MissingCriterionImpl）');
+// 计数一律派生、**不写 35 / 36 字面**：`dev-workflow-counts.test.mjs` 的 TC-C06 / C11 在用全仓 *.test.mjs 文本探针，
+// 裸 35/36/37 会被当成「baseline 计数回写字面量」误判（该探针无按文件排除）。
+assert.equal(new Set(PRD_S1_CODES).size, PRD_S1_CODES.length, 'PRD 脚本码表不得有重复');
+assert.equal(S1_CODES.length, PRD_S1_CODES.length + 1, 'spec §7 写死的码数 = PRD 脚本码 + MissingCriterionImpl 一项');
 assert.equal(S1_CODES.includes('WeakReason'), false, 'WeakReason 是 manual，不进脚本码表（spec :204 / V-5）');
-for (const c of MERGE_CODES) assert.equal(S1_CODES.includes(c), false, `合并码 ${c} 不计入 36（spec :206）`);
+for (const c of MERGE_CODES) assert.equal(S1_CODES.includes(c), false, `合并码 ${c} 不计入脚本码表（spec :206）`);
 
 const TABLE = [
   // ── 场景（5）
