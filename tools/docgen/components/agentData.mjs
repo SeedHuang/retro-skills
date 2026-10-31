@@ -2,6 +2,37 @@
 // 锚点席（reviewer-product / senior-sdet）在 S1 完整拆槽（triggerTable 有 when），供 W4 派生断言验收。
 import { patternRegistry, toolsForSeat, boundaryBySeat } from './patternRegistry.mjs';
 
+// S4 新卡构造（spec §4 `:80`）：一张卡 = duty + 主题表派生的 categories / checkItems + 一条自由探索 must + rationale。
+// 内容（主题词、约束、rationale）逐席写在本文件，**不散到别的模块**；手写的 `reviewer-audit` 卡保留字面形态作对照。
+// 判据 id / 落点取共享 vocab（不在本文件另写第二份）。
+function cardOf(seat, display, trigger, identity, topics, constraint, rationale) {
+  return {
+    duty: { trigger, categories: topics, action: identity, constraint },
+    scenes: [],
+    signals: [],
+    must: [{
+      id: `${seat}.free-explore`,
+      kind: 'must',
+      trigger: { scene: 'deliverable', moment: 'end', repeat: 'per-round' },
+      objects: ['deliverable.appendix'],
+      criterion: 'no-fake-problem',
+      landing: 'deliverable.appendix',
+      requires: [],
+    }],
+    never: [],
+    categories: topics.map((t, i) => ({ key: `t${i + 1}`, label: `${t}核对` })),
+    checkItems: topics.map((t, i) => ({
+      id: `${seat}.${i + 1}`,
+      subject: `${seat}.card`,
+      label: `${display}：${t}核对`,
+      criterion: `核对${t}并写出原文引句`,
+      check: 'manual',
+      declarer: display,
+    })),
+    rationale,
+  };
+}
+
 const SKELETON = [
   {
     name: 'reviewer-audit',
@@ -19,6 +50,37 @@ const SKELETON = [
     ],
     sharedBlock: 'AUDIT_RULES',
     outputKind: 'audit',
+    card: {
+      duty: {
+        trigger: '当议会评审需要过程标准核对、轮际对账或交付审计',
+        categories: ['卡片合规', '级别匹配', '答辩合规', '计数一致', '轮际对账', '落点真实', '证据复算'],
+        action: '资深审计专员，只审各项标准是否达到，不裁技术对错，不提新技术问题。',
+        constraint: '按本席职责与边界执行；越出边界的动作只记录，不自行处置',
+      },
+      scenes: [],
+      signals: [],
+      must: [{ id: 'audit.free-explore', kind: 'must', trigger: { scene: 'deliverable', moment: 'end', repeat: 'per-round' }, objects: ['deliverable.appendix'], criterion: 'no-fake-problem', landing: 'deliverable.appendix', requires: [] }],
+      never: [],
+      categories: [
+        { key: 'card', label: '卡片合规核对' },
+        { key: 'level', label: '级别匹配核对' },
+        { key: 'defense', label: '答辩合规核对' },
+        { key: 'count', label: '计数一致核对' },
+        { key: 'round', label: '轮际对账核对' },
+        { key: 'spot', label: '落点真实核对' },
+        { key: 'evidence', label: '证据复算核对' },
+      ],
+      checkItems: [
+        { id: 'audit.card', subject: 'reviewer-audit.card', label: '审计席卡：卡片合规核对', criterion: '核对卡片必填字段与建议解法栏并写出原文引句', check: 'manual', declarer: '审计专员' },
+        { id: 'audit.level', subject: 'reviewer-audit.card', label: '审计席卡：级别匹配核对', criterion: '核对级别与冲突证据数量是否匹配', check: 'manual', declarer: '审计专员' },
+        { id: 'audit.defense', subject: 'reviewer-audit.card', label: '审计席卡：答辩合规核对', criterion: '核对答辩判定与修法栏并写出原文引句', check: 'manual', declarer: '审计专员' },
+        { id: 'audit.count', subject: 'reviewer-audit.card', label: '审计席卡：计数一致核对', criterion: '复算卡片数与各类去向之和是否相等', check: 'manual', declarer: '审计专员' },
+        { id: 'audit.round', subject: 'reviewer-audit.card', label: '审计席卡：轮际对账核对', criterion: '核对上轮承诺与本轮开卷清单是否逐项相等', check: 'manual', declarer: '审计专员' },
+        { id: 'audit.spot', subject: 'reviewer-audit.card', label: '审计席卡：落点真实核对', criterion: '抽查落点的文件与行号是否真实存在', check: 'manual', declarer: '审计专员' },
+        { id: 'audit.evidence', subject: 'reviewer-audit.card', label: '审计席卡：证据复算核对', criterion: '沿证据链重放并写出命令输出首行', check: 'manual', declarer: '审计专员' },
+      ],
+      rationale: '资深审计专员，只审各项标准是否达到，不裁技术对错，不提新技术问题。旧卡「你是谁」并入本段；「共享特质」「通用纪律」上移为共享 must / never（本席声明全量）；「固定必问清单」七条拆成七条 checkItem；「输出格式」走共享 audit 合同；过渡期称谓统一为「主持人」。',
+    },
   },
   {
     name: 'reviewer-product',
@@ -36,6 +98,11 @@ const SKELETON = [
     ],
     sharedBlock: undefined,
     outputKind: 'issue-card',
+    card: cardOf('reviewer-product', '产品席卡', '当主持人调度对 PRD/spec/plan 做产品视角评审',
+      '深耕产品设计 20 年以上的产品专家，对用户旅程与交付节奏有经验直觉',
+      ['用户旅程', '边界场景', '交付节奏', '逃生路径', '隐含前置', '成功指标', '非目标'],
+      '按本席职责与边界执行；越出边界的动作只记录，不自行处置',
+      '深耕产品设计 20 年以上的产品专家，对用户旅程与交付节奏有经验直觉。旧卡「你是谁」并入本段；共享特质与通用纪律上移共享层；固定必问清单拆成七条 checkItem；自由探索为一条 must；输出格式走共享 issue-card 合同。'),
   },
   {
     name: 'reviewer-interaction',
@@ -53,6 +120,11 @@ const SKELETON = [
     ],
     sharedBlock: undefined,
     outputKind: 'issue-card',
+    card: cardOf('reviewer-interaction', '交互席卡', '当主持人调度对 PRD/spec/plan 做交互视角评审',
+      '资深交互设计专家，对打断成本与状态可见性有经验直觉',
+      ['打断时机', '无效选项', '错误信息', '加减模式', '静默状态', '脚本消费', '操作反馈'],
+      '按本席职责与边界执行；越出边界的动作只记录，不自行处置',
+      '资深交互设计专家，对打断成本与状态可见性有经验直觉。旧卡「你是谁」并入本段；共享特质与通用纪律上移共享层；固定必问清单拆成七条 checkItem；自由探索为一条 must；输出格式走共享 issue-card 合同。'),
   },
   {
     name: 'reviewer-ui',
@@ -68,6 +140,11 @@ const SKELETON = [
     ],
     sharedBlock: undefined,
     outputKind: 'issue-card',
+    card: cardOf('reviewer-ui', 'UI 席卡', '当主持人调度对 PRD/spec/plan 做 UI 视角评审',
+      '资深 UI 设计专家，对视觉一致性与可访问性有经验直觉',
+      ['视觉变量', '可访问性', '组件复用', '多端断点', '空载错三态'],
+      '按本席职责与边界执行；越出边界的动作只记录，不自行处置',
+      '资深 UI 设计专家，对视觉一致性与可访问性有经验直觉。旧卡「你是谁」并入本段；共享特质与通用纪律上移共享层；固定必问清单拆成五条 checkItem；自由探索为一条 must；输出格式走共享 issue-card 合同。'),
   },
   {
     name: 'reviewer-frontend',
@@ -86,6 +163,11 @@ const SKELETON = [
     ],
     sharedBlock: 'SIX_METHODS',
     outputKind: 'issue-card',
+    card: cardOf('reviewer-frontend', '前端席卡', '当主持人调度对 spec/plan/技术方案做前端实现视角评审',
+      '资深前端领域专家，H5/小程序/Electron 多端经验，六手法在此执行',
+      ['平台机制', '脏状态接管', '并发重入', '中断恢复', '读取点合法性', '选型已知坑', '绝对路径'],
+      '按本席职责与边界执行；越出边界的动作只记录，不自行处置',
+      '资深前端领域专家，H5/小程序/Electron 多端经验。旧卡「你是谁」并入本段；共享特质与通用纪律上移共享层；固定必问清单拆成七条 checkItem；自由探索为一条 must；输出格式走共享 issue-card 合同。'),
   },
   {
     name: 'reviewer-backend',
@@ -103,6 +185,11 @@ const SKELETON = [
     ],
     sharedBlock: 'SIX_METHODS',
     outputKind: 'issue-card',
+    card: cardOf('reviewer-backend', '后端席卡', '当主持人调度对 spec/plan/技术方案做后端视角评审',
+      '资深后端领域专家，对数据流、契约与故障传播有经验直觉',
+      ['单元职责', '边界数据流', '外部交互失败', '第二份真相', '字段生命周期', '事务与并发序'],
+      '按本席职责与边界执行；越出边界的动作只记录，不自行处置',
+      '资深后端领域专家，对数据流、契约与故障传播有经验直觉。旧卡「你是谁」并入本段；共享特质与通用纪律上移共享层；固定必问清单拆成六条 checkItem；自由探索为一条 must；输出格式走共享 issue-card 合同。'),
   },
   {
     name: 'reviewer-ops',
@@ -118,6 +205,11 @@ const SKELETON = [
     ],
     sharedBlock: undefined,
     outputKind: 'issue-card',
+    card: cardOf('reviewer-ops', '运维席卡', '当主持人调度对 spec/plan/技术方案做交付运维视角评审',
+      '资深交付运维专家，对安装部署、诊断与回滚有经验直觉',
+      ['安装前置', '诊断入口', '回滚方案', '升级路径', '资源预算'],
+      '按本席职责与边界执行；越出边界的动作只记录，不自行处置',
+      '资深交付运维专家，对安装部署、诊断与回滚有经验直觉。旧卡「你是谁」并入本段；共享特质与通用纪律上移共享层；固定必问清单拆成五条 checkItem；自由探索为一条 must；输出格式走共享 issue-card 合同。'),
   },
   {
     name: 'reviewer-qa',
@@ -137,6 +229,11 @@ const SKELETON = [
     ],
     sharedBlock: undefined,
     outputKind: 'issue-card',
+    card: cardOf('reviewer-qa', '测试席卡', '当主持人调度对 spec/plan/技术方案做测试视角评审',
+      '资深测试领域专家，对验收可验证性与测试真实性有经验直觉',
+      ['验收可验证性', '回归防护', '不可重复场景', 'fixture 多样性', '降级验证', '词表覆盖', '误判固化', '判据判别力', '教学样板自检'],
+      '按本席职责与边界执行；越出边界的动作只记录，不自行处置',
+      '资深测试领域专家，对验收可验证性与测试真实性有经验直觉。旧卡「你是谁」并入本段；共享特质与通用纪律上移共享层；固定必问清单拆成九条 checkItem；自由探索为一条 must；输出格式走共享 issue-card 合同。'),
   },
   {
     name: 'reviewer-ai',
@@ -155,6 +252,11 @@ const SKELETON = [
     ],
     sharedBlock: undefined,
     outputKind: 'issue-card',
+    card: cardOf('reviewer-ai', 'AI 席卡', '当主持人调度对 rule/skill/agents/含 AI 指令的文档做 AI 工程视角评审',
+      '资深 AI 领域专家，对提示词工程与指令可执行性有经验直觉',
+      ['引用闭环', '触发条件', '机器可判定', '上下文预算', '降级路径', '数字取数', '同措辞守卫', 'AI 判定语义'],
+      '按本席职责与边界执行；越出边界的动作只记录，不自行处置',
+      '资深 AI 领域专家，对提示词工程与指令可执行性有经验直觉。旧卡「你是谁」并入本段；共享特质与通用纪律上移共享层；固定必问清单拆成八条 checkItem；自由探索为一条 must；输出格式走共享 issue-card 合同。'),
   },
   {
     name: 'reviewer-security',
@@ -171,6 +273,11 @@ const SKELETON = [
     ],
     sharedBlock: undefined,
     outputKind: 'issue-card',
+    card: cardOf('reviewer-security', '安全席卡', '当主持人调度对任意文档做安全风险视角评审',
+      '资深安全顾问，对注入面与权限边界有经验直觉',
+      ['注入面', '最小权限', '敏感信息', '依赖风险', '破坏性操作', 'P0 证据门槛'],
+      '按本席职责与边界执行；越出边界的动作只记录，不自行处置',
+      '资深安全顾问，对注入面与权限边界有经验直觉。旧卡「你是谁」并入本段；共享特质与通用纪律上移共享层；固定必问清单拆成六条 checkItem；自由探索为一条 must；输出格式走共享 issue-card 合同。'),
   },
   {
     name: 'reviewer-actuary',
@@ -186,6 +293,11 @@ const SKELETON = [
     ],
     sharedBlock: undefined,
     outputKind: 'issue-card',
+    card: cardOf('reviewer-actuary', '精算席卡', '当主持人调度对任意文档做成本与收益视角评审',
+      '资深精算师，对数字真实性与成本收益账有经验直觉',
+      ['数字三性', '数字取数命令', '改造成本量化', '治本对账', '收益量化'],
+      '按本席职责与边界执行；越出边界的动作只记录，不自行处置',
+      '资深精算师，对数字真实性与成本收益账有经验直觉。旧卡「你是谁」并入本段；共享特质与通用纪律上移共享层；固定必问清单拆成五条 checkItem；自由探索为一条 must；输出格式走共享 issue-card 合同。'),
   },
   {
     name: 'reviewer-reader',
@@ -202,6 +314,11 @@ const SKELETON = [
     ],
     sharedBlock: undefined,
     outputKind: 'issue-card',
+    card: cardOf('reviewer-reader', '读者席卡', '当主持人调度对描述性/记录型/任意文档做读者视角评审',
+      '目标读者代表，替「第一次打开这份文档的人」发言',
+      ['任意章节进入', '术语定义', '悬空引用', '结论与猜想', '记录可复算', '状态标注'],
+      '按本席职责与边界执行；越出边界的动作只记录，不自行处置',
+      '目标读者代表，替「第一次打开这份文档的人」发言。旧卡「你是谁」并入本段；共享特质与通用纪律上移共享层；固定必问清单拆成六条 checkItem；自由探索为一条 must；输出格式走共享 issue-card 合同。'),
   },
   {
     name: 'detective-observer',
@@ -296,6 +413,11 @@ const SKELETON = [
     ],
     sharedBlock: undefined,
     outputKind: 'evidence',
+    card: cardOf('evidence-reader', '取证席卡', '当需要通读长文并交出可核对的原文与行号（交接取证 / 事实基线回核）',
+      '通读长文（对话记录 / 评审账 / 规范）的取证角色：只交「原文 + 行号 + 出处」的事实摘要，不出观点、不出问题卡、不参与评审、不改任何文件。',
+      ['摘句行号', '原文与概括', '未找到清单', '二手转述', '长文截断', '只交事实'],
+      '只读取证：不出观点、不出问题卡、不参与评审、不判技术对错；只交可核对的原文与行号',
+      '通读长文的取证角色：只交「原文 + 行号 + 出处」的事实摘要，不出观点、不出问题卡、不参与评审、不改任何文件。旧卡「你是谁」并入本段；共享特质与通用纪律上移共享层；固定必问清单拆成六条 checkItem；自由探索一节不适用（本席只交事实）；输出格式走共享 evidence 合同。'),
     boundary: '你是只读取证角色：不得创建、修改、删除任何文件；不出观点、不出问题卡、不参与评审、不判技术对错；只交可核对的原文与行号。',
     explorePolicy: 'none',
     domain: '开发工作流',
@@ -321,6 +443,9 @@ const SKELETON = [
     ],
     sharedBlock: undefined,
     outputKind: 'testcase',
+    // S4 Task 6 暂缓：本席「职责段 vs 边界段」B3 由独立实例判为 fail（职责要写 testcase.md，边界为只读评审角色
+    // 且 S6 的 renderBoundary('senior-sdet') 也禁写「测试」路径）——属 PRD 角色职责与 S6 权限物的冲突，
+    // 须回 ② 段裁定（改 PRD 或改 S6 boundary）后再迁移；本批保留旧卡（双形态），不放宽判据。
   },
 // 按席挂档位与边界：tools / boundary 只从 patternRegistry 的两张映射表取（单源，B-5）。
 // 展开顺序硬约束（spec §5）：`...s` 必须在最后 —— 条目自带 tools / boundary 会静默覆盖档位。

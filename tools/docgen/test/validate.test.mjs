@@ -49,7 +49,8 @@ test('断言 7：when 格式——不含「在…中担任 / 时调用」、不�
 
 test('断言 8：派生 description == 句式拼装输出 + 不含「时时」（A 族）；registered 未拆槽席豁免', () => {
   // S11 修正：时时置中、不以「时」结尾（绕过断言 7，TC-088 前置「绕过 §6-7 时」构造）；时时结尾归断言 7 WhenFormatViolation（TC-087）
-  const a = valid(); a.table['reviewer-product'].when = '当主持人调度对 PRD/spec/plan 做产品视角评审时时确认';
+  // S4 迁移后断言 8 只判未迁移席，故构造面取仍未迁移的 senior-sdet
+  const a = valid(); a.table['senior-sdet'].when = '当需要为 PRD/spec 设计并编写测试用例（testcase.md），或专门找出被忽视的边界与失败场景时时确认';
   expectFail('DescriptionDerivation', a);
 });
 

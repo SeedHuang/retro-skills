@@ -260,17 +260,17 @@ test('S5-TC-B03 侦探边界节五段齐 + 允许写切片只含 detective.md + 
   assert.match(forbidden, /不得写\s*`?(?:skills\/dev-workflow\/references\/)?gate-record\.md`?/);
 });
 
-test('S5-TC-B04 审计卡输出格式含「已授 producer 档」、不含旧句且单源', () => {
+test('S5-TC-B04 审计卡档位事实与输出格式（S4 迁移后：档位在边界段、格式在结构化合同）', () => {
   const text = card('reviewer-audit');
-  // 审计输出格式自带 `## 核对项` / `## 结论` / `## A 节` 等小节，故切片下界取模板里的下一个固定节「## 通用纪律」，
-  // 不取「下一个 ## 」——否则会截在 `## 结论` 之前，把「已授 producer 档」那句切出去（假红）
-  const start = text.indexOf('## 输出格式');
-  const end = text.indexOf('## 通用纪律', start + 3);
-  const sec = text.slice(start, end < 0 ? undefined : end);
-  assert.ok(sec.includes('已授 producer 档'));
-  assert.equal(sec.includes('已授 command 档'), false);
+  // S4 迁移：审计输出格式改为结构化合同（必填字段 + 校验），档位事实单源落在「边界」段（S6 renderBoundary）
+  const fmt = text.slice(text.indexOf('## 输出格式'), text.indexOf('## 边界', text.indexOf('## 输出格式')));
+  assert.ok(fmt.includes('核对项'), '审计输出格式必须含核对项字段');
+  assert.equal(fmt.includes('已授 command 档'), false);
+  const edge = text.slice(text.lastIndexOf('## 边界'));
+  assert.ok(edge.includes('`producer` 档'), '档位事实必须写在边界段（S6 单源）');
+  assert.equal(edge.includes('`command` 档'), false);
   const src = readRepo('tools/docgen/components/outputFormats.mjs');
-  assert.equal((src.match(/已授 producer 档/g) ?? []).length, 1);
+  assert.equal((src.match(/已授 producer 档/g) ?? []).length, 1, '旧散文句只允许留在 legacy 块（收口时随旧模板删）');
   assert.equal((src.match(/已授 command 档/g) ?? []).length, 0);
 });
 
@@ -392,8 +392,8 @@ test('S5-TC-B08 真实 agentData 的 producer 席 boundary 等于渲染结果', 
 
 test('S5-TC-B09 B3 pending → 拒写盘；写回 pass 后落盘；rejudge-<席>-B3.md 四字段', () => {
   withRepoCopy((dst) => {
-    // 只改审计席的渲染（outputFormats 审计句），保证 target 盘上 ≠ 渲染、旁席不受影响
-    patchFile(dst, 'tools/docgen/components/outputFormats.mjs', '（已授 producer 档）', '（已授 producer 档·B09）');
+    // 只改审计席的渲染（新卡的本席清单条目），保证 target 盘上 ≠ 渲染、旁席不受影响
+    patchFile(dst, 'tools/docgen/components/agentData.mjs', "'审计席卡：卡片合规核对'", "'审计席卡：卡片合规核对·B09'");
     assert.equal(runCli(dst, ['draft', '--kind', 'agent', '--name', 'reviewer-audit']).status, 0);
     const draftsDir = join(dst, '.drafts');
     const draftName = readdirSync(draftsDir).find((f) => f.startsWith('reviewer-audit--'));
@@ -443,7 +443,7 @@ test('S5-TC-B09 B3 pending → 拒写盘；写回 pass 后落盘；rejudge-<席>
 
 test('S5-TC-B10 缺 DOCGEN_JUDGED_BY → UnapprovedChange exit 4 且不写盘', () => {
   withRepoCopy((dst) => {
-    patchFile(dst, 'tools/docgen/components/outputFormats.mjs', '（已授 producer 档）', '（已授 producer 档·B10）');
+    patchFile(dst, 'tools/docgen/components/agentData.mjs', "'审计席卡：卡片合规核对'", "'审计席卡：卡片合规核对·B10'");
     assert.equal(runCli(dst, ['draft', '--kind', 'agent', '--name', 'reviewer-audit']).status, 0);
     const draftsDir = join(dst, '.drafts');
     const draftPath = join(draftsDir, readdirSync(draftsDir).find((f) => f.startsWith('reviewer-audit--')));

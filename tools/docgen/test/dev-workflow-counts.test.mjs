@@ -125,12 +125,14 @@ test('TC-D02 agents/ 下文件恰为 agentPaths()（无凭空手写卡）', () =
   assert.deepEqual(onDisk, agentPaths().map((p) => p.slice('agents/'.length)).sort());
 });
 
-test('TC-D06 默认 DOMAIN 被改 → gate 报 Mismatch（exit 1）', () => {
+test('TC-D06 触发条件被改 → gate 报 Mismatch（exit 1）', () => {
   withRepoCopy((dst) => {
-    const p = join(dst, 'tools', 'docgen', 'components', 'patternRegistry.mjs');
+    // S4 迁移后 description = trigger.when 直出：改 triggerTable 的 when 即可造出「渲染 ≠ 盘上」；
+    // 本席取仍未迁移的 senior-sdet（其余席已走新卡，DOMAIN 不再参与 description 拼装）
+    const p = join(dst, 'tools', 'docgen', 'components', 'agentData.mjs');
     const t = readFileSync(p, 'utf8');
-    const patched = t.replace("export const DOMAIN = '议会评审';", "export const DOMAIN = '议事厅';");
-    assert.notEqual(patched, t, '构造前提：能改到 DOMAIN');
+    const patched = t.replace('或专门找出被忽视的边界与失败场景', '或专门找出被忽视的边界与失败情形');
+    assert.notEqual(patched, t, '构造前提：能改到 senior-sdet 的 when');
     writeFileSync(p, patched);
     const r = runCli(dst, ['gate']);
     assert.equal(r.status, 1, r.stdout + r.stderr);

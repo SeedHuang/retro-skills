@@ -66,7 +66,9 @@ function dutyBlock(card) {
 
 export function renderCard(card, env) {
   const seat = (env && env.seat) || (card && card.seat) || ''
-  const boundary = (patternRegistry.boundaryBySeat && patternRegistry.boundaryBySeat[seat]) || DEFAULT_BOUNDARY
+  // 边界取席条目自身的 boundary（spec §5.1 :132：`tools` + 权限物料）；未声明槽位的席退回 DEFAULT_BOUNDARY
+  const entry = agentData.find((x) => x.name === seat)
+  const boundary = (entry && entry.boundary) || DEFAULT_BOUNDARY
   let out = CARD_TEMPLATE
   out = fill(out, '{{NAME}}', cell(card && card.name))
   out = fill(out, '{{DESCRIPTION}}', cell(card && card.description))

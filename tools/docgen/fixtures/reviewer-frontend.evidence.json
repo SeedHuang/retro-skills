@@ -5,6 +5,44 @@
   "hashObject": "613d88628ef954c403aae9a7119794bb58ae95dc",
   "goldenAssertion": "pass",
   "compareResult": null,
-  "renderSha256": "8B9C568F28D26F60A6B2463FF3C3E32C970A8D9B9F71A80787279BE31A31D8B1",
-  "lastWrittenHash": "8B9C568F28D26F60A6B2463FF3C3E32C970A8D9B9F71A80787279BE31A31D8B1"
+  "renderSha256": "659E1CF3833E811CFFD20A69CD2F1553309B6312135A50C5B604CC5D27E13DD2",
+  "lastWrittenHash": "659E1CF3833E811CFFD20A69CD2F1553309B6312135A50C5B604CC5D27E13DD2",
+  "changes": [
+    {
+      "from": "8B9C568F28D26F60A6B2463FF3C3E32C970A8D9B9F71A80787279BE31A31D8B1",
+      "to": "659E1CF3833E811CFFD20A69CD2F1553309B6312135A50C5B604CC5D27E13DD2",
+      "at": "2026-10-31T02:47:19.371Z",
+      "rejudged": [
+        "A1",
+        "A2",
+        "B3"
+      ],
+      "judgeMode": "subagent",
+      "judgedBy": "reviewer-ai-2026-10-31-s4-task6-batch",
+      "judged": [
+        {
+          "key": "A1",
+          "verdict": "pass",
+          "basis": "tools/execution-matrix/criteria.md A1 + 渲染产物；重判写回 rules/.inspector-annotations.json reviewer-frontend:A1 = pass（replace 机械转录）"
+        },
+        {
+          "key": "A2",
+          "verdict": "pass",
+          "basis": "tools/execution-matrix/criteria.md A2 + 渲染产物；重判写回 rules/.inspector-annotations.json reviewer-frontend:A2 = pass（replace 机械转录）"
+        },
+        {
+          "key": "B3",
+          "verdict": "pass",
+          "basis": "tools/execution-matrix/criteria.md B3 + 渲染产物；重判写回 rules/.inspector-annotations.json reviewer-frontend:B3 = pass（replace 机械转录）"
+        }
+      ],
+      "machineChecks": {
+        "A3": "pass",
+        "A4": "pass",
+        "A5": "pass",
+        "A6": "pass",
+        "A7": "pass"
+      }
+    }
+  ]
 }

@@ -3,9 +3,47 @@
   "blob": "443ac757cf6bb0c32fcd2f043361993310e811b8",
   "hashObject": "443ac757cf6bb0c32fcd2f043361993310e811b8",
   "sha256": "37830E00817D42613D8B6B29088176FEE927E08D4C46E4DE00A875D0242BCD1C",
-  "renderSha256": "37830E00817D42613D8B6B29088176FEE927E08D4C46E4DE00A875D0242BCD1C",
-  "lastWrittenHash": "37830E00817D42613D8B6B29088176FEE927E08D4C46E4DE00A875D0242BCD1C",
+  "renderSha256": "4A8314669A6C7C86FCF3917E570DC14F034CA878CE4B21C81668E5E1DC61F7B5",
+  "lastWrittenHash": "4A8314669A6C7C86FCF3917E570DC14F034CA878CE4B21C81668E5E1DC61F7B5",
   "goldenAssertion": "pending",
   "compareResult": null,
-  "note": "新建席按 spec §7.1 C7 走 draft → 校验即落盘（绕过 replace 迁移段），故这里没有 goldenAssertion=pass。commit 字段 = 建卡时的仓库 HEAD（本卡尚未提交，该 commit 不含此卡）；首次提交后由 replace 流程刷新。blob / hashObject = git hash-object 的结果（工作树字节的 blob 标识）。"
+  "note": "新建席按 spec §7.1 C7 走 draft → 校验即落盘（绕过 replace 迁移段），故这里没有 goldenAssertion=pass。commit 字段 = 建卡时的仓库 HEAD（本卡尚未提交，该 commit 不含此卡）；首次提交后由 replace 流程刷新。blob / hashObject = git hash-object 的结果（工作树字节的 blob 标识）。",
+  "changes": [
+    {
+      "from": "37830E00817D42613D8B6B29088176FEE927E08D4C46E4DE00A875D0242BCD1C",
+      "to": "4A8314669A6C7C86FCF3917E570DC14F034CA878CE4B21C81668E5E1DC61F7B5",
+      "at": "2026-10-31T02:47:05.887Z",
+      "rejudged": [
+        "A1",
+        "A2",
+        "B3"
+      ],
+      "judgeMode": "subagent",
+      "judgedBy": "reviewer-ai-2026-10-31-s4-task6-batch",
+      "judged": [
+        {
+          "key": "A1",
+          "verdict": "pass",
+          "basis": "tools/execution-matrix/criteria.md A1 + 渲染产物；重判写回 rules/.inspector-annotations.json evidence-reader:A1 = pass（replace 机械转录）"
+        },
+        {
+          "key": "A2",
+          "verdict": "pass",
+          "basis": "tools/execution-matrix/criteria.md A2 + 渲染产物；重判写回 rules/.inspector-annotations.json evidence-reader:A2 = pass（replace 机械转录）"
+        },
+        {
+          "key": "B3",
+          "verdict": "pass",
+          "basis": "tools/execution-matrix/criteria.md B3 + 渲染产物；重判写回 rules/.inspector-annotations.json evidence-reader:B3 = pass（replace 机械转录）"
+        }
+      ],
+      "machineChecks": {
+        "A3": "pass",
+        "A4": "pass",
+        "A5": "pass",
+        "A6": "pass",
+        "A7": "pass"
+      }
+    }
+  ]
 }

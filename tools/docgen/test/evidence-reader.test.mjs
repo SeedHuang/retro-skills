@@ -34,20 +34,21 @@ test('TC-B02 tools 恰等于只读三元组', () => {
   assert.deepEqual(base.tools, patternRegistry.tools.readOnly);
 });
 
-test('TC-B03 description 走 domain 分支且不含「议会评审」', () => {
+test('TC-B03 description 只写触发条件（S4 迁移后 = trigger.when 直出）且不含「议会评审」', () => {
   const d = /^description:\s*(.+)$/m.exec(card)[1];
-  assert.ok(d.startsWith('在开发工作流中担任阅读取证员。'), d);
-  assert.ok(d.endsWith('时调用'), d);
+  assert.equal(d, triggerTable['evidence-reader'].when, d);
+  assert.equal(d.includes('在开发工作流中担任'), false, 'S4 迁移后不再派生「在…中担任…」');
+  assert.equal(d.includes('时调用'), false, 'S4 迁移后不再带派生式尾巴');
   assert.equal(d.includes('议会评审'), false);
 });
 
 test('TC-B04 outputKind 与 evidence 输出格式齐，结构检查零 findings', () => {
   assert.equal(patternRegistry.outputKind.has('evidence'), true);
   const i = card.indexOf('## 输出格式');
-  const j = card.indexOf('## 通用纪律');
-  assert.ok(i > -1 && j > i, '卡缺输出格式节或通用纪律节');
+  const j = card.indexOf('## 边界');
+  assert.ok(i > -1 && j > i, '卡缺输出格式节或边界节');
   const s = card.slice(i, j);
-  for (const w of ['原文摘句', '文件', '行号', '未找到']) assert.ok(s.includes(w), `取证格式缺「${w}」`);
+  for (const w of ['原文摘句', '文件', '行号']) assert.ok(s.includes(w), `取证格式缺「${w}」`);
   for (const w of ['严重级别', '建议解法']) assert.equal(s.includes(w), false, `取证格式不得出现「${w}」`);
   const r = checkAgentFile('evidence-reader');
   assert.equal(r.ok, true, JSON.stringify(r.findings));
@@ -84,14 +85,10 @@ test('TC-B10 reader 卡「边界」节为取证角色句、不含「只读评审
   assert.equal(/你是只读评审角色：[^\r\n]*不裁决他人分歧/.test(tpl), false, '模板不得硬编码默认句');
 });
 
-test('TC-B11 reader 卡「自由探索」节为「本节不适用…」形态；旧句与新句各只存一份', () => {
+test('TC-B11 reader 卡不再有「自由探索」散文节（S4 迁移后由一条 must 承接）', () => {
   assert.equal(card.includes('现场生成 3-5 个'), false);
-  assert.equal(card.includes('只答固定清单 = 不合格'), false);
-  const i = card.indexOf('## 自由探索');
-  assert.ok(i > -1);
-  const s = card.slice(i);
-  assert.match(s, /本节不适用/);
-  assert.equal(/生成 3-5 个/.test(s), false);
+  assert.equal(card.includes('## 自由探索'), false, 'S4 迁移后新卡 7 段里无「自由探索」节');
+  assert.equal(card.includes('must'), true, '自由探索语义由「一定会」的 must 行承接');
 
   assert.equal(tpl.includes('{{EXPLORE}}'), true);
   assert.equal(tpl.includes('现场生成 3-5 个'), false);
@@ -174,18 +171,21 @@ test('TC-D04 renderAgent 未把 domain 接进 description 时会被 grep 判据�
   assert.match(broken, /^description:.*在议会评审中担任/m, '未接 domain 时必须能被 grep 抓到');
 });
 
-test('TC-D05 domain 输入空间：空串 / 全空格 / 非字符串都不得拼出空 domain 句，且被 validate 拒绝', () => {
+test('TC-D05 domain 输入空间（S4 迁移后）：新卡 description 不受 domain 影响，值域仍由 boundary 守', () => {
   for (const v of ['', '  ', 123]) {
     const d = structuredClone(agentData);
     const a = d.find((x) => x.name === 'evidence-reader');
     a.domain = v;
-    const rendered = renderAgent({ agent: a, trigger: triggerTable[a.name], template: tpl, sharedBlocks: {}, outputFormats: {} });
-    const line = /^description:\s*(.+)$/m.exec(rendered)[1];
+    // 迁移席的 description = trigger.when 直出 → 不再拼 domain 句，也不会拼出空 domain 句
+    const line = /^description:\s*(.+)$/m.exec(card)[1];
     assert.equal(line.includes('在中担任'), false, `domain=${JSON.stringify(v)} 拼出了空 domain 句`);
     assert.equal(line.includes('在  中担任'), false, `domain=${JSON.stringify(v)} 拼出了全空格 domain 句`);
-    assert.throws(() => validateAgentData(d, triggerTable), (e) => e.code === 'DescriptionDerivation', `domain=${JSON.stringify(v)} 未被拒绝`);
-    assert.equal(line.includes(DOMAIN), true, '回落值必须引用 DOMAIN 常量');
+    // 非法 domain 不再走派生式（断言 8 只判未迁移席）；值域防线改由 boundary 承担（B12 已判）
+    assert.equal(d.find((x) => x.name === 'evidence-reader').domain, v, '构造必须真的改到 domain');
   }
+  const d = structuredClone(agentData);
+  d.find((x) => x.name === 'evidence-reader').boundary = '';
+  assert.throws(() => validateAgentData(d, triggerTable), (e) => e.code === 'DescriptionDerivation', '空 boundary 仍必须被拒');
 });
 
 test('TC-D07 domain 字段被接受，且只有 evidence-reader 带它', () => {
@@ -204,12 +204,13 @@ test('TC-D08 边界句退回模板现句 → reader 卡变回「只读评审角�
 
   let diff14 = 0;
   for (const a of agentData) {
-    // 已声明 boundary 槽位的席（evidence-reader / reviewer-audit / detective-observer）与 testcase 席不参与本对照
-    if (a.boundary !== undefined || a.outputKind === 'testcase') continue;
+    // 已声明 boundary 槽位的席（evidence-reader / reviewer-audit / detective-observer）与 testcase 席不参与本对照；
+    // S4 迁移席的渲染输入已换 card（不走 renderAgent），同样不在本对照面内
+    if (a.boundary !== undefined || a.outputKind === 'testcase' || a.card) continue;
     const t = renderAgent({ agent: a, trigger: triggerTable[a.name], template: badTpl, sharedBlocks, outputFormats });
     if (t !== readFileSync(join(ROOT, 'agents', `${a.name}.md`), 'utf8')) diff14 += 1;
   }
-  assert.equal(diff14, 0, '14 席逐字节仍绿 → 证明 gate 对 C10 半改零判别力，唯一防线是卡文判据');
+  assert.equal(diff14, 0, '未迁移席逐字节仍绿 → 证明 gate 对 C10 半改零判别力，唯一防线是卡文判据');
 });
 
 test('TC-D09 explore 槽位未接线 → gate 仍绿、卡仍含旧句，只有卡文判据抓得住', () => {
@@ -241,13 +242,13 @@ test('TC-E07 给另一席注入一字节 → gate 必报 Mismatch（第二个独
 
 test('TC-E08 evidence 格式退化成问题卡（级别 / 解法 / P0）必被抓住', () => {
   const i = card.indexOf('## 输出格式');
-  const j = card.indexOf('## 通用纪律');
+  const j = card.indexOf('## 边界');
   const s = card.slice(i, j);
   assert.equal(s.includes('严重级别'), false);
   assert.equal(s.includes('建议解法'), false);
   assert.equal(s.includes('P0'), false);
   assert.equal(s.includes('原文摘句'), true);
-  assert.equal(s.includes('未找到'), true);
+  assert.equal(s.includes('没找到'), true);
 });
 
 test('TC-E13 tools 多加 Write → ToolsViolation（恰等，不是包含）', () => {

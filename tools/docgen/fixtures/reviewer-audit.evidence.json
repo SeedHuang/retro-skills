@@ -5,8 +5,8 @@
   "hashObject": "291ec6a2ce44e12093b77346923c888ec7075189",
   "goldenAssertion": "pass",
   "compareResult": null,
-  "renderSha256": "999E045666AC52DA04E32EC4729AB56D99C169360B070B6A1A0037235F2CA23F",
-  "lastWrittenHash": "999E045666AC52DA04E32EC4729AB56D99C169360B070B6A1A0037235F2CA23F",
+  "renderSha256": "6260C84907A733D7FF249ADEDC4BA6ED4E1CAE0E18109CA2B464E6F9DB238890",
+  "lastWrittenHash": "6260C84907A733D7FF249ADEDC4BA6ED4E1CAE0E18109CA2B464E6F9DB238890",
   "changes": [
     {
       "from": "703E6DFA565E01EA2975BE971D38F873D20E091BC9A079EBA3D7E53B56B3CA16",
@@ -175,6 +175,42 @@
           "key": "B3",
           "verdict": "pass",
           "basis": "tools/execution-matrix/criteria.md B3 + 渲染产物；重判写回 rules/.inspector-annotations.json reviewer-audit:B3 = pass（replace 机械转录）。B3 判定产生于 2026-10-25（CB97 那一版卡，FB7A→CB97 的中间态）；2026-10-27 本次改动只触及输出格式节，职责段与边界段未变，判定沿用"
+        }
+      ],
+      "machineChecks": {
+        "A3": "pass",
+        "A4": "pass",
+        "A5": "pass",
+        "A6": "pass",
+        "A7": "pass"
+      }
+    },
+    {
+      "from": "999E045666AC52DA04E32EC4729AB56D99C169360B070B6A1A0037235F2CA23F",
+      "to": "6260C84907A733D7FF249ADEDC4BA6ED4E1CAE0E18109CA2B464E6F9DB238890",
+      "at": "2026-10-31T02:47:19.088Z",
+      "rejudged": [
+        "A1",
+        "A2",
+        "B3"
+      ],
+      "judgeMode": "subagent",
+      "judgedBy": "reviewer-ai-2026-10-31-s4-task6-batch",
+      "judged": [
+        {
+          "key": "A1",
+          "verdict": "pass",
+          "basis": "tools/execution-matrix/criteria.md A1 + 渲染产物；重判写回 rules/.inspector-annotations.json reviewer-audit:A1 = pass（replace 机械转录）"
+        },
+        {
+          "key": "A2",
+          "verdict": "pass",
+          "basis": "tools/execution-matrix/criteria.md A2 + 渲染产物；重判写回 rules/.inspector-annotations.json reviewer-audit:A2 = pass（replace 机械转录）"
+        },
+        {
+          "key": "B3",
+          "verdict": "pass",
+          "basis": "tools/execution-matrix/criteria.md B3 + 渲染产物；重判写回 rules/.inspector-annotations.json reviewer-audit:B3 = pass（replace 机械转录）"
         }
       ],
       "machineChecks": {

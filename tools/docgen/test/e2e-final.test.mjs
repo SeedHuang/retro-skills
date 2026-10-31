@@ -9,18 +9,23 @@ import { patternRegistry } from '../components/patternRegistry.mjs';
 const CLI = 'tools/docgen/cli.mjs';
 const run = (args) => spawnSync(process.execPath, [CLI, ...args], { encoding: 'utf8', env: { ...process.env, DOCGEN_DRAFTS_DIR: '.tmp-test/drafts' } });
 
-test('W4：锚点席（reviewer-product/senior-sdet）派生 description == 句式拼装逐字相等', () => {
+test('W4：锚点席 description 形态（senior-sdet 走派生式；reviewer-product 迁移后 = trigger.when 直出）', () => {
   for (const name of ['reviewer-product', 'senior-sdet']) {
     const a = agentData.find((x) => x.name === name);
     const t = triggerTable[name];
-    const derived = a.outputKind === 'testcase'
-      ? patternRegistry.description.handwritten(a.role, t.when, t.notWhen?.text ?? '')
-      : patternRegistry.description.parliament(a.role, t.when);
-    assert.ok(!derived.includes('时时'), `${name} 派生含时时`);
     const onDisk = readFileSync(`agents/${name}.md`, 'utf8');
     const fm = /^description:\s*(.+)$/m.exec(onDisk);
     assert.ok(fm, `${name} 无 description`);
-    assert.equal(derived, fm[1].trim(), `${name} 派生 ≠ 现文件 description`);
+    if (a.card) {
+      assert.equal(fm[1].trim(), t.when, `${name} 迁移后 description 必须 = trigger.when`);
+      assert.equal(fm[1].includes('在议会评审中担任'), false, `${name} 迁移后不得再派生`);
+    } else {
+      const derived = a.outputKind === 'testcase'
+        ? patternRegistry.description.handwritten(a.role, t.when, t.notWhen?.text ?? '')
+        : patternRegistry.description.parliament(a.role, t.when);
+      assert.ok(!derived.includes('时时'), `${name} 派生含时时`);
+      assert.equal(derived, fm[1].trim(), `${name} 派生 ≠ 现文件 description`);
+    }
   }
 });
 

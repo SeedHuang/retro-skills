@@ -6,6 +6,7 @@ import { sharedBlocks } from '../components/sharedBlocks.mjs';
 import { legacyOutputFormats as outputFormats } from '../components/outputFormats.mjs';
 import { agentData, triggerTable } from '../components/agentData.mjs';
 import { renderAgent } from '../components/renderAgent.mjs';
+import { renderByName } from '../components/renderByName.mjs';
 
 test('AUDIT_RULES 是 3 条审计铁律，逐字取自黄金快照 L89-91', () => {
   const s = sharedBlocks.AUDIT_RULES;
@@ -35,13 +36,8 @@ const agent = () => agentData.find((a) => a.name === 'reviewer-audit');
 const tpl = () => readFileSync('tools/docgen/templates/agent.md.tpl', 'utf8');
 
 test('渲染结果与黄金快照整文件逐字节相等', () => {
-  const actual = renderAgent({
-    agent: agent(),
-    trigger: triggerTable['reviewer-audit'],
-    template: tpl(),
-    sharedBlocks,
-    outputFormats,
-  });
+  // S4 迁移后 reviewer-audit 走新卡渲染器：判据不变（渲染产物 == 盘上卡），承载渲染器换成 renderByName 的新分支
+  const actual = renderByName('reviewer-audit');
   const expected = readFileSync('agents/reviewer-audit.md', 'utf8');
   assert.equal(Buffer.compare(Buffer.from(actual), Buffer.from(expected)), 0);
 });
