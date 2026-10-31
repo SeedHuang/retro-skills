@@ -7,6 +7,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { agentData, triggerTable } from './agentData.mjs';
 import { renderAgent } from './renderAgent.mjs';
+import { renderSeat } from './cardPipeline.mjs';
 import { sharedBlocks } from './sharedBlocks.mjs';
 // 过渡期：旧模板渲染走 `legacyOutputFormats`（逐字散文块）；新卡分支（S4）读结构化 `outputFormats`
 import { legacyOutputFormats as outputFormats } from './outputFormats.mjs';
@@ -27,6 +28,8 @@ export function renderByName(name) {
   if (!t || t.when === undefined) {
     fail('MissingComponentData', { name, reason: 'registered 未拆槽席不可渲染（S2+ 拆槽后可用）' });
   }
+  // 新卡分支（S4）：已迁移席走 cardPipeline 的卡面投影；旧模板分支保留到收口（spec §7-⑥）
+  if (agent.card) return renderSeat(name).card;
   const tplName = agent.outputKind === 'testcase' ? 'agent-handwritten.md.tpl' : 'agent.md.tpl';
   const template = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'templates', tplName), 'utf8');
   return renderAgent({ agent, trigger: t, template, sharedBlocks, outputFormats });

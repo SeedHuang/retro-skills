@@ -326,12 +326,12 @@ test('S1-TC-A04 8/8/5 个 label 与 PRD 原文逐字相等（第三方通道）'
   const prd = readFileSync(join(REPO, 'docs/prd/20261026205821-agent-card-contract.md'), 'utf8').split(/\r?\n/);
   const line = (n) => prd[n - 1];
   const cut = (s) => s.split('|')[2].trim().split('（')[0].split(/[、/]/).map((x) => x.replace(/\s+/g, '').trim()).filter(Boolean);
-  const sceneLabels = cut(line(249)); // 会话 / 议会轮 / …
-  const momentLabels = cut(line(250)); // 开始 / 结束 / …
-  const signalLabels = cut(line(252)); // 事件到达 / …
-  assert.equal(sceneLabels.length, 8, `PRD :249 应切出 8 个 scene label，实得 ${sceneLabels.length}`);
-  assert.equal(momentLabels.length, 8, `PRD :250 应切出 8 个 moment label，实得 ${momentLabels.length}`);
-  assert.equal(signalLabels.length, 5, `PRD :252 应切出 5 个 signal label，实得 ${signalLabels.length}`);
+  const sceneLabels = cut(line(250)); // 会话 / 议会轮 / …（S4 Task 4 在 §3.7 段表内插 1 行 → 行号 +1）
+  const momentLabels = cut(line(251)); // 开始 / 结束 / …
+  const signalLabels = cut(line(253)); // 事件到达 / …
+  assert.equal(sceneLabels.length, 8, `PRD :250 应切出 8 个 scene label，实得 ${sceneLabels.length}`);
+  assert.equal(momentLabels.length, 8, `PRD :251 应切出 8 个 moment label，实得 ${momentLabels.length}`);
+  assert.equal(signalLabels.length, 5, `PRD :253 应切出 5 个 signal label，实得 ${signalLabels.length}`);
   assert.deepEqual(Object.values(M.SHARED_SCENES).map((v) => v.label), sceneLabels);
   assert.deepEqual(Object.values(M.MOMENTS).map((v) => v.label), momentLabels);
   assert.deepEqual(Object.values(M.SIGNALS).map((v) => v.label), signalLabels);
@@ -347,9 +347,9 @@ test('S1-TC-A05 词表全成员对账 + 单位 / 程序词 / 指针词逐条必�
     return w;
   };
   // ① 词表全成员对账（成员、顺序逐字相等；长度也断，防「塞一个词改绿」）
-  const subWords = cutVocab(270, '起步词'); // 主观词：自省 / 客观 / 诚实 / 宽松 / 严格
-  assert.equal(subWords.length, 5, `PRD :270 的起步主观词应为 5 个，实得 ${subWords.length}`);
-  assert.deepEqual(ST.subjectiveTerms, subWords, `vocab/subjective-terms.mjs 必须与 PRD :270 逐字相等，实得 ${ST.subjectiveTerms}`);
+  const subWords = cutVocab(271, '起步词'); // 主观词：自省 / 客观 / 诚实 / 宽松 / 严格（S4 Task 4 行号 +1）
+  assert.equal(subWords.length, 5, `PRD :271 的起步主观词应为 5 个，实得 ${subWords.length}`);
+  assert.deepEqual(ST.subjectiveTerms, subWords, `vocab/subjective-terms.mjs 必须与 PRD :271 逐字相等，实得 ${ST.subjectiveTerms}`);
   const critWords = cutVocab(202, '起步 6 词'); // 判据词：处置 / 依据 / 充分 / 合理 / 及时 / 适当
   assert.equal(critWords.length, 6, `PRD :202 的起步判据词应为 6 个，实得 ${critWords.length}`);
   assert.deepEqual(CT.criterionTerms, critWords, `vocab/criterion-terms.mjs 必须与 PRD :202 逐字相等，实得 ${CT.criterionTerms}`);

@@ -1,5 +1,11 @@
 // validateAgentData（§6 断言 1–15）：数据层查字段（纯数据），输出层 frontmatter 由 gate 逐字节兜底。
 import { patternRegistry, resolveDomain, tierOf, toolsForSeat } from './patternRegistry.mjs';
+// S4（spec §10-D12 / :225）：S1 的 36 个脚本码 + 3 个合并码归 exit 1——从 S1 码表**派生**，不抄第二份名单。
+// `WeakReason` 是 manual 码、不在 `CARD_MODEL_CODES`（S1 V-5），故天然不入表（`S4-TC-F10` 正断言「未知错误码」）。
+import { CARD_MODEL_CODES } from '../card-model/validateCardModel.mjs';
+import { MERGE_CODES } from '../card-model/merge.mjs';
+
+const S1_EXIT1 = [...Object.keys(CARD_MODEL_CODES), ...Object.values(MERGE_CODES)];
 
 const EXIT = {
   0: [],
@@ -12,7 +18,9 @@ const EXIT = {
     // S6 配置校验五码（spec §7）：唯一发射点 = `components/validatePolicy.mjs`；
     // 第六码 `RenderNotEquivalent` 由施工期断言发出、**不进本表**（CLI 不引入）
     'UnknownPolicyRef', 'LiteralInConfig', 'SeatNameInDefinition', 'ForbiddenGroupGranted',
-    'TemplateImpure'],
+    'TemplateImpure',
+    // S4 承接 S1（spec §10-D12）：36 个脚本码 + 3 个合并码 → exit 1
+    ...S1_EXIT1],
   2: ['UnregisteredHandwritten', 'InvalidBaseline', 'InvalidBaselinePath', 'DanglingBaselineEntry',
     'BaselineDrift', 'EnvironmentEOL', 'InvalidInputPath', 'InvalidOutputPath',
     'MissingComponentData', 'UnsupportedKind', 'StateFileInvalid', 'GoldenSnapshotUnavailable',
@@ -60,12 +68,15 @@ export function validateAgentData(data, table) {
     if (!t || t.when === undefined) continue; // registered 未拆槽豁免
     if (/在[^。]*中担任|时调用/.test(t.when) || t.when.endsWith('时')) fail('WhenFormatViolation', { name, when: t.when });
   }
-  // 断言 8：description 派生 + 时时（对已拆槽席）
+  // 断言 8：description 派生 + 时时（对已拆槽**且未迁移**的席）
   // domain 一致性（C5 ②）：声明了 domain 就必须是非空字符串，且派生出的 description 真的包含它。
   // 不用 includes('') 这类恒真写法——空串 / 全空格 / 非字符串一律判 DescriptionDerivation。
+  // S4（spec §10-D3）：已迁移席的新卡 `description` = `trigger.when` 直出（不再派生「在…中担任…」），
+  // 该形态由 `S4-TC-C01` 断，本断言只管未迁移席（过渡期新旧共存，spec §8 逐席滚动）。
   for (const [name, t] of Object.entries(table)) {
     if (!t || t.when === undefined) continue;
     const a = data.find((x) => x.name === name);
+    if (a && a.card) continue;
     const derived = a && a.outputKind === 'testcase'
       ? patternRegistry.description.handwritten(a.role, t.when, t.notWhen?.text ?? '')
       : patternRegistry.description.parliament(a.role, t.when, resolveDomain(a));
@@ -113,9 +124,10 @@ export function validateAgentData(data, table) {
   }
   // 断言 15：条目不得含四键（when / notWhen / route / fallback 只住 triggerTable），且键集不超白名单
   // 普通席 8 键 + 三个可选槽位键（domain / boundary / explorePolicy，C5 ①）；
+  // S4：新卡数据落 `card` 键（spec §4 `:80`），迁移期与旧键共存，旧键在 Task 7 收口时删。
   // testcase 席（手写卡模板）另容 heading / sourceLine。identity / fixedList 不要求必填（施工中段骨架合法）
   const BASE_KEYS = ['name', 'role', 'dimension', 'tools', 'identity', 'fixedList', 'sharedBlock', 'outputKind',
-    'domain', 'boundary', 'explorePolicy'];
+    'domain', 'boundary', 'explorePolicy', 'card'];
   const HANDWRITTEN_KEYS = ['heading', 'sourceLine'];
   // 两个槽位字段只允许出现在显式声明它们的席（C5 ④）：其他席一旦带上，渲染会静默换句而不报错。
   // 白名单由 boundaryBySeat 派生（+ evidence-reader 自带的边界句），新增 producer 席时自动跟随。

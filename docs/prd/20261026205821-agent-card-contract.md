@@ -235,8 +235,9 @@
 | 冲突裁决 | 优先级规则（用户 > 规则 > 本席） | 采纳 / 不采纳 + 认输判据 |
 | 本席清单 | `CHECK_ITEMS`（类别 + 条目表） | 类别 label + 条目 id + `criterion` 文字 + `check` 类型 |
 | 边界 | 权限物料 | 只写 / 禁写两类清单 |
+| 输出格式 | `outputFormats[outputKind]`（结构化 `fields[]` + `checks[]`） | 必填字段表 + 校验命令 |
 
-> **单源**：本表的字段清单与 §9.2 P-B 的扫描判据同源于 `tools/docgen/card-model/vocab/card-must-fields.mjs`（S4 建）——两处不得各写一份，改字段只改该文件与本节行数。
+> **单源**：本表的字段清单与 §9.2 P-B 的扫描判据同源于 `tools/docgen/card-model/vocab/card-must-fields.mjs`（S4 建）——两处不得各写一份，改字段只改该文件与本节行数（**当前段行数 = 7**：职责 / 一定会 / 禁止 / 冲突裁决 / 本席清单 / 输出格式 / 边界）。
 
 **数据源落点** `[已决·代裁 C-11]`：15 席的数据在 `tools/docgen/components/agentData.mjs`（+ `triggerTable`）；`agents/*.md` 是**生成物**。手改 `agents/*.md` 会在下次重生成时被静默覆盖——S4 落地前允许过渡期手改（截止 = S4 首次重生成）；S4 落地后手改由 `node tools/docgen/cli.mjs gate` 报红。
 
@@ -290,7 +291,7 @@
 {
   round: 3,
   instance: 'A' | 'B' | null,     // 仅 check:'ai' 条目双实例判定时出现；单实例为 null
-  subject: 'reviewer-detective.card'|'artifact.observation'|…,      // 本轮对象类型（枚举）
+  subject: 'reviewer-detective.card'|'artifact.observation'|'<seat>.card',   // 本轮对象类型：15 席 `<seat>.card` + 2 项产物侧（登记表，非封闭枚举；唯一来源 tools/docgen/card-model/subjects.mjs）
   items: [{ id: 'k01', objectType?: '<缺省沿用 subject>',
             verdict: 'hit'|'miss'|'na',
             evidence: { path, line, quote },   // hit 必带

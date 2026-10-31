@@ -12,6 +12,7 @@ import { BASELINE_RULES, agentPaths, renderBaseline } from './components/baselin
 import * as spec from './components/specTestCaseGate.mjs';
 import { compareBuffers, checkEnvironment } from './components/compare.mjs';
 import { renderByName } from './components/renderByName.mjs';
+import { buildCards, expectedDocs, writeAll } from './components/cardPipeline.mjs';
 import { validatePolicy } from './components/validatePolicy.mjs';
 import { dumpPolicy } from './components/dumpPolicy.mjs';
 import { readState, writeState, setAgentState, statePath } from './state.mjs';
@@ -25,6 +26,8 @@ export { renderByName };
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const AGENTS_DIR = join(REPO_ROOT, 'agents');
+// 人读投影落点（spec §10-D2 / §3 `:53-56`）：只由 `generate --readme --apply` 落盘，手改即 gate 报 Mismatch
+const DOC_AGENTS_DIR = join(REPO_ROOT, 'docs', 'agents');
 // baseline 清单路径可用 DOCGEN_BASELINE_PATH 重定向（与 state / evidence / drafts 同款测试隔离位）：
 // 测试写的是临时文件，不再与非同进程的 gate 抢同一个共享文件（并发 truncate 窗口会让 gate 误报 BaselineDrift）
 const baselinePath = () => process.env.DOCGEN_BASELINE_PATH || join(dirname(fileURLToPath(import.meta.url)), 'baseline.json');
@@ -43,6 +46,9 @@ function readTemplate(kind) {
 }
 
 export function cmdGenerate(args) {
+  if (args.apply && !args.readme) {
+    fail('InvalidArgs', { message: 'InvalidArgs: --apply 只授权 docs/agents 落盘，必须与 --readme 同时给出' });
+  }
   const kind = args.kind ?? 'all';
   const name = args.name;
   if (name !== undefined && !/^[a-z][a-z0-9-]{0,49}$/.test(name)) fail('InvalidName', { name });
@@ -76,6 +82,23 @@ export function cmdGenerate(args) {
       if (compareBuffers(rendered, readFileSync(p))) drift += 1;
     }
   }
+  // docs/agents/**（人读投影）：`--readme` 选目标面，`--apply` 才落盘；无旗标时保持「只比不写」（spec §3 `:71`）
+  if (args.readme) {
+    const docs = expectedDocs();
+    const artifacts = [
+      ...docs.entries.map((e) => ({ path: join(DOC_AGENTS_DIR, `${e.seat}.md`), bytes: e.readme })),
+      { path: join(DOC_AGENTS_DIR, 'README.md'), bytes: docs.index },
+    ];
+    if (args.apply) {
+      const w = writeAll(artifacts);
+      if (!w.ok) fail('WriteFailed', { message: `WriteFailed: ${w.errors.map((x) => x.message ?? x.code).join('；')}` });
+      console.log(`docs/agents 已写入（${artifacts.length} 份，全内存 rename 落盘）`);
+    }
+    for (const a of artifacts) {
+      if (!existsSync(a.path)) { drift += 1; continue; }
+      if (compareBuffers(Buffer.from(a.bytes), readFileSync(a.path))) drift += 1;
+    }
+  }
   console.log(`baseline ${BASELINE_RULES.length + agentPaths().length}/${BASELINE_RULES.length + agentPaths().length}`);
   return drift === 0 ? 0 : 1;
 }
@@ -101,14 +124,50 @@ export function collectGate() {
   let state;
   try { state = readState(); }
   catch (e) { drifts.push({ code: e.code ?? 'StateFileInvalid', path: statePath() }); state = { agents: {} }; }
+  state.agents = state.agents && typeof state.agents === 'object' ? state.agents : {};
+  const landedSeats = new Set();
   for (const a of agentData) {
+    // 接管完整性（spec §7④）：state 键集必须与席集双向相等（删一席即红并点名）
+    if (!Object.prototype.hasOwnProperty.call(state.agents, a.name)) {
+      drifts.push({ code: 'Mismatch', path: 'state.json', message: `state.json 缺席 ${a.name}（接管完整性，spec §7④）` });
+      continue;
+    }
     const p = join(AGENTS_DIR, `${a.name}.md`);
     if (!existsSync(p)) { drifts.push({ code: 'DanglingBaselineEntry', path: `agents/${a.name}.md` }); continue; }
+    // 未迁移席不得处于「已接管」之外的状态：state 说它不是 replaced 却仍带新卡/人读投影 → 红
+    if (a.card && state.agents[a.name] !== 'replaced') {
+      drifts.push({ code: 'Mismatch', path: `docs/agents/${a.name}.md`, message: `未接管席 ${a.name}（state=${state.agents[a.name]}）不得带人读投影（spec §7④ 中期子集判据）` });
+      continue;
+    }
     if (state.agents[a.name] === 'replaced') {
       if (compareBuffers(Buffer.from(renderByName(a.name), 'utf8'), readFileSync(p))) {
         drifts.push({ code: 'Mismatch', path: `agents/${a.name}.md` });
+      } else if (a.card) {
+        landedSeats.add(a.name);
       }
     }
+  }
+  // docs/agents/** 比对面（spec §7③）：已落地席（盘上卡 == 渲染）逐字节比对；缺文件 → DanglingBaselineEntry。
+  // 逐席滚动期未落地席暂不比 README（新 README 先于角色卡替换生成，见 Task 5 的落盘次序）。
+  const docs = expectedDocs();
+  const migrated = new Set(docs.entries.map((e) => e.seat));
+  const presentDocs = existsSync(DOC_AGENTS_DIR) ? readdirSync(DOC_AGENTS_DIR).filter((f) => f.endsWith('.md')) : [];
+  for (const f of presentDocs) {
+    if (f === 'README.md') continue;
+    if (!migrated.has(f.slice(0, -3))) {
+      drifts.push({ code: 'Mismatch', path: `docs/agents/${f}`, message: `未迁移席 ${f.slice(0, -3)} 不得出现在 docs/agents（spec §7④）` });
+    }
+  }
+  for (const e of docs.entries) {
+    if (!landedSeats.has(e.seat)) continue;
+    const p = join(DOC_AGENTS_DIR, `${e.seat}.md`);
+    if (!existsSync(p)) { drifts.push({ code: 'DanglingBaselineEntry', path: `docs/agents/${e.seat}.md` }); continue; }
+    if (compareBuffers(Buffer.from(e.readme), readFileSync(p))) drifts.push({ code: 'Mismatch', path: `docs/agents/${e.seat}.md` });
+  }
+  if (agentData.length > 0 && agentData.every((a) => landedSeats.has(a.name))) {
+    const idx = join(DOC_AGENTS_DIR, 'README.md');
+    if (!existsSync(idx)) drifts.push({ code: 'DanglingBaselineEntry', path: 'docs/agents/README.md' });
+    else if (compareBuffers(Buffer.from(docs.index), readFileSync(idx))) drifts.push({ code: 'Mismatch', path: 'docs/agents/README.md' });
   }
   const scanRulesDir = process.env.DOCGEN_RULES_DIR || join(REPO_ROOT, 'rules');
   const scanAgentsDir = process.env.DOCGEN_AGENTS_DIR || join(REPO_ROOT, 'agents');
@@ -149,6 +208,15 @@ export function cmdPolicy() {
 export function cmdGate() {
   gateChecks();
   console.log(`baseline ${BASELINE_RULES.length + agentPaths().length}/${BASELINE_RULES.length + agentPaths().length}`);
+  return 0;
+}
+
+// `dump`（spec §5 `:117`）：合并后全量 JSON，**只 stdout**——不落盘、不进门禁、不调 writeAll（S4-TC-B07）
+export function cmdDump(args) {
+  assertAgentName(args.name);
+  const built = buildCards().find((x) => x.seat === args.name);
+  if (!built) fail('MissingComponentData', { name: args.name, reason: '未迁移席不可 dump（旧模板席没有合并后的卡数据）' });
+  console.log(JSON.stringify(built.card, null, 2));
   return 0;
 }
 
@@ -269,8 +337,9 @@ export function touchedSemanticKeys(oldText, newText) {
       const line = lines[i];
       if (line === undefined) continue;
       if (/^description: /.test(line)) { keys.add('A2'); continue; }
+      // S4（spec §10-D11 / :224）：A1 的判定对象从「你是谁」段迁到新卡的「职责」段；过渡期三形态兼容
       const heading = secs[i] ?? '';
-      if (heading.includes('你是谁') || heading.includes('身份')) keys.add('A1');
+      if (heading.includes('职责') || heading.includes('你是谁') || heading.includes('身份')) keys.add('A1');
     }
   }
   return [...keys].sort();
@@ -512,6 +581,10 @@ const VALUE = 'value';
 const BOOL = 'bool';
 const REPLACE_FLAGS = { '--kind': VALUE, '--name': VALUE, '--draft': VALUE, '--expect-change': VALUE, '--rejudge': VALUE, '--yes': BOOL };
 const DIFF_FLAGS = { '--kind': VALUE, '--name': VALUE };
+// generate：只比不写为缺省；`--readme` 选 docs/agents 目标面、`--apply` 才授权落盘（spec §3 `:71`）
+const GENERATE_FLAGS = { '--kind': VALUE, '--name': VALUE, '--readme': BOOL, '--apply': BOOL };
+// dump：只读子命令，只接受 `--name`（未知旗标 → InvalidArgs exit 2）
+const DUMP_FLAGS = { '--name': VALUE };
 // 只读子命令：只接受 `--dump`（`--write` / `--out` / `--apply` 落到「未知旗标」→ InvalidArgs exit 2）
 const POLICY_FLAGS = { '--dump': BOOL };
 
@@ -568,8 +641,15 @@ export function main(argv) {
     const rest = argv.slice(1);
     const flag = (k, d) => { const i = rest.indexOf(k); return i >= 0 ? rest[i + 1] ?? d : d; };
     const has = (k) => rest.includes(k);
-    if (sub === 'generate') return cmdGenerate({ kind: flag('--kind', undefined), name: flag('--name', undefined) });
+    if (sub === 'generate') {
+      const a = parseArgs(rest, GENERATE_FLAGS, 'generate');
+      return cmdGenerate({ kind: a['--kind'], name: a['--name'], readme: a['--readme'] === true, apply: a['--apply'] === true });
+    }
     if (sub === 'gate') return cmdGate();
+    if (sub === 'dump') {
+      const a = parseArgs(rest, DUMP_FLAGS, 'dump');
+      return cmdDump({ name: a['--name'] });
+    }
     if (sub === 'draft' || sub === 'draft ls' || sub === 'draft rm' || sub === 'draft ensure') {
       const parts = argv[0] === 'draft' && ['ls', 'rm', 'ensure'].includes(argv[1]) ? ['draft', argv[1], ...argv.slice(2)] : argv;
       // 健康 sub 归一再传：仅 ls/rm/ensure 是真正的子命令，其余（如 --name）都应视为生成 draft，避免 `draft --name x` 时 sub 携带错误值
