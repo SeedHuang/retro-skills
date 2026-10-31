@@ -17,13 +17,13 @@
 
 ## 现状
 
-- **agent-card S4 已整段收口**：`skills/dev-workflow/references/gate-record.md` 的 S4 门行 **`②`（`:42`）/ `②→③`（`:43`）/ `③`（`:44`）/ `④`（`:45`）/ `⑤`（`:46`）** 全部在位且六列齐；① PRD 主轴行在 `:11`。④ 签字 = 独立 `senior-sdet`（61 条逐条结论，`quality-4.md`）；⑤ 签字 = **用户**（原话「通过」，主 agent 转录，`portal` 见 `:46` 结论列）。
+- **agent-card S4 已整段收口**：`skills/dev-workflow/references/gate-record.md` 的 S4 门行 **`②`（`:42`）/ `②→③`（`:43`）/ `③`（`:44`）/ `④`（`:45`）/ `⑤`（`:46`）** 全部在位且六列齐；① PRD 主轴行在 `:11`。④ 签字 = 独立 `senior-sdet`（61 条逐条结论，`quality-4.md`）；⑤ 签字 = **用户**（原话「通过」，主 agent 转录，见 `gate-record.md:46` 的结论列）。
 - **本 session 三个提交**：`7fd2c7b`（④ 段质量：`card-render.test.mjs` 12→61 块 + 8 处判据改判 + 代码审查 5 条修复 + R8 词表 `I15～I19`）→ `147c310`（闭合交付审计 C-1/C-2：plan 38 个 Step 全勾 + plan/testcase 指纹登记 + 新建 `docs/after/20261031165047-agent-card-s4-open-items.md` + PRD/testcase 两处锚勘误）→ `b1d3996`（⑤ 出口签字）。
 - **④/⑤ 段证据（不进 git，仍在 `.session/`）**：`.session/reviews/2026-10-31-1320-agent-card-s4-quality/` 下 `progress.md`（裁定 + 申报 J-1～J-10 + ⑤ 结论）/ `impact-sheet.md`（R8 当次清单，18 口径 + 代码审查修复 5 行 + ⑤ 条件闭合 6 行）/ `quality-4.md`（sdet 61 条 v4）/ `quality-4-audit.md`（审计 v2）/ `delivery-5-s4.md`（交付审计 + 复核轮）。
 - **已知限制已落 git**：`docs/after/20261031165047-agent-card-s4-open-items.md`（S4-L1 A06 中段可漏 / S4-L2 A02 删源条目静默重建 / S4-L3 gate 只点名首个 drift / S4-L4 `senior-sdet` 维度空 / S4-L5 K-9 触发未具名），每条四要素齐（限制原文 `path:line` / 漏检样例 / 谁人工兜 / 触发信号）。
 - **遗留 P2（不阻断，出处 `delivery-5-s4.md` §H）**：`P2-4` — `docs/superpowers/specs/2026-10-29-agent-card-s4-render-design.md:5` 与 `docs/superpowers/plans/2026-10-30-agent-card-s4-render.md:97` 仍留旧锚 `:473-476` / `:487`（已签件历史保留，映射已在 open-items 文末）；`P2-5` — testcase §7 缺口 10/11 有登记但缺触发信号（建议并入 open-items 作 S4-L6）。
 - **验证证据**：见元信息表『验证基线』（单源，此处不重复）。
-- **提交状态**：已 commit（`b1d3996`，见元信息表『HEAD』）。
+- **提交状态**：已 commit（S4 三提交 `7fd2c7b` / `147c310` / `b1d3996`；本交接文档自身另有提交，HEAD 以 `git log --oneline -1` 实查为准）。
 - **工作树异常**：无。
 
 ## 过程记录
@@ -55,7 +55,7 @@
 ## 开放问题
 
 1. **【开工第一问】下一批先做 backlog 里的哪一项？** 选项：(a) **K-8/K-9 接线**；(b) S6-B 结构收敛（按席排除禁写组 + 模板去「评审席」化）；(c) 死代码清理（`tools/docgen/components/renderAgent.mjs` 3275 B / `sharedBlocks.mjs` 1879 B）；(d) A02 每席 `must`/`never` 条数基线（S4-L2）；(e) `senior-sdet` 补 `dimension`（S4-L4）。
-   **推断：(a) K-8/K-9 接线**。依据：① 它是 ⑤ 段唯一的「假绿」来源（`npm run check` 打印的「卡面 findings 0 / 告警 0 / 阻断 0」实际来自 `scripts/check-all.mjs` 的 416 行 的硬编码 `const cardFindings = []`，行末自带「S1 未上线：非达标证据」）—— 不接线，下一次交付审计仍不能把该行当证据；② spec 已有登记（§7⑤ `:183` / §10-D7 `:220`），不新开 PRD/spec，改动面 = 1 脚本 + 1 断言；③ (b) 需走 ①② 立项，(c) 须先回扫多条已签文档里的 `renderAgent.mjs:行` 引用（`lessons.test.mjs` 行号守卫会红），(d)(e) 都涉及取值/基线定义，成本高于 (a)。
+   **推断：(a) K-8/K-9 接线**。依据：① 它是 ⑤ 段唯一的「假绿」来源（`npm run check` 打印的「卡面 findings 0 / 告警 0 / 阻断 0」实际来自 `scripts/check-all.mjs` 的 416 行的硬编码 `const cardFindings = []`，行末自带「S1 未上线：非达标证据」）—— 不接线，下一次交付审计仍不能把该行当证据；② spec 已有登记（§7⑤ `:183` / §10-D7 `:220`），不新开 PRD/spec，改动面 = 1 脚本 + 1 断言；③ (b) 需走 ①② 立项，(c) 须先回扫多条已签文档里的 `renderAgent.mjs:行` 引用（`lessons.test.mjs` 行号守卫会红），(d)(e) 都涉及取值/基线定义，成本高于 (a)。
    **请用户：确认 (a)，或指定 (b)/(c)/(d)/(e)**。
 2. **若选 (e)：`senior-sdet` 的 `dimension` 取什么值？** 推断：`'测试设计'`。依据：`agents/senior-sdet.md:11` 的关注类别是测试设计面（输入空间/状态转移/失败面/判别力…），且 `tools/docgen/components/agentData.mjs` 现有取值口径为短名词（`'产品设计'` / `'技术实现'` / `'独立（标准核对）'`）。**请用户：确认值或改正**（非开工第一问，做到该项时再定）。
 
@@ -88,5 +88,5 @@
 ## 开场话术
 
 ```
-读 docs/handoffs/2026-10-31-post-s4-backlog.md，按交接词继续：先裁定下一批做哪项（推断 = K-8/K-9 接线），再开工。注意：S4 已整段收口、HEAD 为 b1d3996、工作树应为空；已知限制在 docs/after/20261031165047-agent-card-s4-open-items.md。
+读 docs/handoffs/2026-10-31-post-s4-backlog.md，按交接词继续：先裁定下一批做哪项（推断 = K-8/K-9 接线），再开工。注意：S4 已整段收口（`b1d3996` 为 ⑤ 段签字提交）、工作树应为空；已知限制在 docs/after/20261031165047-agent-card-s4-open-items.md。
 ```
