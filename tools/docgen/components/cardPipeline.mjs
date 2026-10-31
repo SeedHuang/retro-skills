@@ -1,9 +1,11 @@
 // 唯一装配点（spec §3 `:70` / §4 `:81-84`）：buildCards → buildEnv → mergeActions → 三投影 + writeAll。
-// 数据源单向（V-6 / S4-TC-I04）：本文件**不读盘**（不读任何文件、不扫目录、不碰 `agents/` 常量）；
-// 渲染输入只来自 `agentData.mjs` + `triggerTable`，`agents/*.md` 只被 gate 读来比对。
+// 数据源单向（V-6 / S4-TC-I04）：本文件**不读盘**（不读任何文件、不扫目录、不碰 `agents/` 的读取常量）；
+// 渲染输入只来自 `agentData.mjs` + `triggerTable`，`agents/*.md` 只被 gate 读来比对；
+// 唯一例外 = `collectCardFindings` 用 `baseline.cardPathOfSeat()` 拼 `finding.file`（只拼字符串，不读盘）。
 import { mkdirSync, writeFileSync, renameSync, rmSync } from 'node:fs'
 import { dirname } from 'node:path'
 import { agentData, triggerTable } from './agentData.mjs'
+import { cardPathOfSeat } from './baseline.mjs'
 import { toolsForSeat } from './patternRegistry.mjs'
 import { SHARED_MUST, SHARED_NEVER, SHARED_USE } from '../card-model/vocab/shared-actions.mjs'
 import { PREDICATES } from '../card-model/vocab/predicates.mjs'
@@ -126,6 +128,33 @@ export function renderSeat(seat) {
   const v = validateCardModel(built.card, env)
   if (v.errors.length) refuse(v.errors)
   return { card: renderCard(built.card, env), readme: renderReadme(built.card, built.overrides) }
+}
+
+// 卡面 findings 实算（K-8/K-9 接线）：逐席 =「缺 card 数据」+ 装配错误 + S1 入口错误，映射成
+// `{ file: 角色卡路径, code, path, message }`（`file` 经 `baseline.cardPathOfSeat` 派生，与 `EXEMPT_CARDS` 同域）。
+// 层序与 `renderSeat` 一致：装配错误即停（该席不再进 S1），否则同一根因会报两条（代码审查 R2，2026-10-31）。
+// `built` 参数只供测试注入坏卡（生产不传）；本函数纯内存、不读盘（V-6）。
+export function collectCardFindings(built = buildCards()) {
+  const entries = Array.isArray(built) ? built : []
+  const findings = []
+  const seats = new Set(entries.map((b) => (b && typeof b.seat === 'string' ? b.seat : '')))
+  for (const a of agentData) {
+    if (!seats.has(a.name)) {
+      findings.push({ file: cardPathOfSeat(a.name), code: 'MissingComponentData', path: 'card', message: '席缺 card 数据（未迁移）' })
+    }
+  }
+  for (const b of entries) {
+    if (!b || typeof b.seat !== 'string') continue
+    const file = cardPathOfSeat(b.seat)
+    const assembly = Array.isArray(b.errors) ? b.errors : []
+    for (const e of assembly) {
+      findings.push({ file, code: e.code, path: e.path, message: e.message })
+    }
+    if (assembly.length > 0) continue
+    const v = validateCardModel(b.card, buildEnv(b.seat, [b.card]))
+    for (const e of v.errors) findings.push({ file, code: e.code, path: e.path, message: e.message })
+  }
+  return findings
 }
 
 // `docs/agents/**` 的期望产物（内存，未写盘）：gate 逐字节比对与 `generate --readme --apply` 共用同一实现。

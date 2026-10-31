@@ -16,8 +16,14 @@ export const BASELINE_RULES = [
   'rules/ts-expect-error.md', 'rules/vitest-queued-alternative.md',
 ];
 
+// 单席角色卡路径的唯一派生式（`agentPaths()` 与 `collectCardFindings` 的 `finding.file` 共用；
+// 形态与 `observation-check/card-exempt.mjs` 的 `EXEMPT_CARDS` 同域——改路径方案只改这一处）。
+export function cardPathOfSeat(name) {
+  return `agents/${name}.md`;
+}
+
 export function agentPaths() {
-  return agentData.map((a) => a.name).sort().map((name) => `agents/${name}.md`);
+  return agentData.map((a) => a.name).sort().map(cardPathOfSeat);
 }
 
 export function renderBaseline() {

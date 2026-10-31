@@ -26,7 +26,9 @@ import { checkPatternTable } from '../tools/execution-matrix/check-pattern-table
 import { splitRow, fenceMask } from '../tools/execution-matrix/markdown-rows.mjs'
 // ⑥ 段（观察产物门禁）与 ② 段 skip 守卫的判据单源：本文件只调用，不内联文案
 import { runObservationGate, formatGateLine } from '../tools/observation-check/gate-run.mjs'
-import { EXPIRY_EVENT, EXPIRY_LANDED, disposeCardFindings } from '../tools/observation-check/card-exempt.mjs'
+import { EXEMPT_CARDS, EXPIRY_EVENT, EXPIRY_LANDED, disposeCardFindings } from '../tools/observation-check/card-exempt.mjs'
+// 卡面 findings 实算入口（K-8/K-9 接线）：逐席过装配 + S1 入口，本文件不另写一份
+import { collectCardFindings } from '../tools/docgen/components/cardPipeline.mjs'
 import { SKIP_ALLOWLIST } from './test-skip-allowlist.mjs'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -412,10 +414,13 @@ if (bypass) {
   const gateRes = runObservationGate()
   console.log(formatGateLine(gateRes))
   if (gateRes.findings.length > 0) failed = true
-  // 卡面 findings 源在 S1（本期零实现，R7）：n/w/b 全部取自实跑值，不写字面量
-  const cardFindings = []
+  // 卡面 findings 源在 S1（K-8/K-9 接线）：n/w/b 全部取自实跑值，不写字面量；
+  // 阻断非空 → check 变红（否则「阻断」计数只是装饰，仍是假绿）。
+  const cardFindings = collectCardFindings()
   const disposed = disposeCardFindings(cardFindings)
-  console.log(`[豁免窗口] 15 张角色卡只告警（到期 = S4 首次重生成，EXPIRY_EVENT=${EXPIRY_EVENT} / EXPIRY_LANDED=${EXPIRY_LANDED}）；卡面 findings ${cardFindings.length} / 告警 ${disposed.warnings.length} / 阻断 ${disposed.blockers.length}（S1 未上线：非达标证据）`)
+  for (const f of disposed.blockers) console.error(`[卡面] ${f.file} ${f.code}: ${f.message ?? ''}`)
+  if (disposed.blockers.length > 0) failed = true
+  console.log(`[豁免窗口] ${EXEMPT_CARDS.length} 张角色卡（到期 = S4 首次重生成，EXPIRY_EVENT=${EXPIRY_EVENT} / EXPIRY_LANDED=${EXPIRY_LANDED}）；卡面 findings ${cardFindings.length} / 告警 ${disposed.warnings.length} / 阻断 ${disposed.blockers.length}`)
 }
 
 if (failed) {
