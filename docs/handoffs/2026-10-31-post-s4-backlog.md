@@ -6,7 +6,7 @@
 |---|---|
 | 交接时间 | 2026-10-31 17:31（Asia/Shanghai，`Get-Date` 实跑） |
 | 项目根 | `d:\Seed\retro-skills` |
-| HEAD | `b1d3996`（`docs: agent-card S4 ⑤ 段出口签字 —— 交付审计复核轮通过，六段门行齐`）；工作树 **clean**（`git status --porcelain` 输出为空，17:31 实查） |
+| HEAD | 本交接文件首提交 = `47a3c9c`（其父 `b1d3996` = S4 ⑤ 段签字）；**若本文件随后有勘误提交，HEAD 以 `git log --oneline -1` 实查为准**。工作树 **clean**（`git status --porcelain` 输出为空，17:31 实查） |
 | 验证基线 | 2026-10-31 **17:31 本次实跑**（本交接文件落盘后复跑，含本文件）：`npm run check` → `# tests 1163` / `# pass 1161` / `# fail 0` / `# skipped 2`、`baseline 37/37`、`④ markdown 检查通过（344 个文件 / 1481 张表）`、`⑤ .session 结构检查通过`、`⑥ 观察产物门禁 findings 0`、末行 `check 全部通过`（exit 0）；`node tools/docgen/cli.mjs gate` → `baseline 37/37`；`node scripts/check-gate-record.mjs` → `rows 37 bad 0` + `gate-record ok（R1/R2/R6 全过；splitting 0）`；`node scripts/scope-sweep.mjs --check` → 18 口径 `counts`（`I15:7 I16:7 I17:1 I18:2 I19:6`）、末行 `sweep ok（命中未超基线、清单齐、scope 齐）`（exit 0）；`node scripts/doc-name.mjs --check docs` → `命名检查通过（docs）` |
 | 继任自 | `docs/handoffs/2026-10-31-agent-card-s4-quality.md`（上一份：④ 段质量开工） |
 | 状态 | **有 1 个开工第一问**（下一批先做哪项，见「开放问题」）+ 1 个待取值项 |
@@ -79,7 +79,7 @@
 
 ## 开工前先做
 
-1. `git status --porcelain`（应空串）+ `git log --oneline -1`（应 `b1d3996`）；复跑元信息表『验证基线』五条命令，数值应逐项相同。
+1. `git status --porcelain`（应空串）+ `git log --oneline -1`（应 ≥ `47a3c9c`，其中 `b1d3996` 为 S4 ⑤ 段签字、`47a3c9c` 为本交接首提交）；复跑元信息表『验证基线』五条命令，数值应逐项相同（`npm run check` / `gate` / `check-gate-record` / `scope-sweep` / `doc-name`）。
 2. 读 `docs/after/20261031165047-agent-card-s4-open-items.md` 全文，确认 S4-L5（K-9）的原文与触发；再读 `scripts/check-all.mjs` 的 416–418 行，核对 `cardFindings` 现状。
 3. 向用户确认开放问题 1 的选型（推断 = (a) K-8/K-9 接线）。
 4. 若确认 (a)：先确认「卡面 findings」的实算口径（建议 = 对 15 张卡跑 `tools/docgen/card-model/index.mjs` 的 `validateCardModel`，按 `disposeCardFindings` 分 warnings/blockers），再决定是否同时改 §7⑤ 的判据文字（改判据级口径 → 需 R8 登记）。
