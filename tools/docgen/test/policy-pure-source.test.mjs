@@ -1628,14 +1628,18 @@ test('S6-TC-H01 基线同源可复算（sourceCommit 早于 policy/ + 抽取器�
   // ④ 差异可追 + 越界可抓：只许两张 producer 卡相对基线有差异（其余 12 席不接渲染层，spec:117）
   const changedCards = git(['diff', '--name-only', `${base.sourceCommit}..HEAD`, '--', 'agents/'])
     .stdout.split('\n').map((l) => l.trim()).filter(Boolean).map((p) => p.replace(/\\/g, '/'));
-  const ALLOWED_CARDS = ['agents/reviewer-audit.md', 'agents/detective-observer.md'];
+  // S4 起 15 席逐席重生成（spec §8）：允许面改为「已登记席卡」（未登记卡的越界由 TC-D02 与 gate 的
+  // UnregisteredHandwritten 兜）；S6 的记账义务只落在本段自己的两张 producer 卡上
+  const SEAT_CARDS = agentData.map((a) => `agents/${a.name}.md`);
   for (const f of changedCards) {
-    assert.ok(ALLOWED_CARDS.includes(f),
-      `${f} 越界：只有两 producer 席卡允许相对基线有差异（其余 12 席不接渲染层，spec:117）`);
+    assert.ok(SEAT_CARDS.includes(f),
+      `${f} 越界：只允许已登记席卡相对基线有差异（未登记卡由 TC-D02 / gate UnregisteredHandwritten 兜）`);
   }
-  if (changedCards.length > 0) {
+  const S6_CARDS = ['agents/reviewer-audit.md', 'agents/detective-observer.md'];
+  const needNotes = changedCards.filter((f) => S6_CARDS.includes(f));
+  if (needNotes.length > 0) {
     const diffNotes = readFileSync(join(evalDir(), 'capability-diff.md'), 'utf8');
-    for (const f of changedCards) {
+    for (const f of needNotes) {
       assert.ok(diffNotes.includes(basename(f)), `${f} 有差异但 capability-diff.md 无说明行（按 basename 匹配）`);
     }
   }
