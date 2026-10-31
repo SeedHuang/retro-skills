@@ -7,7 +7,8 @@ import { renderSeat } from '../components/cardPipeline.mjs';
 import { CARD_SEGMENTS } from '../card-model/vocab/card-must-fields.mjs';
 import { renderIndex } from '../components/renderReadme.mjs';
 
-// S4 Task 7：旧模板（agent.md.tpl）与 legacyOutputFormats 已删除；本文件断言全部改走新卡等价面。
+// S4 Task 7：旧模板与 legacyOutputFormats 已删除；本文件断言全部改走新卡等价面。
+// 注：旧模板文件名不得以字面量写在本文件（`tools/docgen/**/*.mjs` 属 S4-TC-F08 的扫描面，写名字即 1 处残留）。
 const entry = () => agentData.find((a) => a.name === 'reviewer-audit');
 const tpl = () => readFileSync('tools/docgen/templates/agent-card.md.tpl', 'utf8');
 

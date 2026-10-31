@@ -266,7 +266,7 @@ const APPEND_ONE_BYTE = (rel) => (copy) => {
 | 用例 ID | 覆盖的 spec 条目（§ / V / F） | 一句话场景 | 类型 | 层级 | 判据类型 | 执行方式 | 优先级 |
 |---|---|---|---|---|---|---|---|
 | S4-TC-A01 | V-1 / §5.1 `:123-132` / §3 `:62` / F-09 | 15 卡 7 段齐 + 每段必渲染字段在位（段名从 spec **主表**严格切，不跨段污染） | 正 | 单元 | 机器 | `node --test tools/docgen/test/card-render.test.mjs` | P0 |
-| S4-TC-A02 | V-1 / §4 `:89`（`Card` 12 键）/ §4 `:98`（拒绝语义） | `Card` **12 键**逐键删除 → 12 次均经 S1 入口被拒（不静默兜底） | 负 | 单元 | 机器 | 同上 | P0 |
+| S4-TC-A02 | V-1 / §4 `:89`（`Card` 12 键）/ §4 `:98`（拒绝语义） | `Card` **12 键**逐键删除 → 12 次均经 S1 入口被拒（不静默兜底）｜**2026-10-31 现行判据：6 个非结构键被拒 + 6 个结构键由派生/合并值恢复**（见 §2 本条的日期注） | 负 | 单元 | 机器 | 同上 | P0 |
 | S4-TC-A03 | V-1 / §5.1 `:123-132` / §3 `:62` | 卡面二级节名/顺序逐项等于 `CARD_SEGMENTS`：多段 / **删第 4 段** / 换序各必红 | 边界 | 单元 | 机器 | 同上 | P0 |
 | S4-TC-A04 | V-1 / §5.1 `:134` / §2-4 `:30` | 7 段模板同时满足 A3–A7：`checkStruct(卡面)` → `findings: []` | 正 | 单元 | 机器 | 同上 | P0 |
 | S4-TC-A05 | §5.1 `:134`（A3 表头 / A4 / A5 三处原文） | A3–A7 判别力（**按表头行定位**）：四变异各只红一码 | 负 | 单元 | 机器 | 同上 | P0 |
@@ -292,7 +292,7 @@ const APPEND_ONE_BYTE = (rel) => (copy) => {
 | S4-TC-D03 | §6 `:169` / PRD `:223` | 输出格式段残留 `doc-taxonomy` 指针 → 卡面指针词红 | 负 | 单元 | 机器 | 同上 | P0 |
 | S4-TC-D04 | §6 `:168` | 散文声明残留 → `declaration` 类探针红 | 负 | 单元 | 机器 | 同上 | P0 |
 | S4-TC-D05 | §6 `:173`（禁 15 份副本） | `outputFormats` 不复制进席数据；同 kind 席输出格式段逐字相等 | 边界 | 单元 | 机器 | 同上 | P0 |
-| S4-TC-E01 | §4 `:91` / V-3 / §12-R4 `:243` | 共享层单源：判据 id 在 `shared-actions.mjs` 源码里恰好出现 1 次 | 正 | 单元 + 静态 | 机器 | 同上 | P0 |
+| S4-TC-E01 | §4 `:91` / V-3 / §12-R4 `:243` | 共享层单源：判据 id 在 `shared-actions.mjs` 源码里恰好出现 1 次｜**2026-10-31 现行判据：按 `criterion:` 字段赋值计数**（裸子串会被 `id` 里的同一串算成 2 次；见 §2 本条的日期注） | 正 | 单元 + 静态 | 机器 | 同上 | P0 |
 | S4-TC-E02 | V-3 / §4 `:91` / F-10 | 带 reason 的覆盖合法且被记账 | 正 | 单元 | 机器 | 同上 | P0 |
 | S4-TC-E03 | §4 `:91` / S1 `merge.mjs` | 无 reason → `OverrideWithoutReason`；零差异 → `PointlessOverride` | 负 | 单元 | 机器 | 同上 | P0 |
 | S4-TC-E04 | §12-R4 `:243` / V-3 | 绕共享层写全量 → `DuplicateStatement` | 负 | 单元 | 机器 | 同上 | P0 |
@@ -301,7 +301,7 @@ const APPEND_ONE_BYTE = (rel) => (copy) => {
 | S4-TC-F02 | §7① `:179`（单席原子 + 收口零写盘）/ §3 `:71` / §4 `:98` | 单席坏卡被拒且其它席照常；收口坏 1 席 → 31 份不变；`generate`（无旗标）→ 31 份也不写 | 负 | 集成 | 机器 | 同上 | P0 |
 | S4-TC-F03 | §7② `:180`（现状已生效，防回退）/ V-5 / F-23 | 改卡面 1 字节 → `gate` exit 1 且点名 | 负 | 集成 | 机器 | 同上 | P0 |
 | S4-TC-F04 | §7③ `:181`（本段新增；比对面 31）/ V-5 / F-23 | 改 README/index 1 字节 → 红；**删一份 README → `DanglingBaselineEntry`**；比对面 = 2×席数+1 | 负 | 集成 | 机器 | 同上 | P0 |
-| S4-TC-F05 | §7④ `:182`（收口期 + 中期子集）/ V-5 / C-08 `:121` | 删 state 一席 → 红；**中期「未迁移席却有 README」→ 红**；对照必绿 | 负 | 集成 | 机器 | 同上 | P0 |
+| S4-TC-F05 | §7④ `:182`（收口期 + 中期子集）/ V-5 / C-08 `:121` | 删 state 一席 → 红；**中期「未迁移席却有 README」→ 红**；对照必绿｜**2026-10-31 现行判据：后半构造值改 `suspended`（`registered` 不在值域）**（见 §2 本条的日期注） | 负 | 集成 | 机器 | 同上 | P0 |
 | S4-TC-F06 | §7④ `:182` / C-08 `:121` | `state.agents` 键集 = 席集双向相等、值域合法、全部 `replaced` | 边界 | 集成 | 机器 | 同上 | P0 |
 | S4-TC-F07 | §7⑤ `:183`（输出中含该行 + 注入有行为差异）/ §10-D7 `:220` | `EXPIRY_LANDED === true`、豁免行非首行且插值、`disposeCardFindings(landed:true)` → blockers ≥ 1 | 正 | 单元 + 静态 | 机器 | 同上 | P0 |
 | S4-TC-F08 | §7⑥ `:184`（扫描面收窄为两处）/ §10-D8 `:221` / D-05 `:500` | 两 `.tpl` 不存在 + 代码面 0 命中 + 新卡无 `sourceLine` + 卡面无 `*.tpl` | 正 | 静态 | 机器 | 同上 | P0 |
@@ -412,6 +412,52 @@ const APPEND_ONE_BYTE = (rel) => (copy) => {
 - **对应测试**：同上
 - **不覆盖**：具体码（S1 已定 36 码，本段不新增，§4 `:98`）。
 
+> **日期注 / 现行判据（2026-10-31，用户裁定；上方原文保留不删）**：spec §4 `:89-90` 的「12 键」在装配层分两类——4 个 **`seatEntry` 派生键**（`seat` / `name` / `description` / `tools`，§4 `:90`）与 2 个 **共享层合并键**（`must` / `never`，§4 `:91`）由 `buildOne` 重建；其余 **6 个非结构键**（`duty` / `scenes` / `signals` / `categories` / `checkItems` / `rationale`）由 `CARD_KEYS` 逐键判缺（`cardPipeline.mjs` 的 `buildOne`：`{ ...own }` 后按 `CARD_KEYS` 逐键判 `undefined`）。
+> 2026-10-31 实测（仓根）：数据层逐键删除 + `PIPE.buildCards()` → 6 个非结构键 `errors.length > 0`（`UnverifiableOutput@card`）、6 个结构键删除后仍由派生 / 合并值恢复；而原判据「对**已装配**卡调 `CM.validateCardModel` 逐键」只对 `rationale` 生效（`MissingRationale@rationale`），因为 S1 校验器不判顶层键存在性。故原判据的 ③ 与预期改判如下（其余步骤 / 覆盖不变）；**残余风险**：删本席 `must` / `never` 的源条目会静默只留共享句，由 ④ 段缺口表登记。
+
+**现行判据（2026-10-31 起生效）**：
+
+```js
+const KEYS = ['seat', 'name', 'description', 'tools', 'duty', 'scenes', 'signals', 'must', 'never', 'categories', 'checkItems', 'rationale'];
+const SEAT_DERIVED = ['seat', 'name', 'description', 'tools'];   // §4 :90 由 seatEntry 派生
+const MERGE_DERIVED = ['must', 'never'];                          // §4 :91 共享层 + 本席合并
+const PLAIN = KEYS.filter((k) => !SEAT_DERIVED.includes(k) && !MERGE_DERIVED.includes(k));
+assert.equal(KEYS.length, 12, 'spec §4 :89 写死 Card = 12 键（前置非空）');
+assert.equal(PLAIN.length, 6, '非结构键必须 6 个（12 − 4 派生 − 2 合并）');
+assert.equal(typeof PIPE.buildCards, 'function', 'buildCards 必须导出（§4 :81）');
+const b0 = PIPE.buildCards()[0];
+assert.ok(b0 && b0.card && typeof b0.card === 'object', 'buildCards()[0].card 必须存在（§4 :81）');
+const base = structuredClone(b0.card);
+for (const k of KEYS) assert.ok(k in base, `基线卡必须 12 键齐：缺 ${k}（前置失败 → 本用例无从构造）`);
+let refused = 0;
+for (const k of PLAIN) {                                  // ① 非结构键：删除 → 装配层拒绝
+  const restore = mutCard(b0.seat, (card) => { delete card[k] });
+  try {
+    const built = PIPE.buildCards().find((b) => b.seat === b0.seat);
+    assert.ok(built && Array.isArray(built.errors) && built.errors.length > 0, `删 ${k} 后必须报 errors（§4 :89 / :98），实得静默通过`);
+    refused += 1;
+  } finally { restore(); }
+}
+for (const k of SEAT_DERIVED) {                           // ② 派生键：删除 → 派生值恢复
+  const restore = mutCard(b0.seat, (card) => { delete card[k] });
+  try {
+    const built = PIPE.buildCards().find((b) => b.seat === b0.seat);
+    assert.ok(built && built.errors.length === 0, `派生键 ${k} 删除不得报错（spec §4 :90）`);
+    assert.deepEqual(built.card[k], base[k], `派生键 ${k} 必须由派生值恢复（不得留空）`);
+  } finally { restore(); }
+}
+const use = (SH.SHARED_USE[b0.seat] ?? []);
+for (const [k, list] of [['must', SH.SHARED_MUST], ['never', SH.SHARED_NEVER]]) {  // ③ 合并键：共享层重建
+  const restore = mutCard(b0.seat, (card) => { delete card[k] });
+  try {
+    const built = PIPE.buildCards().find((b) => b.seat === b0.seat);
+    assert.ok(built && built.errors.length === 0, `${k} 删除不得报错（由共享层重建，§4 :91）`);
+    assert.deepEqual(built.card[k], list.filter((a) => use.includes(a.id)), `${k} 必须恢复为「共享层 ∩ 本席 use」的合并结果`);
+  } finally { restore(); }
+}
+assert.equal(refused, 6, '6 个非结构键逐键都必须被拒（§4 :89）；6 个结构键由派生 / 合并值恢复');
+```
+
 ### S4-TC-A03 卡面二级节名 / 顺序逐项等于 `CARD_SEGMENTS`（多段 · 删第 4 段 · 换序）
 
 - **覆盖**：V-1 / spec §5.1 `:123-132`（7 段是**封闭清单**）/ §3 `:62`
@@ -515,6 +561,8 @@ const APPEND_ONE_BYTE = (rel) => (copy) => {
   ```
 - **对应测试**：同上
 - **不覆盖**：README 排版（人读视图形式）。
+
+> **日期注（2026-10-31，④ 段实测；原文保留不删）**：原判据取「首 12 字窗」并要求卡面不含。实测多数席的首窗与 `duty` 合法复用（同一句在卡面「职责」段本就该出现）→ 直接照抄会假阳性。现行构造 = **选择「首窗 + 尾窗都不在卡面」的席**（判据句不变），并**追加尾窗断言**（强化：防只渲染部分 rationale 逃检）。实测 2 席满足（`detective-observer` / `evidence-reader`），用例通过。
 
 ### S4-TC-A07 4 个 `vocab/` 表的导出面恰为 spec 写死的 8 个名字
 
@@ -656,6 +704,8 @@ const APPEND_ONE_BYTE = (rel) => (copy) => {
   ```
 - **对应测试**：同上
 - **不覆盖**：index 列语义（B04）/ 排版。
+
+> **日期注（2026-10-31，④ 段实测；原文保留不删）**：上方判据代码的捕获组 `([a-z0-9-]+)` 只取席名、丢 `.md`，拼出的 `rel` = `docs/agents/<席名>` → `existsSync` 恒 false（判据句「链接目标必须存在」不变）。现行构造 = 捕获组含扩展名（`([a-z0-9-]+\.md)`），其余断言逐字不动。
 
 ### S4-TC-B04 index 表头五列齐
 
@@ -1096,6 +1146,26 @@ const APPEND_ONE_BYTE = (rel) => (copy) => {
 - **对应测试**：同上
 - **不覆盖**：共享句覆盖旧「共享特质」每一条语义（探索稿 §12.6 `:419-428` 的逐句映射 → §5 manual）。
 
+> **日期注 / 现行判据（2026-10-31，用户裁定；上方原文保留不删）**：`shared-actions.mjs` 的 `id` 本身含 `criterion` 值（如 `id: 'shared.impartial-long-term'`、`criterion: 'impartial-long-term'`），原判据用裸子串 `SRC.split(a.criterion)` 计数会把 `id` 行算成第二份副本 → 恒红（8 条里 5 条计得 2）。单源语义不变，计数改为「`criterion:` 字段上赋值次数」。2026-10-31 实测：现文每条 `criterion:` 赋值恰 1 次。
+
+```js
+const SM = SH.SHARED_MUST, SN = SH.SHARED_NEVER;
+assert.ok(Array.isArray(SM) && SM.length > 0, '§4 :91 共享层 must 必须非空数组');
+assert.ok(Array.isArray(SN) && SN.length > 0, '§4 :91 共享层 never 必须非空数组');
+const SRC = readFileSync(join(REPO, 'tools/docgen/card-model/vocab/shared-actions.mjs'), 'utf8');
+assert.ok(SRC.length > 0, 'shared-actions.mjs 必须非空（否则计数恒 0）');
+const all = [...SM, ...SN];
+assert.ok(all.length > 0, '共享动作总数不得为 0（否则循环空转）');
+for (const a of all) {
+  assert.ok(typeof a.id === 'string' && a.id.trim() !== '', '共享动作 id 必须非空');
+  assert.ok(typeof a.criterion === 'string' && a.criterion.trim() !== '', `${a.id} 的 criterion 必须非空（否则下面的计数恒 0）`);
+  const esc = a.criterion.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const n = (SRC.match(new RegExp(`criterion:\\s*'${esc}'`, 'g')) ?? []).length;
+  assert.equal(n, 1, `共享句 ${a.id} 的 criterion 在源码里必须恰好赋值 1 次（>1 = 第二份副本；裸子串计数会被 id 行污染的已改判，见本条日期注）`);
+  assert.ok(SEATS.some((s) => CARD(s).includes(a.criterion)), `共享句 ${a.id} 至少被一席卡面渲染（否则是死数据）`);
+}
+```
+
 ### S4-TC-E02 覆盖走 `overrides[]`（带 reason 且字段确有差异）→ 合并绿 + README 有该行
 
 - **覆盖**：V-3 / spec §4 `:91` / §5 `:116` / F-10
@@ -1300,6 +1370,17 @@ const APPEND_ONE_BYTE = (rel) => (copy) => {
 - **对应测试**：同上
 - **不覆盖**：`docs/agents/` 之外的人读文档。
 
+> **日期注 / 现行判据（2026-10-31，用户裁定；上方原文保留不删）**：原步骤 ③ 写「删一份 README → exit 1」与本 testcase 的 `S4-TC-F10`（`DanglingBaselineEntry` 沿用既有映射 = **exit 2**）矛盾；spec §7③ `:181` 只许诺「改 → exit 1 且点名；删一份 → `DanglingBaselineEntry`」，未把该码定为 exit 1。2026-10-31 实测：删一份 README → `DanglingBaselineEntry`、exit **2**、首行点名路径。故 ③ 的退出码改判为 2（码与点名判据不变）；①②（改 1 字节 → `Mismatch`、exit 1、点名）实测成立。
+
+```js
+const goneRel = `docs/agents/${SEATS[1]}.md`;
+const gone = coldRepo({ mutate: (copy) => { rmSync(join(copy, goneRel), { force: true }); }, args: ['gate'],
+  verify: (copy) => assert.equal(existsSync(join(copy, goneRel)), false, '副本内 README 必须真的被删（否则空转）') });
+assert.equal(gone.code, 2, `缺一份 README 必须 exit 2（DanglingBaselineEntry 沿用既有映射，S4-TC-F10）：${gone.out.slice(0, 300)}`);
+assert.match(gone.out, /DanglingBaselineEntry/, '缺文件必须报 DanglingBaselineEntry（§7③ :181）');
+assert.ok(gone.out.includes(goneRel) || gone.out.includes(SEATS[1]), `必须点名缺的 ${goneRel}（§7③ :181）`);
+```
+
 ### S4-TC-F05 接管完整性：删一席 / 中期「未迁移席却有 README」→ 必红
 
 - **覆盖**：spec §7④ `:182`（**收口期断言** + **中期子集判据**：已迁移席必 `replaced`、未迁移席不得出现在 `docs/agents/`）/ V-5 / C-08 `:121`
@@ -1338,6 +1419,24 @@ const APPEND_ONE_BYTE = (rel) => (copy) => {
   ```
 - **对应测试**：同上
 - **不覆盖**：`suspended` 值域（F06 判）。
+
+> **日期注 / 现行判据（2026-10-31，用户裁定；上方原文保留不删）**：① 前提**未废**——15 席全迁后仍可构造「非 `replaced` 却带人读投影」的席；② 原步骤 ② 的构造值 `'registered'` 不在 state 值域内（`state.mjs` 的 `VALUES` 只许 `replaced` / `suspended`），会先被 `StateFileInvalid`（exit 2）拦掉、测不到 §7④ 子集判据。现行构造 = 置 `suspended`（非 `replaced`）→ `Mismatch: 未接管席 <席>（state=suspended）不得带人读投影`、exit 1；前半（删一席 → `Mismatch: state.json 缺席 <席>`、exit 1）与原判据一致。2026-10-31 实测三条（`state` 副本 + `DOCGEN_STATE_PATH`）：对照 exit 0 / 删一席 exit 1 / 置 `suspended` exit 1。
+
+**现行判据（2026-10-31 起生效）**：
+
+```js
+const mid = SEATS[1];
+const r2 = coldRepo({ mutate: (copy) => {
+  const p = join(copy, 'tools/docgen/state.json');
+  const st = JSON.parse(readFileSync(p, 'utf8'));
+  st.agents[mid] = 'suspended';                        // 非 replaced（构建「未接管」态；值域见 tools/docgen/state.mjs:9）
+  writeFileSync(p, `${JSON.stringify(st, null, 2)}\n`, 'utf8');
+  assert.equal(existsSync(join(copy, `docs/agents/${mid}.md`)), true, '构造要求该席 README 先存在（否则无从成立）');
+}, args: ['gate'] });
+assert.equal(r2.code, 1, `非 replaced 席却带人读投影必须 gate exit 1（实得 ${r2.code}；§7④ :182 子集判据）：${r2.out.slice(0, 300)}`);
+assert.ok(r2.out.includes(mid), `必须点名未接管的席 ${mid}`);
+assert.match(r2.out, /不得带人读投影/, '必须命中中期子集判据文案（spec §7④ :182）');
+```
 
 ### S4-TC-F06 `state.agents` 键集 = 席集双向相等、值域合法、全部 `replaced`
 
@@ -1814,6 +1913,8 @@ const APPEND_ONE_BYTE = (rel) => (copy) => {
 - **对应测试**：同上
 - **不覆盖**：历史差异（只看 HEAD 相对工作区）。
 
+> **日期注 / 现行判据（2026-10-31 代码审查修复；原文保留不删）**：原步骤 ② 的 `git diff --quiet HEAD -- tools/observation-check/` 把「本段零接触」写成**工作区状态**——任一本机未提交改动都会让常驻门禁（`npm run check`）变红，而改动提交后又查不出来。现行判据改**内容锚**：`registered-ids.mjs` 整文件 SHA256 等于测试文件里的固定钉值 `REGISTERED_IDS_SHA`（值只存一份，不在本文复制），与工作区是否干净无关，且连排版改动也拦。① 常量值逐字不变、③ `render.mjs` 在位两条不变。**残余**：该文件在 S2/S3 正式切换时确需变更 → 同批更新钉值（守卫退化为「变更须显式改钉」）。
+
 ### S4-TC-I03 `registeredIdsOf([本席 card])` = 本席 `checkItems[].id` 并集（产物侧 id 从常量派生）
 
 - **覆盖**：spec §4 `:95`（`registeredIdsOf(cards)`，传**本席刚合并的 card 单元素数组**；与 S1 §6 `:154` 同义）/ S1 §6 `:154`
@@ -1980,6 +2081,37 @@ const APPEND_ONE_BYTE = (rel) => (copy) => {
   ```
 - **对应测试**：同上
 - **不覆盖**：PRD 其它节（`:239` 的单源说明由 A07 / G05 的 spec 侧单源守）。
+
+> **日期注 / 现行判据（2026-10-31，④ 段实测；原文保留不删）**：PRD §3.7 段表在插入「输出格式」行后实为 **表头 + front matter + 7 段 = 9 行**（`front matter` 行本就存在），原判据写「8 行（表头 + 7 段）」漏算该行 → 恒红。现行判据 = **9 行**且「去 front matter 后恰 7 段」（`segsOnly === 7`）；原文的「6→7 段」指段数，不受影响。实测 `rows 9 / segsOnly 7 / hasOut true`。
+> **追加（2026-10-31 代码审查修复）**：原判据代码的 `L[292]` 是**绝对行号锚**——§3.7 插行后 D5 要收敛的 `subject:` 枚举行已下移到 `:294`，`:293` 变成 `instance:` 行（该行永不含 `…`）→ 断言对 `…` 空转。现行判据改**内容锚**：定位含 `subject: 'reviewer-detective.card'` 的那一行再断「不含 `…`」（找不到该行即红）；判据句「不得含 `…`」不变。
+
+```js
+const prd = readFileSync(PRD_PATH, 'utf8');
+assert.ok(prd.length > 0, `PRD 必须可读：${PRD_PATH}`);
+const L = prd.split(/\r?\n/);
+const h = L.findIndex((l) => /^###\s*3\.7/.test(l));
+assert.ok(h >= 0, 'PRD 必须含 §3.7 标题（D1 :214 的落点节）');
+const head = L.findIndex((l, i) => i > h && /^\|\s*段\s*\|/.test(l));
+assert.ok(head >= 0, 'PRD §3.7 必须有「卡面段清单」表');
+let rows = 0, hasOut = false, segsOnly = 0;
+for (let i = head; i < L.length; i++) {
+  const l = L[i];
+  if (!l.trim().startsWith('|')) break;
+  const cells = l.split('|').slice(1, -1).map((c) => c.trim());
+  if (cells.length > 0 && cells.every((c) => /^:?-{3,}/.test(c))) continue;
+  rows += 1;
+  if (cells[0] !== '段' && cells[0] !== 'front matter') segsOnly += 1;
+  if (cells.some((c) => c.includes('输出格式'))) hasOut = true;
+}
+assert.ok(rows > 0, 'PRD §3.7 段表必须存在（否则本用例空转）');
+assert.equal(rows, 9, `PRD §3.7 段表必须 = 表头 + front matter + 7 段 = 9 行（实得 ${rows}）`);
+assert.equal(segsOnly, 7, `去 front matter 后必须恰 7 段（D1 :214 承诺 6→7 段），实得 ${segsOnly}`);
+assert.equal(hasOut, true, '段表必须含「输出格式」行（D1 的「表内插行」落地，不是表外追加）');
+// 2026-10-31 代码审查修复：`L[292]` 绝对行号锚已漂到 `instance:` 行（该行永不含 `…`）→ 改内容锚
+const hj = L.findIndex((l, i) => i > h && l.includes("subject: 'reviewer-detective.card'"));
+assert.ok(hj >= 0, 'PRD 必须含 subject 枚举行（D5 :218 的落点行，按内容锚定）');
+assert.equal(L[hj].includes('…'), false, `subject 枚举行不得再含 '…' 省略号（D5 :218），实得：${L[hj]}`);
+```
 
 ---
 

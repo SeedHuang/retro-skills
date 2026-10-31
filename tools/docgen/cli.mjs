@@ -2,7 +2,7 @@
 // docgen CLI（R1）：六子命令统一入口。本任务实现 generate + gate；draft/replace/check-agents/baseline 由 Task 5/6 扩展。
 import { readFileSync, existsSync, realpathSync, mkdirSync, writeFileSync, readdirSync, rmSync, renameSync } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { join, resolve, dirname } from 'node:path';
+import { join, resolve, dirname, relative, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
 import { agentData, triggerTable, AGENT_KINDS } from './components/agentData.mjs';
@@ -192,7 +192,11 @@ export function gateChecks() {
   const drifts = collectGate();
   if (drifts.length === 0) return;
   const first = [...drifts].sort((a, b) => PRIORITY(a) - PRIORITY(b))[0];
-  fail(first.code, first);
+  // spec §7②/③ 要求「exit 1 且点名该路径」：drift 无自有 message 时补上 path（消息内不得重复码，stderr 契约只许出现一次码）。
+  // 路径一律转仓内相对路径——`BaselineDrift` / `StateFileInvalid` 的 path 是绝对路径，直接拼接会把本机路径写进用户可见 stderr。
+  const rel = isAbsolute(first.path) ? relative(REPO_ROOT, first.path).replace(/\\/g, '/') : first.path;
+  const shown = rel.startsWith('..') ? first.path : rel; // 仓外路径没有有意义的相对形式 → 保留原值
+  fail(first.code, first.message ? first : { ...first, message: `产物漂移 ${shown}` });
 }
 
 // 只读子命令（spec §5）：先跑 validatePolicy（五码唯一发射点），再输出 dumpPolicy 的 JSON，**不写盘**。

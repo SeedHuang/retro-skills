@@ -133,6 +133,50 @@
         "skills/dev-workflow/references/stage-4-quality.md",
         "tools/docgen/test/support/dev-workflow-checks.mjs"
       ]
+    },
+    {
+      "id": "I15",
+      "title": "S4-TC-A02 的「12 键逐键删除全被拒」（改为 6 非结构键被拒 + 6 结构键由派生 / 合并值恢复）",
+      "words": ["12 键逐键删除", "12 次均", "十二键逐键"],
+      "scope": [
+        "docs/superpowers/specs/2026-10-29-agent-card-s4-render-design-testcase.md",
+        "docs/superpowers/plans/2026-10-30-agent-card-s4-render.md",
+        "docs/handoffs/2026-10-31-agent-card-s4-quality.md"
+      ]
+    },
+    {
+      "id": "I16",
+      "title": "S4-TC-E01 的「判据 id 裸子串计数 = 1」（改为 `criterion:` 字段赋值计数 = 1）",
+      "words": ["判据 id 在", "共享判据 id"],
+      "scope": [
+        "docs/superpowers/specs/2026-10-29-agent-card-s4-render-design-testcase.md",
+        "docs/superpowers/plans/2026-10-30-agent-card-s4-render.md"
+      ]
+    },
+    {
+      "id": "I17",
+      "title": "S4-TC-F04 的「缺一份 README → exit 1」（改为 exit 2，沿用 DanglingBaselineEntry 映射）",
+      "words": ["缺一份 README 必须 gate exit 1"],
+      "scope": [
+        "docs/superpowers/specs/2026-10-29-agent-card-s4-render-design-testcase.md"
+      ]
+    },
+    {
+      "id": "I18",
+      "title": "S4-TC-K01 的「PRD §3.7 段表 = 8 行（表头 + 7 段）」（改为 9 行，含 front matter 行）",
+      "words": ["表头 + 7 段 = 8 行", "断行数 = **8**"],
+      "scope": [
+        "docs/superpowers/specs/2026-10-29-agent-card-s4-render-design-testcase.md"
+      ]
+    },
+    {
+      "id": "I19",
+      "title": "S4-TC-I02 的「零接触 = `git diff --quiet HEAD` 无差异」（改为整文件 SHA256 内容锚）",
+      "words": ["git diff --quiet HEAD"],
+      "scope": [
+        "docs/superpowers/specs/2026-10-29-agent-card-s4-render-design-testcase.md",
+        "docs/superpowers/plans/2026-10-30-agent-card-s4-render.md"
+      ]
     }
   ]
 }
