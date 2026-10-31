@@ -30,6 +30,12 @@
 | `agents/reviewer-audit.md` | `A8790FC3…770` → `FB7A6D9A…CF4` | `FB7A6D9A…CF4` → `CB97B5FD…AC73` | 措辞改进 + 分段调整（判据语义未变） | ② 段拆「只允许写 / 禁止写」两节；③ 段路径项统一加反引号；④ 段白名单由「；」逐条改「 / 」连接；⑤ 段补「越权清单由越权者写进本人产物（② 段限定的产物 …）」+「复算由独立于越权者的核验席完成」。来源 = 边界段改为 `renderBoundary('reviewer-audit')`（S6 §3.6）；第 2 次 = V-13 回改 |
 | `agents/detective-observer.md` | `CF0D27E0…2D6` → `1E6ECD84…2C8` | `1E6ECD84…2C8` → `2605F250…09CC` | 同上 | 同一次渲染改动的两席落地；第 2 次 = V-13 回改 |
 
+## 二′、S4 迁移追加（2026-10-31；G01 记账位）
+
+| 卡 | 差异 | 说明 |
+|---|---|---|
+| `agents/senior-sdet.md` | 旧手写卡（84 行）→ 新卡（73 行） | S4 迁移最后一席：职责 / 清单 / 边界改由 `agentData` 卡数据渲染；边界句新增 `SDET_BOUNDARY`（非评审席专用句，S6-B 再收）；旧模板 `agent-handwritten.md.tpl` 随 Task 7 退场。凭证见 `tools/docgen/fixtures/senior-sdet.evidence.json` 末条 `changes`（`rejudged=["A1","A2","B3"]`、`judgedBy=reviewer-ai-2026-10-31-senior-sdet-b3`）。 |
+
 ## 三、取证锚点
 
 - 两次重出的完整凭证（`from` / `to` / `rejudged` / `judgedBy`）在 `tools/docgen/fixtures/{reviewer-audit,detective-observer}.evidence.json` 的末两条 `changes`：`judgedBy = reviewer-audit-2026-10-25-b3`（第 1 次）/ `reviewer-audit-2026-10-25-b3-r2`（第 2 次），两席均 `rejudged=["B3"]`、`judgeMode="subagent"`。

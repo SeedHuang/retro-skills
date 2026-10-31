@@ -6,17 +6,15 @@ import { readFileSync, appendFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { agentData, triggerTable } from '../components/agentData.mjs';
 import { validateAgentData } from '../components/validateAgentData.mjs';
-import { renderAgent } from '../components/renderAgent.mjs';
-import { patternRegistry, DOMAIN } from '../components/patternRegistry.mjs';
-import { sharedBlocks } from '../components/sharedBlocks.mjs';
-import { legacyOutputFormats as outputFormats } from '../components/outputFormats.mjs';
+import { patternRegistry, DEFAULT_BOUNDARY, DOMAIN } from '../components/patternRegistry.mjs';
+import { renderSeat } from '../components/cardPipeline.mjs';
 import { checkAgentFile } from '../../execution-matrix/check-agent.mjs';
 import { ROOT, readRepo, withRepoCopy, runCli, runEsm } from './support/dev-workflow-checks.mjs';
 
 const CARD = 'agents/evidence-reader.md';
-const TPL = 'tools/docgen/templates/agent.md.tpl';
+const CARD_TPL = 'tools/docgen/templates/agent-card.md.tpl';
 const card = readRepo(CARD);
-const tpl = readRepo(TPL);
+const tpl = readRepo(CARD_TPL);
 const base = agentData.find((a) => a.name === 'evidence-reader');
 
 test('TC-B01 evidence-reader 卡与渲染逐字节一致（diff 报零差异）', () => {
@@ -88,15 +86,14 @@ test('TC-B10 reader 卡「边界」节为取证角色句、不含「只读评审
 test('TC-B11 reader 卡不再有「自由探索」散文节（S4 迁移后由一条 must 承接）', () => {
   assert.equal(card.includes('现场生成 3-5 个'), false);
   assert.equal(card.includes('## 自由探索'), false, 'S4 迁移后新卡 7 段里无「自由探索」节');
-  assert.equal(card.includes('must'), true, '自由探索语义由「一定会」的 must 行承接');
+  assert.ok(card.includes('evidence-reader.free-explore'), '自由探索语义由「一定会」的 must 行承接');
 
-  assert.equal(tpl.includes('{{EXPLORE}}'), true);
+  assert.equal(tpl.includes('{{EXPLORE}}'), false, '新卡模板无 {{EXPLORE}} 槽');
   assert.equal(tpl.includes('现场生成 3-5 个'), false);
 
-  const files = ['tools/docgen/components/patternRegistry.mjs', 'tools/docgen/components/renderAgent.mjs', TPL];
-  const texts = files.map((p) => readRepo(p));
-  assert.deepEqual(texts.map((t) => t.includes('现场生成 3-5 个')), [true, false, false], '旧句只能出现在 patternRegistry');
-  assert.deepEqual(texts.map((t) => (t.match(/本节不适用/g) ?? []).length), [1, 0, 0], 'DEFAULT_EXPLORE_NONE 文本只能出现在 patternRegistry');
+  const texts = [readRepo('tools/docgen/components/patternRegistry.mjs')];
+  assert.deepEqual(texts.map((t) => t.includes('现场生成 3-5 个')), [true], '旧句只留在 patternRegistry（未被任何渲染路径消费）');
+  assert.deepEqual(texts.map((t) => (t.match(/本节不适用/g) ?? []).length), [1], 'DEFAULT_EXPLORE_NONE 文本只留在 patternRegistry');
 });
 
 test('TC-B12 boundary + explorePolicy 被 BASE_KEYS 接受（不判非法），且值域写错必被拒', () => {
@@ -113,10 +110,17 @@ test('TC-B12 boundary + explorePolicy 被 BASE_KEYS 接受（不判非法），�
   badPolicy.find((a) => a.name === 'evidence-reader').explorePolicy = 'NONE';
   assert.throws(() => validateAgentData(badPolicy, triggerTable), (e) => e.code === 'DescriptionDerivation');
 
-  // 渲染侧的纵深防御：即使绕过校验直接渲染空 boundary，也不许出现空的「边界」节
-  const rendered = renderAgent({ agent: { ...base, boundary: '' }, trigger: triggerTable['evidence-reader'], template: tpl, sharedBlocks, outputFormats });
-  const boundarySection = rendered.slice(rendered.lastIndexOf('## 边界'));
-  assert.ok(boundarySection.trim().length > '## 边界'.length, '空 boundary 不得渲染出空边界节');
+  // 渲染侧纵深防御：把条目 boundary 置空（绕过校验）→ 卡面回落 DEFAULT_BOUNDARY，不得出现空边界节
+  const keep = base.boundary;
+  try {
+    base.boundary = '';
+    const rendered = renderSeat('evidence-reader').card;
+    const boundarySection = rendered.slice(rendered.lastIndexOf('## 边界'));
+    assert.ok(boundarySection.trim().length > '## 边界'.length, '空 boundary 不得渲染出空边界节');
+    assert.equal(boundarySection.includes(DEFAULT_BOUNDARY), true, '空 boundary 应回落 DEFAULT_BOUNDARY');
+  } finally {
+    base.boundary = keep;
+  }
 });
 
 test('TC-D01 gate 逐字节兜住既有席；给 reviewer-qa.md 注入一字节必报 Mismatch', () => {
@@ -137,38 +141,30 @@ test('TC-D01 gate 逐字节兜住既有席；给 reviewer-qa.md 注入一字节�
   });
 });
 
-test('TC-D03 其余 14 席 description：未迁移席走默认分支、迁移席走 trigger.when 直出、senior-sdet 按手写卡判', () => {
+test('TC-D03 其余 14 席 description：全部迁移席 = trigger.when 直出（无派生式尾巴）', () => {
   const dir = join(ROOT, 'agents');
   const seats = agentData.map((a) => a.name).filter((x) => x !== 'evidence-reader');
   for (const name of seats) {
     const d = /^description:\s*(.+)$/m.exec(readFileSync(join(dir, `${name}.md`), 'utf8'))[1];
-    const entry = agentData.find((a) => a.name === name);
-    if (name === 'senior-sdet') {
-      assert.equal(d.includes('在议会评审中担任'), false);
-      assert.equal(d.includes('开发工作流'), false);
-      assert.equal(d.includes('Do not use for'), true);
-    } else if (entry.card) {
-      // S4 迁移席（spec §10-D3）：description = trigger.when 直出，不得再派生「在…中担任…」
-      assert.equal(d.includes('在议会评审中担任'), false, `${name} 迁移后不得再走派生式`);
-      assert.equal(d.includes('时调用'), false, `${name} 迁移后不得保留派生式尾巴`);
-    } else {
-      assert.equal(d.includes('在议会评审中担任'), true, `${name} 未走默认分支`);
-      assert.equal(d.includes('开发工作流'), false);
-      assert.equal(d.includes('Do not use for'), false);
-    }
+    // S4 迁移席（spec §10-D3）：description = trigger.when 直出，不得再派生「在…中担任…」
+    assert.equal(d.includes('在议会评审中担任'), false, `${name} 迁移后不得再走派生式`);
+    assert.equal(d.includes('在开发工作流中担任'), false, `${name} 迁移后不得再走派生式`);
+    assert.equal(d.includes('时调用'), false, `${name} 迁移后不得保留派生式尾巴`);
   }
 });
 
-test('TC-D04 renderAgent 未把 domain 接进 description 时会被 grep 判据抓住', () => {
+test('TC-D04 新卡 description 不拼 domain（改 domain 后渲染不变）', () => {
   assert.equal(/^description:.*在议会评审中担任/m.test(card), false);
-  const broken = renderAgent({
-    agent: { ...base, domain: undefined },
-    trigger: triggerTable['evidence-reader'],
-    template: tpl,
-    sharedBlocks: {},
-    outputFormats: {},
-  });
-  assert.match(broken, /^description:.*在议会评审中担任/m, '未接 domain 时必须能被 grep 抓到');
+  const keep = base.domain;
+  const before = renderSeat('evidence-reader').card;
+  try {
+    base.domain = '测试域';
+    const after = renderSeat('evidence-reader').card;
+    assert.equal(after, before, '新卡 description 不得因 domain 变化而变（派生分支已随旧模板退场）');
+    assert.match(after, /^description: 当需要通读长文并交出可核对的原文与行号/m);
+  } finally {
+    base.domain = keep;
+  }
 });
 
 test('TC-D05 domain 输入空间（S4 迁移后）：新卡 description 不受 domain 影响，值域仍由 boundary 守', () => {
@@ -194,39 +190,30 @@ test('TC-D07 domain 字段被接受，且只有 evidence-reader 带它', () => {
   assert.equal(agentData.filter((a) => a.domain !== undefined).length, 1);
 });
 
-test('TC-D08 边界句退回模板现句 → reader 卡变回「只读评审角色」必被检出，且 gate 无判别力', () => {
-  const hard = '你是只读评审角色：不得创建、修改、删除任何文件；不裁决他人分歧；无中断评审的权力。';
-  const badTpl = tpl.replace('{{BOUNDARY}}', hard);
-  const rendered = renderAgent({ agent: base, trigger: triggerTable['evidence-reader'], template: badTpl, sharedBlocks: {}, outputFormats: {} });
-  const s = rendered.slice(rendered.lastIndexOf('## 边界'));
-  assert.equal(s.includes('只读评审角色'), true, '失败态复现失败');
-  assert.equal(s.includes('不得创建、修改、删除任何文件'), true, '旧句与新句都含这句 → 只查它会误判为通过');
-
-  let diff14 = 0;
-  for (const a of agentData) {
-    // 已声明 boundary 槽位的席（evidence-reader / reviewer-audit / detective-observer）与 testcase 席不参与本对照；
-    // S4 迁移席的渲染输入已换 card（不走 renderAgent），同样不在本对照面内
-    if (a.boundary !== undefined || a.outputKind === 'testcase' || a.card) continue;
-    const t = renderAgent({ agent: a, trigger: triggerTable[a.name], template: badTpl, sharedBlocks, outputFormats });
-    if (t !== readFileSync(join(ROOT, 'agents', `${a.name}.md`), 'utf8')) diff14 += 1;
+test('TC-D08 边界句退回默认只读句 → 卡面可被机械探针检出（槽位未接线不得静默）', () => {
+  const keep = base.boundary;
+  try {
+    base.boundary = DEFAULT_BOUNDARY;
+    const rendered = renderSeat('evidence-reader').card;
+    const s = rendered.slice(rendered.lastIndexOf('## 边界'));
+    assert.equal(s.includes('只读评审角色'), true, '失败态复现失败');
+    assert.equal(s.includes('不得创建、修改、删除任何文件'), true, '旧句与新句都含这句 → 只查它会误判为通过');
+  } finally {
+    base.boundary = keep;
   }
-  assert.equal(diff14, 0, '未迁移席逐字节仍绿 → 证明 gate 对 C10 半改零判别力，唯一防线是卡文判据');
+  // 模板面：边界必须是槽位、不得硬编码默认句
+  assert.equal(tpl.includes('{{BOUNDARY}}'), true);
+  assert.equal(/你是只读评审角色：[^\r\n]*不裁决他人分歧/.test(tpl), false, '新卡模板不得硬编码默认句');
 });
 
-test('TC-D09 explore 槽位未接线 → gate 仍绿、卡仍含旧句，只有卡文判据抓得住', () => {
-  const render = (policy) => {
-    const a = structuredClone(base);
-    a.explorePolicy = policy;
-    return renderAgent({ agent: a, trigger: triggerTable[a.name], template: tpl, sharedBlocks: {}, outputFormats: {} });
-  };
-  const none = render('none');
-  const full = render('full');
-  assert.notEqual(none, full, 'explorePolicy 未被消费（槽位未接线）');
-  assert.equal(none.includes('本节不适用'), true);
-  assert.equal(full.includes('现场生成 3-5 个'), true);
+test('TC-D09 explore 语义由一条 must 承接（新卡不再渲散文节）', () => {
+  const rendered = renderSeat('evidence-reader').card;
+  assert.ok(rendered.includes('evidence-reader.free-explore'), '自由探索须由 must 行承接');
+  assert.equal(rendered.includes('本节不适用'), false, '新卡不渲染 explore 散文');
+  assert.equal(rendered.includes('现场生成 3-5 个'), false, '新卡不渲染旧探索句');
 
   const g = runCli(ROOT, ['gate']);
-  assert.equal(g.status, 0, 'gate 在这题上零判别力：盘上卡与渲染同源时恒绿');
+  assert.equal(g.status, 0, '盘上卡与渲染同源时 gate 恒绿（gate 不判语义，语义由卡文判据与议会判）');
 });
 
 test('TC-E07 给另一席注入一字节 → gate 必报 Mismatch（第二个独立注入点）', () => {

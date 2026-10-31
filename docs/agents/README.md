@@ -16,3 +16,4 @@
 | reviewer-reader | 当主持人调度对描述性/记录型/任意文档做读者视角评审 | 产品设计 | issue-card | `docs/agents/reviewer-reader.md` |
 | detective-observer | 每轮答辩结束后由主持人调度做行为核实 | 独立观察 | observation | `docs/agents/detective-observer.md` |
 | evidence-reader | 当需要通读长文并交出可核对的原文与行号（交接取证 / 事实基线回核） | 取证 | evidence | `docs/agents/evidence-reader.md` |
+| senior-sdet | 当需要为 PRD/spec 设计并编写测试用例（testcase.md），或专门找出被忽视的边界与失败场景；不用于：修改业务代码、写实现方案、或只读的议会评审（那走 reviewer-qa） |  | testcase | `docs/agents/senior-sdet.md` |

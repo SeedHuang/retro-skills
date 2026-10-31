@@ -1,3 +1,5 @@
+// ⚠️ 已停用（2026-10-31，S4 Task 7）：旧模板退场后本文件**无生产调用方**（仅历史文档引用），
+// 删除触发 = 下一次清理死代码 / S6-B 启动；勿在此新增逻辑（新卡走 `renderCard` / `cardPipeline`）。
 import { patternRegistry, DEFAULT_BOUNDARY, DEFAULT_EXPLORE, DEFAULT_EXPLORE_NONE, resolveDomain } from './patternRegistry.mjs';
 
 function fill(template, key, value) {

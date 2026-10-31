@@ -25,20 +25,21 @@ test('H42 名单外卡 finding → blockers，warnings 空', () => {
   assert.strictEqual(blockers[0].file, `${CARD_DIR}zz-nonexistent-card.md`);
 });
 
-test('H43 名单内 + 不传 landed → 只告警（两名从实跑集合取前两个，不写死名字）', () => {
+test('H43 名单内 + 显式 landed:false → 只告警（两名从实跑集合取前两个，不写死名字）', () => {
+  // S4 Task 7 已把生产常量置 true；「窗口未到期」的告警分支改由显式注入 `landed:false` 覆盖
   const [fa, fb] = EXEMPT_CARDS.slice(0, 2).map(finding);
-  const { warnings, blockers } = disposeCardFindings([fa, fb]);
+  const { warnings, blockers } = disposeCardFindings([fa, fb], { landed: false });
   assert.deepEqual(blockers, []);
   assert.deepEqual(warnings, [fa, fb]);
 });
 
-test('H44 名单内 + 注入 landed:true → 阻断；生产常量仍为 false', () => {
+test('H44 名单内 + 注入 landed:true → 阻断；生产常量已置 true（S4 到期）', () => {
   const before = EXPIRY_LANDED;
   const f = finding(EXEMPT_CARDS[0]);
   const { warnings, blockers } = disposeCardFindings([f], { landed: true });
   assert.deepEqual(warnings, []);
   assert.deepEqual(blockers, [f]);
   assert.strictEqual(EXPIRY_LANDED, before);
-  assert.strictEqual(EXPIRY_LANDED, false);
+  assert.strictEqual(EXPIRY_LANDED, true, 'S4 首次重生成已落地（spec §7⑤ / D7）');
   assert.strictEqual(EXPIRY_EVENT, 's4-first-regeneration');
 });

@@ -38,11 +38,9 @@ function fail(code, fields = {}) { const e = new Error(fields.message ?? code); 
 
 export function sha256Hex(buf) { return createHash('sha256').update(buf).digest('hex').toUpperCase(); }
 
-function readTemplate(kind) {
-  if (kind === 'rule') return readFileSync(spec.TEMPLATE_PATH, 'utf8');
-  const p = join(dirname(fileURLToPath(import.meta.url)), 'templates', kind === 'agent' ? 'agent.md.tpl' : 'agent-handwritten.md.tpl');
-  if (!existsSync(p)) fail('TemplateReadFailed', { path: p });
-  return readFileSync(p, 'utf8');
+// S4 Task 7：旧 agent 模板已退场，只留规则模板分支
+function readTemplate() {
+  return readFileSync(spec.TEMPLATE_PATH, 'utf8');
 }
 
 export function cmdGenerate(args) {
@@ -68,7 +66,7 @@ export function cmdGenerate(args) {
       const target = readFileSync(p, 'utf8');
       checkEnvironment(Buffer.from(target), 'target', o.path);
       if (o.path === GENERATED_RULE) {
-        const rendered = spec.render(spec.buildData(), readTemplate('rule'));
+        const rendered = spec.render(spec.buildData(), readTemplate());
         if (compareBuffers(Buffer.from(rendered), Buffer.from(target))) drift += 1;
       }
     } else {
@@ -109,7 +107,7 @@ export function collectGate() {
   validateAgentData(agentData, triggerTable);
   const onDisk = readFileSync(baselinePath(), 'utf8');
   if (onDisk !== renderBaseline()) drifts.push({ code: 'BaselineDrift', path: baselinePath() });
-  const tpl = readTemplate('rule');
+  const tpl = readTemplate();
   const target = readFileSync(join(REPO_ROOT, GENERATED_RULE), 'utf8');
   if (compareBuffers(Buffer.from(spec.render(spec.buildData(), tpl)), Buffer.from(target))) {
     drifts.push({ code: 'Mismatch', path: GENERATED_RULE });

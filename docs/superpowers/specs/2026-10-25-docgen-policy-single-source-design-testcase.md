@@ -616,7 +616,7 @@ const hasRerunStamp = (row) => /重评|重跑|rerun/i.test(Object.values(row).jo
 | S6-TC-F06 | V-10 / §3.1 数据流 | dump 与 `renderBoundary` 同源：定义改一处，两者同变 | 正 | 集成 | 机器 | 副本内 `runEsm` | P1 |
 | S6-TC-G01 | **V-2（辅助定位）** / §2 第 2 条 / §11.3 D4 | 字节零变化是「最好情况」；判据改为**差异可追**（每个差异文件在 `capability-diff.md` 有说明行） | 边界 | e2e | 机器 | `git diff --stat` | P1 |
 | S6-TC-G02 | **V-10** / V-2 | `gate` → `baseline N/N`，N 派生不写死 | 正 | e2e | 机器 | `runCli(gate)` | P0 |
-| S6-TC-G03 | V-1 / §3.6 / §2「不做什么」4 | 12 席不接渲染层，其中**卡面渲 `DEFAULT_BOUNDARY` 的是 11 席**（`senior-sdet` 走手写模板）；`evidence-reader` 边界句不变 | 正 | 集成 | 机器 | 读卡 + 单元 | P0 |
+| S6-TC-G03 | V-1 / §3.6 / §2「不做什么」4 | 12 席不接渲染层，其中**卡面渲 `DEFAULT_BOUNDARY` 的是 11 席**（`senior-sdet` 走手写模板）；`evidence-reader` 边界句不变（**2026-10-31 迁移改判 → 自带边界集合 3→4、`senior-sdet` 改为自带专用句；默认席仍 11；原文保留，见 §G03 加注**） | 正 | 集成 | 机器 | 读卡 + 单元 | P0 |
 | S6-TC-G04 | §3.6 / D2 / V-5 | `BOUNDARY_COMMAND` 已删；`:12` import / `S5-TC-B08` / `S5-TC-E05` / `S5-TC-B14` 四处同批改判；S5 testcase 数组改派生；`git status` 读取不因「无命中 exit 1」抛错 | 边界 | 静态 + 单元 | 机器 | 扫描 + 单元 | P0 |
 | S6-TC-G05 | V-6 反向验证 / V-2 | 改定义层一条 → `gate` 红（卡面变）→ 改回绿 | 边界 | 集成 | 机器 | 副本内 `runCli(gate)` | P0 |
 | S6-TC-H01 | **V-1 基线来源** / §6 步骤 0 ③④⑤ | 基线**同源可复算** + 抽取规则写死 + 黄金样本独立复算（**同一抽取器 `runEsm` 真执行**，不是只 grep 源码）；**基线端按旧卡文本切分**（反引号 / 顿号 / 分号 / ` / ` 工具项，不注入字典）；抽取器不 import 定义层；**`agents/` 差异可追 + 越界可抓**（只许两张 producer 卡 + 逐个进 `capability-diff.md`）；两条取数命令写进 `checklist.md` 交付说明 | 正 | 集成 | 机器 | `git show` + `runBaselineExtractor` | P0 |
@@ -2309,6 +2309,8 @@ const hasRerunStamp = (row) => /重评|重跑|rerun/i.test(Object.values(row).jo
 
 ### S6-TC-G03 `DEFAULT_BOUNDARY` 的 12 席与 `evidence-reader` 边界句不变
 
+> **2026-10-31 迁移改判（用户裁定方案 1；原文不删）**：`senior-sdet` 的职责是写 `testcase.md`，与评审席边界模板「你是评审席 / 只允许写本次评审账本 / 禁写『代码、测试』」结构不同构，S6 原本把它列为「走手写模板、不注入 boundary」的例外。迁移到新卡后必须由它自带专用边界句，否则会退回 `DEFAULT_BOUNDARY`（只读评审角色）而与职责自相矛盾（B3 fail）。故**计数口径改为**：自带边界 = 2 producer + `evidence-reader` + `senior-sdet` = **4**；`senior-sdet` 从「既非自带、也不渲默认的手写模板席」并入「自带」集合，**卡面渲 `DEFAULT_BOUNDARY` 的仍是 11 席**（15 − 4）；其专用句新增黄金键 `senior-sdet-boundary`。结构收敛（按席排除禁写组 + 模板去「评审席」化）归 S6-B，登记见 `docs/after/`。下方原判据保留为历史口径，**现行判据**见本节末块。
+
 - **覆盖**：V-1 / §3.6 / §2「不做什么」3 / `agentData` 条目自带 `boundary` 的守卫（`spec:121`）
 - **来源**：spec 推导（§3.6 已明确「本轮只收 2 席，其余 12 席继续用 `DEFAULT_BOUNDARY`，`evidence-reader` 保留自有句」；12 = 15 − 2 − 1 的派生见事实 5；黄金表 4 键见 §5；**`spec:121`：条目不得自带 `boundary`，该守卫沿用 S5 既有断言 `DECLARED_SLOT_SEATS`（`validateAgentData.mjs:118`，= `evidence-reader` ∪ `boundaryBySeat` 的席），本 spec 不新增守卫**）
 - **前置**：S6 完成。
@@ -2329,6 +2331,22 @@ const hasRerunStamp = (row) => /重评|重跑|rerun/i.test(Object.values(row).jo
   assert.equal(sha(DEFAULT_BOUNDARY), goldenOf('default-boundary'));
   assert.equal(sha(agentData.find((a) => a.name === 'evidence-reader').boundary), goldenOf('evidence-reader-boundary'));
   ```
+
+**现行判据（2026-10-31 起，替代上方历史块）**：
+
+  ```js
+  const own = new Set([...Object.keys(patternRegistry.boundaryBySeat), 'evidence-reader']);
+  const defSeats = agentData.filter((a) => !own.has(a.name));
+  assert.equal(own.size, 4, '自带边界 = 2 producer + evidence-reader + senior-sdet');
+  assert.equal(defSeats.length, 11, '卡面渲 DEFAULT_BOUNDARY 的应为 11 席（15 − 4 自带）');
+  for (const a of defSeats) assert.equal(a.boundary ?? DEFAULT_BOUNDARY, DEFAULT_BOUNDARY, a.name);
+  assert.equal(agentData.filter((a) => Object.hasOwn(a, 'boundary') && !own.has(a.name)).length, 0,
+    '条目自带 boundary 越出 DECLARED_SLOT_SEATS');
+  const sd = agentData.find((a) => a.name === 'senior-sdet');
+  assert.equal(sd.boundary, patternRegistry.boundaryBySeat['senior-sdet']);
+  assert.equal(sha(sd.boundary), goldenOf('senior-sdet-boundary'), '专用边界句黄金必须对位');
+  ```
+
 - **红绿证据**：红 = 为了让模板统一，把 `DEFAULT_BOUNDARY` 也改成模板渲染（11 席卡面全变，`gate` 全红）——这正是 §2「不做什么」4 的边界；另一红 = 把 `senior-sdet` 也塞 `boundary`（卡面有 `## 边界` 但渲染走手写模板 → 静默被 `...s` 覆盖或整段错位）→ ③ 段红；再一红 = 给某张 default 卡条目加 `boundary`（绕过 `renderBoundary` 静默换句）→ ③ 段的集合断言红（S5 `DECLARED_SLOT_SEATS` 同口径）；绿 = 11 席 + 两项黄金不变。
 - **对应测试**：同上（待 plan Task N）。
 - **不覆盖**：`evidence-reader` 的边界语义是否足够（§10：结构不同构，本轮不收）。

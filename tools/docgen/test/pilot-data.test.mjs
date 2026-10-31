@@ -5,19 +5,16 @@ import { patternRegistry, DOMAIN } from '../components/patternRegistry.mjs';
 
 const entry = () => agentData.find((a) => a.name === 'reviewer-audit');
 
-test('reviewer-audit 八键齐，触发表四字段不混入 agentData', () => {
+// S4 Task 7：旧模板键（identity / fixedList / sharedBlock）已删，同一语义改由新卡 `card` 承接
+test('reviewer-audit 外层键齐，触发表四字段不混入 agentData', () => {
   const a = entry();
   assert.equal(a.role, '审计专员');
   assert.equal(a.dimension, '独立（标准核对）');
   assert.deepEqual(a.tools, ['Read', 'Glob', 'Grep', 'Write', 'Edit', 'RunCommand']);
-  assert.equal(
-    a.identity,
-    '资深审计专员，只审各项标准是否达到，不裁技术对错，不提新技术问题。',
-  );
-  assert.equal(a.fixedList.length, 7);
-  assert.equal(a.fixedList[3], '计数一致：卡片数 = 已修 + 关闭 + 候选 + 升级 + 带往下轮');
-  assert.equal(a.sharedBlock, 'AUDIT_RULES');
   assert.equal(a.outputKind, 'audit');
+  assert.equal(a.card.duty.action, '资深审计专员，只审各项标准是否达到，不裁技术对错，不提新技术问题。');
+  assert.equal(a.card.checkItems.length, 7, '原 7 条固定清单须逐条进 checkItems');
+  assert.equal(a.card.checkItems[3].criterion, '复算卡片数与各类去向之和是否相等', '原清单第 4 条语义须在位');
   assert.equal(a.description, undefined);
   assert.equal(a.when, undefined);
   assert.equal(a.route, undefined);

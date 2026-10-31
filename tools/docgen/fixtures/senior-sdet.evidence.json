@@ -5,8 +5,8 @@
   "hashObject": "346945525357b9e921a5e41e181c7e9da84c175a",
   "goldenAssertion": "pass",
   "compareResult": null,
-  "renderSha256": "5ABA3215E4A7586D88F60B43C0AF43CCF4DA890D9C64175D843CCC9B522911EB",
-  "lastWrittenHash": "5ABA3215E4A7586D88F60B43C0AF43CCF4DA890D9C64175D843CCC9B522911EB",
+  "renderSha256": "B4B6A0A0B346804EABD2F2AB7041C62EA99BB0DC8B638B90F6D2806784C8DA2E",
+  "lastWrittenHash": "B4B6A0A0B346804EABD2F2AB7041C62EA99BB0DC8B638B90F6D2806784C8DA2E",
   "changes": [
     {
       "from": "717803BE432BE5147DA49EDA531EA3250ADE54E8FC02C133A4F03424B679E7BF",
@@ -22,6 +22,42 @@
           "key": "A2",
           "verdict": "pass",
           "basis": "tools/execution-matrix/criteria.md A2 + 渲染产物；重判写回 rules/.inspector-annotations.json senior-sdet:A2 = pass（replace 机械转录）"
+        }
+      ],
+      "machineChecks": {
+        "A3": "pass",
+        "A4": "pass",
+        "A5": "pass",
+        "A6": "pass",
+        "A7": "pass"
+      }
+    },
+    {
+      "from": "5ABA3215E4A7586D88F60B43C0AF43CCF4DA890D9C64175D843CCC9B522911EB",
+      "to": "B4B6A0A0B346804EABD2F2AB7041C62EA99BB0DC8B638B90F6D2806784C8DA2E",
+      "at": "2026-10-31T03:50:58.354Z",
+      "rejudged": [
+        "A1",
+        "A2",
+        "B3"
+      ],
+      "judgeMode": "subagent",
+      "judgedBy": "reviewer-ai-2026-10-31-senior-sdet-b3",
+      "judged": [
+        {
+          "key": "A1",
+          "verdict": "pass",
+          "basis": "tools/execution-matrix/criteria.md A1 + 渲染产物；重判写回 rules/.inspector-annotations.json senior-sdet:A1 = pass（replace 机械转录）"
+        },
+        {
+          "key": "A2",
+          "verdict": "pass",
+          "basis": "tools/execution-matrix/criteria.md A2 + 渲染产物；重判写回 rules/.inspector-annotations.json senior-sdet:A2 = pass（replace 机械转录）"
+        },
+        {
+          "key": "B3",
+          "verdict": "pass",
+          "basis": "tools/execution-matrix/criteria.md B3 + 渲染产物；重判写回 rules/.inspector-annotations.json senior-sdet:B3 = pass（replace 机械转录）"
         }
       ],
       "machineChecks": {

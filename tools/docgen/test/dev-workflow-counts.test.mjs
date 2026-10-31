@@ -127,12 +127,12 @@ test('TC-D02 agents/ 下文件恰为 agentPaths()（无凭空手写卡）', () =
 
 test('TC-D06 触发条件被改 → gate 报 Mismatch（exit 1）', () => {
   withRepoCopy((dst) => {
-    // S4 迁移后 description = trigger.when 直出：改 triggerTable 的 when 即可造出「渲染 ≠ 盘上」；
-    // 本席取仍未迁移的 senior-sdet（其余席已走新卡，DOMAIN 不再参与 description 拼装）
+    // S4 收口后 description = trigger.when 直出：改 triggerTable 的 when 即可造出「渲染 ≠ 盘上」；
+    // 必须精确改到 triggerTable 块（同一 when 文本也出现在 card.duty.trigger，裸替换会改错目标）
     const p = join(dst, 'tools', 'docgen', 'components', 'agentData.mjs');
     const t = readFileSync(p, 'utf8');
-    const patched = t.replace('或专门找出被忽视的边界与失败场景', '或专门找出被忽视的边界与失败情形');
-    assert.notEqual(patched, t, '构造前提：能改到 senior-sdet 的 when');
+    const patched = t.replace(/(  'senior-sdet': \{\n    when: ')[^']*(')/, "$1当需要为 PRD/spec 设计并编写测试用例（testcase.md），或专门找出被忽视的边界与失败情形$2");
+    assert.notEqual(patched, t, '构造前提：能改到 senior-sdet 的 triggerTable.when');
     writeFileSync(p, patched);
     const r = runCli(dst, ['gate']);
     assert.equal(r.status, 1, r.stdout + r.stderr);

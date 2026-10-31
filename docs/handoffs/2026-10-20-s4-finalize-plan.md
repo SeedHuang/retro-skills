@@ -51,7 +51,7 @@ S4 定稿 → 写 plan → 施工；流程：① 把 spec 头行状态由「待�
   - `docs/superpowers/specs/2026-10-19-docgen-agent-batch-design-testcase.md`：§1 覆盖总表 + TC-003（四常量）、TC-005/006/007（三组合）、TC-008（检查点）、TC-017/018（空行/白名单）、TC-106（双闸门）、TC-113（check-all）、TC-114（cli-gate）、TC-206（ROWS 判别）、TC-207（pilot-render）
   - `.session/reviews/2026-10-20-222621-s4-batch/{progress.md:169-174,problems.md,delivery-audit.md}`（终审结论与记录项）
   - 实现现状：`tools/docgen/components/renderAgent.mjs`（`fill` 第 3–6 行、`{{SHARED_BLOCK}}` 第 35 行）、`tools/docgen/cli.mjs`（`cmdReplace` 218–224）、`tools/docgen/components/validateAgentData.mjs`（33–34 只拦 description）、`scripts/check-all.mjs:119`（只跑 reviewer-audit）、`tools/docgen/components/{sharedBlocks,outputFormats,agentData}.mjs`
-  - 既有测试：`tools/docgen/test/pilot-render.test.mjs:91-101`、`tools/docgen/test/cli-gate.test.mjs:11-20,45-49`、`tools/docgen/test/review-fixes.test.mjs:18-26`
+  - 既有测试：`tools/docgen/test/pilot-render.test.mjs:1-82`（原 91-101 的三连空行断言已随 S4 旧模板退场重写，行号按 2026-10-31 迁移后文件）、`tools/docgen/test/cli-gate.test.mjs:11-20,45-49`、`tools/docgen/test/review-fixes.test.mjs:18-26`
 - **勿重做**：5 轮议会评审与 spec/testcase 全部修订（已 PASS）；S3 全链路（`b53f408` / `eb51580`）；线 E 执行力度矩阵产物（`tools/execution-matrix/**`）。
 
 ## 开放问题

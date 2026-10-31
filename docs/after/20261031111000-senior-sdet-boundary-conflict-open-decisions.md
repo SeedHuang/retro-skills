@@ -1,6 +1,6 @@
-# 未决：`senior-sdet` 的「职责要写 testcase.md」与「边界禁写测试路径」冲突（2026-10-31）
+# 已裁定：`senior-sdet` 的「职责要写 testcase.md」与「边界禁写测试路径」冲突（2026-10-31）
 
-> 状态：**未决（待用户裁定）**。本文是这条冲突的唯一入口；裁定后把结论并入 S6 spec / PRD，并删除本节。
+> 状态：**已裁定并落地（2026-10-31，用户选方案 1）**；剩余部分 = **S6-B 结构收敛**（见 §六），本文因此保留为该项的唯一入口。
 > 来源：S4 Task 6（13 席迁移批）由**独立实例**按 `tools/execution-matrix/criteria.md` 的 **B3（职责段 vs 边界段）** 判 `senior-sdet` 为 `fail`（判者 `reviewer-ai-2026-10-31-s4-task6-batch`）。
 
 ## 一、冲突事实（可复核）
@@ -25,12 +25,20 @@
 2. **改 PRD 职责措辞**：「编写 testcase.md」改为「设计 testcase 内容，由主 agent 落盘」；边界不动。代价：SDET 席不再拥有写权限，`tools` 也要同批收窄。
 3. **维持现状并接受 B3 = fail**：需在 S6 的判据表里显式登记该席为豁免（等于改判据），不推荐。
 
-## 四、未决期间的当前状态
+## 四、裁定与落地（2026-10-31）
 
-- `senior-sdet` **未迁移**：保留旧卡（`agentData` 无 `card`），gate 走旧模板分支，仓库门禁绿；
-- S4 收口（Task 7：`EXPIRY_LANDED=true` / 删旧模板 / gate 31 份比对面 / `renderAll()` 全量）**因此阻塞**；
-- 其余 14 席已迁移（试点 1 + 批量 13），`docs/agents/**` 15 份（14 席 README + index）。
+- **用户裁定 = 方案 1**（给 SDET 席一条专用 boundary，并允许同批改两份已签字的测试口径）。
+- 落地形态：`tools/docgen/components/patternRegistry.mjs` 新增 `SDET_BOUNDARY`（与 `DEFAULT_BOUNDARY` 同住一文件、只写一份），并登记进 `boundaryBySeat['senior-sdet']`；`agentData` 的 map 与 `validateAgentData` 的 `DECLARED_SLOT_SEATS` 自动派生，`policy/**` 零改动。
+- 权限语义**未变**：旧卡 `agents/senior-sdet.md` 本就写「可写 testcase.md、其余只读」，`tools` 也已是 `sdet` 档；本批只是把手工边界搬进登记表。
+- 同批改判：`S6-TC-G03` 的计数口径（`own` 3 → 4，默认席仍 11；`senior-sdet` 从「不注入 boundary」改为「自带专用句 + 黄金键 `senior-sdet-boundary`」），载体 = S6 testcase §G03 的日期注与「现行判据」块（**原文不删**）+ 总表行注 + `policy-pure-source.test.mjs` 断言 + `fixtures/boundary-golden.json`。
+- 迁移证据：独立实例 `reviewer-ai-2026-10-31-senior-sdet-b3` 重判 A1/A2/B3 全 pass；替换凭证见 `tools/docgen/fixtures/senior-sdet.evidence.json` 末条 `changes`。
 
 ## 五、何时该搬走
 
-裁定完成后：把结论并入 `docs/superpowers/specs/2026-10-25-docgen-policy-single-source-design.md`（若走方案 1）或 PRD 角色表（若走方案 2），实施迁移，随后删除本文。
+- 方案 1 的落地部分已完成，**不再留待决项**；本文只剩 §六 的 S6-B 结构收敛欠账。
+
+## 六、S6-B 结构收敛欠账（本项唯一入口）
+
+- **要收什么**：当前 `renderBoundary` 的模板对非评审席结构不同构（首句「你是评审席」、只允许写本次评审账本、禁写「代码、测试」/`spec / plan`），所以 `senior-sdet` 只能自带一条字面边界句。理想态 = 边界句仍由「数据 → 渲染」生成（S6 的本质目标），且支持「按席排除禁写组」。
+- **触发信号**：S6-B 立项（或下一次需要给非评审席新增写路径时）。
+- **当前处置**：已作为登记例外落码，并在 `patternRegistry.mjs` 的 `SDET_BOUNDARY` 注释与 S6-TC-G03 日期注两处标明「S6-B 再收」。

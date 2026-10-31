@@ -15,9 +15,7 @@ try {
     'tools/docgen/state.json',
     'tools/docgen/state.mjs',
     'tools/docgen/evidence.mjs',
-    'tools/docgen/components/sharedBlocks.mjs',
     'tools/docgen/components/outputFormats.mjs',
-    'tools/docgen/components/renderAgent.mjs',
     'tools/docgen/fixtures/reviewer-audit.evidence.json',
   ];
   const all = [...new Set([...files, ...extra])].filter((f) => f && !f.startsWith('.git/'));

@@ -20,8 +20,8 @@ export const EXEMPT_CARDS = [
 
 export const EXPIRY_EVENT = 's4-first-regeneration';
 
-// 本期 false；S4 首次重生成落地时置 true（唯一开关，spec:224）
-export const EXPIRY_LANDED = false;
+// S4 首次重生成已在 2026-10-31 落地（15 席全迁新卡 + 旧模板退场）→ 唯一开关置 true
+export const EXPIRY_LANDED = true;
 
 // 名单内且窗口未到期 → 只告警；名单外、或窗口已到期 → 阻断。
 // landed 只供测试注入（生产不传，Q9 spec:208）。

@@ -11,14 +11,12 @@ import { createHash } from 'node:crypto';
 import { agentData, triggerTable } from '../components/agentData.mjs';
 import { patternRegistry, tierOf, toolsForSeat, DEFAULT_BOUNDARY } from '../components/patternRegistry.mjs';
 import { renderBoundary } from '../components/renderBoundary.mjs';
+// S4 Task 7：旧 agent 模板与 renderAgent 退场，渲染等价面改用新卡管线
+import { renderSeat } from '../components/cardPipeline.mjs';
+import { validateAgentData } from '../components/validateAgentData.mjs';
 // 判据侧一律 import 定义层、不手抄（S6 spec §3.6 / D3）：三处清单常量由定义层现算
 import { pathGroups } from '../policy/definitions/paths.mjs';
 import { commandGroups, forbiddenGroups } from '../policy/definitions/commands.mjs';
-import { validateAgentData } from '../components/validateAgentData.mjs';
-import { renderAgent } from '../components/renderAgent.mjs';
-import { sharedBlocks } from '../components/sharedBlocks.mjs';
-// 旧模板的散文块（逐字节基线）；S4 的结构化合同另见 `outputFormats`
-import { legacyOutputFormats as outputFormats } from '../components/outputFormats.mjs';
 import { BASELINE_RULES, agentPaths } from '../components/baseline.mjs';
 import { readState } from '../state.mjs';
 import {
@@ -28,10 +26,6 @@ import {
 
 const sha256 = (buf) => createHash('sha256').update(buf).digest('hex');
 const card = (name) => readRepo(`agents/${name}.md`);
-const tpl = () => readRepo('tools/docgen/templates/agent.md.tpl');
-const renderOf = (name) => renderAgent({
-  agent: agentData.find((a) => a.name === name), trigger: triggerTable[name], template: tpl(), sharedBlocks, outputFormats,
-});
 // 每席 tools 重建为独立副本：structuredClone 会让同档两席共享同一个数组（G-4），
 // 就地注入会连带另一席，负例因此可能假红/假绿（D03 专门钉这一点）
 const clone = () => structuredClone(agentData).map((a) => ({ ...a, ...(a.tools ? { tools: [...a.tools] } : {}) }));
@@ -270,7 +264,7 @@ test('S5-TC-B04 审计卡档位事实与输出格式（S4 迁移后：档位在�
   assert.ok(edge.includes('`producer` 档'), '档位事实必须写在边界段（S6 单源）');
   assert.equal(edge.includes('`command` 档'), false);
   const src = readRepo('tools/docgen/components/outputFormats.mjs');
-  assert.equal((src.match(/已授 producer 档/g) ?? []).length, 1, '旧散文句只允许留在 legacy 块（收口时随旧模板删）');
+  assert.equal((src.match(/已授 producer 档/g) ?? []).length, 0, '旧散文句随 legacy 块一并删除（S4 Task 7 收口）');
   assert.equal((src.match(/已授 command 档/g) ?? []).length, 0);
 });
 
@@ -513,22 +507,20 @@ test('S5-TC-B13 正文提及旧短语不误红；两个 helper 与 B02/B03 共�
   assert.match(forbidden, /不得写\s*`?(?:skills\/dev-workflow\/references\/)?gate-record\.md`?/);
 });
 
-test('S5-TC-B14 半改态（六元组 tools + 只读边界）的渲染矛盾必须被探针抓到', () => {
-  // 半改态的真实形态是「给了写权但没写 boundary」→ 回落默认只读句（DEFAULT_BOUNDARY 不含完整旧句）
-  const half = {
-    ...agentData.find((a) => a.name === 'reviewer-audit'),
-    tools: [...patternRegistry.tools.producer],
-    boundary: DEFAULT_BOUNDARY,
-  };
-  const rendered = renderAgent({
-    agent: half, trigger: triggerTable['reviewer-audit'], template: tpl(), sharedBlocks, outputFormats,
-  });
-  assert.match(rendered, /^tools: Read, Glob, Grep, Write, Edit, RunCommand$/m);
-  const sec = rendered.slice(rendered.lastIndexOf('## 边界'));
-  const hasWrite = /^tools: .*\bWrite\b/m.test(rendered);
-  const hasOldClause = sec.includes('你是只读评审角色：不得创建、修改、删除任何文件');
-  assert.ok(hasOldClause, '半改态应保留默认只读句');
-  assert.equal(hasWrite && hasOldClause, true);
+test('S5-TC-B14 半改态（producer 席缺 boundary）必须被拒，不得静默回落默认只读句', () => {
+  // 半改态的真实形态 = 「给了写权但没写 boundary」→ 旧模板下会回落 DEFAULT_BOUNDARY（只读评审句）。
+  // S4 收口后渲染输入换新卡：producer 席删 boundary 由 validateAgentData 直接拒（D01 既有守卫），
+  // 对照面 = 真数据里 producer 席的边界来自 renderBoundary（不是 DEFAULT_BOUNDARY）。
+  for (const n of producerSeats()) {
+    const d = clone();
+    delete d.find((a) => a.name === n).boundary;
+    assert.throws(() => validateAgentData(d, triggerTable), (e) => e.code === 'DescriptionDerivation', n);
+  }
+  const a = agentData.find((x) => x.name === 'reviewer-audit');
+  assert.equal(a.boundary, renderBoundary('reviewer-audit'));
+  assert.notEqual(a.boundary, DEFAULT_BOUNDARY, 'producer 席不得落默认只读句');
+  const sec = renderSeat('reviewer-audit').card.slice(renderSeat('reviewer-audit').card.lastIndexOf('## 边界'));
+  assert.equal(sec.includes('你是只读评审角色：不得创建、修改、删除任何文件'), false, '渲染产物边界不得是默认只读句');
 });
 
 // ───────────────────────── C 组：生成物一致（C07 归 T11 实跑）─────────────────────────
@@ -604,7 +596,8 @@ test('S5-TC-C06 连跑两次 gate 输出一致、卡与 evidence 哈希不变', 
 test('S5-TC-C08 只生成一席草稿 → 旁席 Mismatch 挡住 replace', () => {
   withRepoCopy((dst) => {
     // 前提：target 盘上必须 ≠ 渲染（否则先撞幂等短路 exit 0，见 cli.mjs:425-432）
-    patchFile(dst, 'tools/docgen/components/agentData.mjs', "'卡片合规：八字段齐", "'卡片合规（B）：八字段齐");
+    // S4 Task 7：reviewer-audit 的渲染输入已是 `card`（旧 identity/fixedList 已删）→ 漂移必须改 card 字段
+    patchFile(dst, 'tools/docgen/components/agentData.mjs', '只审各项标准是否达到，不裁技术对错', '只审各项标准是否达到（B），不裁技术对错');
     // S4 迁移（Task 5）：detective-observer 的渲染输入已是 `card`（不再读 fixedList）→ 旁席漂移必须改 card 字段
     patchFile(dst, 'tools/docgen/components/agentData.mjs', '只记录不裁决；观察记录原文进最终报告', '只记录不裁决（B）；观察记录原文进最终报告');
     assert.equal(runCli(dst, ['draft', '--kind', 'agent', '--name', 'reviewer-audit']).status, 0);
@@ -693,11 +686,9 @@ test('S5-TC-D09 tools 冻结后 validate / render 不抛，档位数组长度不
   });
   assert.doesNotThrow(() => validateAgentData(frozen, triggerTable));
   const before = patternRegistry.tools.producer.length;
-  for (let i = 0; i < 3; i += 1) {
-    assert.doesNotThrow(() => renderAgent({
-      agent: frozen[0], trigger: triggerTable[frozen[0].name], template: tpl(), sharedBlocks, outputFormats,
-    }));
-  }
+  // 渲染等价面 = 新卡管线：连跑三次同一席，产物逐字相等且不就地改档位数组
+  const once = renderSeat('reviewer-audit').card;
+  for (let i = 0; i < 3; i += 1) assert.doesNotThrow(() => { assert.equal(renderSeat('reviewer-audit').card, once); });
   assert.equal(patternRegistry.tools.producer.length, before);
 });
 

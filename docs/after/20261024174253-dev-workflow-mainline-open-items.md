@@ -27,7 +27,8 @@
 |---|---|---|---|
 | B | `rule-writer` / `rule-inspector` 的 **41 个问题**（6 严重 / 10 中 / 25 轻） | 未开工；修法 = 按 6 类病根成批修，不逐条修 | 方案 `docs/reports/2026-10-16-1-rule-writer-rule-inspector-深度评审报告/soluation.md` |
 | D | ① 议会的审计数数可脚本化；② 「按病根分组的修复编排」是否要独立载体 | 留观，不急 | ① 跑熟 >3 场后；② 修 41 问题时按真实卡点定 |
-| F | docgen P2 剩余三件：① `criteria.md` C 组缺「模板形态适配」；② agent 来源行缺「权威来源」；③ `judged[]` 只能转录、不能证明独立重判 | 待用户拍板 | **具名接班（2026-10-29 S5 ⑤ 交付审计改判；原写「S5 收口时同批处理」= 触发已过未处置）**：① → 下次修订 `tools/execution-matrix/criteria.md` 时把 `:12-16` 的「0.2 模板形态适配」覆盖到 C 组 4 项（`:156/:165/:174/:183`），或明说 C 组不适用；② → 下次改 `tools/docgen/policy/definitions/seats.mjs` 时补 `sourceLine`（现 `tools/docgen/components/renderAgent.mjs:33` 只有 `{{SOURCE_LINE}}` 占位、0 席填值）；③ → 另起 spec 定「重判落账通道」（与 `B-1c` CLI B3 机器门同批考虑） |
+| F | docgen P2 剩余三件：① `criteria.md` C 组缺「模板形态适配」；② agent 来源行缺「权威来源」；③ `judged[]` 只能转录、不能证明独立重判 | 待用户拍板 | **具名接班（2026-10-29 S5 ⑤ 交付审计改判；原写「S5 收口时同批处理」= 触发已过未处置）**：① → 下次修订 `tools/execution-matrix/criteria.md` 时把 `:12-16` 的「0.2 模板形态适配」覆盖到 C 组 4 项（`:156/:165/:174/:183`），或明说 C 组不适用；② **已由 S4 收口处理（2026-10-31）**：旧 `sourceLine` 随旧模板删除，来源说明并入 README `rationale`，无需再补；③ → 另起 spec 定「重判落账通道」（与 `B-1c` CLI B3 机器门同批考虑） |
+| G | 旧渲染残留三件（`renderAgent.mjs` / `sharedBlocks.mjs` / `legacyOutputFormats`<br/>`legacyOutputFormats` 已于 2026-10-31 删除） | 已 banner 停用（2026-10-31 S4 Task 7 收口） | 删除触发 = 下一次清理死代码 / S6-B 启动；删除前先清 `tools/docgen/acceptance/{cold-run,replace-scenarios}.mjs` 的文件副本清单与 `pilot-render.test.mjs` 的历史基线引用（已清前者与 legacy，剩 `renderAgent` / `sharedBlocks` 的引用） |
 
 ## C S5 收口接班（2026-10-28 `④` 行 4 条 P2 的去向；2026-10-29 补落点）
 

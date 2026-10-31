@@ -30,9 +30,7 @@ function copyRepo() {
     'tools/docgen/evidence.mjs',
     // 新增文件在提交前不在 git ls-files 里：显式带上，否则副本的 check-agent 加载即 ENOENT
     'tools/docgen/components/renderByName.mjs',
-    'tools/docgen/components/sharedBlocks.mjs',
     'tools/docgen/components/outputFormats.mjs',
-    'tools/docgen/components/renderAgent.mjs',
   ];
   for (const f of [...new Set([...files, ...extra])]) {
     if (!f || f.startsWith('.git/')) continue;

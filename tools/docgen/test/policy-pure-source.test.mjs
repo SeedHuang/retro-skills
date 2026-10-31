@@ -705,8 +705,9 @@ const changedFiles = (a, b) => {
   return Object.keys({ ...x, ...y }).filter((k) => x[k] !== y[k]).sort();
 };
 // 「一份路径清单副本」= 单文件命中 ≥ 20 项（E03 / E04 / E05 共用；阈值与 testcase §0.3 一致）
+// S4 Task 7：`git ls-files --cached` 仍会列出已删但未提交的旧模板（工作区已不存在）→ 跳过缺失文件
 const listCopies = (root, files, items = pathTokens(), threshold = 20) =>
-  files.filter((f) => items.filter((it) => readFileSync(join(root, f), 'utf8').includes(it)).length >= threshold);
+  files.filter((f) => existsSync(join(root, f)) && items.filter((it) => readFileSync(join(root, f), 'utf8').includes(it)).length >= threshold);
 
 test('S6-TC-D01 六个错误码各 1 个负例：exit 1 + 报文首行格式', () => {
   // 统一探针：副本内构造一次违规 → 跑 policy --dump（五码的唯一 CLI 发射点，spec:161）
@@ -1077,19 +1078,26 @@ test('S6-TC-G02 gate → baseline N/N，N 派生不写死', () => {
   assert.equal(readFileSync('tools/docgen/test/policy-pure-source.test.mjs', 'utf8').includes(`${N}/${N}`), false);
 });
 
-test('S6-TC-G03 默认边界句的 11 席与 evidence-reader 边界句不变', () => {
+test('S6-TC-G03 默认边界句的 11 席、evidence-reader 与 senior-sdet 专用边界句不变', () => {
   const own = new Set([...Object.keys(patternRegistry.boundaryBySeat), 'evidence-reader']);
-  const defSeats = agentData.filter((a) => !own.has(a.name) && a.name !== 'senior-sdet');
-  assert.equal(own.size, 3, '自带边界 = 2 producer + evidence-reader');
-  assert.equal(defSeats.length, 11, '卡面渲 DEFAULT_BOUNDARY 的应为 11 席（12 不接渲染层 − senior-sdet）');
+  // 2026-10-31 迁移改判（S6-TC-G03 加注，原文不删）：senior-sdet 职责要写 testcase.md，与评审席模板「只允许写本次
+  // 评审账本 / 禁写『代码、测试』」结构不同构 → 该席自带专用边界常量（非 renderBoundary）。
+  // 计数口径：`own` 3 → 4（senior-sdet 从「既非 own 也非 default 的手写模板席」并入 own）；
+  // `defSeats` 仍为 11（15 − 4 自带 − 0；原来的 `a.name !== 'senior-sdet'` 手工排除随之冗余）。
+  const defSeats = agentData.filter((a) => !own.has(a.name));
+  assert.equal(own.size, 4, '自带边界 = 2 producer + evidence-reader + senior-sdet');
+  assert.equal(defSeats.length, 11, '卡面渲 DEFAULT_BOUNDARY 的应为 11 席（15 − 4 自带）');
   for (const a of defSeats) assert.equal(a.boundary ?? DEFAULT_BOUNDARY, DEFAULT_BOUNDARY, a.name);
   // ③ 条目自带 boundary 只许 ∈ DECLARED_SLOT_SEATS（S5 既有断言口径，spec:121；不新增守卫）
   assert.equal(agentData.filter((a) => Object.hasOwn(a, 'boundary') && !own.has(a.name)).length, 0,
     '条目自带 boundary 越出 DECLARED_SLOT_SEATS');
-  assert.equal(Object.hasOwn(agentData.find((a) => a.name === 'senior-sdet'), 'boundary'), false,
-    'senior-sdet 走手写模板，不注入 boundary');
+  const sd = agentData.find((a) => a.name === 'senior-sdet');
+  assert.equal(typeof sd.boundary, 'string', 'senior-sdet 迁移后必须注入专用 boundary（B3 裁定 2026-10-31）');
+  assert.equal(sd.boundary, patternRegistry.boundaryBySeat['senior-sdet']);
+  assert.ok(sd.boundary.includes('只写'), '专用边界必须写「只写」清单（S4 §5.1 :132）');
   assert.equal(sha(DEFAULT_BOUNDARY), goldenOf('default-boundary'));
   assert.equal(sha(agentData.find((a) => a.name === 'evidence-reader').boundary), goldenOf('evidence-reader-boundary'));
+  assert.equal(sha(sd.boundary), goldenOf('senior-sdet-boundary'), 'senior-sdet 专用边界句黄金必须对位');
 });
 
 test('S6-TC-G04 死常量已删；tool-tiers 的 import / B08 / E05 / B14 四处同批改判', () => {

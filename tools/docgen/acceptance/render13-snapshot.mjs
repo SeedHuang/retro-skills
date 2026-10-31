@@ -1,48 +1,55 @@
 #!/usr/bin/env node
-// render13-snapshot.mjs —— 议会席模板渲染快照（TC-031）：固定 fixture → 调指定 renderAgent 模块 → 字节写 --out。
-// 自检：fixture 的 role / dimension / tools 首项 / fixedList[0] / AUDIT_RULES 展开文本必须出现在产物里，
-// 且探针串在模板里 0 命中——否则脚本漏读字段会让改前/改后快照同时少同一段而恒绿。
+// render13-snapshot.mjs —— 角色卡渲染快照（TC-031）：固定 fixture → 调 `renderCard` → 字节写 --out。
+// S4 Task 7：旧 agent 模板与 `renderAgent` 已退场，本脚本改用新卡渲染器。
+// 自检：fixture 的 role / tools 首项 / duty.action / checkItems[0].label 必须出现在产物里，
+// 且探针串在模板里 0 命中——否则脚本漏读字段会让快照恒绿。
 import { readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join, dirname, resolve } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
-import { sharedBlocks } from '../components/sharedBlocks.mjs';
-import { legacyOutputFormats as outputFormats } from '../components/outputFormats.mjs';
+import { fileURLToPath } from 'node:url';
+import { renderCard } from '../components/renderCard.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const flag = (k) => {
   const i = process.argv.indexOf(k);
   return i >= 0 ? process.argv[i + 1] : undefined;
 };
-const modulePath = flag('--module');
 const outPath = flag('--out');
-if (!modulePath || !outPath) {
-  console.error('用法：node tools/docgen/acceptance/render13-snapshot.mjs --module <renderAgent 模块路径> --out <输出文件>');
+// 严格参数白名单（2026-10-31 代码审查 I4）：未知旗标一律 exit 2，不得静默忽略（曾按旧 `--module` 用法调用会静默改行为）
+const KNOWN = new Set(['--out']);
+for (const tok of process.argv.slice(2)) {
+  if (tok.startsWith('--') && !KNOWN.has(tok)) {
+    console.error(`InvalidArgs: 未知旗标 ${tok}（只接受 --out <输出文件>）`);
+    process.exit(2);
+  }
+}
+if (!outPath) {
+  console.error('用法：node tools/docgen/acceptance/render13-snapshot.mjs --out <输出文件>');
   process.exit(2);
 }
 
-const template = readFileSync(join(ROOT, 'tools/docgen/templates/agent.md.tpl'), 'utf8');
-const agent = {
+const template = readFileSync(join(ROOT, 'tools/docgen/templates/agent-card.md.tpl'), 'utf8');
+const card = {
+  seat: 'fixture-13',
   name: 'fixture-13',
-  role: '评审员',
-  dimension: '技术实现',
+  description: '当需要评审某份 spec',
   tools: ['Read', 'Glob', 'Grep'],
-  identity: '桩。',
-  fixedList: ['SDET_FIXTURE_ROW_1', 'SDET_FIXTURE_ROW_2'],
-  outputKind: 'issue-card',
-  sharedBlock: 'AUDIT_RULES',
+  duty: { trigger: '当需要评审某份 spec', categories: ['甲'], action: 'SDET_FIXTURE_DUTY', constraint: '按职责与边界执行' },
+  scenes: [],
+  signals: [],
+  must: [{ id: 'fixture.free-explore', kind: 'must', trigger: { scene: 'deliverable', moment: 'end', repeat: 'per-round' }, objects: ['deliverable.appendix'], criterion: 'no-fake-problem', landing: 'deliverable.appendix', requires: [] }],
+  never: [],
+  categories: [{ key: 'a', label: '甲核对' }],
+  checkItems: [{ id: 'fixture-13.1', subject: 'reviewer-audit.card', label: 'SDET_FIXTURE_ROW', criterion: '核对甲并写出原文引句', check: 'manual', declarer: '评审员' }],
+  rationale: '桩。',
 };
-const trigger = { when: '当需要评审某份 spec' };
 
-const mod = await import(pathToFileURL(resolve(modulePath)).href);
-const out = mod.renderAgent({ agent, trigger, template, sharedBlocks, outputFormats });
+const out = renderCard(card, { seat: 'fixture-13' });
 
 const probes = [
-  ['role', agent.role],
-  ['dimension', agent.dimension],
-  ['tools[0]', agent.tools[0]],
-  ['fixedList[0]', agent.fixedList[0]],
-  ['AUDIT_RULES', sharedBlocks.AUDIT_RULES],
+  ['role', card.duty.action],
+  ['tools[0]', card.tools[0]],
+  ['checkItems[0].label', card.checkItems[0].label],
 ];
 const missing = probes.filter(([, v]) => !out.includes(v)).map(([k]) => k);
 const leaked = probes.filter(([, v]) => template.includes(v)).map(([k]) => k);

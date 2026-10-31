@@ -1,3 +1,5 @@
+// ⚠️ 已停用（2026-10-31，S4 Task 7）：旧模板退场后本文件无任何调用方（共享语义已上移
+// `card-model/vocab/shared-actions.mjs`）；删除触发 = 下一次清理死代码 / S6-B 启动；勿在此新增逻辑。
 // 共享块正文：S2 试点实现 AUDIT_RULES；S4 补 SIX_METHODS / DETECTIVE_RULES（逐字取自迁移前现卡）。
 export const sharedBlocks = {
   AUDIT_RULES: `\n### 审计铁律\n- 轮间核对单与交付审计表必由你本人实例完成；主持人代填即违规\n- 证据栏空 = 不通过，不是待补\n- 你无中断评审权；不裁决技术分歧；机械绿 ≠ 语义真（限度自知并声明）\n`,

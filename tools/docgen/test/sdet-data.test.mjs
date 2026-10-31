@@ -2,26 +2,27 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { agentData, triggerTable } from '../components/agentData.mjs';
+import { patternRegistry } from '../components/patternRegistry.mjs';
 
 const entry = () => agentData.find((a) => a.name === 'senior-sdet');
-const KEYS = ['name', 'heading', 'role', 'dimension', 'tools', 'identity', 'fixedList', 'sourceLine', 'outputKind', 'sharedBlock'];
+// S4 迁移后条目键集 = 外层派生键 + 注入的 tools / boundary + 新卡 `card`（旧模板键随 Task 7 删除）
+const KEYS = ['name', 'role', 'dimension', 'tools', 'outputKind', 'boundary', 'card'];
 
-test('TC-002(a)：10 键全在 + 四键互斥 + fixedList === 9', () => {
+test('TC-002(a)：新卡键集齐 + 四键互斥 + 9 条 checkItems + 档位/边界来自单源', () => {
   const e = entry();
-  for (const k of KEYS) assert.ok(Object.prototype.hasOwnProperty.call(e, k), `缺键 ${k}`);
   assert.deepEqual(Object.keys(e).sort(), [...KEYS].sort());
   for (const k of ['when', 'notWhen', 'route', 'fallback']) assert.equal(k in e, false, `条目不得含 ${k}`);
-  assert.equal(e.fixedList.length, 9);
+  assert.ok(e.card && typeof e.card === 'object', '必须已迁入新卡');
+  assert.equal(e.card.checkItems.length, 9, '测试设计固定清单 9 条须逐条进 checkItems');
   assert.equal(e.dimension, undefined);
-  assert.equal(e.sharedBlock, undefined);
   assert.equal(e.outputKind, 'testcase');
   assert.deepEqual(e.tools, ['Read', 'Glob', 'Grep', 'Write', 'Edit']);
+  assert.equal(e.boundary, patternRegistry.boundaryBySeat['senior-sdet']);
 });
 
-test('TC-007：heading !== role，when 不含尾随「时」，route === name', () => {
+test('TC-007：role 逐字、when 不含尾随「时」、route === name', () => {
   const e = entry();
   const t = triggerTable['senior-sdet'];
-  assert.equal(e.heading, 'Senior SDET（测试设计与盲点猎手）');
   assert.equal(e.role, '资深测试开发工程师（Senior SDET）');
   assert.ok(!t.when.endsWith('时'));
   assert.equal(t.route, 'senior-sdet');
