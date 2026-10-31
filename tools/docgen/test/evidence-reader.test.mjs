@@ -9,7 +9,7 @@ import { validateAgentData } from '../components/validateAgentData.mjs';
 import { renderAgent } from '../components/renderAgent.mjs';
 import { patternRegistry, DOMAIN } from '../components/patternRegistry.mjs';
 import { sharedBlocks } from '../components/sharedBlocks.mjs';
-import { outputFormats } from '../components/outputFormats.mjs';
+import { legacyOutputFormats as outputFormats } from '../components/outputFormats.mjs';
 import { checkAgentFile } from '../../execution-matrix/check-agent.mjs';
 import { ROOT, readRepo, withRepoCopy, runCli, runEsm } from './support/dev-workflow-checks.mjs';
 

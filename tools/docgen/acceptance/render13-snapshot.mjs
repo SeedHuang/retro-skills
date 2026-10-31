@@ -7,7 +7,7 @@ import { createHash } from 'node:crypto';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { sharedBlocks } from '../components/sharedBlocks.mjs';
-import { outputFormats } from '../components/outputFormats.mjs';
+import { legacyOutputFormats as outputFormats } from '../components/outputFormats.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const flag = (k) => {

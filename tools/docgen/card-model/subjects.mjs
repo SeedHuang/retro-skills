@@ -8,6 +8,24 @@ const nonEmptyObject = (v) => v !== null && typeof v === 'object' && Object.keys
 export const SUBJECTS = Object.freeze({
   'reviewer-detective.card': Object.freeze({ display: '侦探卡', validator: nonEmptyObject }),
   'artifact.observation': Object.freeze({ display: '观察产物', validator: nonEmptyObject }),
+  // S4 扩席（spec §4 :94）：15 席逐条字面登记，形态写死 `<seat>.card`。
+  // **不从 agentData 派生**：`card-model/**` 只许 node: 与目录内相对路径（S1 `tools/docgen/test/card-model.test.mjs` 的
+  // 「反向零 import」守卫）；席名漂移由 `S4-TC-G01`（15 席 subject 全为 `<seat>.card`）兜底。
+  'detective-observer.card': Object.freeze({ display: '侦探席卡', validator: nonEmptyObject }),
+  'evidence-reader.card': Object.freeze({ display: '取证席卡', validator: nonEmptyObject }),
+  'reviewer-actuary.card': Object.freeze({ display: '精算席卡', validator: nonEmptyObject }),
+  'reviewer-ai.card': Object.freeze({ display: 'AI 席卡', validator: nonEmptyObject }),
+  'reviewer-audit.card': Object.freeze({ display: '审计席卡', validator: nonEmptyObject }),
+  'reviewer-backend.card': Object.freeze({ display: '后端席卡', validator: nonEmptyObject }),
+  'reviewer-frontend.card': Object.freeze({ display: '前端席卡', validator: nonEmptyObject }),
+  'reviewer-interaction.card': Object.freeze({ display: '交互席卡', validator: nonEmptyObject }),
+  'reviewer-ops.card': Object.freeze({ display: '运维席卡', validator: nonEmptyObject }),
+  'reviewer-product.card': Object.freeze({ display: '产品席卡', validator: nonEmptyObject }),
+  'reviewer-qa.card': Object.freeze({ display: '测试席卡', validator: nonEmptyObject }),
+  'reviewer-reader.card': Object.freeze({ display: '读者席卡', validator: nonEmptyObject }),
+  'reviewer-security.card': Object.freeze({ display: '安全席卡', validator: nonEmptyObject }),
+  'reviewer-ui.card': Object.freeze({ display: 'UI 席卡', validator: nonEmptyObject }),
+  'senior-sdet.card': Object.freeze({ display: 'SDET 席卡', validator: nonEmptyObject }),
 });
 
 export const SUBJECT_VALIDATORS = Object.freeze(

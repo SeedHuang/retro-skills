@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { sharedBlocks } from '../components/sharedBlocks.mjs';
-import { outputFormats } from '../components/outputFormats.mjs';
+// 旧模板的散文块（逐字节基线）；S4 的结构化合同另见 `outputFormats`
+import { legacyOutputFormats as outputFormats } from '../components/outputFormats.mjs';
 import { agentData, triggerTable } from '../components/agentData.mjs';
 import { renderAgent } from '../components/renderAgent.mjs';
 

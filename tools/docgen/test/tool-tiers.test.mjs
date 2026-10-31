@@ -17,7 +17,8 @@ import { commandGroups, forbiddenGroups } from '../policy/definitions/commands.m
 import { validateAgentData } from '../components/validateAgentData.mjs';
 import { renderAgent } from '../components/renderAgent.mjs';
 import { sharedBlocks } from '../components/sharedBlocks.mjs';
-import { outputFormats } from '../components/outputFormats.mjs';
+// 旧模板的散文块（逐字节基线）；S4 的结构化合同另见 `outputFormats`
+import { legacyOutputFormats as outputFormats } from '../components/outputFormats.mjs';
 import { BASELINE_RULES, agentPaths } from '../components/baseline.mjs';
 import { readState } from '../state.mjs';
 import {

@@ -8,7 +8,8 @@ import { fileURLToPath } from 'node:url';
 import { agentData, triggerTable } from './agentData.mjs';
 import { renderAgent } from './renderAgent.mjs';
 import { sharedBlocks } from './sharedBlocks.mjs';
-import { outputFormats } from './outputFormats.mjs';
+// 过渡期：旧模板渲染走 `legacyOutputFormats`（逐字散文块）；新卡分支（S4）读结构化 `outputFormats`
+import { legacyOutputFormats as outputFormats } from './outputFormats.mjs';
 import { exitCodeFor } from './validateAgentData.mjs';
 
 function fail(code, fields = {}) {
