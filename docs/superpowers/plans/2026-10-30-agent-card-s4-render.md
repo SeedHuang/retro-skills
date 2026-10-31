@@ -207,7 +207,7 @@ outputFormats.mjs            outputFormats = { audit|issue-card|observation|evid
 - Consumes: 无（判据全在 spec §3 `:58-65`、§5.1 `:123-145`、§6 `:157-173`、§4 `:94`）
 - Produces: 4 个 `vocab/` 模块的 **8 个导出名**（`CARD_SEGMENTS` / `MUST_FIELDS` / `PROSE_PROBES` / `PREDICATES` / `LANDINGS` / `SHARED_MUST` / `SHARED_NEVER` / `SHARED_USE`）+ `SUBJECTS` 的 15 席登记项 + `outputFormats` 的 5 个 kind 结构化合同
 
-- [ ] **Step 1: `card-must-fields.mjs` 三段表 + 探针三类**
+- [x] **Step 1: `card-must-fields.mjs` 三段表 + 探针三类**
 
 `CARD_SEGMENTS` = spec §5.1 主表（`spec:123-132`）首列去掉 `front matter` 后的 **7 段**（顺序 = 渲染顺序）：职责 / 一定会 / 禁止 / 冲突裁决 / 本席清单 / 输出格式 / 边界。`MUST_FIELDS` = 「一定会」必渲染的 5 字段名（`trigger` / `objects` / `criterion` / `landing` / `requires`，`spec:127`）。`PROSE_PROBES` = **三个固定键名** `{ oldSegments: string[], declaration: (string|RegExp)[], pointers: string[] }`（`spec:62`）：
 - `oldSegments` 5 词 = 共享特质 / 通用纪律 / 固定必问 / 自由探索 / 你是谁（`spec:141`）；
@@ -216,19 +216,19 @@ outputFormats.mjs            outputFormats = { audit|issue-card|observation|evid
 
 全部 `Object.freeze`；**不得**写第二份词表（V-4 只认本文件）。
 
-- [ ] **Step 2: `predicates.mjs` 与 `landings.mjs` 登记表骨架**
+- [x] **Step 2: `predicates.mjs` 与 `landings.mjs` 登记表骨架**
 
 `PREDICATES = { '<id>': { label, impl: 'script'|'manual' } }`、`LANDINGS = { '<id>': label }`（`spec:63-64`）。**初始条目 = 共享 `must` 行的判据 id + 试点席（`detective-observer`）所需的全部 id**；其余席的条目由 Task 5 / Task 6 逐席追加（追加时**同步检查** `env.predicates` 未登记即被 S1 报 `MissingCriterionImpl`，`spec:92`）。`impl` 只取 `'script'` / `'manual'` 两值（`WeakReason` 一类 manual 码不入脚本面，PRD `:216`）。
 
-- [ ] **Step 3: `shared-actions.mjs` 共享层单源**
+- [x] **Step 3: `shared-actions.mjs` 共享层单源**
 
 `SHARED_MUST` / `SHARED_NEVER` = `Action[]`（S1 §4 `:68-72` 形状：`id` / `kind` / `trigger` / `objects[]` / `criterion` / `landing` / `requires[]`）；`SHARED_USE = { '<seat>': ['<actionId>', …] }`，**是白名单**（未出现的席不合并任何共享句，`S4-TC-E05` 按此读法）。内容来源 = 旧 `agent.md.tpl:12-29` 的「共享特质」(`:12-13`) 与「通用纪律」(`:24-29`) 逐句映射（探索稿 §12.6 `:419-428` 的句表），**判据 id 在源码里每条只出现 1 次**（`S4-TC-E01`）。同判据意图的句子合成一条，不按旧卡逐席复制（这是 F-09 的治本点）。
 
-- [ ] **Step 4: `subjects.mjs` 追加 15 席登记项**
+- [x] **Step 4: `subjects.mjs` 追加 15 席登记项**
 
 在 `SUBJECTS`（`subjects.mjs:8-11`，现值 2 项产物侧）**追加** 15 条 `'<seat>.card'` 登记项（形态写死，`spec:94`；例 `reviewer-audit.card`），`display` = 卡名、`validator` = `nonEmptyObject`。**保留**两项产物侧、**不动** `SUBJECT_VALIDATORS` / `subjectMatches` / `verdictAllowed` / `compareVerdicts`（S1 判据一字不动）。**15 条按字面逐条追加、不从 `agentData` 派生**：`card-model/**` 只许 import `node:` 与目录内相对路径（Global 2 / `spec:69`；S1 的 `tools/docgen/test/card-model.test.mjs:1249-1256` 已断言该目录无反向 import），故派生式会破 V-6；席名漂移由 `S4-TC-G01`（15 席 subject 全为 `<seat>.card`）兜底。
 
-- [ ] **Step 5: `outputFormats.mjs` 由散文改结构化**
+- [x] **Step 5: `outputFormats.mjs` 由散文改结构化**
 
 现状 4 个键（`audit:2` / `'issue-card':52` / `observation:73` / `evidence:85`），**无** `testcase`；`outputKind` 枚举 5 值（`patternRegistry.mjs:54`）。改法（spec §6 `:166-171` 逐行）：
 - 每个 kind = `{ fields: [...], checks: [...] }`，`fields` = 必填字段名（来自原散文里的表头 / 字段说明），`checks` = 可执行校验项（**写「跑哪条命令 + 什么算失败」**，`S4-TC-D02` 的正则要求 `testcase` 块含量词与命令）；
@@ -238,7 +238,7 @@ outputFormats.mjs            outputFormats = { audit|issue-card|observation|evid
 - **新增** `testcase:` 块（7 节必含 + 校验命令，口径单源指 `rules/spec-testcase-gate.md`，卡面只写「跑哪条命令 + 什么算失败」，`spec:171`）；
 - **禁**：`outputFormats` 复制进每席数据（`S4-TC-D05`）。
 
-- [ ] **Step 6: 测试文件 helper（testcase §0.3 的**已存在子集**）+ 3 条用例**
+- [x] **Step 6: 测试文件 helper（testcase §0.3 的**已存在子集**）+ 3 条用例**
 
 helper 按 `testcase:64-216` 逐字落，**import 段只列本任务已存在的模块**（`MF` / `PRED` / `LAND` / `SH` / `OF`；`PIPE` / `renderCard` / `CM` / `checkStruct` / `touchedSemanticKeys` / `exitCodeFor` / `card-exempt` 由 Task 2 / 3 补，末态必须等于 §0.3）。本任务的 helper 面：`SPEC_LINES` / `specLine` / `cellsOf` / `specTableStrict` / `SPEC_SEGMENTS` / `SPEC_7` / `SEGS` / `MUST_FIELDS` / `VOCAB_EXPORTS` / `VOCAB_NS` / `PROBE_CLASSES` / `PROSE_PROBES` / `POINTER_FORM` / `probeSrc` / `hitClass`。
 
@@ -250,7 +250,7 @@ helper 按 `testcase:64-216` 逐字落，**import 段只列本任务已存在的
 
 > 施工期落点更正（**非判据级**）：`S4-TC-D04` 与 `S4-TC-E01` 均需**渲染后的卡面**（前者扫卡面「输出格式」段、后者断「每条共享句至少被一席渲染」），本任务尚无 `renderCard` / 无迁移席 → 分别下移到 Task 2 / Task 7（附录 A 已同步）。
 
-- [ ] **Step 7: 跑测试与仓门禁**
+- [x] **Step 7: 跑测试与仓门禁**
 
 ```powershell
 node --test "tools/docgen/test/card-render.test.mjs"; "exit=$LASTEXITCODE"
@@ -277,7 +277,7 @@ Expected：`exit=0`、`# fail 0`、`# pass + # skipped === # tests`；本文件 
 - Consumes: Task 1（4 个 `vocab/` 表、`SUBJECTS` 15 席、`outputFormats` 结构化）
 - Produces: `buildCards()` / `buildEnv(seat, cards)` / `renderSeat(seat)` / `renderAll()` / `writeAll(artifacts)`；`renderCard` / `renderReadme` / `renderIndex`；`cli.mjs dump --name <seat>`；`generate --readme --apply`（落 `docs/agents/**`）
 
-- [ ] **Step 1: `agent-card.md.tpl` 7 段模板 + 3 处模板常量**
+- [x] **Step 1: `agent-card.md.tpl` 7 段模板 + 3 处模板常量**
 
 段顺序 = `CARD_SEGMENTS` 7 段；占位符一份（`{{NAME}}` / `{{DESCRIPTION}}` / `{{TOOLS}}` / `{{DUTY}}` / `{{MUST_TABLE}}` / `{{MUST_CONST}}` / `{{NEVER_TABLE}}` / `{{CONFLICT}}` / `{{CHECK_TABLE}}` / `{{OUTPUT_FORMAT}}` / `{{BOUNDARY}}`）。**三行常量写死在模板**（15 卡同源 1 处，`spec:127-129`）：
 - 「一定会」表头 = `| # | 必问（must） | 触发 | 宾语 | 判据 id | 落点 | 前置 |`（满足 A3 的「必问」列头，`check-agent.mjs:66-70`）；
@@ -285,16 +285,16 @@ Expected：`exit=0`、`# fail 0`、`# pass + # skipped === # tests`；本文件 
 - 「冲突裁决」三行：优先级 `用户 > 规则 > 本席`；采纳 / 不采纳 + 认输判据（`spec:129`）。
 **禁**：模板内出现任何 `{{XXX}}` 未被填充（`renderAgent.mjs:45-49` 已有 `MissingSlot` 守卫，`renderCard` 同形）。
 
-- [ ] **Step 2: `renderCard.mjs`（卡面投影，零散文）**
+- [x] **Step 2: `renderCard.mjs`（卡面投影，零散文）**
 
 入参 `(card, env)`，出 7 段 + front matter 字符串；三条硬约束：① `description` = `trigger.when`（+ `notWhen.text` 存在时附「不用于：…」，`spec:151`；**不派生**「在…中担任」，`S4-TC-C01`）；② `rationale` **不渲染**（`S4-TC-A06`）；③ 「一定会」每行 = `trigger.scene`(id+moment) / `objects` / `criterion` / `landing`（枚举字面值 + 变量名，不渲染运行时值）/ `requires`，加三值字面量 `hit` / `miss` / `na` 各一行 + `reason` 字段名（`spec:127`）；「禁止」每行 = `objects` + `criterion`（`spec:128`）；「本席清单」= `categories` label + `checkItems` 的 `id` + `criterion` 文字 + `check` 类型（`spec:130`）；「输出格式」从 `outputFormats[card.outputKind]` 渲结构化表（`spec:131`）；「边界」= `tools` + `boundaryBySeat`（`spec:132`）。
 **零散文机械口径**（`spec:135`）：渲染前对 `card` 的所有文本字段跑 `PROSE_PROBES` 三类，命中即 `fail`（码沿用 S1 的 `PointerToElsewhere` / `HardcodedCount`，不新增码）；`rationale` 不参与扫描（它就是散文的合法落点）。
 
-- [ ] **Step 3: `renderReadme.mjs`（README 投影 + index + 覆盖记录表）**
+- [x] **Step 3: `renderReadme.mjs`（README 投影 + index + 覆盖记录表）**
 
 `renderReadme(card, overrides)`：每席一份，含 `rationale`（`MissingRationale` 若缺，S1 判）+ **覆盖记录表**（表头三列 `id` / `changed` / `reason`，行数 = `overrides` 条数，0 条时表头仍在，`S4-TC-B06`）。`reason` **取自本席 `own` 动作条目自身的 `reason`**（`merge.mjs:63` 的 `overrides[]` 只带 `{id, changed}`；无 `reason` 的覆盖已被 S1 `OverrideWithoutReason` 拒掉，`spec:119`）。`renderIndex(cards)`：五列（席名 / 职责一句 / 维度 / 输出类型 / 链接，`spec:54`）+ 每席一行。
 
-- [ ] **Step 4: `cardPipeline.mjs`（唯一装配点）**
+- [x] **Step 4: `cardPipeline.mjs`（唯一装配点）**
 
 `buildCards()`：对每席 `seatEntry.card` 先用 `mergeActions(SHARED_MUST/NEVER 按 SHARED_USE 取, own)` 合并 → 填 `name` / `description`（= `trigger.when`）/ `tools`（= `toolsForSeat`）→ 返回 `[{ seat, card, overrides[] }]`；**12 键缺一 → 抛 S1 码并 exit 1**（`spec:98`）。
 `buildEnv(seat, cards)`：11 键全派生（Global 6）。
@@ -303,19 +303,19 @@ Expected：`exit=0`、`# fail 0`、`# pass + # skipped === # tests`；本文件 
 `writeAll(artifacts)`：全内存 → 逐文件 `.tmp-<pid>` → **全成功再 rename**；任一失败 → 清 tmp + `{ ok:false, wrote:false, errors }`（PRD §4.2 ④ `:319`）。`artifacts` 元素形状 = `{ path, bytes }`（spec 缺口 12，见 `K-6`；只作内部形状）。
 **数据隔离**：本模块**不得** `readFileSync`、不得引用 `AGENTS_DIR`（`S4-TC-I04`）。
 
-- [ ] **Step 5: `validateAgentData.mjs` 兼容双形态 + `renderByName` 分支**
+- [x] **Step 5: `validateAgentData.mjs` 兼容双形态 + `renderByName` 分支**
 
 ① `BASE_KEYS`（`validateAgentData.mjs:117-118`）追加 `'card'`；`HANDWRITTEN_KEYS`（`:119`）随旧模板保留到收口。② 断言 8（`:66-79`，description 派生 + `domain` 包含）**改为只判未迁移席**（`!(a && a.card)`）；新卡走 `trigger.when` 直出（D3），由 `S4-TC-C01` 断。③ 断言 5（`sharedBlock` 枚举）与断言 15 的旧键校验保留到 Task 7（逐席滚动期新旧共存）。④ `renderByName.mjs`：`agent.card ? renderCard(buildEnv…, card) : renderAgent(旧模板)` —— 旧分支在 Task 7 删。
 **为什么必须双形态**：`state.json` 15 席已全 `replaced`（`state.json:4-18`），若 T2 一次性改掉全部渲染式，14 张未迁移卡立刻 `Mismatch`（`tools/docgen/cli.mjs:104-112`），逐席滚动（spec §8 `:192`）就无从落地。
 
-- [ ] **Step 6: `cli.mjs` 三处接线（授权链不变）**
+- [x] **Step 6: `cli.mjs` 三处接线（授权链不变）**
 
 ① 新增 `dump`（`main` 的 sub 分支 + `cmdDump`）：`renderAll()` 后按 `--name` 取合并后全量 JSON，`console.log`，**不落盘、不调 `writeAll`**（`S4-TC-B07`）；未知旗标一律 `InvalidArgs`（沿用 `tools/docgen/cli.mjs:508-535` 的严格白名单形）。
 ② `generate` 加 `--readme --apply` 两旗标：只写 `docs/agents/**`（16 份：`README.md` + 15 席），走 `writeAll`；**无旗标时保持只比不写**（`S4-TC-F01` / `F02`）。
 ③ `collectGate()` 扩面：对 **15 卡 + 15 席 README + index（31 份）** 逐字节比对（缺文件 → `DanglingBaselineEntry`，不符 → `Mismatch`；`spec:181`）。**必须**以独立派生面实现（见「接口小节」的口径陷阱），`baseline 37/37` 不变。
 ④ `docs/agents/**` 不得触发 `UnregisteredHandwritten`（`tools/docgen/cli.mjs:120-124` 只扫 `agents/` 与 `rules/`，本段**不动**该扫描面，`S4-TC-J03`）。
 
-- [ ] **Step 7: 测试（32 条）**
+- [x] **Step 7: 测试（32 条）**
 
 helper 补齐 `PIPE` / `renderCard` / `CM` / `checkStruct` / `TARGETS` / `RS` / `CARD` / `ALL` / `readmeOnDisk` / `TERM_RE` / `DERIVED_DESC_RE` / `WRITE_ALL` / `walkFiles` / `runNode` / `runCli` / `coldRepo` / `mutCard` / `INJECT_BAD` / `APPEND_ONE_BYTE`（`testcase:105-260` 逐字）。
 
@@ -353,7 +353,7 @@ helper 补齐 `PIPE` / `renderCard` / `CM` / `checkStruct` / `TARGETS` / `RS` / 
 | J01 | 两次渲染逐字相等；无时间戳 / 绝对路径；产物无 CR、无 BOM（`testcase:1870`） |
 | J02 | 写盘后无 `.part` / tmp 残留；`writeAll` 含 `.tmp-` 形态（`testcase:1914`） |
 
-- [ ] **Step 8: 跑测试与仓门禁**
+- [x] **Step 8: 跑测试与仓门禁**
 
 ```powershell
 node --test "tools/docgen/test/card-render.test.mjs"; "exit=$LASTEXITCODE"
@@ -377,19 +377,19 @@ Expected：`exit=0`、`# fail 0`；本文件 `test('S4-TC-` 累计 = **35**（3 
 - Consumes: Task 2（`renderByName` 的新卡分支、`renderCard`）
 - Produces: `exitCodeFor(S1 码)` = **1**（36 脚本码 + 3 合并码）；`touchedSemanticKeys` 认「职责」段
 
-- [ ] **Step 1: `EXIT` 表新增 S1 码分组**
+- [x] **Step 1: `EXIT` 表新增 S1 码分组**
 
 `validateAgentData.mjs:4-22` 是封闭映射表；把 S1 的 **36 个脚本码**（`CARD_MODEL_CODES`，`card-model/validateCardModel.mjs`）+ **3 个合并码**（`merge.mjs:6-10` 的 `DuplicateStatement` / `OverrideWithoutReason` / `PointlessOverride`）归 **exit 1**。`WeakReason` **不入表**（`check:'manual'`，PRD `:216`）→ 它会按 `validateAgentData.mjs:23-26` 抛「未知错误码」，`S4-TC-F10` 正断言这一点。**不动 S1 的码与判据**，只补本文件映射行；`Rotation` 类顺序 = 码名字面（不写行号）。
 
-- [ ] **Step 2: `touchedSemanticKeys` 段名表加「职责」**
+- [x] **Step 2: `touchedSemanticKeys` 段名表加「职责」**
 
 `tools/docgen/cli.mjs:271-274` 现只认 `你是谁` / `身份` → 追加 `职责`（`heading.includes('职责') → keys.add('A1')`）。`description` 行 → `A2` 的判定不变（`:271`）。**判据语义不变**（仍是「身份 / 职责与卡内容是否自洽」），只换锚点段名（spec §10-D11 `:224`）。
 
-- [ ] **Step 3: `criteria.md` 的 A1 / A2 判定对象同批改**
+- [x] **Step 3: `criteria.md` 的 A1 / A2 判定对象同批改**
 
 `criteria.md:96-112`：A1「判定对象 = identity（「你是谁」声明段）」→ 「判定对象 = 卡「职责」段（`duty`：trigger + objects + action + constraint）；旧卡过渡期兼容「你是谁」段」；A2 的判定对象（frontmatter description 的 when）**不改**（它本来就锚 front matter）。**只改判定对象行**，判定方式 / 落位 / 名称逐字保留（`criteria.md:3` 的「名称 / 判定对象 / 判定方式不得另行改写」指的是**不得另改口径**；本次改判有 spec §10-D11 授权 + R8 回扫）。同批回扫：`node scripts/scope-sweep.mjs --check` 必须 exit 0（Global 15）。
 
-- [ ] **Step 4: 测试 2 条 + 跑门禁**
+- [x] **Step 4: 测试 2 条 + 跑门禁**
 
 | ID | 断言（判据出处） |
 |---|---|
@@ -417,19 +417,19 @@ Expected：`# fail 0`；`test('S4-TC-` 累计 = **37**；`sweep ok（命中未�
 - Consumes: 无（纯文档面；可与 Task 1–3 并行）
 - Produces: PRD §3.7 段表 **6 → 7 段**（含「输出格式」）；`docs-convention` 有 `docs/agents/` 档
 
-- [ ] **Step 1: PRD §3.7 段表内插「输出格式」行（D1）**
+- [x] **Step 1: PRD §3.7 段表内插「输出格式」行（D1）**
 
 `PRD:229-237` 的表**最后一行（`:237` 的「边界」行）之后插一行**（**表内插行，不是表外追加**）：「输出格式 | `outputFormats[outputKind]`（结构化 `fields[]` + `checks[]`） | 必填字段表 + 校验命令」。同批对齐 `PRD:239` 的单源说明（仍指 `tools/docgen/card-model/vocab/card-must-fields.mjs`，补「段行数 7」）。**判据**：`S4-TC-K01` 断「表头 + 7 段」。**不做**：不删任何既有行、不改其余 6 段文字。
 
-- [ ] **Step 2: PRD `:293` 省略号收敛（D5 / `O-4`）**
+- [x] **Step 2: PRD `:293` 省略号收敛（D5 / `O-4`）**
 
 `PRD:293` 的 `subject: 'reviewer-detective.card'|'artifact.observation'|…,` → `|…` 去掉、改为「15 席 `<seat>.card` + 2 项产物侧（登记表，非封闭枚举；唯一来源 `tools/docgen/card-model/subjects.mjs`）」。**不改** `:294-304` 的字段形状。
 
-- [ ] **Step 3: `rules/docs-convention.md` 目录表补一行（D2）**
+- [x] **Step 3: `rules/docs-convention.md` 目录表补一行（D2）**
 
 「一张表」（`docs-convention.md:9-17`）补：`docs/agents/` = 「**生成物**（人读投影：index + 每席一份）；不由手写维护——改数据 → `generate --readme --apply`」；「什么时候搬走」= 不搬走（生成物随席迁移更新）。**只补一行**，不加小节、不改文件命名表（该目录不是新增文档类型，是生成物落点）。
 
-- [ ] **Step 4: 测试 2 条 + 跑门禁**
+- [x] **Step 4: 测试 2 条 + 跑门禁**
 
 | ID | 断言（判据出处） |
 |---|---|
@@ -462,7 +462,7 @@ Expected：`# fail 0`；`test('S4-TC-` 累计 = **39**；`sweep ok`；`check 全
 - Consumes: Task 2（`renderSeat` / `writeAll` / `dump`）、Task 3（`EXIT` 表 + `touchedSemanticKeys` 认「职责」）
 - Produces: 首张新卡 + 首份 README + index v1 + 对照稿（7 段逐段对照 + 差异清单）+ 单席改动行数（`git diff --numstat`）
 
-- [ ] **Step 1: 取该席的测试影响面（先量再改）**
+- [x] **Step 1: 取该席的测试影响面（先量再改）**
 
 ```powershell
 Get-ChildItem tools\docgen\test -Filter *.test.mjs | Select-String -Pattern 'detective-observer' | Group-Object Filename | Select-Object Count,Name
@@ -470,16 +470,16 @@ Get-ChildItem tools\docgen\test -Filter *.test.mjs | Select-String -Pattern 'det
 
 把命中文件逐条读，判「该断言属**旧数据形态**（`identity` / `fixedList` / `sharedBlock`）→ 同批改；属**渲染式**（`renderAgent` + 旧模板）→ 留到 Task 7」。**不得**为了绿而删断言（删什么必须在 ④ 段缺口表登账）。
 
-- [ ] **Step 2: 该席 `card` 12 键落数据 + 称谓统一**
+- [x] **Step 2: 该席 `card` 12 键落数据 + 称谓统一**
 
 按 spec §4「15 席内容迁移映射」，把该席旧卡 6 段迁进 `card`：`## 你是谁` → `duty`（identity 叙述进 `rationale`）；`## 共享特质` / `## 通用纪律` → 由 `SHARED_USE['detective-observer']` 取共享句（**卡面不留**）；`## 固定必问清单` → `checkItems`（类别 + 条目表）+ 对应 `must`；`## 自由探索` → 一条 `must`（每轮 ≥1 或显式「无 + 依据」）；`## 输出格式` → 走 `outputFormats.observation`（不复制进席数据）。
 **称谓强制统一**：该席实测 8 行命中（议长 1 行 / 主持人 7 行，见 `K-7`），迁移后**卡面「议长」= 0、「主持人」在位**（`S4-TC-C06`）——原样搬即 `MixedTermInCard` 红（`spec:154`）。
 
-- [ ] **Step 3: 出对照稿（工作副本 + 归档副本）**
+- [x] **Step 3: 出对照稿（工作副本 + 归档副本）**
 
 `renderSeat('detective-observer')` → 与旧卡逐段对照（7 段 × 旧 6 段映射表 + 差异清单：删了什么、搬到 `rationale` 的什么、共享句上移了哪几条）。**工作副本**落 `.session/reviews/<本次>/pilot-contrast.md`（不跨机）；**归档副本**同步落 `docs/reports/2026-10-30-agent-card-s4-pilot-contrast.md`（`docs-convention`：`.session/` 不进 git，归档副本才是可跨机复核的，`spec:190`）。
 
-- [ ] **Step 4: 落盘（授权链，`K-12`）**
+- [x] **Step 4: 落盘（授权链，`K-12`）**
 
 ```
 1) node tools/docgen/cli.mjs diff --kind agent --name detective-observer   # 取新 sha256 与差异行
@@ -491,7 +491,7 @@ Get-ChildItem tools\docgen\test -Filter *.test.mjs | Select-String -Pattern 'det
 
 失败码按 `EXIT` 表：`UnapprovedChange`（4）/ `DraftDrift`（1）/ `Mismatch`（1）——**不得**用 `--yes` 之外的旁路；**不得**改 `state.json`（`setAgentState` 由 `replace` 内部执行，`tools/docgen/cli.mjs` 的 `setAgentState(name, 'replaced')` 调用）。
 
-- [ ] **Step 5: 出数（单席改动行数 + 剩余工期换算）**
+- [x] **Step 5: 出数（单席改动行数 + 剩余工期换算）**
 
 ```powershell
 git diff --numstat -- agents/ tools/docgen/ docs/agents/
@@ -500,7 +500,7 @@ git log -1 --numstat -- agents/ tools/docgen/
 
 把「单席改动行数」写进对照稿的「出数」节，并给「剩余 = 单席 × 14 + 20% 缓冲」的换算式（**数字由实测产生，本 plan 不填**，PRD D-07 `:502`）。
 
-- [ ] **Step 6: 测试 4 条 + 跑门禁**
+- [x] **Step 6: 测试 4 条 + 跑门禁**
 
 | ID | 断言（判据出处） |
 |---|---|
@@ -533,15 +533,15 @@ Expected：`# fail 0`；`test('S4-TC-` 累计 = **43**；`gate` 首行 `baseline
 - Consumes: Task 5（试点完成 = 迁移模式已验证、出数已知）
 - Produces: 15 席全迁移；`docs/agents/**` = 16 份；`gate` 按「已迁移子集」绿
 
-- [ ] **Step 1: 一席一轮（14 轮，同一套动作）**
+- [x] **Step 1: 一席一轮（14 轮，同一套动作）**
 
 每席 = Task 5 的 Step 1–5 原样（取影响面 → 落 `card` 12 键 → 输出格式走共享 kind → 落盘 `replace`（含独立实例重判 A1/A2）→ `generate --readme --apply`），**每席一个提交**。**籍此逐轮验收**：`gate` 只对「已迁移子集」比对新卡、未迁移席仍比旧卡；未迁移席**不得**出现在 `docs/agents/`（`spec:182` 的中期子集判据）。
 
-- [ ] **Step 2: 每席的称谓与非议会席口径**
+- [x] **Step 2: 每席的称谓与非议会席口径**
 
 议会 13 席（除 `evidence-reader` / `senior-sdet`）：「主持人」可用、「议长」不得与之同现（`S4-TC-C05` 的构造面）；`evidence-reader` / `senior-sdet` 两词 0 命中（两席实测已 0，迁移后必须保持）；前者 `outputKind='evidence'`、后者 `outputKind='testcase'`，输出格式段分别走 `outputFormats.evidence` / `.testcase`。
 
-- [ ] **Step 3: 测试 1 条 + 每席跑门禁**
+- [x] **Step 3: 测试 1 条 + 每席跑门禁**
 
 | ID | 断言（判据出处） |
 |---|---|
@@ -573,7 +573,7 @@ Expected（逐席）：`# fail 0`；`test('S4-TC-` 累计 = **44**；`gate` `bas
 - Consumes: Task 2（三投影 + `writeAll` + gate 扩面）、Task 4（PRD / `docs-convention`）、Task 6（15 席全迁）
 - Produces: 全席重生成终态：`docs/agents/**` 16 份 + 15 卡 + `state` 完整性 + `EXPIRY_LANDED=true` + 旧模板零残留
 
-- [ ] **Step 1: `renderAll()` 全量一次（内存产物 → 逐文件落盘）**
+- [x] **Step 1: `renderAll()` 全量一次（内存产物 → 逐文件落盘）**
 
 ```
 node -e "import('./tools/docgen/components/cardPipeline.mjs').then(m=>{const r=m.renderAll();console.log('cards',r.cards.length,'readmes',r.readmes.length,'index',typeof r.index)})"
@@ -581,11 +581,11 @@ node -e "import('./tools/docgen/components/cardPipeline.mjs').then(m=>{const r=m
 
 Expected：`cards 15 readmes 15 index string`（**15 席全过才产字节**，`spec:179`）。任一席坏 → 31 份零写盘（`S4-TC-F02` 收口半）。
 
-- [ ] **Step 2: 豁免到期（D7 / C-08）**
+- [x] **Step 2: 豁免到期（D7 / C-08）**
 
 `tools/observation-check/card-exempt.mjs:24` 的 `EXPIRY_LANDED = false` → **`true`**（唯一开关，注释 `:23` 原文「S4 首次重生成落地时置 true」）。**唯一改动**：这一行 + 该注释时点不写行号。验证：`npm run check` 的 ⑥ 段输出**含** `[豁免窗口] … EXPIRY_LANDED=true`（该行在 ⑥ 段内、**非首行**，`check-all.mjs:418`）+ `disposeCardFindings([{file:'agents/x.md'}], { landed:true })` → `blockers ≥ 1`（`S4-TC-F07`）。
 
-- [ ] **Step 3: 旧模板退场（`K-10` 的 9 处逐处）**
+- [x] **Step 3: 旧模板退场（`K-10` 的 9 处逐处）**
 
 ① 删两个 `.tpl`（`Test-Path` → `False`）；② `tools/docgen/components/renderByName.mjs:26-31` 的 template 读取与旧分支删；`tools/docgen/cli.mjs:40` 的 `readTemplate` 只留 rule 分支；`tools/docgen/components/agentData.mjs:247` 的 `sourceLine` 删键（`senior-sdet` 卡面 `agents/senior-sdet.md:9` 的模板名随旧模板一起消失）；③ 5 个测试文件与 `tools/docgen/acceptance/render13-snapshot.mjs` 的旧模板引用逐处改成**新渲染器等价面**（例：该脚本的 fixture 改用 `renderCard` + `agent-card.md.tpl`；`tools/docgen/test/sdet-template.test.mjs` 的 9 节断言改为「新卡 7 段 + 该席 `checkItems` 逐条在位」）——**删断言必须在 ④ 段缺口表登账**（不许删断言换绿）；④ 复扫：
 
@@ -596,11 +596,11 @@ Test-Path tools\docgen\templates\agent.md.tpl; Test-Path tools\docgen\templates\
 
 Expected：首条命中 **0**；两条 `False`。
 
-- [ ] **Step 4: state 完整性与 gate 31 份**
+- [x] **Step 4: state 完整性与 gate 31 份**
 
 ① `state.json` 的 `agents` 键集与 `agentData` 名字集**双向相等且逐席 `replaced`**（收口全集判据，`spec:182`）。② `gate` 比对面 = **31 份**（15 卡 + 15 README + index），缺文件 → `DanglingBaselineEntry`、不符 → `Mismatch`（沿用码，不新增）。③ `baseline 37/37` 一字不变（「接口小节」的口径陷阱）。
 
-- [ ] **Step 5: 全集回归 18 项（17 条新增 test 块 + `F02` 收口半追加进既有块）**
+- [x] **Step 5: 全集回归 18 项（17 条新增 test 块 + `F02` 收口半追加进既有块）**
 
 | ID | 断言（判据出处） |
 |---|---|
@@ -622,7 +622,7 @@ Expected：首条命中 **0**；两条 `False`。
 | I02 | `registered-ids.mjs` 常量逐字不变 + `git diff --quiet HEAD` 无差异（`testcase:1795`） |
 | J03 | `docs/agents/**` 不触发 `UnregisteredHandwritten`，且恰 = 席数 + index（`testcase:1914` 后段） |
 
-- [ ] **Step 6: 收口门禁 + 五条命令**
+- [x] **Step 6: 收口门禁 + 五条命令**
 
 ```powershell
 node --test "tools/docgen/test/card-render.test.mjs"; "exit=$LASTEXITCODE"

@@ -1,7 +1,7 @@
 # 测试用例：agent-card S4 渲染层（一份数据 → 三投影 + 全席重生成，F-09～F-12、F-23）
 
 > **归属 spec**：`docs/superpowers/specs/2026-10-29-agent-card-s4-render-design.md`（**v4，245 行**，内容已定稿、待议会 #2 签字）。
-> **上游权威**：`docs/prd/20261026205821-agent-card-contract.md` §3.7 `:219-241`（三投影 + 卡面契约 + 单源 `:239`）/ `:223`（零散文）/ `:225`（dump stdout-only）/ `:231`（`description` 只写触发条件）/ `:234`（`never` 只判 objects + criterion）/ `:236`（本席清单）/ `:280` / `:293`（subject 枚举）/ `:310`（`registeredIds`）/ `:321` / A-4 `:55` / A-5 `:56` / C-08 `:121` / §6 F-09～F-12 `:473-476`、F-23 `:487` / §8 S4 行 `:519` / D-05 `:500`、D-07 `:502` / §9.2 P-A、P-B `:576`。探索稿：`docs/after/20261026164718-agent-card-composition-exploration.md`（§12.6 `:419-428` / §12.9 `:459-475`）。
+> **上游权威**：`docs/prd/20261026205821-agent-card-contract.md` §3.7 `:219-241`（三投影 + 卡面契约 + 单源 `:239`）/ `:223`（零散文）/ `:225`（dump stdout-only）/ `:231`（`description` 只写触发条件）/ `:234`（`never` 只判 objects + criterion）/ `:236`（本席清单）/ `:280` / `:293`（subject 枚举）/ `:310`（`registeredIds`）/ `:321` / A-4 `:55` / A-5 `:56` / C-08 `:121` / §6 F-09～F-12 `:474-477`、F-23 `:488` / §8 S4 行 `:519` / D-05 `:500`、D-07 `:502` / §9.2 P-A、P-B `:576`。探索稿：`docs/after/20261026164718-agent-card-composition-exploration.md`（§12.6 `:419-428` / §12.9 `:459-475`）。
 > **编写者**：`senior-sdet`（独立子代理，**全新上下文**）。
 > **独立性声明**：编写者 = 本文件唯一作者，**≠ spec 作者、≠ 施工者**；用例只在 spec §1–§12 与 PRD 上生长，**未参与任何实现**，**未修改 spec / PRD / rule / skill / agent / 业务代码**；对实现的只读观察（`tools/docgen/{cli.mjs,components/*,card-model/**,state.json}`、`tools/execution-matrix/check-agent.mjs`、`tools/observation-check/{card-exempt,registered-ids}.mjs`、`scripts/check-all.mjs`、`tools/docgen/acceptance/cold-run.mjs`、`agents/*.md`）只进「来源 = 实现观察（补充）」的用例与 §7 / §8，**不得据此放宽或删掉任何 spec 推导用例**。**发现 spec 缺口只记 §7 / §8，不改 spec**。
 > **版本**：**v4**（2026-10-29 对齐 spec v4；v1 = 54 / v2 = 57 / v3 = 58 条）。**v4 = 61 条**（净增 A08 / F10 / K01；A02 由 9 键改 **12 键**；G02/G07 改指针词**同形判定**；F01~F05·F07·I02·I03·H01·H03·J01 按 v4 改判据）。｜**日期**：2026-10-29。
@@ -43,7 +43,7 @@
 | 零散文探针 | **3 类**（旧段名 / 声明句式 / 指针词；单源 = `PROSE_PROBES`，§3 `:62` + §5.1 `:137-145`） | G02 三类逐词对账 + G07 三类反例 + 守卫 |
 | 生成物 | **两数口径**（§1 `:20`）：`docs/agents/**` = **16**；gate 比对面 = `2 × 席数 + 1` = **31** | F02 / F04 的 `TARGETS` 派生式 |
 | 验收项 | **V-1～V-8**（§9 `:201-208`） | §1 末「验收对位」 |
-| 功能点 | **F-09 / F-10 / F-11 / F-12 / F-23**（PRD `:473-476` / `:487`） | §1 末「F 对位」 |
+| 功能点 | **F-09 / F-10 / F-11 / F-12 / F-23**（PRD `:474-477` / `:488`） | §1 末「F 对位」 |
 | 门禁段 | **6**（§7 ①～⑥ `:179-184`） | F01～F09 |
 
 ### 0.2 测试设计固定清单（逐条必答）

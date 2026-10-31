@@ -224,7 +224,7 @@
 | README | 人 | 表格 + 理由 | 每席一份 + 自动 index；`rationale` 必填（`MissingRationale`） |
 | dump | 开发 | 合并后全量 JSON | **stdout-only，不落盘、不进门禁**；覆盖记录靠 README 覆盖表追责 |
 
-**卡面段清单 × 必渲染字段**（front matter + 6 段，取代原「9 段」）：
+**卡面段清单 × 必渲染字段**（front matter + 7 段，取代原「9 段」）：
 
 | 段 | 数据来源 | 必渲染 |
 |---|---|---|
