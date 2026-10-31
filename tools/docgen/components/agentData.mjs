@@ -216,6 +216,68 @@ const SKELETON = [
     ],
     sharedBlock: 'DETECTIVE_RULES',
     outputKind: 'observation',
+    // S4 新卡（试点席，spec §8 步 1）：旧卡 6 段 → card 12 键；称谓统一为「主持人」（过渡期议会席写法）
+    card: {
+      duty: {
+        trigger: '每轮答辩结束后由主持人调度做行为核实',
+        categories: ['评委刁难', '答辩回避', '主持人失职', '工具越权'],
+        action: '逐类机械核对，逐条写出对象、行为类型与原文引句',
+        constraint: '只记录不裁决；观察记录原文进最终报告，不得删改；每条记录必须引用真实卡号',
+      },
+      scenes: [],
+      signals: [{ type: 'artifact.appear', observer: '主持人', match: '本轮卡片目录新增一份卡片' }],
+      must: [{
+        id: 'detective.free-explore',
+        kind: 'must',
+        trigger: { scene: 'parliament.round', moment: 'end', repeat: 'per-round' },
+        objects: ['deliverable.appendix'],
+        criterion: 'no-fake-problem',
+        landing: 'deliverable.appendix',
+        requires: [],
+      }],
+      never: [],
+      categories: [
+        { key: 'evaluator', label: '评委刁难核对' },
+        { key: 'defense', label: '答辩回避核对' },
+        { key: 'host', label: '主持人失职核对' },
+        { key: 'tool', label: '工具越权核对' },
+      ],
+      checkItems: [
+        {
+          id: 'detective.evaluator',
+          subject: 'detective-observer.card',
+          label: '侦探席卡：评委刁难核对',
+          criterion: '逐条写出卡号与原文引句',
+          check: 'script',
+          cmd: 'git --no-optional-locks status --porcelain',
+        },
+        {
+          id: 'detective.defense',
+          subject: 'detective-observer.card',
+          label: '侦探席卡：答辩回避核对',
+          criterion: '对每条答辩写出判定与改判条件',
+          check: 'manual',
+          declarer: '侦探（独立观察）',
+        },
+        {
+          id: 'detective.host',
+          subject: 'detective-observer.card',
+          label: '侦探席卡：主持人失职核对',
+          criterion: '对每条卡片写出收取与关闭的差额',
+          check: 'script',
+          cmd: 'node tools/docgen/cli.mjs gate',
+        },
+        {
+          id: 'detective.tool',
+          subject: 'detective-observer.card',
+          label: '侦探席卡：工具越权核对',
+          criterion: '每轮比对轮初快照与当前工作区是否逐字相等',
+          check: 'script',
+          cmd: 'git --no-optional-locks diff',
+        },
+      ],
+      rationale: '资深观察员，只记录不裁决；对「评委刁难、答辩回避、主持人失职」三类行为做机械核对。旧卡「你是谁」的叙述并入本段；「共享特质」「通用纪律」上移为共享 must / never（本席声明全量）；「固定必问清单」四条拆成四条 checkItem + 一条自由探索 must；「输出格式」走共享 observation 合同；过渡期称谓统一为「主持人」。',
+    },
   },
   // 阅读取证员（S1 新增，PRD F-17 / D-23）：不是议会席位，故带 domain（description 走「开发工作流」分支），
   // 且用 boundary / explorePolicy 两个槽位把「只读取证、不出观点、不提问」写进卡面（C10 / C11）。

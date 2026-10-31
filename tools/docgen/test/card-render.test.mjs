@@ -362,3 +362,35 @@ test('S4-TC-J04 docs-convention 同批补一行 + scope-sweep --check exit 0', (
   assert.equal(sw.code, 0, `R8 改判回扫必须 exit 0（实得 ${sw.code}）：${sw.out.slice(0, 300)}`)
   assert.match(sw.out, /sweep ok/, '末行必须是 sweep ok（判据只认退出码与末行）')
 })
+
+// ── Task 5（试点席 detective-observer 迁移）────────────────────────────────────────────────
+
+test('S4-TC-C06 试点席迁移后「议长」= 0 且「主持人」在位', () => {
+  const s = 'detective-observer'
+  assert.ok(SEATS.includes(s), `${s} 必须真实存在`)
+  assert.ok(PARL.includes(s), `${s} 必须是议会席（§4 :97；非议会席口径由 C03 守）`)
+  const disk = readFileSync(join(AGENTS_DIR, `${s}.md`), 'utf8')
+  assert.ok(disk.length > 200, `${s} 卡面不得为空或过短（否则 0 命中是假绿）`)
+  assert.equal((disk.match(/议长/g) ?? []).length, 0, `迁移后 ${s} 卡面不得再出现「议长」（§5.2 :154 要求统一为「主持人」）`)
+  assert.ok((disk.match(/主持人/g) ?? []).length >= 1, `${s} 卡面必须保留「主持人」（过渡期议会席允许，不得两词全删）`)
+  assert.equal((CARD(s).match(/议长/g) ?? []).length, 0, `渲染投影同样不得含「议长」（§5.2 :154）`)
+})
+
+test('S4-TC-H01 试点先行：归档副本在位且 7 段逐段对照', () => {
+  const p = join(REPO, 'docs', 'reports', '2026-10-30-agent-card-s4-pilot-contrast.md')
+  assert.equal(existsSync(p), true, '试点对照稿的**归档副本**必须存在（§8 步 1 :190；.session/ 那份不进 git，只作手动项）')
+  const t = readFileSync(p, 'utf8')
+  assert.ok(t.length > 0, '归档副本不得为空')
+  for (const seg of SPEC_7) assert.ok(t.includes(seg), `对照稿必须逐段对照：缺「${seg}」`)
+  assert.match(t, /差异|一致|相同/, '对照稿必须含差异清单（不是复制旧卡）')
+  assert.ok(t.includes('detective-observer') || t.includes('侦探'), '试点席必须是侦探席（PRD A-4 :55）')
+})
+
+test('S4-TC-H03 出数门槛：git log -1 --numstat 可跑且单席改动行数 > 0', () => {
+  const out = execFileSync('git', ['log', '-1', '--numstat', '--format=', '--', 'agents/', 'tools/docgen/'], { cwd: REPO, encoding: 'utf8' })
+    .trim().split(/\r?\n/).filter(Boolean)
+  assert.ok(out.length > 0, '必须取到「最近一次触及 agents/ 或 tools/docgen/ 的提交」的 numstat（§8 步 2 :191）')
+  const nums = out.map((l) => Number(l.split('\t')[0])).filter((n) => Number.isFinite(n))
+  assert.ok(nums.length > 0, 'numstat 行必须可解析出新增行数')
+  assert.ok(nums.reduce((a, b) => a + b, 0) > 0, '单席改动行数必须 > 0（否则工期公式无输入）')
+})
