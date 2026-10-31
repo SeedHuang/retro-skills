@@ -5,8 +5,8 @@
   "hashObject": "2f8d8fdfa4dfc809abb8f6f07fca954065855149",
   "goldenAssertion": "pass",
   "compareResult": null,
-  "renderSha256": "A74541F1BAFBF87A3320108F2A6D5F28AE02C00FCA4FF66EC24998EA727FE503",
-  "lastWrittenHash": "A74541F1BAFBF87A3320108F2A6D5F28AE02C00FCA4FF66EC24998EA727FE503",
+  "renderSha256": "456C6A91F8DEEC80A5CE6858C9D165DAC11110C32D91B43613FDD54C35112375",
+  "lastWrittenHash": "456C6A91F8DEEC80A5CE6858C9D165DAC11110C32D91B43613FDD54C35112375",
   "changes": [
     {
       "from": "4364645A689E47B295C4FDD1D77E2444F90DA0185180BC9798811BDDC2C89668",
@@ -188,13 +188,14 @@
     {
       "from": "2605F25048D9316CF06CD5130DC2B64D60D80DC6818FB1B091DDB1A1E76B09CC",
       "to": "A74541F1BAFBF87A3320108F2A6D5F28AE02C00FCA4FF66EC24998EA727FE503",
-      "at": "2026-10-31T02:21:01.577Z",
+      "at": "2026-10-31T02:29:36.356Z",
       "rejudged": [
         "A1",
-        "A2"
+        "A2",
+        "B3"
       ],
       "judgeMode": "subagent",
-      "judgedBy": "reviewer-ai-2026-10-31-detective-a1a2",
+      "judgedBy": "reviewer-ai-2026-10-31-detective-a1a2b3",
       "judged": [
         {
           "key": "A1",
@@ -205,6 +206,47 @@
           "key": "A2",
           "verdict": "pass",
           "basis": "tools/execution-matrix/criteria.md A2 + 渲染产物；重判写回 rules/.inspector-annotations.json detective-observer:A2 = pass（replace 机械转录）"
+        },
+        {
+          "key": "B3",
+          "verdict": "pass",
+          "basis": "tools/execution-matrix/criteria.md B3 + 渲染产物；重判写回 rules/.inspector-annotations.json detective-observer:B3 = pass（replace 机械转录）"
+        }
+      ],
+      "machineChecks": {
+        "A3": "pass",
+        "A4": "pass",
+        "A5": "pass",
+        "A6": "pass",
+        "A7": "pass"
+      }
+    },
+    {
+      "from": "A74541F1BAFBF87A3320108F2A6D5F28AE02C00FCA4FF66EC24998EA727FE503",
+      "to": "456C6A91F8DEEC80A5CE6858C9D165DAC11110C32D91B43613FDD54C35112375",
+      "at": "2026-10-31T02:34:19.475Z",
+      "rejudged": [
+        "A1",
+        "A2",
+        "B3"
+      ],
+      "judgeMode": "subagent",
+      "judgedBy": "reviewer-ai-2026-10-31-detective-a1a2b3",
+      "judged": [
+        {
+          "key": "A1",
+          "verdict": "pass",
+          "basis": "tools/execution-matrix/criteria.md A1 + 渲染产物；重判写回 rules/.inspector-annotations.json detective-observer:A1 = pass（replace 机械转录）"
+        },
+        {
+          "key": "A2",
+          "verdict": "pass",
+          "basis": "tools/execution-matrix/criteria.md A2 + 渲染产物；重判写回 rules/.inspector-annotations.json detective-observer:A2 = pass（replace 机械转录）"
+        },
+        {
+          "key": "B3",
+          "verdict": "pass",
+          "basis": "tools/execution-matrix/criteria.md B3 + 渲染产物；重判写回 rules/.inspector-annotations.json detective-observer:B3 = pass（replace 机械转录）"
         }
       ],
       "machineChecks": {

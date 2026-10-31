@@ -1,7 +1,7 @@
 // S1 测试支撑（纯函数 + 最小仓副本）：把「文本 / 数据 → 结论」的判据写成函数，
 // 负例只需换输入文本，不必为每条负例复制整仓。
 // 文件名不带 .test.mjs，故不进 node --test；也不在 skills/ 下，不进 check-all 的语法扫描。
-import { readFileSync, readdirSync, cpSync, mkdtempSync, rmSync } from 'node:fs';
+import { readFileSync, readdirSync, cpSync, mkdtempSync, rmSync, existsSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
@@ -230,7 +230,9 @@ export function readCounterFiles() {
 export function withRepoCopy(fn) {
   const dst = mkdtempSync(join(tmpdir(), 'dw-copy-'));
   try {
-    for (const rel of ['tools/docgen', 'tools/execution-matrix', 'rules', 'agents']) {
+    // `docs/agents/**` 也是 gate 的比对面（S4 spec §7③）：副本缺它会把正常态误报 DanglingBaselineEntry
+    for (const rel of ['tools/docgen', 'tools/execution-matrix', 'rules', 'agents', 'docs/agents']) {
+      if (!existsSync(join(ROOT, rel))) continue;
       cpSync(join(ROOT, rel), join(dst, rel), { recursive: true });
     }
     return fn(dst);

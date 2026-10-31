@@ -21,7 +21,7 @@ function mustTable(must) {
     const t = a && a.trigger ? a.trigger : {}
     const objs = (a && Array.isArray(a.objects) ? a.objects : []).join('、') || '无'
     const req = (a && Array.isArray(a.requires) && a.requires.length ? a.requires.map((r) => r.id).join('、') : '无')
-    return `| ${i + 1} | trigger: ${cell(t.scene)}／${cell(t.moment)} | objects: ${cell(objs)} | criterion: ${cell(a && a.criterion)} | landing: ${cell(a && a.landing)} | requires: ${cell(req)} |`
+    return `| ${i + 1} | ${cell(a && a.id)} | trigger: ${cell(t.scene)}／${cell(t.moment)} | objects: ${cell(objs)} | criterion: ${cell(a && a.criterion)} | landing: ${cell(a && a.landing)} | requires: ${cell(req)} |`
   })
   return head.concat(rows).join('\n')
 }

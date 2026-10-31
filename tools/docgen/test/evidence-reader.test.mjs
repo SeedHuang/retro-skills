@@ -140,15 +140,20 @@ test('TC-D01 gate 逐字节兜住既有席；给 reviewer-qa.md 注入一字节�
   });
 });
 
-test('TC-D03 其余 14 席 description：13 席走默认分支、senior-sdet 按手写卡判', () => {
+test('TC-D03 其余 14 席 description：未迁移席走默认分支、迁移席走 trigger.when 直出、senior-sdet 按手写卡判', () => {
   const dir = join(ROOT, 'agents');
   const seats = agentData.map((a) => a.name).filter((x) => x !== 'evidence-reader');
   for (const name of seats) {
     const d = /^description:\s*(.+)$/m.exec(readFileSync(join(dir, `${name}.md`), 'utf8'))[1];
+    const entry = agentData.find((a) => a.name === name);
     if (name === 'senior-sdet') {
       assert.equal(d.includes('在议会评审中担任'), false);
       assert.equal(d.includes('开发工作流'), false);
       assert.equal(d.includes('Do not use for'), true);
+    } else if (entry.card) {
+      // S4 迁移席（spec §10-D3）：description = trigger.when 直出，不得再派生「在…中担任…」
+      assert.equal(d.includes('在议会评审中担任'), false, `${name} 迁移后不得再走派生式`);
+      assert.equal(d.includes('时调用'), false, `${name} 迁移后不得保留派生式尾巴`);
     } else {
       assert.equal(d.includes('在议会评审中担任'), true, `${name} 未走默认分支`);
       assert.equal(d.includes('开发工作流'), false);

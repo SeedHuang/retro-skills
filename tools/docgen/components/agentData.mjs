@@ -273,7 +273,7 @@ const SKELETON = [
           label: '侦探席卡：工具越权核对',
           criterion: '每轮比对轮初快照与当前工作区是否逐字相等',
           check: 'script',
-          cmd: 'git --no-optional-locks diff',
+          cmd: 'git --no-optional-locks status --porcelain',
         },
       ],
       rationale: '资深观察员，只记录不裁决；对「评委刁难、答辩回避、主持人失职」三类行为做机械核对。旧卡「你是谁」的叙述并入本段；「共享特质」「通用纪律」上移为共享 must / never（本席声明全量）；「固定必问清单」四条拆成四条 checkItem + 一条自由探索 must；「输出格式」走共享 observation 合同；过渡期称谓统一为「主持人」。',

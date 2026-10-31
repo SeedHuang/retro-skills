@@ -18,11 +18,11 @@ tools: Read, Glob, Grep, Write, Edit, RunCommand
 
 | # | 必问（must） | 触发 | 宾语 | 判据 id | 落点 | 前置 |
 |---|---|---|---|---|---|---|
-| 1 | trigger: deliverable／end | objects: deliverable.body | criterion: impartial-long-term | landing: deliverable.body | requires: 无 |
-| 2 | trigger: deliverable／end | objects: deliverable.evidence | criterion: evidence-recomputable | landing: deliverable.body | requires: 无 |
-| 3 | trigger: deliverable／end | objects: deliverable.body | criterion: plain-expression | landing: deliverable.body | requires: 无 |
-| 4 | trigger: deliverable／end | objects: deliverable.body | criterion: no-fake-problem | landing: deliverable.body | requires: 无 |
-| 5 | trigger: parliament.round／end | objects: deliverable.appendix | criterion: no-fake-problem | landing: deliverable.appendix | requires: 无 |
+| 1 | shared.impartial-long-term | trigger: deliverable／end | objects: deliverable.body | criterion: impartial-long-term | landing: deliverable.body | requires: 无 |
+| 2 | shared.evidence | trigger: deliverable／end | objects: deliverable.evidence | criterion: evidence-recomputable | landing: deliverable.body | requires: 无 |
+| 3 | shared.plain-expression | trigger: deliverable／end | objects: deliverable.body | criterion: plain-expression | landing: deliverable.body | requires: 无 |
+| 4 | shared.no-fake-problem | trigger: deliverable／end | objects: deliverable.body | criterion: no-fake-problem | landing: deliverable.body | requires: 无 |
+| 5 | detective.free-explore | trigger: parliament.round／end | objects: deliverable.appendix | criterion: no-fake-problem | landing: deliverable.appendix | requires: 无 |
 
 ## 禁止
 | # | 禁止什么 | 宾语 | 判据 id |

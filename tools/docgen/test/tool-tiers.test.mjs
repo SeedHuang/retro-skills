@@ -326,10 +326,14 @@ test('S5-TC-B05 以「**禁止**」为界：允许段白名单 + 禁止段点名
 });
 
 test('S5-TC-B06 侦探固定清单第 4 项含 --no-optional-locks status（数据侧 + 卡面 + spec 三处同源）', () => {
+  // S4 迁移（Task 5）：旧「固定必问清单」第 4 项的落点 = 新卡 `detective.tool` 条目（cmd 写命令）；
+  // 判据不变（数据侧 + 卡面 + spec 三处同源），只换承载面（旧 fixedList 行在 Task 7 收口时删）。
   const d = agentData.find((a) => a.name === 'detective-observer');
-  assert.match(d.fixedList[3], /git --no-optional-locks status --porcelain/);
-  assert.equal(/本轮 `git status --porcelain`/.test(d.fixedList[3]), false);
-  assert.match(card('detective-observer'), /^\| 4 \| .*git --no-optional-locks status --porcelain.*\| 待答 \|$/m);
+  const toolItem = (d.card?.checkItems ?? []).find((it) => it.id === 'detective.tool');
+  assert.ok(toolItem, '新卡必须有工具越权核对条目（旧固定清单第 4 项的落点）');
+  assert.match(JSON.stringify(toolItem), /git --no-optional-locks status --porcelain/);
+  assert.equal(/本轮 `git status --porcelain`/.test(JSON.stringify(toolItem)), false);
+  assert.match(card('detective-observer'), /git --no-optional-locks status --porcelain/);
 
   const SPEC_PATH = 'docs/superpowers/specs/2026-10-25-s5-tool-tiers-design.md';
   const specText = readRepo(SPEC_PATH);
@@ -601,7 +605,8 @@ test('S5-TC-C08 只生成一席草稿 → 旁席 Mismatch 挡住 replace', () =>
   withRepoCopy((dst) => {
     // 前提：target 盘上必须 ≠ 渲染（否则先撞幂等短路 exit 0，见 cli.mjs:425-432）
     patchFile(dst, 'tools/docgen/components/agentData.mjs', "'卡片合规：八字段齐", "'卡片合规（B）：八字段齐");
-    patchFile(dst, 'tools/docgen/components/agentData.mjs', '工具越权：本轮', '工具越权（B）：本轮');
+    // S4 迁移（Task 5）：detective-observer 的渲染输入已是 `card`（不再读 fixedList）→ 旁席漂移必须改 card 字段
+    patchFile(dst, 'tools/docgen/components/agentData.mjs', '只记录不裁决；观察记录原文进最终报告', '只记录不裁决（B）；观察记录原文进最终报告');
     assert.equal(runCli(dst, ['draft', '--kind', 'agent', '--name', 'reviewer-audit']).status, 0);
     const draftsDir = join(dst, '.drafts');
     const draftPath = join(draftsDir, readdirSync(draftsDir).find((f) => f.startsWith('reviewer-audit--')));
