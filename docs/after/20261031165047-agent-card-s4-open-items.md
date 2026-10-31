@@ -33,13 +33,6 @@
 - **谁人工兜**：⑤ 段交付审计（`delivery-5-s4.md` §H 的 P2-2）；填什么值属产品内容，需人工定。
 - **触发信号**：下次改 `agentData.mjs` 任一条目时同批补 `dimension`（值由用户/产品定）并 `node tools/docgen/cli.mjs generate --readme --apply` 重新落盘；此后可考虑给 B04 加「每格非空」断言。
 
-### S4-L5 `K-9` 的触发未具名（`check-all.mjs` 的卡面 findings 仍硬编码 `[]`）
-
-- **限制原文**：`scripts/check-all.mjs` 的 `cardFindings` 为硬编码空数组，⑥ 段打印的「卡面 findings 0 / 告警 0 / 阻断 0」**不是实跑值**，行末自带「S1 未上线：非达标证据」。
-- **漏检样例**：任何人把该行当「卡面零 findings」的达标证据 → 假绿（`K-8` 同族）。
-- **谁人工兜**：⑤ 段交付审计**不得**引用该行作达标证据（已写入 `④@S4-render` 行的「⑤ 段必须承接」）；sdet 的 §6 `G-7` 已登记。
-- **触发信号**：下次改 `scripts/check-all.mjs` 时，同批把 `cardFindings` 接实算并改行末说明；`docs/after/20261024174253-dev-workflow-mainline-open-items.md` 的线 G 同步。
-
 ## 二、已闭合（勘误即闭合，留痕备查）
 
 | # | 项 | 处置 |

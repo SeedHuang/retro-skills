@@ -127,6 +127,8 @@ check-all.mjs
 
 `check-all` ⑥ 段末尾**按模板插值**打印：`[豁免窗口] 15 张角色卡只告警（到期 = S4 首次重生成，EXPIRY_EVENT=<值> / EXPIRY_LANDED=<值>）；卡面 findings <n> / 告警 <w> / 阻断 <b>（S1 未上线：非达标证据）`。**`n/w/b` 取自 `disposeCardFindings([])` 的返回值**（本期真实运行 = 0/0/0，不写字面量）；**「卡面」限定词必须保留**——它与 ⑥ 段的 `findings`（产物问题数）是两个量，同一次输出里不得互相否定。S1 落地后由 S1 校验段把 findings 喂给 `disposeCardFindings`；本期无 findings 源，按 R7 明示不冒充「已达标」。
 
+> **2026-10-31 日期注（K-8/K-9 接线，现行判据）**：`n/w/b` 改由 `cardPipeline.collectCardFindings()` 逐席实算（缺卡 + 装配错误 + S1 `validateCardModel` 入口错误，finding 的 `file` 经 `baseline.cardPathOfSeat()` 派生 = 角色卡路径）后喂 `disposeCardFindings`；**层序同 `renderSeat`：装配错误即停、不再跑 S1**（否则同一根因报两条）；**阻断非空 → `check` exit 1**。行文案随之改为 `[豁免窗口] <EXEMPT_CARDS.length> 张角色卡（到期 = S4 首次重生成，EXPIRY_EVENT=<值> / EXPIRY_LANDED=<值>）；卡面 findings <n> / 告警 <w> / 阻断 <b>`——`EXPIRY_LANDED=true` 后「只告警」不再成立，行末「（S1 未上线：非达标证据）」句删除。**「卡面」限定词不变**；上段其余句按原文保留（历史）。现行判据另见 `2026-10-29-agent-card-s4-render-design.md` §7⑤ 的日期注。
+
 **静默 skip 守卫（R9）**：`check-all` ② 段在回读 `# tests N` 之外，再按用例名白名单核 `# skipped M` / `# todo M`——白名单单源 = 新增 `scripts/test-skip-allowlist.mjs` 导出的 `SKIP_ALLOWLIST`（用例名字符串数组，现 2 条；随批次同改该文件与本节）；**解析形态定死为 TAP 内联指令**：`/^\s*(?:not )?ok\s+\d+\s+-\s+(.*?)\s+#\s+(SKIP|TODO)\b/`（名字取第 1 捕获组，reason 丢弃；**不存在独立的 `# SKIP <名>` 行**）。**判据只按名字**：解析出的名字 ⊄ `SKIP_ALLOWLIST` → 红，打印 `[测试] 名单外 skip：<用例名>` / `[测试] 名单外 todo：<用例名>`；**「`# skipped M`（M>0）但该正则解析不出任何用例名」= fail-closed 红**。**不比较条数**（`M` 与名单长度可不等：`DW_RUNTIME_CHECK=1` 让 skip 真跑时为 0；S2 的「绝对基线 2」正是因此撤回）。
 
 **施工期预期红**：⑥ 段在第 1 次 move（迁移演练 / 首次归档）之前，对既有归档目录应为 0 findings；施工中若出现 `UntrackedArtifact`，属迁移步骤 1 的预期态（见上）。plan 收尾的「绿」判据从「`git add` 完成」那一刻起算。
@@ -168,7 +170,7 @@ check-all.mjs
 | 过程目录口径（0 产物 → 0 findings；有产物 → 四段校验但无 git 断言；只有 md → 不出码；**过程根不存在 → 0 对、不报码**） | R3 的负例：套错口径会整片假红；干净克隆 / CI 无 `.session/` |
 | 迁移状态机四步在临时 git 仓库的期望序列（move 后 `UntrackedArtifact` → `git add` 后两码消 → `commit` 后绿） | F-22；「步骤 1 报码属预期」必须可复现，否则会被当成门禁失效（PRD §5.1 `:391`） |
 | 旁路：`CHECK_BYPASS=1` 首行 `BYPASS: <原因>` + ⑥ 跳过 + 其余段仍可红；无 reason 的可审计文案；未开启时无 `BYPASS:` 行 | F-22 的旁路一半；首行要求是 PRD 明文（`:396`） |
-| F-24：`EXEMPT_CARDS` = 15 项且每项 `agents/<name>.md` 形态；`disposeCardFindings` 未到期 / 已到期两态；名单外卡不享豁免；状态行按模板插值 + 「非达标证据」短语 | 封闭清单与事件型到期是本功能点全部内容（C-08）；集合恒等会随新增卡误红（S2 撤销「绝对基线 2」同型教训） |
+| F-24：`EXEMPT_CARDS` = 15 项且每项 `agents/<name>.md` 形态；`disposeCardFindings` 未到期 / 已到期两态；名单外卡不享豁免；状态行按模板插值 + 「非达标证据」短语（**2026-10-31 日期注：该短语随实算接线删除，改判见 `:128` 的日期注**） | 封闭清单与事件型到期是本功能点全部内容（C-08）；集合恒等会随新增卡误红（S2 撤销「绝对基线 2」同型教训） |
 | 静默 skip 守卫：白名单 2 条绿；名单外 skip / todo 红；skipped>0 但解析不出名字红 | R9；「skipped 被当成通过」是 S2 已踩过的假绿形态 |
 | `npm run check` 整体不红 + 新增 ⑥ 段打印四个计数 | 收编不能把仓门禁搞红（同 S2 R7）；计数行是「扫了没扫」的唯一现场证据 |
 | 验收类用例**不落 `*.test.mjs`**：需要 spawn `check-all` 或改全仓状态的用例，写成 plan 收尾任务的命令清单，输出贴 `gate-record.md` | 落进 `*.test.mjs` 会被 ② 段 `**/*.test.mjs` 收进 → 每轮 self-run `check-all` 递归、时长翻倍（Q11） |

@@ -120,7 +120,7 @@
 | H42 | `disposeCardFindings`（`spec:126`）/ PRD `:416` C-08 / 锚点7 | 名单外卡 finding → `blockers` | 负 | 单元 | 常驻 | P0 |
 | H43 | 未到期态（`spec:126`）/ Q9（`spec:208`）/ 锚点7 | 名单内 + `landed` 默认 `EXPIRY_LANDED=false` → `warnings`、`blockers` 空 | 边界 | 单元 | 常驻 | P0 |
 | H44 | 到期注入签名（`spec:126`）/ Q9（`spec:208`）/ PRD `:416` 事件型 / 锚点7 | 名单内 + 注入 `{ landed: true }` → `blockers`、`warnings` 空；调用前后 `EXPIRY_LANDED` 同值 | 边界 | 单元 | 常驻 | P1 |
-| H45 | 豁免窗口状态行模板（`spec:128`，含「**卡面**」限定词）/ Q20（`spec:219`）/ §11.6 D4（`spec:189`）/ 锚点7 | 常量值（`EXPIRY_EVENT` / `EXPIRY_LANDED`）+ `check` 按模板打印状态行（含「**卡面** findings n / 告警 w / 阻断 b」限定词 + 「（S1 未上线：非达标证据）」短语）；**n/w/b 取自 `disposeCardFindings([])` 返回值**，不写字面量 | 边界 | e2e | 验收 | P1 |
+| H45 | 豁免窗口状态行模板（`spec:128`，含「**卡面**」限定词）/ Q20（`spec:219`）/ §11.6 D4（`spec:189`）/ 锚点7 | 常量值（`EXPIRY_EVENT` / `EXPIRY_LANDED`）+ `check` 按模板打印状态行（含「**卡面** findings n / 告警 w / 阻断 b」限定词 + 「（S1 未上线：非达标证据）」短语）；**n/w/b 取自 `disposeCardFindings([])` 返回值**，不写字面量（**2026-10-31 日期注：旧短语句与 `landed=false` 已随接线失效，现行判据见 §5 的 H45 日期注**） | 边界 | e2e | 验收 | P1 |
 | H46 | skip 守卫单源与 TAP 解析（`spec:130`）/ Q19（`spec:218`，**只按名字、不比条数**）/ Q10（`spec:209`）/ R9（`spec:51`）/ 锚点6（`spec:242`） | TAP 内联正则解析 `ok N - <名> # SKIP …` 取名字；**解析集 ⊆** `SKIP_ALLOWLIST`（名单外名即红）；`# skipped > 0` 但解析出 0 个名字 → 判红（fail-closed）；spawn 的 env 删 `DW_RUNTIME_CHECK` | 正 | e2e | 验收 | P0 |
 | H47 | 红时文案（`spec:130`）/ Q10（`spec:209`）/ R9 / 锚点6 | 插一条名单外 `skip` 测试 → 红，输出含 `[测试] 名单外 skip：<用例名>` | 负 | e2e | 验收 | P0 |
 | H48 | 红时文案（`spec:130`）/ Q10（`spec:209`）/ R9「`# todo M` 同样核」/ 锚点6 | 插一条名单外 `todo` 测试 → 红，输出含 `[测试] 名单外 todo：<用例名>` | 负 | e2e | 验收 | P0 |
@@ -853,6 +853,8 @@
 - **不覆盖**：到期事件由 S4 首次重生成"置真"的动作（S4 落地，见 §5 第 2 条）；生产调用不传 `landed` 的形态（H43 覆盖）。
 
 #### H45 常量值 + `check` 按模板打印状态行（含「**卡面**」限定词、`EXPIRY_EVENT` / `EXPIRY_LANDED` 与「非达标证据」短语）
+
+> **2026-10-31 日期注（K-8/K-9 接线，现行判据）**：本用例 v1–v4 的期望**整体已被接线取代**——① `EXPIRY_LANDED` 已在 2026-10-31 置 `true`（S4 D7），`EXPIRY_LANDED === false` 与行首「只告警」不再成立；② 行末「（S1 未上线：非达标证据）」句已删除；③ `n/w/b` 改由 `cardPipeline.collectCardFindings()` 逐席实算后喂 `disposeCardFindings`（不再取 `disposeCardFindings([])` 的返回），**阻断非空 → `check` exit 1**。可执行承接 = `S4-TC-F07`（`tools/docgen/test/card-render.test.mjs`：判该行含 `EXPIRY_LANDED=true`）+ `tools/docgen/test/checkall.test.mjs`（实算零 findings / 坏卡映射到该席角色卡路径 / 旧句已删）。下方原文保留不动（历史）；现行口径见 `2026-10-27-s3-gate-wiring-design.md:130` 与本注。
 
 - **覆盖**：状态行模板（`spec:128`，含「**卡面** findings」限定词）/ Q20（`spec:219`）/ `EXPIRY_EVENT`（`spec:124`）/ `EXPIRY_LANDED`（`spec:125`）/ §11.6 D4（`spec:189`）/ 锚点7
 - **来源**：`spec:128` 定死模板：`[豁免窗口] 15 张角色卡只告警（到期 = S4 首次重生成，EXPIRY_EVENT=<值> / EXPIRY_LANDED=<值>）；**卡面** findings <n> / 告警 <w> / 阻断 <b>（S1 未上线：非达标证据）`，并明写两点：①「**`n/w/b` 取自 `disposeCardFindings([])` 的返回值**（本期真实运行 = 0/0/0，**不写字面量**）」；②「**『卡面』限定词必须保留**——它与 ⑥ 段的 `findings`（产物问题数）是两个量，同一次输出里不得互相否定」（Q20 `spec:219` / 第 3 轮卡 Q-3-RD3：不加限定词会被读成「产物 0 问题」）。v1 把计数写字面量并逐字锁死 → S1 上线后必说谎（第 1 轮卡 Q-1-BE5 / Q-1-AI4）；v2 只锁模板与两常量；v3 补「n/w/b = 真实返回」；**v4 补「卡面」限定词**。
