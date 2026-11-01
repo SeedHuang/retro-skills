@@ -26,7 +26,7 @@
 | **同族** | 同族已有 S4 卡面渲染（`renderCard` + `agent-card.md.tpl` + `gate` 比对）与 S1 文本判据校验器（`scripts/check-observable.mjs`，只扫 `rules/` + `skills/`）。本块**沿用同一套形态**：数据层常量 + 模板占位符 + `gate` 比对 + `node --test` 断言，不另造范式。 |
 | **边界** | 只改卡面与其数据层（`tools/docgen/card-model/vocab/**`、`templates/**`、`components/renderCard.mjs`、`components/cardFaceIds.mjs`、`test/**`、`agents/*.md`、`docs/agents/**`）。**不碰**：`predicates` 改写与 `validatePredicates`（S3）、校验器扩到卡面文本面（S3）、档位枚举 / 死路径串（C-3 归 S6）、`tools/docgen/policy/**`（S6 已签，零改动）、`rules/` 与 `skills/` 正文（首日不红的前提）。 |
 | **验收** | ① `node --test tools/docgen/test/s2-card-rewrite.test.mjs` → 76 条全绿；② `node tools/docgen/cli.mjs gate` → `baseline N/N` 且 15 卡 disk == render；③ `npm run check` 末行 `check 全部通过` 且 `[observable]` 未豁免命中仍 0；④ `node scripts/scope-sweep.mjs --check` exit 0（R8）；⑤ V-11 三席复测过判据（`L_after ≤ ⌊L_before×0.5⌋` 且净减 ≥ 1）。 |
-| **影响面** | 新建 **5** 个文件（`vocab/card-contract.mjs` / `vocab/object-names.mjs` / `components/cardFaceIds.mjs`（**D19**）/ `test/s2-card-rewrite.test.mjs` / `test/support/card-fixtures.mjs`）+ 修改 **11** 个（模板 / `renderCard.mjs` / `validateCardModel.mjs` / `card-model/index.mjs`（D19 去掉多导出）/ `card-render.test.mjs` / `evidence-reader.test.mjs` / `vocab/landings.mjs` / `baseline.json` + **D17 增量 4 个**：`execution-matrix/criteria.md` / `execution-matrix/check-agent.mjs` / `execution-matrix/check-agent.test.mjs` / `test/pilot-render.test.mjs`）+ 15 张 `agents/*.md` 重生成 + `docs/agents/**` 重生成 + 2 处只加注（S4 spec 的 C-7 块、卡面契约 PRD 的日期注，**落文末附录 C**，不动既有正文行号）。 |
+| **影响面** | 新建 **5** 个文件（`vocab/card-contract.mjs` / `vocab/object-names.mjs` / `components/cardFaceIds.mjs`（**D19**）/ `test/s2-card-rewrite.test.mjs` / `test/support/card-fixtures.mjs`）+ 修改 **11** 个（模板 / `renderCard.mjs` / `validateCardModel.mjs` / `card-model/index.mjs`（D19 去掉多导出）/ `card-render.test.mjs` / `evidence-reader.test.mjs` / `vocab/landings.mjs` / `baseline.json` + **D17 增量 4 个**：`execution-matrix/criteria.md` / `execution-matrix/check-agent.mjs` / `execution-matrix/check-agent.test.mjs` / `test/pilot-render.test.mjs`）+ 15 张 `agents/*.md` 重生成 + `docs/agents/**` 重生成 + **`tools/docgen/fixtures/*.evidence.json` ×16**（`draft→replace` 的必然留痕，D11 派生面）+ 2 处只加注（S4 spec 的 C-7 块、卡面契约 PRD 的日期注，**落文末附录 C**，不动既有正文行号）。另有 1 份交接件 `docs/handoffs/2026-11-01-s2-impl.md`（文档纪律产物，非本块交付面）。 |
 
 **全局联动四问**：
 
@@ -52,7 +52,7 @@
 9. **构造不落盘、必还原**：一切「必红构造」只在内存或 `mkdtemp` 副本上做；每条构造后必须还原并断言回到基线（防「构造失效 → 假绿」）。
 10. **测试不自递归**：用例不得执行 `npm run check` / `check-all.mjs`；只允许单跑 `node scripts/check-observable.mjs` / `node tools/docgen/cli.mjs <子命令>` / `node scripts/scope-sweep.mjs --check` / `node --test <单文件>`。
 11. **「没改」用 sha 内容锚**：断「工作区干净」在脏树下立跑即红 → 一律断「指定文件内容 sha 不变」（`S2-TC-E09` / `I06`）。
-12. **`S2_BASE` 缺失降级为 `HEAD`** 并打 `t.diagnostic`（不得 `t.skip`、不得 fail-closed）；取值命令 `git log -1 --format=%H -- docs/superpowers/specs/2026-11-01-s2-card-rewrite-design.md`。
+12. **`S2_BASE` 缺失降级为「spec 最近一次提交；若等于 `HEAD` 则取父提交」**（D21）并打 `t.diagnostic`（不得 `t.skip`、不得 fail-closed）；取值命令 `git log -1 --format=%H -- docs/superpowers/specs/2026-11-01-s2-card-rewrite-design.md` + `git rev-parse HEAD`。
 13. **R8 回扫只认裸命令**：`node scripts/scope-sweep.mjs --check`（**禁用** `npm run doc:sweep -- --check`：PowerShell + npm 10.9 吞掉 `--` 后参数、恒 exit 0 = 假绿）。
 14. **零接触**：`tools/docgen/policy/**` 一字不动；`rules/` 与 `skills/` 正文零改动（首日不红 = ⑦ 段 `[observable]` 命中仍 0）。
 15. **门禁基线不钉死**：本 plan 落盘前实跑 = `# tests 1244` / `# pass 1242` / `# fail 0` / `# skipped 2`、`baseline 38/38`、`0 findings`、`④ markdown 通过（358 文件 / 1572 表）`、`[observable] 107 扫描 / 0 命中 / 6 豁免 / 0 stale`。每加一个文件 / 一张表，数字按实际漂移，**不钉死**。
@@ -80,10 +80,10 @@
 | `tools/docgen/test/pilot-render.test.mjs` | 修改（**D17 连带**） | 「一定会表 5 行」改 bullet 条数；「卡面含共享 must id」改「含该共享句的渲染文案」 |
 | `scripts/check-before-after.mjs` | 新建（**D9 载体**） | 「不得先改后记」的可跑判据：扫 `agents/*.md` 命中「已代为」/「已代删」即 exit 1（`S2-TC-H06` / `H07` 的 `carriers` 面） |
 | `agents/<seat>.md` × 15 | 重生成 | 两步写盘（`draft` → 确认 → `replace --yes`） |
-| `docs/agents/**` | 重生成 | `generate --readme --apply` |
-| `tools/docgen/baseline.json` | 修改 | 15 卡重生成后 `baseline --write` |
+| `docs/agents/**` | 重生成 | `generate --readme --apply`（**若投影面无变化则零改动**：验收看 `generate` exit 0 + `gate` 绿，不要求文件字节变化） |
+| `tools/docgen/baseline.json` | 修改 | 15 卡重生成后 `baseline --write`（**清单按路径派生，路径未变则零改动**：验收看 `gate` 首行 `baseline N/N`，不要求文件变化） |
 | `docs/superpowers/specs/2026-10-29-agent-card-s4-render-design.md` | 修改（只加） | C-7：加「现行判据块 + 日期注」，原文一字不改 |
-| `docs/prd/20261026205821-agent-card-contract.md` | 修改（只加注） | §3.4 行末加日期注「实现唯一源 = `card-contract.mjs`，原文保留不改」 |
+| `docs/prd/20261026205821-agent-card-contract.md` | 修改（只加注） | **文末**新增「附录 C 日期注」：「实现唯一源 = `card-contract.mjs`，§3.4 原文保留不改」（**不插正文行内**：插在 §3.4 会让其后全部行号位移，撞 `S1-TC-A04/A05/I04`） |
 
 **接口（唯一契约）**：
 
@@ -130,7 +130,7 @@ cardFaceIds.mjs     cardFaceIds(card, env) → string[]（空 = 过）          
 ## Task 3：模板占位符
 
 - **Consumes:** Task 1
-- [ ] `agent-card.md.tpl`：`{{MUST_TABLE}}` → `{{MUST_BULLETS}}`、`{{NEVER_TABLE}}` → `{{NEVER_BULLETS}}`；在「一定会」段末加 `{{TRISTATE}}`、在「边界」段加 `{{PRODUCT_NAMES}}`、在「输出格式」段加 `{{FORMAT_CHECKS}}`。
+- [ ] `agent-card.md.tpl`：`{{MUST_TABLE}}` → `{{MUST_BULLETS}}`、`{{NEVER_TABLE}}` → `{{NEVER_BULLETS}}`；在「一定会」段末加 `{{TRISTATE}}`、在「输出格式」段末加 `{{PRODUCT_NAMES}}`（**不能进「边界」段**：`S6-TC-F02` 要求「卡面边界节 == `renderBoundary(席)`」，多一行即失配）、在「输出格式」段加 `{{FORMAT_CHECKS}}`。
 - [ ] 模板**不得**出现任何契约字面（`脚本核对` / `AI 判定` / `人工判定` / `hit` / `miss` / `na` / `reason` / `废卡`）。
 - [ ] 未填槽必须抛 `MissingSlot`（沿用 `cardTemplate.mjs` 既有行为，不改它的实现）。
 - **验收**：`Select-String -Path tools/docgen/templates/agent-card.md.tpl -Pattern 'MUST_TABLE|NEVER_TABLE'` → 0 命中；`-Pattern '脚本核对|AI 判定|人工判定|废卡'` → 0 命中
@@ -169,7 +169,7 @@ cardFaceIds.mjs     cardFaceIds(card, env) → string[]（空 = 过）          
 - [ ] 新建 `scripts/check-before-after.mjs`（D9 载体）：扫描文本命中「已代为」/「已代删」即 exit 1；`H06` 的 `carriers ≥ 1` 指的就是它（`rules/` 与 `skills/` 正文零改动，故该判据只能落在 `scripts/`）。
 - [ ] 新建 `tools/docgen/test/s2-card-rewrite.test.mjs`，内含 76 个 `test('S2-TC-<ID> …')` 块 + **K 组 3 条（D17）**，逐条按 testcase 的「步骤 / 判据」列实现；四类构造（`D02` / `E06` / `F03` / `F04`）走子进程。
 - [ ] 三类常驻夹具（宾语≠落点 / 两行同值 / 共享句只 1 席渲染）各至少一条「必红构造」+ 还原断言。
-- [ ] `S2_BASE` 缺失 → 降级 `HEAD` + `t.diagnostic`（不 `t.skip`）。
+- [ ] `S2_BASE` 缺失 → 降级为「spec 最近一次提交；若等于 `HEAD` 则取父提交」+ `t.diagnostic`（不 `t.skip`；见约束 12 / D21）。
 - **验收**：四个测试文件 `node --check` 全过；`node --test tools/docgen/test/s2-card-rewrite.test.mjs` 能跑出 `# tests 79`（**本步只断「文件可加载 + 79 个 test 块就位」，红绿不在本步**——多数用例前置是「15 卡已重生成」（Task 8）与「C-7 / baseline 在位」（Task 9 / 10）；全绿门槛在 Task 10）
 - **交付物**：3 个改动测试文件（`card-render` / `evidence-reader` / `pilot-render`）+ 1 个新增 support + 1 个新增测试文件。
 
@@ -189,7 +189,7 @@ cardFaceIds.mjs     cardFaceIds(card, env) → string[]（空 = 过）          
 - [ ] `node tools/docgen/cli.mjs generate --readme --apply` 重生成 `docs/agents/**`。
 - [ ] 逐卡核 `disk === renderCard`（15/15 逐字节相等）；核 15 卡 `{{` 计数 = 0。
 - **验收**：`node tools/docgen/cli.mjs generate` → exit 0 且输出 `baseline N/N`、无 `Mismatch`；`Select-String -Path agents\*.md -Pattern '\{\{'` → 0 命中；`node --test tools/docgen/test/card-render.test.mjs` 与 `node --test tools/docgen/test/evidence-reader.test.mjs` → **全绿**（旧断言改造后的收口点）；`s2-card-rewrite.test.mjs` 的 **A–G 组 + H03–H07** 绿（I 组还缺 Task 10 的 C-7；H01/H02 是执行型、产出在 Task 11）
-- **交付物**：15 张 `agents/*.md` + `docs/agents/**` 全量重生成。
+- **交付物**：15 张 `agents/*.md` + `docs/agents/**` 重生成（**投影面无变化则零改动**：验收看 `generate` exit 0 + `gate` 无 `Mismatch`）。
 
 ## Task 9：`baseline --write`
 
@@ -197,13 +197,13 @@ cardFaceIds.mjs     cardFaceIds(card, env) → string[]（空 = 过）          
 - [ ] 跑 `node tools/docgen/cli.mjs baseline --write` 重记 `tools/docgen/baseline.json`；条数 = rule 清单 + agent 清单之和（派生，不写死）。
 - [ ] 审计抽 3 席核 disk ↔ render 一致。
 - **验收**：`node tools/docgen/cli.mjs gate` → `baseline N/N`，N = 两清单之和；`node --test tools/docgen/test/cli-gate.test.mjs` → 全绿
-- **交付物**：1 个改动文件（`baseline.json`）。
+- **交付物**：`tools/docgen/baseline.json`（**清单按路径派生，路径未变则零改动**：验收看 `gate` 首行 `baseline N/N`）。
 
 ## Task 10：C-7 只加块 + PRD 日期注 + 首日不红复核
 
 - **Consumes:** Task 8
 - [ ] `docs/superpowers/specs/2026-10-29-agent-card-s4-render-design.md`：**只加**「现行判据块 + 日期注」，原文一字不改；删掉该块即应用例 `I02` 变红。
-- [ ] `docs/prd/20261026205821-agent-card-contract.md` §3.4 行末加日期注（实现唯一源 = `tools/docgen/card-model/vocab/card-contract.mjs`，原文保留）。
+- [ ] `docs/prd/20261026205821-agent-card-contract.md` **文末**新增「附录 C 日期注」（实现唯一源 = `tools/docgen/card-model/vocab/card-contract.mjs`，§3.4 原文保留；**不插正文行内**——插进去会把其后行号整体位移，撞 `S1-TC-A04/A05/I04`）。
 - [ ] 核 `rules/` 与 `skills/` 正文零改动：`node scripts/check-observable.mjs --check` → `check-observable ok` 且命中仍 0。
 - [ ] `npm run check` 全绿；`node scripts/scope-sweep.mjs --check` exit 0。
 - **验收**：`npm run check` 末行 `check 全部通过`；`node scripts/check-observable.mjs --check` → `check-observable ok`；`node --test tools/docgen/test/s2-card-rewrite.test.mjs` → `# fail 0`，**除 `H01` / `H02` 外全绿**（这两条是执行型，产出在 Task 11；79 条全绿的最终门槛在 Task 11）

@@ -787,9 +787,13 @@ test('S2-TC-G04 第二实现点即红', () => {
 const s2Base = (t) => {
   const env = (process.env.S2_BASE || '').trim()
   if (env) return env
-  const h = execFileSync('git', ['log', '-1', '--format=%H', '--', 'docs/superpowers/specs/2026-11-01-s2-card-rewrite-design.md'], { cwd: REPO, encoding: 'utf8' }).trim()
-  if (t) t.diagnostic('S2_BASE 未注入：降级为 spec 最近一次提交的 HEAD 锚')
-  return h
+  const h = execFileSync('git', ['log', '-1', '--format=%H', '--', SPEC_PATH], { cwd: REPO, encoding: 'utf8' }).trim()
+  // 本批已提交时「spec 最近一次提交」就是本批自身 → `base..HEAD` 恒空，G05 的提交面与 I01 的 `git diff base` 都看不到东西。
+  // 故锚到它的父提交（= 本批**改前**状态），语义仍是「改前基线」（testcase 常量 14 的「降级锚」）。
+  const head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: REPO, encoding: 'utf8' }).trim()
+  const base = h === head ? execFileSync('git', ['rev-parse', 'HEAD^'], { cwd: REPO, encoding: 'utf8' }).trim() : h
+  if (t) t.diagnostic(`S2_BASE 未注入：降级为「spec 最近一次提交${h === head ? '的父提交（本批已提交）' : ''}」`)
+  return base
 }
 test('S2-TC-G05 一次性全改 + 一次提交', (t) => {
   const base = s2Base(t)
@@ -991,13 +995,30 @@ test('S2-TC-I05 原文未改 + 注在位（语义同义交审计）', (t) => {
   t.diagnostic('语义同义性（PRD 原句 = 常量的意思）不进本用例：由审计抽核并记入 gate-record（执行型）')
 })
 
+// 签字载体白名单（D20）：`gate-record.md` 是门行账本（R1/R3 要求每过一门落一行），不是 `skills/` 正文；
+// I06 的判据对象是「正文零改动」，故按 blob 逐键比时豁免它（其余 skills/rules 文件逐字节比）
+const SIGNATURE_LEDGER = 'skills/dev-workflow/references/gate-record.md'
+const relOf = (p) => p.slice(REPO.length + 1).split('\\').join('/')
+const blobBase = (base) => {
+  const out = new Map()
+  for (const l of execFileSync('git', ['ls-tree', '-r', base, '--', 'rules', 'skills'], { cwd: REPO, encoding: 'utf8' }).trim().split(/\r?\n/).filter(Boolean)) {
+    const [meta, path] = l.split('\t')
+    const [, type, sha] = meta.split(' ')
+    if (type === 'blob') out.set(path, sha)
+  }
+  return out
+}
+const blobNow = (rel) => execFileSync('git', ['hash-object', rel], { cwd: REPO, encoding: 'utf8' }).trim()
+
 test('S2-TC-I06 rules/skills 零改动且 observable hits 仍 0', (t) => {
-  const base = s2Base(t)
-  const tree = execFileSync('git', ['ls-tree', '-r', base, '--', 'rules', 'skills'], { cwd: REPO, encoding: 'utf8' })
-    .trim().split(/\r?\n/).filter(Boolean).map((l) => l.split('\t')[1]).filter((p) => /\.(mjs|md|json|tpl)$/.test(p))
-  const now = [...walkFiles(join(REPO, 'rules')), ...walkFiles(join(REPO, 'skills'))]
-    .map((p) => p.slice(REPO.length + 1).split('\\').join('/')).sort()
-  assert.deepEqual(now, tree.sort(), 'rules/ 与 skills/ 文件集必须逐键相同（增删都算改动）')
+  const base = blobBase(s2Base(t))
+  const nowFiles = [...walkFiles(join(REPO, 'rules')), ...walkFiles(join(REPO, 'skills'))].map(relOf)
+  const changed = nowFiles.filter((rel) => rel !== SIGNATURE_LEDGER && base.get(rel) !== blobNow(rel))
+  const missing = [...base.keys()].filter((rel) => rel !== SIGNATURE_LEDGER && !nowFiles.includes(rel))
+  assert.deepEqual(changed, [], `rules/ 与 skills/ 正文不得改动（除签字载体 ${SIGNATURE_LEDGER}）：${changed.join(', ')}`)
+  assert.deepEqual(missing, [], `rules/ 与 skills/ 不得删文件：${missing.join(', ')}`)
+  assert.ok(nowFiles.length >= base.size, '不得靠删文件凑绿')
+  t.diagnostic('D20 白名单：gate-record.md 的 blob 允许变（门行账本，非正文）；其余文件逐 blob 比对')
   const r = runNode(['scripts/check-observable.mjs', '--check', '--json'])
   const json = parseJsonOut(r.out)
   assert.equal(json.hits.length, 0)
