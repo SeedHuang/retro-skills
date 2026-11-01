@@ -268,7 +268,7 @@
 
 | 码 | 判据 |
 |---|---|
-| `SubjectiveLabel` | label 命中 `tools/docgen/card-model/vocab/subjective-terms.mjs`（起步词：自省 / 客观 / 诚实 / 宽松 / 严格） |
+| `SubjectiveLabel` | label 命中 `tools/docgen/card-model/vocab/subjective-terms.mjs`（起步词：自省 / 客观 / 诚实 / 宽松 / 严格）（2026-10-31 注：词表自本日起以 `tools/quality/observable-terms.json` 为唯一源，`subjective-terms.mjs` 降为派生；本行 5 词为历史起步锚，原文保留不改） |
 | `MissingSubject` | 条目无 `subject`，或 label 不是「subject + 谓词」派生 |
 | `DuplicateCheckItem` | 同一 `subject + criterion` 出现两次 |
 | `CrossSubjectSharedItem` | 同一 checkItem id 被两个不同 `subject` 引用（即「主语不同不许共用」） |

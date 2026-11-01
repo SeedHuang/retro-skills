@@ -14,6 +14,7 @@ export const BASELINE_RULES = [
   'rules/skill-assets-convention.md', 'rules/skill-authoring-convention.md',
   'rules/spec-testcase-gate.md', 'rules/styled-component-file.md',
   'rules/ts-expect-error.md', 'rules/vitest-queued-alternative.md',
+  'rules/observable-criteria.md',
 ];
 
 // 单席角色卡路径的唯一派生式（`agentPaths()` 与 `collectCardFindings` 的 `finding.file` 共用；

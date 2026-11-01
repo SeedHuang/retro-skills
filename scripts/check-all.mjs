@@ -423,6 +423,26 @@ if (bypass) {
   console.log(`[豁免窗口] ${EXEMPT_CARDS.length} 张角色卡（到期 = S4 首次重生成，EXPIRY_EVENT=${EXPIRY_EVENT} / EXPIRY_LANDED=${EXPIRY_LANDED}）；卡面 findings ${cardFindings.length} / 告警 ${disposed.warnings.length} / 阻断 ${disposed.blockers.length}`)
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// ⑦ 可观察判据（S1）：跑 `scripts/check-observable.mjs --check --json`；失败即 check 非 0。
+// 计数单源 = 子命令的 `--json`（本段不重算、不解析文本）；本段**不走旁路开关**
+// （旁路只跳 ⑥，见上方 `:51-56`；不得把本段接进旁路分支）。
+// ─────────────────────────────────────────────────────────────────────────────
+const obsRun = spawnSync(process.execPath, [join(root, 'scripts', 'check-observable.mjs'), '--check', '--json'], { cwd: root, encoding: 'utf8' })
+const obsLine = (obsRun.stdout || '').split(/\r?\n/)[0]
+let obsJson = null
+try { obsJson = JSON.parse(obsLine) } catch { obsJson = null }
+if (!obsJson || obsRun.status !== 0 || obsJson.ok !== true) failed = true
+if (obsJson) {
+  console.log(`[observable] 扫描 ${obsJson.scanned.length} 个 .md / 未豁免命中 ${obsJson.hits.length} 行 / 已豁免 ${obsJson.exemptedLines} 行 / stale ${obsJson.stale.length} 条`)
+  for (const h of obsJson.hits) console.error(`[observable] ${h.path}:${h.line}  ${h.terms.join(',')}`)
+  // 判定 5「规则文档复制词表」的原因行：`--json` 只在非空时带 `copyProblems`（保 C16 的 5 键形态），
+  // 故这里用 `?? []` 兜住空态；不打这行的话，唯一红点会只剩「未豁免命中 0 行」+ `check 未通过`，看不到原因。
+  for (const c of obsJson.copyProblems ?? []) console.error(`[observable][copy] ${c}`)
+} else {
+  console.error('[observable] --json 首行不可解析（校验器前置不过？）')
+}
+
 if (failed) {
   console.error('check 未通过')
   process.exitCode = 1          // 不要 process.exit(1)：管道/CI 下会截断 stdout，正好隐藏要报的 findings

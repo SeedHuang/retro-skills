@@ -231,7 +231,8 @@ export function withRepoCopy(fn) {
   const dst = mkdtempSync(join(tmpdir(), 'dw-copy-'));
   try {
     // `docs/agents/**` 也是 gate 的比对面（S4 spec §7③）：副本缺它会把正常态误报 DanglingBaselineEntry
-    for (const rel of ['tools/docgen', 'tools/execution-matrix', 'rules', 'agents', 'docs/agents']) {
+    // `tools/quality/**` 是 S1 词表单源（`card-model/vocab/*` 在 import 时读它）：副本缺它会 ENOENT
+    for (const rel of ['tools/docgen', 'tools/execution-matrix', 'tools/quality', 'rules', 'agents', 'docs/agents']) {
       if (!existsSync(join(ROOT, rel))) continue;
       cpSync(join(ROOT, rel), join(dst, rel), { recursive: true });
     }

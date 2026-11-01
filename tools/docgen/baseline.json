@@ -21,6 +21,7 @@
   "rules/styled-component-file.md",
   "rules/ts-expect-error.md",
   "rules/vitest-queued-alternative.md",
+  "rules/observable-criteria.md",
   "agents/detective-observer.md",
   "agents/evidence-reader.md",
   "agents/reviewer-actuary.md",

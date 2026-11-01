@@ -1,0 +1,70 @@
+{
+  "terms": ["自省", "客观", "诚实", "宽松", "严格", "清晰", "准确", "显著", "良好"],
+  "criterionTerms": ["处置", "依据", "充分", "合理", "及时", "适当"],
+  "markers": [
+    { "kind": "compare", "pattern": "(>=|<=|==|===|!=|≥|≤|＝|>|<)\\s*[^，。；\\s]+" },
+    { "kind": "pathline", "pattern": "(path:line|[A-Za-z0-9_./\\\\-]+\\.(md|mjs|js|json|ts|tsx|yml|yaml|tpl):\\d+)" },
+    { "kind": "exit", "pattern": "(exit|退出码|退出状态)\\s*(code|码)?\\s*([=:：]|为|是)?\\s*[0-9]+" },
+    { "kind": "diff", "pattern": "diff\\s*(命令|--|输出|检查)" },
+    { "kind": "count", "pattern": "计数\\s*=\\s*[0-9]+" },
+    { "kind": "empty", "pattern": "(?<![不非假])(?<!要求)为空" },
+    { "kind": "nonempty", "pattern": "(?<![不非假])(?<!要求)非空" },
+    { "kind": "enum", "pattern": "枚举[：:]\\s*[A-Za-z0-9_]" }
+  ],
+  "samples": [
+    {
+      "term": "自省",
+      "positive": { "input": "每轮收尾必须写自省结论：三性验证逐条附 path:line；缺一条 == 不合格。", "expect": "pass" },
+      "negative": { "input": "每轮收尾要自省，想清楚有没有长期方案。", "expect": "fail" },
+      "residual": { "who": "reviewer-qa", "sample": 3 }
+    },
+    {
+      "term": "客观",
+      "positive": { "input": "评审必须客观：结论附 docs/reviews/x.md:12 逐条可追。", "expect": "pass" },
+      "negative": { "input": "评审要客观公正。", "expect": "fail" },
+      "residual": null
+    },
+    {
+      "term": "诚实",
+      "positive": { "input": "报告必须诚实：未覆盖项计数 = 3 条逐条列出。", "expect": "pass" },
+      "negative": { "input": "报告要诚实。", "expect": "fail" },
+      "residual": { "who": "reviewer-ai", "sample": 2 }
+    },
+    {
+      "term": "宽松",
+      "positive": { "input": "宽松放行：退出码 exit 0 即可通过。", "expect": "pass" },
+      "negative": { "input": "判据写得太宽松。", "expect": "fail" },
+      "residual": null
+    },
+    {
+      "term": "严格",
+      "positive": { "input": "严格判定：每条用例必须 exit 1 才算红。", "expect": "pass" },
+      "negative": { "input": "执行要严格。", "expect": "fail" },
+      "residual": null
+    },
+    {
+      "term": "清晰",
+      "positive": { "input": "输出要清晰：每行形如 枚举：hit/miss。", "expect": "pass" },
+      "negative": { "input": "文案要清晰易懂。", "expect": "fail" },
+      "residual": null
+    },
+    {
+      "term": "准确",
+      "positive": { "input": "计数要准确：计数 = 21 行逐条对账。", "expect": "pass" },
+      "negative": { "input": "数字要准确。", "expect": "fail" },
+      "residual": null
+    },
+    {
+      "term": "显著",
+      "positive": { "input": "差异必须显著：diff 输出逐行贴。", "expect": "pass" },
+      "negative": { "input": "提升要显著。", "expect": "fail" },
+      "residual": null
+    },
+    {
+      "term": "良好",
+      "positive": { "input": "状态良好：findings 为空。", "expect": "pass" },
+      "negative": { "input": "运行情况良好。", "expect": "fail" },
+      "residual": null
+    }
+  ]
+}

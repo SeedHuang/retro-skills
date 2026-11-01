@@ -16,7 +16,7 @@
 |---|---|---|
 | 常量 1 | 主观词 **9** 条（逐字；`完整` 已剔除） | `自省` / `客观` / `诚实` / `宽松` / `严格` / `清晰` / `准确` / `显著` / `良好`（spec §2 `:23`、§3 `:33`、D26 `:200`、Q22 `:235`） |
 | 常量 2 | 判据词 6 条（逐字） | `处置` / `依据` / `充分` / `合理` / `及时` / `适当`（spec §2 `:24`、§3 `:34`） |
-| 常量 3 | 标记 8 类（**已收窄**，逐字） | `compare`（含全角 `≥` `≤` `＝` 与 `>` `<`）/ `pathline`（只认 `path:line` 字面或「带扩展名 + `:行号`」）/ `exit`（`exit` `退出码` `退出状态` + 可选 `code`/`码` + 可选 `=`/`:`/`为`/`是` + 数字）/ `diff`（只认 `diff 命令` / `diff --` / `diff 输出` / `diff 检查`）/ `count`（`计数 = N`）/ `empty`（`(?<![不非假])为空`）/ `nonempty`（`(?<![不非假])非空`）/ `enum`（`枚举[：:]` 后必须至少 1 个字面量字符）（spec §3 `:36-43`、Q17 `:230` / Q18 `:231`、D2 `:183`） |
+| 常量 3 | 标记 8 类（**已收窄**，逐字） | `compare`（含全角 `≥` `≤` `＝` 与 `>` `<`）/ `pathline`（只认 `path:line` 字面或「带扩展名 + `:行号`」）/ `exit`（`exit` `退出码` `退出状态` + 可选 `code`/`码` + 可选 `=`/`:`/`为`/`是` + 数字）/ `diff`（只认 `diff 命令` / `diff --` / `diff 输出` / `diff 检查`）/ `count`（`计数 = N`）/ `empty`（`(?<![不非假])为空`）/ `nonempty`（`(?<![不非假])非空`）/ `enum`（`枚举[：:]` 后必须至少 1 个字面量字符）（spec §3 `:36-43`、Q17 `:230` / Q18 `:231`、D2 `:183`）（**2026-11-01 增量注**：实际守卫为 `empty` / `nonempty` = `(?<![不非假])(?<!要求)`、`enum` = `[A-Za-z0-9_]`；两处都是**收窄**以对齐本文件 `C19④` / `C22②`，本行原文保留，现行值以 `tools/quality/observable-terms.json` 为唯一源） |
 | 常量 4 | 禁止作 literal 的四词 + enum 形态 | 裸 `=` / `出现` / `命令` / `词表`；`enum` 的 `pattern` 只写 `枚举[：:]`（冒号后无字面量要求）也算红（spec §3 C-3 `:60`） |
 | 常量 5 | 清单 / 豁免 / 校验器 / 规则文档 路径 | `tools/quality/observable-terms.json` / `tools/quality/observable-exempt.json` / `scripts/check-observable.mjs` / `rules/observable-criteria.md`（spec §1 `:11-14`） |
 | 常量 6 | 退出码与末行 | `0` = `check-observable ok`；`1` = `check-observable fail（命中 N 行 / stale M 条）`；`2` = `check-observable error（<断言号>: <原因>）`，断言号含 **P-1～P-4**；**任何未捕获异常 → exit 2**（spec §4 `:94`） |
@@ -26,7 +26,7 @@
 | 常量 10 | 判定纯函数（单点） | `export function evaluateText(text, { terms, markers })` → `{ verdict: 'pass' \| 'fail', matched: [{ term, index }] }`（`matched` **不去重**）；CLI 与 P-3 共用（spec §4 `:92`、D14 `:195`） |
 | 常量 11 | 豁免违规归类 | 结构错（E-1 / E-3 / E-4 / E-5）→ **P-4 → exit 2**；stale（`contains` 0 命中）→ **exit 1**（spec §4 `:90`、§5 `:108-112`、D9 `:190`） |
 | 常量 12 | ⑦ 段首行与计数单源 | `[observable] 扫描 <N> 个 .md / 未豁免命中 <H> 行 / 已豁免 <E> 行 / stale <S> 条`；数字单源 = `--json`（`N = scanned.length`、`H = hits.length`、`E = exemptedLines`、`S = stale.length`）；**不可经 `CHECK_BYPASS` 旁路**（spec §7 `:128-130`、D15 `:196`、D25 `:208`） |
-| 常量 13 | 遍历口径（P-1） | **两次独立遍历**数相等；`rules/` 与 `skills/` 各 ≥1；仓根总数 = 基线 **106**；`.md` / `.MD` 大小写不敏感；symlink / junction 跳过；扫描根不存在或不可读 → exit 2（spec §4 `:87`、D13 `:194`、Q10 `:223`） |
+| 常量 13 | 遍历口径（P-1） | **两次独立遍历**数相等；`rules/` 与 `skills/` 各 ≥1；仓根总数 = **两态允许 {106, 107}**（`rules/observable-criteria.md` 落地前 106、落地后 107；**既不在集合内才红**）；`.md` / `.MD` 大小写不敏感；symlink / junction 跳过；扫描根不存在或不可读 → exit 2（spec §4 `:87`、D13 `:194`、Q10 `:223`） |
 | 常量 14 | 分诊表落点与表头 | `docs/reports/2026-10-31-observable-s1-triage.md`，表头 6 列 = `path:line` / `命中词` / `块内 marker（有/无）` / `分类（改文案 / 已合格 / 合法保留）` / `处置` / `豁免 reason`；对账 `M + P + L = 21`、`exemptedLines = L`、`stale = 0`；**合法保留只许术语引用 / 词表自身，预期 `L ≤ 8`**（spec §9.3 `:166-176`、Q14 `:227`（**仍写 77，见 §10 冲突 4**）、Q24 `:237`） |
 | 常量 15 | `--json` 形态（**新口径**） | `{ scanned: string[], hits: [{ path, line, terms: [] }], exemptedLines, stale: [...], ok }`（spec §4 `:78`、D19 `:202`、D21 `:204`、Q5 `:218`） |
 | 常量 16 | 自动测试禁自递归 | 用例**不得** spawn `npm run check` / `check-all.mjs`（会与 ② 段 `node --test '**/*.test.mjs'` 自递归）；只允许：单跑 `node scripts/check-observable.mjs`、源码静态断、`node --test <单文件>`（spec §11 Q21 `:234`） |
@@ -47,7 +47,7 @@
 | C-4（每词一条 samples + expect 值 + `residual` 键必在） | §3 `:61`、D10 `:191` | A09（正）/ A10（负） | 正 · 负 |
 | C-5（`residual` 可为 null；非 null 时 who / sample；空壳红） | §3 `:62`、D10 `:191` | A12（正）/ A13（负） | 正 · 负 |
 | C-6（无重复、无空串） | §3 `:63` | A14（正）/ A15（负） | 正 · 负 |
-| P-1（两次独立遍历相等 + 各目录 ≥1 + 仓根 106 + 不存在/不可读 → exit 2） | §4 `:87`、D13 `:194`、Q10 `:223` | B01（正）/ B02（负）/ B12（负） | 正 · 负 |
+| P-1（两次独立遍历相等 + 各目录 ≥1 + 仓根 {106, 107} + 不存在/不可读 → exit 2） | §4 `:87`、D13 `:194`、Q10 `:223` | B01（正）/ B02（负）/ B12（负） | 正 · 负 |
 | P-2（JSON 可解析 + 三表非空 + samples 全覆盖） | §4 `:88` | B04（正）/ B05（负）/ B06（负）/ B07（负） | 正 · 负 |
 | P-3（正反例双向：verdict + `matched` 含该 term） | §4 `:89`、D14 `:195` | B08（正）/ B09（负）/ B10（边界）/ B13（负） | 正 · 负 · 边界 |
 | P-4（豁免清单结构合法；结构错 → exit 2） | §4 `:90`、D9 `:190`、§5 `:108-112` | D01（正）/ D02（负）/ D06（负）/ D09（负）/ D11（负） | 正 · 负 |
@@ -105,7 +105,7 @@
 
 | ID | 类型 | 覆盖 | 前置 | 步骤 | 预期 | 判据 |
 |---|---|---|---|---|---|---|
-| OCR-S1-TC-B01 | 正 | §4 P-1 `:87`、D13 `:194`、Q10 `:223` | `rules/` 与 `skills/` 存在；测试内自备 Node 同口径遍历（跳过 symlink / junction，`.md` / `.MD` 均计） | ① `node scripts/check-observable.mjs --check --json` 取 `scanned`；② 用测试自己的 Node 遍历计同口径文件数（第二源）；③ 仓根再断「总数 = 106」；④ 临时根放 `a.MD` 与指向外部目录的 junction，`--check --json --root <tmp>` | ① `scanned` 是 **`string[]`**（`json.scanned.length`）且 = ②；③ 两支目录各 ≥1、总数 106；④ `.MD` 计入、junction 内文件不计入 | `assert(Array.isArray(json.scanned)); assert.strictEqual(json.scanned.length, nodeCount); assert.strictEqual(json.scanned.length, 106); assert(hasUpperMd === true); assert(junctionFilesCounted === 0)` |
+| OCR-S1-TC-B01 | 正 | §4 P-1 `:87`、D13 `:194`、Q10 `:223` | `rules/` 与 `skills/` 存在；测试内自备 Node 同口径遍历（跳过 symlink / junction，`.md` / `.MD` 均计） | ① `node scripts/check-observable.mjs --check --json` 取 `scanned`；② 用测试自己的 Node 遍历计同口径文件数（第二源）；③ 仓根再断「总数 ∈ {106, 107}」；④ 临时根放 `a.MD` 与指向外部目录的 junction，`--check --json --root <tmp>` | ① `scanned` 是 **`string[]`**（`json.scanned.length`）且 = ②；③ 两支目录各 ≥1、总数 ∈ {106, 107}；④ `.MD` 计入、junction 内文件不计入 | `assert(Array.isArray(json.scanned)); assert.strictEqual(json.scanned.length, nodeCount); assert([106, 107].includes(json.scanned.length)); assert(hasUpperMd === true); assert(junctionFilesCounted === 0)` |
 | OCR-S1-TC-B02 | 负 | §4 P-1 `:87` | 用 `mkdtemp` 造临时根：`rules/` 与 `skills/` 均存在但为空 | `node scripts/check-observable.mjs --check --root <tmp>` | exit 2；末行 `check-observable error（P-1: <原因>）`；stdout 无任何 `term=` 行 | `assert.strictEqual(status, 2); assert(/check-observable error（P-1/.test(lastLine)); assert(!/term=/.test(stdout))` |
 | OCR-S1-TC-B04 | 正 | §4 P-2 `:88` | 默认读仓根 `tools/quality/*.json`（不复制 JSON） | 跑 `node scripts/check-observable.mjs --check` | 前置过：输出不含 `error（P-2`；exit ∈ {0,1} | `assert(!/error（P-2/.test(stdout+stderr)); assert([0,1].includes(status))` |
 | OCR-S1-TC-B05 | 负 | §4 P-2 `:88` | 临时根持有两份坏副本（测试用 `mkdtemp` 写） | ① `--terms <截断的 JSON 副本>`（语法错：删掉末尾 `}` 与 `]`）；② `--terms <terms: [] 的副本>` | 两者各 exit 2；末行含 `P-2`（语法错也必须收敛成 exit 2，不得抛栈） | `assert.strictEqual(s1, 2); assert.strictEqual(s2, 2); assert(/error（P-2/.test(last1) && /error（P-2/.test(last2))` |
@@ -114,7 +114,7 @@
 | OCR-S1-TC-B08 | 正 | §4 P-3 `:89`、D14 `:195` | `scripts/check-observable.mjs` 导出 `evaluateText`（常量 10） | 测试 `import { evaluateText }`，对 9 条 samples 逐条**在内存**调用正例与反例 | 9/9 正例 `verdict === 'pass'` **且** `matched` 含该 `term`；9/9 反例 `verdict === 'fail'` 且 `matched` 含该 `term`；`matched` 不去重 | `assert(J.samples.every(s => evaluateText(s.positive.input,{terms,markers}).verdict==='pass' && evaluateText(s.positive.input,{terms,markers}).matched.some(m=>m.term===s.term) && evaluateText(s.negative.input,{terms,markers}).verdict==='fail' && evaluateText(s.negative.input,{terms,markers}).matched.some(m=>m.term===s.term)))` |
 | OCR-S1-TC-B09 | 负 | §4 P-3 `:89` | 临时根持有 `--terms` 副本 | 把 `自省` 的 `negative.input` 改成「每轮收尾必须写自省结论：三性验证附 path:line」（含 marker 的合格句），跑 `--terms <副本> --check` | exit 2；末行含 `P-3`（反例写成合格句 = 前置不过，不是命中红） | `assert.strictEqual(status, 2); assert(/error（P-3/.test(lastLine))` |
 | OCR-S1-TC-B10 | 边界 | §4 P-3 `:89`、Q21 `:234` | 同 B09 | ① 反例改成**不含该词**的句子（`三性验证逐条附 path:line`）——评分函数「无命中 = 合格」，与 `expect: fail` 冲突；② 连跑两次 `--check`，前后 `mkdtemp` 目录文件清单快照 | ① exit 2、末行含 `P-3`；② 前后清单逐字相等（P-3 在内存跑、不落盘） | `assert.strictEqual(s1, 2); assert.deepStrictEqual(listBefore, listAfter)` |
-| OCR-S1-TC-B12 | 负 | §4 P-1 `:87`、D13 `:194` | 临时根三种 fail-closed 形态 | ① `--root <不存在的目录>`；② 临时根原有两个子目录，跑一次计数后**删掉 `skills/`** 再跑；③ 临时根仅 1 个合法 `.md`（对照：前置应过） | ① exit 2（扫描根不存在 → 不可当 0 文件放行）；② exit 2、末行含 `P-1`（两次遍历数不等）；③ exit 0、`scanned.length === 1` | `assert.strictEqual(s1, 2); assert.strictEqual(s2, 2); assert(/error（P-1/.test(last2)); assert.strictEqual(s3, 0); assert.strictEqual(len3, 1)` |
+| OCR-S1-TC-B12 | 负 | §4 P-1 `:87`、D13 `:194` | 临时根三种 fail-closed 形态 | ① `--root <不存在的目录>`；② 临时根原有两个子目录，跑一次计数后**删掉 `skills/`** 再跑；③ 临时根仅 1 个合法 `.md`（对照：前置应过） | ① exit 2（扫描根不存在 → 不可当 0 文件放行）；② exit 2、末行含 `P-1`（两次遍历数不等）；③ exit 0、`scanned.length === 1`（**2026-11-01 增量注**：支 ③ 是 `--root` 例外口径的依据 —— spec P-1 的「各 ≥1」只在扫描仓根时强制，`--root` 指向非仓根时降为「两目录须存在 + 总数 ≥1」；两处已同批对齐） | `assert.strictEqual(s1, 2); assert.strictEqual(s2, 2); assert(/error（P-1/.test(last2)); assert.strictEqual(s3, 0); assert.strictEqual(len3, 1)` |
 | OCR-S1-TC-B13 | 负 | §4 P-3 `:89`（正例空转） | 临时根持有 `--terms` 副本 | 把 `自省` 的 `positive.input` 改成**不含该词**的句子（`三性验证逐条附 path:line`），跑 `--terms <副本> --check` | exit 2；末行含 `P-3`（正例 `matched` 不含该 term = 空转） | `assert.strictEqual(status, 2); assert(/error（P-3/.test(lastLine))` |
 
 ## 4 C 组：判定规则、判定窗口与标记形态
@@ -216,7 +216,7 @@
 | CQ-2 E-5 的 365 天到期 | **Q7** `:220` / D12 `:193` / E-5b `:113` | D12 改 `2026-01-05` → exit 0，并加**源码静态断言**（不含 365 天分支） | 无（S1 无到期用例，覆盖总表标「不适用」） |
 | CQ-3 `exit code 0` 算不算标记 | **Q8** `:221` / D11 `:192` | 常量 3 记 pattern；C13 四形态（含 `为` / `是`）全绿；C19 四反例（含裸 `枚举：`）全红 | 无 |
 | CQ-4 豁免结构错的退出码 | **Q9** `:222` / D9 `:190` / P-4 `:90` | 常量 11；D02 / D06 / D09 / D11 → exit 2（P-4）；D03 / D04 stale 仍 exit 1；覆盖总表 P-4 行含 D01 正例 | 无 |
-| CQ-5 P-1 在 `--root` / symlink / 大小写 | **Q10** `:223` / D13 `:194` | 常量 13；B01（两次遍历 + 各目录 ≥1 + 106 + `.MD` + junction）；B12 补三 fail-closed 构造 | 无 |
+| CQ-5 P-1 在 `--root` / symlink / 大小写 | **Q10** `:223` / D13 `:194` | 常量 13；B01（两次遍历 + 各目录 ≥1 + {106, 107} + `.MD` + junction）；B12 补三 fail-closed 构造 | 无 |
 | CQ-6 评分函数导出名 | **Q11** `:224` / D14 `:195` | 常量 10；B08 加「正反例 `matched` 均含该 term」；B13 补正例空转负例 | 无 |
 | CQ-7 ⑦ 首行 `H` 含不含已豁免 | **Q12** `:225` / D15 `:196` | 常量 12；E01 静态断源码 + 单跑；首行按 `未豁免命中 H 行 / 已豁免 E 行 / stale S 条` 断言 | 无 |
 | CQ-8「复制词表」机械判据 | **Q13** `:226` / D16 `:197` | E06（pattern 原文）/ E11（同行枚举）/ E10（单词面绿），全部**黑盒调 CLI** | 无 |

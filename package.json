@@ -7,7 +7,8 @@
     "doc:rename": "node scripts/doc-rename.mjs",
     "doc:migrate": "node scripts/doc-migrate-stamps.mjs",
     "doc:sweep": "node scripts/scope-sweep.mjs",
-    "gate:record": "node scripts/check-gate-record.mjs"
+    "gate:record": "node scripts/check-gate-record.mjs",
+    "check:observable": "node scripts/check-observable.mjs --check"
   },
   "engines": {
     "node": ">=22"

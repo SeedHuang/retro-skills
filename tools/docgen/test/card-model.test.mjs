@@ -346,13 +346,19 @@ test('S1-TC-A05 词表全成员对账 + 单位 / 程序词 / 指针词逐条必�
     assert.ok(w.length > 0, `PRD :${lineNo} 的 ${label} 不得切出空集（否则下面的 deepEqual 恒真）`);
     return w;
   };
-  // ① 词表全成员对账（成员、顺序逐字相等；长度也断，防「塞一个词改绿」）
-  const subWords = cutVocab(271, '起步词'); // 主观词：自省 / 客观 / 诚实 / 宽松 / 严格（S4 Task 4 行号 +1）
+  // ① 词表派生自唯一单源 JSON（`tools/quality/observable-terms.json`），两表交集空
+  //    （S1 `observable-criteria-rollout` 起词面单源迁到 JSON；本断言不再对 PRD 行逐字，改为「派生 + 子集」，
+  //     PRD `:271` / `:202` 的起步词原文保留、仍必须是当前词表的子集）
+  const OD = JSON.parse(readFileSync(join(REPO, 'tools/quality/observable-terms.json'), 'utf8'));
+  assert.deepEqual(ST.subjectiveTerms, OD.terms, `vocab/subjective-terms.mjs 必须派生自 observable-terms.json 的 terms，实得 ${ST.subjectiveTerms}`);
+  assert.deepEqual(CT.criterionTerms, OD.criterionTerms, `vocab/criterion-terms.mjs 必须派生自 observable-terms.json 的 criterionTerms，实得 ${CT.criterionTerms}`);
+  assert.deepEqual(ST.subjectiveTerms.filter((t) => CT.criterionTerms.includes(t)), [], 'terms 与 criterionTerms 的交集必须为空');
+  const subWords = cutVocab(271, '起步词'); // 主观词：自省 / 客观 / 诚实 / 宽松 / 严格（S4 Task 4 行号 +1；原文保留，现为该词表的子集）
   assert.equal(subWords.length, 5, `PRD :271 的起步主观词应为 5 个，实得 ${subWords.length}`);
-  assert.deepEqual(ST.subjectiveTerms, subWords, `vocab/subjective-terms.mjs 必须与 PRD :271 逐字相等，实得 ${ST.subjectiveTerms}`);
+  assert.ok(subWords.every((w) => ST.subjectiveTerms.includes(w)), `PRD :271 的 5 词必须仍是当前主观词表的子集，实得 ${subWords}`);
   const critWords = cutVocab(202, '起步 6 词'); // 判据词：处置 / 依据 / 充分 / 合理 / 及时 / 适当
   assert.equal(critWords.length, 6, `PRD :202 的起步判据词应为 6 个，实得 ${critWords.length}`);
-  assert.deepEqual(CT.criterionTerms, critWords, `vocab/criterion-terms.mjs 必须与 PRD :202 逐字相等，实得 ${CT.criterionTerms}`);
+  assert.deepEqual(CT.criterionTerms, critWords, `criterionTerms 必须与 PRD :202 逐字相等，实得 ${CT.criterionTerms}`);
   // ② InlineThreshold：7 个单位**从 spec §7 :194 原文切**（§0.3 的 `UNIT_KEY` / `THRESHOLD_UNITS`），缺 params 逐条必红
   assert.ok(THRESHOLD_UNITS.length === 7, `前置：spec :194 应切出 7 个单位，实得 ${THRESHOLD_UNITS.length}（${THRESHOLD_UNITS.join('/')}）`);
   assert.ok(THRESHOLD_UNITS.includes('次'), '前置：`次` 必须在该单位表内（否则探针错位）');

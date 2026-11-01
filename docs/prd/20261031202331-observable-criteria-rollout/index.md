@@ -113,7 +113,7 @@
 
 | 既有件 | 冲突点 | 处置（改 / 改引用 / 标历史保留） |
 |---|---|---|
-| `docs/prd/20261026205821-agent-card-contract.md:271`（起步 5 词锚） | D-04 扩到 10 词 | **改引用**：该行原文保留 + 加日期注「词表自 2026-10-31 起以 `tools/quality/observable-terms.json` 为唯一源」，并同步 `card-model.test.mjs:350-355` 的逐字断言改为「从 JSON 派生」 |
+| `docs/prd/20261026205821-agent-card-contract.md:271`（起步 5 词锚） | D-04 扩到 10 词 | **改引用**：该行原文保留 + 加日期注「词表自 2026-10-31 起以 `tools/quality/observable-terms.json` 为唯一源」，并同步 `card-model.test.mjs:350-355` 的逐字断言改为「从 JSON 派生」（2026-11-01 注：D-04 的「10 词」已改为定稿 **9 词**（`完整` 剔除），本行「扩到 10 词」为当时裁定，原文保留不改；词面以 JSON 为唯一源） |
 | `docs/prd/20261026205821-agent-card-contract.md:233`（三值 `hit`/`miss`/`na` + `reason` 各一行） | 本 PRD 早期稿写「一行中文」 | **本 PRD 遵从契约**（D-03 已改为「1 行解释 + 4 行常量」），契约原文不动 |
 | `docs/superpowers/specs/2026-10-29-agent-card-s4-render-design.md:127-131`（必渲染 `criterion` id / `landing` 字面值 / `requires` / 三行常量） | 卡面零 id + 删「前提：无」 | **C-7**：加「现行判据块 + 日期注」，原文一字不改；由 S2 同批落 |
 | `tools/docgen/test/card-render.test.mjs`（§0.3-8 的 ≥8 处） | 卡面零 id / 去英文字段名 | **改**：逐处换成 `expectedBullet` 逐字 + 保留负例判别力（S2） |
@@ -287,7 +287,7 @@ graph TD
 | D-01 | 卡面句式：短指令句（A）还是更口语（B，允许一句解释） | A（B 会滑向散文，违零散文） | `[已确认]` A（A-7，2026-10-31） |
 | D-02 | 「前提」为空时：删掉还是保留「前提：无」 | 删（15 卡全空，保留是噪音） | `[已确认]` 删（A-7） |
 | D-03 | 三态行放「一定会」段末还是「输出格式」段 | 段末（它约束的是 must 行的答法） | `[已确认]` 段末（A-7）。**形态 = 1 行中文解释 + `hit`/`miss`/`na`/`reason` 4 行常量**（与已签 `agent-card-contract:233` 对齐，不改成纯中文一行） |
-| D-04 | 主观词初始词表：沿用 5 词还是扩充 | 扩到 10 词，但新增须同批给正反例 | `[已确认]` 扩到 10 词（A-7）。**定稿词面** = 自省/客观/诚实/宽松/严格/清晰/完整/准确/显著/良好（`合理`/`充分` 归 `criterionTerms`）；词面以 `tools/quality/observable-terms.json` 为唯一单源；`agent-card-contract` PRD `:271` 的 5 词锚与 `card-model.test.mjs:350-355` 须同批改（R8 回扫） |
+| D-04 | 主观词初始词表：沿用 5 词还是扩充 | 扩到 10 词，但新增须同批给正反例 | `[已确认]` 扩到 10 词（A-7）。**定稿词面** = 自省/客观/诚实/宽松/严格/清晰/完整/准确/显著/良好（`合理`/`充分` 归 `criterionTerms`）；词面以 `tools/quality/observable-terms.json` 为唯一单源；`agent-card-contract` PRD `:271` 的 5 词锚与 `card-model.test.mjs:350-355` 须同批改（R8 回扫）（**2026-11-01 注**：`完整` 已剔除，定稿 **9 词** = 自省/客观/诚实/宽松/严格/清晰/准确/显著/良好；本行「10 词」与词面枚举为当时裁定，**原文保留不改**，现行词面以 `tools/quality/observable-terms.json` 为唯一源） |
 | D-05 | 豁免粒度：行级白名单还是"引用/否定"标记 | 行级白名单（显式、可审计） | `[已确认]` 行级白名单（A-7）。**形态升级**：`contains` + `reason` + `reviewed`；stale 必红；新增须审计签字 |
 | D-06 | F-08 的做法：新增码（36→37）还是扩 `SubjectiveLabel` 的判定面（0 新码） | **扩面**（少改码表与计数断言），但属判据级，需 ② 段确认 | `[已确认]` 扩面（A-7）。**落码形态定死**：① 匹配改 **substring**（现 token 切分对 8 条 label 恒不命中）；② 判定面 = **独立函数 `validatePredicates`**，报文 `predicates[<id>].label`，`SCAN_FIELDS` 与 36 码不动、B01 三方相等断言不动；③ 条件改「label/criterion 命中主观词 → 红」（`observable` 不豁免） |
 | D-07 | ① 出口「功能点清单与流程图双向一一对应」怎么满足（本 PRD 原无流程图） | 补主干图 + §6「进流程图」列 | `[已确认]` 补主干图（A-6）：§6 加列 + §6.1 图（10 节点）+ 双向互校（§8 产物须有归属 F） |
@@ -307,6 +307,21 @@ graph TD
 **S3 的前置（R8）**：F-07 改 8 条**已签** `predicates` label 属判据级改判，必须先 `node scripts/scope-sweep.mjs --check` exit 0，并在本批 `impact-sheet.md` 给出 8 条旧 label 全部命中的处置（改 / 改引用 / 标历史保留）。
 
 **F → S 覆盖**：F-01/F-02 → S1；F-03～F-06 → S2；F-07～F-10 → S3。
+
+**F → S 覆盖表（机器可读形态，口径与上一行逐项相同；只加表、上一行原文保留不改）**：
+
+| F | S | 备注 |
+|---|---|---|
+| F-01 | S1 | 清单 JSON（唯一单源） |
+| F-02 | S1（`rules/` + `skills/` 面）；S3（卡面与 `predicates` 面） | 扫描面分期（C-6） |
+| F-03 | S2 | — |
+| F-04 | S2 | — |
+| F-05 | S2 | — |
+| F-06 | S2 | — |
+| F-07 | S3 | — |
+| F-08 | S3 | — |
+| F-09 | S3 | — |
+| F-10 | S1（先行产物 `rules/observable-criteria.md`）；S3（三写作流程引用） | — |
 
 ---
 
