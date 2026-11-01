@@ -13,10 +13,11 @@ tools: {{TOOLS}}
 > 每行必答，答过也要写明结论；只答固定清单 = 不合格，缺答 = 不合格。
 > 证据可复算：每行证据栏写文件:行号或命令输出首行，证据栏空 = 不成立。
 
-{{MUST_TABLE}}
+{{MUST_BULLETS}}
+{{TRISTATE}}
 
 ## 禁止
-{{NEVER_TABLE}}
+{{NEVER_BULLETS}}
 
 ## 冲突裁决
 - 优先级：用户 > 规则 > 本席。
@@ -28,6 +29,10 @@ tools: {{TOOLS}}
 
 ## 输出格式
 {{OUTPUT_FORMAT}}
+
+{{FORMAT_CHECKS}}
+
+{{PRODUCT_NAMES}}
 
 ## 边界
 {{BOUNDARY}}

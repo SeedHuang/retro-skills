@@ -177,6 +177,27 @@
         "docs/superpowers/specs/2026-10-29-agent-card-s4-render-design-testcase.md",
         "docs/superpowers/plans/2026-10-30-agent-card-s4-render.md"
       ]
+    },
+    {
+      "id": "I20",
+      "title": "A3 必答清单存在（旧说法 = 只认表格列头；S2 D17 起只加不删 + 允许「一定会」bullet 形态）",
+      "words": ["卡内任一含「必答/必问」列头的表格"],
+      "scope": [
+        "tools/execution-matrix/criteria.md",
+        "tools/execution-matrix/check-agent.mjs",
+        "tools/execution-matrix/check-agent.test.mjs",
+        "docs/superpowers/specs/2026-10-29-agent-card-s4-render-design.md"
+      ]
+    },
+    {
+      "id": "I21",
+      "title": "A1 契约枚举扫描面（旧说法 = 全仓扫 tools/ + scripts/ + agents/；S2 D18 起收窄为卡面渲染链并排除 *.test.mjs）",
+      "words": ["全仓扫 `tools/`"],
+      "scope": [
+        "docs/superpowers/specs/2026-11-01-s2-card-rewrite-design.md",
+        "docs/superpowers/specs/2026-11-01-s2-card-rewrite-design-testcase.md",
+        "docs/superpowers/plans/2026-11-01-s2-card-rewrite.md"
+      ]
     }
   ]
 }

@@ -438,3 +438,4 @@ export function validateCardModel(card, env) {
 
   return { ok: errors.length === 0, errors };
 }
+

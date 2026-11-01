@@ -243,3 +243,18 @@ outputFormats = { audit: { fields: [...], checks: [...] }, 'issue-card': {...},
 | R4 | 共享层合并（`overrides[]`）被绕过（本席直接写全量） | V-3：同层同 id 重复必须报 `DuplicateStatement`（S1 `merge.mjs` 已实现）；README 覆盖记录表缺 `reason` → 红 |
 | R5 | `dump` 被落盘当第二份真相 | PRD `:225` 明写 stdout-only；V-6 静态扫描 + testcase 断言「`dump` 无写操作」 |
 | R6 | 称谓口径跨 15 卡回扫不彻底 | §5.2 机械判 + 本批 `node scripts/scope-sweep.mjs --check` 必须 exit 0（禁用 `npm run doc:sweep -- --check`） |
+
+## 13 现行判据（2026-11-01 日期注，C-7）
+
+> **本节的效力**：本文 §5.1 与 §4 的部分判法已被 S2 卡面重构取代；**以上原文一字不改（历史保留）**，实际执行以本节为准。
+> 出处：`docs/prd/20261031202331-observable-criteria-rollout/index.md` 的 C-7（「给已签 spec 加现行判据块 + 日期注，原文一字不改」）。
+
+| 本文原文（历史） | 现行判据（2026-11-01 起） | 生效来源 |
+|---|---|---|
+| §5.1「一定会」= 7 列表格、必渲染 `criterion` id / `landing` 字面值 | 「一定会」= 每条 `- <i>｜…` bullet（`i` = 该段数据序），判据印**中文名**（`PREDICATES[id].label` / 落点名），卡面**零登记 id** | S2 spec §4-D1/D6、§6-D3；`tools/docgen/components/renderCard.mjs` 的 `expectedBullet` |
+| §5.1 `requires` 必渲染（含「前提：无」） | `requires` 为空**不渲染**「前提：」（数据层字段保留） | S2 spec §4-D7 |
+| §5.1 三行常量 | 三态 = **1 行中文解释 + 4 行常量**（`hit` / `miss` / `na` / `reason`），单源 `card-contract.mjs` 的 `TRISTATE` | S2 spec §4-D5 / §6-D1 |
+| 「本席清单」类型列印 `script` / `ai` / `manual` | 类型列印中文值 `脚本核对` / `AI 判定` / `人工判定` | S2 spec §4-D4、`TYPE_LABELS` |
+| A3（表头含「必问」）判必答清单存在 | A3 扩面（只加不删）：表格列头形态 **或** 「一定会」节内 ≥1 行 `- <i>｜` bullet | `tools/execution-matrix/criteria.md` 的 A3（S2 spec §6-D17） |
+
+> 维护口径：本文其余节（§6 输出格式、§7 落盘、§8 验收、§10 差异、§11 退场、§12 风险）继续有效；本节只登记冲突面。

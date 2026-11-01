@@ -618,3 +618,7 @@
 | Q-A-06 | 排期与收益顺序 | 「S1 先行」只被「门禁先立」支持，而门禁是 S2/S3 | 草稿 888 行 71 测试绿 | P2 | 承认 | §8 顺序 → S2→S3→S1→S4 |
 | Q-A-07 | 路径可核性 | §8 S1 写 `test/*.test.mjs`，本仓根目录无 `test/` | 根目录无 `test`；`scripts/check-all.mjs:76` | P2 | 承认 | 已改 §8 两行 |
 | Q-A-08 | 存量与范围声明 | 只认 `observation-r*`，现存 `round-check.md` 与归档件不在判据内 | `round-check.md` 11 份；`docs/superpowers/reviews` 9 文件 | P2 | 承认 | §5.2 存量不追溯 + 精确名白名单 |
+
+## 附录 C　日期注（2026-11-01）
+
+（2026-11-01 日期注：类型三值、三态行与产物允许名的**实现唯一源** = `tools/docgen/card-model/vocab/card-contract.mjs`；§3.4 原文保留不改。注落在文末，不改动任何既有正文行号。）

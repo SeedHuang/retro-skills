@@ -2,7 +2,8 @@
 // 出口面恰 18 项：8 张表 + `SUBJECTS` / `SUBJECT_VALIDATORS` + 四入口
 // （`validateCardModel` / `validateOpenItems` / `compareVerdicts` / `verdictAllowed`）
 // + `CARD_MODEL_CODES` + `SCAN_FIELDS` + `mergeActions` + `registeredIdsOf`。
-// 词表物料与 `resolveLanding` 等内部面**不经 barrel**（各自从模块取，避免出口面多出非契约项）。
+// S2 的 `cardFaceIds` **不经本 barrel**：它扫渲染文本、必须 import 渲染器，
+// 落在 `tools/docgen/components/cardFaceIds.mjs`（S2 spec §3 #5 / §6-D19；S1 §3 依赖红线：本目录只许 node: 与自身）。
 
 export {
   SHARED_SCENES,

@@ -18,6 +18,7 @@ import * as OF from '../components/outputFormats.mjs'
 import * as MF from '../card-model/vocab/card-must-fields.mjs'
 import * as PRED from '../card-model/vocab/predicates.mjs'
 import * as LAND from '../card-model/vocab/landings.mjs'
+import * as ON from '../card-model/vocab/object-names.mjs'
 import * as SH from '../card-model/vocab/shared-actions.mjs'
 import * as CM from '../card-model/index.mjs'
 import { checkStruct } from '../../execution-matrix/check-agent.mjs'
@@ -25,12 +26,11 @@ import { touchedSemanticKeys } from '../cli.mjs'
 import { cmdDump } from '../cli.mjs'
 import { exitCodeFor } from '../components/validateAgentData.mjs'
 import { EXPIRY_LANDED, disposeCardFindings } from '../../observation-check/card-exempt.mjs'
+// 五个 helper 的**唯一实现**在 support/card-fixtures.mjs（本文件不保留第二份，plan Task 6）
+import { REPO, AGENTS_DIR, DOC_AGENTS_DIR, walkFiles, runNode, runCli, coldRepo, mutCard } from './support/card-fixtures.mjs'
 
-// ── helper（testcase §0.3 逐字；随 Task 2 / 3 增量补齐，末态必须等于 §0.3）─────────────────────
+// ── 本文件自己的路径与夹具（五个共享 helper 已抽到 support/card-fixtures.mjs）──────────────────
 const HERE = dirname(fileURLToPath(import.meta.url))
-const REPO = join(HERE, '..', '..', '..')
-const AGENTS_DIR = join(REPO, 'agents')
-const DOC_AGENTS_DIR = join(REPO, 'docs', 'agents')
 const SPEC_PATH = join(REPO, 'docs', 'superpowers', 'specs', '2026-10-29-agent-card-s4-render-design.md')
 const S1_SPEC_PATH = join(REPO, 'docs', 'superpowers', 'specs', '2026-10-29-agent-card-s1-card-model-design.md')
 const PRD_PATH = join(REPO, 'docs', 'prd', '20261026205821-agent-card-contract.md')
@@ -151,55 +151,6 @@ const WRITE_ALL = () => {
   return PIPE.writeAll
 }
 
-const walkFiles = (dir, out = []) => {
-  if (!existsSync(dir)) return out
-  for (const e of readdirSync(dir, { withFileTypes: true })) {
-    const p = join(dir, e.name)
-    if (e.isDirectory()) { if (!['node_modules', '.git'].includes(e.name)) walkFiles(p, out) }
-    else if (/\.(mjs|md|json|tpl)$/.test(e.name)) out.push(p)
-  }
-  return out
-}
-const runNode = (args, cwd = REPO, env = null) => {
-  const r = spawnSync(process.execPath, args, { cwd, encoding: 'utf8', env: env ? { ...process.env, ...env } : process.env })
-  return { code: r.status ?? -1, out: `${r.stdout ?? ''}${r.stderr ?? ''}` }
-}
-const runCli = (args, cwd = REPO, env = null) => runNode(['tools/docgen/cli.mjs', ...args], cwd, env)
-
-// 临时副本（同 tools/docgen/acceptance/cold-run.mjs 的做法）：已跟踪 + 未跟踪未忽略文件一起复制
-// 为什么补 --others：`docs/agents/**` 是新增未提交文件，只复制 ls-files 会让副本缺生成物 → 恒红/恒绿
-const coldRepo = ({ mutate = null, args = ['gate'], verify = null } = {}) => {
-  const copy = mkdtempSync(join(tmpdir(), 's4-tc-'))
-  const list = (argv) => execFileSync('git', ['-c', 'core.quotePath=false', ...argv], { cwd: REPO, encoding: 'utf8' })
-    .trim().split(/\r?\n/).filter((f) => f && !f.startsWith('.git/'))
-  const files = [...new Set([...list(['ls-files']), ...list(['ls-files', '--others', '--exclude-standard'])])]
-  for (const f of files) {
-    const src = join(REPO, f)
-    if (!existsSync(src)) continue
-    const dst = join(copy, f)
-    mkdirSync(dirname(dst), { recursive: true })
-    cpSync(src, dst)
-  }
-  if (existsSync(DOC_AGENTS_DIR)) cpSync(DOC_AGENTS_DIR, join(copy, 'docs', 'agents'), { recursive: true })
-  if (mutate) mutate(copy)
-  mkdirSync(join(copy, '.drafts'), { recursive: true })
-  const r = runCli(args, copy, {
-    DOCGEN_DRAFTS_DIR: join(copy, '.drafts'),
-    DOCGEN_STATE_PATH: join(copy, 'tools/docgen/state.json'),
-    DOCGEN_EVIDENCE_DIR: join(copy, 'tools/docgen/fixtures'),
-  })
-  try { if (verify) verify(copy, r) } finally { rmSync(copy, { recursive: true, force: true }) }
-  return r
-}
-
-// 构造向量（§0.4）：改本席 card 数据（不改源文件；用完还原）/ 副本内注入坏卡 / 追加 1 字节
-const mutCard = (seat, fn) => {
-  const a = agentData.find((x) => x.name === seat)
-  assert.ok(a && a.card && typeof a.card === 'object', `${seat} 必须已有 card 数据（§4 :80）`)
-  const keep = structuredClone(a.card)
-  fn(a.card, keep)
-  return () => { a.card = keep }
-}
 const INJECT_BAD = (predicate = 'no.such.predicate') => (copy) => {
   const p = join(copy, 'tools/docgen/components/agentData.mjs')
   const src = readFileSync(p, 'utf8')
@@ -488,6 +439,9 @@ test('S4-TC-A01 15 卡 7 段齐 + 每段必渲染字段在位（单源 = card-mu
   for (const f of ['trigger', 'objects', 'criterion', 'landing', 'requires']) {
     assert.ok(fields.includes(f), `spec §5.1 :127 的必渲染项 ${f} 必须登记在 MUST_FIELDS（数组）`)
   }
+  // S2 改形（spec §4-D1）：必渲染项不再以英文字段名出现，而是每条数据一行 `- <i>｜…`；
+  // 「在位」的判据改为「bullet 条数 == 数据条数 + 每行含该条的宾语 / 落点中文名」（独立取词，不经 expectedBullet）。
+  const nameOf = (table, v) => table[v] ?? String(v ?? '')
   for (const s of SEATS) {
     const t = CARD(s)
     assert.ok(typeof t === 'string' && t.length > 200, `${s} 卡面不得为空或过短（否则存在性断言空转）`)
@@ -495,7 +449,15 @@ test('S4-TC-A01 15 卡 7 段齐 + 每段必渲染字段在位（单源 = card-mu
     for (const seg of segs) assert.ok(t.includes(`## ${seg}`), `${s} 卡面缺「## ${seg}」节（§5.1 :126-132）`)
     const body = t.split(/^## 一定会/m)[1].split(/^## /m)[0]
     assert.ok(body && body.length > 0, `${s} 的「一定会」段不得为空`)
-    for (const f of fields) assert.ok(body.includes(f), `${s} 的「一定会」段缺必渲染项 ${f}`)
+    const lines = body.split(/\r?\n/).filter((l) => /^- \d+｜/.test(l))
+    const card = PIPE.buildCards().find((b) => b.seat === s).card
+    const must = card.must ?? []
+    assert.equal(lines.length, must.length, `${s} 的「一定会」段 bullet 数必须 == must 条数（§4-D1）`)
+    must.forEach((a, k) => {
+      const line = lines[k] ?? ''
+      for (const o of a.objects ?? []) assert.ok(line.includes(nameOf(ON.OBJECT_NAMES, o)), `${s} 第 ${k + 1} 行缺宾语中文名 ${nameOf(ON.OBJECT_NAMES, o)}（§5.1 :127 必渲染宾语）`)
+      assert.ok(line.includes(nameOf(LAND.LANDINGS, a.landing)), `${s} 第 ${k + 1} 行缺落点中文名 ${nameOf(LAND.LANDINGS, a.landing)}（§5.1 :127 必渲染落点）`)
+    })
   }
 })
 
@@ -531,18 +493,19 @@ test('S4-TC-A04 7 段模板同时满足执行力度矩阵 A3–A7', () => {
   }
 })
 
-test('S4-TC-A05 A3–A7 判别力：四处变异各红一处（按表头行定位）', () => {
+test('S4-TC-A05 A3–A7 判别力：四处变异各红一处（bullet 形态，S2 改形）', () => {
   const L134 = specLine(134)
-  const mustHeader = /「一定会」表头 `(\|[^`]+)`/.exec(L134)
   const a4 = /A4（`([^`]+)`）/.exec(L134)
   const a5 = /A5（`([^`]+)`）/.exec(L134)
-  assert.ok(mustHeader && a4 && a5, 'spec :134 必须写死「一定会」表头 + A4/A5 字样三处（切不到 = 行号漂移或 spec 改词）')
+  assert.ok(a4 && a5, 'spec :134 必须写死 A4/A5 字样两处（切不到 = 行号漂移或 spec 改词）')
   const t0 = CARD(SEATS[0])
-  for (const x of [mustHeader[1].trim(), a4[1], a5[1]]) assert.ok(t0.includes(x), `卡面必须含 spec :134 写死的串「${x}」`)
-  const headerLine = t0.split(/\r?\n/).find((l) => l.startsWith('| # | 必问（must）'))
-  assert.ok(headerLine, '卡面必须含 spec :134 写死的「一定会」表头行（按行定位，不做全局首个替换）')
-  const c3 = checkStruct(t0.replace(headerLine, headerLine.split('必问（must）').join('检查项')))
-  assert.deepEqual(c3.findings.map((f) => f.code), ['A3'], '表头行不再含「必问」→ 只应红 A3')
+  for (const x of [a4[1], a5[1]]) assert.ok(t0.includes(x), `卡面必须含 spec :134 写死的串「${x}」`)
+  // S2 改形（spec §6-D17）：A3 的形态面从「表格列头」扩为「表格列头 或 『一定会』bullet」，
+  // 故 A3 变异改为「删光 `- <i>｜`」；旧构造（改表头行「必问（must）」）已随表格退场而失效。
+  const bullets = t0.split(/\r?\n/).filter((l) => /^- \d+｜/.test(l))
+  assert.ok(bullets.length >= 1, '基线卡必须有 bullet 清单（否则 A3 变异无从构造）')
+  const c3 = checkStruct(t0.split(/\r?\n/).filter((l) => !/^- \d+｜/.test(l)).join('\n'))
+  assert.deepEqual(c3.findings.map((f) => f.code), ['A3'], '删光「一定会」bullet 清单 → 只应红 A3')
   const c4 = checkStruct(t0.split(/\r?\n/).filter((l) => !l.includes(a4[1])).join('\n'))
   assert.deepEqual(c4.findings.map((f) => f.code), ['A4'], '删 A4 字样 → 只应红 A4')
   const c6 = checkStruct(t0.split(/\r?\n/).filter((l) => !/^## 边界/.test(l)).join('\n'))
@@ -892,7 +855,7 @@ test('S4-TC-E01 共享层单源：判据 id 在 shared-actions.mjs 里恰好出�
     const esc = a.criterion.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     const n = (SRC.match(new RegExp(`criterion:\\s*'${esc}'`, 'g')) ?? []).length
     assert.equal(n, 1, `共享句 ${a.id} 的 criterion 在源码里必须恰好赋值 1 次（>1 = 第二份副本）`)
-    assert.ok(SEATS.some((s) => CARD(s).includes(a.criterion)), `共享句 ${a.id} 至少被一席卡面渲染（否则是死数据）`)
+    assert.ok(SEATS.some((s) => CARD(s).includes(PRED.PREDICATES[a.criterion].label)), `共享句 ${a.id} 至少被一席卡面渲染（S2 改形后按判据中文名判；否则是死数据）`)
   }
 })
 
@@ -935,7 +898,8 @@ test('S4-TC-E04 绕过共享层（本席直接写全量同文）→ DuplicateSta
 test('S4-TC-E05 use 白名单：只能取本席声明过的共享 id', () => {
   const USE = SH.SHARED_USE
   assert.ok(USE && typeof USE === 'object' && Object.keys(USE).length > 0, 'SHARED_USE 必须非空对象（§3 :65）')
-  const known = new Map([...SH.SHARED_MUST, ...SH.SHARED_NEVER].map((a) => [a.id, a.criterion]))
+  // S2 改形（spec §3 #4）：卡面印 `PREDICATES[id].label` 中文名，故白名单比对也按中文名（判据语义不变）
+  const known = new Map([...SH.SHARED_MUST, ...SH.SHARED_NEVER].map((a) => [a.id, PRED.PREDICATES[a.criterion].label]))
   assert.ok(known.size > 0, '共享登记表不得为空（否则「都已登记」恒真）')
   for (const [s, ids] of Object.entries(USE)) {
     assert.ok(SEATS.includes(s), `use 表的席位 ${s} 必须是真实席名`)
@@ -1178,9 +1142,12 @@ test('S4-TC-G03 副本口径：改共享层 1 处 → 受影响的席数 = use �
     assert.equal(Object.keys(cards).length, CARD_FILES.length, '副本内卡面数必须 = 席数')
     const changed = SEATS.filter((s) => cards[s] !== CARD(s))
     assert.deepEqual([...changed].sort(), [...refSeats].sort(), `受影响席集必须 = use 引用该 id 的席集（应 ${refSeats.length} 席，实得 ${changed.length}）`)
-    // 只判 **criterion 列**是否残留旧值（共享动作的 `id:` 里也含该子串，整卡 includes 会恒真 = 假红）
-    assert.equal(SEATS.filter((s) => (cards[s] ?? '').includes(`criterion: ${crit}`)).length, 0, '不得有卡面的 criterion 列残留旧判据串（改 1 处必须全跟随）')
-    assert.equal(changed.every((s) => cards[s].includes(NEW)), true, '受影响席的卡面必须含新值（证明文本层跟着单源走）')
+    // S2 改形（spec §3 #4）：卡面不再印 `criterion: <id>`，改印 `PREDICATES[id].label` 中文名 →
+    // 「旧值 0 残留 / 新值已在」改按**中文名**判（判据语义不变：改共享层 1 处必须全席跟随）。
+    const oldLabel = PRED.PREDICATES[crit].label
+    const newLabel = PRED.PREDICATES[NEW].label
+    assert.equal(SEATS.filter((s) => (cards[s] ?? '').includes(oldLabel)).length, 0, '不得有卡面残留旧判据的中文名（改 1 处必须全跟随）')
+    assert.equal(changed.every((s) => cards[s].includes(newLabel)), true, '受影响席的卡面必须含新判据中文名（证明文本层跟着单源走）')
   } })
   assert.ok(seen.code === 0 || seen.code === 1, '副本 generate 只要跑完即可（本用例判同步）')
 })
@@ -1208,51 +1175,55 @@ test('S4-TC-G04 散文落点两形态：进 `rationale` 合法、进 `duty` 必�
 
 test('S4-TC-G05 P-B 扫描：`must` 行判 criterion + landing；`never` 行只判 objects + criterion', () => {
   assert.equal(SEATS.length, CARD_FILES.length, '席集与卡文件集必须等长（外部集合相等）')
+  const bulletLines = (t, seg) => t.split(new RegExp(`^## ${seg}`, 'm'))[1].split(/^## /m)[0]
+    .split(/\r?\n/).filter((l) => /^- \d+｜/.test(l))
+  const landName = (l) => LAND.LANDINGS[l] ?? String(l ?? '')
+  const critName = (c) => (PRED.PREDICATES[c] && PRED.PREDICATES[c].label) || ''
   let musts = 0, nevers = 0
   for (const b of PIPE.buildCards()) {
     assert.ok(b && b.card && typeof b.card === 'object', `${b.seat} 的 buildCards 结果必须带 card`)
     const t = CARD(b.seat)
-    const mustBody = t.split(/^## 一定会/m)[1].split(/^## /m)[0]
-    const neverBody = t.split(/^## 禁止/m)[1].split(/^## /m)[0]
-    assert.ok(mustBody && mustBody.length > 0, `${b.seat} 的「一定会」段不得为空`)
-    assert.ok(neverBody && neverBody.length > 0, `${b.seat} 的「禁止」段不得为空`)
-    for (const a of b.card.must ?? []) {
+    const mustLines = bulletLines(t, '一定会')
+    const neverLines = bulletLines(t, '禁止')
+    const must = b.card.must ?? []
+    const never = b.card.never ?? []
+    assert.ok(mustLines.length === must.length, `${b.seat} 的「一定会」bullet 数必须 == must 条数（实得 ${mustLines.length}）`)
+    assert.ok(neverLines.length === never.length, `${b.seat} 的「禁止」bullet 数必须 == never 条数（实得 ${neverLines.length}）`)
+    must.forEach((a, k) => {
       assert.ok(typeof a.criterion === 'string' && a.criterion.trim() !== '', `${b.seat}/${a.id} 的 criterion 必须非空（V-7 :207）`)
       assert.ok(typeof a.landing === 'string' && a.landing.trim() !== '', `${b.seat}/${a.id} 的 landing 必须非空（V-7 :207 落点面）`)
-      assert.ok(mustBody.includes(a.criterion), `${b.seat}/${a.id} 的 must 行必须含判据 id ${a.criterion}`)
-      assert.ok(mustBody.includes(a.landing), `${b.seat}/${a.id} 的 must 行必须含落点字面值 ${a.landing}`)
+      assert.ok(mustLines[k].includes(critName(a.criterion)), `${b.seat}/${a.id} 的 must 行必须含判据中文名「${critName(a.criterion)}」`)
+      assert.ok(mustLines[k].includes(landName(a.landing)), `${b.seat}/${a.id} 的 must 行必须含落点中文名「${landName(a.landing)}」`)
       musts += 1
-    }
-    for (const a of b.card.never ?? []) {
+    });
+    never.forEach((a, k) => {
       const objs = Array.isArray(a.objects) ? a.objects.filter((x) => String(x).trim()) : []
       assert.ok(objs.length > 0, `${b.seat}/${a.id} 的 never 必须至少 1 个 objects（V-7 :207 / PRD :234）`)
       assert.ok(typeof a.criterion === 'string' && a.criterion.trim() !== '', `${b.seat}/${a.id} 的 never criterion 必须非空`)
-      for (const o of objs) assert.ok(neverBody.includes(String(o)), `${b.seat}/${a.id} 的 never 行必须含宾语 ${o}`)
-      assert.ok(neverBody.includes(a.criterion), `${b.seat}/${a.id} 的 never 行必须含判据 id ${a.criterion}`)
+      for (const o of objs) assert.ok(neverLines[k].includes(ON.OBJECT_NAMES[o] ?? String(o)), `${b.seat}/${a.id} 的 never 行必须含宾语中文名 ${o}`)
+      assert.ok(neverLines[k].includes(critName(a.criterion)), `${b.seat}/${a.id} 的 never 行必须含判据中文名「${critName(a.criterion)}」`)
       nevers += 1
-    }
+    })
   }
   assert.ok(musts > 0 && nevers > 0, `全仓必须同时检查到 must 与 never 行（实得 must ${musts} / never ${nevers}）`)
 })
 
-// P-B（V-7 :207）扫描器：**逐行逐列**判，不是整段子串判。
-// 为什么必须逐列：`must` 行的 `objects:` 列常与 `landing:` 同值（如都写 `deliverable.body`），
-// 整段 `includes` 会让「删掉 landing 字面值」的构造仍然恒绿（假阴性守卫失效）。
+// P-B（V-7 :207）扫描器：**逐行**判，不是整段子串判。
+// 为什么必须逐行（S2 改形后）：同一张卡里多条 must 的判据 / 落点中文名会重复出现，
+// 整段 `includes` 会让「把某一行删掉」的构造仍然恒绿（假阴性守卫失效）。
 const pbMissing = (seat, face = null) => {
   const b = PIPE.buildCards().find((x) => x.seat === seat)
   assert.ok(b && b.card, `${seat} 必须有 buildCards 结果（P-B 扫描的输入面）`)
   const acts = b.card.must ?? []
   assert.ok(acts.length > 0, `${seat} 必须有 must 动作`)
   const body = (face ?? CARD(seat)).split(/^## 一定会/m)[1].split(/^## /m)[0]
-  const rows = body.split(/\r?\n/).filter((l) => l.trim().startsWith('|'))
-  const rowOf = (id) => rows.find((l) => String(l.split('|')[2] ?? '').trim() === id)
-  const cellOf = (row, n, label) => String(row.split('|')[n] ?? '').trim().replace(new RegExp(`^${label}:\\s*`), '').trim()
-  return acts.filter((a) => {
-    const row = rowOf(a.id)
-    if (!row) return true
-    const critCell = cellOf(row, 5, 'criterion')
-    const landCell = cellOf(row, 6, 'landing')
-    return !(critCell !== '' && critCell === String(a.criterion ?? '').trim() && landCell !== '' && landCell === String(a.landing ?? '').trim())
+  const lines = body.split(/\r?\n/).filter((l) => /^- \d+｜/.test(l))
+  return acts.filter((a, k) => {
+    const line = lines[k]
+    if (!line) return true
+    const critLabel = (PRED.PREDICATES[a.criterion] && PRED.PREDICATES[a.criterion].label) || ''
+    const landLabel = LAND.LANDINGS[a.landing] ?? String(a.landing ?? '')
+    return !(critLabel !== '' && line.includes(critLabel) && landLabel !== '' && line.includes(landLabel))
   }).map((a) => a.id)
 }
 
@@ -1261,15 +1232,19 @@ test('S4-TC-G06 P-B 负例：删 must 的 landing 字面值（或置空 criterio
   const first = PIPE.buildCards().find((x) => x.seat === s).card.must[0]
   assert.ok(first && typeof first.id === 'string', `${s} 必须有首条 must（构造前提）`)
   assert.deepEqual(pbMissing(s), [], `${s} 基线必须 0 缺项（否则判别力先失效）`)
-  // 构造①：把该行 `landing:` 列的字面值删空（渲染器逐字打印 landing，改数据值仍会出现在卡面 → 构造恒绿，
+  // 构造①（S2 改形后）：把首行里的**落点中文名**删掉（渲染器逐字打印中文名，改数据值仍会出现在卡面 → 构造恒绿，
   // 故「字面值不进卡面」必须在卡面行上删）。
   const face = CARD(s)
   const body = face.split(/^## 一定会/m)[1].split(/^## /m)[0]
-  const row = body.split(/\r?\n/).find((l) => String(l.split('|')[2] ?? '').trim() === first.id)
-  assert.ok(typeof row === 'string' && row.includes(String(first.landing)), `构造前提：首行必须原本含 landing 字面值 ${first.landing}`)
-  const mutatedBody = body.replace(row, row.replace(/landing: [^|]*/, 'landing: '))
-  assert.equal(mutatedBody.includes(row), false, '构造必须真的把该行的 landing 字面值删掉（否则断言空转）')
-  assert.deepEqual(pbMissing(s, face.replace(body, mutatedBody)), [first.id], '落点字面值不进卡面 → P-B 必须点名该行')
+  const line = body.split(/\r?\n/).filter((l) => /^- \d+｜/.test(l))[0]
+  const landLabel = LAND.LANDINGS[first.landing] ?? String(first.landing)
+  // 该条的宾语与落点同值（`deliverable.body`）→ 同一行里同名词出现两次；必须**全删**才能让「落点不在卡面」成立
+  // （只删一处会残留宾语那处，pbMissing 仍判通过 → 构造失效）。
+  assert.ok(line.includes(landLabel), `构造前提：首行必须原本含落点中文名 ${landLabel}`)
+  const mutatedLine = line.replaceAll(landLabel, '')
+  const mutatedBody = body.replace(line, mutatedLine)
+  assert.equal(mutatedBody.includes(line), false, '构造必须真的把该行的落点中文名删掉（否则断言空转）')
+  assert.deepEqual(pbMissing(s, face.replace(body, mutatedBody)), [first.id], '落点中文名不进卡面 → P-B 必须点名该行')
   // 构造②：置空 criterion（数据层）→ P-B 点名 + S1 报 `MissingCriterionImpl`（两判同向，不互替）。
   const r2 = mutCard(s, (a) => { a.must[0].criterion = '' })
   try {

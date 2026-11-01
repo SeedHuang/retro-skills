@@ -5,8 +5,8 @@
   "hashObject": "44c92b44163b8e5d6d1427262f0b514e0a89f7ef",
   "goldenAssertion": "pass",
   "compareResult": null,
-  "renderSha256": "4831DC96D044BE9F9705A1A71429078F1308EF628CC1AE34D5D8350E7E1018EF",
-  "lastWrittenHash": "4831DC96D044BE9F9705A1A71429078F1308EF628CC1AE34D5D8350E7E1018EF",
+  "renderSha256": "2482E8A6113E03D0DAECAC6D376182A4205B5EF3E12B15C81C392F6FB8AA3285",
+  "lastWrittenHash": "2482E8A6113E03D0DAECAC6D376182A4205B5EF3E12B15C81C392F6FB8AA3285",
   "changes": [
     {
       "from": "7B4495504D59218E438951C42A04758FD273CD174CB5EB92F161187F61DA9A79",
@@ -36,6 +36,36 @@
           "basis": "tools/execution-matrix/criteria.md B3 + 渲染产物；重判写回 rules/.inspector-annotations.json reviewer-qa:B3 = pass（replace 机械转录）"
         }
       ],
+      "machineChecks": {
+        "A3": "pass",
+        "A4": "pass",
+        "A5": "pass",
+        "A6": "pass",
+        "A7": "pass"
+      }
+    },
+    {
+      "from": "4831DC96D044BE9F9705A1A71429078F1308EF628CC1AE34D5D8350E7E1018EF",
+      "to": "CE4097BC8C5BB8D85B3DBBFC8C17FEB891E88CAA358255E8EEE408ABE3B46360",
+      "at": "2026-11-01T14:14:51.763Z",
+      "rejudged": [],
+      "judgeMode": "none",
+      "judged": [],
+      "machineChecks": {
+        "A3": "pass",
+        "A4": "pass",
+        "A5": "pass",
+        "A6": "pass",
+        "A7": "pass"
+      }
+    },
+    {
+      "from": "CE4097BC8C5BB8D85B3DBBFC8C17FEB891E88CAA358255E8EEE408ABE3B46360",
+      "to": "2482E8A6113E03D0DAECAC6D376182A4205B5EF3E12B15C81C392F6FB8AA3285",
+      "at": "2026-11-01T15:12:33.661Z",
+      "rejudged": [],
+      "judgeMode": "none",
+      "judged": [],
       "machineChecks": {
         "A3": "pass",
         "A4": "pass",

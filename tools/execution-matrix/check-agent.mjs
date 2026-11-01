@@ -69,6 +69,23 @@ function hasMustAnswerColumn(block) {
   return header.some((c) => c.includes('必答') || c.includes('必问'));
 }
 
+// 「一定会」节的 bullet 清单形态（S2 D17 扩面，只加不删）：行形 `- <i>｜…`（`<i>` = 该段数据序）。
+// 为什么不复用 splitSections：它把围栏内的行也收进 section.lines（围栏里只是示例），
+// 直接按它扫会让「示例里写一行 bullet」假通过 → 这里自己走 fenceMask，按节名含「一定会」定位。
+const BULLET_LIST_RE = /^- \d+｜/;
+function hasBulletChecklist(card) {
+  const lines = String(card ?? '').split(/\r?\n/);
+  const { mask } = fenceMask(lines);
+  let inMustAsk = false;
+  for (let i = 0; i < lines.length; i += 1) {
+    if (mask[i]) continue;
+    const m = /^(#{1,6})\s+(.*)$/.exec(lines[i]);
+    if (m) { inMustAsk = m[2].trim().includes('一定会'); continue; }
+    if (inMustAsk && BULLET_LIST_RE.test(lines[i].trim())) return true;
+  }
+  return false;
+}
+
 // A4 闭环字样（criteria.md A4 判定方式：含「缺答 / 只答固定清单 = 不合格」任一字样）
 const CLOSURE_RE = /(缺答|只答固定清单)[^。\n]{0,20}=\s*不合格/;
 // A5 证据约束字样（criteria.md A5 判定方式：含「证据可复算」或「证据栏」）
@@ -81,7 +98,8 @@ function isFixedListSection(section) {
 
 // A3-A7 结构断言（存在性 + 语义）
 // 模板形态适配（criteria.md §0.2）：判定词按「存在性 + 语义」写，不按逐字模板句——
-//   A3 判卡内任一表格含「必答/必问」列头（无唯一目标节，直接全卡扫表格；**跳过代码围栏内的示例表**）。
+//   A3 判卡内任一表格含「必答/必问」列头（无唯一目标节，直接全卡扫表格；**跳过代码围栏内的示例表**）；
+//      或判「一定会」节内 ≥1 行 `- <i>｜` bullet 清单（S2 D17 扩面，2026-11-01；同样跳过围栏）。
 // A4/A5 的判定口径（criteria.md §0.5「节内优先、整卡兜底」，正文与本实现必须一致）：
 //   ① 先在目标节内匹配判定词（节内优先，收紧精度）；② 未命中再退回全卡搜索（整卡兜底，防误伤——
 //      senior-sdet 的闭环字样就写在「自由探索」节内，严格限节内会把合规卡判红）；③ 命中位置记进 notes。
@@ -91,8 +109,8 @@ export function checkStruct(card) {
   const notes = [];
   const sections = splitSections(card);
 
-  // A3 必答清单存在：卡内任一表格含「必答/必问」列头
-  if (!tableBlocks(card).some(hasMustAnswerColumn)) findings.push({ code: 'A3' });
+  // A3 必答清单存在：卡内任一表格含「必答/必问」列头，或「一定会」节含 `- <i>｜` bullet 清单（S2 D17）
+  if (!tableBlocks(card).some(hasMustAnswerColumn) && !hasBulletChecklist(card)) findings.push({ code: 'A3' });
 
   // A4 必答闭环：「固定清单」节内查闭环字样；节内无则退回整卡（存在性 + 语义）
   const fixedSections = sections.filter(isFixedListSection);

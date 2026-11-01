@@ -86,7 +86,9 @@ test('TC-B10 reader 卡「边界」节为取证角色句、不含「只读评审
 test('TC-B11 reader 卡不再有「自由探索」散文节（S4 迁移后由一条 must 承接）', () => {
   assert.equal(card.includes('现场生成 3-5 个'), false);
   assert.equal(card.includes('## 自由探索'), false, 'S4 迁移后新卡 7 段里无「自由探索」节');
-  assert.ok(card.includes('evidence-reader.free-explore'), '自由探索语义由「一定会」的 must 行承接');
+  // S2 改形（spec §3 #4 / D17）：卡面不再印登记 id，改印宾语 / 判据的中文名 →
+  // 「由一条 must 承接」改按渲染文案判（宾语「交付物附录」+ 判据「无问题时显式声明…」）
+  assert.ok(card.includes('交付物附录') && card.includes('无问题时显式声明'), '自由探索语义由「一定会」的 must 行承接（S2 中文化后按中文名判）');
 
   assert.equal(tpl.includes('{{EXPLORE}}'), false, '新卡模板无 {{EXPLORE}} 槽');
   assert.equal(tpl.includes('现场生成 3-5 个'), false);
@@ -208,7 +210,8 @@ test('TC-D08 边界句退回默认只读句 → 卡面可被机械探针检出�
 
 test('TC-D09 explore 语义由一条 must 承接（新卡不再渲散文节）', () => {
   const rendered = renderSeat('evidence-reader').card;
-  assert.ok(rendered.includes('evidence-reader.free-explore'), '自由探索须由 must 行承接');
+  // S2 改形：同 TC-B11，按渲染出来中文名判（id 已退场）
+  assert.ok(rendered.includes('交付物附录') && rendered.includes('无问题时显式声明'), '自由探索须由 must 行承接（S2 中文化后按中文名判）');
   assert.equal(rendered.includes('本节不适用'), false, '新卡不渲染 explore 散文');
   assert.equal(rendered.includes('现场生成 3-5 个'), false, '新卡不渲染旧探索句');
 

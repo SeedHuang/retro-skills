@@ -60,16 +60,18 @@ test('本席清单 7 条逐条在位（原固定清单的等价面）', () => {
   assert.equal((s.match(/^\| \d+ \| 审计席卡：/gm) || []).length, 7);
 });
 
-test('「一定会」表 5 行（4 条共享 + 1 条自由探索）+ tools 行逗号空格', () => {
+test('「一定会」段 bullet 5 条（4 条共享 + 1 条自由探索）+ tools 行逗号空格', () => {
   const s = renderSeat('reviewer-audit').card;
   assert.match(s, /^tools: Read, Glob, Grep, Write, Edit, RunCommand$/m);
-  assert.equal((s.match(/^\| \d+ \| [^|]+ \| trigger:/gm) || []).length, 5);
+  // S2 改形（spec §4-D1）：表格 → `- <i>｜` bullet；条数口径不变（4 共享 + 1 自由探索）
+  assert.equal((s.split(/^## 一定会/m)[1].split(/^## /m)[0].split(/\r?\n/).filter((l) => /^- \d+｜/.test(l))).length, 5);
 });
 
 test('共享层上移：4 条 shared must 出现在卡面（旧 sharedBlock 的等价面）', () => {
   const s = renderSeat('reviewer-audit').card;
-  for (const id of ['shared.impartial-long-term', 'shared.evidence', 'shared.plain-expression', 'shared.no-fake-problem']) {
-    assert.ok(s.includes(id), `卡面缺共享 must：${id}`);
+  // S2 改形（spec §2.1 点名改此处）：卡面印共享句的**渲染文案**（判据中文名），不再印登记 id
+  for (const label of ['立场客观且按项目长远判断', '结论附可复算证据（文件:行号 或 命令输出）', '用非专业人员也能听懂的方式表达', '无问题时显式声明「全过、无问题」']) {
+    assert.ok(s.includes(label), `卡面缺共享 must 的渲染文案：${label}`);
   }
   assert.equal(s.includes('### 审计铁律'), false, '新卡不渲染共享散文块');
 });

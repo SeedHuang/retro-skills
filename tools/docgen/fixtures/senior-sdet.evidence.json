@@ -5,8 +5,8 @@
   "hashObject": "346945525357b9e921a5e41e181c7e9da84c175a",
   "goldenAssertion": "pass",
   "compareResult": null,
-  "renderSha256": "B4B6A0A0B346804EABD2F2AB7041C62EA99BB0DC8B638B90F6D2806784C8DA2E",
-  "lastWrittenHash": "B4B6A0A0B346804EABD2F2AB7041C62EA99BB0DC8B638B90F6D2806784C8DA2E",
+  "renderSha256": "F2380A92C7E84C489603CC8AC82ADBC359DBEA134BF3240B8C51CD66C9D90564",
+  "lastWrittenHash": "F2380A92C7E84C489603CC8AC82ADBC359DBEA134BF3240B8C51CD66C9D90564",
   "changes": [
     {
       "from": "717803BE432BE5147DA49EDA531EA3250ADE54E8FC02C133A4F03424B679E7BF",
@@ -60,6 +60,51 @@
           "basis": "tools/execution-matrix/criteria.md B3 + 渲染产物；重判写回 rules/.inspector-annotations.json senior-sdet:B3 = pass（replace 机械转录）"
         }
       ],
+      "machineChecks": {
+        "A3": "pass",
+        "A4": "pass",
+        "A5": "pass",
+        "A6": "pass",
+        "A7": "pass"
+      }
+    },
+    {
+      "from": "B4B6A0A0B346804EABD2F2AB7041C62EA99BB0DC8B638B90F6D2806784C8DA2E",
+      "to": "2CA3E6599D2C1802CC7BE3C43260B226546B23CEBB03395CF840739EF9811985",
+      "at": "2026-11-01T14:14:52.627Z",
+      "rejudged": [],
+      "judgeMode": "none",
+      "judged": [],
+      "machineChecks": {
+        "A3": "pass",
+        "A4": "pass",
+        "A5": "pass",
+        "A6": "pass",
+        "A7": "pass"
+      }
+    },
+    {
+      "from": "2CA3E6599D2C1802CC7BE3C43260B226546B23CEBB03395CF840739EF9811985",
+      "to": "6EEEF3876DD3C14C4F6864A7496725BA0334E9197ABD582B302542A5CCEE8D65",
+      "at": "2026-11-01T14:16:46.894Z",
+      "rejudged": [],
+      "judgeMode": "none",
+      "judged": [],
+      "machineChecks": {
+        "A3": "pass",
+        "A4": "pass",
+        "A5": "pass",
+        "A6": "pass",
+        "A7": "pass"
+      }
+    },
+    {
+      "from": "6EEEF3876DD3C14C4F6864A7496725BA0334E9197ABD582B302542A5CCEE8D65",
+      "to": "F2380A92C7E84C489603CC8AC82ADBC359DBEA134BF3240B8C51CD66C9D90564",
+      "at": "2026-11-01T15:12:34.139Z",
+      "rejudged": [],
+      "judgeMode": "none",
+      "judged": [],
       "machineChecks": {
         "A3": "pass",
         "A4": "pass",

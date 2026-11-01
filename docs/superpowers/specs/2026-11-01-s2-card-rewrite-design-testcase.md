@@ -1,6 +1,6 @@
 # 测试用例：卡面重构 S2（可执行语句 + 中文名表 + 行序号对账 + 禁 id 守卫 + 单源注入）
 
-> **归属 spec**：`docs/superpowers/specs/2026-11-01-s2-card-rewrite-design.md`（议会 #2 已结项，审计 r4 = PASS；待 `②→③` 计划门签字）
+> **归属 spec**：`docs/superpowers/specs/2026-11-01-s2-card-rewrite-design.md`（议会 #2 已结项，审计 r4 = PASS；`②→③` 计划门已过（2026-11-01））
 > **上游 PRD**：`docs/prd/20261031202331-observable-criteria-rollout/index.md`（已定稿、① 段已签）
 > **编写者**：senior-sdet（独立实例）
 > **独立性声明**：本用例编写者未参与 S2 设计与实现，结论仅依据 spec 与实现读码
@@ -8,7 +8,8 @@
 > **编写日期**：2026-11-01
 > **修订记录**：2026-11-01 议会 #2 第 1 轮打回后按新 spec 修订（G1–G7）；用例数 75（正 37 / 负 25 / 边界 13）
 > **修订记录 2**：2026-11-01 Q6-b / Q7 裁定后同步（C10/C11 三分支、H01 公式、新增 E12）；用例数 76（正 38 / 负 25 / 边界 13）
-> **状态**：已随 spec 送议会 #2 并结项（审计 r4 = PASS）；待 `②→③` 计划门签字｜**用例总数 76**（正 38 / 负 25 / 边界 13（含 3 条标「执行型」：H01 / H02 / I05）；负 + 边界 = 38 ≥ 正 38）｜ID 前缀 `S2-TC-`
+> **修订记录 3**：2026-11-01 增量 K 组 3 条（承接 spec §6-D17 / §7 Q8：A3 判据扩面——旧表格列头形态保留 + 『一定会』bullet 形态新增）；用例数 79（正 39 / 负 26 / 边界 14）；同批修正三处判据缺陷（B07 判据改「剥前缀比正文 + 序号单比」（原「整行 == 逆序」在任何合规实现上不可满足）、A02 / A04 判据改表达式形态（`join` / 派生枚举）以与 §4-A1 数组字面阈值自洽，判据语义未变）；编写者 = 独立 senior-sdet 实例（未参与 S2 发现与实现）
+> **状态**：已随 spec 送议会 #2 并结项（审计 r4 = PASS）；`②→③` 计划门已过（2026-11-01）；K 组为结项后增量（待随 D17 复签一并复核）｜**用例总数 79**（正 39 / 负 26 / 边界 14（含 3 条标「执行型」：H01 / H02 / I05）；负 + 边界 = 40 ≥ 正 39，见 §12 GAP-17）｜ID 前缀 `S2-TC-`
 > **改动记录（第 0 轮，保留）**：2026-11-01 主持人核对发现计数声明 70/34/22/14 与实际 61/30/20/9 不符、I/J 组缺失；已于本文件补 I01–I06 / J01–J03 并改计数（编写者 senior-sdet，独立实例不变）
 > **命名与落点**：`rules/spec-testcase-gate.md` 判据 1 —— 与 spec 同目录，文件名 = spec 去掉 `.md` 后加 `-testcase.md`；spec 头部已外链本文件，spec 正文不内联用例
 > **测试落点（建议）**：`tools/docgen/test/s2-card-rewrite.test.mjs`（`node --test` 自动收；每个用例 = 一个 `test('S2-TC-<ID> …')` 块，函数名逐条写在「步骤」列首）
@@ -41,7 +42,7 @@
 
 ## 1 覆盖总表
 
-> **读法**：右列「用例 ID」一律是**裸组号**（`A01` … `J03`，全称 = `S2-TC-` + 该号）；`§4-D3` / `§6-D10` 这类是 **spec 自身的条目编号**（§4 判定规则 / §6 差异清单），**不是用例 ID**——按用例 ID 解析时只认带 `S2-TC-` 前缀或裸组号的形态。
+> **读法**：右列「用例 ID」一律是**裸组号**（`A01` … `K03`，全称 = `S2-TC-` + 该号）；`§4-D3` / `§6-D10` 这类是 **spec 自身的条目编号**（§4 判定规则 / §6 差异清单），**不是用例 ID**——按用例 ID 解析时只认带 `S2-TC-` 前缀或裸组号的形态。
 > **出处锚（G6）**：PRD 侧行号一律用实测新锚 **`:344` – `:349`**（V-6…V-11 共六行，V-8 归 S3）。**旧锚作废**：第 1 轮曾写 `:329` / `:330` / `:332` / `:333` / `:334`，与实测错位 15–18 行，已随 spec 一并改到新锚。**spec 侧只用节号与编号**（如 `§4-D3` / `§6-D12` / `落点 #5`）——spec 会随修订增删行，行号是第二份结构副本，一律不写。
 
 | 约束 / 条目 | spec 出处 | 用例 ID |
@@ -53,7 +54,7 @@
 | §4-D5（三态 = 1 解释行 + 4 常量行，逐字等于 `TRISTATE`） | §4 | D04 / D05 / E11 |
 | §4-D6（禁 `objects` / `repeats` 英文键名，并入 D3 第 ③ 步） | §4 | C03 / C08 |
 | §4-D7（`requires` 空则不渲染「前提：无」） | §4 | D06 / D07 |
-| §4-A1（契约枚举只有一处，全仓扫） | §4 | E01 / E02 / E04 / E11 |
+| §4-A1（契约枚举只有一处，卡面渲染链〔排除 `*.test.mjs`，见 §6-D18〕） | §4 | E01 / E02 / E04 / E11 |
 | §4-A2（两探针：`gate` 重渲 + 常量探针） | §4 | B08 / G02 |
 | §4-A3（无第二套白名单：改一处应绿、改别处应红） | §4 | E03 / E04 |
 | §4-A4（占位符不残留，`{{` 0 次） | §4 | E05 / E06 |
@@ -80,6 +81,7 @@
 | §6-D14（接口正名：禁集改 `env` 既有派生，扫面部分由 D16 改判；只补可执行性） | §6 | C01 / C09 / G03 |
 | §6-D15（D3 层③ 判据回流：(a)–(d) 四类命中 + 不判红清单） | §6、§4 | C03 / C07 / C09 / E03 |
 | §6-D16（扫面口径回流：卡面 = `renderCard` 渲染文本，逐行；数据面 `CARD_TEXT_FIELDS` 不作扫面） | §6、§4 | C01 / C08 / C09 / C11 / D02 |
+| §6-D17（A3 判据扩面：表格列头形态 + 『一定会』bullet 形态） | §6、§7 Q8 | K01 / K02 / K03 |
 | 落点 #1 `card-contract.mjs` | §3 | A01 / A02 / A03 / A04 / A05 / A06 / A07 |
 | 落点 #2 `object-names.mjs` | §3 | A08 / A09 |
 | 落点 #3 模板占位符 | §3 | E05 / E06 / E07 |
@@ -92,6 +94,8 @@
 | 落点 #10 C-7 加现行判据块 | §3 | I01 / I02 |
 | 落点 #11 PRD §3.4 加日期注（R8） | §3 | I03 / I04 / I05 |
 | 落点 #12 落点 id 改名（`progress.md` → `review.progress`，渲染文本不变） | §3 | E12 / C10 / C11 |
+| 落点 #13 A3 判据扩面（`criteria.md` + `check-agent.mjs`） | §3、§6-D17 | K01 / K02 / K03 |
+| 落点 #14 pilot-render.test.mjs 断言改形（测试侧改造，非功能项） | §3 | **无独立用例**（GAP-18） |
 | §7 Q1（一次性全改 + 一次提交） | §7 | G05 / G06 |
 | §7 Q2（`docs/agents/**` 同批重生成） | §7 | G02 |
 | §7 Q3（可调语序不可改语义） | §7 | **无自动化用例**（语义不可机判）→ GAP-7 |
@@ -109,9 +113,9 @@
 | ID | 类型 | 覆盖 | 前置 | 步骤 | 预期 | 判据 |
 |---|---|---|---|---|---|---|
 | S2-TC-A01 | 正 | §3 #1、Q4 | `card-contract.mjs` 已落；可 `import * as CC from '../card-model/vocab/card-contract.mjs'` | `test('S2-TC-A01 契约四导出与形状')`：断导出面与四种形状；断文件在 `vocab/`；打印 `Object.keys(CC)` | 导出**恰四个**名字（多一 / 少一 / 改名即红）；`TYPE_LABELS` 对象、`TRISTATE` 数组、`ALLOWED_PRODUCT_NAMES` 数组、`FORMAT_CHECKS` 数组；文件在 `tools/docgen/card-model/vocab/`（Q4 / ） | `assert.deepEqual(Object.keys(CC).sort(), ['ALLOWED_PRODUCT_NAMES','FORMAT_CHECKS','TRISTATE','TYPE_LABELS'])`；`assert.ok(existsSync(join(REPO,'tools/docgen/card-model/vocab/card-contract.mjs')))`；`assert.ok(Array.isArray(CC.ALLOWED_PRODUCT_NAMES) && Array.isArray(CC.FORMAT_CHECKS) && Array.isArray(CC.TRISTATE) && typeof CC.TYPE_LABELS === 'object')` |
-| S2-TC-A02 | 正 | §3 #1、§6-D10、§4-D4 上游（**G2 分层**） | 同 A01；`import * as ENUMS from '../card-model/enums.mjs'` | `test('S2-TC-A02 TYPE_LABELS 三键中文值且键不进许')`：键集与 `Object.keys(ENUMS.CHECK_KINDS)` 比（派生，不手抄）；三值逐字比；断三键**不在** `ALLOWED_PRODUCT_NAMES` | 键集 == `CHECK_KINDS` 的 3 键（`script` / `ai` / `manual`，`enums.mjs`）；值逐字 `脚本核对` / `AI 判定` / `人工判定`；**三个英文键 0 个出现在 `ALLOWED_PRODUCT_NAMES`**（类型键只在 `card-contract.mjs` 内部，进「许」= 与 D4 互斥） | `assert.deepEqual(Object.keys(CC.TYPE_LABELS).sort(), Object.keys(ENUMS.CHECK_KINDS).sort())`；`assert.deepEqual(Object.values(CC.TYPE_LABELS), ['脚本核对','AI 判定','人工判定'])`；`assert.equal(Object.keys(CC.TYPE_LABELS).filter(k => CC.ALLOWED_PRODUCT_NAMES.includes(k)).length, 0)` |
+| S2-TC-A02 | 正 | §3 #1、§6-D10、§4-D4 上游（**G2 分层**） | 同 A01；`import * as ENUMS from '../card-model/enums.mjs'` | `test('S2-TC-A02 TYPE_LABELS 三键中文值且键不进许')`：键集与 `Object.keys(ENUMS.CHECK_KINDS)` 比（派生，不手抄）；三值逐字比；断三键**不在** `ALLOWED_PRODUCT_NAMES` | 键集 == `CHECK_KINDS` 的 3 键（`script` / `ai` / `manual`，`enums.mjs`）；值逐字 `脚本核对` / `AI 判定` / `人工判定`；**三个英文键 0 个出现在 `ALLOWED_PRODUCT_NAMES`**（类型键只在 `card-contract.mjs` 内部，进「许」= 与 D4 互斥）。**用 `join` 比较是为与 §4-A1 的数组字面阈值自洽（测试文件本身在 E01 扫描面内，写数组字面会让 E01 恒红），逐字性不变** | `assert.deepEqual(Object.keys(CC.TYPE_LABELS).sort(), Object.keys(ENUMS.CHECK_KINDS).sort())`；`assert.equal(Object.values(CC.TYPE_LABELS).join('｜'), '脚本核对｜AI 判定｜人工判定')`；`assert.equal(Object.keys(CC.TYPE_LABELS).filter(k => CC.ALLOWED_PRODUCT_NAMES.includes(k)).length, 0)` |
 | S2-TC-A03 | 负 | §6-D10、§4-D4 上游 | A02 的断言抽成 `assertTypeLabels(map)` | `test('S2-TC-A03 类型值漂移即红')`：喂 ① `{...TYPE_LABELS, ai:'AI判定'}`（去空格）② `{...TYPE_LABELS, manual:'人工'}`（截短） | 两次都抛（判据是逐字相等，不是「包含」） | `assert.throws(() => assertTypeLabels(c1))`；`assert.throws(() => assertTypeLabels(c2))` |
-| S2-TC-A04 | 正 | §3 #1、§4-D5 上游（**G1 派生**） | 同 A01；`ENUMS.VERDICTS` 可读 | `test('S2-TC-A04 TRISTATE 由 VERDICTS 派生的 5 行')`：断长度、断 `${1,4}` 段 == `Object.keys(VERDICTS)`、断第 5 行 == `reason`、断首行含四词 | 恰 5 行（1 行中文解释 + 4 行常量）；第 2–4 行 == `VERDICTS` 三键（`enums.mjs` 只 3 值）；第 5 行 == `reason`；**`reason` 不在 `VERDICTS` 内**，故只能由 `TRISTATE` 自带 | `assert.equal(CC.TRISTATE.length, 5)`；`assert.deepEqual(CC.TRISTATE.slice(1,4), Object.keys(ENUMS.VERDICTS))`；`assert.equal(CC.TRISTATE[4], 'reason')`；`assert.equal(Object.keys(ENUMS.VERDICTS).includes('reason'), false)`；`assert.ok(['hit','miss','na','reason'].every(t => CC.TRISTATE[0].includes(t)))` |
+| S2-TC-A04 | 正 | §3 #1、§4-D5 上游（**G1 派生**） | 同 A01；`ENUMS.VERDICTS` 可读 | `test('S2-TC-A04 TRISTATE 由 VERDICTS 派生的 5 行')`：断长度、断 `${1,4}` 段 == `Object.keys(VERDICTS)`、断第 5 行 == `reason`、断首行含四词 | 恰 5 行（1 行中文解释 + 4 行常量）；第 2–4 行 == `VERDICTS` 三键（`enums.mjs` 只 3 值）；第 5 行 == `reason`；**`reason` 不在 `VERDICTS` 内**，故只能由 `TRISTATE` 自带 | `assert.equal(CC.TRISTATE.length, 5)`；`assert.deepEqual(CC.TRISTATE.slice(1,4), Object.keys(ENUMS.VERDICTS))`；`assert.equal(CC.TRISTATE[4], 'reason')`；`assert.equal(Object.keys(ENUMS.VERDICTS).includes('reason'), false)`；`assert.ok([...Object.keys(ENUMS.VERDICTS), 'reason'].every(t => CC.TRISTATE[0].includes(t)))` |
 | S2-TC-A05 | 负 | §3 #1 | A04 断言抽成 `assertTristate(list)` | `test('S2-TC-A05 三态形态破坏即红')`：① 追加 `pass` 行；② 交换 `miss` 与 `na` | 两次都抛（多一行 = 6 行；换序 = 逐行不等） | `assert.throws(() => assertTristate([...CC.TRISTATE, 'pass']))`；`assert.throws(() => assertTristate([T[0],T[1],T[3],T[2],T[4]]))` |
 | S2-TC-A06 | 正 | §3 #1 | 同 A01 | `test('S2-TC-A06 FORMAT_CHECKS 三条可二值判')`：断条数；逐条扫「废卡」与「缺/空」 | 恰 3 条；每条含 `废卡` 且含 `缺` 或 `空`（= 判句，不是形容词） | `assert.equal(CC.FORMAT_CHECKS.length, 3)`；`assert.ok(CC.FORMAT_CHECKS.every(s => /废卡/.test(s) && /[缺空]/.test(s)))` |
 | S2-TC-A07 | 负 | §3 #1 | A06 断言抽成 `assertFormatChecks(list)` | `test('S2-TC-A07 判句写成散文即红')`：喂 `['字段要写全','证据要清楚','建议要给']` | 抛（0 处 `废卡`、0 处可判形态 = 判不了） | `assert.throws(() => assertFormatChecks(['字段要写全','证据要清楚','建议要给']))` |
@@ -131,7 +135,7 @@
 | S2-TC-B04 | 负 | §4-D2、V-7（改一字） | 同 B03 | `test('S2-TC-B04 改一字只被 D2 抓到')`：第 3 行 `须` → `必须` | 该行仍匹配 D1 正则（说明 D1 抓不到形态内改字），但逐字断言抛 | `assert.match(mutLine, /^- \d+｜/)`；`assert.throws(() => assert.equal(mutLine, expectedBullet(card, 2)))` |
 | S2-TC-B05 | 正 | §4-D2、§6-D3、落点 #4 | `expectedBullet` 已导出 | `test('S2-TC-B05 15 卡逐行等于 expectedBullet')`：15 卡 × 每条 must 逐行 `assert.equal(line, expectedBullet(card, i))` | mismatch 计数 0（`expectedBullet` 是唯一翻译点，测试不重写翻译） | `assert.equal(mismatchCount, 0)` |
 | S2-TC-B06 | 边界 | §4-D1（空数据边界） | 可构造独立 card 对象传给 `renderCard` | `test('S2-TC-B06 零条 must/never 不残留表头')`：`renderCard({...card, must: [], never: []}, env)` | 两段 bullet 数 0；段内 `｜` 表头行 0；不抛 | `assert.equal(bullets.length, 0)`；`assert.equal(pipes.length, 0)`；`assert.doesNotThrow(() => renderCard(empty, env))` |
-| S2-TC-B07 | 正 | §4-D1（数据序口径）、§4-D2 | 至少 1 席 `must.length >= 2` | `test('S2-TC-B07 序号跟随数据序而非 id 序')`：把 `must` 整体反转后渲染，比较两段行文本 | 反转后的行文本逐字 == 原行文本的逆序；且两序**不等**（n ≥ 2 时不相等 = 序号确实跟数据走） | `assert.deepEqual(linesRev, [...lines].reverse())`；`assert.notDeepEqual(linesRev, lines)` |
+| S2-TC-B07 | 正 | §4-D1（数据序口径）、§4-D2 | 至少 1 席 `must.length >= 2` | `test('S2-TC-B07 序号跟随数据序而非 id 序')`：把 `must` 整体反转后渲染，取反转前后两段的 bullet 行；两段都先剥掉行首 `- <i>｜` 前缀再比**正文**，序号另比 | 反转后条数不变；剥掉前缀后正文序列 == 原正文的逆序（**正文跟数据走**）；**序号**仍从 1 重新编号（`1..n`，spec §4-D1「`i` = 该段数据序，从 1 起连续」——故整行不等是预期行为，不得拿整行逐字比）；两序**不等**（n ≥ 2 时 = 序号是数据序，不是 id 序） | `assert.equal(linesRev.length, lines.length)`；`const strip = l => l.replace(/^- \d+｜/, '')`；`assert.deepEqual(linesRev.map(strip), [...lines].reverse().map(strip))`；`assert.deepEqual(prefixIdxRev, [...Array(n).keys()].map(i => i + 1))`；`assert.notDeepEqual(linesRev, lines)` |
 | S2-TC-B08 | 正 | §4-A2 探针②、§4-D5、落点 #4 | `TRISTATE` 为可变数组（同模块实例内可改元素） | `test('S2-TC-B08 常量探针：改 TRISTATE[0] 渲染即跟随')`：① `TRISTATE[0]` 加探针串 → 重渲；② 扫磁盘 `agents/*.md`；③ 还原后重渲 | 探针串**出现在渲染卡面**（单源）；磁盘 15 卡探针 **0 命中**（未重生）；还原后卡面归零（构造有效） | `assert.ok(cardText.includes(PROBE))`；`assert.equal(diskHits, 0)`；`assert.equal(cardTextAfterRestore.includes(PROBE), false)` |
 
 ---
@@ -174,10 +178,10 @@
 
 | ID | 类型 | 覆盖 | 前置 | 步骤 | 预期 | 判据 |
 |---|---|---|---|---|---|---|
-| S2-TC-E01 | 正 | §4-A1、V-9 | 扫描面 = `tools/` ∪ `scripts/` ∪ `agents/`（`walkFiles` 同口径，跳过 `node_modules` / `.git`；阈值 = 常量 9） | `test('S2-TC-E01 契约枚举全仓只有一处')`：对每文件取所有 `[...]` 数组字面；统计含 ≥2 个契约枚举值的数组 | 除 `card-contract.mjs` 外 0 处；且 `card-contract.mjs` 内 ≥ 1 处（**防恒真**：若扫描器写错面则为 0） | `assert.deepEqual(copyFiles, [])`；`assert.ok(copyFilesAll.length >= 1)` |
+| S2-TC-E01 | 正 | §4-A1、V-9 | 扫描面 = **卡面渲染链**：`tools/docgen/components` ∪ `tools/docgen/card-model` ∪ `tools/docgen/templates` ∪ `scripts/` ∪ `agents/`（`walkFiles` 同口径，跳过 `node_modules` / `.git`），并排除 `*.test.mjs`（spec §6-D18 收窄；阈值 = 常量 9 不变） | `test('S2-TC-E01 契约枚举全仓只有一处')`：对每文件取所有 `[...]` 数组字面；统计含 ≥2 个契约枚举值的数组 | 除 `card-contract.mjs` 外 0 处；且 `card-contract.mjs` 内 ≥ 1 处（**防恒真**：若扫描器写错面则为 0） | `assert.deepEqual(copyFiles, [])`；`assert.ok(copyFilesAll.length >= 1)` |
 | S2-TC-E02 | 负 | §4-A1 反证、V-9 | `coldRepo` 副本 | `test('S2-TC-E02 故意别处再加一份即红')`：副本新增 `tools/docgen/components/type-labels-copy.mjs`（含 `脚本核对` + `AI 判定` 二字面） | 扫描命中 1 且点名该文件 → 断言抛 | `assert.deepEqual(copyFiles, ['tools/docgen/components/type-labels-copy.mjs'])`；`assert.throws(() => assertNoCopy(copyFiles))` |
 | S2-TC-E03 | 正 | §4-A3、V-9（**G2 换构造**） | 同 C01；`ALLOWED_PRODUCT_NAMES` 同模块实例可 push | `test('S2-TC-E03 新增一个许名只改一处即绿')`：① 基线空；② 塞 `rubric.score`（**点分形态 → (d) 必红**、未在许）；③ 内存把 `rubric.score` 加进 `ALLOWED_PRODUCT_NAMES`（**只此一处**）；④ 还原 | 四态成立：空 → 红 → 只改 `card-contract.mjs` 这一处即绿 → 还原回空。证明「无第二套白名单、改一处生效」，且**不用 `trace.id`**（它是未登记 token 的必红探针，归 C07） | `assert.deepEqual(cardFaceIds(base, env), [])`；`assert.ok(cardFaceIds(probe, env).length >= 1)`；`assert.deepEqual(cardFaceIds(probeWithAllowed, env), [])`；`assert.deepEqual(cardFaceIds(base, env), [])` |
-| S2-TC-E04 | 负 | §4-A3 反证（源码静态扫；**GAP-16**） | 同 C01；`validateCardModel.mjs` 源码可读 | `test('S2-TC-E04 许表只有一处：实现文件里没有第二份许值数组')`：读 `validateCardModel.mjs` 源码，取所有 `[...]` 数组字面；断其中**不含** `ALLOWED_PRODUCT_NAMES` 的任何元素字面（如 `'evidence'` / `'verdict'` / `'reason'`） | 命中 0 处（许只认 `card-contract.mjs` 的一处导出）；副本写入 `const CARD_FACE_EXTRA = ['evidence','verdict']` → 命中 ≥ 1 → 抛（构造有效性） | `assert.deepEqual(extraArrays, [])`；`assert.throws(() => assert.deepEqual(extraArraysCopy, []))` |
+| S2-TC-E04 | 负 | §4-A3 反证（源码静态扫；**GAP-16**） | 同 C01；`components/cardFaceIds.mjs`（**D19 落点**）+ `components/renderCard.mjs` + `validateCardModel.mjs` 源码可读 | `test('S2-TC-E04 许表只有一处：实现文件里没有第二份许值数组')`：读上述三处源码，取所有 `[...]` 数组字面；断其中**不含** `ALLOWED_PRODUCT_NAMES` 的任何元素字面（如 `'evidence'` / `'verdict'` / `'reason'`） | 命中 0 处（许只认 `card-contract.mjs` 的一处导出）；副本在 `cardFaceIds.mjs` 写入 `const CARD_FACE_EXTRA = ['evidence','verdict']` → 命中 ≥ 1 → 抛（构造有效性） | `assert.deepEqual(extraArrays, [])`；`assert.throws(() => assert.deepEqual(extraArraysCopy, []))` |
 | S2-TC-E05 | 正 | §4-A4、落点 #3 | 15 卡已落盘；模板已改占位符 | `test('S2-TC-E05 占位符不残留且新占位符在位')`：15 卡扫 `{{`；模板扫新旧占位符 | 15 卡 `{{` **0 次**；`{{MUST_BULLETS}}` `{{NEVER_BULLETS}}` `{{TRISTATE}}` `{{PRODUCT_NAMES}}` `{{FORMAT_CHECKS}}` 各 ≥ 1；旧名 `{{MUST_TABLE}}` `{{NEVER_TABLE}}` 0 次 | `assert.equal(count(t, /{{/g), 0)`；`assert.ok(NEW_TPLS.every(p => tpl.includes(p)))`；`assert.equal(OLD_TPLS.filter(p => tpl.includes(p)).length, 0)` |
 | S2-TC-E06 | 负 | §4-A4（**G5-1 子进程**） | 副本模板可改；子进程工具在位 | `test('S2-TC-E06 未填占位符即抛 MissingSlot')`：① 副本**不追加**时子进程渲一次（基线应 exit 0）；② 副本模板追加 `{{PROBE_UNFILLED}}` 后子进程重渲；③ 子进程脚本 `catch` 到 `code === 'MissingSlot'` 时 `process.exit(3)` | ① 基线 exit 0（防「恒非 0」= 构造无效）；② 改后 exit **3** 且 stderr 含 `MissingSlot`（**必须子进程**：本进程模板在 `cardTemplate.mjs` 加载即固化，改副本后本进程重渲恒绿） | `assert.equal(base.code, 0)`；`assert.equal(mut.code, 3)`；`assert.match(mut.out, /MissingSlot/)` |
 | S2-TC-E07 | 正 | §6-D2、落点 #3 | 模板与 `renderCard.mjs` 可读 | `test('S2-TC-E07 契约字面不得长在模板/渲染器')`：两文件扫 `脚本核对` / `AI 判定` / `人工判定` / `hit` / `miss` / `na` / `reason` / `废卡` | 两文件命中 0（模板只有占位符、渲染器只 import 常量）；副本把 4 行常量写进模板 → 命中 ≥ 1 → 抛 | `assert.equal(countAll, 0)`；`assert.throws(() => assert.equal(countAllCopy, 0))` |
@@ -250,7 +254,22 @@
 |---|---|---|---|---|---|---|
 | S2-TC-J01 | 正 | 常量 3（ID 前缀与函数名同名）、本文件 §1 / §2–§11 | 本文件可读（`readFileSync` testcase 路径） | `test('S2-TC-J01 ID 与步骤列首的 test 名逐条同名')`：解析用例表第 1 列的 ID，与每行「步骤」列首那个 `test` 调用所挂的 `S2-TC-<ID>` 前缀比对（本行自身只出现 1 次 `test` 调用，防自指误报） | 两集合**双向相等**；每行恰 1 个 test 名（0 个或多个都算红）；ID 无重复 | `assert.deepEqual([...idsInTable].sort(), [...idsInSteps].sort())`；`assert.equal(rowsWithoutTestName, 0)`；`assert.equal(new Set(idsInTable).size, idsInTable.length)` |
 | S2-TC-J02 | 正 | 常量 11（不自递归，**G7**） | 本文件可读 | `test('S2-TC-J02 全文不得 spawn 门禁')`：① 只对**调用形态行**扫（含 `spawnSync` / `execFileSync` / `execSync` / `runNode(` 且同行为门禁总脚本或其 npm 别名）；② 只对**「步骤」列**扫门禁命令字面 | ① 调用形态命中 **0**（散文里写「不得跑」不算违规，故按调用形态判）；② 步骤列命中 **0**（用例步骤不许真的跑门禁总脚本）；③ 散文声明句 ≥ 1（守「扫描器没写错面」） | `assert.equal(callFormHits, 0)`；`assert.equal(stepColumnHits, 0)`；`assert.ok(proseMentions >= 1)` |
-| S2-TC-J03 | 边界 | 本文件计数自洽（能抓住「声称 70 实际 61」这类错，**G7**） | 本文件可读；`tools/execution-matrix/markdown-rows.mjs` 的 `splitRow` 可 import | `test('S2-TC-J03 声明计数 == 实测计数')`：从文件头解析两处声明（状态行 `**用例总数 N**` 与**最后一条**修订记录行「用例数 X（正 A / 负 B / 边界 C）」——旧修订记录行属历史、不参与比对）；再用 `splitRow` 逐行切单元格，取第 1 列匹配 `/^S2-TC-[A-J]\d\d$/` 的行数与三类计数（`边界（**执行型**）` 归入边界） | 实测行数 == 两处声明的总数（逐处相等）；三类实测值 == 两处声明的三类值（逐键相等）；类型列不出现「正 / 负 / 边界」之外的值 | `assert.equal(actualRows, declaredTotal)`；`assert.equal(actualRows, declaredTotalInRevision)`；`assert.deepEqual(actualTypes, declaredTypes)`；`assert.deepEqual(actualTypes, declaredTypesInRevision)`；`assert.deepEqual(Object.keys(actualTypes).sort(), ['正','负','边界'])` |
+| S2-TC-J03 | 边界 | 本文件计数自洽（能抓住「声称 70 实际 61」这类错，**G7**） | 本文件可读；`tools/execution-matrix/markdown-rows.mjs` 的 `splitRow` 可 import | `test('S2-TC-J03 声明计数 == 实测计数')`：从文件头解析两处声明（状态行 `**用例总数 N**` 与**最后一条**修订记录行「用例数 X（正 A / 负 B / 边界 C）」——旧修订记录行属历史、不参与比对）；再用 `splitRow` 逐行切单元格，取第 1 列匹配 `/^S2-TC-[A-K]\d\d$/` 的行数与三类计数（`边界（**执行型**）` 归入边界） | 实测行数 == 两处声明的总数（逐处相等）；三类实测值 == 两处声明的三类值（逐键相等）；类型列不出现「正 / 负 / 边界」之外的值 | `assert.equal(actualRows, declaredTotal)`；`assert.equal(actualRows, declaredTotalInRevision)`；`assert.deepEqual(actualTypes, declaredTypes)`；`assert.deepEqual(actualTypes, declaredTypesInRevision)`；`assert.deepEqual(Object.keys(actualTypes).sort(), ['正','负','边界'])` |
+
+---
+
+## 11.1 K 组：A3 判据扩面（spec §6-D17）
+
+> **本组只测形态判定，不测业务语义**：A3 判的是「卡里有没有一处必答清单载体」——载体形态二选一（表格表头含『必答』或『必问』**或**『一定会』节内 ≥1 行匹配 `^- \d+｜`，取并集，spec §6-D17「只加不删」）。**不判**「这份必答清单是否真的问全了」（业务语义不可机判 → §12 GAP-17，归 ④ 段 sdet 抽核）。
+> **统一前置**：三条一律**只 import `tools/execution-matrix/check-agent.mjs` 的 `checkAgentFromText`**（`node --test` 单文件可跑），**不 spawn 门禁总脚本**（常量 11 / J02）；三个构造卡全在内存里拼（常量 5），不写仓内文件。
+> **判据列形式约定**：断言 ASCII 竖线一律用正则转义 `\x7C`（字符类 / 字面竖线都会破坏本 markdown 表格，常量 10）。
+> **断言面只覆盖 `A3`**：三个构造卡都是最小卡（不含闭环 / 证据字样），故 `A4` / `A5` 会红——与 A3 无关，不作断言；K01 另带 `A6` / `A7` 各 0 条（证明构造卡两节在位，红项不被缺节掩盖）。
+
+| ID | 类型 | 覆盖 | 前置 | 步骤 | 预期 | 判据 |
+|---|---|---|---|---|---|---|
+| S2-TC-K01 | 正 | §6-D17（A3 扩面的新形态：『一定会』bullet）、§7 Q8、落点 #13 | `checkAgentFromText` 可 import（只 import 它）；D17 的 `checkStruct` 分支已落（`^- \d+｜` 形态，见 `criteria.md` 的 A3 判定方式） | `test('S2-TC-K01 A3 扩面：只有 bullet 也过')`：构造最小卡 = front matter + `## 一定会` 节内 1 行 `- 1｜做某事` + `## 边界` + `## 输出格式`（**无任何表头含『必答』或『必问』的表格**）→ 调一次 `checkAgentFromText(card)` | `findings` 里 **0 条 `A3`**（旧形态缺、新形态在 → 扩面生效）；构造有效性三项同批断：`^- \d+｜` 行数 == 1（bullet 真写进去了，不是空节）、ASCII 竖线开头行数 == 0（确实没有表格形态）、`A6` / `A7` 各 0 条（两个节在位，红项不被无关缺节掩盖） | `assert.equal(checkAgentFromText(card).findings.some(f => f.code === 'A3'), false)`；`assert.equal(card.split('\n').filter(l => /^- \d+｜/.test(l)).length, 1)`；`assert.equal(card.split('\n').filter(l => /^\s*\x7C/.test(l)).length, 0)`；`assert.equal(checkAgentFromText(card).findings.filter(f => ['A6','A7'].includes(f.code)).length, 0)` |
+| S2-TC-K02 | 边界 | §6-D17（旧形态保留 = 存量兼容边界）、§7 Q8、落点 #13 | 同 K01 前置；`criteria.md` 的 A3 旧判句（表头含『必答』或『必问』）未被删 | `test('S2-TC-K02 A3 扩面：旧表格形态仍过')`：构造最小卡 = front matter + `## 一定会` 节内 1 张表（表头 `# / 必问 / 回答` + 1 行数据）+ `## 边界` + `## 输出格式`，**节内 0 条 bullet** → 调一次 `checkAgentFromText(card)` | `findings` 里 **0 条 `A3`**（旧形态未因扩面失效，存量手写卡不断）；构造有效性两项：该表头行在文本里**恰 1 行**（防「表根本没写进去 → 本用例其实在测空卡」）、`^- \d+｜` 行数 == 0（本卡确实只有表形态，不靠新形态蒙过） | `assert.equal(checkAgentFromText(card).findings.some(f => f.code === 'A3'), false)`；`assert.equal(card.split('\n').filter(l => /^\s*\x7C # \x7C 必问 \x7C 回答 \x7C\s*$/.test(l)).length, 1)`；`assert.equal(card.split('\n').filter(l => /^- \d+｜/.test(l)).length, 0)` |
+| S2-TC-K03 | 负 | §6-D17 判别力（两形态皆无 → 必红；**围栏内 bullet 不算**）、`check-agent.mjs` 的 `fenceMask` 口径（围栏内内容对 A3–A7 一律不看）、§7 Q8 | 同 K01 前置；围栏识别口径 = `markdown-rows.mjs` 的 `fenceMask` | `test('S2-TC-K03 A3 两形态皆无必红且围栏内 bullet 不算')`：两个构造各调一次 `checkAgentFromText`——① 纯文本卡（`## 一定会` 内写 `- 不做某事`（不匹配 `^- \d+｜`）、全卡 0 张表）；② 同构卡但把 `- 1｜…` 写进 `## 一定会` 节内的代码围栏块（围栏外仍是 0 条 bullet、0 个含『必问』的表头） | ① `findings` **含 `A3`**（证明扩面后判别力没降）；② `findings` **仍含 `A3`**（围栏内的 bullet 被掩掉、不算清单）；且 ② 的文本里**确实出现** `- 1｜`（证明是围栏隔离生效，不是「没写进去」而红） | `assert.equal(checkAgentFromText(plain).findings.some(f => f.code === 'A3'), true)`；`assert.equal(plain.split('\n').filter(l => /^- \d+｜/.test(l)).length, 0)`；`assert.ok(fenced.includes('- 1｜'))`；`assert.equal(fenced.split('\n').filter(l => /^- \d+｜/.test(l)).length, 1)`；`assert.equal(checkAgentFromText(fenced).findings.some(f => f.code === 'A3'), true)` |
 
 ---
 
@@ -274,8 +293,10 @@
 | **GAP-14** | **`{{}}` 占位符替换的语义正确性**（填进去的句子对不对） | §8 G-5  | E05 判「无残留 + 新占位符在位」、E06 判「未填即抛 `MissingSlot`」；语义正确由议会回读 + ④ 段 |
 | **GAP-15** | **裸词时刻 id（`start` / `end` / `before` / `after`）零判别力**：它们与 `MOMENTS` 键全等，但卡面**合法**渲染「时刻：end」（现盘 15 卡 77 处）；本块不做时刻中文名表（F-03 只给 `objects` / `repeats`） | §8 G-7 / §4-D3 不判红② | C02 由「六类」改「五类」（时刻类不判）、C08 的派生词表不含 `MOMENTS`；缺口由 ④ 段 sdet 抽核「时刻：<英文>」兜，S3 扩判定面时补名表 |
 | **GAP-16** | **「许值副本」不被 A1 抓**：A1 只统计「≥2 个**契约枚举值**」的数组字面（`TYPE_LABELS` 中文值 ∪ `TRISTATE` 4 值），所以别处抄一份 `['evidence','verdict']` 这类**许值**数组不会红 | §4-A1 / §4-A3 | E02 只覆盖契约枚举副本；E03 / E04 覆盖「许表只认 `card-contract.mjs`」的**生效性**（改别处不生效），但「多一份许值数组」本身不判红 → ④ 段 sdet 抽核 / S3 扩 A1 阈值时补 |
+| **GAP-17** | **K 组覆盖 A3 的形态判定面；A3 的业务语义不可机判** | §6-D17 / §7 Q8、`criteria.md` 的 A3 判定对象 | ④ 段 sdet 抽核 |
+| **GAP-18** | **落点 #14 只改既有测试断言、不新增被测功能** | spec §3 #14 / §6-D17 | 改形是否正确由 ④ 段 sdet 复核，不进本文件自动化面 |
 
-**spec 必需项的覆盖缺口（D1–D7 / A1–A4 / §6-D1–D16 / V-6 / V-7 / V-9 / V-10 / V-11 / V-11-b）**：**无**——逐条已在 §1 覆盖总表指派到用例（`§6-D5` 一项按 PRD `:175` 明文**不写断言**，见 GAP-11）；上表 **16** 项是「spec 内已声明但机器判不了」与「spec 未定义、本文件钉了口径」两类，不是漏指派。
+**spec 必需项的覆盖缺口（D1–D7 / A1–A4 / §6-D1–D17 / V-6 / V-7 / V-9 / V-10 / V-11 / V-11-b）**：**无**——逐条已在 §1 覆盖总表指派到用例（`§6-D5` 一项按 PRD `:175` 明文**不写断言**，见 GAP-11）；上表 **18** 项是「spec 内已声明但机器判不了」与「spec 未定义、本文件钉了口径」两类，不是漏指派。
 
 ---
 
@@ -283,13 +304,14 @@
 
 | 项 | 值 | 可核方式 |
 |---|---|---|
-| 用例总数 | **76** | 用例表行数（`S2-TC-` ID 数）；J03 判 |
-| 正 | **38** | 类型列计数 |
-| 负 | **25** | 类型列计数 |
-| 边界 | **13** | 类型列计数（含 3 条标「执行型」：H01 / H02 / I05） |
-| 负 + 边界 vs 正 | **38 ≥ 38** | 上两行相加 |
-| 各组条数 | A 10 / B 8 / C 11 / D 7 / E 12 / F 5 / G 7 / H 7 / I 6 / J 3 = **76** | 按 ID 首字母分组计数 |
-| 复算方式 | 逐行用 `splitRow`（`tools/execution-matrix/markdown-rows.mjs`）取第 1 列，匹配 `^S2-TC-[A-J]\d\d$` 的行按首字母分组计数；类型列计数时把 `边界（执行型）` 归入「边界」 | J03 已把「声明值 vs 实测值」做成自动化断言（逐键相等），本条不需要人肉复算 |
+| 用例总数 | **79** | 用例表行数（`S2-TC-` ID 数）；J03 判 |
+| 正 | **39** | 类型列计数 |
+| 负 | **26** | 类型列计数 |
+| 边界 | **14** | 类型列计数（含 3 条标「执行型」：H01 / H02 / I05） |
+| 负 + 边界 vs 正 | **40 ≥ 39 成立**（负 26 + 边界 14 = 40） | 上两行相加；`rules/spec-testcase-gate.md` 判据 3「负例与边界 ≥ 正例」因此满足 |
+| 各组条数 | A 10 / B 8 / C 11 / D 7 / E 12 / F 5 / G 7 / H 7 / I 6 / J 3 / K 3 = **79** | 按 ID 首字母分组计数 |
+| 复算方式 | 逐行用 `splitRow`（`tools/execution-matrix/markdown-rows.mjs`）取第 1 列，匹配 `^S2-TC-[A-K]\d\d$` 的行按首字母分组计数；类型列计数时把 `边界（执行型）` 归入「边界」 | J03 已把「声明值 vs 实测值」做成自动化断言（逐键相等），本条不需要人肉复算 |
+| 负例面说明（K 组） | K 组新增以正例为主；K02 归边界后 40 ≥ 39，判据 3 成立；负例面由 K03 + 原 25 条负例承载；A3 语义面不可机判已在 §12 记 **GAP-17**（④ 段 sdet 抽核） | 与上一行算式同一份实测（J03 的类型列计数） |
 | 测试文件（建议） | `tools/docgen/test/s2-card-rewrite.test.mjs` | 一个用例一个 `test('S2-TC-<ID> …')` 块；ID 前缀 == 函数名首 token（J01 判） |
-| 组 → 函数名 | A 契约与名表 / B 行形态与逐字 / C 禁 id / D 类型列与三态与前提 / E 复用与占位符与写盘两步 / F 夹具 / G 门禁与单源 / H 理解度与「不加」/ I 上游同批与「不改正文」/ J 自核 | 逐条函数名见各表「步骤」列首；I 组统一前置 `<S2-BASE>`（常量 14） |
+| 组 → 函数名 | A 契约与名表 / B 行形态与逐字 / C 禁 id / D 类型列与三态与前提 / E 复用与占位符与写盘两步 / F 夹具 / G 门禁与单源 / H 理解度与「不加」/ I 上游同批与「不改正文」/ J 自核 / K A3 判据扩面（形态面） | 逐条函数名见各表「步骤」列首；I 组统一前置 `<S2-BASE>`（常量 14） |
 | 运行方式 | `node --test tools/docgen/test/s2-card-rewrite.test.mjs`（门禁总脚本不在此列，常量 11 / GAP-13） | J02 判 |
