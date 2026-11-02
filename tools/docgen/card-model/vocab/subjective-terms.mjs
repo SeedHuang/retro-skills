@@ -8,3 +8,7 @@ const OBSERVABLE = JSON.parse(
 );
 
 export const subjectiveTerms = Object.freeze([...OBSERVABLE.terms]);
+
+// substring 判定**唯一实现点**（S3 spec §4）：文本是否**包含**任一词面（不是 token 全等）。
+// `validateCardModel` 与 `validatePredicates` 都只 import 本函数——复本即第二实现点（V-9）。
+export const subjectiveHit = (text) => subjectiveTerms.some((t) => typeof text === 'string' && text.includes(t));

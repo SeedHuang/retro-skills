@@ -44,7 +44,7 @@ const GOOD = `# 禁止在未获明确指令时执行 git 写操作
 每次执行 git 写操作前，先确认是否已获明确指令。
 
 ## 验证
-检查是否已执行 git 写操作；有疑问时暂停并向用户说明。`
+检查是否已执行 git 写操作；有疑问时暂停并向用户说明；复核命令 exit 0 才算通过。`
 
 const NO_SOURCE = `# 测试踩坑笔记
 
@@ -108,7 +108,7 @@ const POSITIVE = `# 代码提交前必须查看 git 状态
 每次提交前。
 
 ## 验证
-提交前自检确认已查看。`
+提交前自检确认已查看；复核 exit 0 才算通过。`
 
 // 预警基准：禁令类缺 ⑤⑥⑧（三检验已做）→ 22/25 → 预警
 const MID = `# 禁止在未获明确指令时执行 git 写操作
@@ -253,11 +253,12 @@ const TITLE_INCONSISTENT = `# 禁止 git 写操作
 
 // ── 新用例（Task 3 检查点评分）──
 
-test('合规基准：GOOD（禁令类 + 三检验）全 25 检查点通过', () => {
+test('合规基准：GOOD（禁令类 + 三检验）全 26 检查点通过', () => {
+  // ⑨ 判据可观察：GOOD 的验证节带 `exit 0` → 得 1 分（26 = 旧 25 + 1）
   const dir = makeDir({ 'good.md': GOOD })
   const r = score(dir, 'good.md', { triCheckDone: true })
-  assert.equal(r.total, 25)
-  assert.equal(r.max, 25)
+  assert.equal(r.total, 26)
+  assert.equal(r.max, 26)
   assert.equal(r.rate, 1)
   assert.equal(r.level, '健康')
   assert.equal(r.findings.length, 0)
@@ -268,17 +269,17 @@ test('合规基准：GOOD（禁令类 + 三检验）全 25 检查点通过', () 
   assert.deepEqual(r.groups['引用完整'], { score: 1, max: 1 })
   assert.deepEqual(r.groups['冗余度'], { score: 4, max: 4 })
   assert.deepEqual(r.groups['单规则'], { score: 1, max: 1 })
-  assert.deepEqual(r.groups['执行力度'], { score: 8, max: 8 })
+  assert.deepEqual(r.groups['执行力度'], { score: 9, max: 9 })
   assert.deepEqual(r.groups['标题'], { score: 4, max: 4 })
   rmSync(dir, { recursive: true, force: true })
 })
 
-test('GOOD 缺三检验报告（triCheckDone=false）→ 冗余度三检验 0，total 24', () => {
+test('GOOD 缺三检验报告（triCheckDone=false）→ 冗余度三检验 0，total 25', () => {
   const dir = makeDir({ 'good.md': GOOD })
   const r = score(dir, 'good.md')
   assert.equal(findingScore(r, '冗余度', '三检验报告已做'), 0)
-  assert.equal(r.total, 24)
-  assert.equal(r.rate, 24 / 25)
+  assert.equal(r.total, 25)
+  assert.equal(r.rate, 25 / 26)
   rmSync(dir, { recursive: true, force: true })
 })
 
@@ -333,20 +334,20 @@ test('标题漏前提 → 标题 反映关键前提 0', () => {
   rmSync(dir, { recursive: true, force: true })
 })
 
-test('非禁令类 → 执行力度组满分 5（省略④⑤⑥）', () => {
+test('非禁令类 → 执行力度组满分 6（省略④⑤⑥）', () => {
   const dir = makeDir({ 'a.md': POSITIVE })
   const r = score(dir, 'a.md')
-  assert.equal(r.groups['执行力度'].max, 5)
-  assert.equal(r.groups['执行力度'].score, 5)
+  assert.equal(r.groups['执行力度'].max, 6)
+  assert.equal(r.groups['执行力度'].score, 6)
   assert.ok(!r.findings.some(f => f.group === '执行力度' && /[④⑤⑥]/.test(f.check)), '④⑤⑥ 不应出现在 findings')
   rmSync(dir, { recursive: true, force: true })
 })
 
-test('禁令类 → 执行力度组满分 8（④⑤⑥ 计入）', () => {
+test('禁令类 → 执行力度组满分 9（④⑤⑥ 计入）', () => {
   const dir = makeDir({ 'good.md': GOOD })
   const r = score(dir, 'good.md', { triCheckDone: true })
-  assert.equal(r.groups['执行力度'].max, 8)
-  assert.equal(r.groups['执行力度'].score, 8)
+  assert.equal(r.groups['执行力度'].max, 9)
+  assert.equal(r.groups['执行力度'].score, 9)
   rmSync(dir, { recursive: true, force: true })
 })
 
@@ -483,7 +484,8 @@ test('确定性：同一 fixture 连跑两次输出一致', () => {
 
 test('不越界：输出不含「判据」「建议删除」', () => {
   const dir = makeDir({ 'good.md': GOOD, 'a.md': NO_SOURCE, 'b.md': BROKEN_REF, 'c.md': DUP, 'd.md': MISSING_PRECOND, 'e.md': POSITIVE, 'f.md': NO_POLAR, 'g.md': LONG_SOURCE, 'h.md': NO_LANDING, 'i.md': TWO_H1, 'j.md': H3_EMOJI, 'k.md': QUOTE_SOURCE, 'l.md': GUIDE_OPEN, 'm.md': HISTORY_SOURCE, 'n.md': VAGUE, 'o.md': MINIMAL_BAN, 'p.md': NO_COVER, 'q.md': NO_CONFLICT, 'r.md': LOOSE_EXC, 's.md': TITLE_NO_ACTION, 't.md': TITLE_INCONSISTENT })
-  const out = JSON.stringify(scoreDir(dir, { triCheckDone: true }))
+  // S3 起新增检查点名「⑨判据可观察」按 spec §5 定死；越界判据仍生效，只把该已登记检查点名剥掉后再扫
+  const out = JSON.stringify(scoreDir(dir, { triCheckDone: true })).split('⑨判据可观察').join('')
   assert.ok(!out.includes('判据'), '输出不应含「判据」')
   assert.ok(!out.includes('建议删除'), '输出不应含「建议删除」')
   rmSync(dir, { recursive: true, force: true })
@@ -597,7 +599,7 @@ const MODE_GOOD = `# 沟通中未获允许，不得开始执行写代码
 只有「用户主动发消息」这条信号才算模式切换依据；泛泛的感觉不算。
 
 ## 验证
-每次用户发消息后自查：是否只在回应、没有开始执行写动作。`
+每次用户发消息后自查：是否只在回应、没有开始执行写动作；复核 exit 0 才算通过。`
 
 // 待拆未定 fixture：合集（3 个无关主题塞一个文件）→ 单规则 0、只报通用组
 const PENDING = `# 代码风格规范
@@ -613,32 +615,34 @@ const PENDING = `# 代码风格规范
 ## 样式
 styled 组件必须放在独立 sc.tsx 文件中。`
 
-test('持续适用·禁令 → 满分 23（③⑦ 不评估，执行力度 max 6）', () => {
+test('持续适用·禁令 → 满分 24（③⑦ 不评估，执行力度 max 7）', () => {
+  // ⑨ 判据可观察：验证节带 marker → 执行力度 7（旧 6 + 1）
   const dir = makeDir({ 'good.md': GOOD })
   const r = score(dir, 'good.md', { type: '持续适用', triCheckDone: true })
-  assert.equal(r.total, 23)
-  assert.equal(r.max, 23)
+  assert.equal(r.total, 24)
+  assert.equal(r.max, 24)
   assert.equal(r.rate, 1)
   assert.equal(r.level, '健康')
-  assert.equal(r.groups['执行力度'].max, 6)
-  assert.equal(r.groups['执行力度'].score, 6)
+  assert.equal(r.groups['执行力度'].max, 7)
+  assert.equal(r.groups['执行力度'].score, 7)
   assert.ok(!r.findings.some(f => f.group === '执行力度' && /[③⑦]/.test(f.check)), '③⑦ 不应出现在 findings')
   rmSync(dir, { recursive: true, force: true })
 })
 
-test('模式门控·禁令（M1–M6 全过）→ 满分 31（执行力度 max 8 + 模式专属 max 6）', () => {
+test('模式门控·禁令（M1–M6 全过）→ 满分 32（执行力度 max 9 + 模式专属 max 6）', () => {
+  // ⑨ 判据可观察：验证节带 marker → 执行力度 9（旧 8 + 1）
   const dir = makeDir({ 'mode.md': MODE_GOOD })
   const r = score(dir, 'mode.md', {
     type: '模式门控',
     modeChecks: { M1: true, M2: true, M3: true, M4: true, M5: true, M6: true },
     triCheckDone: true,
   })
-  assert.equal(r.total, 31)
-  assert.equal(r.max, 31)
+  assert.equal(r.total, 32)
+  assert.equal(r.max, 32)
   assert.equal(r.rate, 1)
   assert.equal(r.level, '健康')
-  assert.equal(r.groups['执行力度'].max, 8)
-  assert.equal(r.groups['执行力度'].score, 8)
+  assert.equal(r.groups['执行力度'].max, 9)
+  assert.equal(r.groups['执行力度'].score, 9)
   assert.equal(r.groups['模式专属'].max, 6)
   assert.equal(r.groups['模式专属'].score, 6)
   rmSync(dir, { recursive: true, force: true })
@@ -679,7 +683,7 @@ const SUSTAIN_DUTY = `# 给用户看的文档必须写清四条要求
 给用户看的文档必须满足四条：不说行话、讲清机理、落到例子、一句话一件事；文档必须写清机理。
 
 ## 验证
-每次给用户看文档前，自检四条是否都满足。`
+每次给用户看文档前，自检四条是否都满足；复核 exit 0 才算通过。`
 
 // 条件·义务 合规 fixture：在…时 触发 + 每次…时 触发 + 验证（执行力度 ①②③⑦⑧ = 5）
 const COND_DUTY = `# 在开工时必须先执行推迟项轮询并写入文档
@@ -690,7 +694,7 @@ const COND_DUTY = `# 在开工时必须先执行推迟项轮询并写入文档
 在开工时，必须先执行推迟项轮询；轮询结果必须写入文档供复核。
 
 ## 验证
-每次开工时自查是否已执行轮询并写入文档。`
+每次开工时自查是否已执行轮询并写入文档；复核 exit 0 才算通过。`
 
 // 条件·义务（每次…前 触发口径）小型 fixture：③⑦ 按条件触发口径通过
 const COND_TRIG_OK = `# 在每次执行前必须查看对应文档
@@ -716,51 +720,52 @@ const MODE_DUTY = `# 在沟通中必须先回应再按规则执行
 - 执行中用户再发消息 = 回到沟通模式：停下执行先回应
 
 ## 验证
-每次用户发消息后自查：是否先回应并在文档中记录。`
+每次用户发消息后自查：是否先回应并在文档中记录；复核 exit 0 才算通过。`
 
-test('持续适用·义务 → 满分 20（执行力度仅 ①②⑧ = 3）', () => {
+test('持续适用·义务 → 满分 21（执行力度仅 ①②⑧⑨ = 4）', () => {
   const dir = makeDir({ 'duty.md': SUSTAIN_DUTY })
   const r = score(dir, 'duty.md', { type: '持续适用', triCheckDone: true })
-  assert.equal(r.total, 20)
-  assert.equal(r.max, 20)
+  assert.equal(r.total, 21)
+  assert.equal(r.max, 21)
   assert.equal(r.rate, 1)
   assert.equal(r.level, '健康')
   assert.equal(r.findings.length, 0)
-  assert.equal(r.groups['执行力度'].max, 3)
-  assert.equal(r.groups['执行力度'].score, 3)
+  assert.equal(r.groups['执行力度'].max, 4)
+  assert.equal(r.groups['执行力度'].score, 4)
   assert.ok(!r.findings.some(f => f.group === '执行力度' && /[④⑤⑥]/.test(f.check)), '义务类不评 ④⑤⑥')
   assert.ok(!r.findings.some(f => f.group === '执行力度' && /[③⑦]/.test(f.check)), '持续适用 ③⑦ 不评估')
   rmSync(dir, { recursive: true, force: true })
 })
 
-test('条件触发·义务 → 满分 22（执行力度 ①②③⑦⑧ = 5）', () => {
+test('条件触发·义务 → 满分 23（执行力度 ①②③⑦⑧⑨ = 6）', () => {
+  // ⑨ 判据可观察：验证节带 marker → 执行力度 6（旧 5 + 1）
   const dir = makeDir({ 'cond.md': COND_DUTY })
   const r = score(dir, 'cond.md', { type: '条件触发', triCheckDone: true })
-  assert.equal(r.total, 22)
-  assert.equal(r.max, 22)
+  assert.equal(r.total, 23)
+  assert.equal(r.max, 23)
   assert.equal(r.rate, 1)
   assert.equal(r.level, '健康')
   assert.equal(r.findings.length, 0)
-  assert.equal(r.groups['执行力度'].max, 5)
-  assert.equal(r.groups['执行力度'].score, 5)
+  assert.equal(r.groups['执行力度'].max, 6)
+  assert.equal(r.groups['执行力度'].score, 6)
   assert.ok(!r.findings.some(f => f.group === '执行力度' && /[④⑤⑥]/.test(f.check)), '义务类不评 ④⑤⑥')
   rmSync(dir, { recursive: true, force: true })
 })
 
-test('模式门控·义务（M1–M6 全过）→ 满分 28（执行力度 max 5 + 模式专属 max 6）', () => {
+test('模式门控·义务（M1–M6 全过）→ 满分 29（执行力度 max 6 + 模式专属 max 6）', () => {
   const dir = makeDir({ 'mode.md': MODE_DUTY })
   const r = score(dir, 'mode.md', {
     type: '模式门控',
     modeChecks: { M1: true, M2: true, M3: true, M4: true, M5: true, M6: true },
     triCheckDone: true,
   })
-  assert.equal(r.total, 28)
-  assert.equal(r.max, 28)
+  assert.equal(r.total, 29)
+  assert.equal(r.max, 29)
   assert.equal(r.rate, 1)
   assert.equal(r.level, '健康')
   assert.equal(r.findings.length, 0)
-  assert.equal(r.groups['执行力度'].max, 5)
-  assert.equal(r.groups['执行力度'].score, 5)
+  assert.equal(r.groups['执行力度'].max, 6)
+  assert.equal(r.groups['执行力度'].score, 6)
   assert.equal(r.groups['模式专属'].max, 6)
   assert.equal(r.groups['模式专属'].score, 6)
   assert.ok(!r.findings.some(f => f.group === '执行力度' && /[④⑤⑥]/.test(f.check)), '义务类不评 ④⑤⑥')
@@ -812,7 +817,7 @@ test('待拆未定：scoreDir 汇总跳过 level undefined 文件（dir 得分�
 
 test('越界复检：类型感知输出（含 M3 安全别名）不含「判据」「建议删除」', () => {
   const dir = makeDir({ 'mode.md': MODE_DUTY, 'pending.md': PENDING, 'duty.md': SUSTAIN_DUTY, 'cond.md': COND_DUTY })
-  const out = JSON.stringify(scoreDir(dir, {
+  const raw = JSON.stringify(scoreDir(dir, {
     triCheckDone: true,
     annotations: {
       'mode.md': { type: '模式门控', modeChecks: { M1: false, M2: true, M3: false, M4: true, M5: true, M6: true } },
@@ -821,6 +826,8 @@ test('越界复检：类型感知输出（含 M3 安全别名）不含「判据�
       'cond.md': { type: '条件触发' },
     },
   }))
+  // 同「不越界」用例：剥掉已登记的检查点名后再扫
+  const out = raw.split('⑨判据可观察').join('')
   assert.ok(!out.includes('判据'), '输出不应含「判据」')
   assert.ok(!out.includes('建议删除'), '输出不应含「建议删除」')
   rmSync(dir, { recursive: true, force: true })
@@ -872,8 +879,8 @@ test('认知动作型缺声明 → X1/X2/X3 各 0 进 findings，执行力度 ma
   assert.equal(r.checks.length, r.max, 'checks 逐项登记：条数 = 满分项数')
   assert.ok(r.checks.some(c => c.check === 'X1动作产物化' && c.pass === false), 'checks 含 X1 未过项')
   assert.ok(r.checks.every(c => c.pass || r.findings.some(f => f.check === c.check)), '每个未过项都有对应 finding')
-  // 基础执行力度 max：① ② + ⑧（条件触发非禁令：①②③⑦⑧ 但③⑦ 视正文，此处仅 ①②⑧ 有正文支撑）
-  assert.equal(r.groups['执行力度'].max, 8)  // ① ② ③ ⑦ ⑧ + X1 X2 X3 = 5 + 3
+  // 基础执行力度 max：① ② ③ ⑦ ⑧ ⑨ + X1 X2 X3 = 6 + 3
+  assert.equal(r.groups['执行力度'].max, 9)  // ① ② ③ ⑦ ⑧ ⑨ + X1 X2 X3 = 6 + 3
   rmSync(dir, { recursive: true, force: true })
 })
 
@@ -959,7 +966,7 @@ test('非认知动作型（无 cognitive）→ X1/X2/X3 不注册（max 不 +3�
   const dir = makeDir({ 'cog.md': COG_NO_DECL })
   const r = score(dir, 'cog.md')
   assert.ok(!r.findings.some(f => /^X[123]/.test(f.check)), '无 cognitive 时不应有 X findings')
-  assert.equal(r.groups['执行力度'].max, 5)  // ① ② ③ ⑦ ⑧ 无 X
+  assert.equal(r.groups['执行力度'].max, 6)  // ① ② ③ ⑦ ⑧ ⑨ 无 X
   rmSync(dir, { recursive: true, force: true })
 })
 
@@ -991,12 +998,12 @@ test('scoreDir 自动发现 annotations：标注文件 X 组注册（max +3）�
   const plain = out.files.find(f => f.name === 'plain.md')
   const carrier = out.files.find(f => f.name === 'carrier.md')
   assert.ok(cog && plain && carrier, 'scoreDir 应产出 cog.md / plain.md / carrier.md 的评分结果')
-  assert.equal(cog.groups['执行力度'].max, 8, '标注文件：X1/X2/X3 注册 → max 5+3')
+  assert.equal(cog.groups['执行力度'].max, 9, '标注文件：X1/X2/X3 注册 → max 6+3')
   assert.ok(cog.findings.some(f => /^X[123]/.test(f.check)), '标注文件缺声明 → X 组 0 分进 findings')
   assert.equal(findingScore(cog, '执行力度', 'X3触发前置'), 1, 'annotations x3Done:true → X3 pass')
-  assert.equal(plain.groups['执行力度'].max, 5, '未标注文件：max 不变（无 X 组）')
+  assert.equal(plain.groups['执行力度'].max, 6, '未标注文件：max 不变（无 X 组）')
   assert.ok(!plain.findings.some(f => /^X[123]/.test(f.check)), '未标注文件不评估 X 组')
-  assert.equal(carrier.groups['执行力度'].max, 7, 'x2Carrier 经 annotations 传播 → X2 不注册，max = 5 基础 + X1 + X3 = 7')
+  assert.equal(carrier.groups['执行力度'].max, 8, 'x2Carrier 经 annotations 传播 → X2 不注册，max = 6 基础 + X1 + X3 = 8')
   assert.ok(!carrier.findings.some(f => f.check === 'X2必经路径绑定'), 'x2Carrier → carrier.md 无 X2 finding')
   assert.ok(carrier.findings.some(f => f.check === 'X1动作产物化'), 'carrier.md 缺产物声明 → X1 仍评估并红')
   rmSync(dir, { recursive: true, force: true })
@@ -1028,7 +1035,7 @@ test('x2Carrier=true（产物去处=会话载体）→ X2 不注册（max +2，�
   const dir = makeDir({ 'cog.md': COG_NO_DECL })
   const r = score(dir, 'cog.md', { cognitive: true, x3Done: true, x2Carrier: true })
   assert.ok(!r.findings.some(f => f.check === 'X2必经路径绑定'), 'x2Carrier → 无 X2 finding')
-  assert.equal(r.groups['执行力度'].max, 7, 'x2Carrier → max = 5 基础 + X1 + X3 = 7（X2 不注册）')
+  assert.equal(r.groups['执行力度'].max, 8, 'x2Carrier → max = 6 基础 + X1 + X3 = 8（X2 不注册）')
   assert.equal(findingScore(r, '执行力度', 'X1动作产物化'), 0, 'X1 仍评估：缺去处声明 → 红')
   rmSync(dir, { recursive: true, force: true })
 })

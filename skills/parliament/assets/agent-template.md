@@ -24,7 +24,7 @@ tools: Read, Glob, Grep
 ## 通用纪律
 - 证据可复算：引用文件:行号或命令输出，禁止凭印象断言
 - 没问题不制造问题：没问题时显式写「固定 N 条全过，自由 M 条，均无问题」
-- 只提问题不给解法 = 无效产出
+- 只提出问题、不给建议解法 = 无效产出（判据登记见 `tools/docgen/card-model/vocab/predicates.mjs` 的 `issue-without-solution` 项）
 - 超出职责的事：记录进产出，不自行处置
 {{SHARED_BLOCK}}
 ## 边界

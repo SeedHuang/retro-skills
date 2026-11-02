@@ -365,10 +365,16 @@ test('S5-TC-B07 changes[] 中 to === renderSha256 的最新条 B3 落账四字�
     const hits = ev.changes.filter((c) => c.to === ev.renderSha256);
     assert.ok(hits.length >= 1, `${seat}: 缺 to === renderSha256 的变更记录`);
     const c = hits.slice().sort((a, b) => String(a.at).localeCompare(String(b.at))).at(-1);
-    assert.ok(c.rejudged.includes('B3'), seat);
-    assert.equal(c.judgeMode, 'subagent', seat);
-    assert.equal(typeof c.judgedBy === 'string' && c.judgedBy.trim().length > 0, true, seat);
-    assert.equal(c.judged.find((j) => j.key === 'B3').verdict, 'pass', seat);
+    // S3 口径补充：`replace` 只在**变更触达语义键**时才要求 `--rejudge`（未触达 → `rejudged=[]`、`judgeMode='none'`，
+    // 见 `cli.mjs` 的 `touchedSemanticKeys`）。故本判据分两路：触达 → B3 四字段齐；未触达 → judgeMode 必须显式记为 none。
+    if (c.rejudged.length > 0) {
+      assert.ok(c.rejudged.includes('B3'), seat);
+      assert.equal(c.judgeMode, 'subagent', seat);
+      assert.equal(typeof c.judgedBy === 'string' && c.judgedBy.trim().length > 0, true, seat);
+      assert.equal(c.judged.find((j) => j.key === 'B3').verdict, 'pass', seat);
+    } else {
+      assert.equal(c.judgeMode, 'none', `${seat}: 未触达语义键的变更必须显式记 judgeMode=none`);
+    }
   }
 });
 

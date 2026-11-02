@@ -9,6 +9,24 @@ const REF_MD_RE = /([A-Za-z0-9_-]+\.md)/g          // 跨规则指针
 const DOC_DIR_RE = /(?:^|[`"'(\s|])(docs|specs|plans|handoffs|session|assets|references|scripts)[/\\]/  // docs/after/xxx.md 等外部文档引用
 const LINE_OVER_LEN = 200                           // 来源行 >200 字符 = 超 2 渲染行
 
+// ⑨ 判据可观察（S3 spec §5）：判据面唯一源 = tools/quality/observable-terms.json 的 markers；
+// 本文件只读该 JSON，不写第二份词面、不读豁免清单（不建第二套豁免判定）。
+const OBSERVABLE_TERMS = JSON.parse(readFileSync(new URL('../../../tools/quality/observable-terms.json', import.meta.url), 'utf8'))
+
+// 验证节 = 标题恰为 `## 验证` 或 `### 验证`（多处取第一个）；节内 ≥1 行命中 markers 正则即 pass
+function verifySectionHasMarker(lines) {
+  const at = lines.findIndex((l) => /^#{2,3}\s*验证$/u.test(l.trim()))
+  if (at < 0) return false
+  const level = lines[at].trim().match(/^#+/)[0].length
+  let end = lines.length
+  for (let i = at + 1; i < lines.length; i += 1) {
+    const m = lines[i].trim().match(/^#+/)
+    if (m && m[0].length <= level) { end = i; break }
+  }
+  const compiled = OBSERVABLE_TERMS.markers.map((m) => new RegExp(m.pattern))
+  return lines.slice(at + 1, end).some((l) => compiled.some((re) => re.test(l)))
+}
+
 // ---- 冗余度（机械代理，照 criteria.md §2.4 判定列）----
 const HISTORY_RE = /合并|补于|补记|历史/            // 无来源行历史叙述：来源行含历史词 → 0
 const GUIDE_RE = /^(总之|综上|需要注意的是|换句话说|由此可见)/  // 无空泛引导段：段落以此类词开头 → 0
@@ -315,6 +333,9 @@ export function scoreFile(filePath, rulesDir, opts = {}) {
     }
     g('执行力度', '⑧验证闭环', VERIFY_RE.test(body),
       '未定义怎么确认遵守了', '补「验证」小节：自检命令/检查点/报告要求')
+    g('执行力度', '⑨判据可观察', verifySectionHasMarker(lineArr),
+      '验证节内没有任何可观察标记（停在形容词）；无「## 验证」节同样记 0',
+      '处方 §R9：改比较式 / 加 path:line 或退出码 / 进豁免并写术语出处')
     // ── 模式专属（仅模式门控，M1–M6 由 AI 判，缺省全 false → 0 分进 findings）──
     if (type === '模式门控') {
       g('模式专属', 'M1 状态集合完整', !!modeChecks.M1,

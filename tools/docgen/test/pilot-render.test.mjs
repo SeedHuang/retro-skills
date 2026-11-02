@@ -5,6 +5,8 @@ import { agentData } from '../components/agentData.mjs';
 import { renderByName } from '../components/renderByName.mjs';
 import { renderSeat } from '../components/cardPipeline.mjs';
 import { CARD_SEGMENTS } from '../card-model/vocab/card-must-fields.mjs';
+import { PREDICATES } from '../card-model/vocab/predicates.mjs';
+import { SHARED_MUST } from '../card-model/vocab/shared-actions.mjs';
 import { renderIndex } from '../components/renderReadme.mjs';
 
 // S4 Task 7：旧模板与 legacyOutputFormats 已删除；本文件断言全部改走新卡等价面。
@@ -70,7 +72,9 @@ test('「一定会」段 bullet 5 条（4 条共享 + 1 条自由探索）+ tool
 test('共享层上移：4 条 shared must 出现在卡面（旧 sharedBlock 的等价面）', () => {
   const s = renderSeat('reviewer-audit').card;
   // S2 改形（spec §2.1 点名改此处）：卡面印共享句的**渲染文案**（判据中文名），不再印登记 id
-  for (const label of ['立场客观且按项目长远判断', '结论附可复算证据（文件:行号 或 命令输出）', '用非专业人员也能听懂的方式表达', '无问题时显式声明「全过、无问题」']) {
+  // S3 派生化（spec §8）：文案从 `PREDICATES[id].label` 取，不写旧字面（改 label 即改断言源）
+  for (const id of SHARED_MUST.map((a) => a.criterion)) {
+    const label = PREDICATES[id].label;
     assert.ok(s.includes(label), `卡面缺共享 must 的渲染文案：${label}`);
   }
   assert.equal(s.includes('### 审计铁律'), false, '新卡不渲染共享散文块');

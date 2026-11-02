@@ -32,7 +32,7 @@ description: 体检 rules/ 里的规则——按判据全集评分、出报告�
 
 ## 判据与处方去哪读
 
-- 判据全集（来源类型枚举 / 层级规范 / 三检验 / 24 检查点 / 取数命令）：`references/criteria.md`
+- 判据全集（来源类型枚举 / 层级规范 / 三检验 / 25 检查点 / 取数命令）：`references/criteria.md`
 - 改法处方（每类违规 → 可复制的改法）：`references/recipes.md`
 - 体检报告模板（输出用，spec §3 固化）：`assets/rule-report-template.md`
 - 评分脚本（确定性、可复现）：`scripts/score.mjs`

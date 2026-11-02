@@ -29,7 +29,7 @@ export const CARRIER_FILES = {
 };
 
 // 判据正文里的检查项标记 → [归桶项名, 预期桶]
-// ① - ⑧ 是 rule 判据集 §2.4 执行力度 8 项：①②③ = rule 独有；④⑤⑥⑦⑧ = skill+rule 共享
+// ① - ⑨ 是 rule 判据集 §2.4 执行力度 9 项：①⑨ = rule 独有；②③ = rule 独有；④⑤⑥⑦⑧ = skill+rule 共享
 // ⚠ 本表是「标记 → 归桶项 + 预期桶」的唯一映射表：判据正文新增标记时必须在此登记，
 //   否则被下方 unknownMarkers() 报 BucketMarkerUnknown 红（不静默漏过）。
 export const RULE_MARKER_ITEM = {
@@ -41,13 +41,15 @@ export const RULE_MARKER_ITEM = {
   '⑥': ['例外从严⑥', 'skillAndRuleShared'],
   '⑦': ['触发机制⑦', 'skillAndRuleShared'],
   '⑧': ['验证闭环⑧', 'skillAndRuleShared'],
+  '⑨': ['执行力度⑨', 'rule 独有'],
 };
-// skill-authoring-convention 的 4 条判据 ①~④（对齐该文件实际判据）
+// skill-authoring-convention 的 5 条判据 ①~⑤（对齐该文件实际判据）
 const SKILL_MARKER_ITEM = {
   '①': ['跨技能路径引用', 'skill 独有'],
   '②': ['自引用相对路径', 'skill 独有'],
   '③': ['脚本守卫路径免疫', 'skill 独有'],
   '④': ['目录语义', 'skill 独有'],
+  '⑤': ['判据可观察⑤', 'skill 独有'],
 };
 
 // 通用标记捕获：圈号 + 罗马数字，字符类 = shared-items.mjs 的 MARKER_CLASS（唯一实现，不在此重复定义）。

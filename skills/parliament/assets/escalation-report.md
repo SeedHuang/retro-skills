@@ -1,6 +1,6 @@
 # 升级报告
 
-> 声明：任何一方只提问题不给解法 = 不许升级。
+> 声明：任何一方只提出问题而不给出建议解法 = 不许升级（判据登记见 `tools/docgen/card-model/vocab/predicates.mjs` 的 `issue-without-solution` 项）。
 
 ## 争议焦点
 

@@ -127,6 +127,7 @@
 | 33 | retro 归档（session 结束前搬 docs/superpowers/retro/） | 停下/合并前/最后一轮 | `Test-Path docs/superpowers/retro/<那一次>`（review-log 归档节） | |
 | 34 | 最终结论（轮数/总耗时/核销/未验证项单列） | 全部轮次后 | loop.md §4 输出格式 | |
 | 35 | 轮次账起止/耗时必填（起~止成对；填不出写「未取数」，不许留空/只留 ⬜） | 每轮收尾 | `node skills/review-log/scripts/review-ledger-gate.mjs <progress.md 路径>` → exit 0（review-log 模板轮次账说明，2026-10-20 新增，超出 spec 34 项快照） | |
+| 36 | 改规则正文 → 判据可观察 | 改了 rules/*.md 正文 | `node scripts/check-observable.mjs --check` → 末行 `check-observable ok` 且 exit 0（rule-inspector ⑨ / skill 判据⑤） | |
 
 > 归因三选一（「未执行」必填，判据见 spec §2.2）：**rule 缺/没写清** → 补 rule；**skill 缺/没写清**（含措辞弱如「建议」）→ 补 skill；**载体写清了、执行侧没做** → 进复盘/KB，不改载体，反复复发 → 升级工程化（机器可判），不是改措辞。
 

@@ -7,7 +7,7 @@ import {
   ENV_KEYS, CHECK_KINDS, SHARED_SCENES, MOMENTS, VAGUE_TERMS, HARDCODED_COUNT, POINTER_WORDS, PROC_WORDS,
   MIXED_PAIR, SCAN_FIELDS,
 } from './enums.mjs';
-import { subjectiveTerms } from './vocab/subjective-terms.mjs';
+import { subjectiveHit } from './vocab/subjective-terms.mjs';
 import { resolveLanding } from './landings.mjs';
 import { duplicateScene, promotionCheck, unusedScene } from './scenes.mjs';
 import { unknownSignalType, signalProliferation } from './signals.mjs';
@@ -73,9 +73,7 @@ export function registeredIdsOf(cards) {
 }
 
 const firstLine = (err) => String((err && err.message) || err).split(/\r?\n/)[0];
-const TOKEN_SPLIT = /[、，,/\s]+/;
-const tokensOf = (text) => (typeof text === 'string' ? text.split(TOKEN_SPLIT).map((x) => x.trim()).filter(Boolean) : []);
-const subjectiveHit = (text) => tokensOf(text).some((t) => subjectiveTerms.includes(t));
+// `subjectiveHit`（substring）由 `vocab/subjective-terms.mjs` 单实现提供，本文件不再自建 token 版（S3 §4 / V-9）。
 const hasSlash = (v) => typeof v === 'string' && (v.includes('/') || v.includes('／'));
 const blank = (v) => typeof v !== 'string' || v.trim() === '';
 const own = (obj, key) => obj !== null && typeof obj === 'object' && Object.prototype.hasOwnProperty.call(obj, key);

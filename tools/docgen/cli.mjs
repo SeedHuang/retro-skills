@@ -14,6 +14,8 @@ import { compareBuffers, checkEnvironment } from './components/compare.mjs';
 import { renderByName } from './components/renderByName.mjs';
 import { buildCards, expectedDocs, writeAll } from './components/cardPipeline.mjs';
 import { validatePolicy } from './components/validatePolicy.mjs';
+import { PREDICATES } from './card-model/vocab/predicates.mjs';
+import { validatePredicates } from './card-model/validatePredicates.mjs';
 import { dumpPolicy } from './components/dumpPolicy.mjs';
 import { readState, writeState, setAgentState, statePath } from './state.mjs';
 import { readEvidence, writeEvidence, evidencePath } from './evidence.mjs';
@@ -186,6 +188,19 @@ const BASELINE_CLASS = new Set(['BaselineDrift', 'UnregisteredHandwritten', 'Dan
 const PRIORITY = (d) => (BASELINE_CLASS.has(d.code) ? 0 : 1);
 
 export function gateChecks() {
+  // 判据表防线（S3 spec §4 接线）：先于运行时唯一防线与逐席比对——坏判据表给 `predicates[<id>].<字段>` 报文，
+  // 不进 `Mismatch`（`Mismatch` 管产物漂移，两件事不互相替代）。
+  if (!validatePredicates(PREDICATES).ok) {
+    const rows = [];
+    for (const [id, one] of Object.entries(PREDICATES)) {
+      for (const e of validatePredicates({ [id]: one }).errors) {
+        rows.push({ code: e.code, at: `predicates[${id}].${e.path}`, message: e.message });
+      }
+    }
+    for (const r of rows) console.error(`${r.code}: ${r.at}：${r.message}`);
+    const first = rows[0];
+    fail(first.code, { path: first.at, message: `${first.at}：${first.message}` });
+  }
   // 运行时唯一防线（spec:196）：配置 / 模板非法时 gate 必须 exit 1 并给五个码之一，
   // 不得落成 `Mismatch`、不得被静默放行；排在既有逐席比对之前（`Mismatch` 管产物漂移，两件事不互相替代）
   validatePolicy();

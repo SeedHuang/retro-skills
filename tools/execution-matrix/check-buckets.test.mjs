@@ -122,28 +122,30 @@ test('引用方载体缺「判据名 + 指向权威定义」指针 → SharedPoi
 
 // —— G3：判据正文新增标记但归桶索引未登记 → BucketMarkerUnknown（不静默漏过）——
 
-test('G3：rule 判据正文新增 ⑨（映射表未登记）→ BucketMarkerUnknown 报红', () => {
+test('G3：rule 判据正文新增 ⑩（映射表未登记）→ BucketMarkerUnknown 报红', () => {
   const real = readFileSync(join(ROOT, CARRIER_FILES.rule), 'utf8');
-  const injected = `${real}\n| ⑨ | **新判据⑨** | 判据正文新增的检查项 | 有 1 / 无 0 |\n`;
+  // ⑨ 自 S3 起已登记（执行力度⑨ / rule 独有）；本用例要的是「未登记标记」→ 用 ⑩
+  const injected = `${real}\n| ⑩ | **新判据⑩** | 判据正文新增的检查项 | 有 1 / 无 0 |\n`;
   const { ok, findings } = checkBuckets(cloneBuckets(), { carriers: { [CARRIER_FILES.rule]: injected } });
-  const hit = findings.find((f) => f.code === 'BucketMarkerUnknown' && f.marker === '⑨');
-  assert.ok(hit, 'rule 判据集新增 ⑨ 而未更新 RULE_MARKER_ITEM 必须报红，不得静默漏过');
+  const hit = findings.find((f) => f.code === 'BucketMarkerUnknown' && f.marker === '⑩');
+  assert.ok(hit, 'rule 判据集新增 ⑩ 而未更新 RULE_MARKER_ITEM 必须报红，不得静默漏过');
   assert.equal(hit.from, CARRIER_FILES.rule);
   assert.equal(ok, false);
 });
 
-test('G3：skill 判据正文新增 ⑤（映射表未登记）→ BucketMarkerUnknown 报红', () => {
+test('G3：skill 判据正文新增 ⑥（映射表未登记）→ BucketMarkerUnknown 报红', () => {
   const real = readFileSync(join(ROOT, CARRIER_FILES.skill), 'utf8');
-  const injected = `${real}\n### 判据 ⑤：新判据⑤\n\n正文。\n`;
+  // ⑤ 自 S3 起已登记（判据可观察⑤ / skill 独有）；未登记面用 ⑥
+  const injected = `${real}\n### 判据 ⑥：新判据⑥\n\n正文。\n`;
   const { ok, findings } = checkBuckets(cloneBuckets(), { carriers: { [CARRIER_FILES.skill]: injected } });
-  const hit = findings.find((f) => f.code === 'BucketMarkerUnknown' && f.marker === '⑤');
-  assert.ok(hit, 'skill 规则新增判据 ⑤ 而未更新 SKILL_MARKER_ITEM 必须报红');
+  const hit = findings.find((f) => f.code === 'BucketMarkerUnknown' && f.marker === '⑥');
+  assert.ok(hit, 'skill 规则新增判据 ⑥ 而未更新 SKILL_MARKER_ITEM 必须报红');
   assert.equal(ok, false);
 });
 
 test('G3：未知标记不计入判据项（不产生伪 MissingBucket），已知标记仍照常落桶', () => {
   const real = readFileSync(join(ROOT, CARRIER_FILES.rule), 'utf8');
-  const injected = `${real}\n| ⑨ | **新判据⑨** | x | 有 1 / 无 0 |\n`;
+  const injected = `${real}\n| ⑩ | **新判据⑩** | x | 有 1 / 无 0 |\n`;
   const baseline = itemsFromCriteria();
   const after = itemsFromCriteria({ [CARRIER_FILES.rule]: injected });
   assert.equal(after.size, baseline.size, '未知标记不应被当成一个检查项');

@@ -28,6 +28,10 @@
 
 目录语义（scripts/references/assets 三档）按 `skill-assets-convention` 规则执行，本规则不复制其内容。
 
+### 判据 ⑤：写 skill 时判据句必须可观察
+
+写或改 skill 正文里的判据句时，每条评价必须能被一次命令判死：跑 `node scripts/check-observable.mjs --check`，末行 `check-observable ok` 且 exit 0 才算过；判不死的改写成可判形态（比较式 / `path:line` 锚 / 退出码 / 计数 / 空或非空 / 带字面量的枚举），或按 `observable-criteria` 规则的豁免条款登记并写明理由。词表与标记表唯一源 = `tools/quality/observable-terms.json`，本规则不复述任何词面或正则。
+
 ## 适用范围（不因来源豁免）
 
 以上判据**不因来源豁免**——写 skill 的 agent、子代理、脚本生成、模板产出，都不豁免。任何来源的 skill 产出都要过 check.mjs。

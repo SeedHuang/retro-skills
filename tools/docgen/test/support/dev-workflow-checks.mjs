@@ -222,7 +222,12 @@ export function counterProbes(files) {
 export function readCounterFiles() {
   const dir = join(ROOT, 'tools', 'docgen', 'test');
   const out = {};
-  for (const f of readdirSync(dir).filter((x) => x.endsWith('.test.mjs'))) out[f] = readFileSync(join(dir, f), 'utf8');
+  for (const f of readdirSync(dir).filter((x) => x.endsWith('.test.mjs'))) {
+    // `s3-predicates.test.mjs` 不在本探针面：它的 35 是 §3.5 表局部变量名 `t35`、36 是 `CARD_MODEL_CODES` 码表规模
+    // （S3 D-4 要求码表恒 36 码），都不是「baseline 条数 / 席位数」计数
+    if (f === 's3-predicates.test.mjs') continue;
+    out[f] = readFileSync(join(dir, f), 'utf8');
+  }
   return out;
 }
 

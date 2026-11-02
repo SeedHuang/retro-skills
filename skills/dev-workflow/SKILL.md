@@ -57,4 +57,5 @@ description: 当任务要走「需求 → 技术设计 → 计划门 → 实现 
 
 - 每段判据：`references/stage-1-prd.md`、`references/stage-2-tech-design.md`、`references/stage-2b-plan-gate.md`、`references/stage-3-implementation.md`、`references/stage-4-quality.md`、`references/stage-5-delivery.md`
 - 出口核对记录表（R1–R7 的唯一证据载体）：`references/gate-record.md`
+- 判据类文本的可观察判据：以 `observable-criteria` 规则为准，机判 = `npm run check:observable`（末行 `check-observable ok` 且 exit 0）
 - 强制约束：`rules/dev-workflow-mainline.md`（每轮自动加载）

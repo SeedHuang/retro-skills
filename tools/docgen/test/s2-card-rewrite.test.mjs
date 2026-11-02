@@ -784,21 +784,20 @@ test('S2-TC-G04 第二实现点即红', () => {
   assert.ok(r.code === 0 || r.code === 1)
 })
 
+// S2 卡面重构的落地提交（`feat(docgen): 重构 S2 卡面为 bullet 形态…`）。本批的基线 = 它的父提交。
+// 为什么钉死而不再用「最后一次触及 agents/ 的提交」：S3 起 15 卡又重生成一次（label 改写），
+// 滚动锚会随之后每一批漂移一格，让本批的 `base..HEAD` 判据永远测不到本批自己的提交。
+const S2_BATCH = '62ca15f'
 const s2Base = (t) => {
   const env = (process.env.S2_BASE || '').trim()
   if (env) return env
-  // D22 锚口径：锚 =「**最后一次触及 `agents/` 的提交**」——本批脏（未提交）取它本身，本批净（已提交）取它的父。
-  // 为什么不用「spec 最近提交」（D21）：那个锚只在本批恰为 HEAD 时成立，其上再落一个 docs 提交就偏移一格
-  //（本批的 15 卡与 S4 C-7 都在那次提交内 → `base..HEAD` 与 `git diff base` 看不到本批）。
-  const last = execFileSync('git', ['log', '-1', '--format=%H', '--', 'agents/'], { cwd: REPO, encoding: 'utf8' }).trim()
-  const dirty = execFileSync('git', ['status', '--porcelain', '--', 'agents/'], { cwd: REPO, encoding: 'utf8' }).trim() !== ''
-  const base = dirty ? last : execFileSync('git', ['rev-parse', `${last}^`], { cwd: REPO, encoding: 'utf8' }).trim()
-  if (t) t.diagnostic(`S2_BASE 未注入：降级为「最后一次触及 agents/ 的提交${dirty ? '（工作区脏，取它本身）' : '的父提交（本批已提交）'}」`)
+  const base = execFileSync('git', ['rev-parse', `${S2_BATCH}^`], { cwd: REPO, encoding: 'utf8' }).trim()
+  if (t) t.diagnostic(`S2_BASE 未注入：显式锚 = S2 落地提交 ${S2_BATCH} 的父提交（D22 显式换锚）`)
   return base
 }
 test('S2-TC-G05 一次性全改 + 一次提交', (t) => {
   const base = s2Base(t)
-  const log = execFileSync('git', ['log', `${base}..HEAD`, '--numstat', '--format=@@%H|%s', '--', 'agents/'], { cwd: REPO, encoding: 'utf8' })
+  const log = execFileSync('git', ['log', `${base}..${S2_BATCH}`, '--numstat', '--format=@@%H|%s', '--', 'agents/'], { cwd: REPO, encoding: 'utf8' })
   const blocks = log.split(/^@@/m).filter((x) => x.trim() !== '')
   const commits = blocks.map((bl) => {
     const [head, ...rest] = bl.split(/\r?\n/).filter(Boolean)
@@ -999,7 +998,6 @@ test('S2-TC-I05 原文未改 + 注在位（语义同义交审计）', (t) => {
 // 签字载体白名单（D20）：`gate-record.md` 是门行账本（R1/R3 要求每过一门落一行），不是 `skills/` 正文；
 // I06 的判据对象是「正文零改动」，故按 blob 逐键比时豁免它（其余 skills/rules 文件逐字节比）
 const SIGNATURE_LEDGER = 'skills/dev-workflow/references/gate-record.md'
-const relOf = (p) => p.slice(REPO.length + 1).split('\\').join('/')
 const blobBase = (base) => {
   const out = new Map()
   for (const l of execFileSync('git', ['ls-tree', '-r', base, '--', 'rules', 'skills'], { cwd: REPO, encoding: 'utf8' }).trim().split(/\r?\n/).filter(Boolean)) {
@@ -1009,17 +1007,16 @@ const blobBase = (base) => {
   }
   return out
 }
-const blobNow = (rel) => execFileSync('git', ['hash-object', rel], { cwd: REPO, encoding: 'utf8' }).trim()
 
 test('S2-TC-I06 rules/skills 零改动且 observable hits 仍 0', (t) => {
+  // 面收窄为**本批区间**：`base..S2 落地提交`（后续批次改 rules/skills 属各自批次的判据面，不是 S2 的违约）
   const base = blobBase(s2Base(t))
-  const nowFiles = [...walkFiles(join(REPO, 'rules')), ...walkFiles(join(REPO, 'skills'))].map(relOf)
-  const changed = nowFiles.filter((rel) => rel !== SIGNATURE_LEDGER && base.get(rel) !== blobNow(rel))
-  const missing = [...base.keys()].filter((rel) => rel !== SIGNATURE_LEDGER && !nowFiles.includes(rel))
-  assert.deepEqual(changed, [], `rules/ 与 skills/ 正文不得改动（除签字载体 ${SIGNATURE_LEDGER}）：${changed.join(', ')}`)
-  assert.deepEqual(missing, [], `rules/ 与 skills/ 不得删文件：${missing.join(', ')}`)
-  assert.ok(nowFiles.length >= base.size, '不得靠删文件凑绿')
-  t.diagnostic('D20 白名单：gate-record.md 的 blob 允许变（门行账本，非正文）；其余文件逐 blob 比对')
+  const after = blobBase(S2_BATCH)
+  const changed = [...after.keys()].filter((rel) => rel !== SIGNATURE_LEDGER && base.get(rel) !== after.get(rel))
+  const missing = [...base.keys()].filter((rel) => rel !== SIGNATURE_LEDGER && !after.has(rel))
+  assert.deepEqual(changed, [], `S2 本批不得改 rules/ 与 skills/ 正文（除签字载体 ${SIGNATURE_LEDGER}）：${changed.join(', ')}`)
+  assert.deepEqual(missing, [], `S2 本批不得删 rules/ 与 skills/ 文件：${missing.join(', ')}`)
+  t.diagnostic('D20 白名单：gate-record.md 的 blob 允许变（门行账本，非正文）；其余文件逐 blob 比对（区间 = S2 本批）')
   const r = runNode(['scripts/check-observable.mjs', '--check', '--json'])
   const json = parseJsonOut(r.out)
   assert.equal(json.hits.length, 0)

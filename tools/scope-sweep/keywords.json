@@ -198,6 +198,92 @@
         "docs/superpowers/specs/2026-11-01-s2-card-rewrite-design-testcase.md",
         "docs/superpowers/plans/2026-11-01-s2-card-rewrite.md"
       ]
+    },
+    {
+      "id": "I22",
+      "title": "计数口径：检查点总数 24→25、执行力度 8→9 项、组满分 5/5→6/6",
+      "words": ["24 检查点", "执行力度 8 项", "5/5"],
+      "scope": [
+        "skills/rule-inspector/references/criteria.md",
+        "skills/rule-inspector/SKILL.md",
+        "skills/rule-inspector/assets/rule-edit-checklist-template.md",
+        "skills/rule-writer/SKILL.md",
+        "skills/rule-writer/references/writing-guide.md",
+        "skills/rule-writer/assets/rule-skeleton.md"
+      ]
+    },
+    {
+      "id": "I23",
+      "title": "⑨ 判据可观察的判定口径：不用 evaluateText 的 verdict，改判「验证节内 ≥1 行命中 markers」",
+      "words": ["evaluateText"],
+      "scope": [
+        "skills/rule-inspector/references/criteria.md",
+        "skills/rule-inspector/references/recipes.md",
+        "skills/rule-inspector/scripts/score.mjs",
+        "skills/rule-inspector/SKILL.md"
+      ]
+    },
+    {
+      "id": "I24",
+      "title": "subjectiveHit 判定口径：token 全等 → substring（单实现点 = vocab/subjective-terms.mjs）",
+      "words": ["token 全等"],
+      "scope": [
+        "tools/docgen/card-model/vocab/subjective-terms.mjs",
+        "tools/docgen/card-model/validateCardModel.mjs"
+      ]
+    },
+    {
+      "id": "I25",
+      "title": "8 条 predicates 旧 label 合集（改后只许作为新 label 的核心语义前缀残留，不许另有独立出现）",
+      "words": [
+        "立场客观且按项目长远判断",
+        "结论附可复算证据（文件:行号 或 命令输出）",
+        "用非专业人员也能听懂的方式表达",
+        "无问题时显式声明「全过、无问题」",
+        "只提问题不给解法",
+        "越出职责自行处置",
+        "证据栏留空",
+        "代他人填写其本人应填的表"
+      ],
+      "scope": [
+        "tools/docgen/card-model/vocab/predicates.mjs",
+        "tools/execution-matrix/criteria.md",
+        "tools/docgen/test/pilot-render.test.mjs",
+        "tools/docgen/test/evidence-reader.test.mjs"
+      ]
+    },
+    {
+      "id": "I26",
+      "title": "S6-TC-G01 卡面差异记账面（旧 = 只认 `-s6-eval/capability-diff.md` 的逐文件命中；S3 起受理当次 impact-sheet 的批级说明）",
+      "words": ["capability-diff.md"],
+      "scope": [
+        "tools/docgen/test/policy-pure-source.test.mjs"
+      ]
+    },
+    {
+      "id": "I27",
+      "title": "S5-TC-B07 变更段重判（旧 = 任何卡面变更都必须带 B3；S3 起按「是否触达语义键」分两路）",
+      "words": ["rejudged.includes", "judgeMode"],
+      "scope": [
+        "tools/docgen/test/tool-tiers.test.mjs"
+      ]
+    },
+    {
+      "id": "I28",
+      "title": "计数探针扫描面（旧 = 扫全部 `*.test.mjs`；S3 起排除 s3-predicates.test.mjs —— 其 35/36 是表变量名与码表规模）",
+      "words": ["readCounterFiles", "counterProbes"],
+      "scope": [
+        "tools/docgen/test/support/dev-workflow-checks.mjs",
+        "tools/docgen/test/dev-workflow-counts.test.mjs"
+      ]
+    },
+    {
+      "id": "I29",
+      "title": "S2 本批判据的比对区间（旧 = `base..HEAD` / 现行 blob；S3 起收窄为 `base..S2 落地提交`）",
+      "words": ["base..HEAD"],
+      "scope": [
+        "tools/docgen/test/s2-card-rewrite.test.mjs"
+      ]
     }
   ]
 }
