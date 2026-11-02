@@ -40,7 +40,9 @@ const MARKERS = JSON.parse(readFileSync(join(REPO, 'tools/quality/observable-ter
 const CRIT_TERMS = JSON.parse(readFileSync(join(REPO, 'tools/quality/observable-terms.json'), 'utf8')).criterionTerms
 
 // 常量 7：`<S3-BASE>` = env 优先；否则取 S3 开工前 HEAD（D22 要求 S3 起**显式换锚**，不再用「最后一次触及 JSON 的提交」滚动推断）
-const S3_BASE = process.env.S3_BASE || 'b5e11aa'
+// 解析抽成纯函数，使「env 覆盖」这条路径可被直接断言（B01 判：忽略 env 的硬编码必红）
+const resolveS3Base = (env = process.env) => env.S3_BASE || 'b5e11aa'
+const S3_BASE = resolveS3Base()
 // 常量 12：旧 8 条 label 从 `.mjs` 源码按正则抽（不 JSON.parse）
 const OLD_LABELS = [...execFileSync('git', ['show', `${S3_BASE}:tools/docgen/card-model/vocab/predicates.mjs`], { cwd: REPO, encoding: 'utf8' }).matchAll(/label:\s*'([^']*)'/g)].map((m) => m[1])
 const MUST_IDS = SHARED_MUST.map((a) => a.criterion)
@@ -325,6 +327,11 @@ test('S3-TC-B01 label 零命中', (t) => {
   assert.ok(TERMS.length >= 5)
   assert.equal(Object.values(PREDICATES).length, 8)
   t.diagnostic(`S3_BASE=${S3_BASE}`)
+  // P2-3：`S3_BASE` 的 env 覆盖路径（门禁不注入它，只走常量默认）。三条一起才判得死——
+  // ① 无 env → 默认锚；② 有 env → 取值生效；③ 模块常量确实经由该函数（防「函数改了但使用点绕过」）
+  assert.equal(resolveS3Base({}), 'b5e11aa')
+  assert.equal(resolveS3Base({ S3_BASE: 'abc123' }), 'abc123')
+  assert.match(read('tools/docgen/test/s3-predicates.test.mjs'), /^const S3_BASE = resolveS3Base\(\)$/m)
 })
 
 test('S3-TC-B02 旧 label 红探针', () => {

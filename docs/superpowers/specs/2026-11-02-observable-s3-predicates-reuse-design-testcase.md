@@ -30,7 +30,7 @@
 | 常量 10 | **命令一律仓根可复跑** | 路径全写仓内相对形式；Windows 下统一 `node` 直接调脚本，不用 `npm run … -- --x`（PowerShell + npm 10.9 会吞 `--` 之后的参数） |
 | 常量 11 | **错误码 + `path` 形态（spec §4 定死）** | `code` 只取两个既有码：D1 → `SubjectiveLabel`；D2/D3/D4/D5 → `UnverifiableOutput`（两者 `exitCodeFor` = 1）。`errors[].path` **无 `predicates[<id>]` 前缀**：`label` / `observable` / `observable[<i>]` / `negativeSample` / `residual.who` / `residual.sample`；`predicates[<id>].<path>：<message>` 由 `gate` 拼。码表与退出码集合一律从 `CARD_MODEL_CODES` / `exitCodeFor` 派生，**不新增码** |
 | 常量 12 | **`S3_BASE` / `SEATS` / `TOTAL` / `OLD_LABELS` 绑定** | `S3_BASE` 见常量 7；`SEATS = buildCards().map((b) => b.seat)`；`TOTAL = BASELINE_RULES.length + agentPaths().length`；**`OLD_LABELS` 从 `.mjs` 源码按正则抽，不 `JSON.parse`**：<br>`const src = execFileSync('git', ['show', `${S3_BASE}:tools/docgen/card-model/vocab/predicates.mjs`], { cwd: REPO, encoding: 'utf8' })`<br>`const OLD_LABELS = [...src.matchAll(/label:\s*'([^']*)'/g)].map((m) => m[1])`<br>`assert.equal(OLD_LABELS.length, 8)`（少一条即本组多例红，暴露取数失败）。**不依赖本批新建的 `keywords.json` `I25`** |
-| 常量 13 | **`§5 检查点 ⑨ 判据可观察` 的判定本体（v3 定死）** | 判定 = 该规则的**验证节**内 ≥1 行命中 `markers[].pattern`；**验证节 = 标题恰为 `## 验证` 或 `### 验证`**（正则 `^#{2,3}\s*验证$`）的小节（到下一个同级或更高级标题为止）；**多处匹配取第一个**（`§10 D-17`）。**不读豁免清单**；`evaluateText` 仅作对照 import。取分读 `scoreFile(...).checks.find((c) => c.check.includes('⑨')).pass` |
+| 常量 13 | **`§5 检查点 ⑨ 判据可观察` 的判定本体（v3 定死）** | 判定 = 该规则的**验证节**内 ≥1 行命中 `markers[].pattern`；**验证节 = 标题恰为 `## 验证` 或 `### 验证`**（正则 `^#{2,3}\s*验证$`）的小节（到下一个同级或更高级标题为止）；**多处匹配取第一个**（`§10 D-17`）。**不读豁免清单**；**不** import `evaluateText`（仅作口径参照写在注释里，同 §5③ D-24）。取分读 `scoreFile(...).checks.find((c) => c.check.includes('⑨')).pass` |
 | 常量 14 | **圈号三种写法（一符三义消歧）** | ① 规则体检的第 9 项 → **`§5 检查点 ⑨`**；② 施工顺序 → **`§7 步 S1`–`S7`**（含 `S1a` / `S1b`）；③ `check-all` 的门禁段 → **`门禁段 ⑦`**（另 `门禁段 ⑤`）。本文件不再单写裸 `⑦` / `⑧` / `⑨` 指代其中任一种 |
 | 常量 15 | **全量门禁不重跑（覆盖表口径）** | `§7 步 S4` / `S7` 的 `npm run check` 是施工与门禁动作，**由 `check-all` 自跑**，本文件不重跑（常量 9 / GAP-7）；§1 覆盖表的「未覆盖 0 项」**只对 spec 约束负责**，不代表用例跑过全量门禁。spec `§9.1` 明写同一句 |
 
@@ -99,7 +99,7 @@
 | §4 `card-model/index.mjs` barrel 不加导出（18 项为自觉约束） | §4、§10 D-4 | G04 |
 | §5 检查点 ①（`criteria.md` §2.4 新增 `§5 检查点 ⑨`，判定 = 验证节内 ≥1 行命中 markers） | §5 | I01 |
 | §5 检查点 ②（`recipes.md` 新增 §R9 判据不可观察，三条改法） | §5 | I03 |
-| §5 检查点 ③（`score.mjs` 新增 `§5 检查点 ⑨`：扫验证节 markers / 不读豁免清单 / `evaluateText` 仅对照） | §5、§9.2 V-9（D-12 收窄） | I04 |
+| §5 检查点 ③（`score.mjs` 新增 `§5 检查点 ⑨`：扫验证节 markers / 不读豁免清单 / **不** import `evaluateText`（仅口径参照）） | §5、§9.2 V-9（D-12 收窄） | I04 |
 | §5 检查点 ⑨ 判别力三态（有标记 1 / 无标记 0 / 无验证节 0） | §5、§10 D-14 | I05 / I06 / I07 |
 | §10 D-17（验证节口径写死 `^#{2,3}\s*验证$`、多处取第一个） | §10 D-17、§5 检查点 ①③ | I08 / I01 |
 | §5 检查点 ④（`rules/skill-authoring-convention.md` 新增判据⑤） | §5 | I12 |
@@ -557,7 +557,7 @@
 - **预期**：标题含「判据不可观察」；块内含 ①「比较」②「path:line」③「豁免」各 ≥1；块内不含 `evaluateText`（处方不把 verdict 当判定）
 - **判据**：`assert.equal(r9Blocks.length, 1)`；`assert.match(r9.title, /判据不可观察/)`；`assert.equal(['比较','path:line','豁免'].filter((k) => r9.body.includes(k)).length, 3)`；`assert.equal(/\bevaluateText\b/.test(r9.body), false)`
 
-### S3-TC-I04 `score.mjs` 新增 `§5 检查点 ⑨`（扫验证节 markers / 不读豁免清单 / `evaluateText` 仅对照）且块内零词面【正】
+### S3-TC-I04 `score.mjs` 新增 `§5 检查点 ⑨`（扫验证节 markers / 不读豁免清单 / **不** import `evaluateText`）且块内零词面【正】
 
 - **覆盖**：`§5 检查点 ③`、`§9.2 V-9`（D-12 收窄）
 - **前置**：`score.mjs` 已改；`<S3-BASE>` 已取；`terms` / `criterionTerms` 派生（15 词，不写字面）

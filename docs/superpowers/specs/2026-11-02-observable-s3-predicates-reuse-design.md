@@ -9,7 +9,7 @@
 
 | 做（本块交付物，逐件带归属 F） | 不做（已签块 / 明确排除） |
 |---|---|
-| `tools/docgen/card-model/vocab/predicates.mjs` 8 条改写（F-07） | S1 已签件零改动：`observable-terms.json` / 豁免清单 / `check-observable.mjs` 的**判定实现与扫描根**（本块只 import 它的 `evaluateText` 作对照，不新增导出） |
+| `tools/docgen/card-model/vocab/predicates.mjs` 8 条改写（F-07） | S1 已签件零改动：`observable-terms.json` / 豁免清单 / `check-observable.mjs` 的**判定实现与扫描根**（本块只按口径对照 `evaluateText`，**不 import**，见 §5③；不新增导出） |
 | `tools/docgen/card-model/validatePredicates.mjs`（新建，F-08） | S2 已签件零改动：`card-contract` / `object-names` / `cardFaceIds` / `expectedBullet` / 15 卡形态（只做「同批重生成」这一派生动作） |
 | `vocab/subjective-terms.mjs` 加 substring 判定单实现 + `validateCardModel.mjs` 改用它（F-08 / F-02 后半） | `SCAN_FIELDS`（8 键）与 `CARD_MODEL_CODES`（36 码）——**不动**（PRD §7 D-06）；`card-model/index.mjs` barrel 18 项不动 |
 | `tools/docgen/cli.mjs` 的 `gateChecks()` 接线 `validatePredicates`（F-08） | `tools/docgen/policy/**`（S6 已签，零改动） |
@@ -19,7 +19,7 @@
 | `skills/rule-writer/SKILL.md` + `skills/dev-workflow/SKILL.md` 引用同一规则（F-10，仓内两处） | 存量 spec / testcase 追溯（S1、S2 已签，零改） |
 | 新测试文件 `tools/docgen/test/s3-predicates.test.mjs` + 派生测试数字更新（§5 / §9） | 存量已签 spec 正文（历史保留） |
 
-**依赖**：S1（清单 JSON + `evaluateText`）、S2（15 卡与渲染器）。**下游**：无。
+**依赖**：S1（清单 JSON + `markers` 正则口径）、S2（15 卡与渲染器）。**下游**：无。
 
 ## 2 术语
 
@@ -57,9 +57,9 @@
 | `impartial-long-term` | must | 立场客观且按项目长远判断 | 立场不偏、按项目长期判断——结论段依据条 `计数 ≥ 2`，且各带 `path:line`、来自 ≥2 个不同文件 | `evidence` 产物「原文摘句 / 文件 + 行号」两列 | ① 依据条 计数 ≥ 2 ② 不同文件数 ≥ 2（各依据带 `path:line`） | 结论只写「综合判断可行」，依据 0 条 | reviewer-qa（抽 3 条结论核「是否只堆本席视角」） / 3 |
 | `evidence-recomputable` | must | 结论附可复算证据（文件:行号 或 命令输出） | 结论附可复算证据——`path:line` 指向的文件存在，且该行含被引摘句；缺一 = 不合规 | `evidence` 产物「文件 + 行号」列 + 源文件该行 | ① 每条结论行含 `path:line` ② `path:line` 指向文件存在且该行含被引摘句 | 结论写「已核实」但无 `path:line` 与命令输出 | reviewer-audit（抽 3 条结论复跑 `path:line`） / 3 |
 | `plain-expression` | must | 用非专业人员也能听懂的方式表达 | 非专业读者能听懂——英文术语首现行含中文解释，未解释术语 计数 = 0 | 交付物正文（任意 `outputKind`） | ① 英文 token（`[A-Za-z_]{3,}`）首现行含 ≥1 个汉字 ② 未解释英文 token 计数 = 0 | 正文直接写 `runtime` / `schema` 而无中文解释 | reviewer-reader（抽 3 段正文核读者可读性） / 3 |
-| `no-fake-problem` | must | 无问题时显式声明「全过、无问题」 | 无问题时显式写「全过、无问题」——findings 集合为空时该行必须存在 | `audit` 产物「结论」列 + findings 集合 | ① `findings` 集合为空时正文含「全过」行 ② `findings` 非空时不得只写「全过」 | 没发现问题却只写「未发现问题」或干脆不写 | reviewer-audit（抽 3 轮收尾核「全过」行） / 3 |
+| `no-fake-problem` | must | 无问题时显式声明「全过、无问题」 | 无问题时显式写「全过、无问题」——findings 集合为空时该行必须存在 | `audit` 产物「结论」列 + findings 集合 | ① `audit` 产物的**结论列**含「全过」行（`findings` 集合为空时） ② `findings` 非空时不得只写「全过」 | 没发现问题却只写「未发现问题」或干脆不写 | reviewer-audit（抽 3 轮收尾核「全过」行） / 3 |
 | `issue-without-solution` | never | 只提问题不给解法 | 只提问题不给解法——问题卡「建议解法」栏为空 | `issue-card` 产物「建议解法」栏 | ① 问题卡「建议解法」栏非空 ② 问题卡三字段（证据 / 严重级别 / 建议解法）各非空 | 问题卡只有问题描述，「建议解法」栏空 | reviewer-qa（抽 3 张问题卡核解法可执行） / 3 |
-| `out-of-scope-self-disposal` | never | 越出职责自行处置 | 越出职责自行处置——越界处置动作 计数 ≥1 且正文无「声明」行 | `git status --porcelain` 路径集 + 交付物正文 | ① 越界处置动作 计数 = 0 ② 越界时正文含「声明」行且带 `path:line`（「越界」集合不可机器枚举，判定由 residual 承担） | 发现越界后自行改文件，未声明 | reviewer-audit（抽 3 席：按卡面「边界」段逐条核交付路径是否越界） / 3 |
+| `out-of-scope-self-disposal` | never | 越出职责自行处置 | 越出职责自行处置——越界处置动作 计数 ≥1 且正文无「声明」行 | `git status --porcelain` 路径集 + 交付物正文 | ① `git status --porcelain` 路径集中的越界处置动作 计数 = 0 ② 越界时正文含「声明」行且带 `path:line`（「越界」集合不可机器枚举，判定由 residual 承担） | 发现越界后自行改文件，未声明 | reviewer-audit（抽 3 席：按卡面「边界」段逐条核交付路径是否越界） / 3 |
 | `blank-evidence` | never | 证据栏留空 | 证据栏留空——结论行证据栏无 `path:line` 与命令首行 | `audit` / `issue-card` 的「证据」栏 | ① 结论行证据栏非空 ② 证据栏含 `path:line` 或命令首行原文 | 证据栏留空并写「待补」 | reviewer-audit（抽 3 条结论核证据栏） / 3 |
 | `proxy-fill` | never | 代他人填写其本人应填的表 | 代他人填写其本人应填的表——签名字段所记名称 != 该实例名 | `skills/dev-workflow/references/gate-record.md` 的「申报人 / 签字人」两列 | ① 签名字段所记名称 == 该实例名 ② 不符行 计数 = 0 | 代他人填评审结论并签其名 | reviewer-audit（抽 3 个签名字段核落笔方） / 3 |
 
@@ -114,7 +114,7 @@
 |---|---|---|---|
 | ① | `skills/rule-inspector/references/criteria.md` §2.4「执行力度」表 | 追加 **⑨ 判据可观察**：判定 = **验证节**内 ≥1 行命中 `markers[].pattern`。**验证节的口径写死**：标题**恰为** `## 验证` 或 `### 验证`（正则 `^#{2,3}\s*验证$`）的小节；无该节 = 0 分；多处匹配取**第一个**（第 2 轮 AI 实测曾出现 6/23 与 4/23 两个 N，根因即节定位未定死，D-17） | 有/无 1 分 |
 | ② | `skills/rule-inspector/references/recipes.md` | 追加 **§R9 判据不可观察**：三条改法（改比较式 / 加 `path:line` 或退出码 / 进豁免并写术语出处） | 处方可复制 |
-| ③ | `skills/rule-inspector/scripts/score.mjs` | 新增 `g('执行力度', '⑨判据可观察', …)`：import `evaluateText` **仅作对照**，判定本体 = 用 `observable-terms.json` 的 `markers` 正则扫**验证节**；**不读豁免清单**（不建第二套豁免判定） | 有/无 1 分 |
+| ③ | `skills/rule-inspector/scripts/score.mjs` | 新增 `g('执行力度', '⑨判据可观察', …)`：**不** import `evaluateText`（判定本体 = 用 `observable-terms.json` 的 `markers` 正则扫**验证节**；`evaluateText` 仅作口径参照写在注释里，D-24）；**不读豁免清单**（不建第二套豁免判定） | 有/无 1 分 |
 | ④ | `rules/skill-authoring-convention.md` | 追加 **判据⑤：写 skill 时判据句必须可观察**（验证 = `node scripts/check-observable.mjs --check` exit 0）；`skill-inspector` 的判据权威 = 该规则，经此继承 | 命令退出码 |
 
 **⑨ 为什么不是 ⑦ 的复读**（第 1 轮 F4）：第 1 轮草案用 `evaluateText` 判 → 与 ⑦ 同构，23 份规则里 22 份恒 pass、1 份靠豁免 ⇒ 23/23 恒得 1 分（实测）。现改判**验证节内的标记覆盖**：① 与 ⑦ 的判定面不同（⑦ 看含主观词的行，⑨ 看验证节）；② 不进口豁免清单（无第二实现点）；③ 对今天的库存**不是恒 1**——③ 段须贴实测「23 份规则里 ⑨ 得分 N/23」，若发现恒 1 立即按 D-14 回 ② 重议。
@@ -265,6 +265,8 @@ node --input-type=module -e "import {readFileSync} from 'node:fs'; const d=JSON.
 | D-16 | 8 条 observable 落 §3 表「载体」列的**已声明**载体（`outputFormats` 字段 / `gate-record.md` 列 / 仓内命令输出），**不新增字段**（新增字段 = 回 S2 已签件） | 第 1 轮 AI-1-02 + `outputFormats.mjs:5-61` |
 | D-17 | ⑨ 的「验证节」口径写死为 `^#{2,3}\s*验证$`、多处取第一个——第 2 轮实测曾因节定位未定死出现 `6/23` 与 `4/23` 两个 N | 第 2 轮 AI-2-01 |
 | D-18 | `never` 类 label 的可判句必须是**违规形态**（`out-of-scope` 的 `diff` 改为「非空」），不得把通过态写进「不得」句 | 第 2 轮 RD-2-01 / AI-2-02 |
+| D-23 | **§3 两行 `observable` 改按「载体」列钉死**：`no-fake-problem` 改「`audit` 产物的**结论列**含「全过」行」、`out-of-scope-self-disposal` 改「`git status --porcelain` 路径集中的越界处置动作 计数 = 0」——原写法只说「正文」「越界处置动作」而不点名载体，GAP-11 人工抽核判「有差」（`label` 未变故 15 卡零改动） | ④ 段 `quality-4.md` §5.3 + ⑤ 段 `delivery-5.md` §7 第二意见 + 用户 2026-11-02「5 条遗留全修」 |
+| D-24 | **§5③ 的 `evaluateText` 措辞更正**：原写「import `evaluateText` 仅作对照」，改为「**不** import（仅作口径参照写在注释里）」——已签 testcase 明确断言 ⑨ 判定里不得出现 `evaluateText`（同文件常量 15 行 `:55`；测试侧 `tools/docgen/test/s3-predicates.test.mjs:176` / `:880`），spec 原措辞与已签件冲突，以 testcase 为准；testcase 自身的 3 处同向措辞（`:33` / `:102` / `:560`）由独立 sdet 同批顺句 | ⑤ 段复核轮 P2-1（`delivery-5.md` §10.4）+ 增量审计 P1-1（`audit-increment-d23.md` §6） |
 
 ## 11 未决（Q，逐条给裁定）
 

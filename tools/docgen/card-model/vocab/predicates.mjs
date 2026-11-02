@@ -37,7 +37,7 @@ export const PREDICATES = Object.freeze({
   ),
   'no-fake-problem': pred(
     '无问题时显式写「全过、无问题」——findings 集合为空时该行必须存在',
-    ['findings 集合为空时正文含「全过」行', 'findings 非空时不得只写「全过」'],
+    ['audit 产物的结论列含「全过」行（findings 集合为空时）', 'findings 非空时不得只写「全过」'],
     '没发现问题却只写「未发现问题」或干脆不写',
     'reviewer-audit（抽 3 轮收尾核「全过」行）',
     3,
@@ -51,7 +51,7 @@ export const PREDICATES = Object.freeze({
   ),
   'out-of-scope-self-disposal': pred(
     '越出职责自行处置——越界处置动作 计数 ≥1 且正文无「声明」行',
-    ['越界处置动作 计数 = 0', '越界时正文含「声明」行且带 path:line'],
+    ['git status --porcelain 路径集中的越界处置动作 计数 = 0', '越界时正文含「声明」行且带 path:line'],
     '发现越界后自行改文件，未声明',
     'reviewer-audit（抽 3 席：按卡面「边界」段逐条核交付路径是否越界）',
     3,

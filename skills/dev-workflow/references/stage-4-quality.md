@@ -53,3 +53,5 @@
 ## 收口后
 
 产出 `gate-record.md` 里 ④ 的那一行：六列齐，「核了什么」写**审计本人复算命令 + 输出首行**；sdet 核结论表、审计核命令。缺行不得进入 ⑤。
+
+**落行后必做**：改 `gate-record.md` 任一行之后，当次 `.session/reviews/<次>/impact-sheet.md` 必须再 touch 一次（该文件在 R8 的 `I11` scope 内，属「被扫文件」）；否则 `node scripts/scope-sweep.mjs --check` 打印 `FAIL: impact-sheet 早于被扫文件`，本段视为未收口。

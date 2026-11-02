@@ -284,6 +284,15 @@
       "scope": [
         "tools/docgen/test/s2-card-rewrite.test.mjs"
       ]
+    },
+    {
+      "id": "I30",
+      "title": "S3 遗留 P2-1：`no-fake-problem` 的 observable 旧写法（未点名「结论」列，D-23 已改为按载体列钉死；旧说法复活即红）",
+      "words": ["findings 集合为空时正文含"],
+      "scope": [
+        "docs/superpowers/specs/2026-11-02-observable-s3-predicates-reuse-design.md",
+        "tools/docgen/card-model/vocab/predicates.mjs"
+      ]
     }
   ]
 }
