@@ -787,12 +787,13 @@ test('S2-TC-G04 第二实现点即红', () => {
 const s2Base = (t) => {
   const env = (process.env.S2_BASE || '').trim()
   if (env) return env
-  const h = execFileSync('git', ['log', '-1', '--format=%H', '--', SPEC_PATH], { cwd: REPO, encoding: 'utf8' }).trim()
-  // 本批已提交时「spec 最近一次提交」就是本批自身 → `base..HEAD` 恒空，G05 的提交面与 I01 的 `git diff base` 都看不到东西。
-  // 故锚到它的父提交（= 本批**改前**状态），语义仍是「改前基线」（testcase 常量 14 的「降级锚」）。
-  const head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: REPO, encoding: 'utf8' }).trim()
-  const base = h === head ? execFileSync('git', ['rev-parse', 'HEAD^'], { cwd: REPO, encoding: 'utf8' }).trim() : h
-  if (t) t.diagnostic(`S2_BASE 未注入：降级为「spec 最近一次提交${h === head ? '的父提交（本批已提交）' : ''}」`)
+  // D22 锚口径：锚 =「**最后一次触及 `agents/` 的提交**」——本批脏（未提交）取它本身，本批净（已提交）取它的父。
+  // 为什么不用「spec 最近提交」（D21）：那个锚只在本批恰为 HEAD 时成立，其上再落一个 docs 提交就偏移一格
+  //（本批的 15 卡与 S4 C-7 都在那次提交内 → `base..HEAD` 与 `git diff base` 看不到本批）。
+  const last = execFileSync('git', ['log', '-1', '--format=%H', '--', 'agents/'], { cwd: REPO, encoding: 'utf8' }).trim()
+  const dirty = execFileSync('git', ['status', '--porcelain', '--', 'agents/'], { cwd: REPO, encoding: 'utf8' }).trim() !== ''
+  const base = dirty ? last : execFileSync('git', ['rev-parse', `${last}^`], { cwd: REPO, encoding: 'utf8' }).trim()
+  if (t) t.diagnostic(`S2_BASE 未注入：降级为「最后一次触及 agents/ 的提交${dirty ? '（工作区脏，取它本身）' : '的父提交（本批已提交）'}」`)
   return base
 }
 test('S2-TC-G05 一次性全改 + 一次提交', (t) => {

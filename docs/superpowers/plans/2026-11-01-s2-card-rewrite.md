@@ -52,7 +52,7 @@
 9. **构造不落盘、必还原**：一切「必红构造」只在内存或 `mkdtemp` 副本上做；每条构造后必须还原并断言回到基线（防「构造失效 → 假绿」）。
 10. **测试不自递归**：用例不得执行 `npm run check` / `check-all.mjs`；只允许单跑 `node scripts/check-observable.mjs` / `node tools/docgen/cli.mjs <子命令>` / `node scripts/scope-sweep.mjs --check` / `node --test <单文件>`。
 11. **「没改」用 sha 内容锚**：断「工作区干净」在脏树下立跑即红 → 一律断「指定文件内容 sha 不变」（`S2-TC-E09` / `I06`）。
-12. **`S2_BASE` 缺失降级为「spec 最近一次提交；若等于 `HEAD` 则取父提交」**（D21）并打 `t.diagnostic`（不得 `t.skip`、不得 fail-closed）；取值命令 `git log -1 --format=%H -- docs/superpowers/specs/2026-11-01-s2-card-rewrite-design.md` + `git rev-parse HEAD`。
+12. **`S2_BASE` 缺失降级为「最后一次触及 `agents/` 的提交：脏取它本身、净取它的父」**（D22；D21 的「spec 最近提交」锚会随新 docs 提交偏移一格）并打 `t.diagnostic`（不得 `t.skip`、不得 fail-closed）；取值命令 `git log -1 --format=%H -- agents/` + `git status --porcelain -- agents/`。
 13. **R8 回扫只认裸命令**：`node scripts/scope-sweep.mjs --check`（**禁用** `npm run doc:sweep -- --check`：PowerShell + npm 10.9 吞掉 `--` 后参数、恒 exit 0 = 假绿）。
 14. **零接触**：`tools/docgen/policy/**` 一字不动；`rules/` 与 `skills/` 正文零改动（首日不红 = ⑦ 段 `[observable]` 命中仍 0）。
 15. **门禁基线不钉死**：本 plan 落盘前实跑 = `# tests 1244` / `# pass 1242` / `# fail 0` / `# skipped 2`、`baseline 38/38`、`0 findings`、`④ markdown 通过（358 文件 / 1572 表）`、`[observable] 107 扫描 / 0 命中 / 6 豁免 / 0 stale`。每加一个文件 / 一张表，数字按实际漂移，**不钉死**。
@@ -169,7 +169,7 @@ cardFaceIds.mjs     cardFaceIds(card, env) → string[]（空 = 过）          
 - [ ] 新建 `scripts/check-before-after.mjs`（D9 载体）：扫描文本命中「已代为」/「已代删」即 exit 1；`H06` 的 `carriers ≥ 1` 指的就是它（`rules/` 与 `skills/` 正文零改动，故该判据只能落在 `scripts/`）。
 - [ ] 新建 `tools/docgen/test/s2-card-rewrite.test.mjs`，内含 76 个 `test('S2-TC-<ID> …')` 块 + **K 组 3 条（D17）**，逐条按 testcase 的「步骤 / 判据」列实现；四类构造（`D02` / `E06` / `F03` / `F04`）走子进程。
 - [ ] 三类常驻夹具（宾语≠落点 / 两行同值 / 共享句只 1 席渲染）各至少一条「必红构造」+ 还原断言。
-- [ ] `S2_BASE` 缺失 → 降级为「spec 最近一次提交；若等于 `HEAD` 则取父提交」+ `t.diagnostic`（不 `t.skip`；见约束 12 / D21）。
+- [ ] `S2_BASE` 缺失 → 降级为「最后一次触及 `agents/` 的提交：脏取它本身、净取它的父」+ `t.diagnostic`（不 `t.skip`；见约束 12 / D22）。
 - **验收**：四个测试文件 `node --check` 全过；`node --test tools/docgen/test/s2-card-rewrite.test.mjs` 能跑出 `# tests 79`（**本步只断「文件可加载 + 79 个 test 块就位」，红绿不在本步**——多数用例前置是「15 卡已重生成」（Task 8）与「C-7 / baseline 在位」（Task 9 / 10）；全绿门槛在 Task 10）
 - **交付物**：3 个改动测试文件（`card-render` / `evidence-reader` / `pilot-render`）+ 1 个新增 support + 1 个新增测试文件。
 

@@ -33,7 +33,7 @@
 | 常量 11 | 测试不自递归（G7） | 任何用例的「步骤」列**不得**执行门禁总脚本；只允许单跑 `node scripts/check-observable.mjs` / `node tools/docgen/cli.mjs <子命令>` / `node scripts/scope-sweep.mjs --check` / `node --test <单文件>`。全量门禁由 `scripts/check-all.mjs` 自己跑（见 GAP-13） |
 | 常量 12 | 理解度用例标「执行型」 | `V-11` / `V-11-b` 靠「独立实例答题 + 判分」，**非 `node --test` 自动化**；用例里机判部分只核**报告文件与计分表的结构**，分数由人判 |
 | 常量 13 | 三类常驻夹具（新 spec §4） | ① 宾语≠落点 ② 两行同值 ③ 共享句只 1 席渲染；**每类必须有一条「必红构造」**（构造后判据必红的证明），缺一即判别力为零 |
-| 常量 14 | **`<S2-BASE>` 缺失记 skipped 并点名**（G5-3） | 基锚优先取 `process.env.S2_BASE`；**缺失时降级为「spec 最近一次提交；若它就等于 `HEAD`（本批已提交）则取它的父提交」**（D21：字面 `HEAD` 会让 `base..HEAD` 恒空）并 `t.diagnostic` 点名。不得 `t.skip`（`scripts/check-all.mjs` 只放行 `SKIP_ALLOWLIST` 的 2 个名字，名单外 skip 直接判红），也不得 fail-closed（`check-all.mjs` 的 `testEnv` 不注入本变量 → 恒红）。取值命令：`git log -1 --format=%H -- docs/superpowers/specs/2026-11-01-s2-card-rewrite-design.md` + `git rev-parse HEAD`（相等时再取 `HEAD^`） |
+| 常量 14 | **`<S2-BASE>` 缺失记 skipped 并点名**（G5-3） | 基锚优先取 `process.env.S2_BASE`；**缺失时降级为「最后一次触及 `agents/` 的提交：工作区脏取它本身、干净取它的父」**（D22：D21 的「spec 最近提交」锚在其上再落一个 docs 提交后会偏移一格）并 `t.diagnostic` 点名。不得 `t.skip`（`scripts/check-all.mjs` 只放行 `SKIP_ALLOWLIST` 的 2 个名字，名单外 skip 直接判红），也不得 fail-closed（`check-all.mjs` 的 `testEnv` 不注入本变量 → 恒红）。取值命令：`git log -1 --format=%H -- agents/` + `git status --porcelain -- agents/`（脏取前者，净取 `git rev-parse <前者>^`） |
 | 常量 15 | **「没改」一律用 sha 内容锚**（G5-2） | 断「工作区干净」在脏树下立跑即红（本轮 `skills/dev-workflow/references/gate-record.md` 有未提交行）→ 改判「指定文件内容不变」：跑前跑后各取 `createHash('sha256')` 或 `git hash-object`，断清单逐键相等 |
 
 **断言语义**：本文件「判据」列一律写可直接照抄的 `assert.*` 表达式，或「命令 + 退出码 + 关键输出」；不存在「检查是否合理」「确保正确」这类不可判表述。
@@ -165,7 +165,7 @@
 | ID | 类型 | 覆盖 | 前置 | 步骤 | 预期 | 判据 |
 |---|---|---|---|---|---|---|
 | S2-TC-D01 | 正 | §4-D4 | 15 卡已两步写盘落盘 | `test('S2-TC-D01 本席清单类型列只许三值')`：取「本席清单」表每行类型列格 | 格集 ⊆ `脚本核对` / `AI 判定` / `人工判定`；空格 0；`script` / `ai` / `manual` 命中 0 | `assert.ok(cells.every(c => TY3.includes(c)))`；`assert.equal(cells.filter(c => c === '').length, 0)`；`assert.equal(cells.filter(c => ['script','ai','manual'].includes(c)).length, 0)` |
-| S2-TC-D02 | 负 | §4-D4 + §4-D3（双判同向；**常量 6 子进程**） | `coldRepo` 副本可用；子进程重渲工具在位 | `test('S2-TC-D02 类型未翻译时两判同红')`：副本把 `card-contract.mjs` 里 `TYPE_LABELS.ai` 的值改成英文 `ai` → **子进程** `import` 副本模块重渲，输出类型列与 `cardFaceIds` 结果 | 类型列出现英文 `ai` → D01 断言抛；同一次输出的 `cardFaceIds` 非空（同一处走形被两条判据同时抓到）；子进程必须 exit 0（否则是「跑不通」不是「判红」） | `assert.equal(r.code, 0)`；`assert.throws(() => assertTypeCells(parsed.typeCells))`；`assert.ok(parsed.ids.length >= 1)` |
+| S2-TC-D02 | 负 | §4-D4 + §4-D3（双判同向；**常量 6 子进程**） | `coldRepo` 副本可用；子进程重渲工具在位 | `test('S2-TC-D02 类型未翻译时两判同红')`：副本把 `card-contract.mjs` 的 `TYPE_LABELS.manual` 值从「人工判定」改成英文键 `manual`（＝实现里的同义走形）→ **子进程** `import` 副本模块重渲，输出类型列与 `cardFaceIds` 结果 | 类型列出现英文 `manual` → D01 断言抛；同一次输出的 `cardFaceIds` 非空（同一处走形被两条判据同时抓到）；子进程必须 exit 0（否则是「跑不通」不是「判红」） | `assert.equal(r.code, 0)`；`assert.throws(() => assertTypeCells(parsed.typeCells))`；`assert.ok(parsed.ids.length >= 1)` |
 | S2-TC-D03 | 边界 | §4-D4「不删任何一列」 | 同 D01 | `test('S2-TC-D03 四列不减')`：① 断表头列数 == 4 且四列全非空；② 构造删「类型」列 | ① 15 席全过；② 抛（删列 = 判据消失，不是「简化」） | `assert.equal(cols, 4)`；`assert.ok(colNonEmpty.every(n => n >= 1))`；`assert.throws(() => assert.equal(colsAfterDelete, 4))` |
 | S2-TC-D04 | 正 | §4-D5 | 同 D01 | `test('S2-TC-D04 三态 5 行逐字且在段末')`：断「一定会」段末 5 行 == `TRISTATE` | 逐行相等；且三态在**段末**（`slice(-5)`），不得插在段中 | `assert.deepEqual(segLines.slice(-5), CC.TRISTATE)` |
 | S2-TC-D05 | 负 | §4-D5 | D04 断言抽成 `assertTristateLines(lines)` | `test('S2-TC-D05 三态缺行 / 换序即红')`：① 删 `na` 行；② 交换 `miss` 与 `na` | 两次都抛（4 行 ≠ 5 行；逐行不等） | `assert.throws(() => assertTristateLines(withoutNa))`；`assert.throws(() => assertTristateLines(swapped))` |
@@ -235,7 +235,7 @@
 
 ## 10 I 组：上游同批与「不改正文」面（§3 #10 / #11、§5 首日不红）
 
-> **本组统一前置**：`<S2-BASE>` 取值见常量 14——优先 `process.env.S2_BASE`，**缺失时降级为「spec 最近一次提交；若等于 `HEAD`（本批已提交）则取父提交」并 `t.diagnostic` 点名**（不 skip、不 fail-closed，G5-3；D21）。「只加不改」用 `git diff --numstat <S2-BASE> -- <file>`（**比工作区，不加 `..HEAD`**，否则未提交改动算不进去）；「没改」用 sha 内容锚（常量 15）。构造一律在 `mkdtemp` 副本，不写仓内。
+> **本组统一前置**：`<S2-BASE>` 取值见常量 14——优先 `process.env.S2_BASE`，**缺失时降级为「最后一次触及 `agents/` 的提交：工作区脏取它本身、干净取它的父」并 `t.diagnostic` 点名**（不 skip、不 fail-closed，G5-3；D22）。「只加不改」用 `git diff --numstat <S2-BASE> -- <file>`（**比工作区，不加 `..HEAD`**，否则未提交改动算不进去）；「没改」用 sha 内容锚（常量 15）。构造一律在 `mkdtemp` 副本，不写仓内。
 
 | ID | 类型 | 覆盖 | 前置 | 步骤 | 预期 | 判据 |
 |---|---|---|---|---|---|---|

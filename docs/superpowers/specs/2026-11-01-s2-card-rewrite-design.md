@@ -119,8 +119,9 @@ cardFaceIds.mjs     cardFaceIds(card, env) → string[]（空 = 过）          
 | **D19** | **`cardFaceIds` 落点修正（③ 施工期发现，**落点改判，需审计复签**）**：§3 #5 原把守卫落在 `tools/docgen/card-model/validateCardModel.mjs`，而 `S1-TC-J06` 的依赖方向判据（S1 spec §3：`card-model/**` 只 import `node:` 与自身，不 import `components/**`）实测直接判红（`S1-TC-J06 依赖方向` 报 `validateCardModel.mjs: 依赖 ../components/renderCard.mjs 越界`）。而守卫的扫面按 D16 已钉死为「渲染文本」（必须 import 渲染器），两条判据不可同时成立 → 取**保 S1 红线、改本块落点**：实现移到 `tools/docgen/components/cardFaceIds.mjs`（新建），签名 `cardFaceIds(card, env) → string[]` 与三层判定**逐字不变**；`validateCardModel.mjs` 与 `card-model/index.mjs` 的 barrel **不导出该函数**（避免跨层 import）。**判据强度零改动**：判据、条数（C01 等仍断「15 卡零命中」）、`S2-TC-G04` 的「定义数恰 1」都不变，只改文件落点。 | S1 spec §3 依赖方向 / S1 testcase `S1-TC-J06`；③ 段实跑 `node --test tools/docgen/test/card-model.test.mjs` 的 J06 报错原文；D16 的扫面裁定 |
 | **D20** | **`I06` 判据对象澄清 + 签字载体白名单（③ 出口审计 P1，**判据口径澄清，需审计复签**）**：testcase `I06` 原写「两张 blob 清单**逐键相等**」，而 `skills/dev-workflow/references/gate-record.md` 是**门行账本**（R1/R3 要求每过一门必须落一行），必然每批都变 → 字面口径下 `I06` 恒红。澄清判据对象为「**`rules/` 与 `skills/` 正文**」：其余文件逐 blob 比对，`gate-record.md` 单列白名单（理由 = 签字载体不是正文）。实现同步（`S2-TC-I06` 改为 `git hash-object` 逐文件比 + 白名单 + 新增/删除键都判红）。**不降低判据强度**：原来只比路径集（内容变了也绿）= 假绿，现改为内容级。 | ③ 出口审计 P1（实测 `gate-record.md` 本轮 blob `fe69ad8 → f374fac` 已变，而旧实现只比路径集）；`rules/dev-workflow-mainline.md` R1 / R3（门行必须落） |
 | **D21** | **`<S2-BASE>` 降级锚补充（③ 出口审计 P1，**测试基锚取值口径，需审计复签**）**：testcase 常量 14 原写「`S2_BASE` 缺失时降级为 `HEAD`」。本批**提交后**「spec 最近一次提交」就是 HEAD 本身 → `HEAD..HEAD` 恒空，`G05` 的提交面与 `I01`/`I03`/`I05` 的 `git diff <base>` 全部看不到东西（实测 `G05`/`I01` 转红）。补一条：降级锚取「spec 最近一次提交；**若它等于 HEAD（本批已提交），取它的父提交**」——语义仍是「本批**改前**基线」，判据（一次性全改 / 原文零删除）不变。 | 实测：`git log -1 -- spec` == `git rev-parse HEAD` == 本批提交；改锚后 `git log HEAD^..HEAD -- agents/` = 1 个提交 / 15 文件、S4 spec `+15 −0` |
+| **D22** | **`<S2-BASE>` 锚口径再修（④ 段质量审计 P0，**测试基锚取值口径，需 sdet 复签**）**：D21 的「spec 最近提交；等于 HEAD 取父提交」只在**本批恰为 HEAD** 时成立——其上再落一个 docs 提交（如 `bf0831f`）后，spec 最近提交变成它，`HEAD^` 退回**本批提交**（15 卡与 S4 C-7 都在那次提交内）→ `base..HEAD` 与 `git diff base` 看不到本批，`G05` 实得 `0 !== 15`、`I01` 实得 `+0`。改为「锚 = **最后一次触及 `agents/` 的提交**：工作区脏（本批未提交）取它本身，干净（本批已提交）取它的父」——两种态下都指向「本批改前」。判据（一次性全改 / 原文零删除）不变。 | ④ 段 sdet 实测：默认锚 77/79（`G05` `:798` / `I01` `:954` 红）；`S2_BASE=1e2c01e` 时 79/79；`git log -1 -- agents/` = `62ca15f`（本批），其父 `1e2c01e` 才是改前 |
 
-## 6.1 R8 回扫清单（D13 / D17 / D18 / D19 / D20 / D21 的改判，逐项给处置）
+## 6.1 R8 回扫清单（D13 / D17 / D18 / D19 / D20 / D21 / D22 的改判，逐项给处置）
 
 | 口径 | 命中处 | 处置 |
 |---|---|---|
@@ -147,8 +148,9 @@ cardFaceIds.mjs     cardFaceIds(card, env) → string[]（空 = 过）          
 | `I06` 判据对象（D20） | 本 spec §5 首日不红行 | **不改**（原句已写「S2 不动 `rules/` 与 `skills/` **正文**」，白名单理由见 §6-D20） |
 | 同上 | testcase `S2-TC-I06` 前置/判据 | **改**（白名单入前置；判据从「路径集相等」改为「逐 blob 相等 + 唯一豁免」） |
 | 同上 | `tools/docgen/test/s2-card-rewrite.test.mjs` 的 `S2-TC-I06` | **改**（路径集比对 → `git hash-object` 逐 blob + 白名单 + 新增/删除键都判红；判据**加强**） |
-| `<S2-BASE>` 降级锚（D21） | testcase 常量 14 + plan 约束 12 | **改**（补「若 spec 最近提交 == HEAD 则取父提交」） |
-| 同上 | `tools/docgen/test/s2-card-rewrite.test.mjs` 的 `s2Base` | **改**（降级锚实现 + 诊断串同步） |
+| `<S2-BASE>` 降级锚（D21） | testcase 常量 14 + plan 约束 12 | **改**（补「若 spec 最近提交 == HEAD 则取父提交」；**已被 D22 取代**，原句作历史保留） |
+| `<S2-BASE>` 锚口径（D22） | testcase 常量 14 + plan 约束 12 | **改**（锚 =「最后一次触及 `agents/` 的提交」；脏取它本身 / 净取它的父） |
+| 同上 | `tools/docgen/test/s2-card-rewrite.test.mjs` 的 `s2Base` | **改**（实现与诊断串同步；D21 写法作历史保留在注释里） |
 
 ## 7 未决（Q，已裁定）
 
@@ -164,7 +166,8 @@ cardFaceIds.mjs     cardFaceIds(card, env) → string[]（空 = 过）          
 | **Q8** | ~~执行力度矩阵 A3 与新卡 bullet 形态互斥（③ 开工第一日实测 `checkStruct` 判 A3 红）~~ | **已裁定 = 扩面（2026-11-01 用户三选一取第一档）**：A3 保留旧表格形态并新增 bullet 形态（只加不删，PRD `:107`）；判据正文 + 唯一实现 + 测试同批改；R8 登记 `I20`；须独立审计复签后方可进 Task 8。落点见 §3 #13 / #14、差异见 §6 D17、回扫见 §6.1 |
 | **Q9** | ~~`cardFaceIds` 落 `card-model/` 还是 `components/`（S1 依赖红线 vs §3 #5 原落点）~~ | **已裁定 = 落 `components/`（③ 施工期实跑判红后定）**：`S1-TC-J06` 明写 `card-model/**` 不得 import `components/**`，而守卫扫渲染文本必须 import 渲染器 → 两条判据不可兼得时保上游红线、改本块落点；签名与判定零改动。落点见 §3 #5 / §3 的「接口（唯一契约）」块、差异见 §6 D19、回扫见 §6.1 |
 | **Q10** | ~~`I06` 的「`rules/` 与 `skills/` 零改动」遇 `gate-record.md` 必变（门行账本）~~ | **已裁定 = 判据对象澄清为「正文」+ 白名单（③ 出口审计 P1 后定）**：其余文件逐 blob 比、`gate-record.md` 豁免（它是签字载体，R1/R3 要求每过一门落一行）；同时把「只比路径集」的假绿实现改成内容级。见 §6-D20 / §6.1 |
-| **Q11** | ~~`<S2-BASE>` 降级为 `HEAD` 在本批提交后恒空（看不到提交面与 diff）~~ | **已裁定 = 降级锚取「spec 最近提交；等于 HEAD 时取父提交」**：语义仍是「本批改前基线」，G05/I01/I03/I05 判据不变。见 §6-D21 / §6.1 |
+| **Q11** | ~~`<S2-BASE>` 降级为 `HEAD` 在本批提交后恒空（看不到提交面与 diff）~~ | **已裁定 = 降级锚取「spec 最近提交；等于 HEAD 时取父提交」**（D21，**已被 Q12 取代**）：语义仍是「本批改前基线」，G05/I01/I03/I05 判据不变。见 §6-D21 / §6.1 |
+| **Q12** | ~~D21 的锚在其上再落 docs 提交后偏移一格（`HEAD^` 退回本批提交）~~ | **已裁定 = 锚改为「最后一次触及 `agents/` 的提交」：脏取它本身、净取它的父**（D22）：两种工作树态都指向本批改前，判据不变；实测默认锚 79/79。见 §6-D22 / §6.1 |
 
 **Q6 三个候选**（已选 b；a / c 作历史保留，不再采用）：
 
