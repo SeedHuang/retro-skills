@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync, existsSync, realpathSync } from 'node:fs'
 import { join, dirname, resolve, basename } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { fenceMask } from '../../../tools/execution-matrix/markdown-rows.mjs'
 
 const SOURCE_TYPES = ['用户当场指令', '评审第 N 轮', '实测/踩坑', '项目约定']
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
@@ -13,7 +14,8 @@ const LINE_OVER_LEN = 200                           // 来源行 >200 字符 = �
 // 本文件只读该 JSON，不写第二份词面、不读豁免清单（不建第二套豁免判定）。
 const OBSERVABLE_TERMS = JSON.parse(readFileSync(new URL('../../../tools/quality/observable-terms.json', import.meta.url), 'utf8'))
 
-// 验证节 = 标题恰为 `## 验证` 或 `### 验证`（多处取第一个）；节内 ≥1 行命中 markers 正则即 pass
+// 验证节 = 标题恰为 `## 验证` 或 `### 验证`（多处取第一个）；节内 ≥1 行命中 markers 正则即 pass。
+// 围栏代码块内的行不算（与 `check-observable.mjs` 的 `evaluateText` 同一跳过口径；示例代码不得代替真判据）。
 function verifySectionHasMarker(lines) {
   const at = lines.findIndex((l) => /^#{2,3}\s*验证$/u.test(l.trim()))
   if (at < 0) return false
@@ -23,8 +25,9 @@ function verifySectionHasMarker(lines) {
     const m = lines[i].trim().match(/^#+/)
     if (m && m[0].length <= level) { end = i; break }
   }
+  const { mask } = fenceMask(lines)
   const compiled = OBSERVABLE_TERMS.markers.map((m) => new RegExp(m.pattern))
-  return lines.slice(at + 1, end).some((l) => compiled.some((re) => re.test(l)))
+  return lines.slice(at + 1, end).some((l, k) => !mask[at + 1 + k] && compiled.some((re) => re.test(l)))
 }
 
 // ---- 冗余度（机械代理，照 criteria.md §2.4 判定列）----

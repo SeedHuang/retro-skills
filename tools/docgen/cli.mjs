@@ -197,7 +197,8 @@ export function gateChecks() {
         rows.push({ code: e.code, at: `predicates[${id}].${e.path}`, message: e.message });
       }
     }
-    for (const r of rows) console.error(`${r.code}: ${r.at}：${r.message}`);
+    // 逐条只打报文（不带码）：首个非空行的码由下方 fail → main catch 统一输出，避免同码在 stderr 出现两次
+    for (const r of rows.slice(1)) console.error(`${r.at}：${r.message}`);
     const first = rows[0];
     fail(first.code, { path: first.at, message: `${first.at}：${first.message}` });
   }

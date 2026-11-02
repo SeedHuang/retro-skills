@@ -374,6 +374,10 @@ test('S5-TC-B07 changes[] 中 to === renderSha256 的最新条 B3 落账四字�
       assert.equal(c.judged.find((j) => j.key === 'B3').verdict, 'pass', seat);
     } else {
       assert.equal(c.judgeMode, 'none', `${seat}: 未触达语义键的变更必须显式记 judgeMode=none`);
+      // 「没重判」不等于「可以伪造判词」：none 档不得带 judged / judgedBy，且结构项必须已复检
+      assert.deepEqual(c.judged, [], `${seat}: judgeMode=none 不得带判词`);
+      assert.equal(c.judgedBy, undefined, `${seat}: judgeMode=none 不得带判者标识`);
+      assert.equal(typeof c.machineChecks === 'object' && c.machineChecks !== null, true, `${seat}: 变更必须带 machineChecks`);
     }
   }
 });

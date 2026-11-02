@@ -202,8 +202,8 @@ function assertTwoTables(src) {
   }
   const t34 = tableRows(/^### 3\.4 执行力度适用项表/, 6)
   assert.deepEqual(t34.map((c) => c[4]), ['7', '4', '9', '6', '15', '12'])
-  const t35 = tableRows(/^### 3\.5 满分口径/, 6)
-  assert.deepEqual(t35.map((c) => c[1]), ['24', '21', '26', '23', '32', '29'])
+  const tFullScore = tableRows(/^### 3\.5 满分口径/, 6)
+  assert.deepEqual(tFullScore.map((c) => c[1]), ['24', '21', '26', '23', '32', '29'])
 }
 
 function blockOf(src, titlePrefix) {
@@ -453,7 +453,7 @@ test('S3-TC-E02 纯函数与 0 新码', () => {
   assert.equal(/readFileSync|writeFileSync|process\.env/.test(fnSrc), false)
   const codeLiterals = new Set([...fnSrc.matchAll(/'([A-Z][A-Za-z0-9]*)'/g)].map((m) => m[1]))
   assert.deepEqual([...codeLiterals].filter((c) => !['SubjectiveLabel', 'UnverifiableOutput'].includes(c)), [])
-  assert.equal(Object.keys(CM.CARD_MODEL_CODES).length, 36)
+  assert.equal(Object.keys(CM.CARD_MODEL_CODES).length, 36) // counter-probe: off（码表规模，非 baseline / 席位计数）
   assert.equal(Object.keys(CM.SCAN_FIELDS).length, 8)
   assert.deepEqual([exitCodeFor('SubjectiveLabel'), exitCodeFor('UnverifiableOutput')], [1, 1])
 })
@@ -648,6 +648,8 @@ test('S3-TC-G02 判据表坏', () => {
     verify: (copy, r) => {
       assert.equal(r.code, 1)
       assert.match(r.out.split(/\r?\n/)[0], /^SubjectiveLabel: predicates\[impartial-long-term\]\.label/)
+      // stderr 契约（cli.mjs 注释）：错误码**只出现一次**——首条的码由 main catch 打，逐条 console.error 不带码
+      assert.equal((r.out.match(/SubjectiveLabel/g) ?? []).length, 1)
       assert.equal(r.out.includes('Mismatch'), false)
     },
   })
@@ -884,9 +886,14 @@ test('S3-TC-I04 ⑨ 接线与块内零词面', () => {
     }
     if (depth <= 0) { end = i; break }
   }
-  const blockLines = lines.slice(startLayer, end + 1)
-  const diff = execFileSync('git', ['diff', '--unified=0', S3_BASE, '--', 'skills/rule-inspector/scripts/score.mjs'], { cwd: REPO, encoding: 'utf8' })
-  for (const line of diff.split(/\r?\n/)) if (line.startsWith('+') && !line.startsWith('+++')) blockLines.push(line.slice(1))
+  // ⑨ 专属区 = 常量行 + 判定函数 + `g('执行力度', '⑨判据可观察'…)` 调用（**不再**并入「本批 diff 的全部新增行」——
+  // 那会把后续批次对 score.mjs 的正常新增判成红，属跨批耦合）
+  const constIdx = lines.findIndex((l) => l.includes('OBSERVABLE_TERMS = JSON.parse'))
+  const fnIdx = lines.findIndex((l) => l.startsWith('function verifySectionHasMarker'))
+  assert.ok(constIdx >= 0 && fnIdx > constIdx)
+  const fnEnd = lines.findIndex((l, i) => i > fnIdx && l === '}')
+  assert.ok(fnEnd > fnIdx)
+  const blockLines = [...lines.slice(constIdx, fnEnd + 1), ...lines.slice(startLayer, end + 1)]
   const block = blockLines.join('\n')
   assert.equal((src.match(/g\('执行力度', '⑨判据可观察'/g) ?? []).length, 1)
   assert.ok(blockLines.some((l) => l.includes('markers')))
@@ -926,6 +933,9 @@ test('S3-TC-I06 无标记得 0', () => {
   void fixed
   writeFileSync(join(dir, 'r.md'), `${RULE_HEAD}禁止随意改动代码，必须运行测试。\n\n## 验证\n请认真确认，务必做到位；exit 0\n`, 'utf8')
   assert.equal(eight(scoreFile(join(dir, 'r.md'), dir, { type: '持续适用' })).pass, true)
+  // 围栏代码块里的标记不算：示例代码不得代替真判据（与 evaluateText 同一跳过口径）
+  writeFileSync(join(dir, 'r.md'), `${RULE_HEAD}禁止随意改动代码，必须运行测试。\n\n## 验证\n请认真确认，务必做到位\n\n\`\`\`\n计数 = 3\n\`\`\`\n`, 'utf8')
+  assert.equal(eight(scoreFile(join(dir, 'r.md'), dir, { type: '持续适用' })).pass, false)
   rmSync(dir, { recursive: true, force: true })
 })
 
@@ -1028,10 +1038,11 @@ test('S3-TC-I13 六项核销', () => {
 test('S3-TC-I14 两模板与删除面', () => {
   const ledgerTpl = read('skills/review-log/assets/review-progress-template.md')
   const nos = ledgerTpl.split(/\r?\n/).map((l) => l.match(/^\|\s*(\d+)\s*\|/)).filter(Boolean).map((m) => Number(m[1]))
-  assert.equal(Math.max(...nos), 36)
+  const EXPECTED_ROWS = 36 // counter-probe: off（查账表模板行数，非 baseline / 席位计数）
+  assert.equal(Math.max(...nos), EXPECTED_ROWS)
   const run = []
-  for (let i = 1; i <= 36; i += 1) if (nos.includes(i)) run.push(i)
-  assert.equal(run.length, 36)
+  for (let i = 1; i <= EXPECTED_ROWS; i += 1) if (nos.includes(i)) run.push(i)
+  assert.equal(run.length, EXPECTED_ROWS)
   assert.equal(run.filter((n, i) => n !== i + 1).length, 0)
   const checklist = read('skills/rule-inspector/assets/rule-edit-checklist-template.md')
   const e2 = checklist.split(/^## E2 · /m)[1].split(/^## /m)[0]

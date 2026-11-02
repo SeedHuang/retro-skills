@@ -210,6 +210,9 @@ export function counterProbes(files) {
   const seatAssert = []; // assert.* 行内出现 14/15
   for (const [file, text] of Object.entries(files)) {
     text.split(/\r?\n/).forEach((line, i) => {
+      // 行级豁免：`// counter-probe: off` 标注的行自身不参与探针（标注行必须在**同一行**写理由，
+      // 避免整文件按名排除——按名排除会随新文件增长成一串补丁，正是本探针要防的形态）
+      if (line.includes('counter-probe: off')) return;
       if (/(?<![0-9])(35|36|37)(?![0-9])/.test(stripCommentsAndStrings(line))) baseline.push(`${file}:${i + 1}`);
       // 边界用「非词字符」而非「非数字」：`diff14` 这类标识符里的数字不是席位计数（假阳性）
       // 先剥引号串：负例夹具把「违规写法」当字符串写在用例里，不剥会把夹具本身判成违规
@@ -223,9 +226,6 @@ export function readCounterFiles() {
   const dir = join(ROOT, 'tools', 'docgen', 'test');
   const out = {};
   for (const f of readdirSync(dir).filter((x) => x.endsWith('.test.mjs'))) {
-    // `s3-predicates.test.mjs` 不在本探针面：它的 35 是 §3.5 表局部变量名 `t35`、36 是 `CARD_MODEL_CODES` 码表规模
-    // （S3 D-4 要求码表恒 36 码），都不是「baseline 条数 / 席位数」计数
-    if (f === 's3-predicates.test.mjs') continue;
     out[f] = readFileSync(join(dir, f), 'utf8');
   }
   return out;

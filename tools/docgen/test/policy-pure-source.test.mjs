@@ -1063,20 +1063,22 @@ test('S6-TC-G01 agents/ 差异必须可追（字节零变化是最好情况）',
       .filter((base) => existsSync(base))
       .flatMap((base) => readdirSync(base).filter((x) => /-s6-eval$/.test(x)).map((x) => join(base, x)));
     assert.ok(evalDirs.length > 0, '有卡面差异但评估账单目录不存在 → 差异无处记账');
-    // S3 起允许另一条等价记账面：当次批次的 `impact-sheet.md`（label 改写不是 S6 能力变更，记在改判清单里）
-    const s3Impact = ['.session/reviews', 'docs/superpowers/reviews']
+    // S3 起允许另一条等价记账面：**当次**批次的 `impact-sheet.md`（label 改写不是 S6 能力变更）。
+    // 「当次」= 目录名（`YYYY-MM-DD-HHMM-…`，可字典序）最新的一份——不扫全部历史清单，否则任一旧账都能覆盖任意卡的差异。
+    const impactDirs = ['.session/reviews', 'docs/superpowers/reviews']
       .filter((base) => existsSync(base))
-      .flatMap((base) => readdirSync(base).map((x) => join(base, x, 'impact-sheet.md')))
-      .filter((p) => existsSync(p));
+      .flatMap((base) => readdirSync(base).map((x) => ({ name: x, p: join(base, x, 'impact-sheet.md') })))
+      .filter(({ p }) => existsSync(p))
+      .sort((a, b) => (a.name < b.name ? 1 : a.name > b.name ? -1 : 0));
+    const latestImpact = impactDirs.length ? [impactDirs[0].p] : [];
     const notes = [
       ...evalDirs.map((d) => join(d, 'capability-diff.md')).filter((p) => existsSync(p)),
-      ...s3Impact,
+      ...latestImpact,
     ].map((p) => readFileSync(p, 'utf8')).join('\n');
-    // S3 卡面改写 = 判据句 label 换文案（S6 能力零变更）：命中文件在 impact-sheet 里以「agents/*.md 15 卡」整体登记，
-    // 逐文件名断言会假红；故每个 touched 文件二选一（逐文件名命中 或 批级说明覆盖全部），**不早退**
-    const batchNote = /agents[\\/]/.test(notes) && /label|判据句|核心语义/.test(notes)
+    // 批级说明必须带**可核锚**：提到 agents/ 且写明本批触及的卡数（`N 卡` / `N 张`），否则逐文件名命中
+    const batchNote = /agents[\\/]/.test(notes) && new RegExp(`(?<![0-9])${touched.length}\\s*(卡|张)`).test(notes)
     const uncovered = touched.filter((f) => !notes.includes(f))
-    assert.ok(uncovered.length === 0 || batchNote, `${uncovered.join(', ')} 有差异但账单无说明行`)
+    assert.ok(uncovered.length === 0 || batchNote, `${uncovered.join(', ')} 有差异但账单无说明行（或批级说明缺「${touched.length} 卡」锚）`)
   }
 });
 
