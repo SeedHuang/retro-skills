@@ -323,6 +323,8 @@ graph TD
 | F-09 | S3 | — |
 | F-10 | S1（先行产物 `rules/observable-criteria.md`）；S3（三写作流程引用） | — |
 
+> 日期注（2026-11-02，PRD 收尾）：本 PRD 的 **S1 / S2 / S3 三份均已签**，六段门行齐（`skills/dev-workflow/references/gate-record.md` 的 `①@observable-criteria-rollout`–`⑤@observable-criteria-rollout`、`@S2-card-rewrite`、`@S3-predicates-reuse` 及其两行 `-d23` 增量）。**上文 §8 表「状态」列与 `:301-303` 的「未开始」原文保留不改**（历史记录），现状只认门行。收尾核验：`npm run check` 末行 `check 全部通过`。
+
 ---
 
 ## 9 验收
