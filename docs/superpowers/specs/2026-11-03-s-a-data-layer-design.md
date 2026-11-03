@@ -21,7 +21,7 @@
 | R3 | `when` 唯一源 = `triggerTable.when`；`duty.trigger` **一律装配期注入**，不取「删除」分支（PRD D17 / r4 后端席） | 两处真相是缺陷 6 本体；取「删除」分支则 V12 两面都无字段可判，等于把判据删了 |
 | R4 | `description` 纳入文本扫描面：`CARD_TEXT_FIELDS` **与** `surfaceTexts` 两处同批改，缺一即静默空转（PRD D17） | 只改前者会让「改了表、仍然不扫」原样保留，且 §4 没有一条验收能判出它 |
 | R5 | 同批改写三条冻结断言：`card-model.test.mjs:1125` / `:1131`（现状 `green(description …)` 要求 `description` **不扫**）与 `:1141`（`SCAN_FIELDS` 恰 8 键） | 不改这三条 → R4 落地即红；PRD §5 `S1-TC-G09` 行已登记这是改已签件，须回 ② 段 |
-| R6 | policy 删 3 项本仓专属路径（PRD Q8），保留 `.gitignore` 兜底句。**删的范围 = 只删 `pathGroups.workspace` 的三项**（`skills-lock.json` / `lessons/` / `tools/docgen-spike/.tmp-test/`）；`DETECTION_BLIND_SPOTS`（`policy/definitions/paths.mjs:27`）里的 `lessons/` **保留不动**——那是「检测限度」段（≠ 禁写清单），删它会改另一段的语义 | 那是「通用角色卡」里的项目专属内容（PRD D13）；兜底句删了会让卡面失去最后一道提醒；两处 `lessons/` 分属不同段，混删会把边界段整段改写 |
+| R6 | policy 删 3 项本仓专属路径（PRD Q8），保留 `.gitignore` 兜底句。**删的范围 = 只删 `pathGroups.workspace` 的三项**（`skills-lock.json` / `lessons/` / `tools/docgen-spike/.tmp-test/`）；`DETECTION_BLIND_SPOTS`（`policy/definitions/paths.mjs:26`）里的 `lessons/` **保留不动**——那是「检测限度」段（≠ 禁写清单），删它会改另一段的语义 | 那是「通用角色卡」里的项目专属内容（PRD D13）；兜底句删了会让卡面失去最后一道提醒；两处 `lessons/` 分属不同段，混删会把边界段整段改写 |
 | R7 | 装配顺序不变：`...s` 必须置末（`agentData.mjs:294` 注释是硬约束、`:295` 是唯一实现） | 条目自带的 `tools` / `boundary` 会静默覆盖档位；顺序一乱，`tool-tiers` 的 `FROZEN` 断言与渲染都会漂 |
 | R8 | `trigger.kind` 落在 `triggerTable[<seat>].kind`（PRD Q5 / §8 S-C） | 本段只**留字段位**，四值校验与卡面渲染归 S-C；字段位置现在不定死，S-C 会再造一个第二来源 |
 | R9 | 本段产物硬约束：`node tools/docgen/cli.mjs gate` → **exit 0** 且 15 席 `disk == render` 逐字节相等（PRD V4）；`baseline 38/38` 不作判据（PRD §5） | 数据层改造若让渲染漂了一格，S-B / S-C 的所有验收都建立在错基线上 |
