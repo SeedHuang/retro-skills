@@ -379,8 +379,8 @@
 
 - **覆盖**：spec §11.4-4 / §11.2.5 口径 3·5 / §11.5 第 8 行（「这是 V7 的全部意义」）；PRD §4 V7 负例（token 级判据纠自议会第 1 轮 AI 的 Q-4）
 - **前置**：`CASE` 可用；注入面 = testcase 的**副本文件**（`--testcase <副本>`），不动已签件
-- **步骤**：① 复制 S-A testcase 到临时路径；② 把其中某一条用例体（`### TC-0xx` 起至下一个同级标题止）内的所有 `assert.*` 替换成**一种**恒真形态，**四种形态各跑一遍**（= spec §11.2.5 口径 3 的 `{true, 1, '1'}` 全集再带一个空白变体）：ⅰ `assert.ok(true)`、ⅱ `assert.ok( true )`（带空格）、ⅲ `assert.ok(1)`（数字）、ⅳ `assert.ok('1')`（**字符串 `'1'`**）；③ `CASE` 指该副本；④ 复原
-- **预期**：② 四种形态下 ③ 均 exit 1，每个都报 `hollow 1` 且含该用例的 `ID` 与行号；④ 原文件复跑 exit 0（`hollow 0`）
+- **步骤**：① 复制 S-A testcase 到临时路径；② 把其中某一条用例体（`### TC-0xx` 起至下一个同级标题止）内的所有 `assert.*` 替换成**一种**恒真形态，**四种形态各跑一遍**（= spec §11.2.5 口径 3 的 `{true, 1, '1'}` 全集再带一个空白变体）：ⅰ `assert.ok(true)`、ⅱ `assert.ok( true )`（带空格）、ⅲ `assert.ok(1)`（数字）、ⅳ `assert.ok('1')`（**字符串 `'1'`**）；③ `CASE` 指该副本；④ 复原；⑤ **混装对照**：同一条用例体内写入**一条真断言 + 一条恒真断言**（如 `assert.equal(ids.length, 30)` + `assert.ok(true)`）→ 必须**不**判 `hollow`（`every()` 语义），且 `noassert` 不增
+- **预期**：② 四种形态下 ③ 均 exit 1，每个都报 `hollow 1` 且含该用例的 `ID` 与行号；④ 原文件复跑 exit 0（`hollow 0`）；⑤ 混装态 exit 0 且 `hollow 0`、`noassert` 与基线同值
 - **判据**：
   - 四种形态各 `CASE` exit 1，输出含 `hollow 1` + `ID（<行号>）`
   - **且不得把它们算进 `missing`**（`hollow` 与 `missing` 不混算，spec §11.2.5 口径 4）：任一形态报 `missing 1` = 判失败
