@@ -5,7 +5,7 @@
 
 **Goal:** 把 `tools/docgen/components/agentData.mjs` 的 15 席字面数据拆成 `data/shared.json` + `data/seats/<seat>.json`（`@` 引用展开），让 `triggerTable.when` 成为 `duty.trigger` 的唯一源，删掉 policy 里 3 项本仓专属路径——**15 席渲染产物逐字节不变**。
 
-**Architecture:** 新增 `components/seatLoader.mjs`（读盘 → `expandRefs` 一层展开 → 拆 `trigger` → 注入 `duty.trigger` → 装配 `tools`/`boundary`（`...s` 置末）→ 12 键断言）与 `check-shared-refs.mjs`（PRD V5 校验器）。`agentData.mjs` 降为薄壳（**先 `import` 再 `export`**，不得纯再导出）。数据源单向不变：`cardPipeline.mjs` 仍不读盘。
+**Architecture:** 新增 `components/seatLoader.mjs`（读盘 → `expandRefs` 一层展开 → 拆 `trigger` → 注入 `duty.trigger` → 装配 `tools`/`boundary`（`...s` 置末）→ **席文件 8 键断言**；12 键全量由 `check-shared-refs.mjs` 在 `buildCards()` 产物上判）与 `check-shared-refs.mjs`（PRD V5 校验器）。`agentData.mjs` 降为薄壳（**先 `import` 再 `export`**，不得纯再导出）。数据源单向不变：`cardPipeline.mjs` 仍不读盘。
 
 **Tech Stack:** Node ESM（无构建）、`node --test`（TAP）、`tools/docgen/cli.mjs` 六子命令、PowerShell 5 执行环境。
 
@@ -26,6 +26,7 @@
 - 不改 PRD 的 D/Q/V 口径；发现 spec 未定义的东西 → **停下回流 spec**，不得在本计划里加设计决策。
 - `baseline 38/38` 不作判据（同式自除恒真）。
 - 卡面是生成物：`agents/*.md` 只由 `cli.mjs` 生成，**禁止手改**。
+- **本计划于 `2026-11-03` 计划门首轮 `FAIL`（审计 P0 1 / P1 6）后按 spec 改判重写**：①12 键判据归档 `buildCards()`（spec §10.1 R2 / §10.2.5 第 6 步）；②`@` 混用规则改成可判形态（§10.2.3 规则 4）；③`patch()` 不是死 helper，改为「改 `DATA` 常量指 JSON、四处调用保留」（§10.2.9 末行）。证据 = `.session/reviews/2026-11-03-s-a-plan-gate/plan-gate.md`。
 
 ---
 
@@ -37,7 +38,7 @@
 | `tools/docgen/data/seats/<seat>.json` ×15 | 建 | 一席一文件：`name/role/dimension/outputKind/card/trigger` + 可选 `boundary/explorePolicy/domain` |
 | `tools/docgen/components/seatLoader.mjs` | 建 | 读盘 + `expandRefs` + 拆 `trigger` + 注入 + 装配 + 键集断言（**唯一**读盘与装配点） |
 | `tools/docgen/components/agentData.mjs` | 改（降为薄壳） | 只 `import` 后 `export` 三个符号（保持 29 条既有 `import` 的导出面） |
-| `tools/docgen/check-shared-refs.mjs` | 建 | PRD V5 校验器：悬空 / 空值 / 嵌套 / 12 键恰等（exit 1） |
+| `tools/docgen/check-shared-refs.mjs` | 建 | PRD V5 校验器：悬空 / 空值 / 嵌套 / 12 键全量（exit 1） |
 | `tools/docgen/components/validateAgentData.mjs` | 改 | `EXIT[1]` 追加 4 码 |
 | `tools/docgen/components/cardPipeline.mjs` | 改 1 行 | `CARD_KEYS` 加 `export`（内容不动） |
 | `tools/docgen/card-model/enums.mjs` | 改 | `CARD_TEXT_FIELDS` 加 `'description'` |
@@ -45,7 +46,7 @@
 | `tools/docgen/test/card-model.test.mjs` | 改 3 处断言 | `S1-TC-G09` 的 `:1125` / `:1131` 改「必报」，`:1141` 仍 8 键 |
 | `tools/docgen/policy/definitions/paths.mjs` | 删 3 项 | `pathGroups.workspace` 删 `lessons/`、`skills-lock.json`、`tools/docgen/-spike/.tmp-test/`（`DETECTION_BLIND_SPOTS` 保留） |
 | `tools/docgen/test/sa-data-layer.test.mjs` | 建 | 30 条用例的落点（TC-001…TC-030） |
-| 7 个既有测试文件 | 改 6 处伴随断言 + 删 1 处死 helper（另 1 处靠形态满足、1 处同处置、2 处归 T5） | 见 spec §10.2.9「测试侧 11 处」表，分账写在该表下方的自检节 |
+| 7 个既有测试文件 | T1 改 1 处期望文件集（`policy-pure-source` 的 `S6-TC-E03`）+ T3 改 6 处伴随断言 + 1 处改 `patch()` 注入目标（`replace-scenarios.mjs`，**不删 helper**）（另 1 处靠形态满足、1 处同处置、2 处归 T5） | 见 spec §10.2.9「测试侧 12 处」表，分账写在该表下方的自检节 |
 
 ---
 
@@ -73,17 +74,19 @@ import { readdirSync, readFileSync, existsSync } from 'node:fs'
 const DATA = 'tools/docgen/data'
 const SEATS = `${DATA}/seats`
 
-test('TC-001 数据源按席拆成 data/seats/<seat>.json（15 份）+ data/shared.json（1 份）', () => {
+test('TC-001 数据源按席拆成 data/seats/<seat>.json（一席一文件）+ data/shared.json（1 份）', () => {
   const dirs = readdirSync(DATA, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name)
   assert.deepEqual(dirs, ['seats'], 'data/ 下一级只能有 seats 一个目录')
   const files = readdirSync(SEATS).filter((f) => f.endsWith('.json')).map((f) => f.replace(/\.json$/, '')).sort()
-  assert.equal(files.length, 15, `应 15 份席文件，实得 ${files.length}`)
   const shared = JSON.parse(readFileSync(`${DATA}/shared.json`, 'utf8'))
   assert.deepEqual(Object.keys(shared).sort(),
     ['cardRationaleHead', 'cardRationaleTail', 'dutyConstraintDefault'], 'shared.json 恰 3 键')
-  // 席名与 agentData 逐字相等（旧入口仍在，故可就地比对）
+  // 席名与 agentData 逐字相等；**席数一律派生**（`dev-workflow-counts.test.mjs` 的 `counterProbes`
+  // 会扫 `tools/docgen/test/*.test.mjs` 的 assert 行，写死 15 会当场红）
   return import('../components/agentData.mjs').then(({ agentData }) => {
-    assert.deepEqual(files, agentData.map((a) => a.name).sort(), '席文件名必须与 agentData 席名集逐字相等')
+    const names = agentData.map((a) => a.name).sort()
+    assert.equal(files.length, names.length, `席文件数与 agentData 席数不等：${files.length} vs ${names.length}`)
+    assert.deepEqual(files, names, '席文件名必须与 agentData 席名集逐字相等')
   })
 })
 ```
@@ -179,7 +182,7 @@ git commit -m "feat(docgen): S-A 数据源拆成 shared.json + 15 席 JSON（T1�
 - Produces:
   - `seatLoader.mjs` → `export function expandRefs(value, shared, seat)`（纯函数，抛 `err.code`）
   - `seatLoader.mjs` → `export function loadSeatData(dir = <默认 data 目录>)` → `{ agentData, triggerTable }`（`dir` 只为测试注入副本，生产不传）
-  - `check-shared-refs.mjs` → CLI，参数 `--dir <data 目录>`，默认 `tools/docgen/data`；exit 0/1
+  - `check-shared-refs.mjs` → CLI（**无参数**，固定在仓根跑；`--dir` 已撤：12 键判面必须走 `buildCards()`，它跟随模块默认数据源，带 `--dir` 会变成「数据源混用」）；exit 0/1
   - `cardPipeline.mjs` → `export const CARD_KEYS`
 - Consumes: Task 1
 
@@ -188,13 +191,23 @@ git commit -m "feat(docgen): S-A 数据源拆成 shared.json + 15 席 JSON（T1�
 追加到 `tools/docgen/test/sa-data-layer.test.mjs`：
 
 ```js
+import { cpSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { expandRefs, loadSeatData } from '../components/seatLoader.mjs'
-import { CARD_KEYS } from '../components/cardPipeline.mjs'
+import { CARD_KEYS, buildCards } from '../components/cardPipeline.mjs'
 
-const EMPTY = /^(|\s+)$/
+const DERIVED = ['seat', 'name', 'description', 'tools']
+const EIGHT = [...CARD_KEYS].filter((k) => !DERIVED.includes(k)).sort()
 const expandCases = () => {
   const shared = { a: '甲', b: '乙', arr: ['x'], empty: '', nul: null, ws: '   ', nested: '@a' }
   return { shared }
+}
+// COPY：注入面统一在副本上做（data/ 整份拷到临时目录），不动工作区
+const copyData = () => {
+  const dst = mkdtempSync(join(tmpdir(), 'sa-refs-'))
+  cpSync('tools/docgen/data', dst, { recursive: true })
+  return dst
 }
 
 test('TC-002 展开是装配前一次性纯函数：同输入两次逐字节相等', () => {
@@ -206,11 +219,16 @@ test('TC-002 展开是装配前一次性纯函数：同输入两次逐字节相�
   assert.equal(input.k, '前${@a}后', '不得就地改写入参')
 })
 
-test('TC-003 展开后 card 12 键恰等（15/15）', async () => {
+test('TC-003 两段判：席文件 card 恰等 8 键（loader）+ buildCards() 与 CARD_KEYS 恰等（12 键全量，消费点）', async () => {
   const { agentData } = await import('../components/agentData.mjs')
   for (const e of agentData) {
-    const keys = Object.keys(e.card).sort()
-    assert.deepEqual(keys, [...CARD_KEYS].sort(), `${e.name} 的 card 键集必须恰等 12 键`)
+    // 8 键 = CARD_KEYS 去派生四键；12 键只在 cardPipeline.mjs 的 buildOne 里派生（spec §10.1 R2 改判）
+    assert.deepEqual(Object.keys(e.card).sort(), EIGHT, `${e.name} 席数据 card 必须恰等 8 键`)
+  }
+  const built = buildCards()
+  assert.equal(built.length, agentData.length, `buildCards() 席数必须与 agentData 一致：${built.length} vs ${agentData.length}`)
+  for (const b of built) {
+    assert.deepEqual(Object.keys(b.card).sort(), [...CARD_KEYS].sort(), `${b.seat} 的 buildCards() card 必须与 CARD_KEYS 恰等（12 键全量）`)
   }
 })
 
@@ -227,16 +245,68 @@ test('TC-008 kind 只住 triggerTable；条目顶层不得出现', () => {
   }
 })
 
-test('TC-011/012/013/014/015/016 引用四形态：悬空 / 嵌套 / 少键 / 多键 / 空值', () => {
+test('TC-011/012/013/016 引用四形态：悬空 / 空值 / 混用 / 嵌套（规则 2·3·4 走纯函数，规则 1 走加载器）', () => {
   const { shared } = expandCases()
   assert.throws(() => expandRefs({ k: '@noSuchKey' }, shared, 'probe'), (e) => e.code === 'DanglingSharedRef')
-  assert.throws(() => expandRefs({ k: '@nested' }, { ...shared, nested: '@a' }, 'probe'), (e) => e.code === 'NestedSharedRef')
   assert.throws(() => expandRefs({ k: '@empty' }, shared, 'probe'), (e) => e.code === 'EmptySharedValue')
   assert.throws(() => expandRefs({ k: '@nul' }, shared, 'probe'), (e) => e.code === 'EmptySharedValue')
   assert.throws(() => expandRefs({ k: '@ws' }, shared, 'probe'), (e) => e.code === 'EmptySharedValue')
   assert.throws(() => expandRefs({ k: 'x${@arr}y' }, shared, 'probe'), (e) => e.code === 'EmptySharedValue')
-  // 整值 + 插值混用
+  // 规则 4 上半：以 @ 开头但不整体匹配 ^@key$（整值与插值混用）
   assert.throws(() => expandRefs({ k: '@a ${@b}' }, shared, 'probe'), (e) => e.code === 'NestedSharedRef')
+  // 规则 4 下半：整值展开结果内仍含引用
+  assert.throws(() => expandRefs({ k: '@nested' }, { ...shared, nested: '@a' }, 'probe'), (e) => e.code === 'NestedSharedRef')
+  // 规则 1：shared 值内再写引用 → 加载器前置拒绝（不递归、不必栈溢出）
+  const dst = copyData()
+  try {
+    const p = join(dst, 'shared.json')
+    const j = JSON.parse(readFileSync(p, 'utf8'))
+    j.dutyConstraintDefault = '@cardRationaleHead'   // 第二层引用
+    writeFileSync(p, JSON.stringify(j, null, 2) + '\n')
+    assert.throws(() => loadSeatData(dst), (e) => e.code === 'NestedSharedRef')
+  } finally { rmSync(dst, { recursive: true, force: true }) }
+})
+
+test('TC-014 席文件 card 少一个键（删 rationale）→ CardKeySetMismatch', () => {
+  const dst = copyData()
+  try {
+    const p = join(dst, 'seats', 'reviewer-product.json')
+    const j = JSON.parse(readFileSync(p, 'utf8'))
+    delete j.card.rationale
+    writeFileSync(p, JSON.stringify(j, null, 2) + '\n')
+    assert.throws(() => loadSeatData(dst), (e) => e.code === 'CardKeySetMismatch' && (e.missing || []).includes('rationale'))
+  } finally { rmSync(dst, { recursive: true, force: true }) }
+})
+
+test('TC-015 多一个键（returns）/ 写派生四键（tools）→ 两种形态都报 CardKeySetMismatch', () => {
+  const forms = [
+    ['extra', (j) => { j.card.returns = [] }],
+    ['derived', (j) => { j.card.tools = [] }],
+  ]
+  for (const [label, mutate] of forms) {
+    const dst = copyData()
+    try {
+      const p = join(dst, 'seats', 'reviewer-product.json')
+      const j = JSON.parse(readFileSync(p, 'utf8'))
+      mutate(j)
+      writeFileSync(p, JSON.stringify(j, null, 2) + '\n')
+      assert.throws(() => loadSeatData(dst), (e) => e.code === 'CardKeySetMismatch', `${label} 形态必须报 CardKeySetMismatch`)
+    } finally { rmSync(dst, { recursive: true, force: true }) }
+  }
+})
+
+test('TC-027 `kind` 写进条目顶层 → 拒载 TriggerFieldMisplaced（不静默当成 trigger 字段）', async () => {
+  const { validateAgentData } = await import('../components/validateAgentData.mjs')
+  const dst = copyData()
+  try {
+    const p = join(dst, 'seats', 'reviewer-audit.json')
+    const j = JSON.parse(readFileSync(p, 'utf8'))
+    j.kind = 'dispatch'                       // 顶层写入（应只住 trigger.kind）
+    writeFileSync(p, JSON.stringify(j, null, 2) + '\n')
+    const { agentData, triggerTable } = loadSeatData(dst)
+    assert.throws(() => validateAgentData(agentData, triggerTable),
+      (e) => e.code === 'TriggerFieldMisplaced' && String(e.extra || '').includes('kind'))
+  } finally { rmSync(dst, { recursive: true, force: true }) }
 })
 
 test('TC-019 席文件里写回非空 duty.trigger → 拒载 TriggerFieldMisplaced（不静默覆盖）', async () => {
@@ -258,9 +328,20 @@ test('TC-019 席文件里写回非空 duty.trigger → 拒载 TriggerFieldMispla
 - [ ] **Step 2: 跑测试确认红**
 
 Run: `node --test tools/docgen/test/sa-data-layer.test.mjs`
-Expected: FAIL —— `Cannot find module .../components/seatLoader.mjs`
+Expected: FAIL 两类红（两条都出现才算「红到位」）：
+① `SyntaxError: The requested module '../components/cardPipeline.mjs' does not provide an export named 'CARD_KEYS'`（导出还没加，Step 3 第一件事就补）；
+② `Cannot find module .../components/seatLoader.mjs`。
 
-- [ ] **Step 3: 写 `seatLoader.mjs`**
+- [ ] **Step 3: 先给 `CARD_KEYS` 加 `export`，再写 `seatLoader.mjs`**
+
+`tools/docgen/components/cardPipeline.mjs`：`CARD_KEYS` 常量前加 `export `（内容与顺序一字不改）——必须在 Step 4 跑绿**之前**做，否则 loader 与测试都拿不到唯一源：
+
+```js
+export const CARD_KEYS = ['seat', 'name', 'description', 'tools', 'duty', 'scenes', 'signals', 'must', 'never',
+  'categories', 'checkItems', 'rationale']
+```
+
+然后新建 `tools/docgen/components/seatLoader.mjs`：
 
 ```js
 // 唯一读盘与装配点（spec §10.2.5）：读 JSON → 展开 → 拆 trigger → 注入 duty.trigger → 装配 → 键集断言。
@@ -274,6 +355,7 @@ import { exitCodeFor } from './validateAgentData.mjs'
 
 const DATA = join(dirname(fileURLToPath(import.meta.url)), '..', 'data')
 const DERIVED = ['seat', 'name', 'description', 'tools']
+const EIGHT = CARD_KEYS.filter((k) => !DERIVED.includes(k))   // 席文件 card 的合法键集（12 键去派生四键）
 const EMPTY = /^(|\s+)$/
 const WHOLE = /^@([a-z][A-Za-z0-9]*)$/
 const PART = /\$\{@([a-z][A-Za-z0-9]*)\}/g
@@ -297,9 +379,14 @@ export function expandRefs(value, shared, seat) {
   if (typeof value === 'string') {
     const m = WHOLE.exec(value)
     if (m) {
-      if (value.includes('${')) fail('NestedSharedRef', { seat, key: m[1], why: '整值与插值混用' })
-      return lookup(shared, m[1], seat)          // 整值：原样返回，不递归展开（单层）
+      const v = lookup(shared, m[1], seat)          // 整值：原样返回，不递归展开（单层）
+      if (typeof v === 'string' && (v.includes('@') || v.includes('${'))) {
+        fail('NestedSharedRef', { seat, key: m[1], why: '整值展开结果仍含引用' })
+      }
+      return v
     }
+    // 规则 4 上半：以 @ 开头但不整体匹配 ^@key$（整值与插值混用 / 非法形态）
+    if (value.startsWith('@')) fail('NestedSharedRef', { seat, why: '混用或非法形态', value })
     return value.replace(PART, (_, key) => {
       const v = lookup(shared, key, seat)
       if (typeof v !== 'string') fail('EmptySharedValue', { seat, key, why: '插值要求字符串' })
@@ -333,12 +420,15 @@ export function loadSeatData(dir = DATA) {
     if (typeof dt !== 'string') fail('TriggerFieldMisplaced', { name: raw.name, key: 'duty.trigger' })
     if (dt !== '') fail('TriggerFieldMisplaced', { name: raw.name, key: 'duty.trigger', why: '第二来源' })
     s.card.duty.trigger = trigger.when
-    for (const k of DERIVED) if (s.card && k in s.card) fail('CardKeySetMismatch', { name: raw.name, extra: k })
-    const card = { tools: toolsForSeat(s.name), ...(boundaryBySeat[s.name] ? { boundary: boundaryBySeat[s.name] } : {}), ...s }
-    const keys = Object.keys(card.card || {})
-    if (keys.length !== CARD_KEYS.length || CARD_KEYS.some((k) => !keys.includes(k))) {
-      fail('CardKeySetMismatch', { name: s.name, keys })
+    // 席文件 card 的键集：恰等 8 键（= CARD_KEYS 去派生四键）；派生四键写了就拒载（spec §10.2.5 第 6 步）
+    // `missing` / `extra` 两个字段必须分开给：TC-014 要点名缺的那个键，TC-015 要点名多出来的那个键
+    const keys = Object.keys(s.card || {})
+    const missing = EIGHT.filter((k) => !keys.includes(k))
+    const extra = keys.filter((k) => !EIGHT.includes(k))
+    if (missing.length || extra.length) {
+      fail('CardKeySetMismatch', { name: s.name, keys, missing, extra, derivedInCard: extra.filter((k) => DERIVED.includes(k)) })
     }
+    const card = { tools: toolsForSeat(s.name), ...(boundaryBySeat[s.name] ? { boundary: boundaryBySeat[s.name] } : {}), ...s }
     triggerTable[s.name] = trigger
     agentData.push(card)
   }
@@ -349,57 +439,46 @@ export function loadSeatData(dir = DATA) {
 - [ ] **Step 4: 跑测试确认绿（第一批）**
 
 Run: `node --test tools/docgen/test/sa-data-layer.test.mjs`
-Expected: PASS（TC-001…004/008/011–016/019）
+Expected: PASS（TC-001…004/008/011–016/019/027）
 
 - [ ] **Step 5: 写 `check-shared-refs.mjs`（PRD V5）**
 
 ```js
-// PRD V5 的验收命令：悬空键 0 / 无嵌套 / 12 键齐（exit 1）。不进 npm run check 的门禁段——
+// PRD V5 的验收命令：悬空 0 / 无嵌套 / 15 席 12 键全量（exit 1）。不进 npm run check 的门禁段——
 // 理由见 spec §10.2.6：loader 在 import 期 fail-closed，29 条 import 已兜底。
-import { expandRefs, loadSeatData } from './components/seatLoader.mjs'
-import { CARD_KEYS } from './components/cardPipeline.mjs'
-
-const argv = process.argv.slice(2)
-const i = argv.indexOf('--dir')
-const dir = i >= 0 ? argv[i + 1] : undefined
-if (i >= 0 && !dir) { console.log('[check-shared-refs] 用法错：--dir 缺值'); process.exit(2) }
+import { loadSeatData } from './components/seatLoader.mjs'
+import { CARD_KEYS, buildCards } from './components/cardPipeline.mjs'
 
 try {
-  const { agentData } = loadSeatData(dir)   // dir === undefined 时走默认 data 目录
-  const bad = agentData.filter((e) => {
-    const keys = Object.keys(e.card || {})
+  const { agentData } = loadSeatData()   // 悬空 / 嵌套 / 席文件 8 键：loader 内已 fail-closed 抛错
+  const built = buildCards()             // 12 键只在 buildOne 派生，必须在消费点判（spec §10.1 R2）
+  const bad = built.filter((b) => {
+    const keys = Object.keys(b.card || {})
     return keys.length !== CARD_KEYS.length || CARD_KEYS.some((k) => !keys.includes(k))
   })
-  if (bad.length) { console.log(`check-shared-refs: keySet ${bad.length} bad => fail`); process.exit(1) }
-  console.log(`check-shared-refs: seats ${agentData.length} / dangling 0 / nested 0 / keySet 12 => ok`)
+  if (bad.length) { console.log(`check-shared-refs: keySet12 ${bad.length} bad => fail`); process.exit(1) }
+  console.log(`check-shared-refs: seats ${agentData.length} / dangling 0 / nested 0 / keySet8 ${agentData.length} / keySet12 ${built.length} => ok`)
 } catch (e) {
   console.log(`check-shared-refs: ${e.code} ${e.key ?? e.name ?? ''} => fail`)
   process.exit(1)
 }
 ```
 
-- [ ] **Step 6: 追加 4 码并导出 `CARD_KEYS`**
+- [ ] **Step 6: 追加 4 码到 `EXIT[1]`**
 
-`tools/docgen/components/validateAgentData.mjs` 的 `EXIT[1]` 数组里追加一行（数组在文件开头的 `const EXIT = {…}` 内，紧挨 `'TriggerFieldMisplaced'` 之后）：
+`tools/docgen/components/validateAgentData.mjs` 的 `EXIT[1]` 数组里追加一行（数组在文件开头的 `const EXIT = {…}` 内，紧挨 `'TriggerFieldMisplaced'` 之后；`CARD_KEYS` 的 `export` 已在 Step 3 落，此处不再动 `cardPipeline.mjs`）：
 
 ```js
     'DanglingSharedRef', 'EmptySharedValue', 'NestedSharedRef', 'CardKeySetMismatch',
 ```
 
-`tools/docgen/components/cardPipeline.mjs` 的 `CARD_KEYS` 常量前加 `export `（内容与顺序一字不改）：
-
-```js
-export const CARD_KEYS = ['seat', 'name', 'description', 'tools', 'duty', 'scenes', 'signals', 'must', 'never',
-  'categories', 'checkItems', 'rationale']
-```
-
 - [ ] **Step 7: 跑校验器 + 全量门禁**
 
 Run: `node tools/docgen/check-shared-refs.mjs`
-Expected: `check-shared-refs: seats 15 / dangling 0 / nested 0 / keySet 12 => ok`、exit 0
+Expected: `check-shared-refs: seats 15 / dangling 0 / nested 0 / keySet8 15 / keySet12 15 => ok`、exit 0
 
 Run: `node tools/docgen/cli.mjs gate`
-Expected: `baseline 38/38`、exit 0（`agentData` 仍是旧字面，渲染未变）
+Expected: `baseline 38/38`、exit 0（`agentData` 仍是旧字面；席文件 8 键由 loader 判、12 键由 `buildCards()`（此时仍读旧入口）判，渲染未变）
 
 Run: `npm run check`
 Expected: `# tests ≥ 1405`、`# fail 0`、末行 `check 全部通过`
@@ -413,12 +492,12 @@ git commit -m "feat(docgen): S-A 加载器 + 引用校验器 + 4 个错误码（
 
 ---
 
-### Task 3: 切薄壳 + 6 处伴随断言 + 删死 helper（最重的一跳）
+### Task 3: 切薄壳 + 6 处伴随断言 + 改 `patch()` 注入目标（最重的一跳）
 
 **Files:**
 - Modify: `tools/docgen/components/agentData.mjs`（整文件替换为薄壳）
 - Modify: `tools/docgen/test/tool-tiers.test.mjs`（`:146-155`、`:400`、`:450`、`:610-612`、`:706-712`）
-- Modify: `tools/docgen/acceptance/replace-scenarios.mjs`（删死 helper `patch()`——它把语句拼进 `agentData.mjs` 源文本，当前**无调用点**；spec §10.2.9 第 11 处）
+- Modify: `tools/docgen/acceptance/replace-scenarios.mjs`（把 `:14` 的 `DATA` 常量改指 `tools/docgen/data/seats/senior-sdet.json`；`patch()` **有 4 处调用**（`:196`/`:219`/`:232`/`:258`），不得删——spec §10.2.9 第 11 处已按计划门 P1-2 改判）
 - Modify: `tools/docgen/test/dev-workflow-counts.test.mjs`（`:132-135`、`:146-155`、`:189` 不动）
 - Modify: `tools/docgen/test/sdet-data.test.mjs`（删 `:40-47` 的 test）
 - Test: `tools/docgen/test/sa-data-layer.test.mjs`（加 TC-005/007/017/018/026/029/030）
@@ -432,17 +511,54 @@ git commit -m "feat(docgen): S-A 加载器 + 引用校验器 + 4 个错误码（
 追加：
 
 ```js
-test('TC-030 坏数据在 import 期即 fail-closed（exit 1 + 码名）', async () => {
+test('TC-030 坏数据在 import 期即 fail-closed（干净态 exit 0；悬空引用态 exit 1 + 码名）', async () => {
   const { spawnSync } = await import('node:child_process')
+  const { withRepoCopy } = await import('./support/dev-workflow-checks.mjs')
   const code = "import('./tools/docgen/components/agentData.mjs').then(()=>process.exit(0),e=>{console.error(e.code);process.exit(1)})"
-  const r = spawnSync(process.execPath, ['-e', code], { encoding: 'utf8' })
-  assert.equal(r.status, 0, `干净数据下 import 应成功，实得 ${r.status}：${r.stderr}`)
+  const ok = spawnSync(process.execPath, ['-e', code], { encoding: 'utf8' })
+  assert.equal(ok.status, 0, `干净数据下 import 应成功，实得 ${ok.status}：${ok.stderr}`)
+  withRepoCopy((dst) => {
+    const p = join(dst, 'tools/docgen/data/seats/reviewer-product.json')
+    const j = JSON.parse(readFileSync(p, 'utf8'))
+    j.card.duty.constraint = '@noSuchKey'     // 悬空引用：必须在 import 期抛，而不是等到渲染
+    writeFileSync(p, JSON.stringify(j, null, 2) + '\n')
+    const bad = spawnSync(process.execPath, ['-e', code], { cwd: dst, encoding: 'utf8' })
+    assert.equal(bad.status, 1, bad.stdout + bad.stderr)
+    assert.match(bad.stderr, /DanglingSharedRef/)
+  })
 })
 
-test('TC-005/017/018 渲染不变（gate exit 0）与「改数据不重生成」必红', async () => {
+test('TC-005 拆 JSON 后 15 席 disk == render、gate exit 0', async () => {
   const { spawnSync } = await import('node:child_process')
   const ok = spawnSync(process.execPath, ['tools/docgen/cli.mjs', 'gate'], { encoding: 'utf8' })
   assert.equal(ok.status, 0, ok.stdout + ok.stderr)
+})
+
+test('TC-017 值类型漂移（`duty.action` 句子 → 数字）→ gate exit 1 `Mismatch`', async () => {
+  const { spawnSync } = await import('node:child_process')
+  const { withRepoCopy, runCli } = await import('./support/dev-workflow-checks.mjs')
+  withRepoCopy((dst) => {
+    const p = join(dst, 'tools/docgen/data/seats/reviewer-product.json')
+    const j = JSON.parse(readFileSync(p, 'utf8'))
+    j.card.duty.action = 1                       // 句子 → 数字：渲染文本必变
+    writeFileSync(p, JSON.stringify(j, null, 2) + '\n')
+    const r = runCli(dst, ['gate'])
+    assert.equal(r.status, 1, r.stdout + r.stderr)
+    assert.match(r.stdout + r.stderr, /Mismatch/)
+  })
+})
+
+test('TC-018 改了 seats/*.json 未重生成 agents/*.md → gate exit 1 `Mismatch`', async () => {
+  const { withRepoCopy, runCli } = await import('./support/dev-workflow-checks.mjs')
+  withRepoCopy((dst) => {
+    const p = join(dst, 'tools/docgen/data/seats/reviewer-product.json')
+    const j = JSON.parse(readFileSync(p, 'utf8'))
+    j.card.duty.action = `${j.card.duty.action}。`  // 加一个句号：值合法、渲染变
+    writeFileSync(p, JSON.stringify(j, null, 2) + '\n')
+    const r = runCli(dst, ['gate'])
+    assert.equal(r.status, 1, r.stdout + r.stderr)
+    assert.match(r.stdout + r.stderr, /Mismatch/)
+  })
 })
 
 test('TC-007 装配点唯一：tools: toolsForSeat(s.name) 恰 1 处，...s 在其后 400 字符内', () => {
@@ -471,7 +587,7 @@ test('TC-029 notWhen 拼接在位（senior-sdet description 含「不用于：�
 - [ ] **Step 2: 跑测试确认红**
 
 Run: `node --test tools/docgen/test/sa-data-layer.test.mjs`
-Expected: FAIL —— TC-007 的 `hits.length` 为 0（`seatLoader.mjs` 里是 `rest.name`，见 Task 2 代码；此断言在切壳前即应绿），而 TC-026 的薄壳 `import` 断言红（`agentData.mjs` 仍是字面）
+Expected: FAIL —— 红来自四处，且**必须四处同时红**：① TC-026（薄壳 `import` 断言：`agentData.mjs` 仍是字面）；② TC-017（在副本里改 `seats/*.json` 后 `gate` 仍 exit 0——旧入口不读 JSON，注入不生效）；③ TC-018（同上形态）；④ TC-030 的负例（副本注入悬空引用后 `import agentData.mjs` 仍 `status 0`）。已绿的是 TC-005（干净态 `gate` exit 0）与 TC-007（Task 2 的 `seatLoader.mjs` 里装配式已成立）。若 TC-007 此时为红，说明 Task 2 的装配式写错了，回去改 Task 2，不要改断言。
 
 - [ ] **Step 3: 把 `agentData.mjs` 换成薄壳**
 
@@ -510,11 +626,14 @@ patchFile(dst, 'tools/docgen/data/seats/reviewer-audit.json', '"constraint": "�
 // :146-155 的切块锚 `indexOf('  // translation-self-check')` 改为按 JSON 键路径定位：
 //   旧：src.indexOf('  // translation-self-check')
 //   新：src.indexOf('"name": "senior-sdet"')
+// :148 的第二处注释锚（`indexOf('  // 阅读取证员')`）同处置：
+//   旧：src.indexOf('  // 阅读取证员')
+//   新：src.indexOf('"name": "evidence-reader"')
 ```
 
 `tools/docgen/test/sdet-data.test.mjs`：**删除** `:40` 起的 `test('TC-005：自评注释绑到条目…')` 整块（JSON 装不下注释。按 spec §10.2.9 的处置：自评改记 spec §10.2.10 与**本计划文末「执行记录」**，不写进 `gate-record.md`）。
 
-`tools/docgen/acceptance/replace-scenarios.mjs`：删除死 helper `patch()`（它把语句拼进 `agentData.mjs` 源文本、当前无调用点；留着它，薄壳后下一次有人调用就会 `ReferenceError`）。
+`tools/docgen/acceptance/replace-scenarios.mjs`：把 `:14` 的 `DATA` 常量由 `'tools/docgen/components/agentData.mjs'` 改为 `'tools/docgen/data/seats/senior-sdet.json'`。**四处 `patch()` 调用一律保留**（`WHEN_OLD` 现在住该席 JSON 的 `trigger.when`，命中数仍须恰 1）。已知债（不在本任务修）：`:196` / `:219` 注入的 `改动 = 改组件数据 → …` 句在数据里 0 命中，属 acceptance 既有 `9/11 红` 那笔账，登记触发 = 下次修该验收脚本。
 
 - [ ] **Step 5: 逐层验绿（这一步最容易撞车，按序跑）**
 
@@ -535,8 +654,8 @@ Expected: `# tests ≥ 1405`、`# fail 0`、`check 全部通过`
 - [ ] **Step 7: 提交**
 
 ```powershell
-git add tools/docgen/components/agentData.mjs tools/docgen/test/tool-tiers.test.mjs tools/docgen/test/dev-workflow-counts.test.mjs tools/docgen/test/sdet-data.test.mjs tools/docgen/test/sa-data-layer.test.mjs
-git commit -m "refactor(docgen): agentData 降为薄壳，6 处伴随断言改指新落点 + 删死 helper（T3）"
+git add tools/docgen/components/agentData.mjs tools/docgen/test/tool-tiers.test.mjs tools/docgen/test/dev-workflow-counts.test.mjs tools/docgen/test/sdet-data.test.mjs tools/docgen/acceptance/replace-scenarios.mjs tools/docgen/test/sa-data-layer.test.mjs
+git commit -m "refactor(docgen): agentData 降为薄壳，6 处伴随断言改指新落点 + patch 注入目标改 JSON（T3）"
 ```
 
 ---
@@ -558,6 +677,35 @@ git commit -m "refactor(docgen): agentData 降为薄壳，6 处伴随断言改�
 ```js
 import { SCAN_FIELDS } from '../card-model/enums.mjs'
 import { validateCardModel } from '../card-model/index.mjs'
+
+test('TC-022 新增第 9 个 `SCAN_FIELDS` 键 → `ESC` exit 非 0', async () => {
+  const { spawnSync } = await import('node:child_process')
+  const { withRepoCopy } = await import('./support/dev-workflow-checks.mjs')
+  withRepoCopy((dst) => {
+    const p = join(dst, 'tools/docgen/card-model/enums.mjs')
+    const s = readFileSync(p, 'utf8')
+    const anchor = "export const SCAN_FIELDS = Object.freeze({"
+    assert.equal(s.split(anchor).length - 1, 1, '注入锚必须恰 1 处')
+    writeFileSync(p, s.split(anchor).join(`${anchor}\n  Description: Object.freeze(['description']),`))
+    const r = spawnSync(process.execPath, ['--test', 'tools/docgen/test/card-model.test.mjs'], { cwd: dst, encoding: 'utf8' })
+    assert.notEqual(r.status, 0, '第 9 键必须让 8 键断言红')   // `card-model.test.mjs:1141`
+  })
+})
+
+test('TC-023 三条冻结断言未同批改写 → `ESC` exit 非 0', async () => {
+  const { spawnSync } = await import('node:child_process')
+  const { withRepoCopy } = await import('./support/dev-workflow-checks.mjs')
+  withRepoCopy((dst) => {
+    const p = join(dst, 'tools/docgen/test/card-model.test.mjs')
+    const s = readFileSync(p, 'utf8')
+    const NEW = "  only(run((c) => { c.description = '每轮答辩结束后开始观察（共 3 条）'; }), 'HardcodedCount', 'description');"
+    const OLD = "  green(run((c) => { c.description = '每轮答辩结束后开始观察（共 3 条）'; }));"
+    assert.equal(s.split(NEW).length - 1, 1, '还原锚必须恰 1 处（T4 Step 4 已把它改成 only）')
+    writeFileSync(p, s.split(NEW).join(OLD))
+    const r = spawnSync(process.execPath, ['--test', 'tools/docgen/test/card-model.test.mjs'], { cwd: dst, encoding: 'utf8' })
+    assert.notEqual(r.status, 0, '还原成「不扫」的旧断言后，实现已扫 description → 必红')
+  })
+})
 
 test('TC-009 SCAN_FIELDS 仍 8 键，且 4 个文本码的扫描面含 description', () => {
   assert.equal(Object.keys(SCAN_FIELDS).length, 8)
@@ -659,6 +807,23 @@ git commit -m "feat(card-model): description 纳入文本扫描面（D17 / R4，
 - [ ] **Step 1: 写失败测试**
 
 ```js
+test('TC-024 policy 删 3 项但不重生成 2 卡 → gate exit 1 `Mismatch`', async () => {
+  const { spawnSync } = await import('node:child_process')
+  const { withRepoCopy, runCli } = await import('./support/dev-workflow-checks.mjs')
+  withRepoCopy((dst) => {
+    const p = join(dst, 'tools/docgen/policy/definitions/paths.mjs')
+    let s = readFileSync(p, 'utf8')
+    for (const item of ["    'lessons/',\n", "    'skills-lock.json',\n", "    'tools/docgen-spike/.tmp-test/',\n"]) {
+      assert.equal(s.split(item).length - 1, 1, `删除锚必须恰 1 处：${item.trim()}`)
+      s = s.split(item).join('')
+    }
+    writeFileSync(p, s)
+    const r = runCli(dst, ['gate'])
+    assert.equal(r.status, 1, r.stdout + r.stderr)
+    assert.match(r.stdout + r.stderr, /Mismatch/)
+  })
+})
+
 test('TC-006/025 删 3 项后：禁写清单 20 项、检测限度段仍含 lessons/（2 卡各 1 行）', () => {
   const card = readFileSync('agents/reviewer-audit.md', 'utf8')
   const line = card.split('\n').find((l) => l.includes('逐项点名'))
@@ -716,8 +881,12 @@ Expected: FAIL —— 禁写项仍是 `23`；`skills-lock.json` 仍在
 `tools/docgen/test/support/capability-baseline.test.mjs`（该 test 语义是「旧卡 23 项基线」）改为读冻结来源：
 
 ```js
-const CARD = readFileSync('tools/docgen/fixtures/capability-baseline.golden.json', 'utf8');
-// 断言仍为 23（来自 golden，不随 Q8 变）
+import { execFileSync } from 'node:child_process';
+// 冻结来源 = **改造前那次提交里的旧卡文本**：golden JSON 只有 facts（`forbiddenPaths` 等数组），
+// 喂不进 `factsFromBaselineText`（markdown 抽取器），所以这里用 gitShow，不用 golden。
+// 锚 `641a7e7`（S6 交付提交）实测：`factsFromBaselineText` → `paths 23 / tools 6 / tier producer`。
+// `:12` 的 CARD 与 `:22-23` 的 clone-diff **两处消费都改读它**，断言仍为 23。
+const CARD = execFileSync('git', ['show', '641a7e7:agents/reviewer-audit.md'], { encoding: 'utf8' });
 ```
 
 - [ ] **Step 4: 重生成 2 卡并同步两处基线**
@@ -779,9 +948,9 @@ git commit -m "feat(docgen): Q8 删 3 项本仓专属路径 + 2 卡重生成 + �
 
 ```powershell
 node tools/docgen/cli.mjs gate                      # V4：期望 baseline 38/38、exit 0
-node tools/docgen/check-shared-refs.mjs             # V5：期望 seats 15 / dangling 0 / nested 0 / keySet 12 => ok
+node tools/docgen/check-shared-refs.mjs             # V5：期望 seats 15 / dangling 0 / nested 0 / keySet8 15 / keySet12 15 => ok
 node -e "import('./tools/docgen/components/agentData.mjs').then(({triggerTable})=>{const k=Object.keys(triggerTable).length;console.log('seats '+k+' kindSlot '+k)})"   # V10 字段位：15/15（四值校验归 S-C）
-npm run check                                       # 期望 # tests ≥ 1405 / # fail 0 / check 全部通过
+npm run check                                       # TC-010：期望 # tests ≥ 1405 / # fail 0 / check 全部通过
 ```
 
 - [ ] **Step 2: 记冻结基线并写 impact-sheet**
@@ -866,7 +1035,7 @@ git commit -m "chore(dev-workflow): S-A 出口行与冻结基线（T6）"
 | # | 判据 | 命令 / 期望 |
 |---|---|---|
 | A1 | 渲染不变（PRD V4） | `node tools/docgen/cli.mjs gate` → `baseline 38/38`、exit 0；15 席 `disk == render` |
-| A2 | `@` 引用完整性（PRD V5） | `node tools/docgen/check-shared-refs.mjs` → `seats 15 / dangling 0 / nested 0 / keySet 12 => ok` |
+| A2 | `@` 引用完整性（PRD V5） | `node tools/docgen/check-shared-refs.mjs` → `seats 15 / dangling 0 / nested 0 / keySet8 15 / keySet12 15 => ok` |
 | A3 | `kind` 字段位（PRD V10 本段部分） | `triggerTable` 15 席齐、`kind` 可落位；四值校验归 S-C |
 | A4 | 全量门禁 | `npm run check` → `# tests ≥ 1405`、`# fail 0`、末行 `check 全部通过` |
 | A5 | 用例映射 | `node scripts/check-plan.mjs map --plan docs/superpowers/plans/2026-11-03-s-a-data-layer.md` → `missing 0 / dangling 0` |
@@ -886,10 +1055,10 @@ git commit -m "chore(dev-workflow): S-A 出口行与冻结基线（T6）"
 
 | 任务 | 实际改动 | 验收命令 + 输出首行 | 偏差 |
 |---|---|---|---|
-| （待施工时填） | | | |
+| T1 | 新建 `tools/docgen/data/shared.json` + `data/seats/*.json` ×15 + `tools/docgen/test/sa-data-layer.test.mjs`（只 TC-001）；一次性脚本 `.session/tmp/export-seat-data.mjs` 用完已删（`.session/tmp/` 复归为空）；**改 1 处伴随断言** `tools/docgen/test/policy-pure-source.test.mjs` 的 `S6-TC-E03`（期望文件集 3 → 5，补两个席 JSON；spec §10.2.9 第 12 处）；**代码审查后加固 1 处**：TC-001 不再只按 `.json` 过滤，`seats/` 里任何非 `.json` 条目（含子目录）直接判红（探针实测：建 `zz-probe.md` → `actual: ['zz-probe.md']` 必红，删后 `# fail 0`） | `node --test tools/docgen/test/sa-data-layer.test.mjs` → `# tests 1 / # pass 1 / # fail 0`（红→绿两态实跑：红 = `ENOENT … tools\docgen\data`）；`node tools/docgen/cli.mjs gate` → `baseline 38/38`、exit 0；导出脚本自报 `wrote 15 seat files + shared.json（@dutyConstraintDefault 12 席 / @cardRationale 两键 11 席）`；`npm run check` → `# tests 1406 / # pass 1404 / # fail 0`、`check 全部通过` | 三处，均为实测后果：① 导出脚本 `num()` 正则由 `[五六七八九]` 放宽为 `[一二三四五六七八九十]+`（实测 11 席命中值与计划一致）；② 新测试的席数断言改为**派生**（`files.length` vs `agentData.length`）——`counterProbes` 会扫 `tools/docgen/test/*.test.mjs` 的 assert 行，写死 15 会当场红（TC-C06/C11/E09 三条实红后改）；③ 新增 `S6-TC-E03` 一处伴随断言（数据层让「承载该段文本的产物」多两个席 JSON，已补登 spec §10.2.9 第 12 处）。**计划门未预见 ③**，属施工期实跑发现，按「回写 spec 登记 + 门行点名」处置 |
 
 ## 自检（写完过一遍）
 
-- **spec 覆盖**：R1→T1/T2；R2→T2；R3→T2/T3；R4→T4；R5→T4；R6→T5；R7→T3（装配点迁移、`...s` 置末）；R8→T2（字段位）；R9→T3/T6。§10.4-1→TC-003/014/015；§10.4-2→T3；§10.4-3→TC-004/019；§10.4-4→T4；§10.4-5→T6。§10.2.7 两处基线→T5。§10.2.9 的 **11 处 / 7 文件**分账：T3 = 改 6 处（`tool-tiers` 3、`dev-workflow-counts` 2、`sdet-data` 1）+ 删 1 处死 helper（`replace-scenarios`）+ 靠形态满足 1 处（`card-render` 的 `INJECT_BAD`，不改文件）+ 1 处与 `dev-workflow-counts:146-155` 同处置；T5 = 改 2 处（`policy-pure-source`、`capability-baseline`）。6+1+1+1+2 = **11**。无缺口。
+- **spec 覆盖**：R1→T1/T2；R2→T2；R3→T2/T3；R4→T4；R5→T4；R6→T5；R7→T3（装配点迁移、`...s` 置末）；R8→T2（字段位）；R9→T3/T6。§10.4-1→TC-003/014/015；§10.4-2→T3；§10.4-3→TC-004/019；§10.4-4→T4；§10.4-5→T6。§10.2.7 两处基线→T5。§10.2.9 的 **12 处 / 7 文件**分账：T1 = 改 1 处（`policy-pure-source` 的 `S6-TC-E03` 期望文件集补 2 个席 JSON，T1 施工期实测新增）；T3 = 改 6 处（`tool-tiers` 3、`dev-workflow-counts` 2、`sdet-data` 1）+ 改 1 处 `patch()` 注入目标（`replace-scenarios`，**不删 helper**）+ 靠形态满足 1 处（`card-render` 的 `INJECT_BAD`，不改文件）+ 1 处与 `dev-workflow-counts:146-155` 同处置；T5 = 改 2 处（`policy-pure-source`、`capability-baseline`）。1+6+1+1+1+2 = **12**。无缺口。
 - **占位符扫描**：无 TBD / 「类似 Task N」/ 「加上适当的错误处理」；每个代码步骤都给了可粘贴代码。
 - **类型一致**：`expandRefs(value, shared, seat)` 在 T2 定义、T2/T5 测试调用一致；`loadSeatData()` 返回 `{ agentData, triggerTable }` 在 T2 定义、T3 薄壳消费一致；`CARD_KEYS` 由 T2 导出、T2/T6 消费一致。

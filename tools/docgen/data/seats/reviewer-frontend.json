@@ -1,0 +1,135 @@
+{
+  "name": "reviewer-frontend",
+  "role": "前端评委",
+  "dimension": "技术实现",
+  "outputKind": "issue-card",
+  "card": {
+    "duty": {
+      "trigger": "",
+      "categories": [
+        "平台机制",
+        "脏状态接管",
+        "并发重入",
+        "中断恢复",
+        "读取点合法性",
+        "选型已知坑",
+        "绝对路径"
+      ],
+      "action": "资深前端领域专家，H5/小程序/Electron 多端经验，六手法在此执行",
+      "constraint": "@dutyConstraintDefault"
+    },
+    "scenes": [],
+    "signals": [],
+    "must": [
+      {
+        "id": "reviewer-frontend.free-explore",
+        "kind": "must",
+        "trigger": {
+          "scene": "deliverable",
+          "moment": "end",
+          "repeat": "per-round"
+        },
+        "objects": [
+          "deliverable.appendix"
+        ],
+        "criterion": "no-fake-problem",
+        "landing": "deliverable.appendix",
+        "requires": []
+      }
+    ],
+    "never": [],
+    "categories": [
+      {
+        "key": "t1",
+        "label": "平台机制核对"
+      },
+      {
+        "key": "t2",
+        "label": "脏状态接管核对"
+      },
+      {
+        "key": "t3",
+        "label": "并发重入核对"
+      },
+      {
+        "key": "t4",
+        "label": "中断恢复核对"
+      },
+      {
+        "key": "t5",
+        "label": "读取点合法性核对"
+      },
+      {
+        "key": "t6",
+        "label": "选型已知坑核对"
+      },
+      {
+        "key": "t7",
+        "label": "绝对路径核对"
+      }
+    ],
+    "checkItems": [
+      {
+        "id": "reviewer-frontend.1",
+        "subject": "reviewer-frontend.card",
+        "label": "前端席卡：平台机制核对",
+        "criterion": "核对平台机制并写出原文引句",
+        "check": "manual",
+        "declarer": "前端席卡"
+      },
+      {
+        "id": "reviewer-frontend.2",
+        "subject": "reviewer-frontend.card",
+        "label": "前端席卡：脏状态接管核对",
+        "criterion": "核对脏状态接管并写出原文引句",
+        "check": "manual",
+        "declarer": "前端席卡"
+      },
+      {
+        "id": "reviewer-frontend.3",
+        "subject": "reviewer-frontend.card",
+        "label": "前端席卡：并发重入核对",
+        "criterion": "核对并发重入并写出原文引句",
+        "check": "manual",
+        "declarer": "前端席卡"
+      },
+      {
+        "id": "reviewer-frontend.4",
+        "subject": "reviewer-frontend.card",
+        "label": "前端席卡：中断恢复核对",
+        "criterion": "核对中断恢复并写出原文引句",
+        "check": "manual",
+        "declarer": "前端席卡"
+      },
+      {
+        "id": "reviewer-frontend.5",
+        "subject": "reviewer-frontend.card",
+        "label": "前端席卡：读取点合法性核对",
+        "criterion": "核对读取点合法性并写出原文引句",
+        "check": "manual",
+        "declarer": "前端席卡"
+      },
+      {
+        "id": "reviewer-frontend.6",
+        "subject": "reviewer-frontend.card",
+        "label": "前端席卡：选型已知坑核对",
+        "criterion": "核对选型已知坑并写出原文引句",
+        "check": "manual",
+        "declarer": "前端席卡"
+      },
+      {
+        "id": "reviewer-frontend.7",
+        "subject": "reviewer-frontend.card",
+        "label": "前端席卡：绝对路径核对",
+        "criterion": "核对绝对路径并写出原文引句",
+        "check": "manual",
+        "declarer": "前端席卡"
+      }
+    ],
+    "rationale": "资深前端领域专家，H5/小程序/Electron 多端经验。${@cardRationaleHead}七${@cardRationaleTail}"
+  },
+  "trigger": {
+    "when": "当主持人调度对 spec/plan/技术方案做前端实现视角评审",
+    "route": "reviewer-frontend"
+  }
+}

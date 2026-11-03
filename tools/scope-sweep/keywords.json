@@ -293,6 +293,37 @@
         "docs/superpowers/specs/2026-11-02-observable-s3-predicates-reuse-design.md",
         "tools/docgen/card-model/vocab/predicates.mjs"
       ]
+    },
+    {
+      "id": "I31",
+      "title": "S-A 计划门 P0-1：把「12 键恰等」挂在 loader / `agentData[i].card` 上的旧口径（实测该对象恒 8 键，12 键只在 `cardPipeline.buildOne` 派生；改判后 12 键断言落 `buildCards()` 产物，loader 只判 8 键 + 派生四键拒载）",
+      "words": ["12 键齐", "12 键恰等", "恰等 12 键"],
+      "scope": [
+        "docs/prd/20261102212627-card-data-contract-and-proof/index.md",
+        "docs/superpowers/specs/2026-11-03-s-a-data-layer-design.md",
+        "docs/superpowers/specs/2026-11-03-s-a-data-layer-design-testcase.md",
+        "docs/superpowers/plans/2026-11-03-s-a-data-layer.md"
+      ]
+    },
+    {
+      "id": "I32",
+      "title": "S-A 计划门 P1-3：`@` 混用规则的旧写法（旧 = 「整值字符串内出现 `${`」——该判定在实现里不可达；改判后 = 「以 `@` 开头但不整体匹配 `^@key$`」+「整值展开结果仍含 `@` / `${`」）",
+      "words": ["两种形态混用", "整值字符串内出现"],
+      "scope": [
+        "docs/superpowers/specs/2026-11-03-s-a-data-layer-design.md",
+        "docs/superpowers/specs/2026-11-03-s-a-data-layer-design-testcase.md",
+        "docs/superpowers/plans/2026-11-03-s-a-data-layer.md"
+      ]
+    },
+    {
+      "id": "I33",
+      "title": "S-A 计划门 P1-6：PRD §8 S-A 验收列的旧写「V10（`kind` 四值）」（四值校验归 S-C，本段只落字段位；PRD `:119` 与 `:137` 旧说法自相矛盾）",
+      "words": ["V10（`kind` 四值）"],
+      "scope": [
+        "docs/prd/20261102212627-card-data-contract-and-proof/index.md",
+        "docs/superpowers/specs/2026-11-03-s-a-data-layer-design.md",
+        "docs/superpowers/plans/2026-11-03-s-a-data-layer.md"
+      ]
     }
   ]
 }

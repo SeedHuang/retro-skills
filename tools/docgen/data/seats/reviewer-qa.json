@@ -1,0 +1,161 @@
+{
+  "name": "reviewer-qa",
+  "role": "测试评委",
+  "dimension": "技术实现",
+  "outputKind": "issue-card",
+  "card": {
+    "duty": {
+      "trigger": "",
+      "categories": [
+        "验收可验证性",
+        "回归防护",
+        "不可重复场景",
+        "fixture 多样性",
+        "降级验证",
+        "词表覆盖",
+        "误判固化",
+        "判据判别力",
+        "教学样板自检"
+      ],
+      "action": "资深测试领域专家，对验收可验证性与测试真实性有经验直觉",
+      "constraint": "@dutyConstraintDefault"
+    },
+    "scenes": [],
+    "signals": [],
+    "must": [
+      {
+        "id": "reviewer-qa.free-explore",
+        "kind": "must",
+        "trigger": {
+          "scene": "deliverable",
+          "moment": "end",
+          "repeat": "per-round"
+        },
+        "objects": [
+          "deliverable.appendix"
+        ],
+        "criterion": "no-fake-problem",
+        "landing": "deliverable.appendix",
+        "requires": []
+      }
+    ],
+    "never": [],
+    "categories": [
+      {
+        "key": "t1",
+        "label": "验收可验证性核对"
+      },
+      {
+        "key": "t2",
+        "label": "回归防护核对"
+      },
+      {
+        "key": "t3",
+        "label": "不可重复场景核对"
+      },
+      {
+        "key": "t4",
+        "label": "fixture 多样性核对"
+      },
+      {
+        "key": "t5",
+        "label": "降级验证核对"
+      },
+      {
+        "key": "t6",
+        "label": "词表覆盖核对"
+      },
+      {
+        "key": "t7",
+        "label": "误判固化核对"
+      },
+      {
+        "key": "t8",
+        "label": "判据判别力核对"
+      },
+      {
+        "key": "t9",
+        "label": "教学样板自检核对"
+      }
+    ],
+    "checkItems": [
+      {
+        "id": "reviewer-qa.1",
+        "subject": "reviewer-qa.card",
+        "label": "测试席卡：验收可验证性核对",
+        "criterion": "核对验收可验证性并写出原文引句",
+        "check": "manual",
+        "declarer": "测试席卡"
+      },
+      {
+        "id": "reviewer-qa.2",
+        "subject": "reviewer-qa.card",
+        "label": "测试席卡：回归防护核对",
+        "criterion": "核对回归防护并写出原文引句",
+        "check": "manual",
+        "declarer": "测试席卡"
+      },
+      {
+        "id": "reviewer-qa.3",
+        "subject": "reviewer-qa.card",
+        "label": "测试席卡：不可重复场景核对",
+        "criterion": "核对不可重复场景并写出原文引句",
+        "check": "manual",
+        "declarer": "测试席卡"
+      },
+      {
+        "id": "reviewer-qa.4",
+        "subject": "reviewer-qa.card",
+        "label": "测试席卡：fixture 多样性核对",
+        "criterion": "核对fixture 多样性并写出原文引句",
+        "check": "manual",
+        "declarer": "测试席卡"
+      },
+      {
+        "id": "reviewer-qa.5",
+        "subject": "reviewer-qa.card",
+        "label": "测试席卡：降级验证核对",
+        "criterion": "核对降级验证并写出原文引句",
+        "check": "manual",
+        "declarer": "测试席卡"
+      },
+      {
+        "id": "reviewer-qa.6",
+        "subject": "reviewer-qa.card",
+        "label": "测试席卡：词表覆盖核对",
+        "criterion": "核对词表覆盖并写出原文引句",
+        "check": "manual",
+        "declarer": "测试席卡"
+      },
+      {
+        "id": "reviewer-qa.7",
+        "subject": "reviewer-qa.card",
+        "label": "测试席卡：误判固化核对",
+        "criterion": "核对误判固化并写出原文引句",
+        "check": "manual",
+        "declarer": "测试席卡"
+      },
+      {
+        "id": "reviewer-qa.8",
+        "subject": "reviewer-qa.card",
+        "label": "测试席卡：判据判别力核对",
+        "criterion": "核对判据判别力并写出原文引句",
+        "check": "manual",
+        "declarer": "测试席卡"
+      },
+      {
+        "id": "reviewer-qa.9",
+        "subject": "reviewer-qa.card",
+        "label": "测试席卡：教学样板自检核对",
+        "criterion": "核对教学样板自检并写出原文引句",
+        "check": "manual",
+        "declarer": "测试席卡"
+      }
+    ],
+    "rationale": "资深测试领域专家，对验收可验证性与测试真实性有经验直觉。${@cardRationaleHead}九${@cardRationaleTail}"
+  },
+  "trigger": {
+    "when": "当主持人调度对 spec/plan/技术方案做测试视角评审",
+    "route": "reviewer-qa"
+  }
+}

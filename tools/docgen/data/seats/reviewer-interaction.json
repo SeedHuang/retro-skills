@@ -1,0 +1,135 @@
+{
+  "name": "reviewer-interaction",
+  "role": "交互评委",
+  "dimension": "产品设计",
+  "outputKind": "issue-card",
+  "card": {
+    "duty": {
+      "trigger": "",
+      "categories": [
+        "打断时机",
+        "无效选项",
+        "错误信息",
+        "加减模式",
+        "静默状态",
+        "脚本消费",
+        "操作反馈"
+      ],
+      "action": "资深交互设计专家，对打断成本与状态可见性有经验直觉",
+      "constraint": "@dutyConstraintDefault"
+    },
+    "scenes": [],
+    "signals": [],
+    "must": [
+      {
+        "id": "reviewer-interaction.free-explore",
+        "kind": "must",
+        "trigger": {
+          "scene": "deliverable",
+          "moment": "end",
+          "repeat": "per-round"
+        },
+        "objects": [
+          "deliverable.appendix"
+        ],
+        "criterion": "no-fake-problem",
+        "landing": "deliverable.appendix",
+        "requires": []
+      }
+    ],
+    "never": [],
+    "categories": [
+      {
+        "key": "t1",
+        "label": "打断时机核对"
+      },
+      {
+        "key": "t2",
+        "label": "无效选项核对"
+      },
+      {
+        "key": "t3",
+        "label": "错误信息核对"
+      },
+      {
+        "key": "t4",
+        "label": "加减模式核对"
+      },
+      {
+        "key": "t5",
+        "label": "静默状态核对"
+      },
+      {
+        "key": "t6",
+        "label": "脚本消费核对"
+      },
+      {
+        "key": "t7",
+        "label": "操作反馈核对"
+      }
+    ],
+    "checkItems": [
+      {
+        "id": "reviewer-interaction.1",
+        "subject": "reviewer-interaction.card",
+        "label": "交互席卡：打断时机核对",
+        "criterion": "核对打断时机并写出原文引句",
+        "check": "manual",
+        "declarer": "交互席卡"
+      },
+      {
+        "id": "reviewer-interaction.2",
+        "subject": "reviewer-interaction.card",
+        "label": "交互席卡：无效选项核对",
+        "criterion": "核对无效选项并写出原文引句",
+        "check": "manual",
+        "declarer": "交互席卡"
+      },
+      {
+        "id": "reviewer-interaction.3",
+        "subject": "reviewer-interaction.card",
+        "label": "交互席卡：错误信息核对",
+        "criterion": "核对错误信息并写出原文引句",
+        "check": "manual",
+        "declarer": "交互席卡"
+      },
+      {
+        "id": "reviewer-interaction.4",
+        "subject": "reviewer-interaction.card",
+        "label": "交互席卡：加减模式核对",
+        "criterion": "核对加减模式并写出原文引句",
+        "check": "manual",
+        "declarer": "交互席卡"
+      },
+      {
+        "id": "reviewer-interaction.5",
+        "subject": "reviewer-interaction.card",
+        "label": "交互席卡：静默状态核对",
+        "criterion": "核对静默状态并写出原文引句",
+        "check": "manual",
+        "declarer": "交互席卡"
+      },
+      {
+        "id": "reviewer-interaction.6",
+        "subject": "reviewer-interaction.card",
+        "label": "交互席卡：脚本消费核对",
+        "criterion": "核对脚本消费并写出原文引句",
+        "check": "manual",
+        "declarer": "交互席卡"
+      },
+      {
+        "id": "reviewer-interaction.7",
+        "subject": "reviewer-interaction.card",
+        "label": "交互席卡：操作反馈核对",
+        "criterion": "核对操作反馈并写出原文引句",
+        "check": "manual",
+        "declarer": "交互席卡"
+      }
+    ],
+    "rationale": "资深交互设计专家，对打断成本与状态可见性有经验直觉。${@cardRationaleHead}七${@cardRationaleTail}"
+  },
+  "trigger": {
+    "when": "当主持人调度对 PRD/spec/plan 做交互视角评审",
+    "route": "reviewer-interaction"
+  }
+}

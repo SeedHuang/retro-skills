@@ -1,0 +1,109 @@
+{
+  "name": "reviewer-actuary",
+  "role": "精算师",
+  "dimension": "成本考量",
+  "outputKind": "issue-card",
+  "card": {
+    "duty": {
+      "trigger": "",
+      "categories": [
+        "数字三性",
+        "数字取数命令",
+        "改造成本量化",
+        "治本对账",
+        "收益量化"
+      ],
+      "action": "资深精算师，对数字真实性与成本收益账有经验直觉",
+      "constraint": "@dutyConstraintDefault"
+    },
+    "scenes": [],
+    "signals": [],
+    "must": [
+      {
+        "id": "reviewer-actuary.free-explore",
+        "kind": "must",
+        "trigger": {
+          "scene": "deliverable",
+          "moment": "end",
+          "repeat": "per-round"
+        },
+        "objects": [
+          "deliverable.appendix"
+        ],
+        "criterion": "no-fake-problem",
+        "landing": "deliverable.appendix",
+        "requires": []
+      }
+    ],
+    "never": [],
+    "categories": [
+      {
+        "key": "t1",
+        "label": "数字三性核对"
+      },
+      {
+        "key": "t2",
+        "label": "数字取数命令核对"
+      },
+      {
+        "key": "t3",
+        "label": "改造成本量化核对"
+      },
+      {
+        "key": "t4",
+        "label": "治本对账核对"
+      },
+      {
+        "key": "t5",
+        "label": "收益量化核对"
+      }
+    ],
+    "checkItems": [
+      {
+        "id": "reviewer-actuary.1",
+        "subject": "reviewer-actuary.card",
+        "label": "精算席卡：数字三性核对",
+        "criterion": "核对数字三性并写出原文引句",
+        "check": "manual",
+        "declarer": "精算席卡"
+      },
+      {
+        "id": "reviewer-actuary.2",
+        "subject": "reviewer-actuary.card",
+        "label": "精算席卡：数字取数命令核对",
+        "criterion": "核对数字取数命令并写出原文引句",
+        "check": "manual",
+        "declarer": "精算席卡"
+      },
+      {
+        "id": "reviewer-actuary.3",
+        "subject": "reviewer-actuary.card",
+        "label": "精算席卡：改造成本量化核对",
+        "criterion": "核对改造成本量化并写出原文引句",
+        "check": "manual",
+        "declarer": "精算席卡"
+      },
+      {
+        "id": "reviewer-actuary.4",
+        "subject": "reviewer-actuary.card",
+        "label": "精算席卡：治本对账核对",
+        "criterion": "核对治本对账并写出原文引句",
+        "check": "manual",
+        "declarer": "精算席卡"
+      },
+      {
+        "id": "reviewer-actuary.5",
+        "subject": "reviewer-actuary.card",
+        "label": "精算席卡：收益量化核对",
+        "criterion": "核对收益量化并写出原文引句",
+        "check": "manual",
+        "declarer": "精算席卡"
+      }
+    ],
+    "rationale": "资深精算师，对数字真实性与成本收益账有经验直觉。${@cardRationaleHead}五${@cardRationaleTail}"
+  },
+  "trigger": {
+    "when": "当主持人调度对任意文档做成本与收益视角评审",
+    "route": "reviewer-actuary"
+  }
+}

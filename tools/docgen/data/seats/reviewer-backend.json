@@ -1,0 +1,122 @@
+{
+  "name": "reviewer-backend",
+  "role": "后端评委",
+  "dimension": "技术实现",
+  "outputKind": "issue-card",
+  "card": {
+    "duty": {
+      "trigger": "",
+      "categories": [
+        "单元职责",
+        "边界数据流",
+        "外部交互失败",
+        "第二份真相",
+        "字段生命周期",
+        "事务与并发序"
+      ],
+      "action": "资深后端领域专家，对数据流、契约与故障传播有经验直觉",
+      "constraint": "@dutyConstraintDefault"
+    },
+    "scenes": [],
+    "signals": [],
+    "must": [
+      {
+        "id": "reviewer-backend.free-explore",
+        "kind": "must",
+        "trigger": {
+          "scene": "deliverable",
+          "moment": "end",
+          "repeat": "per-round"
+        },
+        "objects": [
+          "deliverable.appendix"
+        ],
+        "criterion": "no-fake-problem",
+        "landing": "deliverable.appendix",
+        "requires": []
+      }
+    ],
+    "never": [],
+    "categories": [
+      {
+        "key": "t1",
+        "label": "单元职责核对"
+      },
+      {
+        "key": "t2",
+        "label": "边界数据流核对"
+      },
+      {
+        "key": "t3",
+        "label": "外部交互失败核对"
+      },
+      {
+        "key": "t4",
+        "label": "第二份真相核对"
+      },
+      {
+        "key": "t5",
+        "label": "字段生命周期核对"
+      },
+      {
+        "key": "t6",
+        "label": "事务与并发序核对"
+      }
+    ],
+    "checkItems": [
+      {
+        "id": "reviewer-backend.1",
+        "subject": "reviewer-backend.card",
+        "label": "后端席卡：单元职责核对",
+        "criterion": "核对单元职责并写出原文引句",
+        "check": "manual",
+        "declarer": "后端席卡"
+      },
+      {
+        "id": "reviewer-backend.2",
+        "subject": "reviewer-backend.card",
+        "label": "后端席卡：边界数据流核对",
+        "criterion": "核对边界数据流并写出原文引句",
+        "check": "manual",
+        "declarer": "后端席卡"
+      },
+      {
+        "id": "reviewer-backend.3",
+        "subject": "reviewer-backend.card",
+        "label": "后端席卡：外部交互失败核对",
+        "criterion": "核对外部交互失败并写出原文引句",
+        "check": "manual",
+        "declarer": "后端席卡"
+      },
+      {
+        "id": "reviewer-backend.4",
+        "subject": "reviewer-backend.card",
+        "label": "后端席卡：第二份真相核对",
+        "criterion": "核对第二份真相并写出原文引句",
+        "check": "manual",
+        "declarer": "后端席卡"
+      },
+      {
+        "id": "reviewer-backend.5",
+        "subject": "reviewer-backend.card",
+        "label": "后端席卡：字段生命周期核对",
+        "criterion": "核对字段生命周期并写出原文引句",
+        "check": "manual",
+        "declarer": "后端席卡"
+      },
+      {
+        "id": "reviewer-backend.6",
+        "subject": "reviewer-backend.card",
+        "label": "后端席卡：事务与并发序核对",
+        "criterion": "核对事务与并发序并写出原文引句",
+        "check": "manual",
+        "declarer": "后端席卡"
+      }
+    ],
+    "rationale": "资深后端领域专家，对数据流、契约与故障传播有经验直觉。${@cardRationaleHead}六${@cardRationaleTail}"
+  },
+  "trigger": {
+    "when": "当主持人调度对 spec/plan/技术方案做后端视角评审",
+    "route": "reviewer-backend"
+  }
+}

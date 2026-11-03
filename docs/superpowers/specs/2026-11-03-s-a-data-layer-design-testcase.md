@@ -1,9 +1,9 @@
 # 测试用例：S-A 数据层（`agentData` 拆 JSON + `when` 唯一源）
 
 > 归属 spec：`docs/superpowers/specs/2026-11-03-s-a-data-layer-design.md`（split from `docs/prd/20261102212627-card-data-contract-and-proof/index.md` 2026-11-03）
-> 编写者：`senior-sdet`（**修订轮次 5**，实例标识 `senior-sdet@s-a-data-layer-testcase-20261103-05`；此前轮次 1 `…-01`、2 `…-02`、3 `…-03`、4 `…-04`）｜**独立性声明**：本文件由 `senior-sdet` 在**全新上下文**编写，编写者 ≠ spec 作者（`main-agent@20261103-s-a-spec`），≠ 后续施工者；编写者只读 spec / PRD / 既有实现，未参与 spec 撰写，也未参与本段施工。
-> 本轮范围（轮次 5）：只改 TC-028 ④⑤ 的构造（第 3 轮复核）——④ 形态 A（`change` 相位 + 盘上 +1 字节）、⑤ 形态 C（迁移段 + `renderSha256` 不等）；R5-1 附三分支实测结论。此前各轮处置见文末 R3 / R4。
-> 状态：草稿（**定稿 = 每条用例五要素齐全，且覆盖总表与 spec 验收项一一对应**）｜最后更新：`2026-11-03`（修订轮次 5）
+> 编写者：`senior-sdet`（**修订轮次 6**，实例标识 `senior-sdet@s-a-data-layer-testcase-20261103-06`；此前轮次 1 `…-01`、2 `…-02`、3 `…-03`、4 `…-04`、5 `…-05`）｜**独立性声明**：本文件由 `senior-sdet` 在**全新上下文**编写，编写者 ≠ spec 作者（`main-agent@20261103-s-a-spec`），≠ 后续施工者；编写者只读 spec / PRD / 既有实现，未参与 spec 撰写，也未参与本段施工。
+> 本轮范围（轮次 6）：只收**两段判改判**（spec §10.1 R2 `:20` / §10.2.5 第 6 步 `:128` / §10.2.6 `:133`·`:135`）——「`card` 全量 **12** 键的恰等断言」从 loader / `agentData[i].card` 移到 `buildCards()` 产物，loader 只判「席文件 `card` 恰等 8 键 + 派生四键拒载」；并收 `@` 混用**规则 4**（spec §10.2.3 `:103` + §10.2.4 `:109-117`）的新口径。改动面 = TC-003 / TC-012 / TC-013 / TC-015 + §0 / §1 / §3 / §4 对应行；用例条数与类型分布不变。此前各轮处置见文末 R3 / R4 / R5。
+> 状态：草稿（**定稿 = 每条用例五要素齐全，且覆盖总表与 spec 验收项一一对应**）｜最后更新：`2026-11-03`（修订轮次 6）
 > 命名与落点：按 `spec-testcase-gate` 判据 1（与 spec 同目录；文件名 = spec 文件名去掉 `.md` 后 + `-testcase.md`）。
 
 ## 0 判据约定（全表复用，避免每条重写命令）
@@ -20,13 +20,13 @@
 | `ESC` | `node --test tools/docgen/test/card-model.test.mjs` | 承载 `S1-TC-G09` 三条冻结断言的文件 |
 | `TT` | `node --test tools/docgen/test/tool-tiers.test.mjs` | 承载 `...s` 置末（`S5-TC-D10`）与档位 `FROZEN` 断言的文件 |
 | `COPY` | 仓副本注入坏值 | 用既有支撑 `tools/docgen/test/support/dev-workflow-checks.mjs` 的 `withRepoCopy(dst => …)`；**不得在真仓就地注入** |
-| `PROBE` | `node -e "<inline>"` | 从 `tools/docgen/components/agentData.mjs` 读 `agentData` / `triggerTable`（公开入口不变；展开与装配实现落在 `tools/docgen/components/seatLoader.mjs`，spec §10.2.1 / §10.2.5） |
+| `PROBE` | `node -e "<inline>"` | 从 `tools/docgen/components/agentData.mjs` 读 `agentData` / `triggerTable`（公开入口不变；展开与装配实现落在 `tools/docgen/components/seatLoader.mjs`，spec §10.2.1 / §10.2.5）；**两段判的消费点取数**用 `import('./tools/docgen/components/cardPipeline.mjs')` 的 `buildCards()`（TC-003 段 B） |
 | `SHA` | `node -e "<inline>"` | 15 席 `evidence.renderSha256` 与 `SHA256(agents/<seat>.md)` 逐席比对 |
 
 **口径声明**（本文件出现的数字，全部可复算）：
 - 15 席 = `(Get-ChildItem agents -File).Count`；
-- 12 键 = 唯一源 `tools/docgen/components/cardPipeline.mjs:23` 的 `CARD_KEYS`（spec §10.2.9 要求加 `export`）；键名内容与 `docs/superpowers/specs/2026-10-29-agent-card-s4-render-design.md:89` 逐字一致，本文件**不再内联第二份字面**；
-- 8 键 = `tools/docgen/card-model/enums.mjs:95-104` 的 `SCAN_FIELDS` 键数；
+- **12 键 = 唯一源 `tools/docgen/components/cardPipeline.mjs:23` 的 `CARD_KEYS`**（spec §10.2.9 `:162` 要求加 `export`）；键名内容与 `docs/superpowers/specs/2026-10-29-agent-card-s4-render-design.md:89` 逐字一致，本文件**不再内联第二份字面**；**判据落点 = `buildCards()` 产物**（`cardPipeline.mjs:82-90` 的 `buildOne` 派生 `seat`/`name`/`description`/`tools` 后才成立，实测 15/15 席恰 12 键），**不在 loader**（spec §10.2.5 第 6 步 `:128`、§10.2.6 `:135`）；
+- **8 键（两种，勿混）**：① = `tools/docgen/card-model/enums.mjs:95-104` 的 `SCAN_FIELDS` 键数（TC-009 / TC-022 用）；② = loader 产出的 `agentData[i].card` 键数 = `CARD_KEYS` 去掉 `seat` / `name` / `description` / `tools` 四派生键（`duty` / `scenes` / `signals` / `must` / `never` / `categories` / `checkItems` / `rationale`；实测 15/15 席恰 8 键，spec §10.2.5 第 6 步 `:128`，TC-003 段 A / TC-014 / TC-015 用）；
 - 卡面禁写项 23 = `agents/reviewer-audit.md` 中「逐项点名：」至「；兜底句」之间按 `、` 切分（实测 23），删 Q8 的 3 项后 = 20；
 - `shared.json` 键集 3 = spec §10.2.2 的实测表（`dutyConstraintDefault` / `cardRationaleHead` / `cardRationaleTail`），判定口径 = 逐字重复 ≥2 次（§10.2.10 D-d）。
 
@@ -36,7 +36,7 @@
 |---|---|---|---|---|---|---|
 | TC-001 | 10.1 R1 / 10.2.1（落点）/ 10.2.2（D-d 键集）/ PRD D12·Q7 | 集成 | 正 | 机器 | 限定目录计数 + `PROBE` | P0 |
 | TC-002 | 10.1 R2（纯函数）/ 10.2.4 / PRD D12 | 单元 | 正 | 机器 | `PROBE` 二次展开比对 | P0 |
-| TC-003 | 10.1 R2 / 10.4-1 / 10.2.5 第 6 步 / 10.2.6 `CardKeySetMismatch`（卡片键集不符码）/ 10.2.9（`CARD_KEYS` 单源）/ PRD V5 | 单元 | 正 | 机器 | `PROBE` 键集断言（import `CARD_KEYS`） | P0 |
+| TC-003 | 10.1 R2（两段判：loader 8 键 / `buildCards()` 12 键）/ 10.4-1 / 10.2.5 第 6 步 / 10.2.6（`CardKeySetMismatch`（卡片键集不符码）住 loader；判定面③ 住 `buildCards()`）/ 10.2.9（`CARD_KEYS` 单源）/ PRD V5（「展开后键集齐全」面） | 单元 | 正 | 机器 | `PROBE` 双段键集断言（import `CARD_KEYS` + `buildCards()`） | P0 |
 | TC-004 | 10.1 R3 / 10.2.5 第 3–4 步 / 10.4-3 ① / PRD D17 | 单元 | 正 | 机器 | `PROBE` 逐席等比 | P0 |
 | TC-005 | 10.1 R9 / 10.4-2 / PRD V4 | e2e | 正 | 机器 | `GATE` | P0 |
 | TC-006 | 10.1 R6（只删 `pathGroups.workspace` 三项）/ PRD Q8 | 集成 | 正 | 机器 | `GATE` + 逐项点名行计数 | P0 |
@@ -46,9 +46,9 @@
 | TC-010 | PRD V3（回归）/ 10.4-2 | e2e | 正 | 机器 | `CHECK` | P1 |
 | TC-011 | 10.1 R2 / 10.2.3 规则 2 / 10.2.6 `DanglingSharedRef`（悬空引用码）/ PRD V5 | 单元 | 负 | 机器 | `COPY` + `REFS` | P0 |
 | TC-012 | 10.1 R2 / 10.2.3 规则 1 / 10.2.6 `NestedSharedRef`（共享段嵌套引用码）/ PRD V5（「无环」） | 边界 | 负 | 机器 | `COPY` + `REFS` | P0 |
-| TC-013 | 10.1 R2 / 10.2.3 规则 1 / 10.2.10 D-b（单层）/ PRD V5 | 边界 | 负 | 机器 | `COPY` + `REFS` | P1 |
-| TC-014 | 10.1 R2 / 10.4-1 / 10.2.5 第 6 步 / 10.2.6 `CardKeySetMismatch` | 单元 | 负 | 机器 | `COPY` + `GATE` | P0 |
-| TC-015 | 10.1 R2 / 10.2.5 第 6 步 / 10.2.6 `CardKeySetMismatch` / PRD V11① | 边界 | 负 | 机器 | `COPY` + `GATE` | P1 |
+| TC-013 | 10.1 R2 / 10.2.3 规则 1（shared 侧）/ 10.2.3 规则 4（`@` 开头但非 `^@key$` 的整值+插值混用）/ 10.2.10 D-b（单层）/ PRD V5 | 边界 | 负 | 机器 | `COPY` + `REFS`（经加载器/校验器，不对纯函数 `expandRefs` 单点断言） | P1 |
+| TC-014 | 10.1 R2（loader 段：席文件 `card` 8 键恰等的**缺键**面）/ 10.4-1 / 10.2.5 第 6 步 / 10.2.6 `CardKeySetMismatch` | 单元 | 负 | 机器 | `COPY` + `GATE` | P0 |
+| TC-015 | 10.1 R2（loader 段：席文件 `card` 8 键恰等的**多键/派生键**面）/ 10.2.5 第 6 步 / 10.2.6 `CardKeySetMismatch` / PRD V11① | 边界 | 负 | 机器 | `COPY` + `GATE` | P1 |
 | TC-016 | 10.1 R2 / 10.2.3 规则 3 / 10.2.6 `EmptySharedValue`（共享值空值码） | 边界 | 负 | 机器 | `COPY` + `REFS` | P0 |
 | TC-017 | 10.1 R9 / 10.4-2 / PRD V4 | 边界 | 负 | 机器 | `COPY` + `GATE` | P0 |
 | TC-018 | 10.1 R9 / 10.4-2 / PRD V4 | 集成 | 负 | 机器 | `COPY` + `GATE` | P0 |
@@ -98,16 +98,19 @@
 - **对应测试**：建议 `tools/docgen/test/sa-data-layer.test.mjs::TC-002`
 - **不覆盖**：展开器的内部算法（只判外部可观察的两条：确定性 + 无副作用）
 
-### TC-003 展开后每席 12 键齐、键名逐字、无多余键
+### TC-003 两段判：席文件 `card` 恰等 **8** 键（loader 段）/ `buildCards()` 产物恰等 **12** 键（消费点段）
 
-- **覆盖**：spec §10.1 R2 / §10.4-1 / §10.2.5 第 6 步（装配后键集断言）/ §10.2.6（`CardKeySetMismatch`）/ §10.2.9（`CARD_KEYS` 加 `export`，内容与顺序不变）；PRD §4 V5
-- **前置**：`tools/docgen/components/cardPipeline.mjs:23` 的 `CARD_KEYS` 已 `export`（12 键唯一源）；`seatLoader.mjs` / `check-shared-refs.mjs` 均从它 import
-- **步骤**：① `PROBE` 逐席取 `Object.keys(agentData[i].card)`；② 与 `import { CARD_KEYS } from './components/cardPipeline.mjs'` 得到的数组做**集合比较**（本文件不再手写字面）；③ 对 15 席逐席重复 ①②；④ 第二份名单探针：在 `tools/docgen/components/seatLoader.mjs` 与 `tools/docgen/check-shared-refs.mjs` 两个源文件内，12 键字面序列（`'seat'` 后紧跟 `'name'` … 至 `'rationale'` 的组合）命中数
-- **预期**：15 席每席键数 = 12；键集与 `CARD_KEYS` **恰等**（既不多也不少，差集两向均为空）；④ 两个文件内该字面序列命中数 = 0（12 键只有 `CARD_KEYS` 一处）
-- **判据**：`PROBE` 输出 `keys12 15/15` 与 `diff 0`（两向差集均空）、`secondList 0`，exit 0；任一席键数 ≠ 12、差集非空、或 `secondList` ≥ 1 → exit 1 并打印该席名与差集
-- **红绿证据**：红 = 现状 `cardPipeline.mjs:23-24` 的 `CARD_KEYS` 未导出、只在装配末尾查「缺键」（`undefined` 即报），多键不报；拆 JSON 时多带一个 `role` 会静默通过；绿 = `15/15` 恰等 `CARD_KEYS` 且 `secondList 0`
+- **覆盖**：spec §10.1 R2 `:20`（`2026-11-03` 计划门 P0-1 改判：**全量 12 键的恰等断言不落 loader**）/ §10.4-1 `:198` / §10.2.5 第 6 步 `:128`（**段 A** = 席文件 `card` 恰等 8 键 = `CARD_KEYS` 去派生四键 + 派生四键拒载）/ §10.2.6 `:133`·`:135`（`CardKeySetMismatch` 住 loader；`check-shared-refs.mjs` 判定面③ = `buildCards()` 15 席键集与 `CARD_KEYS` 恰等（12 键全量））/ §10.2.9 `:162`（`CARD_KEYS` 加 `export`，内容与顺序不变）；PRD §4 V5（「展开后键集齐全」面 ⇒ 段 B）
+- **前置**：`tools/docgen/components/cardPipeline.mjs:23-24` 的 `CARD_KEYS` 已 `export`（12 键唯一源）；`seatLoader.mjs` / `check-shared-refs.mjs` 均从它 import（loader 的 8 键子集必须由 `CARD_KEYS` **过滤**得到，不得自写 8 键字面）；`buildCards()` 的派生点在 `cardPipeline.mjs:82-90` 的 `buildOne`
+- **步骤**（两条都可直接粘贴，仓根 PowerShell 5）：
+  ① **段 A + 段 B 一条命令取证**：`node -e "Promise.all([import('./tools/docgen/components/agentData.mjs'),import('./tools/docgen/components/cardPipeline.mjs')]).then(([a,c])=>{const K=c.CARD_KEYS;if(!Array.isArray(K)){console.log('CARD_KEYS 未导出');process.exit(1)}const D=['seat','name','description','tools'],A=K.filter(k=>!D.includes(k)),keys=o=>Object.keys(o),bad=(o,s)=>keys(o).filter(k=>!s.includes(k)).concat(s.filter(k=>!keys(o).includes(k))),L=a.agentData.map(x=>bad(x.card,A)),B=c.buildCards().map(x=>bad(x.card,K)),dv=a.agentData.filter(x=>D.some(k=>k in x.card)).length;console.log('loaderKeys8',L.filter(z=>!z.length).length+'/'+a.agentData.length,'loaderDiff',L.filter(z=>z.length).length,'derivedInCard',dv,'consumedKeys12',B.filter(z=>!z.length).length+'/'+B.length,'consumedDiff',B.filter(z=>z.length).length);process.exit(L.some(z=>z.length)||B.some(z=>z.length)||dv?1:0)})"` —— 取数写法：段 A 读 `agentData[i].card`（loader 产物，实测恒 8 键），段 B 读 `buildCards()[i].card`（消费点产物，实测恒 12 键）；
+  ② 15 席逐席在 ① 内完成（`map` 遍历全部条目，任一席差集非空即计入 `loaderDiff` / `consumedDiff`）；
+  ③ **第二份 12 键名单探针**：`Select-String -Path tools\docgen\components\seatLoader.mjs,tools\docgen\check-shared-refs.mjs -Pattern "'seat'[\s\S]{0,200}?'rationale'"` 命中数（12 键字面序列在两文件内均应为 0）
+- **预期**：段 A 15 席每席键数 = 8，且与 `CARD_KEYS.filter(k => !['seat','name','description','tools'].includes(k))` **恰等**（差集两向均空）；段 A 反面：四派生键在 `agentData[i].card` 内命中数 = 0；段 B 15 席每席键数 = 12，且与 `CARD_KEYS` **恰等**（既不多也不少）；③ 两文件内 12 键字面序列命中数 = 0（12 键只有 `CARD_KEYS` 一处）
+- **判据**：① 输出 `loaderKeys8 15/15`、`loaderDiff 0`、`derivedInCard 0`、`consumedKeys12 15/15`、`consumedDiff 0`，exit 0；③ `secondList 0`。任一段差集非空、计数不符、或 `secondList` ≥ 1 → exit 1 并打印该席名与该段差集。**两段都断在「双向差集均空」这一档，不得降级为 `ok(长度)`、不得写成「≥」、不得删「恰等」**
+- **红绿证据**：红 = 现状 `cardPipeline.mjs:23-24` 的 `CARD_KEYS` 未导出 → ① 打印 `CARD_KEYS 未导出` 并 exit 1（唯一源缺失，两段都判不了）；红（判据错位，本轮修的就是它）= 旧版把 12 键挂在 `agentData[i].card` 上，实测 15/15 席恒 **8** 键（`duty`/`scenes`/`signals`/`must`/`never`/`categories`/`checkItems`/`rationale`），该判据永红；红（多键漏判）= 只判「至少 12 键」会放过席文件多带一个 `role`——`...own`（`cardPipeline.mjs:83`）原样带进 `buildCards()` 产物 → 段 B 得 13 键、`consumedDiff` 非空；绿 = 段 A `15/15` 8 键恰等 + `derivedInCard 0`，段 B `15/15` 席键集与 `CARD_KEYS` 恰等（12 键全量），`secondList 0`
 - **对应测试**：建议 `tools/docgen/test/sa-data-layer.test.mjs::TC-003`
-- **不覆盖**：各键内部结构合法性（由 `validateCardModel` 既有码覆盖，本段不改）；键**顺序**（`CARD_KEYS` 顺序变化不报，只判键集恰等）
+- **不覆盖**：各键内部结构合法性（由 `validateCardModel` 既有码覆盖，本段不改）；键**顺序**（`CARD_KEYS` 顺序变化不报，只判键集恰等）；`buildOne` 对 `must` / `never` 的合并语义（归 S1 `merge.mjs`，TC-009 相邻但不同面）
 
 ### TC-004 `duty.trigger` 装配期注入后与 `triggerTable.when` 逐字相同（15/15）
 
@@ -200,24 +203,24 @@
 ### TC-012 环引用：共享段 A ↔ B 互引 / A 自引 → 前置拒绝 `NestedSharedRef` exit 1，10 秒内返回（不得栈溢出）
 
 - **覆盖**：spec §10.1 R2 / §10.2.3 规则 1（`shared.json` 值内不得再含 `@` 或 `${@`）/ §10.2.6（`NestedSharedRef`，中文释义：共享段嵌套引用码）；PRD §4 V5（「无环」）
-- **前置**：`COPY`；`tools/docgen/data/shared.json` 至少两段可被 `@` 引用
-- **步骤**：① 在 A 段字符串值内写 `${@B}`、在 B 段值内写 `${@A}`（互引）；② 跑 `REFS`（设 10 秒超时）；③ 另造 A 段值内写 `${@A}`（自引），再跑一次；④ 去掉 A 段引用后再跑
+- **前置**：`COPY`；`tools/docgen/data/shared.json` 至少两段可被 `@` 引用；**取数路线必须是加载器 / 校验器**（`REFS` = `check-shared-refs.mjs`，或直接 `import` 加载器 `seatLoader.mjs` 触发的临盘校验），**不得**写成对纯函数 `expandRefs` 的单点断言——实现里 shared 侧的拒嵌套落在 `loadSeatData` 的前置检查（spec §10.2.3 规则 1 `:100` + §10.2.4 `:109-117` 的算法前置），单点调纯函数会绕开「数据一落盘就拒」这条语义
+- **步骤**：① 在 A 段字符串值内写 `${@B}`、在 B 段值内写 `${@A}`（互引）；② 跑 `REFS`（设 10 秒超时；该脚本走 `buildCards()` 一圈，覆盖 loader + 消费点两段）；③ 另造 A 段值内写 `${@A}`（自引），再跑一次；④ 去掉 A 段引用后再跑
 - **预期**：②③ 均 exit 1，输出含 `NestedSharedRef` 且点名被拒的键（A 或 B）；**不得** `Maximum call stack` 崩溃、不得挂起、不得超时；④ exit 0
-- **判据**：②③ `REFS` exit 1 且输出含 `NestedSharedRef` 与至少一个键名；命令在 10 秒内返回（超时或栈溢出 = 判失败）；④ exit 0
+- **判据**：②③ `REFS` exit 1 且输出含 `NestedSharedRef` 与至少一个键名；命令在 10 秒内返回（超时或栈溢出 = 判失败）；④ exit 0。**判据只认 `REFS` 的退出码与输出，不认「纯函数单测绿」**（`expandRefs` 单独调通不能代替本条的通过）
 - **红绿证据**：红 = 实现先做递归展开（或先写环检测）→ `shared.json` 侧的引用被递归跟进 → 进程栈溢出（exit ≠ 1）或超时；绿 = 由 §10.2.3 规则 1 在展开前拒绝、快速失败并点键
 - **对应测试**：建议 `tools/docgen/test/sa-data-layer.test.mjs::TC-012`
 - **不覆盖**：环检测算法本身（spec §10.2.3 明写「环在数据形态上无法构造，不另写递归环检测」）；本用例判「构造环 ⇒ 被前置拒绝且不崩」，不是「环检测正确」
 
-### TC-013 嵌套引用：共享段内再写引用 → `NestedSharedRef` exit 1 并点名该键（**单分支：不支持嵌套**）
+### TC-013 嵌套引用 / 整值-插值混用：共享段内再写引用、或字符串 `@` 开头却不整体匹配 → `NestedSharedRef` exit 1 并点名该键（**单分支：不取「递归展开到底」**）
 
-- **覆盖**：spec §10.1 R2 / §10.2.3 规则 1 / §10.2.6（`NestedSharedRef`）/ §10.2.10 D-b（`@` 只允许单层：`seats/*.json` → `shared.json`）
-- **前置**：`COPY`；`tools/docgen/data/shared.json` 的 X 段当前**不含**任何 `@` 或 `${@`
-- **步骤**：① 在 X 段值里写对 Y 段的引用 —— 整值 `"@Y"` 与插值 `${@Y}` 各造一次；② 每种写法各跑一次 `REFS`；③ 若某席引用了 X，同批跑 `GATE`
-- **预期**：② 两种写法均 exit 1，输出含 `NestedSharedRef` 且点名键 `X`（或 `Y`）；③ `GATE` 不得因「引用已展开」而 exit 0；**不许**出现「exit 0 且 X 段里的 `@` 原文残留」，也**不许**出现「exit 0 且已递归展开到底」
-- **判据**：`REFS` 在两种写法下均 exit 1 且输出含 `NestedSharedRef` 与键名 `X`/`Y` 之一；③ `GATE` exit 非 0（或同一前置校验点已由 `REFS` 拦下）；出现任何一次 exit 0 → 判失败
-- **红绿证据**：红 = 只展开一层后 exit 0（X 里留 `@Y` 原文却静默放过）；绿 = 明示拒绝并点键。**反例（不许实现）**：把「递归展开到底」当成可接受分支 —— 与 D-b 相悖，实现即判失败
+- **覆盖**：spec §10.1 R2 / §10.2.3 规则 1 `:100`（shared 侧）/ §10.2.3 规则 4 `:103`（**`@` 开头但不整体匹配 `^@key$`** ⇒ 同码；含 `@a ${@b}` 这类整值与插值混用；**不含**旧口径——该判定在实现里不可达，整值匹配成功时整串不可能含 `$`）/ §10.2.4 `:111-112`（算法两分支）/ §10.2.6（`NestedSharedRef`）/ §10.2.10 D-b（`@` 只允许单层：`seats/*.json` → `shared.json`）
+- **前置**：`COPY`；`tools/docgen/data/shared.json` 的 X 段当前**不含**任何 `@` 或 `${@`；断言走加载器 / 校验器路线（`REFS`，**不得**对纯函数 `expandRefs` 单点断言）
+- **步骤**：① 三种写法逐次造，每次只留一种：ⅰ shared 侧 X 段值写对 Y 段的**整值** `"@Y"`；ⅱ shared 侧 X 段值写**插值** `${@Y}`；ⅲ **seat 侧**把某席一处普通字符串改成整值与插值混用 `"@cardRationaleHead ${@cardRationaleTail}"`（以 `@` 开头但不整体匹配 `^@key$`，spec §10.2.3 规则 4）；② 每种写法各跑一次 `REFS`；③ 若某席引用了 X，同批跑 `GATE`
+- **预期**：② 三种写法均 exit 1，输出含 `NestedSharedRef` 且点名键 `X` / `Y`（ⅲ 点名该席与被混用的键）；③ `GATE` 不得因「引用已展开」而 exit 0；**不许**出现「exit 0 且 X 段里的 `@` 原文残留」，也**不许**出现「exit 0 且已递归展开到底」，更**不许**把 `"@a ${@b}"` 当合法的「整值 + 追加文本」放行
+- **判据**：`REFS` 在三种写法下均 exit 1 且输出含 `NestedSharedRef` 与键名 `X`/`Y` 之一；③ `GATE` exit 非 0（或同一前置校验点已由 `REFS` 拦下）；出现任何一次 exit 0 → 判失败
+- **红绿证据**：红 = 只展开一层后 exit 0（X 里留 `@Y` 原文却静默放过）；红（ⅲ）= 把「以 `@` 开头的整值」当普通字符串处理后只替换其中的 `${@…}` → 混用形态 exit 0；绿 = 三种写法都明示拒绝并点键。**反例（不许实现）**：把「递归展开到底」当成可接受分支 —— 与 D-b 相悖，实现即判失败
 - **对应测试**：建议 `tools/docgen/test/sa-data-layer.test.mjs::TC-013`
-- **不覆盖**：嵌套深度上限（**已定：不存在**，只允许单层，见 spec §10.2.10 D-b）
+- **不覆盖**：嵌套深度上限（**已定：不存在**，只允许单层，见 spec §10.2.10 D-b）；「整值展开后结果内仍含 `@` 或 `${` ⇒ 同码」（规则 4 后半句）属同一实现点的纵深，与 ⅰ 的 shared 侧注入同码同报，不另立用例以免重复计负例
 
 ### TC-014 装配后 `card` 少一个键（删 `rationale`）→ `CardKeySetMismatch` exit 1，点名缺的键
 
@@ -230,14 +233,14 @@
 - **对应测试**：建议 `tools/docgen/test/sa-data-layer.test.mjs::TC-014`
 - **不覆盖**：键值内容合法性（归 `validateCardModel`）
 
-### TC-015 装配后多一个键（`returns`）/ 写了派生四键之一（`tools`）→ 两种形态都报 `CardKeySetMismatch`
+### TC-015 席文件 `card` 多一个键（`returns`）/ 写了派生四键之一（`tools`）→ 二者都在 loader 的 8 键恰等处报 `CardKeySetMismatch`
 
-- **覆盖**：spec §10.1 R2（12 键 = 恰等）/ §10.2.2（派生四键不得写）/ §10.2.5 第 6 步 / §10.2.6（`CardKeySetMismatch`）；交叉 PRD §4 V11①（`tools/docgen` 内 `returns` 计数 = 0）
-- **前置**：`COPY`；`card` 只许 8 键（spec §10.2.2）
-- **步骤**：① 形态 A —— 在某一席 `tools/docgen/data/seats/<seat>.json` 的 `card` 内加 `"returns": []`（第 9 键 → 展开后 13 键）；② `GATE`；③ 复原；④ 形态 B —— 在同一席 `card` 内加 `"tools": []`（派生键，会被 `...s` 静默覆盖）；⑤ `GATE`；⑥ 复原；⑦ `Get-ChildItem tools/docgen -Recurse -File` 过滤 `.mjs` / `.json` 后 `Select-String -Pattern 'returns'` 计数
-- **预期**：② exit 1、`CardKeySetMismatch` 点席并点多余键 `returns`；⑤ exit 1、同一码点名被拒的派生键 `tools`（**不得静默覆盖后 exit 0**——该形态渲染结果与正确数据逐字节相同，V4 抓不到，只能靠这个码）；③⑥ exit 0；⑦ 注入态计数 ≥1、复原态 = 0
-- **判据**：②⑤ `GATE` 各 exit 1 且输出同时含 `CardKeySetMismatch`、席名与对应键名（`returns` / `tools`）；③⑥ exit 0；⑦ 注入态 ≥1、复原态 = 0
-- **红绿证据**：红 = 「至少 12 键」式判据放过多键（多键被渲染器忽略或悄悄进卡面）；派生键写进 `card` 被 `...s` 覆盖后渲染逐字节相同 → `gate` exit 0；绿 = 两种形态各报同一码
+- **覆盖**：spec §10.1 R2 `:20`（loader 只判「席文件 `card` 恰等 8 键 + 派生四键拒载」；全量 12 键的恰等判在 `buildCards()`，见 TC-003 段 B）/ §10.2.2 `:84`（派生四键不得写）/ §10.2.5 第 6 步 `:128` / §10.2.6 `:133`（`CardKeySetMismatch`）；交叉 PRD §4 V11①（`tools/docgen` 内 `returns` 计数 = 0）
+- **前置**：`COPY`；席文件 `card` 只许 8 键（spec §10.2.2 `:84`、§10.2.5 第 6 步 `:128`）
+- **步骤**：① 形态 A —— 在某一席 `tools/docgen/data/seats/<seat>.json` 的 `card` 内加 `"returns": []`（第 9 键 → loader 8 键恰等**当场报**，不等 `buildCards()`）；② `GATE`；③ 复原；④ 形态 B —— 在同一席 `card` 内加 `"tools": []`（派生键，若放行会被 `...s` 静默覆盖）；⑤ `GATE`；⑥ 复原；⑦ `Get-ChildItem tools/docgen -Recurse -File` 过滤 `.mjs` / `.json` 后 `Select-String -Pattern 'returns'` 计数
+- **预期**：② exit 1、`CardKeySetMismatch` 点席并点多余键 `returns`（该码在 loader 第 6 步触发，消费点那一圈不必跑到）；⑤ exit 1、同一码点名被拒的派生键 `tools`（**不得静默覆盖后 exit 0**——该形态若放行，渲染结果与正确数据逐字节相同，V4 抓不到）；③⑥ exit 0；⑦ 注入态计数 ≥1、复原态 = 0
+- **判据**：②⑤ `GATE` 各 exit 1 且输出同时含 `CardKeySetMismatch`、席名与对应键名（`returns` / `tools`）；③⑥ exit 0；⑦ 注入态 ≥1、复原态 = 0。**两形态都不得只拿 `UnverifiableOutput` 顶替**：`cardPipeline.mjs:91-95` 的 12 键检查只查「缺」不查「多」（多键经 `...own`（`:83`）原样进产物，`buildOne` 只会看到 13 键而不是报码），故本条只能由 loader 的 8 键恰等判死
+- **红绿证据**：红 = 「至少 8 键」/「至少 12 键」式判据放过多键（多键在 `buildCards()` 端变成 13 键，若无人判就静默进卡面）；派生键写进 `card` 被 `...s` 覆盖后渲染逐字节相同 → `gate` exit 0；绿 = 两种形态都在 loader 的 8 键恰等处各报同一码
 - **对应测试**：建议 `tools/docgen/test/sa-data-layer.test.mjs::TC-015`
 - **不覆盖**：`checkItem.returns` 的整条 D16④（归 S-C）
 
@@ -416,9 +419,9 @@
 |---|---|---|---|
 | TC-011 | 整值 / 片段引用指向不存在的 shared 键 | 渲染期拿到空值是「长得像正常」的失败，最隐蔽（spec §10.5 第 1 行） | 两种写法 `REFS` 均 exit 1 报 `DanglingSharedRef`，点名键与席 |
 | TC-012 | 两段互引成环 / 单段自引 | 递归展开 → 栈溢出，错误信息完全跑偏 | 10 秒内报 `NestedSharedRef` exit 1 并点名键（不崩栈、不挂起） |
-| TC-013 | 共享段内再引用共享段 | 容易「只展开一层」后 exit 0，留下 `@` 原文进卡面 | `NestedSharedRef` exit 1 并点名该键；不许半展开，也不许递归展开到底 |
+| TC-013 | 共享段内再引用共享段 / seat 侧 `@a ${@b}` 整值与插值混用 | 容易「只展开一层」后 exit 0，留下 `@` 原文进卡面；混用形态还容易被当「整值 + 追加文本」放行（spec §10.2.3 规则 4 `:103`） | 三种写法都 `NestedSharedRef` exit 1 并点名该键/该席；不许半展开，也不许递归展开到底 |
 | TC-014 | 装配后 `card` 少一个键（删 `rationale`） | 缺键检查在 `cardPipeline` 是通用报错、无码 | `CardKeySetMismatch` exit 1，点名缺键与席 |
-| TC-015 | 多一个键（`returns`）/ 写了派生键 `tools` | 多键被忽略；派生键被 `...s` 静默覆盖后渲染与正确数据逐字节相同（V4 抓不到） | 两种形态各报 `CardKeySetMismatch`；写 `tools` 的形态是派生键拒载的唯一判据 |
+| TC-015 | 席文件 `card` 多一个键（`returns`）/ 写了派生键 `tools` | 多键被忽略（`buildOne` 只查缺键、不查多键）；派生键被 `...s` 静默覆盖后渲染与正确数据逐字节相同（V4 抓不到） | 两种形态都在 loader 的 8 键恰等处各报 `CardKeySetMismatch`；写 `tools` 的形态是派生键拒载的唯一判据 |
 | TC-016 | 引用存在但值为 `""` / `null` / `"   "` / 非字符串被插值 | 只判「键在不在」→ 空串展开成空文本，卡面静默少一句 | 四种形态一律报 `EmptySharedValue` exit 1 |
 | TC-017 | 句子被改成数字 | 隐式 `String()` 会把语义漂移抹平成「渲染恰好相同」；本仓无类型码可兜 | `GATE` exit 1 且首行 `Mismatch`（无第二兜底） |
 | TC-018 | 改数据不重生成 | `gate` 是唯一逐字节防线，漏跑即漂移 | exit 1 `Mismatch` |
@@ -440,9 +443,9 @@
 | 如果改了 | 必须重跑 | 为什么 |
 |---|---|---|
 | `tools/docgen/data/shared.json` 任一段 | TC-002、TC-003、TC-004、TC-005、TC-011、TC-012、TC-013、TC-016 | 共享段被 15 席引用，一处改动波及全量渲染 |
-| 任一 `tools/docgen/data/seats/<seat>.json` | TC-003、TC-005、TC-014、TC-015、TC-018、TC-019 | 12 键与逐字节两条防线都在装配边界上 |
+| 任一 `tools/docgen/data/seats/<seat>.json` | TC-003、TC-005、TC-014、TC-015、TC-018、TC-019 | 三条防线都在装配边界上：席文件 `card` 恰等 8 键（loader，§10.2.5 第 6 步）/ `buildCards()` 产物的 12 键键集恰等（消费点）/ 渲染逐字节 |
 | `@` 展开器 / 加载器（`tools/docgen/components/seatLoader.mjs`） | TC-002、TC-003、TC-011～TC-016、TC-019、TC-030 | 展开器是本段唯一新增逻辑点，负例全在它身上；import 期 fail-closed 也在这里（TC-030） |
-| `components/cardPipeline.mjs` 的 `CARD_KEYS`（12 键唯一源） | TC-003、TC-005、TC-014、TC-015 | 键集恰等由它给；它一变，装配后断言与渲染契约同时动 |
+| `components/cardPipeline.mjs` 的 `CARD_KEYS`（12 键唯一源） | TC-003、TC-005、TC-014、TC-015 | 两段判的唯一源：loader 用它**过滤**出 8 键子集（段 A）、`buildCards()` 用它判 12 键键集恰等（段 B）；它一变，两段与渲染契约同时动 |
 | `triggerTable`（含 `kind` 字段位） | TC-004、TC-008、TC-027、TC-029 | `when` 唯一源 + 字段位置 + `notWhen` 拼接三件事共用一处 |
 | `CARD_TEXT_FIELDS` 或 `surfaceTexts` 任一处 | TC-009、TC-020、TC-021、TC-022、TC-023 | 两处实现点缺一即空转（spec R4） |
 | `card-model.test.mjs` 的 `S1-TC-G09` | TC-009、TC-022、TC-023、TC-010 | 三条冻结断言与扫描面口径互锁 |
@@ -478,7 +481,7 @@
 | `trigger.kind` 的第五个取值在本段无人拦 | S-C 迟迟不开工时，数据里出现第五个 `kind` 而全仓仍绿 | `COPY` 内给某席 `triggerTable.kind = "fifth"` 跑 `GATE`（本段预期 exit 0 = 已知缺口） | spec §10.7 已点名；S-C 的 V10 兜 |
 | `@` 展开的「纯函数」只由两次等比证明，不是代数性质证明 | 依赖环境变量 / 时间 / `Math.random()` 的隐蔽副作用（两次同进程可能同值） | TC-002 ③ 的跨进程比较 | TC-002 ③ 跨进程即兜；无更多本段可测手段 |
 
-**判别力水位**：正例 10 条全部能红（每条都给了「改坏即红」的构造）；负/边界 20 条**全部单分支判死**——TC-013 由 spec §10.2.3 规则 1 与 §10.2.10 D-b 钉死为「拒绝嵌套」、TC-019 由 D-a 钉死为「拒载」、TC-014/TC-015 双形态都断在同一码 `CardKeySetMismatch`、TC-030 只认 `import` 退出码，20 条中已无「未定口径故只能判不许静默」的条目。TC-020 的判别力靠「完整态 `/description/` 命中 ≥1 + 半改态 = 0」两面对照；TC-017 只留 `Mismatch` 一条（本仓无类型码，第二兜底已删）。
+**判别力水位**：正例 10 条全部能红（每条都给了「改坏即红」的构造）；负/边界 20 条**全部单分支判死**——TC-013 由 spec §10.2.3 规则 1 与 §10.2.10 D-b 钉死为「拒绝嵌套」、TC-019 由 D-a 钉死为「拒载」、TC-014/TC-015 少键·多键·派生键三种形态都断在同一码 `CardKeySetMismatch`（loader 的 8 键恰等处，spec §10.2.5 第 6 步）、TC-030 只认 `import` 退出码，20 条中已无「未定口径故只能判不许静默」的条目。TC-020 的判别力靠「完整态 `/description/` 命中 ≥1 + 半改态 = 0」两面对照；TC-017 只留 `Mismatch` 一条（本仓无类型码，第二兜底已删）。
 
 **真缺口计数**：上表剩 2 行（`trigger.kind` 第五值、纯函数两次等比）。`REFS` 与门禁的接线已由 spec §10.2.6 末段定死——**不建第二个门禁入口**：loader 在 `import` 期即 fail-closed，`agentData.mjs` 的 29 处 `import` 保证「数据坏了必有一次 import 抛错」→ 门禁自然红；该脚本只作 PRD V5 的验收命令与施工期定点复核，故不在缺口表。
 
@@ -660,3 +663,56 @@
 | 3 | hit | 本轮未引入新术语（`TargetDrift` / `EvidenceInvalid` 已在 TC-028 首现行带中文释义） | 未解释术语计数 = 0 |
 | 4 | hit | 本文件正文 —— **全过、无问题**（findings 集合为空） | 唯一改动已落到 TC-028 |
 | 5 | hit | 本文件附录（附 A-1～A-5）—— **全过、无问题**（findings 集合为空） | 附录无需改动 |
+
+## 修订说明（轮次 6，`2026-11-03`）
+
+**一句话**：收 S-A plan 门审计 **P0**（判据错位）——「`card` 全量 12 键的恰等断言」从 loader / `agentData[i].card` 改判到 `buildCards()` 产物，loader 只判「席文件 `card` 恰等 **8** 键 + 派生四键拒载」；同批收 `@` 混用**规则 4**（`@` 开头但不整体匹配 `^@key$` → `NestedSharedRef`）。用例 **30 条不变**、类型分布 **正 10 / 负+边界 20 不变**、七节结构不变；判据强度**只收紧不平移**（两段都断「双向差集均空」，未出现 `ok(长度)`、未出现「≥」、未删「恰等」）。
+
+### R6-1 逐项处置（改了哪几处 / 为什么 / spec 行号）
+
+| # | 位置（改后行号） | 改前 | 改后 | 依据 |
+|---|---|---|---|---|
+| 1 | TC-003 标题 / 覆盖 / 前置 / 步骤 / 预期 / 判据 / 红绿（`:101-113`） | 单段判：`Object.keys(agentData[i].card)` 须与 12 键集合**恰等** | **两段判**：段 A `agentData[i].card` 恰等 **8** 键（= `CARD_KEYS` 去 `seat` / `name` / `description` / `tools`）+ 四派生键命中 0；段 B `buildCards()[i].card` 与 **12** 键集合恰等（`CARD_KEYS` 唯一源）；① 给一条可直接粘贴的取证命令（`import` 两模块 → 逐席双向差集 → 打印 5 个计数 + exit code） | spec §10.1 R2 `:20`（P0-1 实测改判）；§10.2.5 第 6 步 `:128`；§10.2.6 `:133`·`:135`；§10.4-1 `:198` |
+| 2 | TC-003 ③ 第二份名单探针 | 只查 12 键字面 | 保留（`secondList 0`），并补「loader 的 8 键子集必须由 `CARD_KEYS` **过滤**得到，不得自写 8 键字面」 | 同上 + §10.2.9 `:162` |
+| 3 | TC-015 覆盖 / 前置 / 步骤① / 预期 / 判据 / 红绿（`:236-245`） | 「第 9 键 → 展开后 13 键」 | 「第 9 键 → loader 8 键恰等**当场报**，不等 `buildCards()`」；覆盖列改指 loader 的 8 键恰等（12 键面转指 TC-003 段 B）；判据补「两形态不得只拿 `UnverifiableOutput` 顶替——`buildOne` 只查缺、不查多」 | spec §10.1 R2 `:20`；§10.2.2 `:84`；§10.2.5 第 6 步 `:128`；`cardPipeline.mjs:83` / `:91-95` |
+| 4 | TC-013 覆盖 / 步骤 / 预期 / 判据 / 红绿 / 不覆盖（`:214-223`） | 两种写法（shared 侧整值 `"@Y"` / 插值 `${@Y}`） | **三种写法**：ⅰ ⅱ 保留 shared 侧两形态（规则 1 `:100`），ⅲ 新增 **seat 侧** `"@cardRationaleHead ${@cardRationaleTail}"` 混用（规则 4 `:103`）；覆盖列去掉旧口径措辞 | spec §10.2.3 规则 4 `:103` + §10.2.4 `:111-112` |
+| 5 | TC-012 前置 / 步骤② / 判据（`:206-209`） | 路线没写明 | 明确「取数路线必须是加载器 / 校验器（`REFS` 或 import 加载器触发的临盘校验），**不得**对纯函数 `expandRefs` 单点断言」；判据补「只认 `REFS` 的退出码与输出，纯函数单测绿不能代替本条」 | 任务书第 4 条；spec §10.2.3 规则 1 `:100` + §10.2.4 `:109-117` |
+| 6 | §0 口径声明（`:28-29`） | 12 键只写唯一源；8 键只写 `SCAN_FIELDS` | 12 键补「判据落点 = `buildCards()` 产物，不在 loader」；8 键拆两条（① `SCAN_FIELDS` 键数；② `agentData[i].card` = `CARD_KEYS` 去派生四键，实测 15/15 席恰 8 键） | spec §10.2.5 `:128`；本轮实测 `Object.keys(agentData[0].card)` |
+| 7 | §1 覆盖总表 4 行（TC-003 / TC-013 / TC-014 / TC-015；**行数不变 30 行**） | TC-003 泛引 R2；TC-014 / 015 只写「第 6 步」 | TC-003 = 两段判 + 判定面③ 住 `buildCards()` + V5 键齐面；TC-014 = loader 段的缺键面；TC-015 = loader 段的多键 / 派生键面；TC-013 补规则 4 与执行路线 | 同 1–5 |
+| 8 | §3 两行（TC-013 / TC-015） | 旧表述 | TC-013 补混用形态；TC-015 改「都在 loader 的 8 键恰等处」 | 同 3–4 |
+| 9 | §4 两行（`seats/*.json` 行 / `CARD_KEYS` 行） | 「12 键与逐字节两条防线」 | 三条防线写明：loader 8 键 / 消费点全量 12 键 / 渲染逐字节；`CARD_KEYS` 行写「loader 过滤出 8 键子集 + `buildCards()` 判全量 12 键」 | 同 1 |
+| 10 | §7 判别力水位（`:484`） | 「TC-014 / TC-015 双形态」 | 「少键·多键·派生键三种形态，断在 loader 的 8 键恰等处」 | 同 3 |
+
+### R6-2 未改什么（逐条给理由）
+
+- **TC-011**（悬空引用，规则 2）：与键集两段判无关；`DanglingSharedRef` 的触发面是「键不存在」，且本例已走 `COPY` + `REFS` 路线 → 一字未动。
+- **TC-016**（空值，规则 3）：第四形态「数组用于插值」属规则 3；规则 4 管「形态非法」不管「值空」，两者不同码，不并入 → 一字未动。
+- **TC-014**（少键）：席文件 `card` 少一个键**本来就在** loader 第 6 步报 `CardKeySetMismatch`，与改判后口径一致（标题「装配后」即 spec §10.2.5 第 6 步的原词）→ 正文一字未动。
+- **TC-001 / 002 / 004–010、TC-017–TC-030**：与键集两段判、`@` 规则 4 均无关 → 一字未动（TC-028 的轮次 5 结论保持）。
+- **文末 R2 / R3 / R4 / R5 修订说明**：属历史记录，**不改**（改了即重写历史）；其中「第 9 键 → 展开后 13 键」等旧表述由本节 R6-1 第 3 行明确取代。
+- **不动 spec / plan / PRD / 源码 / `gate-record.md`**：本轮只改本文件。
+
+### R6-3 自检（本轮实跑，仓根 PowerShell 5）
+
+| # | 命令 / 动作 | 输出 | 结论 |
+|---|---|---|---|
+| 1 | `node tools/docgen/cli.mjs gate` | `baseline 38/38`、`GATE_EXIT=0` | 未改代码，门禁仍绿 |
+| 2 | `^### TC-` 计数 + 正/负两列计数 | `TC_HEAD=30`；`POS=10`；`NEG=20` | 条数与类型分布不变 |
+| 3 | ID 集合比较（§1 / §2 / §3） | `S1=30 S2=30 S3=20`；`DIFF12=0`；`S2_MINUS_S3=TC-001…TC-010` | §1 = §2；§3 ⊆ §2 且差集恰 10 条正例 |
+| 4 | TC-003 ① 的粘贴命令（现状态实跑） | `CARD_KEYS 未导出`、`PROBE_EXIT=1` | 红绿证据的「红」实锤：`CARD_KEYS` 未 `export` → 探针按唯一源缺失 exit 1 |
+| 5 | 段 B 判面单独对照（临时代入 12 键字面，**不进本文件**） | `consumed12 15/15` | 消费点确实 15/15 席恰 12 键——施工后段 B 应为绿 |
+| 6 | `Object.keys(agentData[0].card)` | `counts 8`、`duty/scenes/signals/must/never/categories/checkItems/rationale` | 段 A 的 8 键口径与实测一致（15/15 席同值） |
+| 7 | 读 `cardPipeline.mjs:23-24` / `:82-90` / `:91-95` | `const CARD_KEYS = [...12 项]`（未 `export`）/ `buildOne` 派生 `seat`·`name`·`description`·`tools` / 缺键循环只报 `UnverifiableOutput`、不查多键 | 两段判的源码依据在位 |
+| 8 | `npm run check` | `# pass 1399`、`# fail 4`、`[observable]` 未豁免命中 0 行；4 条 fail 全在 `scope-sweep` 段（`OCR-S1-TC-F08` / `S4-TC-J04` / `S2-TC-G01` / `S3-TC-K04`） | 未改代码，4 条红均属本批改判的 R8 口径账（见下条），与本文件改动无因果 |
+| 9 | `node scripts/scope-sweep.mjs --check` | `I31=11 > 基线 10`；`清单缺口径 I31/I32/I33`；`清单缺文件：2026-11-03-s-a-data-layer-design.md, 2026-11-03-s-a-data-layer.md` | **本文件对 I31 / I32 / I33 词表的命中已清零（`I31=0 I32=0 I33=0`，本轮为此改了 8 处措辞）**；余下红项落在 spec（7）/ plan（4）/ PRD（1），需在当次 `impact-sheet.md` 登记 → 不属本席改动范围，已随本报告转主 agent |
+
+### R6-4 本席必答（`senior-sdet` 一定会 1–5）
+
+| # | 判定 | 证据（path:line，均含所引摘句） | reason |
+|---|---|---|---|
+| 1 | hit | `tools/docgen/components/cardPipeline.mjs:23-24`（「const CARD_KEYS = ['seat', 'name', 'description', 'tools', …]」，未 `export`）、`tools/docgen/components/cardPipeline.mjs:82-90`（`const card = { ...own, seat: entry.name, name: entry.name, description: descriptionOf(entry.name), tools: toolsForSeat(entry.name), … }`）、`tools/docgen/components/cardPipeline.mjs:91-95`（`if (card[k] === undefined) … UnverifiableOutput`，只查缺不查多） | 结论 3 条、来自 1 个文件的 3 处独立锚点；已写回 TC-003 前置 / 红绿与 TC-015 判据（两段判的落点与「多键无人判」的根因） |
+| 2 | hit | 同上三处 path:line 均存在且含所引摘句；另 `docs/superpowers/specs/2026-11-03-s-a-data-layer-design.md:128`（「`seats/<seat>.json` 的 `card` 键集**恰等 8 键**」）、`:135`（「③ `buildCards()` 15 席 `card` 键集…（`CARD_KEYS` 唯一源）」）、`:103`（「以 `@` 开头但不整体匹配 `^@key$`」）逐行核过 | 引句与源行逐字对得上，可复算 |
+| 3 | hit | 本轮未引入新术语（`CardKeySetMismatch`（卡片键集不符码）/ `NestedSharedRef`（共享段嵌套引用码）/ `DanglingSharedRef` / `EmptySharedValue` 均沿用在先释义） | 未解释术语计数 = 0 |
+| 4 | hit | 本文件正文 —— **全过、无问题**（findings 集合为空） | 10 项处置全部落到用例正文与对应表 |
+| 5 | hit | 本文件附录（附 A-1～A-5）—— **全过、无问题**（findings 集合为空） | 附录无需改动：A-1 / A-4 的结论与规则 4 新口径不冲突（A-4 判的是「不支持嵌套」，规则 4 判的是「混用形态同码」） |
+

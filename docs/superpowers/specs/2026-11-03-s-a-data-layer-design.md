@@ -17,7 +17,7 @@
 | # | 决定 | 为什么 |
 |---|---|---|
 | R1 | 数据源拆为 `seats/<seat>.json`（15 份，一席一文件）+ `shared.json`（1 份），靠 `@` 引用共享段（PRD D12 / Q7） | 不拆 → 共享片段继续靠字面复制，改一处要改 13 处；这正是 PRD §1 缺陷 5 的根因 |
-| R2 | `@` 展开 = **装配前一次性纯函数**，展开后 **`card` 的 12 键齐**、无悬空键、无嵌套（PRD D12 / V5） | 展开若散落在渲染期，每次渲染都要判一次引用，且嵌套拒绝没处放；12 键齐是渲染器 `renderCard` 的输入契约（键名见 PRD V5）。注意：**条目顶层是 `BASE_KEYS` 白名单**（`validateAgentData.mjs:105`，9 键 + `trigger` 拆出后仍 9 键），12 键说的是 `card` 内部，两者不可混 |
+| R2 | `@` 展开 = **装配前一次性纯函数**，展开后无悬空键、无嵌套（PRD D12 / V5） | 展开若散落在渲染期，每次渲染都要判一次引用，且嵌套拒绝没处放。**「12 键全量」的断言不落在这里**（`2026-11-03` 计划门 P0-1 实测改判）：loader 产出的 `agentData[i].card` 恒 **8 键**（`duty`/`scenes`/`signals`/`must`/`never`/`categories`/`checkItems`/`rationale`，15/15 席实测），另 4 键（`seat`/`name`/`description`/`tools`）只在 `cardPipeline.mjs:82-90` 的 `buildOne` 派生——loader 若也补这 4 键就是第二份派生物。故分两段判：loader 判「席文件 `card` 恰等 8 键 + 派生四键拒载」（§10.2.5 第 6 步，码 = `CardKeySetMismatch`）；12 键全量判在 `buildCards()` 产物上（§10.2.6 的 `check-shared-refs.mjs`）。注意：**条目顶层是 `BASE_KEYS` 白名单**（`validateAgentData.mjs:105`，9 键 + `trigger` 拆出后仍 9 键），12 键说的是 `card` 内部，两者不可混 |
 | R3 | `when` 唯一源 = `triggerTable.when`；`duty.trigger` **一律装配期注入**，不取「删除」分支（PRD D17 / r4 后端席） | 两处真相是缺陷 6 本体；取「删除」分支则 V12 两面都无字段可判，等于把判据删了 |
 | R4 | `description` 纳入文本扫描面：`CARD_TEXT_FIELDS` **与** `surfaceTexts` 两处同批改，缺一即静默空转（PRD D17） | 只改前者会让「改了表、仍然不扫」原样保留，且 §4 没有一条验收能判出它 |
 | R5 | 同批改写三条冻结断言：`card-model.test.mjs:1125` / `:1131`（现状 `green(description …)` 要求 `description` **不扫**）与 `:1141`（`SCAN_FIELDS` 恰 8 键） | 不改这三条 → R4 落地即红；PRD §5 `S1-TC-G09` 行已登记这是改已签件，须回 ② 段 |
@@ -95,12 +95,12 @@ node -e "const L=require('fs').readFileSync('tools/docgen/components/agentData.m
 
 插值实现**必须**用函数替换或 `split/join`（`str.replace(re, () => v)` 或先 split 再 join），**禁止**把值直接当 `replace` 的替换串传入——值里若含 `$&` / `$1` 会被当成替换模式（实测：`'前缀${@k}后缀'.replace(/…/g, '成本 $& 与 $1')` 输出 `前缀成本 ${@k} 与 $1后缀`）。这是唯一的实现级硬约束。
 
-三条硬规则（各对应一个错误码，见 10.2.6）：
+四条硬规则（各对应一个错误码，见 10.2.6）：
 
 1. `shared.json` 的任何字符串值内**不得再出现** `@` 或 `${@` → `NestedSharedRef`。这一条本身就是 D-b「单层」的机器形态：引用只能从 `seats/*.json` 指向 `shared.json`，所以**环在数据形态上无法构造**，不另写递归环检测。
 2. 键不存在 → `DanglingSharedRef`（点名键 + 席名）。
 3. 值为 `""` / `null` / 全空白 / 用于插值却不是字符串 → `EmptySharedValue`（空值一律不当合法空段）。
-4. 整值字符串内出现 `${`（两种形态混用）→ `NestedSharedRef`。
+4. 字符串**以 `@` 开头但不整体匹配 `^@key$`**（含 `@a ${@b}` 这类整值与插值混用）→ `NestedSharedRef`；整值展开后结果内**仍含 `@` 或 `${`** → 同码。（旧写「整值字符串内出现 `${`」在实现里不可达：整值匹配成功时整串不可能含 `$`——`2026-11-03` 计划门 P1-3 改判）
 
 ### 10.2.4 展开算法
 
@@ -108,7 +108,8 @@ node -e "const L=require('fs').readFileSync('tools/docgen/components/agentData.m
 
 ```
 字符串 v:
-  v 整体匹配 ^@key$            → shared[key]（不存在 → DanglingSharedRef；空 → EmptySharedValue）
+  v 整体匹配 ^@key$            → shared[key]（不存在 → DanglingSharedRef；空 → EmptySharedValue；结果内仍含 @ 或 ${ → NestedSharedRef）
+  v 以 @ 开头但不整体匹配 ^@key$ → NestedSharedRef（整值与插值混用 / 非法形态）
   否则 v 含 ${@key}            → 逐处替换（键不存在 / 非字符串 / 空 → 对应码）
 数组                         → 逐项递归
 对象                         → 逐值递归（键名不展开）
@@ -124,12 +125,14 @@ node -e "const L=require('fs').readFileSync('tools/docgen/components/agentData.m
 3. 拆出 `trigger` → `triggerTable[<seat>]`（含 `kind` 字段位，R8；本段不校验四值）；
 4. 写入 `card.duty.trigger = triggerTable[<seat>].when`（D-a；非空残留已在 10.2.2 拒载）；
 5. 装配：`{ tools: toolsForSeat(...), ...(boundaryBySeat[...] ? { boundary } : {}), ...s }` —— **`...s` 仍置末**（R7 形态逐字不变，位置从 `agentData.mjs:295` 迁到 `seatLoader.mjs`）；
-6. **装配后断言**（`CardKeySetMismatch`，exit 1）：`card` 的键集**恰等** 12 键（`CARD_KEYS`）——少一个、多一个都报；`seats/<seat>.json` 的 `card` 若写了 `seat` / `name` / `description` / `tools` 四派生键，在这一步被拒载（它们本会被 `...s` 静默覆盖，渲染结果与正确数据逐字节相同，V4 抓不到）；
+6. **装配后断言**（`CardKeySetMismatch`，exit 1）：`seats/<seat>.json` 的 `card` 键集**恰等 8 键** = `CARD_KEYS` 去掉 `seat` / `name` / `description` / `tools` 四派生键——少一个、多一个都报；这四个派生键若写进席文件，同样在这一步被拒载（它们本会被 `...s` 静默覆盖，渲染结果与正确数据逐字节相同，V4 抓不到）。**12 键全量不在这步判**：本步产物 `agentData[i].card` 恒 8 键（15/15 席实测），12 键只在 `buildOne` 派生后成立 → 判据落 `check-shared-refs.mjs` 的 `buildCards()` 一圈（§10.2.6）；
 7. `agentData.mjs` 薄壳导出三个符号 —— **必须先 `import` 再 `export`**（`import { agentData, triggerTable } from './seatLoader.mjs'; export { agentData, triggerTable };` + 常量 `AGENT_KINDS`），**不得**用纯再导出 `export { agentData } from './seatLoader.mjs'`：`test/card-render.test.mjs:154-159` 会把赋值语句追加到该文件尾部，要求模块作用域内有本地绑定（§10.2.9 表末行）。
 
 ### 10.2.6 错误码
 
-`validateAgentData.mjs` 的 `EXIT[1]` 列表追加 4 码：`DanglingSharedRef` / `EmptySharedValue` / `NestedSharedRef` / `CardKeySetMismatch`（后者 = 10.2.5 第 6 步的「12 键恰等 / 派生键拒载」）；「残留 `duty.trigger`」与「`kind` 写进条目顶层」**复用**既有 `TriggerFieldMisplaced`（不新增同类码）。**`CARD_MODEL_CODES` 仍 36 码零新增**（D16④ 不动）——这 4 码住在 `validateAgentData` 的 `EXIT` 表，不进 `CARD_MODEL_CODES`。
+`validateAgentData.mjs` 的 `EXIT[1]` 列表追加 4 码：`DanglingSharedRef` / `EmptySharedValue` / `NestedSharedRef` / `CardKeySetMismatch`（后者 = 10.2.5 第 6 步的「席文件 `card` 恰等 8 键 / 派生键拒载」；12 键全量由 `check-shared-refs.mjs` 在 `buildCards()` 产物上判，**不新增码、也不改 `buildOne` 既有码**）；「残留 `duty.trigger`」与「`kind` 写进条目顶层」**复用**既有 `TriggerFieldMisplaced`（不新增同类码）。**`CARD_MODEL_CODES` 仍 36 码零新增**（D16④ 不动）——这 4 码住在 `validateAgentData` 的 `EXIT` 表，不进 `CARD_MODEL_CODES`。
+
+`check-shared-refs.mjs` 的判定面 = **三件**：① 悬空 0（`DanglingSharedRef`）；② 无嵌套（`NestedSharedRef`）；③ `buildCards()` 15 席 `card` 键集与 `CARD_KEYS` 恰等（12 键全量，唯一源）。前两件由 loader 在 import 期抛，第三件只有到 `buildOne` 之后才成立，故必须在本脚本里补判。
 
 `check-shared-refs.mjs` **不进 `npm run check` 的独立门禁段**：loader 在 `import` 期即 **fail-closed**（读盘即校验、坏数据在模块导入时就抛错，不等渲染），而 `agentData.mjs` 现有 29 条 `import` 保证「数据坏了必有一次 import 抛错」→ 门禁自然红。该脚本的用途是 PRD V5 的验收命令（`exit 1` 判据）与施工期定点复核，不建第二个入口。这条兜底**有**专用用例（testcase 里判 `import` 退出码的那条），不是靠推断。
 
@@ -159,7 +162,7 @@ S-A 的验收 = V4 / V5 / V10（PRD §8 S-A 行）。`when` 里的 `PRD/spec/pla
 | `components/cardPipeline.mjs:23` 的 `CARD_KEYS` | 加 `export`，内容与顺序不变 | 「12 键」的唯一实现点；校验器与 loader 要共用它，否则出现第二份 12 键名单 |
 | `components/validateAgentData.mjs:13-33` 的 `EXIT` 表 | 追加 4 码（10.2.6） | 不加则 `exitCodeFor` 抛「未知错误码」，新校验器无法 exit 1 |
 
-**测试侧 11 处 / 7 个文件**（这些位置把「`agentData.mjs` 的源文本 / 注释 / 计数」当判据，装配点一迁走或 Q8 一删项它们必红；处置 = 把判据改到新落点，**语义不变**）：
+**测试侧 12 处 / 7 个文件**（这些位置把「`agentData.mjs` 的源文本 / 注释 / 计数」当判据，装配点一迁走或 Q8 一删项它们必红；处置 = 把判据改到新落点，**语义不变**）：
 
 | 文件:行 | 它钉住的东西 | 处置 |
 |---|---|---|
@@ -170,10 +173,11 @@ S-A 的验收 = V4 / V5 / V10（PRD §8 S-A 行）。`when` 里的 `PRD/spec/pla
 | `test/dev-workflow-counts.test.mjs:146-155` | `indexOf('  // translation-self-check')` 依赖 `agentData.mjs` 内注释 | **JSON 装不下注释** → 该构造前提改为「按 `seats/senior-sdet.json` 的键路径切块」，或随注释一起退役（二选一，plan 定） |
 | `test/sdet-data.test.mjs:40-47` | `agentData.mjs` 里 `name: 'senior-sdet'` 上方 ≤15 行必须有 `translation-self-check` 注释 | **JSON 装不下注释** → 该 test 删除（自评注释改为写进本 spec §10.2.10 与 plan 的施工记录） |
 | `test/policy-pure-source.test.mjs:205-211` | `deepEqual(P.workspace, …9 项)` + `Object.values(P).flat().length === 21` / `pathItems()` 22 / `pathTokens()` 23 | Q8 删 3 项后必红：`workspace` 9 → **6 项**；三个计数 21/22/23 → **18/19/20**。处置 = 改这三处数值，并把三个计数写成**关系式**（`flat === pathItems().length - 1`、`pathTokens().length === pathItems().length + 1`，差值恒为 1）；**禁止再写死 21/22/23**。同时 `:266` / `:318` / `:1213` / `:1694` 的渲染面 23 一并改 20 |
-| `test/support/capability-baseline.test.mjs:12`、`:18` | `readFileSync('agents/reviewer-audit.md')` 读**当前**卡，硬断 `forbiddenPaths.length === 23`（该 test 标题写的是「旧卡 23 项」） | 处置只有一条：**改读冻结来源**——`tools/docgen/fixtures/capability-baseline.golden.json`（已冻存 23 项）或 `gitShow(sourceCommit)` 的旧卡。**不得改读当前卡再断言 23**（Q8 后当前卡是 20，断言必错；且会丢掉「旧卡基线」的独立性） |
+| `test/support/capability-baseline.test.mjs:12`、`:18` | `readFileSync('agents/reviewer-audit.md')` 读**当前**卡，硬断 `forbiddenPaths.length === 23`（该 test 标题写的是「旧卡 23 项」） | 处置只有一条：**改读冻结来源**——`git show 641a7e7:agents/reviewer-audit.md`（改造前那次提交里的旧卡，`factsFromBaselineText` 实测 `paths 23 / tools 6 / tier producer`）或 `gitShow(sourceCommit)` 的旧卡。**注意 `fixtures/capability-baseline.golden.json` 是 facts JSON（只有数组，没有卡面 markdown），喂不进 markdown 抽取器**——`2026-11-03` 计划门 P2 实测踩过。**不得改读当前卡再断言 23**（Q8 后当前卡是 20，断言必错；且会丢掉「旧卡基线」的独立性） |
 | `test/card-render.test.mjs:154-159` | `INJECT_BAD` 把 `;(agentData[0].card.must[0].criterion = …)` **追加到 `agentData.mjs` 文件尾**，要求该模块作用域内有 `agentData` 本地绑定 | **薄壳必须先 `import` 再 `export`**（见 §10.2.5 第 7 步），不得用纯再导出 `export { agentData } from './seatLoader.mjs'`；否则追加语句 `ReferenceError`，多个 S4 用例整片红 |
 | `test/dev-workflow-counts.test.mjs:148` | `indexOf('  // 阅读取证员')`（与 `:149` 的 `translation-self-check` 同属一个切块构造，两处注释都依赖 `agentData.mjs` 源文本） | 与 `:146-155` 同一条处置：按 `seats/*.json` 的键路径切块，或随注释一起退役 |
-| `acceptance/replace-scenarios.mjs:14`、`:79` | `patch()` helper 把新语句拼进 `agentData.mjs` 源文本（当前**无调用点**，是死 helper） | 随本次清洗删除；若保留则须同批改指 `data/seats/*.json` |
+| `acceptance/replace-scenarios.mjs:14`、`:79` | `patch()` helper 把文本替换进 `agentData.mjs` 源文本。**不是死 helper**（`2026-11-03` 计划门 P1-2 实测改判）：`:196` / `:219` / `:232` / `:258` 四处调用 | 处置 = 把 `:14` 的 `DATA` 常量改指 `tools/docgen/data/seats/senior-sdet.json`（`WHEN_OLD` 那时住 `trigger.when`，命中 1），**四处调用保留**，不得删函数留 4 个断头。已知债（不在本段修，登记触发 = 下次修该验收脚本）：`:196` / `:219` 注入的 `改动 = 改组件数据 → …` 句在数据里 0 命中，属 acceptance 既有 `9/11 红` 那笔账 |
+| `test/policy-pure-source.test.mjs` 的 `S6-TC-E03`（`:953-976`） | 「23 项路径清单副本收敛到 定义层 1 处 + 承载该段的产物」的**期望文件集**恰 3 项 | **T1 施工期实测新增（计划门未预见）**：数据层拆 JSON 后，承载同一段文本的产物多了 `tools/docgen/data/seats/detective-observer.json` 与 `…/reviewer-audit.json`（席 JSON 就是卡面文本的源）→ 期望集补这 2 项 = **5 项**；判据语义不变（仍收敛到「定义层 1 + 承载产物 N」，删源文件反而会降判别力）。**不得**改成「排除 `tools/docgen/data/`」——那等于让探针不看源 |
 
 ### 10.2.10 本节已定的四条口径（testcase 作者提出的歧义，此处给答复）
 
@@ -192,7 +196,7 @@ S-A 的验收 = V4 / V5 / V10（PRD §8 S-A 行）。`when` 里的 `PRD/spec/pla
 
 ## 10.4 硬约束
 
-1. `card` 的 12 键恰等 / 无悬空 / 无嵌套（R2；判据 = `CardKeySetMismatch` / `DanglingSharedRef` / `NestedSharedRef`，见 PRD V5）
+1. 席文件 `card` **恰等 8 键**（= `CARD_KEYS` 去派生四键）+ 派生四键拒载 / 无悬空 / 无嵌套（R2；判据 = `CardKeySetMismatch` / `DanglingSharedRef` / `NestedSharedRef`，见 PRD V5）；**12 键全量**由 `check-shared-refs.mjs` 在 `buildCards()` 产物上判
 2. 渲染逐字节不变、`gate` exit 0（R9，判据见 PRD V4）
 3. 「不得同时为源」= 两半（R3）：①只改 `triggerTable[<seat>].when` 一个字符，`card.duty.trigger` 必随之改变；②`seats/<seat>.json` 里 `card.duty.trigger` 恒 `""`（非空即拒载）。**不引 PRD V12**——V12 判的是四字段斜杠串计数（基线 13），与「同源」无关，且清零归 S-C（§10.2.8）
 4. `SCAN_FIELDS` 键数仍 8（R5，判据见 `card-model.test.mjs:1141`）
@@ -202,7 +206,7 @@ S-A 的验收 = V4 / V5 / V10（PRD §8 S-A 行）。`when` 里的 `PRD/spec/pla
 
 | 测什么 | 为什么 |
 |---|---|
-| `@` 展开的悬空 / 嵌套说「不」/ 12 键恰等 | 引用一断，渲染期拿到的是空值而不是报错，最隐蔽；嵌套若被静默展开，环检测就永远不需要写，但也永远没人发现 |
+| `@` 展开的悬空 / 嵌套说「不」/ 12 键全量 | 引用一断，渲染期拿到的是空值而不是报错，最隐蔽；嵌套若被静默展开，环检测就永远不需要写，但也永远没人发现 |
 | 拆分前后 15 席渲染逐字节相等 | 拆 JSON 最容易把字段顺序 / 类型悄悄改掉 |
 | `duty.trigger` 注入后与 `triggerTable.when` 逐字相同 | 同一事实两处的老病，注入写错不会报错、只会让斜杠串漏检 |
 | `description` 进扫描面后能报出**指针词 / 硬编码数量 / 程序词**三类码 | R4 的两处实现点缺一即空转。**注意「斜杠串」不在本段可测范围内**：8 个文本码里没有一条识别 `/`（`hasSlash` 只用于 `scenes[].id` / `signals[].type` / `trigger.*` / `check`），斜杠串清零归 S-C 的 D3 / V12 |

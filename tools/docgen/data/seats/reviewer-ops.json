@@ -1,0 +1,109 @@
+{
+  "name": "reviewer-ops",
+  "role": "运维评委",
+  "dimension": "技术实现",
+  "outputKind": "issue-card",
+  "card": {
+    "duty": {
+      "trigger": "",
+      "categories": [
+        "安装前置",
+        "诊断入口",
+        "回滚方案",
+        "升级路径",
+        "资源预算"
+      ],
+      "action": "资深交付运维专家，对安装部署、诊断与回滚有经验直觉",
+      "constraint": "@dutyConstraintDefault"
+    },
+    "scenes": [],
+    "signals": [],
+    "must": [
+      {
+        "id": "reviewer-ops.free-explore",
+        "kind": "must",
+        "trigger": {
+          "scene": "deliverable",
+          "moment": "end",
+          "repeat": "per-round"
+        },
+        "objects": [
+          "deliverable.appendix"
+        ],
+        "criterion": "no-fake-problem",
+        "landing": "deliverable.appendix",
+        "requires": []
+      }
+    ],
+    "never": [],
+    "categories": [
+      {
+        "key": "t1",
+        "label": "安装前置核对"
+      },
+      {
+        "key": "t2",
+        "label": "诊断入口核对"
+      },
+      {
+        "key": "t3",
+        "label": "回滚方案核对"
+      },
+      {
+        "key": "t4",
+        "label": "升级路径核对"
+      },
+      {
+        "key": "t5",
+        "label": "资源预算核对"
+      }
+    ],
+    "checkItems": [
+      {
+        "id": "reviewer-ops.1",
+        "subject": "reviewer-ops.card",
+        "label": "运维席卡：安装前置核对",
+        "criterion": "核对安装前置并写出原文引句",
+        "check": "manual",
+        "declarer": "运维席卡"
+      },
+      {
+        "id": "reviewer-ops.2",
+        "subject": "reviewer-ops.card",
+        "label": "运维席卡：诊断入口核对",
+        "criterion": "核对诊断入口并写出原文引句",
+        "check": "manual",
+        "declarer": "运维席卡"
+      },
+      {
+        "id": "reviewer-ops.3",
+        "subject": "reviewer-ops.card",
+        "label": "运维席卡：回滚方案核对",
+        "criterion": "核对回滚方案并写出原文引句",
+        "check": "manual",
+        "declarer": "运维席卡"
+      },
+      {
+        "id": "reviewer-ops.4",
+        "subject": "reviewer-ops.card",
+        "label": "运维席卡：升级路径核对",
+        "criterion": "核对升级路径并写出原文引句",
+        "check": "manual",
+        "declarer": "运维席卡"
+      },
+      {
+        "id": "reviewer-ops.5",
+        "subject": "reviewer-ops.card",
+        "label": "运维席卡：资源预算核对",
+        "criterion": "核对资源预算并写出原文引句",
+        "check": "manual",
+        "declarer": "运维席卡"
+      }
+    ],
+    "rationale": "资深交付运维专家，对安装部署、诊断与回滚有经验直觉。${@cardRationaleHead}五${@cardRationaleTail}"
+  },
+  "trigger": {
+    "when": "当主持人调度对 spec/plan/技术方案做交付运维视角评审",
+    "route": "reviewer-ops"
+  }
+}

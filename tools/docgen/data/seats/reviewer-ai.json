@@ -1,0 +1,148 @@
+{
+  "name": "reviewer-ai",
+  "role": "AI 评委",
+  "dimension": "技术实现",
+  "outputKind": "issue-card",
+  "card": {
+    "duty": {
+      "trigger": "",
+      "categories": [
+        "引用闭环",
+        "触发条件",
+        "机器可判定",
+        "上下文预算",
+        "降级路径",
+        "数字取数",
+        "同措辞守卫",
+        "AI 判定语义"
+      ],
+      "action": "资深 AI 领域专家，对提示词工程与指令可执行性有经验直觉",
+      "constraint": "@dutyConstraintDefault"
+    },
+    "scenes": [],
+    "signals": [],
+    "must": [
+      {
+        "id": "reviewer-ai.free-explore",
+        "kind": "must",
+        "trigger": {
+          "scene": "deliverable",
+          "moment": "end",
+          "repeat": "per-round"
+        },
+        "objects": [
+          "deliverable.appendix"
+        ],
+        "criterion": "no-fake-problem",
+        "landing": "deliverable.appendix",
+        "requires": []
+      }
+    ],
+    "never": [],
+    "categories": [
+      {
+        "key": "t1",
+        "label": "引用闭环核对"
+      },
+      {
+        "key": "t2",
+        "label": "触发条件核对"
+      },
+      {
+        "key": "t3",
+        "label": "机器可判定核对"
+      },
+      {
+        "key": "t4",
+        "label": "上下文预算核对"
+      },
+      {
+        "key": "t5",
+        "label": "降级路径核对"
+      },
+      {
+        "key": "t6",
+        "label": "数字取数核对"
+      },
+      {
+        "key": "t7",
+        "label": "同措辞守卫核对"
+      },
+      {
+        "key": "t8",
+        "label": "AI 判定语义核对"
+      }
+    ],
+    "checkItems": [
+      {
+        "id": "reviewer-ai.1",
+        "subject": "reviewer-ai.card",
+        "label": "AI 席卡：引用闭环核对",
+        "criterion": "核对引用闭环并写出原文引句",
+        "check": "manual",
+        "declarer": "AI 席卡"
+      },
+      {
+        "id": "reviewer-ai.2",
+        "subject": "reviewer-ai.card",
+        "label": "AI 席卡：触发条件核对",
+        "criterion": "核对触发条件并写出原文引句",
+        "check": "manual",
+        "declarer": "AI 席卡"
+      },
+      {
+        "id": "reviewer-ai.3",
+        "subject": "reviewer-ai.card",
+        "label": "AI 席卡：机器可判定核对",
+        "criterion": "核对机器可判定并写出原文引句",
+        "check": "manual",
+        "declarer": "AI 席卡"
+      },
+      {
+        "id": "reviewer-ai.4",
+        "subject": "reviewer-ai.card",
+        "label": "AI 席卡：上下文预算核对",
+        "criterion": "核对上下文预算并写出原文引句",
+        "check": "manual",
+        "declarer": "AI 席卡"
+      },
+      {
+        "id": "reviewer-ai.5",
+        "subject": "reviewer-ai.card",
+        "label": "AI 席卡：降级路径核对",
+        "criterion": "核对降级路径并写出原文引句",
+        "check": "manual",
+        "declarer": "AI 席卡"
+      },
+      {
+        "id": "reviewer-ai.6",
+        "subject": "reviewer-ai.card",
+        "label": "AI 席卡：数字取数核对",
+        "criterion": "核对数字取数并写出原文引句",
+        "check": "manual",
+        "declarer": "AI 席卡"
+      },
+      {
+        "id": "reviewer-ai.7",
+        "subject": "reviewer-ai.card",
+        "label": "AI 席卡：同措辞守卫核对",
+        "criterion": "核对同措辞守卫并写出原文引句",
+        "check": "manual",
+        "declarer": "AI 席卡"
+      },
+      {
+        "id": "reviewer-ai.8",
+        "subject": "reviewer-ai.card",
+        "label": "AI 席卡：AI 判定语义核对",
+        "criterion": "核对AI 判定语义并写出原文引句",
+        "check": "manual",
+        "declarer": "AI 席卡"
+      }
+    ],
+    "rationale": "资深 AI 领域专家，对提示词工程与指令可执行性有经验直觉。${@cardRationaleHead}八${@cardRationaleTail}"
+  },
+  "trigger": {
+    "when": "当主持人调度对 rule/skill/agents/含 AI 指令的文档做 AI 工程视角评审",
+    "route": "reviewer-ai"
+  }
+}

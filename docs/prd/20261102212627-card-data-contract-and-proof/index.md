@@ -64,7 +64,7 @@
 | V2 | 映射无悬空 | `check-plan.mjs map` → `missing 0 / dangling 0`；空心用例判据见 V7 | 删一条映射 → `missing 1` → 红 |
 | V3 | 测试全过且**非零用例** | `npm run check` 的 `# fail 0` **且** `# tests ≥ 冻结基线 + 本批新增数`；**基线口径只认 `npm run check`**（现 `1405`）——裸跑 `node --test` 另报 `1409`（发现集不同），两数不可混用 | 删掉一个测试文件 → `# tests` 低于基线 → 红 |
 | V4 | 渲染不变（数据层改造的硬约束） | 拆 JSON 后 `node tools/docgen/cli.mjs gate` → **exit 0**，且 15 席 `disk == render` 逐字节相等（`tools/docgen/cli.mjs:143-144` 逐席比对）。**`baseline 38/38` 不作判据**——它是同一表达式自除自的常量打印（`tools/docgen/cli.mjs:102`/`:228`），恒真 | 改任一 `seats/*.json` 值不重生成 → `Mismatch` → exit 1 |
-| V5 | `@` 引用完整性 | 新脚本 `check-shared-refs.mjs`：悬空键 0、无环、展开后 **12 键齐**——键名以 `docs/superpowers/specs/2026-10-29-agent-card-s4-render-design.md:89` 为唯一源（`seat / name / description / tools / duty / scenes / signals / must / never / categories / checkItems / rationale`） | 写一个不存在的 `@` 键 → exit 1；少一个顶层键 → exit 1 |
+| V5 | `@` 引用完整性 | 新脚本 `check-shared-refs.mjs`：悬空键 0、无嵌套、键集齐全（loader 产出的席文件 `card` 恰等 8 键；`buildCards()` 产物与 `CARD_KEYS` 恰等，12 键全量）——键名以 `docs/superpowers/specs/2026-10-29-agent-card-s4-render-design.md:89` 为唯一源（`seat / name / description / tools / duty / scenes / signals / must / never / categories / checkItems / rationale`） | 写一个不存在的 `@` 键 → exit 1；少一个顶层键 → exit 1 |
 | V6 | 引句真实性（D14） | 新脚本 `check-quotes.mjs`（复用 `checkEvidence()`）；**语料 = 真实产物 `docs/superpowers/reviews/**/observation-*.json` 的 `items[].evidence`**（**不用 `tools/observation-check/golden/*`**——自证是渲染夹具、禁止用于校验，见 `tools/observation-check/golden.test.mjs:1-5`）；**S-B 必须先落 1 份含 ≥2 条 `evidence` 的真实观察记录**，否则语料为 0；任一摘句不在源文件、或行号那行不含它 → exit 1；**fail-closed：扫到 0 条也 exit 1** | 把任一 `quote` 改一个字 → exit 1；语料清空 → exit 1（不是绿） |
 | V7 | 映射用例非空心（原「token 降幅」已降级，见下） | 新脚本 `check-case-assert.mjs`：映射表引用的每个用例 ID，其用例体须含 ≥1 条**非** `assert.ok(true)` 的断言 → `hollow 0` | 把某用例体改成 `assert.ok(true)` → `hollow 1` → 红 |
 | V8 | 卡面不再内联策略清单（Q6 / D11） | `(Select-String agents\*.md -Pattern '逐项点名' -List).Count` → `0`（卡面只留「档位 + 指针」） | 任一卡恢复内联清单 → 计数 ≥1 → 红 |
@@ -116,9 +116,9 @@
 
 | 段 | 前置（可核，未签则本段不得开工） | 内容 | 验收 | 回退 |
 |---|---|---|---|---|
-| **S-A 数据层** | §5 的 `SCAN_FIELDS` 行、`S1-TC-G09` 行与 `policy/**` 行已在 ② 段签收（`gate-record.md` 对应行）——D17 落在本段，三条断言必须同批改写 | D12 拆 JSON + `@` 引用 + 加载器 + D17 `when` 唯一源 + Q8 删 3 项 | V4（渲染逐字节不变）+ V5（`@` 完整性）+ V10（`kind` 四值） | 开工前 `git stash -u`（含未跟踪新文件）；或 `git checkout -- tools/docgen/` 后**复验 `git status --porcelain tools/docgen` 为空**（`git checkout` 不删新建文件，残留 = 回退未完成），再重跑 `gate` |
+| **S-A 数据层** | §5 的 `SCAN_FIELDS` 行、`S1-TC-G09` 行与 `policy/**` 行已在 ② 段签收（`gate-record.md` 对应行）——D17 落在本段，三条断言必须同批改写 | D12 拆 JSON + `@` 引用 + 加载器 + D17 `when` 唯一源 + Q8 删 3 项 | V4（渲染逐字节不变）+ V5（`@` 完整性）+ V10（本段只落 `kind` 字段位 15/15；四值校验归 S-C） | 开工前 `git stash -u`（含未跟踪新文件）；或 `git checkout -- tools/docgen/` 后**复验 `git status --porcelain tools/docgen` 为空**（`git checkout` 不删新建文件，残留 = 回退未完成），再重跑 `gate` |
 | **S-B 契约层** | §5 的 `outputFormats['issue-card'].fields` 行已签收 | D14 证据栏三列 + `check-quotes.mjs` + **造 V6 语料：tool 产出的观察记录先落 `.session/`，再手工归档到 `docs/superpowers/reviews/<round>/` 并 `git add`（该目录对写盘工具只读：`tools/observation-check/artifact.mjs:45-46`；未入索引会被 `gate-run.mjs:126-135` 判 `UntrackedArtifact` 连带 V3 红），≥2 条 `evidence`** + Q6 卡面改指针 + Q3 复用 | V6（引句真实性）+ V7（用例非空心）+ V8（不再内联清单） | 同上；`policy` 与 `outputFormats` 改前存副本 |
-| **S-C 卡面形状** | §5 的「三态 5 行」行与 `card-model.test.mjs` 的 `S1-TC-G09` 行、列数行已签收 | D16 三态承载 + D3 斜杠串数组化 + D6/D5 返回声明 + Q5 trigger 四型（`kind` 住 `triggerTable`）+ Q4 长度约束 + D1/D2 删人设 + Q1 `HOST_TERM` | V1/V2/V3 + V9（人设清零）+ V11（无逐项 `returns`）+ V12（斜杠串 0）+ 15 卡重生成 | `git checkout -- agents/` 后 `replace --yes` 重生成 |
+| **S-C 卡面形状** | §5 的「三态 5 行」行与 `card-model.test.mjs` 的 `S1-TC-G09` 行、列数行已签收 | D16 三态承载 + D3 斜杠串数组化 + D6/D5 返回声明 + Q5 trigger 四型（`kind` 住 `triggerTable`）+ Q4 长度约束 + D1/D2 删人设 + Q1 `HOST_TERM` | V1/V2/V3 + V9（人设清零）+ V10（`trigger.kind` 四值校验，S-A 只落字段位）+ V11（无逐项 `returns`）+ V12（斜杠串 0）+ 15 卡重生成 | `git checkout -- agents/` 后 `replace --yes` 重生成 |
 
 **冻结基线（改前必存）**：15 卡 SHA256 + `# tests` 计数（`npm run check` 口径 `1405`）+ `check-plan` 的 `cases 80` + **观测项基线：逐席 `## 本席清单` 段字符和（245–522）与判据列字符和（65–136）**。
 
@@ -140,7 +140,7 @@
 
 | 你要做 | 必读 |
 |---|---|
-| S-A | 本 PRD §2 D12·D17、§3 Q8、§4 V4·V5·V10、§5 前三行冲突、§8 S-A 行 + 该 spec 的 `-testcase.md` |
+| S-A | 本 PRD §2 D12·D17、§3 Q8、§4 V4·V5·V10（字段位）、§5 `SCAN_FIELDS` 行 + `S1-TC-G09` 行 + `policy/**` 行、§8 S-A 行 + 该 spec 的 `-testcase.md` |
 | S-B | 本 PRD §2 D11·D14、§3 Q3·Q6、§4 V6·V7·V8、§5 `outputFormats` 行、§8 S-B 行 + testcase |
 | S-C | 本 PRD §2 D1–D6·D16、§3 Q1·Q4·Q5、§4 V1–V3·V9·V11·V12、§5 全表、§8 S-C 行 + testcase |
 
