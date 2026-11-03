@@ -3,7 +3,7 @@
 > 归属 spec：`docs/superpowers/specs/2026-11-03-s-b-contract-layer-design.md`（split from `docs/prd/20261102212627-card-data-contract-and-proof/index.md` 2026-11-03）
 > 编写者：`senior-sdet`（实例标识 `senior-sdet@s-b-contract-layer-testcase-20261103-01`）
 > **独立性声明**：本文件由 `senior-sdet` 在**全新上下文**编写，编写者 ≠ spec 作者（`main-agent@20261103-s-b-spec`），≠ 后续施工者；编写者只读 spec / PRD / 既有实现，未参与 spec 撰写，也未参与本段施工。
-> 状态：**修订轮次 4（按议会第 1 轮 5 席的 5 张必须修卡 + 并入的 RD / BE / AI / AU 卡逐条回填；用例 39 → 40，新增 SB-TC-40）**，待 ② 段按 spec §11.9 差异清单逐条登记｜最后更新：`2026-11-03`
+> 状态：**修订轮次 8**（按议会第 1 轮 5 席 25 卡 + 四道复核 + 侦探 2 项逐条回填；用例 39 → 41，新增 SB-TC-40 / SB-TC-41），待 ② 段门行登记｜最后更新：`2026-11-03`
 > 命名与落点：按 `spec-testcase-gate` 判据 1（与 spec 同目录；文件名 = spec 文件名去掉 `.md` 后 + `-testcase.md`）。
 > **声明**：本轮只跟随 spec 已落的裁定与议会卡（以 spec 现值为唯一口径），未改写 spec / plan / 代码；做不到的按纪律标 `异议`（本轮 0 条）。
 
