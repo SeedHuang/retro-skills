@@ -55,7 +55,7 @@
 | 命令 | 输出首行 / 结论 |
 |---|---|
 | `node tools/docgen/cli.mjs gate` | `baseline 38/38`（exit 0） |
-| `npm run check` | `# tests 1434 / # pass 1432 / # fail 0 / # skipped 2`；`baseline 38/38`；`0 findings`；`④ markdown 检查通过（386 个文件 / 1645 张表）`；`⑥ 观察产物门禁：扫描 2 个子目录 / 归档 1 对 / 过程 0 对 / findings 0`；末行 `check 全部通过`（exit 0） |
+| `npm run check` | `# tests 1434 / # pass 1432 / # fail 0 / # skipped 2`；`baseline 38/38`；`0 findings`；`④ markdown 检查通过（386 个文件 / 1645 张表）`；`⑥ 观察产物门禁：扫描 2 个子目录 / 归档 1 对 / 过程 0 对 / findings 0`；末行 `check 全部通过`（exit 0）<br>**（写入时点快照；⑤ 段复核现值 = `# tests 1439 / # pass 1437`、`④ 387 个文件 / 1646 张表`，差异来自 ④ 段补测 +5 块与 `docs/after` 新增 1 文件 1 表）** |
 | `node scripts/scope-sweep.mjs --check` | `counts {…}`（33 口径与基线逐项相同）+ `sweep ok（命中未超基线、清单齐、scope 齐）`（exit 0） |
 
 15 席 SHA 与本文件 §一 **15/15 逐行相等**（独立审计实例脚本比对，mismatch 0）；`git diff --stat c01ccf3..HEAD -- agents/` = `2 files changed, 2 insertions(+), 2 deletions(-)`（13 席零 diff）。

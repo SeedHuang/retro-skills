@@ -11,6 +11,8 @@
 | S-A-Q-2 | `TC-003③`「第二份 12 键名单探针」缺位：`seatLoader.mjs` / `check-shared-refs.mjs` 若被手写 12 键字面替换，该用例仍绿 | 下次改这两文件的 import 面 / 键集面时 | 在 `sa-data-layer.test.mjs` 加一条源码探针：两文件内 12 键字面序列 0 命中（testcase TC-003 步骤 ③ 原文） | 该测试文件下一任修改者 |
 | S-A-Q-3 | `TC-026` 的「把 `...s` 前置再跑 `TT`」注入面未落：`sa-data-layer` 只断言「薄壳先 import」；判别力实际由 `tool-tiers.test.mjs:705-716` 的 `S5-TC-D10` 承担（审计已实测：`...s` 前置 → `TT` 红，`gate` 仍绿——15 席 JSON 无 `tools` 键） | 下次改 `tool-tiers.test.mjs` 的 `S5-TC-D10` 或改装配顺序时 | 在仓副本里注入前置顺序 + 跑 `--test-name-pattern S5-TC-D10`，把该执行面也落到 `sa-data-layer.test.mjs` | ④ 段后续 / 施工者 |
 | S-A-Q-4 | 偶发红：`S6-TC-D06`（`policy-pure-source.test.mjs:886`）在 `withRepoCopy` 的 `cpSync` 上偶发 `ENOENT …/docs/agents`，复跑即绿；同族先例 `S6-TC-D03` 早前 1 次（两次全量：1 红 → 0 红） | 再次出现（累计 ≥2 次即应修，不必等第三次） | `tools/docgen/test/support/dev-workflow-checks.mjs:241-254` 的 `withRepoCopy` 加「拷贝失败重试一次」或把 `docs/agents` 改成按需拷贝；根因优先查并发拷贝 | 该支撑文件维护者 |
+| S-A-Q-5 | ④ 段记录项（P3）：`quality-4.md:164` / `:179` 的「`quality-4-audit.md` 184 行」是**写入时点快照**，复核轮追加 §7 后现为 240 行；两处数字同源但时点不同 | 下次修订该结论表 / 复核表时；或再有人以「184」为计数依据时 | 在该两处加「（时点快照；现 240 行）」后缀，或把行数改成取数式（`(Get-Content …).Count`） | ④ 段后续修订者（sdet 实例） |
+| S-A-Q-6 | ④ 段记录项（P3）：`.session/reviews/2026-11-03-1626-s-a-quality/` 尚未归档到 `docs/superpowers/reviews/`——直接迁移会被 ⑥ 观察产物门禁判 `ArtifactMissing`（该目录无 `observation-rN` 产物） | 本批收尾归档时；或被要求「按 `docs-convention` 迁 reviews/」时 | 二选一：① 只迁 `-4.md` / `-4-audit.md` 两份正文并在 `docs/superpowers/reviews/<次>/` 补 observation 产物；② 不迁，登记本行为长期保留（`.session/` 不进 git，换机即失） | 本批收尾人（主 agent / 用户裁定） |
 
 ## 已在本批闭合、不在此列的
 

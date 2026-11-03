@@ -63,7 +63,7 @@
 - Produces：`tools/docgen/data/seats/<seat>.json` 的键集 = `name` / `role` / `dimension`? / `outputKind` / `card` / `trigger` / `boundary`? / `explorePolicy`? / `domain`?；`card` 只写 8 键（`duty`/`scenes`/`signals`/`must`/`never`/`categories`/`checkItems`/`rationale`），**不写** `seat`/`name`/`description`/`tools`；`card.duty.trigger` 恒 `""`。
 - Produces：`shared.json` 恰 3 键（`dutyConstraintDefault` / `cardRationaleHead` / `cardRationaleTail`）。
 
-- [ ] **Step 1: 写失败测试（TC-001）**
+- [x] **Step 1: 写失败测试（TC-001）**
 
 新建 `tools/docgen/test/sa-data-layer.test.mjs`：
 
@@ -92,12 +92,12 @@ test('TC-001 数据源按席拆成 data/seats/<seat>.json（一席一文件）+ 
 })
 ```
 
-- [ ] **Step 2: 跑测试确认红**
+- [x] **Step 2: 跑测试确认红**
 
 Run: `node --test tools/docgen/test/sa-data-layer.test.mjs`
 Expected: FAIL —— `ENOENT: no such file or directory, scandir 'tools/docgen/data'`
 
-- [ ] **Step 3: 写一次性导出脚本并生成数据**
+- [x] **Step 3: 写一次性导出脚本并生成数据**
 
 新建 `.session/tmp/export-seat-data.mjs`（**这是临时脚本，Step 6 删除**）：
 
@@ -142,7 +142,7 @@ console.log('wrote 15 seat files + shared.json')
 Run: `node .session/tmp/export-seat-data.mjs`
 Expected: `wrote 15 seat files + shared.json`
 
-- [ ] **Step 4: 人工核对导出结果（三处硬点）**
+- [x] **Step 4: 人工核对导出结果（三处硬点）**
 
 Run:
 ```powershell
@@ -152,7 +152,7 @@ Select-String -Path tools\docgen\data\seats\reviewer-audit.json -Pattern 'dutyCo
 ```
 Expected：`15`；product 命中 `@dutyConstraintDefault` + `${@cardRationaleHead}七${@cardRationaleTail}` + `"trigger": ""`；reviewer-audit 命中 `@dutyConstraintDefault`，但 `rationale` **不含** head（它是手写整句）。
 
-- [ ] **Step 5: 跑测试确认绿**
+- [x] **Step 5: 跑测试确认绿**
 
 Run: `node --test tools/docgen/test/sa-data-layer.test.mjs`
 Expected: PASS（1 pass）
@@ -160,7 +160,7 @@ Expected: PASS（1 pass）
 Run: `node tools/docgen/cli.mjs gate`
 Expected: `baseline 38/38`、exit 0（**本任务没动任何代码，渲染不该变**）
 
-- [ ] **Step 6: 删除临时脚本并提交**
+- [x] **Step 6: 删除临时脚本并提交**
 
 ```powershell
 Remove-Item .session\tmp\export-seat-data.mjs
@@ -187,7 +187,7 @@ git commit -m "feat(docgen): S-A 数据源拆成 shared.json + 15 席 JSON（T1�
   - `cardPipeline.mjs` → `export const CARD_KEYS`
 - Consumes: Task 1
 
-- [ ] **Step 1: 写失败测试（11 条）**
+- [x] **Step 1: 写失败测试（11 条）**
 
 追加到 `tools/docgen/test/sa-data-layer.test.mjs`：
 
@@ -326,14 +326,14 @@ test('TC-019 席文件里写回非空 duty.trigger → 拒载 TriggerFieldMispla
 })
 ```
 
-- [ ] **Step 2: 跑测试确认红**
+- [x] **Step 2: 跑测试确认红**
 
 Run: `node --test tools/docgen/test/sa-data-layer.test.mjs`
 Expected: FAIL 两类红（两条都出现才算「红到位」）：
 ① `SyntaxError: The requested module '../components/cardPipeline.mjs' does not provide an export named 'CARD_KEYS'`（导出还没加，Step 3 第一件事就补）；
 ② `Cannot find module .../components/seatLoader.mjs`。
 
-- [ ] **Step 3: 先给 `CARD_KEYS` 加 `export`，再写 `seatLoader.mjs`**
+- [x] **Step 3: 先给 `CARD_KEYS` 加 `export`，再写 `seatLoader.mjs`**
 
 `tools/docgen/components/cardPipeline.mjs`：`CARD_KEYS` 常量前加 `export `（内容与顺序一字不改）——必须在 Step 4 跑绿**之前**做，否则 loader 与测试都拿不到唯一源：
 
@@ -437,12 +437,12 @@ export function loadSeatData(dir = DATA) {
 }
 ```
 
-- [ ] **Step 4: 跑测试确认绿（第一批）**
+- [x] **Step 4: 跑测试确认绿（第一批）**
 
 Run: `node --test tools/docgen/test/sa-data-layer.test.mjs`
 Expected: PASS（TC-001…004/008/011–016/019/027）
 
-- [ ] **Step 5: 写 `check-shared-refs.mjs`（PRD V5）**
+- [x] **Step 5: 写 `check-shared-refs.mjs`（PRD V5）**
 
 ```js
 // PRD V5 的验收命令：悬空 0 / 无嵌套 / 15 席 12 键全量（exit 1）。不进 npm run check 的门禁段——
@@ -465,7 +465,7 @@ try {
 }
 ```
 
-- [ ] **Step 6: 追加 4 码到 `EXIT[1]`**
+- [x] **Step 6: 追加 4 码到 `EXIT[1]`**
 
 `tools/docgen/components/validateAgentData.mjs` 的 `EXIT[1]` 数组里追加一行（数组在文件开头的 `const EXIT = {…}` 内，紧挨 `'TriggerFieldMisplaced'` 之后；`CARD_KEYS` 的 `export` 已在 Step 3 落，此处不再动 `cardPipeline.mjs`）：
 
@@ -473,7 +473,7 @@ try {
     'DanglingSharedRef', 'EmptySharedValue', 'NestedSharedRef', 'CardKeySetMismatch',
 ```
 
-- [ ] **Step 7: 跑校验器 + 全量门禁**
+- [x] **Step 7: 跑校验器 + 全量门禁**
 
 Run: `node tools/docgen/check-shared-refs.mjs`
 Expected: `check-shared-refs: seats 15 / dangling 0 / nested 0 / keySet8 15 / keySet12 15 => ok`、exit 0
@@ -484,7 +484,7 @@ Expected: `baseline 38/38`、exit 0（`agentData` 仍是旧字面；席文件 8 
 Run: `npm run check`
 Expected: `# tests ≥ 1405`、`# fail 0`、末行 `check 全部通过`
 
-- [ ] **Step 8: 提交**
+- [x] **Step 8: 提交**
 
 ```powershell
 git add tools/docgen/components/seatLoader.mjs tools/docgen/check-shared-refs.mjs tools/docgen/components/validateAgentData.mjs tools/docgen/components/cardPipeline.mjs tools/docgen/test/sa-data-layer.test.mjs
@@ -507,7 +507,7 @@ git commit -m "feat(docgen): S-A 加载器 + 引用校验器 + 4 个错误码（
 - Consumes: Task 1, Task 2
 - Produces：`agentData.mjs` 导出面 = `agentData`（15 席、每席 `tools`/`boundary`/`card`）/ `triggerTable` / `AGENT_KINDS`，与旧入口**逐字等价**
 
-- [ ] **Step 1: 写失败测试（TC-030 + TC-005/007/017/018/026/029）**
+- [x] **Step 1: 写失败测试（TC-030 + TC-005/007/017/018/026/029）**
 
 追加：
 
@@ -585,12 +585,12 @@ test('TC-029 notWhen 拼接在位（senior-sdet description 含「不用于：�
 })
 ```
 
-- [ ] **Step 2: 跑测试确认红**
+- [x] **Step 2: 跑测试确认红**
 
 Run: `node --test tools/docgen/test/sa-data-layer.test.mjs`
 Expected: FAIL —— 红来自四处，且**必须四处同时红**：① TC-026（薄壳 `import` 断言：`agentData.mjs` 仍是字面）；② TC-017（在副本里改 `seats/*.json` 后 `gate` 仍 exit 0——旧入口不读 JSON，注入不生效）；③ TC-018（同上形态）；④ TC-030 的负例（副本注入悬空引用后 `import agentData.mjs` 仍 `status 0`）。已绿的是 TC-005（干净态 `gate` exit 0）与 TC-007（Task 2 的 `seatLoader.mjs` 里装配式已成立）。若 TC-007 此时为红，说明 Task 2 的装配式写错了，回去改 Task 2，不要改断言。
 
-- [ ] **Step 3: 把 `agentData.mjs` 换成薄壳**
+- [x] **Step 3: 把 `agentData.mjs` 换成薄壳**
 
 整文件替换（**必须是「先 import 再 export」**，不得 `export { … } from`）：
 
@@ -605,7 +605,7 @@ export const AGENT_KINDS = { rule: 'rule', agent: 'agent' }
 export { agentData, triggerTable }
 ```
 
-- [ ] **Step 4: 同批改写 6 处伴随断言 + 删 1 处死 helper（否则门禁必红）**
+- [x] **Step 4: 同批改写 6 处伴随断言 + 删 1 处死 helper（否则门禁必红）**
 
 按 spec §10.2.9 表逐处改（**语义不变，只换读取目标**）：
 
@@ -636,7 +636,7 @@ patchFile(dst, 'tools/docgen/data/seats/reviewer-audit.json', '"constraint": "�
 
 `tools/docgen/acceptance/replace-scenarios.mjs`：把 `:14` 的 `DATA` 常量由 `'tools/docgen/components/agentData.mjs'` 改为 `'tools/docgen/data/seats/senior-sdet.json'`。**四处 `patch()` 调用一律保留**（`WHEN_OLD` 现在住该席 JSON 的 `trigger.when`，命中数仍须恰 1）。已知债（不在本任务修）：`:196` / `:219` 注入的 `改动 = 改组件数据 → …` 句在数据里 0 命中，属 acceptance 既有 `9/11 红` 那笔账，登记触发 = 下次修该验收脚本。
 
-- [ ] **Step 5: 逐层验绿（这一步最容易撞车，按序跑）**
+- [x] **Step 5: 逐层验绿（这一步最容易撞车，按序跑）**
 
 Run: `node --test tools/docgen/test/tool-tiers.test.mjs` → 期望 PASS
 Run: `node --test tools/docgen/test/dev-workflow-counts.test.mjs` → 期望 PASS
@@ -647,12 +647,12 @@ Run: `node tools/docgen/cli.mjs diff --kind agent --name reviewer-product` → �
 
 若 `gate` 报 `Mismatch`：先用 `diff` 定位是哪个字段变了，**不要**用「重生成」掩盖（重生成会把 bug 固化进卡面）。
 
-- [ ] **Step 6: 全量门禁**
+- [x] **Step 6: 全量门禁**
 
 Run: `npm run check`
 Expected: `# tests ≥ 1405`、`# fail 0`、`check 全部通过`
 
-- [ ] **Step 7: 提交**
+- [x] **Step 7: 提交**
 
 ```powershell
 git add tools/docgen/components/agentData.mjs tools/docgen/test/tool-tiers.test.mjs tools/docgen/test/dev-workflow-counts.test.mjs tools/docgen/test/sdet-data.test.mjs tools/docgen/acceptance/replace-scenarios.mjs tools/docgen/test/sa-data-layer.test.mjs
@@ -673,7 +673,7 @@ git commit -m "refactor(docgen): agentData 降为薄壳，6 处伴随断言改�
 - Consumes: Task 1, Task 2, Task 3
 - Produces：`surfaceTexts(card, ['duty.trigger', …, 'description'])` 时产出 `{ path: 'description', text: card.description }`；`SCAN_FIELDS` 键数仍 8
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```js
 import { SCAN_FIELDS } from '../card-model/enums.mjs'
@@ -733,12 +733,12 @@ test('TC-020/021 description 上的违规词必须报码（指针词 / 硬编码
 })
 ```
 
-- [ ] **Step 2: 跑测试确认红**
+- [x] **Step 2: 跑测试确认红**
 
 Run: `node --test tools/docgen/test/sa-data-layer.test.mjs`
 Expected: FAIL —— `TC-009` 的 `PointerToElsewhere…description` 断言红；`TC-020/021` 的 `e1` 为空数组
 
-- [ ] **Step 3: 两处同批改（缺一即静默空转）**
+- [x] **Step 3: 两处同批改（缺一即静默空转）**
 
 `tools/docgen/card-model/enums.mjs` 的 `CARD_TEXT_FIELDS`（`SCAN_FIELDS` 上面那段 `Object.freeze([...])`）：
 
@@ -760,7 +760,7 @@ const CARD_TEXT_FIELDS = Object.freeze([
     else if (ref === 'description') push('description', card.description);
 ```
 
-- [ ] **Step 4: 同批改写两条冻结断言**
+- [x] **Step 4: 同批改写两条冻结断言**
 
 `tools/docgen/test/card-model.test.mjs` 的 `S1-TC-G09` 里，两条 `green(description …)` 改为 `only(…)`（行号见 spec §10.1 R5；**同批改，否则落 R4 即红**）：
 
@@ -773,14 +773,14 @@ const CARD_TEXT_FIELDS = Object.freeze([
 
 `:1141` 的 `assert.equal(Object.keys(SF).length, 8, …)` **保持不动**。
 
-- [ ] **Step 5: 验绿（注意 `gate` 会变，因为 description 变了）**
+- [x] **Step 5: 验绿（注意 `gate` 会变，因为 description 变了）**
 
 Run: `node --test tools/docgen/test/card-model.test.mjs` → 期望 PASS
 Run: `node --test tools/docgen/test/sa-data-layer.test.mjs` → 期望 PASS
 Run: `node tools/docgen/cli.mjs gate`
 Expected: **exit 0**（description 的**文本**没变，只是扫描面变了，卡面字节不变）
 
-- [ ] **Step 6: 全量 + 提交**
+- [x] **Step 6: 全量 + 提交**
 
 Run: `npm run check` → 期望 `# fail 0`、`check 全部通过`
 
@@ -805,7 +805,7 @@ git commit -m "feat(card-model): description 纳入文本扫描面（D17 / R4，
 - Consumes: Task 1, Task 3
 - Produces：`pathGroups.workspace` 6 项；`DETECTION_BLIND_SPOTS` 仍 3 项（含 `lessons/`）
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```js
 test('TC-024 policy 删 3 项但不重生成 2 卡 → gate exit 1 `Mismatch`', async () => {
@@ -847,12 +847,12 @@ test('TC-028 基线两处：evidence.renderSha256 == 盘上哈希（15/15）', a
 })
 ```
 
-- [ ] **Step 2: 跑测试确认红**
+- [x] **Step 2: 跑测试确认红**
 
 Run: `node --test tools/docgen/test/sa-data-layer.test.mjs`
 Expected: FAIL —— 禁写项仍是 `23`；`skills-lock.json` 仍在
 
-- [ ] **Step 3: 删 3 项 + 改测试口径**
+- [x] **Step 3: 删 3 项 + 改测试口径**
 
 `paths.mjs` 的 `workspace` 数组改为（**只删 3 项，`DETECTION_BLIND_SPOTS` 一字不动**）：
 
@@ -890,7 +890,7 @@ import { execFileSync } from 'node:child_process';
 const CARD = execFileSync('git', ['show', '641a7e7:agents/reviewer-audit.md'], { encoding: 'utf8' });
 ```
 
-- [ ] **Step 4: 重生成 2 卡并同步两处基线**
+- [x] **Step 4: 重生成 2 卡并同步两处基线**
 
 `generate` **只比不写**（`cmdGenerate` 对 `agents/*.md` 只做比对；`--apply` 只授权 `docs/agents` 人读投影，且必须带 `--readme`）——写 `agents/*.md` 的唯一路径是 `draft` → `replace`：
 
@@ -917,7 +917,7 @@ node tools/docgen/cli.mjs baseline --write
 node -e "const {createHash}=require('node:crypto');const {readFileSync,writeFileSync}=require('node:fs');for(const n of ['reviewer-audit','detective-observer']){const b=readFileSync('agents/'+n+'.md');const h=createHash('sha256').update(b).digest('hex').toUpperCase();const p='tools/docgen/fixtures/'+n+'.evidence.json';const e=JSON.parse(readFileSync(p,'utf8'));e.renderSha256=h;e.lastWrittenHash=h;writeFileSync(p,JSON.stringify(e,null,2)+'\n');console.log(n,h)}"
 ```
 
-- [ ] **Step 5: 验绿**
+- [x] **Step 5: 验绿**
 
 Run: `node tools/docgen/cli.mjs gate` → 期望 `baseline 38/38`、exit 0
 Run: `node --test tools/docgen/test/policy-pure-source.test.mjs` → 期望 PASS
@@ -925,7 +925,7 @@ Run: `node --test tools/docgen/test/support/capability-baseline.test.mjs` → �
 Run: `node --test tools/docgen/test/sa-data-layer.test.mjs` → 期望 PASS
 Run: `npm run check` → 期望 `# fail 0`、`check 全部通过`
 
-- [ ] **Step 6: 提交**
+- [x] **Step 6: 提交**
 
 ```powershell
 git add tools/docgen/policy/definitions/paths.mjs tools/docgen/test/policy-pure-source.test.mjs tools/docgen/test/support/capability-baseline.test.mjs agents/reviewer-audit.md agents/detective-observer.md tools/docgen/baseline.json tools/docgen/fixtures/reviewer-audit.evidence.json tools/docgen/fixtures/detective-observer.evidence.json tools/docgen/test/sa-data-layer.test.mjs
@@ -945,7 +945,7 @@ git commit -m "feat(docgen): Q8 删 3 项本仓专属路径 + 2 卡重生成 + �
 - Consumes: Task 1, Task 2, Task 3, Task 4, Task 5
 - Produces：`skills/dev-workflow/references/gate-record.md` 的 ②→③ 与 ③→④ 两行；`docs/superpowers/reviews/<本次>/impact-sheet.md`（15 卡冻结基线 + 改动清单）
 
-- [ ] **Step 1: 跑三条验收命令并留输出首行**
+- [x] **Step 1: 跑三条验收命令并留输出首行**
 
 ```powershell
 node tools/docgen/cli.mjs gate                      # V4：期望 baseline 38/38、exit 0
@@ -954,7 +954,7 @@ node -e "import('./tools/docgen/components/agentData.mjs').then(({triggerTable})
 npm run check                                       # TC-010：期望 # tests ≥ 1405 / # fail 0 / check 全部通过
 ```
 
-- [ ] **Step 2: 记冻结基线并写 impact-sheet**
+- [x] **Step 2: 记冻结基线并写 impact-sheet**
 
 ```powershell
 Get-ChildItem agents\*.md | ForEach-Object { "$($_.Name) " + (Get-FileHash $_.FullName -Algorithm SHA256).Hash }
@@ -962,7 +962,7 @@ Get-ChildItem agents\*.md | ForEach-Object { "$($_.Name) " + (Get-FileHash $_.Fu
 
 把 15 行 SHA 抄进 `docs/superpowers/reviews/<本次>/impact-sheet.md`，并写明「13 席逐字节不变、2 席只有边界段变（Q8）」。
 
-- [ ] **Step 3: 回退演练（只手动验证项）**
+- [x] **Step 3: 回退演练（只手动验证项）**
 
 ```powershell
 git stash -u
@@ -972,7 +972,7 @@ git stash pop
 
 或（不 stash 时）：`git checkout -- tools/docgen/` 后 `git status --porcelain tools/docgen` 必须为空（`git checkout` 不删新建文件，残留 = 回退未完成）。
 
-- [ ] **Step 4: 补 `gate-record.md` 出口行**
+- [x] **Step 4: 补 `gate-record.md` 出口行**
 
 在 `skills/dev-workflow/references/gate-record.md` 的段表里补两行（列数与表头一致，6 列全填）：
 
@@ -984,7 +984,7 @@ git stash pop
 Run: `node scripts/check-gate-record.mjs`
 Expected: `rows N bad 0`、末行 `gate-record ok`
 
-- [ ] **Step 5: 最终门禁 + 提交**
+- [x] **Step 5: 最终门禁 + 提交**
 
 Run: `npm run check` → 期望 `check 全部通过`
 Run: `node scripts/scope-sweep.mjs --check` → exit 0（本批动了「判据级口径」：错误码表 + 扫描面，需过改判回扫）
@@ -1088,6 +1088,6 @@ git commit -m "chore(dev-workflow): S-A 出口行与冻结基线（T6）"
 
 ## 自检（写完过一遍）
 
-- **spec 覆盖**：R1→T1/T2；R2→T2；R3→T2/T3；R4→T4；R5→T4；R6→T5；R7→T3（装配点迁移、`...s` 置末）；R8→T2（字段位）；R9→T3/T6。§10.4-1→TC-003/014/015；§10.4-2→T3；§10.4-3→TC-004/019；§10.4-4→T4；§10.4-5→T6。§10.2.7 两处基线→T5。§10.2.9 的 **12 处 / 7 文件**分账：T1 = 改 1 处（`policy-pure-source` 的 `S6-TC-E03` 期望文件集补 2 个席 JSON，T1 施工期实测新增）；T3 = 改 6 处（`tool-tiers` 3、`dev-workflow-counts` 2、`sdet-data` 1）+ 改 1 处 `patch()` 注入目标（`replace-scenarios`，**不删 helper**）+ 靠形态满足 1 处（`card-render` 的 `INJECT_BAD`，不改文件）+ 1 处与 `dev-workflow-counts:146-155` 同处置；T5 = 改 3 处（`policy-pure-source`、`capability-baseline`、`s3-predicates` 的 `S3-TC-H06` 回退集）。1+6+1+1+1+3 = **13**（§10.2.9 表头已同步为 13 处 / 8 文件）。无缺口。
+- **spec 覆盖**：R1→T1/T2；R2→T2；R3→T2/T3；R4→T4；R5→T4；R6→T5；R7→T3（装配点迁移、`...s` 置末）；R8→T2（字段位）；R9→T3/T6。§10.4-1→TC-003/014/015；§10.4-2→T3；§10.4-3→TC-004/019；§10.4-4→T4；§10.4-5→T6。§10.2.7 两处基线→T5。§10.2.9 的 **12 处 / 7 文件**分账：T1 = 改 1 处（`policy-pure-source` 的 `S6-TC-E03` 期望文件集补 2 个席 JSON，T1 施工期实测新增）；T3 = 改 6 处（`tool-tiers` 3、`dev-workflow-counts` 2、`sdet-data` 1）+ 改 1 处 `patch()` 注入目标（`replace-scenarios`，**不删 helper**）+ 靠形态满足 1 处（`card-render` 的 `INJECT_BAD`，不改文件）+ 1 处与 `dev-workflow-counts:146-155` 同处置；T5 = 改 3 处（`policy-pure-source`、`capability-baseline`、`s3-predicates` 的 `S3-TC-H06` 回退集）。1+6+1+1+1+3 = **13**（T5 时点口径；**T6 补登 `lessons.test.mjs` 后终态 = 14 处 / 9 个文件**，以 spec §10.2.9 表头为唯一源）。无缺口。
 - **占位符扫描**：无 TBD / 「类似 Task N」/ 「加上适当的错误处理」；每个代码步骤都给了可粘贴代码。
 - **类型一致**：`expandRefs(value, shared, seat)` 在 T2 定义、T2/T5 测试调用一致；`loadSeatData()` 返回 `{ agentData, triggerTable }` 在 T2 定义、T3 薄壳消费一致；`CARD_KEYS` 由 T2 导出、T2/T6 消费一致。
