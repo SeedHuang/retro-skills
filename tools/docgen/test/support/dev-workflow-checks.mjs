@@ -256,9 +256,19 @@ export function withRepoCopy(fn) {
     // 多条用例复用，改成逐文件容错或改写清单会同时动到那些用例的比对面。
     try {
       copyAll();
-    } catch {
+    } catch (err) {
+      // 只对「竞争类」ENOENT 重试；权限 / 磁盘满 / 语法类错误重试一次也会死，直接抛才能留住真因
+      if (err && err.code !== 'ENOENT') throw err;
+      // 重试成功也要留痕：否则共享复制根长期带病重试，没人看得出这条分支被触发过
+      process.emitWarning(`withRepoCopy: cpSync 竞争失败（${err.code}: ${err.message}），清空副本后重试一次`);
       rmSync(dst, { recursive: true, force: true });
-      copyAll();
+      try {
+        copyAll();
+      } catch (err2) {
+        // 二次失败时把首错的现场挂到 cause，别让「第一次到底撞了什么」丢在静默 catch 里
+        err2.cause = err;
+        throw err2;
+      }
     }
     return fn(dst);
   } finally {
