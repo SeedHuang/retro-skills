@@ -4,11 +4,13 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join, dirname } from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { expandRefs, loadSeatData } from '../components/seatLoader.mjs'
 import { CARD_KEYS, buildCards } from '../components/cardPipeline.mjs'
-import { runCli, withRepoCopy } from './support/dev-workflow-checks.mjs'
+import { SCAN_FIELDS } from '../card-model/enums.mjs'
+import { validateCardModel } from '../card-model/index.mjs'
+import { ROOT, runCli, withRepoCopy } from './support/dev-workflow-checks.mjs'
 
 const DATA = 'tools/docgen/data'
 const SEATS = `${DATA}/seats`
@@ -255,6 +257,75 @@ test('TC-007 装配点唯一：`tools: toolsForSeat(s.name)` 恰 1 处，`...s` 
 test('TC-026 薄壳必须先 import seatLoader（本地绑定，card-render 的 INJECT_BAD 依赖）', () => {
   const shell = readFileSync('tools/docgen/components/agentData.mjs', 'utf8')
   assert.ok(/^import .*seatLoader\.mjs/m.test(shell), '薄壳必须先 import（不得用纯再导出）')
+})
+
+// T4：在仓副本里只跑 `S1-TC-G09`（`card-model.test.mjs` 在模块顶层读 S1 spec，故副本须补该文件）。
+// `NODE_TEST_CONTEXT` 必须清掉：父进程是 `node --test` 时子进程若继承它，会以测试子进程身份退出 0。
+const ESC_G09 = (dst) => {
+  const rel = join('docs', 'superpowers', 'specs', '2026-10-29-agent-card-s1-card-model-design.md')
+  mkdirSync(dirname(join(dst, rel)), { recursive: true })
+  cpSync(join(ROOT, rel), join(dst, rel))
+  return spawnSync(process.execPath,
+    ['--test', '--test-name-pattern', 'S1-TC-G09', 'tools/docgen/test/card-model.test.mjs'],
+    { cwd: dst, encoding: 'utf8', env: { ...process.env, NODE_TEST_CONTEXT: undefined } })
+}
+
+test('TC-022 新增第 9 个 `SCAN_FIELDS` 键 → `ESC` exit 非 0', () => {
+  withRepoCopy((dst) => {
+    const p = join(dst, 'tools', 'docgen', 'card-model', 'enums.mjs')
+    const s = readFileSync(p, 'utf8')
+    const anchor = 'export const SCAN_FIELDS = Object.freeze({'
+    assert.equal(s.split(anchor).length - 1, 1, '注入锚必须恰 1 处')
+    writeFileSync(p, s.split(anchor).join(`${anchor}\n  Description: Object.freeze(['description']),`))
+    const r = ESC_G09(dst)
+    assert.notEqual(r.status, 0, '第 9 键必须让 8 键断言红')
+    assert.match(r.stdout + r.stderr, /SCAN_FIELDS/, '红必须落在 8 键断言上（不得因副本缺文件而红）')
+  })
+})
+
+test('TC-023 三条冻结断言未同批改写（还原成旧口径）→ `ESC` exit 非 0', () => {
+  withRepoCopy((dst) => {
+    const p = join(dst, 'tools', 'docgen', 'test', 'card-model.test.mjs')
+    const s = readFileSync(p, 'utf8')
+    const NEW = "  only(run((c) => { c.description = '每轮答辩结束后开始观察（共 3 条）'; }), 'HardcodedCount', 'description');"
+    const OLD = "  green(run((c) => { c.description = '每轮答辩结束后开始观察（共 3 条）'; }));"
+    assert.equal(s.split(NEW).length - 1, 1, '还原锚必须恰 1 处（T4 Step 4 已把它改成 only）')
+    writeFileSync(p, s.split(NEW).join(OLD))
+    const r = ESC_G09(dst)
+    assert.notEqual(r.status, 0, '还原成「不扫」的旧断言后，实现已扫 description → 必红')
+    assert.match(r.stdout + r.stderr, /HardcodedCount/, '红必须由该冻结断言本身产生（旧口径应绿、实得 HardcodedCount）')
+  })
+})
+
+test('TC-009 `SCAN_FIELDS` 仍 8 键，且 4 个文本码的扫描面含 description', () => {
+  assert.equal(Object.keys(SCAN_FIELDS).length, 8)
+  const flat = (v) => JSON.stringify(v)
+  const WITH = ['PointerToElsewhere', 'HardcodedCount', 'MixedTermInCard', 'ProceduralWordOutsideParliament']
+  for (const k of WITH) {
+    assert.ok(flat(SCAN_FIELDS[k]).includes('description'), `${k} 的扫描面必须含 description`)
+  }
+  const WITHOUT = ['SubjectiveLabel', 'InlineTermList', 'InlineThreshold', 'AmbiguousCriterion']
+  for (const k of WITHOUT) {
+    assert.equal(flat(SCAN_FIELDS[k]).includes('description'), false, `${k} 不得含 description`)
+  }
+})
+
+test('TC-020/021 description 上的违规词必须报码，且 path 落在 description（指针词 / 硬编码数量 / 程序词）', async () => {
+  const { agentData } = await import('../components/agentData.mjs')
+  const { buildEnv } = await import('../components/cardPipeline.mjs')
+  const card = structuredClone(agentData.find((a) => a.name === 'senior-sdet').card)
+  const env = buildEnv('senior-sdet', [card])
+  // 半改态（只改 `CARD_TEXT_FIELDS` 不补 `surfaceTexts`）下这里恒为空：顺序 π push 之后再无 description 分支
+  const onDescription = () => validateCardModel(card, env).errors.filter((x) => /description/i.test(x.path))
+  card.description = '当需要为 PRD/spec 设计并编写测试用例；不用于：详见 §3 的口径'
+  const e1 = onDescription()
+  assert.ok(e1.some((x) => x.code === 'PointerToElsewhere'), `应报 PointerToElsewhere，实得 ${JSON.stringify(e1)}`)
+  card.description = '当需要为 PRD/spec 设计并编写测试用例；不用于：共 3 条'
+  const e2 = onDescription()
+  assert.ok(e2.some((x) => x.code === 'HardcodedCount'), `应报 HardcodedCount，实得 ${JSON.stringify(e2)}`)
+  card.description = '当需要为 PRD/spec 设计并编写测试用例；不用于：收卡'
+  const e3 = onDescription()
+  assert.ok(e3.some((x) => x.code === 'ProceduralWordOutsideParliament'), `应报 ProceduralWordOutsideParliament，实得 ${JSON.stringify(e3)}`)
 })
 
 test('TC-029 notWhen 拼接丢失（`descriptionOf` 丢 notWhen）→ gate exit 1，点名 senior-sdet', () => {

@@ -1119,16 +1119,18 @@ test('S1-TC-G08 MixedTermInCard / ProceduralWordOutsideParliament：议会席豁
   green(run((c) => { c.duty.action = '收卡'; }, { parliamentSeats: new Set([SEAT]) }));
 });
 
-test('S1-TC-G09 SCAN_FIELDS 扫描面边界：rationale / description / scenes[].why 三处「不扫」与卡文本面「必扫」', () => {
-  // ①②③⑦：三处「不在扫描面」的字段 —— 写了违规词也不得报码
+test('S1-TC-G09 SCAN_FIELDS 扫描面边界：rationale / scenes[].why 两处「不扫」、description 与卡文本面「必扫」', () => {
+  // ①③：两处「不在扫描面」的字段 —— 写了违规词也不得报码
   green(run((c) => { c.rationale = '详见 §3 的口径（散文只进此处）'; })); // ① rationale 不扫指针词
-  green(run((c) => { c.description = '每轮答辩结束后开始观察（共 3 条）'; })); // ② description 不扫数量词
+  // ② description 现在「扫」数量词（D17 落地后口径反转）
+  only(run((c) => { c.description = '每轮答辩结束后开始观察（共 3 条）'; }), 'HardcodedCount', 'description');
   green(run((c) => { // ③ scenes[].why 不扫数量词
     c.scenes = [{ id: 'local.why', label: '局部场景', why: '全部命中时记录' }];
     c.must[0].trigger.scene = 'local.why';
     c.never[0].trigger.scene = 'local.why';
   }));
-  green(run((c) => { c.description = '主持人调度，议长口径'; })); // ⑦ description 不扫混称词
+  // ⑦ description 现在「扫」混称词
+  only(run((c) => { c.description = '主持人调度，议长口径'; }), 'MixedTermInCard');
   // ④⑤：卡文本面内同一违规词必须报
   only(run((c) => { c.duty.constraint = '共 3 条以内'; }), 'HardcodedCount', 'duty.constraint');
   only(run((c) => { c.checkItems[0].label = `${SUB.SUBJECTS[pickSubject(0)].display}见 §3`; }), 'PointerToElsewhere', 'checkItems[0].label');

@@ -108,6 +108,7 @@ function surfaceTexts(card, refs) {
     else if (ref === 'duty.categories[]') each(card.duty && card.duty.categories, (t, i) => push(`duty.categories[${i}]`, t));
     else if (ref === 'duty.action') push('duty.action', card.duty && card.duty.action);
     else if (ref === 'duty.constraint') push('duty.constraint', card.duty && card.duty.constraint);
+    else if (ref === 'description') push('description', card.description);
     else if (ref === 'Action.objects[]') {
       for (const [list, arr] of [['must', card.must], ['never', card.never]]) {
         each(arr, (a, i) => each(a && a.objects, (o, j) => push(`${list}[${i}].objects[${j}]`, o)));

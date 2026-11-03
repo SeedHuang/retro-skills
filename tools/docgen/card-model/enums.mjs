@@ -88,6 +88,7 @@ const CARD_TEXT_FIELDS = Object.freeze([
   'duty.categories[]',
   'duty.action',
   'duty.constraint',
+  'description',      // D17：description 纳入文本扫描面（唯一源 = triggerTable.when + notWhen）
   'Action.objects[]',
   'CheckItem.label',
 ]);
