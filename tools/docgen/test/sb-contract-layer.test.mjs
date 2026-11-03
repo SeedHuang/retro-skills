@@ -1427,3 +1427,85 @@ test('SB-TC-38 plan 引用的用例 ID 在 testcase 里找不到用例体 → `m
     rmSync(dir, { recursive: true, force: true })
   }
 })
+
+// ── ④ 段补测（2026-11-04 质量评估席，`quality-4.md` §2 的「补测新增」）──────────────
+// 只补「明写判据但落点无对应断言」的窄口，不碰任何已签断言：
+// ① SB-TC-27 的 `code = TemplateImpure`（原落点只断 fragment 前缀 `ALLOWED_LITERALS:`）；
+// ② SB-TC-40 ③ 的「空组态仍列命令 → 判据能红」（原落点只断正向「不许列命令」）。
+
+test('SB-TC-27（补测）白名单登记清单类成员时抛出的 code 必须是 TemplateImpure（不只断 fragment 前缀）', () => {
+  withRepoCopy((copy) => {
+    patchRenderBoundary(copy, (src) => {
+      const start = src.indexOf('export const TEMPLATE_ALLOWED_LITERALS = new Set([')
+      const end = src.indexOf(']);', start)
+      assert.ok(start >= 0 && end > start, '构造失败：白名单定义未找到')
+      const body = src.slice(start, end)
+      const patched = body.replace("  '越权清单',", "  '越权清单',\n  'agents/',")
+      assert.notEqual(patched, body, '构造失败：白名单插入点未命中')
+      return src.slice(0, start) + patched + src.slice(end)
+    })
+
+    const bad = runProbeIn(copy, PURE_PROBE)
+    assert.notEqual(bad.status, 0, `白名单含清单类成员必须抛错：${bad.stdout}${bad.stderr}`)
+    // 探针把 code 与 fragment 都打出来（`PROBE <code> <fragment>`）→ 两者须在同一条断言里判死
+    assert.match(`${bad.stdout}${bad.stderr}`, /PROBE TemplateImpure ALLOWED_LITERALS:/,
+      `错误对象必须 code=TemplateImpure 且 fragment 以 ALLOWED_LITERALS: 开头：${bad.stdout}${bad.stderr}`)
+
+    console.log(`whitelist-code: ${(bad.stderr.split(/\r?\n/)[0] ?? '').trim()} => ok`)
+  })
+})
+
+test('SB-TC-40（补测）空组态仍列命令 → 该判据能红（金态 0 命中 / 残缺实现 ≥1 命中 / 复原 0）', () => {
+  const CMD_WORDS = /npm run|node /
+  // 空组分支的原句与残缺句各一份常量：复原后要能逐字验回原句（不能只靠「组非空 → 分支不再进入」蒙过）
+  const EMPTY_BRANCH = "if (!Array.isArray(groups) || groups.length === 0) return `${code('commandGroups')}（无白名单组 = 无白名单命令）`;"
+  const BROKEN_BRANCH = "if (!Array.isArray(groups) || groups.length === 0) return `${code('commandGroups')}（无白名单组） npm run check`;"
+  withRepoCopy((copy) => {
+    // ① 金态：本席 allowGroups 非空、命令白名单句只写组 ID，不含任何具体命令
+    const clean = runProbeIn(copy, COMMAND_LINE_PROBE('reviewer-audit'))
+    assert.equal(clean.status, 0, `金态探针必须能跑通：${clean.stdout}${clean.stderr}`)
+    assert.equal(CMD_WORDS.test(clean.stdout), false, `金态不得出现具体命令字样：${clean.stdout}`)
+
+    // ② 残缺实现：该席 allowGroups 改 []（= 空组态）+ allowGroups() 空组分支仍吐命令
+    const seatPolicy = join(copy, 'tools', 'docgen', 'policy', 'seat-policy.mjs')
+    const spSrc = readFileSync(seatPolicy, 'utf8')
+    const line = spSrc.split('\n').find((l) => l.trim().startsWith("'reviewer-audit'"))
+    assert.ok(line, "构造失败：seat-policy.mjs 里找不到 reviewer-audit 行")
+    const spPatched = spSrc.replace(line, line.replace(/allowGroups: \[[^\]]*\]/, 'allowGroups: []'))
+    assert.notEqual(spPatched, spSrc, '构造失败：reviewer-audit 的 allowGroups 未改成 []')
+    writeFileSync(seatPolicy, spPatched, 'utf8')
+
+    // renderBoundary 的先像要留着，复原时逐字回写（否则「复原 0」只验了「组非空 → 分支不进入」）
+    const rbPath = join(copy, 'tools', 'docgen', 'components', 'renderBoundary.mjs')
+    const rbSrc = readFileSync(rbPath, 'utf8')
+    patchRenderBoundary(copy, (src) => {
+      const hits = src.split(EMPTY_BRANCH).length - 1
+      assert.equal(hits, 1, `构造失败：allowGroups() 的空组分支必须恰 1 处（实得 ${hits}）`)
+      return src.replace(EMPTY_BRANCH, BROKEN_BRANCH)
+    })
+
+    const broke = runProbeIn(copy, COMMAND_LINE_PROBE('reviewer-audit'))
+    assert.equal(broke.status, 0, `残缺实现下探针仍须能跑通：${broke.stdout}${broke.stderr}`)
+    assert.equal(CMD_WORDS.test(broke.stdout), true,
+      `空组态仍列命令时必须能被判据抓到（否则「空组不得列命令」没有判别力）：${broke.stdout}`)
+
+    // ③ 复原两处（renderBoundary 回原始字节 + seat-policy 回原值）后必须回 0 命中
+    writeFileSync(rbPath, rbSrc, 'utf8')
+    writeFileSync(seatPolicy, spSrc, 'utf8')
+    const restored = runProbeIn(copy, COMMAND_LINE_PROBE('reviewer-audit'))
+    assert.equal(restored.status, 0, restored.stdout + restored.stderr)
+    assert.equal(CMD_WORDS.test(restored.stdout), false, `复原后不得出现命令字样：${restored.stdout}`)
+
+    // ④ 构造可逆：复原后的空组分支确实回到原句——再把该席改成空组，深一次走该分支，必须是「无白名单命令」且不吐命令
+    const rbBack = readFileSync(rbPath, 'utf8')
+    assert.equal(rbBack.includes(EMPTY_BRANCH), true, '复原后 renderBoundary 必须逐字含原空组分支')
+    assert.equal(rbBack.includes(BROKEN_BRANCH), false, '复原后不得残留残缺分支')
+    writeFileSync(seatPolicy, spPatched, 'utf8')
+    const emptyAgain = runProbeIn(copy, COMMAND_LINE_PROBE('reviewer-audit'))
+    assert.equal(emptyAgain.status, 0, emptyAgain.stdout + emptyAgain.stderr)
+    assert.match(emptyAgain.stdout, /无白名单命令/, `复原后空组态必须写「无白名单命令」：${emptyAgain.stdout}`)
+    assert.equal(CMD_WORDS.test(emptyAgain.stdout), false, `复原后空组态不得吐命令：${emptyAgain.stdout}`)
+
+    console.log(`empty-groups-red: clean 0 / broken 1 / restored 0 / empty-again 0 => ok`)
+  })
+})
