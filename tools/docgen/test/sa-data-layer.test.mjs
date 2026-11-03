@@ -10,7 +10,7 @@ import { createHash } from 'node:crypto'
 import { expandRefs, loadSeatData } from '../components/seatLoader.mjs'
 import { CARD_KEYS, buildCards } from '../components/cardPipeline.mjs'
 import { SCAN_FIELDS } from '../card-model/enums.mjs'
-import { ROOT, runCli, runEsm, withRepoCopy } from './support/dev-workflow-checks.mjs'
+import { ROOT, runCli, runEsm, withRepoCopy, Q8_REMOVED_PATHS } from './support/dev-workflow-checks.mjs'
 
 const DATA = 'tools/docgen/data'
 const SEATS = `${DATA}/seats`
@@ -371,8 +371,8 @@ test('TC-029 notWhen 拼接丢失（`descriptionOf` 丢 notWhen）→ gate exit 
 })
 
 // ── T5（Q8）：删 3 项本仓专属路径 → 2 卡重生成 → 两处基线同批 ─────────────────────
-// 三项的唯一来源是 PRD §3 Q8 的裁定（spec §10.1 R6），此处只做判据侧引用。
-const Q8_REMOVED = ['lessons/', 'skills-lock.json', 'tools/docgen-spike/.tmp-test/']
+// 三项的唯一字面在 `support/dev-workflow-checks.mjs` 的 `Q8_REMOVED_PATHS`（本文件与 `policy-pure-source` 共用）。
+const Q8_REMOVED = Q8_REMOVED_PATHS
 const cardText = (seat) => readFileSync(join('agents', `${seat}.md`), 'utf8')
 
 test('TC-024 policy 删一项却不重生成 2 卡 → gate exit 1 `Mismatch`', () => {
@@ -405,7 +405,7 @@ test('TC-006 policy 删 3 项后 2 卡「逐项点名」行 20 项、兜底句�
     const items = seg.split('、').map((x) => x.trim().replace(/^`|`$/g, '')).filter(Boolean)
     assert.equal(items.length, 20, `${seat}: 禁写项应 20（删前 23 − 3），实得 ${items.length}`)
     assert.ok(line.includes('兜底句：凡 `.gitignore` 覆盖的路径一律视为禁止写入。'), `${seat}: 兜底句必须逐字在位`)
-    for (const w of ['skills-lock.json', 'tools/docgen-spike/.tmp-test/']) {
+    for (const w of Q8_REMOVED) {
       assert.equal(line.includes(w), false, `${seat}: 「逐项点名」行不得残留 ${w}`)
     }
   }

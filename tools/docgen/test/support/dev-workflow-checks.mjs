@@ -10,6 +10,12 @@ import { fileURLToPath } from 'node:url';
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..');
 export const readRepo = (rel) => readFileSync(join(ROOT, rel), 'utf8');
 
+// Q8（2026-11-03，PRD §3 / spec §10.1 R6）：从 `pathGroups.workspace` 删掉的 3 项本仓专属路径 —— **唯一字面**。
+// 顺序 = 改造前旧卡（`fixtures/capability-baseline.json`）里的数组序，不是 spec / plan 正文的列举序：
+// `S6-TC-H02` / `J03` / `C01` / `C02` 拿 `diffFacts()` 的 minus 做 `deepEqual`（顺序敏感），顺序错会红。
+// 判据侧只许引用本常量；**禁止**改成「基线减当前定义层」动态派生 —— 期望值与实测值同源会豁免任何未批准的删除。
+export const Q8_REMOVED_PATHS = Object.freeze(['lessons/', 'skills-lock.json', 'tools/docgen-spike/.tmp-test/']);
+
 const cellList = (line) => line.replace(/\*\*/g, '').split('|').slice(1, -1).map((x) => x.trim());
 
 // 找「表头含 needle」的第一张表，返回表头、数据行与表头行号（行号 0 基）

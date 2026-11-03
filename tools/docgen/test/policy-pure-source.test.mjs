@@ -9,7 +9,7 @@ import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs';
 import { join, basename } from 'node:path';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import { withRepoCopy, runCli, runEsm } from './support/dev-workflow-checks.mjs';
+import { withRepoCopy, runCli, runEsm, Q8_REMOVED_PATHS } from './support/dev-workflow-checks.mjs';
 // 唯一抽取实现（两种口径同文件）：`factsFromBaselineText` = 基线端旧卡切分 / `factsFromText` = 改造后字典匹配；
 // `factsFromDump` 与抽取器同一实现（不另写第二份）、`FACTS_KEYS` = ①–④ 段 8 字段 —— 本文件只 import
 import { factsFromText, factsFromBaselineText, factsFromDump, diffFacts, FACTS_KEYS, SEG5 } from './support/capability-baseline.mjs';
@@ -98,10 +98,10 @@ const grantGroup = (dir, seat, group) => {
 const pathItems = () => [...Object.values(PTH.pathGroups).flat(), PTH.FORBIDDEN_SPEC_PLAN.pattern.source];
 // pathTokens() = **20**（③ 段成员数）：`代码、测试` 在卡面写作两项，故按「、」再切一次；`spec / plan` 恒在末位
 const pathTokens = () => [...Object.values(PTH.pathGroups).flat().flatMap((x) => x.split('、')), 'spec / plan'];
-// Q8（2026-11-03，PRD §3 / spec §10.1 R6）：`pathGroups.workspace` 删了 3 项本仓专属路径。
+// Q8（2026-11-03，PRD §3 / spec §10.1 R6）：`pathGroups.workspace` 删了 3 项本仓专属路径（字面 = `Q8_REMOVED_PATHS`）。
 // 下列用例以**改造前旧卡**（`capability-baseline.json`，23 项）为 `before`，故 diff 必须**恰等于**这 3 条 minus；
 // 其余任何差仍判红（不放宽成「不看 minus」，也不改基线——基线必须早于 `policy/` 出现，见 H07a）。
-const Q8_MINUS = ['forbiddenPaths: lessons/', 'forbiddenPaths: skills-lock.json', 'forbiddenPaths: tools/docgen-spike/.tmp-test/'];
+const Q8_MINUS = Q8_REMOVED_PATHS.map((p) => `forbiddenPaths: ${p}`);
 const q8Delta = () => ({ minus: [...Q8_MINUS], plus: [] });
 const withoutQ8 = (arr) => arr.filter((x) => !Q8_MINUS.includes(x));
 // 读配置侧唯一口径（testcase §0.3 / spec:131）：`Object.hasOwn`，否则 `constructor` / `__proto__` 会取到原型链上的值
@@ -210,8 +210,9 @@ test('S6-TC-A04 路径 6 组：18 数组元素 / 19 定义层点名 / 20 卡面�
     'ledger 组必须逐项相等（换名不换数 → 必红）');
   assert.deepEqual(P.workspace, ['.superpowers/','*.local.md','**/ledger.md','.trae/','node_modules/','其他评审目录'],
     'workspace 恰 6 项且按定义层顺序逐项相等（Q8 删 3 项后；换名不换数 / 调序 → 必红）');
-  // 三个计数一律写成**关系式**（Q8 后再不写死绝对数）：三项差值恒为 1
-  assert.equal(Object.values(P).flat().length, pathItems().length - 1);   // 18 = 19 − 1（`代码、测试` 合写盖 2 项）
+  // 计数：绝对数 19 写死一次（Plan T5 Step 3 要求）；`flat` 的 18 由上面六组 `deepEqual` 的成员集钉住。
+  // 不写 `flat === pathItems().length - 1` —— 那是恒真式（`pathItems()` 定义就是 `flat()` 再拼 1），无判别力。
+  assert.equal(pathItems().length, 19);                                  // 18 数组元素 + 1 pattern 源串
   assert.equal(pathTokens().length, pathItems().length + 1);             // 20 = 19 + 1（按 `、` 再切 + `spec / plan`）
   assert.ok(pathTokens().includes('spec / plan'), '`spec / plan` 必须进成员集合（否则 ③ 段少一项）');
   assert.ok(PTH.FORBIDDEN_SPEC_PLAN.pattern instanceof RegExp);
