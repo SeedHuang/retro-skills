@@ -1265,3 +1265,134 @@ test('SB-TC-37 §11.4-8 两向判别力：回填 `关注类别：` → 1 红 / �
     console.log(`two-way: A 1 / B ${seatTotal() - 1} / restored 0,${count('类别：')} => ok`)
   })
 })
+
+// ── Task 7：PRD V7 映射非空心校验器（`tools/docgen/check-case-assert.mjs`，spec §11.2.5 / §11.4-4 / §11.1 R10）──
+// 首次实测输入 = S-A 那对已签件（S-B 自身 plan 在 ③ 之前不存在）；注入面一律是 testcase 的**副本**，不动已签件。
+const SA_PLAN = join(ROOT, 'docs', 'superpowers', 'plans', '2026-11-03-s-a-data-layer.md')
+const SA_TESTCASE = join(ROOT, 'docs', 'superpowers', 'specs', '2026-11-03-s-a-data-layer-design-testcase.md')
+// ID 形态口径（spec §11.2.5 口径 1）：三位 `TC-\d{3}` / 带段前缀 `S\d+-TC-[A-Z]\d\d`
+const CASE_ID_RE = /S\d+-TC-[A-Z]\d\d|TC-\d{3}/
+
+function runCase(plan = SA_PLAN, testcase = SA_TESTCASE) {
+  const r = spawnSync(process.execPath, ['tools/docgen/check-case-assert.mjs', '--plan', plan, '--testcase', testcase], { cwd: ROOT, encoding: 'utf8' })
+  const stdout = r.stdout ?? ''
+  return { status: r.status, stdout, text: `${stdout}${r.stderr ?? ''}` }
+}
+
+// 测试侧**独立复算** ID 集合（不复用脚本的实现）：只认表头含「用例」且下一行是分隔行的那张表，逐行取第 1 列
+function planCaseCells(planText) {
+  const lines = planText.split(/\r?\n/).map((l) => l.trim())
+  const head = lines.findIndex((l, i) => l.startsWith('|') && l.includes('用例') && /^\|[\s:|-]+\|$/.test(lines[i + 1] ?? ''))
+  assert.ok(head >= 0, '前置：plan 里必须有一张表头含「用例」的表')
+  const cells = []
+  for (let i = head + 2; i < lines.length && lines[i].startsWith('|'); i += 1) cells.push((lines[i].replace(/^\|/, '').split('|')[0] ?? '').trim())
+  return cells
+}
+
+// 用例体的定位（测试侧独立实现，用于构造注入面）：`### <ID>` 起至下一个同级标题止
+function caseBodyRange(lines, id) {
+  const start = lines.findIndex((l) => new RegExp(`^#{1,6}\\s+${id}(?![\\w-])`).test(l.trim()))
+  assert.ok(start >= 0, `前置：testcase 里必须有「### ${id}」用例体`)
+  const level = (lines[start].trim().match(/^#+/) ?? [''])[0].length
+  let end = lines.length
+  for (let i = start + 1; i < lines.length; i += 1) {
+    const h = /^(#+)\s/.exec(lines[i].trim())
+    if (h && h[1].length <= level) { end = i; break }
+  }
+  return { start, end }
+}
+
+// 把某条用例体变成「只剩恒真断言」：体内所有 `assert.*` 换成同一形态；
+// S-A testcase 的用例体一条 `assert.*` 都没有（正文是命令 + 预期，断言落在代码测试里）→ 原地追加一条，
+// 否则「替换所有」在零命中时是空操作，这条用例就辨不出红（构造失效）。
+function hollowify(text, id, form) {
+  const lines = text.split(/\r?\n/)
+  const { start, end } = caseBodyRange(lines, id)
+  const body = lines.slice(start, end).join('\n')
+  const next = /assert\s*\.\s*[A-Za-z_$][\w$]*\s*\(/.test(body)
+    ? body.replace(/assert\s*\.\s*[A-Za-z_$][\w$]*\s*\([^)]*\)/g, form)
+    : `${body}\n- 断言：${form}`
+  return [...lines.slice(0, start), ...next.split('\n'), ...lines.slice(end)].join('\n')
+}
+
+test('SB-TC-09 check-case-assert 绿态：S-A 那对已签件 `ids 30 / hollow 0 / missing 0 => ok`，且 30 个 ID 形态为 `TC-\\d{3}`', () => {
+  const r = runCase()
+  assert.equal(r.status, 0, r.text)
+  const first = (r.stdout.split(/\r?\n/)[0] ?? '').trim()
+  assert.equal(first, 'check-case-assert: ids 30 / hollow 0 / missing 0 => ok')
+
+  // ③ 独立复算：集合 A（从 plan「用例」表逐行取）与 B（TC-001…TC-030 的 30 个字面）deepEqual
+  const cells = planCaseCells(readFileSync(SA_PLAN, 'utf8'))
+  const ids = []
+  for (const cell of cells) {
+    const m = CASE_ID_RE.exec(cell)
+    if (m && !ids.includes(m[0])) ids.push(m[0])
+  }
+  const expected = Array.from({ length: 30 }, (_, i) => `TC-${String(i + 1).padStart(3, '0')}`)
+  assert.deepEqual([...ids].sort(), expected, `plan「用例」列取出的 ID 集合必须恰为 TC-001…TC-030（实得 ${ids.length} 个：${ids.join('、')}）`)
+
+  // ④ 两位正则的唯一值数 = 4（证明「三位」不是可省的口径）
+  const twoDigit = new Set()
+  for (const cell of cells) {
+    const m = /TC-\d\d/.exec(cell)
+    if (m) twoDigit.add(m[0])
+  }
+  assert.equal(twoDigit.size, 4, `按两位 TC-\\d\\d 重扫唯一值必须 = 4（实得 ${twoDigit.size}：${[...twoDigit].join('、')}）`)
+
+  console.log(`case-assert: ids ${ids.length} / two-digit ${twoDigit.size} => ok`)
+})
+
+test('SB-TC-21 用例体只剩恒真断言（四种形态：true / 带空格 / 1 / \'1\'）→ `hollow 1`、`missing 0`、exit 1', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'ca-copy-'))
+  try {
+    const copy = join(dir, 'testcase.md')
+    const src = readFileSync(SA_TESTCASE, 'utf8')
+    const id = 'TC-004'
+    const forms = ['assert.ok(true)', 'assert.ok( true )', 'assert.ok(1)', "assert.ok('1')"]
+    for (const form of forms) {
+      writeFileSync(copy, hollowify(src, id, form), 'utf8')
+      const r = runCase(SA_PLAN, copy)
+      assert.notEqual(r.status, 0, `形态 ${form} 不得 exit 0：${r.text}`)
+      assert.ok(r.text.includes('hollow 1'), `形态 ${form} 必须报 hollow 1：${r.text}`)
+      assert.ok(r.text.includes('missing 0'), `形态 ${form} 不得把空心算进 missing：${r.text}`)
+      assert.match(r.text, new RegExp(`${id}（\\d+）`), `形态 ${form} 的输出必须点名 ${id} 与行号：${r.text}`)
+    }
+
+    writeFileSync(copy, src, 'utf8')
+    const back = runCase(SA_PLAN, copy)
+    assert.equal(back.status, 0, `复原后必须为绿：${back.text}`)
+    assert.match((back.stdout.split(/\r?\n/)[0] ?? '').trim(), /^check-case-assert: ids 30 \/ hollow 0 \/ missing 0 => ok$/)
+
+    console.log(`hollow: ${forms.length}/${forms.length} => red / restored => ok`)
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('SB-TC-38 plan 引用的用例 ID 在 testcase 里找不到用例体 → `missing 1`、`hollow 0`、exit 1', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'ca-copy-'))
+  try {
+    const copy = join(dir, 'testcase.md')
+    const src = readFileSync(SA_TESTCASE, 'utf8')
+    const id = 'TC-004'
+    const lines = src.split(/\r?\n/)
+    const { start, end } = caseBodyRange(lines, id)
+    // 整段删（含标题），`---` 分隔符保留
+    writeFileSync(copy, [...lines.slice(0, start), ...lines.slice(end)].join('\n'), 'utf8')
+
+    const r = runCase(SA_PLAN, copy)
+    assert.notEqual(r.status, 0, `找不到用例体不得 exit 0：${r.text}`)
+    assert.ok(r.text.includes('missing 1'), `必须报 missing 1：${r.text}`)
+    assert.ok(r.text.includes('hollow 0'), `不得把「找不到用例体」算成空心：${r.text}`)
+    assert.ok(r.text.includes(`${id}（missing）`), `输出必须点名 ${id}：${r.text}`)
+
+    writeFileSync(copy, src, 'utf8')
+    const back = runCase(SA_PLAN, copy)
+    assert.equal(back.status, 0, `复原后必须为绿：${back.text}`)
+    assert.match((back.stdout.split(/\r?\n/)[0] ?? '').trim(), /^check-case-assert: ids 30 \/ hollow 0 \/ missing 0 => ok$/)
+
+    console.log('missing: 1 => red / restored => ok')
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
