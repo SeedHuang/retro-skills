@@ -6,7 +6,7 @@
 |---|---|
 | 交接时间 | 2026-11-03 21:26（本机时区，Asia/Shanghai） |
 | 项目根 | `d:\Seed\retro-skills` |
-| HEAD | `47d53e3`（`docs: S-B ③ 施工交接词（从 Task 0 起）`）；工作树：**clean**（`git status --porcelain` 本次实跑无输出） |
+| HEAD | **以 `git log -1` 为准**（本交接词自身的提交会改变 HEAD，写死即过期）；**代码基线（开工起点）= `88295dd`**（`docs(dev-workflow): ②@S-B 签后增量登记`）；工作树：**clean**（`git status --porcelain` 本次实跑无输出） |
 | 验证基线 | typecheck 无（本仓无 typecheck）/ build 无（无构建）/ unit `# tests 1439 / # pass 1437 / # fail 0 / # skipped 2` + `node tools/docgen/cli.mjs gate` → `baseline 38/38` + `node scripts/check-gate-record.mjs` → `rows 65 bad 0` + `node scripts/scope-sweep.mjs --check` → `sweep ok（命中未超基线、清单齐、scope 齐）` + `④ markdown 检查通过（393 个文件 / 1680 张表）` + `⑥ 观察产物门禁：扫描 2 个子目录 / 归档 1 对 / 过程 0 对 / findings 0` + `[observable] 扫描 107 个 .md / 未豁免命中 0 行 / 已豁免 6 行 / stale 0 条` + 末行 `check 全部通过`（**21:28 实跑**，含本交接词入库后的计数） |
 | 继任自 | `docs/handoffs/2026-11-03-card-data-contract-sb-spec.md`（② 段开工前的交接词） |
 | 状态 | **可直开工**；有 2 个开放问题（见「开放问题」节），均非阻塞 |
