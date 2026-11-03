@@ -11,6 +11,11 @@ import { REGISTERED_IDS } from '../../observation-check/registered-ids.mjs'
 import { ARTIFACT_RE } from '../../observation-check/gate-scan.mjs'
 import { outputFormats } from '../components/outputFormats.mjs'
 import { FORMAT_CHECKS } from '../card-model/vocab/card-contract.mjs'
+import { renderBoundary, assertTemplatePure, TEMPLATE_ALLOWED_LITERALS } from '../components/renderBoundary.mjs'
+import { SEAT_POLICY } from '../policy/seat-policy.mjs'
+import * as CAP from '../policy/definitions/capabilities.mjs'
+import * as CMD from '../policy/definitions/commands.mjs'
+import * as PTH from '../policy/definitions/paths.mjs'
 
 const REVIEWS = join(ROOT, 'docs', 'superpowers', 'reviews')
 
@@ -621,6 +626,297 @@ test('SB-TC-33 注入而非删除：loader 产物 duty.categories 仍在且仍 8
   assert.equal(built.length, n, `buildCards() 席数 ${built.length} / ${n}`)
   assert.equal(topKeys12, n, `消费点必须恰 12 键：${topKeys12}/${n}`)
   console.log(`inDuty ${inDuty}/${n} / loaderKeys8 ${loaderKeys8}/${n} / topKeys12 ${topKeys12}/${n}`)
+})
+
+// ── Task 5：卡面「档位 + 指针」（模板 3 行文案 + 5 个槽值；槽集仍 12）────────────────
+// **卡面取数点 = `renderBoundary(席)` 的渲染结果**：Task 5 施工时 15 卡尚未重生成（归 Task 6），
+// 读盘会把「未重生成」误判成「指针化没做」；「盘上 == 渲染」由 Task 6 的 SB-TC-06（`gate`）绑住。
+const POINTER_SEATS = ['reviewer-audit', 'detective-observer']
+const POINTER_SYMBOLS = ['pathGroups', 'commandGroups', 'forbiddenGroups', 'DETECTION_BLIND_SPOTS']
+const rendered = (seat) => renderBoundary(seat)
+const linesWith = (text, needle) => text.split('\n').filter((l) => l.includes(needle))
+const commandLine = (text) => linesWith(text, '命令默认拒绝')[0] ?? ''
+
+// 探针文件写进副本根（副本用完即删）；相对 import 解析到副本内的模块
+function runProbeIn(dir, src) {
+  const p = join(dir, `.sb5-probe-${process.pid}-${probeSeq += 1}.mjs`)
+  writeFileSync(p, `${src}\n`, 'utf8')
+  const env = { ...process.env }
+  delete env.NODE_TEST_CONTEXT
+  const r = spawnSync(process.execPath, [p], { cwd: dir, encoding: 'utf8', env })
+  return { status: r.status, stdout: r.stdout ?? '', stderr: r.stderr ?? '' }
+}
+
+const PURE_PROBE = [
+  "import { assertTemplatePure } from './tools/docgen/components/renderBoundary.mjs'",
+  "try { assertTemplatePure(); process.stdout.write('pure ok\\n'); process.exit(0) }",
+  "catch (e) { process.stderr.write('PROBE ' + (e.code ?? '') + ' ' + (e.fragment ?? '') + '\\n'); process.exit(1) }",
+].join('\n')
+
+function patchRenderBoundary(copy, mutate) {
+  const p = join(copy, 'tools', 'docgen', 'components', 'renderBoundary.mjs')
+  const src = readFileSync(p, 'utf8')
+  const out = mutate(src)
+  assert.notEqual(out, src, '构造失败：副本的 renderBoundary.mjs 未被修改')
+  writeFileSync(p, out, 'utf8')
+  return p
+}
+
+// 换掉一个顶层函数的函数体（用于构造「漏改 env 槽」与「env 只改一半」两种负例）
+function replaceFnBody(src, name, body) {
+  const start = src.indexOf(`function ${name}()`)
+  assert.ok(start >= 0, `构造失败：副本里找不到 function ${name}()`)
+  const open = src.indexOf('{', start)
+  const close = src.indexOf('\n}', open)
+  assert.ok(open > start && close > open, `构造失败：function ${name}() 的函数体边界未找到`)
+  return `${src.slice(0, open + 1)}\n${body}\n${src.slice(close)}`
+}
+
+// 被指针化的 4 行：按段首句定位（`**禁止**` 不能写成 `禁止写`——那行属「禁止写」段、合法含路径）
+const POINTER_LINE_ANCHORS = ['**除上述落点外', '**命令默认拒绝**', '**禁止**', '检测限度']
+const pointerLines = (text) => POINTER_LINE_ANCHORS
+  .map((a) => text.split('\n').find((l) => l.startsWith(a) || l.includes(a)))
+  .filter(Boolean)
+
+// 仓内路径形态两种：目录前缀（不含 `docs/`——「只允许写」段合法用它）+ 反引号包住的 .mjs / .json
+const IN_REPO_DIR_RE = /(?:tools|agents|scripts|skills|rules)\//g
+const BACKTICK_FILE_RE = /`[^`\n]*\.(?:mjs|json)`/g
+const pathFormHits = (text) => (text.match(IN_REPO_DIR_RE) ?? []).length + (text.match(BACKTICK_FILE_RE) ?? []).length
+
+test('SB-TC-05 卡面形态：逐项点名 0 命中 + 4 符号名各 ≥1（均带反引号）+ 本席组 ID 在位', () => {
+  // ① `逐项点名` 计数（V8）：2 卡渲染结果合起来必须 = 0
+  const scanq = POINTER_SEATS.reduce((n, s) => n + linesWith(rendered(s), '逐项点名').length, 0)
+  assert.equal(scanq, 0, `2 卡不得再出现「逐项点名」（命中 ${scanq} 行）`)
+
+  // ② 4 符号名各 ≥1，且每次出现都被一对反引号包住
+  const missingSym = []
+  for (const s of POINTER_SEATS) {
+    const text = rendered(s)
+    for (const sym of POINTER_SYMBOLS) if (!text.includes(`\`${sym}\``)) missingSym.push(`${s}:${sym}`)
+  }
+  const symTotal = POINTER_SEATS.length * POINTER_SYMBOLS.length
+  console.log(`sym ${symTotal - missingSym.length}/${symTotal}`)
+  assert.equal(missingSym.length, 0, `符号名缺失或未加反引号：${missingSym.join('、')}`)
+
+  // ③ 本席组 ID 在位（判定面 = 这 2 席：其余 13 席与 senior-sdet 没有该句）
+  const badSeats = POINTER_SEATS.filter((s) => {
+    const groups = SEAT_POLICY[s].allowGroups
+    return groups.length === 0 || !groups.every((g) => commandLine(rendered(s)).includes(g))
+  })
+  console.log(`groupIds ${POINTER_SEATS.length - badSeats.length}/${POINTER_SEATS.length}`)
+  assert.equal(badSeats.length, 0, `命令白名单句缺本席组 ID：${badSeats.join('、')}`)
+})
+
+test('SB-TC-13 模板纯度：assertTemplatePure 不抛 + 4 符号已登记 + 白名单不含清单类 + size 12', () => {
+  // 清单集 = 从已导出的定义层自组装（`listClassMembers()` 未导出，不碰内部实现）
+  const ids = [...Object.keys(CAP.capabilities), ...Object.keys(CMD.commandGroups),
+    ...Object.keys(CMD.forbiddenGroups), ...Object.keys(PTH.pathGroups)]
+  const multiWord = [...Object.values(CMD.commandGroups), ...Object.values(CMD.forbiddenGroups)]
+    .flatMap((g) => g.verbs).filter((v) => /\s/.test(v))
+  const paths = [...Object.values(PTH.pathGroups).flat().flatMap((x) => x.split('、')),
+    ...PTH.DETECTION_BLIND_SPOTS, 'spec / plan']
+  const LIST_CLASS = new Set([...ids, ...multiWord, ...paths])
+
+  const missing = POINTER_SYMBOLS.filter((s) => !TEMPLATE_ALLOWED_LITERALS.has(s))
+  const overlap = [...TEMPLATE_ALLOWED_LITERALS].filter((x) => LIST_CLASS.has(x))
+  console.log(`whitelist: sym ${POINTER_SYMBOLS.length - missing.length}/${POINTER_SYMBOLS.length} / overlap ${overlap.length} / size ${TEMPLATE_ALLOWED_LITERALS.size}`)
+
+  assert.doesNotThrow(() => assertTemplatePure(), '模板必须过纯度三条守卫')
+  assert.equal(missing.length, 0, `4 个符号名必须登记进白名单：缺 ${missing.join('、')}`)
+  assert.deepEqual(overlap, [], `白名单不得登记清单类成员：${overlap.join('、')}`)
+  assert.equal(TEMPLATE_ALLOWED_LITERALS.size, 12, `白名单必须恰 12 项（原 8 + 4 符号名），实得 ${TEMPLATE_ALLOWED_LITERALS.size}`)
+})
+
+test('SB-TC-19 回填一句「逐项点名」→ 计数 1（判据有判别力，不是恒 0）', () => {
+  const scanq = (text) => linesWith(text, '逐项点名').length
+  assert.equal(POINTER_SEATS.reduce((n, s) => n + scanq(rendered(s)), 0), 0, '金态必须 0 命中')
+
+  const injected = `${rendered('reviewer-audit')}\n**除上述落点外，任何写文件或重定向一律禁止**，逐项点名：\`a/\`、\`b/\`；兜底句：凡 \`.gitignore\` 覆盖的路径一律视为禁止写入。`
+  assert.equal(scanq(injected), 1, '回填一行后计数必须恰 1（否则判据没有判别力）')
+  console.log('scanq: gold 0 / injected 1 => ok')
+})
+
+test('SB-TC-24 被指针化的 4 行内无仓内路径形态（取到行数必须 = 4，两条负例都必须 ≥1）', () => {
+  for (const seat of POINTER_SEATS) {
+    const four = pointerLines(rendered(seat))
+    assert.equal(four.length, 4, `${seat}: 必须按段首句取到 4 行（实得 ${four.length}）——少了说明定位锚失效`)
+
+    const text = four.join('\n')
+    assert.equal(pathFormHits(text), 0, `${seat}: 4 行内不得出现仓内路径形态：${text}`)
+
+    // 负例 A：指针写成 `policy/definitions/paths.mjs`（无目录前缀，仍命中 .mjs 反引号形态）
+    const negA = ['禁写集合见 `policy/definitions/paths.mjs`', ...four.slice(1)].join('\n')
+    assert.ok(pathFormHits(negA) >= 1, `${seat}: 负例 A 必须命中 ≥1（旧版只 grep 一个目录字面时此形态全绿）`)
+
+    // 负例 B：带目录前缀 + 反引号
+    const negB = ['禁写集合见 `tools/docgen/policy/definitions/paths.mjs`', ...four.slice(1)].join('\n')
+    assert.ok(pathFormHits(negB) >= 1, `${seat}: 负例 B 必须命中 ≥1`)
+  }
+  console.log('pointer-lines: 4/4 lines / pathforms 0 / negA ≥1 / negB ≥1 => ok')
+})
+
+test('SB-TC-27 白名单登记清单类成员（agents/）→ ALLOWED_LITERALS: 自检抛错', () => {
+  withRepoCopy((copy) => {
+    patchRenderBoundary(copy, (src) => {
+      const start = src.indexOf('export const TEMPLATE_ALLOWED_LITERALS = new Set([')
+      const end = src.indexOf(']);', start)
+      assert.ok(start >= 0 && end > start, '构造失败：白名单定义未找到')
+      const body = src.slice(start, end)
+      const patched = body.replace("  '越权清单',", "  '越权清单',\n  'agents/',")
+      assert.notEqual(patched, body, '构造失败：白名单插入点未命中')
+      return src.slice(0, start) + patched + src.slice(end)
+    })
+
+    const bad = runProbeIn(copy, PURE_PROBE)
+    assert.notEqual(bad.status, 0, `白名单含清单类成员必须抛错：${bad.stdout}${bad.stderr}`)
+    assert.match(`${bad.stdout}${bad.stderr}`, /ALLOWED_LITERALS:/)
+
+    console.log(`whitelist-listclass: ${(bad.stderr.split(/\r?\n/)[0] ?? '').trim()} => ok`)
+  })
+})
+
+test('SB-TC-28 新反引号项未登记（删掉 commandGroups）→ TemplateImpure 抛错', () => {
+  withRepoCopy((copy) => {
+    // 构造「模板里留着被反引号包住的 commandGroups」：把该槽换成字面符号（替代 slot 注入，纯度为判模板文本）
+    const tplPath = join(copy, 'tools', 'docgen', 'templates', 'boundary.md.tpl')
+    const tpl = readFileSync(tplPath, 'utf8')
+    const injected = tpl.replace('{{ALLOW_GROUPS}}', '`commandGroups`')
+    assert.notEqual(injected, tpl, '构造失败：模板里没有 {{ALLOW_GROUPS}} 槽可换')
+    writeFileSync(tplPath, injected, 'utf8')
+
+    const control = runProbeIn(copy, PURE_PROBE)
+    assert.equal(control.status, 0, `已登记时必须不抛（对照组）：${control.stdout}${control.stderr}`)
+
+    patchRenderBoundary(copy, (src) => {
+      const start = src.indexOf('export const TEMPLATE_ALLOWED_LITERALS = new Set([')
+      const end = src.indexOf(']);', start)
+      assert.ok(start >= 0 && end > start, '构造失败：白名单定义未找到')
+      const body = src.slice(start, end)
+      const patched = body.split('\n').filter((l) => !l.includes("'commandGroups'")).join('\n')
+      assert.notEqual(patched, body, "构造失败：白名单里没有 'commandGroups' 可删")
+      return src.slice(0, start) + patched + src.slice(end)
+    })
+
+    const bad = runProbeIn(copy, PURE_PROBE)
+    assert.notEqual(bad.status, 0, `未登记的反引号项必须抛 TemplateImpure：${bad.stdout}${bad.stderr}`)
+    assert.match(`${bad.stdout}${bad.stderr}`, /TemplateImpure/)
+    assert.match(`${bad.stdout}${bad.stderr}`, /commandGroups/)
+
+    console.log(`unregistered-span: ${(bad.stderr.split(/\r?\n/)[0] ?? '').trim()} => ok`)
+  })
+})
+
+test('SB-TC-31 保留面：5 个槽（4 行文案）的段首句与语义句 2 卡 × 6 组 = 12/12 在位', () => {
+  const RETENTION_ANCHORS = [
+    ['**除上述落点外，任何写文件或重定向一律禁止**'],
+    ['**命令默认拒绝**', '其余一律不跑'],
+    ['**禁止**', '任何形式的环境变量赋值'],
+    ['检测限度', '归 S5-B'],
+    ['**档位事实**'],
+    ['**只允许写**', '越界写 = 越权'],
+  ]
+  const missing = []
+  for (const seat of POINTER_SEATS) {
+    const text = rendered(seat)
+    for (const group of RETENTION_ANCHORS) {
+      for (const needle of group) if (!text.includes(needle)) missing.push(`${seat}:${needle}`)
+    }
+  }
+  const total = POINTER_SEATS.length * RETENTION_ANCHORS.length
+  const groupsOk = total - missing.length // 打印用；判据是下面逐锚断言
+  console.log(`anchors ${groupsOk}/${total}`)
+  assert.equal(missing.length, 0, `段首句 / 语义句缺失：${missing.join('、')}`)
+})
+
+test('SB-TC-35 4 个符号名各恰 1 行 export const（定义层 definitions/*.mjs，不 -Recurse）', () => {
+  const dir = join(ROOT, 'tools', 'docgen', 'policy', 'definitions')
+  const files = readdirSync(dir).filter((f) => f.endsWith('.mjs'))
+  const counts = POINTER_SYMBOLS.map((sym) => ({
+    sym,
+    n: files.reduce((acc, f) => acc + readFileSync(join(dir, f), 'utf8').split(/\r?\n/)
+      .filter((l) => new RegExp(`export const ${sym}\\b`).test(l)).length, 0),
+  }))
+  const bad = counts.filter((c) => c.n !== 1)
+  console.log(`defs ${counts.length - bad.length}/${counts.length}`)
+  assert.equal(bad.length, 0, `符号定义行数必须各恰 1：${bad.map((b) => `${b.sym}=${b.n}`).join('、')}`)
+})
+
+const COMMAND_LINE_PROBE = (seat) => [
+  "const m = await import('./tools/docgen/components/renderBoundary.mjs')",
+  `const line = m.renderBoundary(${JSON.stringify(seat)}).split('\\n').find((l) => l.includes('命令默认拒绝')) ?? ''`,
+  "process.stdout.write(line + '\\n')",
+].join('\n')
+
+test('SB-TC-40 命令白名单句含本席组 ID（2 卡）；空组必写「无白名单命令」且不列命令', () => {
+  // ① 正例基线：判定面恰 2 席、组 ID 全在位
+  const badSeats = POINTER_SEATS.filter((s) => {
+    const groups = SEAT_POLICY[s].allowGroups
+    return groups.length === 0 || !groups.every((g) => commandLine(rendered(s)).includes(g))
+  })
+  assert.equal(POINTER_SEATS.length, 2, '判定面必须恰 2 席（走 renderBoundary 的席）')
+  assert.equal(badSeats.length, 0, `缺组 ID 的席：${badSeats.join('、')}`)
+
+  // ② 负例 A：删掉组 ID → 缺组数 ≥ 1
+  const noIds = commandLine(rendered('reviewer-audit'))
+    .replace(/`(?:check\.local|git\.read|docgen\.read)`/g, '')
+  const missingA = SEAT_POLICY['reviewer-audit'].allowGroups.filter((g) => !noIds.includes(g)).length
+  assert.ok(missingA >= 1, '删掉组 ID 后必须判出缺组（否则该判据没有判别力）')
+
+  // ③ 负例 B：副本内把该席 allowGroups 改成 [] → 该句必须写「无白名单命令」且不含具体命令
+  withRepoCopy((copy) => {
+    const p = join(copy, 'tools', 'docgen', 'policy', 'seat-policy.mjs')
+    const src = readFileSync(p, 'utf8')
+    const patched = src.replace(/(\{ capabilities: \['read',\s*'write',\s*'exec'\], allowGroups: )\[[^\]]*\]/, '$1[]')
+    assert.notEqual(patched, src, '构造失败：reviewer-audit 的 allowGroups 未改成 []')
+    writeFileSync(p, patched, 'utf8')
+
+    const r = runProbeIn(copy, COMMAND_LINE_PROBE('reviewer-audit'))
+    assert.equal(r.status, 0, `空组构造后探针必须能跑通：${r.stdout}${r.stderr}`)
+    assert.match(r.stdout, /无白名单命令/, `空组必须写「无白名单命令」语义：${r.stdout}`)
+    assert.equal(/npm run|node /.test(r.stdout), false, `空组不得列任何具体命令：${r.stdout}`)
+
+    console.log(`empty-groups: ${r.stdout.trim()} => ok`)
+  })
+  console.log(`groupIds ${POINTER_SEATS.length - badSeats.length}/${POINTER_SEATS.length} / negA missing ${missingA} => ok`)
+})
+
+test('SB-TC-41 env 槽已指针化：改前卡命中 5 / 改后渲染命中 0 / 漏改 env ≥1 / 只改一半 = 1', () => {
+  const envVerbs = CMD.forbiddenGroups['env.assign'].verbs
+  const envHits = (text) => envVerbs.filter((v) => text.includes(v)).length
+
+  // ① 改前基线：取「最后改模板那次提交」里的卡（该提交自身不含重生成，故卡仍是改前形态；
+  //    用模板提交而不是 HEAD，Task 6 重生成后本基线不会漂）
+  const rev = spawnSync('git', ['log', '-1', '--format=%H', '--', 'tools/docgen/templates/boundary.md.tpl'],
+    { cwd: ROOT, encoding: 'utf8' }).stdout.trim()
+  assert.ok(rev, '前置：模板必须已有提交历史')
+  for (const seat of POINTER_SEATS) {
+    const old = spawnSync('git', ['show', `${rev}:agents/${seat}.md`], { cwd: ROOT, encoding: 'utf8' })
+    assert.equal(old.status, 0, `git show ${rev}:agents/${seat}.md 失败：${old.stderr}`)
+    assert.equal(envHits(old.stdout), 5, `${seat}: 改前卡必须命中全部 5 个 env 形态项（实得 ${envHits(old.stdout)}）`)
+  }
+
+  // ② 金态：改后渲染命中 = 0（漏改 ENV_FORMS 时这一步就是唯一会红的地方）
+  assert.equal(envHits(rendered('reviewer-audit')), 0, '改后渲染不得再出现 env 具体形态项')
+
+  // ③ 负例 A：只改 DENY_GROUPS、ENV_FORMS 保留原样 → 必须 ≥ 1
+  withRepoCopy((copy) => {
+    const p = join(copy, 'tools', 'docgen', 'components', 'renderBoundary.mjs')
+    const src = readFileSync(p, 'utf8')
+    writeFileSync(p, replaceFnBody(src, 'envForms', "  return CMD.forbiddenGroups['env.assign'].verbs.join(' / ');"), 'utf8')
+    const a = runProbeIn(copy, "const m = await import('./tools/docgen/components/renderBoundary.mjs'); process.stdout.write(m.renderBoundary('reviewer-audit'))")
+    assert.equal(a.status, 0, a.stderr)
+    assert.ok(envHits(a.stdout) >= 1, `漏改 env 槽必须能红（实得 ${envHits(a.stdout)}）`)
+
+    // ④ 负例 B：ENV_FORMS 只留 1 个 verb → 命中必须 = 1（等值断言，剩 1 个即红）
+    writeFileSync(p, replaceFnBody(src, 'envForms', "  return CMD.forbiddenGroups['env.assign'].verbs.slice(0, 1).join(' / ');"), 'utf8')
+    const b = runProbeIn(copy, "const m = await import('./tools/docgen/components/renderBoundary.mjs'); process.stdout.write(m.renderBoundary('reviewer-audit'))")
+    assert.equal(b.status, 0, b.stderr)
+    assert.equal(envHits(b.stdout), 1, `只留 1 个 verb 时必须命中 1（实得 ${envHits(b.stdout)}）`)
+    console.log(`env-slot: old 5 / new 0 / leak ${envHits(a.stdout)} / half ${envHits(b.stdout)} => ok`)
+  })
+
+  // ⑤ 复原态（真实仓渲染）仍 = 0
+  assert.equal(envHits(rendered('detective-observer')), 0, '复原后必须仍为 0')
 })
 
 test('SB-TC-34 注入值不做字符串变换：加「核对」后缀 → 同形探针逐席不等，判据红', () => {

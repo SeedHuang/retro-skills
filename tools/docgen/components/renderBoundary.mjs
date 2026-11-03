@@ -22,6 +22,8 @@ export const SLOTS = ['SEAT', 'TIER', 'CAPABILITIES', 'ARTIFACTS', 'SEAT_CLAUSE'
   'ALLOW_GROUPS', 'DENY_GROUPS', 'ENV_FORMS', 'FORBIDDEN_PATHS', 'DETECTION_PATHS', 'DETECTION_CMD'];
 
 // 结构性文本白名单（§3.4 纯度规则 3）：只登记**非清单类**成员；登记清单类成员本身即违规（不变量 6）
+// S-B §11.2.3：4 个策略符号名（指针句里出现的反引号项）不是定义层单点成员，必须登记；
+// 它们都不是清单类成员（组 ID / verb / 路径项），故不触发末尾的 `ALLOWED_LITERALS:` 自检。
 export const TEMPLATE_ALLOWED_LITERALS = new Set([
   '.session/reviews/<本次>/',
   'docs/superpowers/reviews/<本次>/',
@@ -31,6 +33,10 @@ export const TEMPLATE_ALLOWED_LITERALS = new Set([
   'sha256',
   '检测限度',
   '越权清单',
+  'pathGroups',
+  'commandGroups',
+  'forbiddenGroups',
+  'DETECTION_BLIND_SPOTS',
 ]);
 
 // `spec / plan` 的**卡面形态**（§3.4 槽 10）：`paths.mjs` 只以正则表达（`spec/plan` 无空格写法也要命中），
@@ -62,39 +68,30 @@ function capTools(caps) {
   return out;
 }
 
+// 槽 7 = 指针句（S-B §11.2.3）：组 ID **逐组列出**（来自入参，不按席写死）；空组写明「无白名单命令」
 function allowGroups(groups) {
-  return groups.map((g) => {
-    // 已登记全局组 → 展开其 verbs；未登记的组（含席级组）→ 原样渲染组 ID，不判红
-    const def = hasOwn(CMD.commandGroups, g) ? CMD.commandGroups[g] : undefined;
-    return def ? def.verbs.map(code).join(' / ') : code(g);
-  }).join('；');
+  if (!Array.isArray(groups) || groups.length === 0) return `${code('commandGroups')}（无白名单组 = 无白名单命令）`;
+  return `${code('commandGroups')} 的 ${groups.map(code).join(' / ')} 白名单组`;
 }
 
-// 禁止组间 `、`、组内 ` / `；**剔除 `env.assign`**（由槽 9 `{{ENV_FORMS}}` 单独注入，§3.4 槽 8/9）
+// 槽 8 = 指针句：禁止命令不再逐条落卡（清单归定义层 `forbiddenGroups`）
 function denyGroups() {
-  return Object.entries(CMD.forbiddenGroups)
-    .filter(([g]) => g !== 'env.assign')
-    .map(([, def]) => def.verbs.map(code).join(' / '))
-    .join('、');
+  return `${code('forbiddenGroups')} 的全部命令组`;
 }
 
-// 槽 9 的值 = `commands['env.assign'].verbs` 原样 ` / ` 连接（不加反引号：与 `factsFromDump` / F02 同口径）
+// 槽 9 = 指针句（防漏改）：env 形态项归 `forbiddenGroups['env.assign']`，卡面只指「该组内的 env 形态项」
 function envForms() {
-  return CMD.forbiddenGroups['env.assign'].verbs.join(' / ');
+  return '该组内的 env 形态项';
 }
 
-// 槽 10 = `pathGroups` 六组按定义层顺序展开（`、` 连接；`代码、测试` 在卡面写作两项），
-// `spec / plan` 紧跟 `docs.prd/` 之后（与改造前两卡顺序一致）
+// 槽 10 = 指针句：禁写集合 = `pathGroups` 六组 + 一项模式项（`spec / plan` 两种写法，卡面不加反引号）
 function forbiddenPaths() {
-  const items = Object.values(PTH.pathGroups).flat().flatMap((x) => x.split('、'));
-  const anchor = PTH.pathGroups['docs.input'].at(-1);
-  const i = items.indexOf(anchor);
-  return (i < 0 ? [...items, SPEC_PLAN_LABEL] : [...items.slice(0, i + 1), SPEC_PLAN_LABEL, ...items.slice(i + 1)])
-    .map(code).join('、');
+  return `${code('pathGroups')}（六组）与一项模式项（spec 与 plan 的两种写法）`;
 }
 
+// 槽 11 = 指针句：检测盲区归 `DETECTION_BLIND_SPOTS`
 function detectionPaths() {
-  return PTH.DETECTION_BLIND_SPOTS.map(code).join(' / ');
+  return code('DETECTION_BLIND_SPOTS');
 }
 
 // 槽 12 = `commands['git.read'].verbs` 的 status 项（只读引用，不复制）
