@@ -1270,14 +1270,18 @@ test('SB-TC-37 §11.4-8 两向判别力：回填 `关注类别：` → 1 红 / �
 // 首次实测输入 = S-A 那对已签件（S-B 自身 plan 在 ③ 之前不存在）；注入面一律是 testcase 的**副本**，不动已签件。
 const SA_PLAN = join(ROOT, 'docs', 'superpowers', 'plans', '2026-11-03-s-a-data-layer.md')
 const SA_TESTCASE = join(ROOT, 'docs', 'superpowers', 'specs', '2026-11-03-s-a-data-layer-design-testcase.md')
-// ID 形态口径（spec §11.2.5 口径 1）：三位 `TC-\d{3}` / 带段前缀 `S\d+-TC-[A-Z]\d\d`
-const CASE_ID_RE = /S\d+-TC-[A-Z]\d\d|TC-\d{3}/
+// ID 形态口径（spec §11.2.5 口径 1）：三位 `TC-\d{3}` / 带段前缀 `S[A-Z]*-TC-[A-Z]?\d\d`
+// （`S[A-Z]*-` 同时覆盖 `S3-TC-H06` 与本段自己的 `SB-TC-09`；写 `S\d+-` 时后者取不到）
+const CASE_ID_RE = /S[A-Z]*-TC-[A-Z]?\d\d|TC-\d{3}/
 
 function runCase(plan = SA_PLAN, testcase = SA_TESTCASE) {
   const r = spawnSync(process.execPath, ['tools/docgen/check-case-assert.mjs', '--plan', plan, '--testcase', testcase], { cwd: ROOT, encoding: 'utf8' })
   const stdout = r.stdout ?? ''
   return { status: r.status, stdout, text: `${stdout}${r.stderr ?? ''}` }
 }
+
+const outLines = (r) => r.stdout.split(/\r?\n/).map((l) => l.trim()).filter(Boolean)
+const lineAt = (r, n) => outLines(r)[n] ?? ''
 
 // 测试侧**独立复算** ID 集合（不复用脚本的实现）：只认表头含「用例」且下一行是分隔行的那张表，逐行取第 1 列
 function planCaseCells(planText) {
@@ -1315,11 +1319,19 @@ function hollowify(text, id, form) {
   return [...lines.slice(0, start), ...next.split('\n'), ...lines.slice(end)].join('\n')
 }
 
-test('SB-TC-09 check-case-assert 绿态：S-A 那对已签件 `ids 30 / hollow 0 / missing 0 => ok`，且 30 个 ID 形态为 `TC-\\d{3}`', () => {
+// 往某条用例体末尾追加若干行（混装构造用：一条真断言 + 一条恒真断言）
+function appendToBody(text, id, snippet) {
+  const lines = text.split(/\r?\n/)
+  const { end } = caseBodyRange(lines, id)
+  return [...lines.slice(0, end), snippet, ...lines.slice(end)].join('\n')
+}
+
+test('SB-TC-09 check-case-assert 绿态：S-A 那对已签件 `ids 30 / hollow 0 / missing 0 => ok` + 第二行 `noassert 30`，且 30 个 ID 形态为 `TC-\\d{3}`', () => {
   const r = runCase()
   assert.equal(r.status, 0, r.text)
-  const first = (r.stdout.split(/\r?\n/)[0] ?? '').trim()
-  assert.equal(first, 'check-case-assert: ids 30 / hollow 0 / missing 0 => ok')
+  assert.equal(lineAt(r, 0), 'check-case-assert: ids 30 / hollow 0 / missing 0 => ok')
+  // 零 assert 的用例体不判 hollow，但必须在第二行可见（spec §11.2.5 口径 3 / 5）：S-A 的 30 条正文全是「判据即命令」
+  assert.equal(lineAt(r, 1), 'noassert 30')
 
   // ③ 独立复算：集合 A（从 plan「用例」表逐行取）与 B（TC-001…TC-030 的 30 个字面）deepEqual
   const cells = planCaseCells(readFileSync(SA_PLAN, 'utf8'))
@@ -1339,10 +1351,21 @@ test('SB-TC-09 check-case-assert 绿态：S-A 那对已签件 `ids 30 / hollow 0
   }
   assert.equal(twoDigit.size, 4, `按两位 TC-\\d\\d 重扫唯一值必须 = 4（实得 ${twoDigit.size}：${[...twoDigit].join('、')}）`)
 
-  console.log(`case-assert: ids ${ids.length} / two-digit ${twoDigit.size} => ok`)
+  // ⑤ 空转守卫（spec §11.2.5 口径 1）：plan 指向不含「用例」表的文件 → `ids 0` 且 exit 1（不得静默恒绿）
+  const dir = mkdtempSync(join(tmpdir(), 'ca-copy-'))
+  try {
+    const noTable = join(dir, 'plan-no-case-table.md')
+    writeFileSync(noTable, '# 无「用例」表的 plan\n\n| 编号 | 说明 |\n|---|---|\n| A1 | 验收项（不是用例表） |\n', 'utf8')
+    const g = runCase(noTable)
+    assert.equal(g.status, 1, `取不到 ID 必须 exit 1（不得 exit 0 / exit 2）：${g.text}`)
+    assert.equal(lineAt(g, 0), 'check-case-assert: ids 0（取不到用例 ID：表头/正则/文件不匹配）=> fail')
+    console.log(`case-assert: ids ${ids.length} / two-digit ${twoDigit.size} / noassert 30 / ids0 guard 1 => ok`)
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
 })
 
-test('SB-TC-21 用例体只剩恒真断言（四种形态：true / 带空格 / 1 / \'1\'）→ `hollow 1`、`missing 0`、exit 1', () => {
+test('SB-TC-21 用例体只剩恒真断言（四种形态：true / 带空格 / 1 / \'1\'）→ `hollow 1`、`missing 0`、exit 1；混装一条真断言 → 不判 `hollow`', () => {
   const dir = mkdtempSync(join(tmpdir(), 'ca-copy-'))
   try {
     const copy = join(dir, 'testcase.md')
@@ -1358,12 +1381,20 @@ test('SB-TC-21 用例体只剩恒真断言（四种形态：true / 带空格 / 1
       assert.match(r.text, new RegExp(`${id}（\\d+）`), `形态 ${form} 的输出必须点名 ${id} 与行号：${r.text}`)
     }
 
+    // 混装：体内一条真断言 + 一条恒真断言 → **不得**判 hollow（every() 语义：只有「全部恒真」才算空心）
+    writeFileSync(copy, appendToBody(src, id, '- 断言：assert.equal(ids.length, 30)\n- 断言：assert.ok(true)'), 'utf8')
+    const mixed = runCase(SA_PLAN, copy)
+    assert.equal(mixed.status, 0, `混装一条真断言不得判 hollow：${mixed.text}`)
+    assert.equal(lineAt(mixed, 0), 'check-case-assert: ids 30 / hollow 0 / missing 0 => ok')
+    // 该体不再零 assert → noassert 必须从 30 减到 29（恒真断言不得被算进 noassert，也不得把体算成空心）
+    assert.equal(lineAt(mixed, 1), 'noassert 29', `混装后 noassert 必须 = 29：${mixed.text}`)
+
     writeFileSync(copy, src, 'utf8')
     const back = runCase(SA_PLAN, copy)
     assert.equal(back.status, 0, `复原后必须为绿：${back.text}`)
     assert.match((back.stdout.split(/\r?\n/)[0] ?? '').trim(), /^check-case-assert: ids 30 \/ hollow 0 \/ missing 0 => ok$/)
 
-    console.log(`hollow: ${forms.length}/${forms.length} => red / restored => ok`)
+    console.log(`hollow: ${forms.length}/${forms.length} => red / mixed => ok / restored => ok`)
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }
