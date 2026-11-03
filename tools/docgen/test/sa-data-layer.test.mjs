@@ -6,6 +6,7 @@ import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writ
 import { tmpdir } from 'node:os'
 import { join, dirname } from 'node:path'
 import { spawnSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import { expandRefs, loadSeatData } from '../components/seatLoader.mjs'
 import { CARD_KEYS, buildCards } from '../components/cardPipeline.mjs'
 import { SCAN_FIELDS } from '../card-model/enums.mjs'
@@ -367,4 +368,74 @@ test('TC-029 notWhen 拼接丢失（`descriptionOf` 丢 notWhen）→ gate exit 
     assert.equal(r.status, 1, r.stdout + r.stderr)
     assert.match(r.stdout + r.stderr, /senior-sdet/)
   })
+})
+
+// ── T5（Q8）：删 3 项本仓专属路径 → 2 卡重生成 → 两处基线同批 ─────────────────────
+// 三项的唯一来源是 PRD §3 Q8 的裁定（spec §10.1 R6），此处只做判据侧引用。
+const Q8_REMOVED = ['lessons/', 'skills-lock.json', 'tools/docgen-spike/.tmp-test/']
+const cardText = (seat) => readFileSync(join('agents', `${seat}.md`), 'utf8')
+
+test('TC-024 policy 删一项却不重生成 2 卡 → gate exit 1 `Mismatch`', () => {
+  withRepoCopy((dst) => {
+    const p = join(dst, 'tools', 'docgen', 'policy', 'definitions', 'paths.mjs')
+    const src = readFileSync(p, 'utf8')
+    // 前置：Q8 三项已从 `pathGroups.workspace` 删掉（用「4 空格缩进的数组项」这一形态判，
+    // `DETECTION_BLIND_SPOTS` 那行里的 `'lessons/'` 不算——它属「检测限度」段，spec R6 要求保留）
+    for (const item of Q8_REMOVED) {
+      assert.equal(src.split(`    '${item}',\n`).length - 1, 0, `前置：Q8 已把 ${item} 从 workspace 删掉`)
+    }
+    // 构造：删一项**现存**的禁写路径；判据与「删 3 项」同形（定义层 ≠ 卡面 → Mismatch）
+    const line = "    '其他评审目录',\n"
+    assert.equal(src.split(line).length - 1, 1, '删除锚必须恰 1 处')
+    writeFileSync(p, src.split(line).join(''))
+    const r = runCli(dst, ['gate'])
+    assert.equal(r.status, 1, r.stdout + r.stderr)
+    const out = r.stdout + r.stderr
+    assert.match(out, /Mismatch/, '删项而不重生成必须落 Mismatch')
+    assert.ok(/reviewer-audit|detective-observer/.test(out), `必须点名受影响的席，实得 ${out.slice(0, 300)}`)
+  })
+})
+
+test('TC-006 policy 删 3 项后 2 卡「逐项点名」行 20 项、兜底句逐字在位', () => {
+  for (const seat of ['reviewer-audit', 'detective-observer']) {
+    const lines = cardText(seat).split('\n').filter((l) => l.includes('逐项点名'))
+    assert.equal(lines.length, 1, `${seat}: 「逐项点名」行必须恰 1 行`)
+    const line = lines[0]
+    const seg = line.slice(line.indexOf('逐项点名：') + '逐项点名：'.length, line.indexOf('；兜底句'))
+    const items = seg.split('、').map((x) => x.trim().replace(/^`|`$/g, '')).filter(Boolean)
+    assert.equal(items.length, 20, `${seat}: 禁写项应 20（删前 23 − 3），实得 ${items.length}`)
+    assert.ok(line.includes('兜底句：凡 `.gitignore` 覆盖的路径一律视为禁止写入。'), `${seat}: 兜底句必须逐字在位`)
+    for (const w of ['skills-lock.json', 'tools/docgen-spike/.tmp-test/']) {
+      assert.equal(line.includes(w), false, `${seat}: 「逐项点名」行不得残留 ${w}`)
+    }
+  }
+})
+
+test('TC-025 「逐项点名」行三项 0 命中；全卡 `lessons/` 恰 2 且都落在「检测限度」行', () => {
+  let total = 0
+  for (const seat of ['reviewer-audit', 'detective-observer']) {
+    const text = cardText(seat)
+    const line = text.split('\n').find((l) => l.includes('逐项点名'))
+    for (const w of Q8_REMOVED) assert.equal(line.includes(w), false, `${seat}: 「逐项点名」行不得残留 ${w}`)
+    const hits = text.split('\n').filter((l) => l.includes('lessons/'))
+    total += hits.length
+    assert.equal(hits.length, 1, `${seat}: 全卡 lessons/ 应恰 1 行（检测限度段），实得 ${hits.length}`)
+    assert.ok(hits[0].includes('检测限度'), `${seat}: lessons/ 只许出现在检测限度行，实得 ${hits[0].slice(0, 60)}`)
+  }
+  assert.equal(total, 2, '两卡合计 lessons/ 命中必须恰 2（= 每卡检测限度段各 1，盲区未被误删）')
+})
+
+test('TC-028 基线两处：evidence.renderSha256 == 盘上哈希（逐席）+ 2 席 lastWrittenHash + baseline.json 无哈希字段', async () => {
+  const { agentData } = await import('../components/agentData.mjs')
+  for (const e of agentData) {
+    const sha = createHash('sha256').update(readFileSync(join('agents', `${e.name}.md`))).digest('hex').toUpperCase()
+    const ev = JSON.parse(readFileSync(join('tools', 'docgen', 'fixtures', `${e.name}.evidence.json`), 'utf8'))
+    assert.equal(ev.renderSha256, sha, `${e.name}: evidence.renderSha256 必须等于盘上哈希`)
+    if (['reviewer-audit', 'detective-observer'].includes(e.name)) {
+      assert.equal(ev.lastWrittenHash, sha, `${e.name}: 重生成后 lastWrittenHash 必须同步`)
+    }
+  }
+  const baseline = JSON.parse(readFileSync(join('tools', 'docgen', 'baseline.json'), 'utf8'))
+  assert.ok(Array.isArray(baseline), 'baseline.json 应只装路径清单（数组）')
+  assert.equal(baseline.filter((p) => /sha256|hash/i.test(String(p))).length, 0, 'baseline.json 不得含哈希字段')
 })

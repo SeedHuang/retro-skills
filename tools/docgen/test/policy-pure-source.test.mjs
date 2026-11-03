@@ -94,10 +94,16 @@ const grantGroup = (dir, seat, group) => {
 };
 
 // ---- 判据侧派生（禁止手抄）：路径清单全部从定义层取（testcase §0.3）----
-// pathItems() = **22**（21 个数组元素 + 1 个 pattern 源串）=「定义层有几个值」，**不是** ③ 段成员数（见 §0.1）
+// pathItems() = **19**（18 个数组元素 + 1 个 pattern 源串）=「定义层有几个值」，**不是** ③ 段成员数（见 §0.1）
 const pathItems = () => [...Object.values(PTH.pathGroups).flat(), PTH.FORBIDDEN_SPEC_PLAN.pattern.source];
-// pathTokens() = **23**（③ 段成员数）：`代码、测试` 在卡面写作两项，故按「、」再切一次；`spec / plan` 恒在末位
+// pathTokens() = **20**（③ 段成员数）：`代码、测试` 在卡面写作两项，故按「、」再切一次；`spec / plan` 恒在末位
 const pathTokens = () => [...Object.values(PTH.pathGroups).flat().flatMap((x) => x.split('、')), 'spec / plan'];
+// Q8（2026-11-03，PRD §3 / spec §10.1 R6）：`pathGroups.workspace` 删了 3 项本仓专属路径。
+// 下列用例以**改造前旧卡**（`capability-baseline.json`，23 项）为 `before`，故 diff 必须**恰等于**这 3 条 minus；
+// 其余任何差仍判红（不放宽成「不看 minus」，也不改基线——基线必须早于 `policy/` 出现，见 H07a）。
+const Q8_MINUS = ['forbiddenPaths: lessons/', 'forbiddenPaths: skills-lock.json', 'forbiddenPaths: tools/docgen-spike/.tmp-test/'];
+const q8Delta = () => ({ minus: [...Q8_MINUS], plus: [] });
+const withoutQ8 = (arr) => arr.filter((x) => !Q8_MINUS.includes(x));
 // 读配置侧唯一口径（testcase §0.3 / spec:131）：`Object.hasOwn`，否则 `constructor` / `__proto__` 会取到原型链上的值
 const policyOf = (n) => (Object.hasOwn(SEAT_POLICY, n) ? SEAT_POLICY[n] : SEAT_POLICY.__default__);
 // 卡文本（A06 ① 切的是**卡面**，不是渲染结果——两席的卡在 T5 才重出）
@@ -192,7 +198,7 @@ test('S6-TC-A02 命令 8 组（允许 3 / 禁止 5）+ seatGroups 空集 + 每�
   assert.deepEqual(Object.keys(CMD.seatGroups ?? {}), [], '本轮 seatGroups 必须是空集（只允许副本内构造）');
 });
 
-test('S6-TC-A04 路径 6 组：21 数组元素 / 22 定义层点名 / 23 卡面成员', () => {
+test('S6-TC-A04 路径 6 组：18 数组元素 / 19 定义层点名 / 20 卡面成员', () => {
   const P = PTH.pathGroups;
   assert.deepEqual(Object.keys(P), ['code','governance','docs.input','build','ledger','workspace']);
   assert.deepEqual(P.code, ['代码、测试']);
@@ -202,13 +208,12 @@ test('S6-TC-A04 路径 6 组：21 数组元素 / 22 定义层点名 / 23 卡面�
   // **成员名逐项断言**（只比长度 → `docs/reports/` 换成 `docs/misc/` 也绿，等于没判）
   assert.deepEqual(P.ledger, ['docs/after/','docs/handoffs/','docs/reports/','docs/superpowers/retro/'],
     'ledger 组必须逐项相等（换名不换数 → 必红）');
-  assert.deepEqual(P.workspace, ['.superpowers/','lessons/','*.local.md','**/ledger.md','.trae/',
-    'skills-lock.json','node_modules/','tools/docgen-spike/.tmp-test/','其他评审目录'],
-    'workspace 恰 9 项且按定义层顺序逐项相等（换名不换数 / 调序 → 必红）');
-  assert.equal(Object.values(P).flat().length, 21);        // 21 数组元素（`代码、测试` 合写盖 2 项）
-  assert.equal(pathItems().length, 22);                    // **定义层**：21 元素 + 1 pattern 源串（不是 ③ 段成员数）
-  assert.equal(pathTokens().length, 23);                   // **卡面**：③ 段成员 23（21 元素按 `、` 再切 = 22，+ `spec / plan`）
-  assert.ok(pathTokens().includes('spec / plan'), '第 23 项 `spec / plan` 必须进成员集合（否则 ③ 段只有 22 项）');
+  assert.deepEqual(P.workspace, ['.superpowers/','*.local.md','**/ledger.md','.trae/','node_modules/','其他评审目录'],
+    'workspace 恰 6 项且按定义层顺序逐项相等（Q8 删 3 项后；换名不换数 / 调序 → 必红）');
+  // 三个计数一律写成**关系式**（Q8 后再不写死绝对数）：三项差值恒为 1
+  assert.equal(Object.values(P).flat().length, pathItems().length - 1);   // 18 = 19 − 1（`代码、测试` 合写盖 2 项）
+  assert.equal(pathTokens().length, pathItems().length + 1);             // 20 = 19 + 1（按 `、` 再切 + `spec / plan`）
+  assert.ok(pathTokens().includes('spec / plan'), '`spec / plan` 必须进成员集合（否则 ③ 段少一项）');
   assert.ok(PTH.FORBIDDEN_SPEC_PLAN.pattern instanceof RegExp);
   assert.match('spec / plan', PTH.FORBIDDEN_SPEC_PLAN.pattern);
   assert.match('spec/plan', PTH.FORBIDDEN_SPEC_PLAN.pattern);
@@ -257,14 +262,14 @@ test('S6-TC-B12 未登记席与原型链键名回落 __default__', () => {
 
 test('S6-TC-A06 卡面切片顺序 == 定义层组内顺序（路径 + 命令两处）', () => {
   // 与 testcase:816 的唯一偏差：切片**去掉锚点本身**——`indexOf('逐项点名：')` 是包含式起点，
-  // 直接用会把首项切成「逐项点名：代码」（23 项恒少一项、集合恒不等，判据永远红）。语义不变，只去锚点。
+  // 直接用会把首项切成「逐项点名：代码」（20 项恒少一项、集合恒不等，判据永远红）。语义不变，只去锚点。
   const sec = (t) => t.slice(t.indexOf('逐项点名：') + '逐项点名：'.length, t.indexOf('；兜底句'));
   const strip = (s) => s.trim().replace(/^`|`$/g, '');
   for (const seat of ['reviewer-audit', 'detective-observer']) {
-    // ① 卡面路径段：成员数 = 23（含 `spec / plan`）+ 去掉 pattern 项后的顺序
+    // ① 卡面路径段：成员数 = 20（含 `spec / plan`）+ 去掉 pattern 项后的顺序
     const items = sec(card(seat)).split('、').map(strip).filter(Boolean);
-    assert.equal(items.length, 23, `${seat}: ③ 段成员数应为 23（不是 22）`);
-    assert.deepEqual([...items].sort(), [...pathTokens()].sort(), `${seat}: 路径项集合 ≠ 23 项`);
+    assert.equal(items.length, pathTokens().length, `${seat}: ③ 段成员数应 = 定义层派生值 ${pathTokens().length}`);
+    assert.deepEqual([...items].sort(), [...pathTokens()].sort(), `${seat}: 路径项集合 ≠ 定义层派生集合`);
     const noPattern = (a) => a.filter((x) => x !== 'spec / plan');
     assert.deepEqual(noPattern(items), noPattern(pathTokens()), `${seat}: 组内顺序 ≠ 卡面顺序`);
     // ② 命令段：14 条允许命令逐项出现且位置单调（= 顺序 = 定义层顺序）
@@ -314,9 +319,9 @@ test('S6-TC-C08 槽级分隔符：组间 `、`/`；`、组内 ` / `；DENY_GROUP
   assert.ok(allowSlot.includes('；'), '允许组：组间分隔符应为 ；');
   assert.ok(allowSlot.includes(' / '), '允许组：组内分隔符应为 ` / `');
   assert.ok(pathSlot.includes('、') && !pathSlot.includes('；'), '路径清单：统一用 、');
-  // ③ 段成员数 = **23**（`spec:89` 槽 10 = `pathGroups` 六组展开 ∪ `spec / plan`）：不是 22
-  assert.equal(pathSlot.split('、').filter(Boolean).length, 23, '路径槽成员数应为 23（含 `spec / plan`）');
-  assert.ok(pathSlot.includes('spec / plan'), '路径槽必须含 `spec / plan`（第 23 项）');
+  // ③ 段成员数 = **20**（`spec:89` 槽 10 = `pathGroups` 六组展开 ∪ `spec / plan`，Q8 删 3 项后）
+  assert.equal(pathSlot.split('、').filter(Boolean).length, pathTokens().length, `路径槽成员数应 = ${pathTokens().length}`);
+  assert.ok(pathSlot.includes('spec / plan'), '路径槽必须含 `spec / plan`');
   for (const v of CMD.forbiddenGroups['env.assign'].verbs) {
     assert.equal(denySlot.includes(v), false, `env.assign verb 混进 DENY_GROUPS：${v}`);
     assert.ok(envSlot.includes(v), `env.assign verb 未进入 ENV_FORMS：${v}`);
@@ -1214,9 +1219,9 @@ test('S6-TC-F02 dump 槽级展开可复算 renderBoundary；两 producer 席 == 
     // 槽 12 = DETECTION_CMD：值必须是 `commands['git.read'].verbs` 的 status 项本身（只读引用，不复制）
     assert.equal(e[11], CMD.commandGroups['git.read'].verbs.find((v) => /status/.test(v)),
       `${s}: 槽 12 = DETECTION_CMD`);
-    // 槽 10 = FORBIDDEN_PATHS：成员 23 项（pathGroups 六组展开 ∪ `spec / plan`；不是 22）
-    assert.equal(e[9].split('、').filter(Boolean).length, 23, `${s}: 槽 10 成员数应为 23（不是 22）`);
-    assert.ok(e[9].includes('spec / plan'), `${s}: 槽 10 必须含 spec / plan（第 23 项）`);
+    // 槽 10 = FORBIDDEN_PATHS：成员数 = 定义层派生（Q8 删 3 项后 20），不是写死值
+    assert.equal(e[9].split('、').filter(Boolean).length, pathTokens().length, `${s}: 槽 10 成员数应 = ${pathTokens().length}`);
+    assert.ok(e[9].includes('spec / plan'), `${s}: 槽 10 必须含 spec / plan`);
   }
   // ③ 两 producer 席：dump ↔ render ↔ 卡面边界节三处一致
   for (const s of ['reviewer-audit','detective-observer']) {
@@ -1506,8 +1511,8 @@ test('S6-TC-J03 边界：措辞重排但要素齐 → 仍绿（哈希不等也�
     const out = renderBoundaryIn(d, 'reviewer-audit');
     assert.doesNotThrow(() => assertNeedClauses(out, 'reviewer-audit'), '② 要素齐即绿');
     assert.notEqual(sha(out), goldenOf('reviewer-audit'), '③ 合法改写必须让哈希不等（v5 口径下会被误判）');
-    assert.equal(verdict(diffFacts(baseJson().seats['reviewer-audit'],
-      factsFromText(out, probeDict(d)))), 'pass', '④ 能力没丢（字典按副本现算）');
+    assert.deepEqual(diffFacts(baseJson().seats['reviewer-audit'], factsFromText(out, probeDict(d))), q8Delta(),
+      '④ 能力除 Q8 三项外没丢（字典按副本现算）');
   });
 });
 
@@ -1516,7 +1521,7 @@ test('S6-TC-C01 审计席：哈希只作定位，判据 = 能力 diff 空 + J01 
   const hashEqual = sha(renderBoundary(seat)) === goldenCurOf(seat);   // ① 只取事实（当前比对键，spec:198）
   assert.equal(typeof hashEqual, 'boolean');
   assert.deepEqual(diffFacts(baseJson().seats[seat], factsFromText(renderBoundary(seat), probeDict())),
-    { minus: [], plus: [] }, `${seat}: 能力 diff 非空`);              // ② 唯一通过判据
+    q8Delta(), `${seat}: 能力 diff 必须恰为 Q8 三项`);              // ② 唯一通过判据
   assert.doesNotThrow(() => assertNeedClauses(renderBoundary(seat), seat));  // ③
   assert.match(renderBoundary(seat), /审计\s*写\s*`round-check\.md`/, '④ 槽 6：审计席应渲染「本席自写」形态');
   // ⑤ 黄金**基线键**的来源 = 改造前（旧卡边界节），不是改造后渲染自哈希
@@ -1547,7 +1552,7 @@ test('S6-TC-C02 侦探席：同口径（哈希只作定位）', () => {
   const hashEqual = sha(renderBoundary(seat)) === goldenCurOf(seat);   // 当前比对键（spec:198）
   assert.equal(typeof hashEqual, 'boolean');
   assert.deepEqual(diffFacts(baseJson().seats[seat], factsFromText(renderBoundary(seat), probeDict())),
-    { minus: [], plus: [] }, `${seat}: 能力 diff 非空`);
+    q8Delta(), `${seat}: 能力 diff 必须恰为 Q8 三项`);
   assert.doesNotThrow(() => assertNeedClauses(renderBoundary(seat), seat));
   // 与 testcase:1391 的唯一偏差：⑩ 是**卡级**子句（CLAUSES 标 `scope:'card'`，J01 已裁定它不在 ⑤ 段；
   // 现文落在槽 5「只允许写」段）→ 按整卡判，不按 seg5 切片判（照切片写会恒红，且与 J01 口径冲突）
@@ -1694,13 +1699,14 @@ test('S6-TC-H02 五段事实集合逐席 diff 空差', () => {
     const after = factsFromText(renderBoundary(s), dict);       // 判据端 = 渲染文本 + 定义层字典（不是 dump）
     assert.deepEqual(Object.keys(before).sort(), [...FACTS_KEYS].sort(), `${s}: 基线五段键集不全`);
     assert.deepEqual(Object.keys(after).sort(), [...FACTS_KEYS].sort(), `${s}: 改造后五段键集不全`);
-    assert.deepEqual(diffFacts(before, after), { minus: [], plus: [] }, s);
-    // ⑤' ③ 段成员数 = 23（不是 22）：`spec / plan` 必须能被取到
-    assert.equal(after.forbiddenPaths.length, 23, `${s}: ③ 段成员数应为 23（含 spec / plan）`);
+    assert.deepEqual(diffFacts(before, after), q8Delta(), `${s}: 除 Q8 三项外不得有差`);
+    // ⑤' ③ 段成员数 = 定义层派生（Q8 后 20）：`spec / plan` 必须能被取到
+    assert.equal(after.forbiddenPaths.length, pathTokens().length, `${s}: ③ 段成员数应 = ${pathTokens().length}`);
     assert.ok(after.forbiddenPaths.includes('spec / plan'), `${s}: factsFromText 必须取到 spec / plan`);
     // ⑤' 两端可比前提（spec:169 ④）：基线成员 ⊆ 定义层字典（否则字典同步缩水 → 差集恒空）
     for (const k of FACTS_KEYS) {
       for (const m of norm(before[k])) {
+        if (Q8_MINUS.includes(`${k}: ${m}`)) continue;   // Q8 有意删除：基线里在、定义层已删（见 Q8_MINUS 注释）
         assert.ok(POOL[k].includes(m),
           `${s}: 基线成员 ${k}:${m} 不在定义层字典里（基线切分口径错 或 定义层丢项 → 判据将恒真）`);
       }
@@ -1721,8 +1727,8 @@ test('S6-TC-H03 负例：少一项路径 → minus 出现 forbiddenPaths → 必
       factsFromText(renderBoundaryIn(dir, 'reviewer-audit'), probeDict(dir)));
   });
   assert.deepEqual(d.plus, []);
-  assert.equal(d.minus.length, 1);
-  assert.match(d.minus[0], /^forbiddenPaths: /);
+  const rest = withoutQ8(d.minus);
+  assert.deepEqual(rest, ['forbiddenPaths: 其他评审目录'], `删一项路径后 minus 应恰为该一项，实得 ${JSON.stringify(rest)}`);
   assert.equal(verdict(d), 'fail');
 });
 
@@ -1735,7 +1741,7 @@ test('S6-TC-H04 负例：删一条允许命令 → minus 出现 allowCmds → �
   });
   const d = diffFacts(baseJson().seats['reviewer-audit'], after);
   assert.equal(after.allowCmds.length, before - 1, '改造后允许命令数应 = 基线 − 1');
-  assert.deepEqual(d.minus.map((x) => x.replace(/^allowCmds: /, '')), ['node scripts/skill-dir.mjs']);
+  assert.deepEqual(withoutQ8(d.minus).map((x) => x.replace(/^allowCmds: /, '')), ['node scripts/skill-dir.mjs']);
   assert.deepEqual(d.plus, []);
   assert.equal(verdict(d), 'fail');
 });
@@ -1758,7 +1764,7 @@ test('S6-TC-H05 越权负例：多一项（路径 / 命令 / 已登记组，各�
       dumpPolicy(d);                       // 先断 dump 成功（议会 #3 F19 / QA-15）
       return diffFacts(beforeOf(seat), factsFromText(renderBoundaryIn(d, seat), probeDict(d)));
     });
-    assert.deepEqual(diff.minus, [], name);
+    assert.deepEqual(withoutQ8(diff.minus), [], name);
     assert.equal(diff.plus.length, expectPlus, `${name}: 越权新增未被捕获`);
     assert.equal(verdict(diff), 'fail');
   }

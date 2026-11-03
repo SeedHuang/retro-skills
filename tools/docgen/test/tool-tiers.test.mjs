@@ -34,7 +34,7 @@ const producerSeats = () => Object.keys(patternRegistry.tierBySeat).filter((n) =
 // ── 共用前提（P0 前置）：B02 / B03 / B05 / B13 共享，模块顶层声明一次（抄进各 test() 会漏项或 ReferenceError）──
 const FORBIDDEN_PATHS = Object.values(pathGroups).flat();
 // 卡面 ③ 段成员数口径（S5 testcase §1.1）：`代码、测试` 在定义层合写一条、卡面写作两项，
-// 故卡面成员 = 定义层数组按 `、` 再切 + `spec / plan` = 23 项
+// 故卡面成员 = 定义层数组按 `、` 再切 + `spec / plan` = 20 项（Q8 删 3 项后；本文件一律派生、不写死）
 const pathTokens = () => [...FORBIDDEN_PATHS.flatMap((x) => x.split('、')), 'spec / plan'];
 const FORBIDDEN_SPEC_PLAN = /spec\s*\/\s*plan/;   // ③ 第 6 项：`spec / plan`（正则判，兼容无空格写法）
 
@@ -222,7 +222,7 @@ test('S5-TC-B02 审计边界节五段齐 + 允许写切片干净 + 禁止段两�
   const MARKS = ['整档授予', '平台无参数级授权', '不假装白名单', '不裁决他人分歧', '无中断评审',
     '.session/reviews/', 'docs/superpowers/reviews/', 'round-check', 'delivery-audit',
     '封闭清单', '任何写文件或重定向',
-    // 卡面 ③ 段 = **23 项**（`代码、测试` 在卡面写作两项）：S6 §3.4 渲染把该合写元素按 `、` 拆开，
+    // 卡面 ③ 段 = **20 项**（`代码、测试` 在卡面写作两项；Q8 删 3 项后）：S6 §3.4 渲染把该合写元素按 `、` 拆开，
     // 故此处取 `pathTokens()`（= 卡面派生）而非定义层数组 `FORBIDDEN_PATHS`（含合写的 `代码、测试`）
     ...pathTokens(), '.gitignore',
     '越权清单', 'sha256', '用户执行', '本轮结论作废', '检测限度'];

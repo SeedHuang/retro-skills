@@ -779,11 +779,14 @@ test('S3-TC-H06 必红期与回退', () => {
     },
   })
   // ② 回退面：整批回到 <S3-BASE>（判据表 + 15 卡 + 校验器 + 接线 + 词表派生）
+  // `2026-11-03`（S-A T5 / Q8）补一项：卡面边界段的**内容源**也在定义层（`paths.mjs`），Q8 删了 3 项路径；
+  // 只回退卡不回退定义层 → 旧卡（23 项）≠ 新渲染（20 项）→ 回退面不可达。故把定义层一并回退。
   const S3_REL = [
     'tools/docgen/card-model/vocab/predicates.mjs',
     'tools/docgen/card-model/validateCardModel.mjs',
     'tools/docgen/card-model/vocab/subjective-terms.mjs',
     'tools/docgen/cli.mjs',
+    'tools/docgen/policy/definitions/paths.mjs',
     ...SEATS.map((s) => `agents/${s}.md`),
   ]
   coldRepo({

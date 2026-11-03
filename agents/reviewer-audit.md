@@ -93,7 +93,7 @@ reason
 
 **禁止写**：不得写 `progress.md`（只由主持人写，段二 / 段三由主持人从责任席的产出转录）、不得写 `skills/dev-workflow/references/gate-record.md`（签字原文由申报人转录，你只核转录是否逐字一致）、以及 ③ 所列全部路径。
 
-**除上述落点外，任何写文件或重定向一律禁止**，逐项点名：`代码`、`测试`、`rules/`、`skills/`、`agents/`、`docs/prd/`、`spec / plan`、`tools/`、`scripts/`、`配置与依赖清单`、`docs/after/`、`docs/handoffs/`、`docs/reports/`、`docs/superpowers/retro/`、`.superpowers/`、`lessons/`、`*.local.md`、`**/ledger.md`、`.trae/`、`skills-lock.json`、`node_modules/`、`tools/docgen-spike/.tmp-test/`、`其他评审目录`；兜底句：凡 `.gitignore` 覆盖的路径一律视为禁止写入。
+**除上述落点外，任何写文件或重定向一律禁止**，逐项点名：`代码`、`测试`、`rules/`、`skills/`、`agents/`、`docs/prd/`、`spec / plan`、`tools/`、`scripts/`、`配置与依赖清单`、`docs/after/`、`docs/handoffs/`、`docs/reports/`、`docs/superpowers/retro/`、`.superpowers/`、`*.local.md`、`**/ledger.md`、`.trae/`、`node_modules/`、`其他评审目录`；兜底句：凡 `.gitignore` 覆盖的路径一律视为禁止写入。
 
 **命令默认拒绝**：只跑下列白名单，其余一律不跑。`npm run check` / `node scripts/check-all.mjs` / `node scripts/doc-name.mjs --check` / `node scripts/skill-dir.mjs` / `node skills/review-log/scripts/time.mjs`；`git --no-optional-locks status --porcelain` / `git --no-optional-locks diff` / `git --no-optional-locks show` / `git --no-optional-locks log` / `git --no-optional-locks reflog show`；`node tools/docgen/cli.mjs gate` / `node tools/docgen/cli.mjs check-agents` / `node tools/docgen/cli.mjs diff --kind agent --name <席>` / `node tools/docgen/cli.mjs draft ls`
 

@@ -7,9 +7,14 @@ import assert from 'node:assert/strict';
 import { readFileSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { factsFromBaselineText, diffFacts, verdict, emit } from './capability-baseline.mjs';
 
-const CARD = readFileSync('agents/reviewer-audit.md', 'utf8');
+// 冻结来源 = **改造前那次提交里的旧卡文本**（Q8 删 3 项后，当前卡只剩 20 项，不能再读当前卡断言 23）。
+// 为什么不用 `fixtures/capability-baseline.golden.json`：那是 facts JSON（只有数组、没有卡面 markdown），
+// 喂不进 `factsFromBaselineText`（markdown 抽取器）。
+// 锚 `641a7e7`（S6 交付提交）实测：`factsFromBaselineText` → `paths 23 / tools 6 / tier producer`。
+const CARD = execFileSync('git', ['show', '641a7e7:agents/reviewer-audit.md'], { encoding: 'utf8' });
 
 test('基线端：旧卡切分 8 字段，工具 6、路径 23（含 spec / plan）', () => {
   const f = factsFromBaselineText(CARD);
