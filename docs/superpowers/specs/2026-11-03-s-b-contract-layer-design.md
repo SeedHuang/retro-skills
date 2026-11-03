@@ -138,15 +138,20 @@ fields: [...HEAD, ...evidence.fields, ...TAIL]
 | `tools/docgen/test/tool-tiers.test.mjs` | 要求卡面含**全部** `pathTokens()`、含**全部** allow / forbidden verbs | **必红**（议会第 1 轮 AU 的 A-02 纠正了 §11.2.6 首版把本行判成「可能无需改」）：改写口径 = 「指针句在位 + 定义层成员数不变」，「只允许写 / 命令默认拒绝」段序断言保留 |
 | `tools/docgen/test/s2-card-rewrite.test.mjs` | `S2-TC-A06`（`FORMAT_CHECKS` 三条 + 含「废卡」/「缺空」）+ `S2-TC-C09③`（把一条 ID 塞进 `duty.categories` 后要求卡面变，五项 `[true×5]`） | **必红两处**（`S2-TC-C09` 由议会第 1 轮 BE 的 B-04 / AI 的 Q-2 指出）：`A06` 按 R9 改文案后仍须 3 条；`C09` 的第五项改写口径 = 「`categories[].label`（`类别：` 行）影响卡面」 |
 | `docs/superpowers/specs/2026-11-03-s-a-data-layer-design.md` | 检测限度段那句「删后该段仍有 2 处命中属预期」（`lessons/`） | **加注**：检测限度行改为指针后该预期句不再成立 → 就地补一条「S-B 指针化后此句失效」的注（**不改结论**，只加注） |
+| `tools/docgen/test/s3-predicates.test.mjs` | `S3-TC-H06`（「回退 8 个文件到 `S3_BASE` 后 `gate` exit 0」） | **必红**（2026-11-03 Task 6 实测）：R5/R6 改了模板与渲染器，只回退卡面、不回退模板/渲染器 → 旧卡 ≠ 新渲染 → 恒红。改写口径 = 「回退时**同批**回退 `templates/boundary.md.tpl` + `renderBoundary.mjs` + `renderCard.mjs`」，或把该步断言改为 `Mismatch`；**不得**为迁就实现改「必红期」语义 |
 
 **不是「红才改」清单，是「必红」清单**：上表每一行都有机械红因（议会第 1 轮把它们从「可能无需改」纠正为必红）。施工时逐条实跑确认**红因与表里写的一致**——红因不符要回这张表改，不许改断言去迁就实现。
 
 ### 11.2.7 冻结基线与重生成（R11）
 
 1. 施工前先落基线：`node tools/docgen/cli.mjs gate` → `baseline 38/38`（exit 0）；记下改前提交哈希 + **15 席** SHA256（入当次账本，形成 S-B 冻结基线表，落 `docs/reports/`；S-A 那张 15 行表作对照历史）。
-2. 模板 + 渲染器改完 → `node tools/docgen/cli.mjs generate` 重生成 15 卡：**15 席内容都变**（2 席边界段 + 15 席「关注类别：」行；其中 13 席只少这一行）。
-3. 同批重生成 **15 份** `fixtures/<席>.evidence.json`（`TC-028` 逐 15 席要求 `evidence.renderSha256 == 盘上哈希`）。`baseline.json` 只装路径清单、不含哈希（议会第 1 轮 BE 的 C-01），**卡内容变化不改变它**——「无变化即预期」，不要去改它。
-4. 复跑 `gate` → exit 0；与**改前提交**比：`git diff --stat <BASE> -- agents/` = `15 files changed`，且 13 席在 `git diff -U0 <BASE> -- agents/` 里**只有一条删除行、无其它增删**（判据口径见 §11.4-6）。
+2. 模板 + 渲染器改完 → 重生成 15 卡（**两条 `draft` + `replace` 通路**，`generate` 只比不写、不能当写盘通路）：15 席各先 `draft --kind agent --name <席>`，再逐席 `replace --kind agent --name <席> --draft <草稿> --yes --expect-change <该席新渲染 sha256> --rejudge A1`（15 席差异都删「关注类别：」行 → 触达语义键 A1；A1 判者必须是**独立于施工者的子代理**，见 2026-10-21 replace spec R7）。
+3. `replace` **同批写回** **15 份** `fixtures/<席>.evidence.json` 的 `renderSha256` / `lastWrittenHash` 并追加 `changes`（`TC-028` 逐 15 席要求 `evidence.renderSha256 == 盘上哈希`）；**禁手改 evidence**。`baseline.json` 只装路径清单、不含哈希（议会第 1 轮 BE 的 C-01），**卡内容变化不改变它**——「无变化即预期」，不要去改它。
+4. 复跑 `gate` → exit 0；与**改前提交**比 `git diff --stat <BASE> -- agents/` = `15 files changed`。**变更形态按席三分类**（2026-11-03 实测，`git diff --numstat <BASE> -- agents/` 可复算；旧稿「13 席只少一行」与 R1 互斥，已作废）：
+   - **2 席 `0 / −1`**（`evidence-reader` / `senior-sdet`）：只删「关注类别：」行；
+   - **11 席 `+7 / −6`**：R1 的 `issue-card` 字段 7 → 9 行（+2）+ 两条 checks 文案改写（+2/−2）+ 删「关注类别：」（−1），其余不变；
+   - **2 张指针席 `+4 / −5`**（`reviewer-audit` / `detective-observer`）：边界段 4 行改指针（+4/−4）+ 删「关注类别：」（−1）。
+   判据（位置型，替掉旧的 `a === 0 && d === 1`）：① 15 席每席**恰 1 条**被删行以 `关注类别：` 开头且落在「职责」段；② 非指针 13 席除该删行外的增删**只落「输出格式」段**；③ 指针 2 席「边界」段至少 1 增 1 删。该形态断言只对本批 BASE 成立，后续批次按新 BASE 重算（常驻测试只留不变量）。
 
 ### 11.2.8 本段内部已定口径
 
@@ -163,7 +168,7 @@ fields: [...HEAD, ...evidence.fields, ...TAIL]
 
 `reviewer-audit` 边界段现 **2198 字符 / 15 行**（口径：不含 `## 边界` 标题；含标题为 16 行）；4 条清单类行合计 **1603 字符**（309 + 542 + 435 + 317）。指针化后这 4 行改为 4 句带符号名的句子。
 
-**卡面变更面 = 15 张卡**（不是 2 张）：2 张因边界段指针化而变，**15 张**因删「关注类别：」行而变（13 张只少这一行）。这条数字由议会第 1 轮 BE 的 B-01 / AI 的 Q-1 纠正，原稿按「只 2 卡变」写是错的。
+**卡面变更面 = 15 张卡**（不是 2 张）：2 张因边界段指针化而变，**15 张**因删「关注类别：」行而变；此外 **11 席**同时承载 R1 的 `issue-card` 输出格式变更（字段 7 → 9 行 + 两条 checks 文案）。逐席增删形态见 §11.2.7 第 4 步的三分类（**旧稿「13 张只少这一行」与 R1 互斥，2026-11-03 实测作废**）。
 
 **观测项（不作验收）**：改后逐席记「边界段字符和」。目标 = 4 条清单行降幅 ≥ 50%；**不设红点**——降幅不是判据，判据是 V8（`逐项点名` = 0）+ 纯度（§11.4-3）。
 
@@ -176,7 +181,7 @@ fields: [...HEAD, ...evidence.fields, ...TAIL]
 3. **模板纯度 + 卡面形态**：① 对**模板**跑 `assertTemplatePure()` 不抛（判渲染文本会恒抛，见 §11.9 Q1）；② 卡面 `逐项点名` 计数 = 0（PRD V8）+ 4 个策略符号名在**那 2 张卡**（`reviewer-audit` / `detective-observer`，其余 13 席走 `DEFAULT_BOUNDARY`、`senior-sdet` 走 `SDET_BOUNDARY`，无该句）的边界段各命中 ≥1 + 本席组 ID 在位（**判定面 = 那 2 张卡**，不是 15 席）。判据 = 用例 **`SB-TC-05`** / **`SB-TC-31`**（后者统一 `anchors 12/12`）。
 4. **映射非空心**：`node tools/docgen/check-case-assert.mjs --plan docs/superpowers/plans/2026-11-03-s-a-data-layer.md --testcase docs/superpowers/specs/2026-11-03-s-a-data-layer-design-testcase.md` → `ids 30 / hollow 0 / missing 0`，exit 0（PRD V7）。
 5. **单一来源**：`card.duty.categories` 在 15 席**装配产物**（`agentData[i].card`）中逐席与 `card.categories[].label` `deepEqual`（同序逐字）；任一席文件出现非空 `duty.categories` → `DutyCategoryMisplaced`，判据 = `exitCodeFor('DutyCategoryMisplaced') === 1`（**不是**看进程退出码：loader 在 import 期抛、未登记码的进程退出码同样是 1，看不出差别——议会第 1 轮 BE 的 B-05）+ stderr 首行以该码开头。用例 **`SB-TC-07`** / **`SB-TC-20`**。
-6. **渲染一致（带基线）**：改后 `node tools/docgen/cli.mjs gate` exit 0（15 席 `disk == render`）+ 与**改前提交**比 `git diff --stat <BASE> -- agents/` = **15 files changed** + 15 份 `fixtures/<席>.evidence.json` 的 `renderSha256` 与盘上一致（`TC-028` 口径）。**不许**写裸 `git diff --stat -- agents/`（提交前后数字不同）。用例 **`SB-TC-06`** / **`SB-TC-32`**。
+6. **渲染一致（带基线）**：改后 `node tools/docgen/cli.mjs gate` exit 0（15 席 `disk == render`）+ 与**改前提交**比 `git diff --stat <BASE> -- agents/` = **15 files changed** + 逐席形态按 §11.2.7 第 4 步的三分类判（位置型：每席恰 1 条 `关注类别：` 删行在「职责」段；非指针 13 席其余增删只在「输出格式」段；指针 2 席「边界」段至少 1 增 1 删）+ 15 份 `fixtures/<席>.evidence.json` 的 `renderSha256` 与盘上一致（`TC-028` 口径）。**不许**写裸 `git diff --stat -- agents/`（提交前后数字不同）。用例 **`SB-TC-06`** / **`SB-TC-32`**。
 7. **全仓门禁**：`npm run check` exit 0、`# fail 0`、末行 `check 全部通过`；`CARD_MODEL_CODES` 仍 36 码、`SCAN_FIELDS` 仍 8 键。
 8. **关注点单行（R8 的验收锚）**：卡面 `关注类别：` 计数 = 0，且 `类别：` ≥ 15。为什么必须单列：R8 若没落地，`gate` 在改动前后都绿（两边同时变）。用例 **`SB-TC-08`** / **`SB-TC-37`**（两向判别力：回填该行 → 1 判红；少一行 `类别：` → 14 判红）。
 9. **指针不含仓内路径（R6 的验收锚）**：**只判被指针化的那 4 行**（禁写路径 / 命令白名单 / 禁止命令 / 检测盲区）的文本——其内仓内路径形态（`(tools|agents|scripts|skills|rules)/…` 与 `.mjs` / `.json` 反引号形态）命中数 = 0。**不能判整段边界段**：「只允许写」段合法地含 `docs/superpowers/reviews/<本次>/`，判整段会把这条合法路径算成违规、金态即红（侦探第 1 轮实测）。用例 **`SB-TC-24`**（含「取到行数 = 4」的防空转判据）。

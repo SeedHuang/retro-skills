@@ -34,7 +34,7 @@
 - **30 个 ID = `TC-001`…`TC-030`**（**三位**，spec §11.2.5 口径 1 与 §11.1 R10；写成两位只能取出 4 个唯一值——议会第 1 轮 QA 的 Q-T-05）；
 - **36 码 / 8 键** = `CARD_MODEL_CODES`（`tools/docgen/card-model/validateCardModel.mjs`）与 `SCAN_FIELDS`（`tools/docgen/card-model/enums.mjs`）的键数，spec §11.4-7 要求不变；
 - **4 符号名** = `pathGroups` / `commandGroups` / `forbiddenGroups` / `DETECTION_BLIND_SPOTS`（spec §11.1 R6）；
-- **13 席「只少一行」** = 除 2 卡外的 13 席，其 `git diff -U0 $BASE -- agents/` 输出**只有一条删除行**（`关注类别：` 那行）、无其它增删（spec §11.2.7 第 4 步）。**这 13 席的 SHA 也会变**（少了一行），所以「哈希不变」这个说法不成立；能判的是「变更形态只有一条删除行」；
+- **变更形态三分类**（2026-11-03 实测，`git diff --numstat $BASE -- agents/` 可复算）：**2 席 `0 / −1`**（`evidence-reader` / `senior-sdet`，只删「关注类别：」）、**11 席 `+7 / −6`**（R1 的 `issue-card` 字段 7 → 9 行 + 两条 checks 文案 + 删「关注类别：」）、**2 张指针席 `+4 / −5`**（`reviewer-audit` / `detective-observer`，边界段 4 行 + 删「关注类别：」）。**旧稿「13 席只少一行」与 R1 互斥、2026-11-03 作废**（spec §11.2.7 第 4 步已改三分类）。
 - **15 份 evidence 同批** = `tools/docgen/fixtures/<席>.evidence.json` 共 15 份，逐席 `renderSha256` 必须等于盘上哈希（`tools/docgen/test/sa-data-layer.test.mjs` 的 `TC-028` 口径，spec §11.2.7 第 3 步）；
 - **`关注类别：` 15 / `类别：` 30 → 0 / 15**：现状实测 `(Select-String -Path agents\*.md -Pattern '关注类别：').Count` → `15`，`… -Pattern '类别：'` → `30`（含被 `关注类别：` 顺带命中的 15 行）；R8 落地后无子串重叠，故 §11.4-8 的 `≥ 15` 是真下界。
 
@@ -530,23 +530,27 @@
 - **对应测试**：建议 `tools/docgen/test/sb-contract-layer.test.mjs::SB-TC-31`
 - **不覆盖**：`{{ARTIFACTS}}` 与 `{{TIER}}` / `{{CAPABILITIES}}` 的具体取值（§11.2.8 D-b / D-c 明写不指针化，SB-TC-06 的逐字节 + 本条的段锚已兜）
 
-### SB-TC-32 变更形态：15 files 全变，但 13 席的 diff **只有一条删除行**、无其它增删
+### SB-TC-32 变更形态（位置型三段）：15 files 全变；每席恰 1 条 `关注类别：` 删行在「职责」段；其余增删只在「输出格式」段（指针 2 席另有「边界」段增删）
 
-- **覆盖**：spec §11.3（卡面变更面 = 15 张）/ §11.4-6（13 席「只少一行」）/ §11.2.7 第 4 步 / §11.1 R11；（变更面口径纠自议会第 1 轮 BE 的 B-01 / AI 的 Q-1）
+- **覆盖**：spec §11.3（卡面变更面 = 15 张）/ §11.4-6（位置型形态判据）/ §11.2.7 第 4 步 / §11.1 R11；（变更面口径纠自议会第 1 轮 BE 的 B-01 / AI 的 Q-1；**三分类纠自 2026-11-03 Task 6 实测——旧稿「13 席只少一行」与 R1 互斥**）
 - **前置**：`BASE` 已在改模板前取到；已完成重生成 + 15 份 evidence 同批
 - **步骤**：
   ① `git diff --name-only $BASE -- agents/` → 文件清单；
   ② `git diff --stat $BASE -- agents/` → 统计行文件数；
-  ③ 逐席跑 `git diff -U0 $BASE -- agents/<席>.md`，解析该席的增删行：删行数 `d`、增行数 `a`；
-  ④ 按席分两类：**2 卡**（`reviewer-audit` / `detective-observer`）允许 `a > 0`（边界段整段改写）；**其余 13 席**必须 `a === 0 && d === 1`，且被删的那一行含 `关注类别：`
-- **预期**：① 15 个路径；② `15 files changed`；④ 2 卡之外 13/13 席都满足 `a = 0 / d = 1`，删的正是 `关注类别：` 行
+  ③ 逐席跑 `git diff -U0 $BASE -- agents/<席>.md`，解析该席的增删行：删行数 `d`、增行数 `a`、**每条增删行所在的节**（按 `^## ` 标题归属）；
+  ④ 位置型三段（替掉旧稿的 `a === 0 && d === 1`）：
+     - Ⅰ **15 席**：每席**恰 1 条**被删行以 `关注类别：` 开头，且该行落在「职责」段；
+     - Ⅱ **非指针 13 席**：除 Ⅰ 那条删行外，**所有**增删行所在节 = 「输出格式」（R1 的预期变更面，无第三类）；
+     - Ⅲ **指针 2 席**（`reviewer-audit` / `detective-observer`）：「边界」段内**至少 1 增 1 删**（分别断言，不得只判合计 ≥ 2）
+- **预期**：① 15 个路径；② `15 files changed`；④ Ⅰ 15/15、Ⅱ 13/13、Ⅲ 2/2
 - **判据**（`node --test` 断言，全部 `COUNT` 形态，**不依赖 `git diff` 的退出码**）：
-  - `assert.equal(<name-only 行数>, 15)`
-  - `assert.equal(<--stat 解析出的文件数>, 15)`
-  - `assert.equal(<13 席里「a = 0 && d = 1」不成立的席数>, 0)`
-  - `assert.equal(<13 席里被删行不含「关注类别：」字样的席数>, 0)`
-  - **不写「13 席 SHA 与基线表逐行相同」**——那与 R8 互斥（13 席各少一行，SHA 必然变；这正是 B-01 / Q-1 的证据）
-- **红绿证据**：红 = 按旧稿判「13 席 SHA 不变 + 2 files」→ 金态即红（15 席都少了一行）；红 = 指针化改动波及 `DEFAULT_BOUNDARY` / `SDET_BOUNDARY` / `evidence-reader` 自有句（其余 13 席 = 11 + 1 + 1，分工见 `tools/docgen/components/patternRegistry.mjs` 的 `boundaryBySeat`）→ 那些席 `a > 0`，第 3 条断言红；绿 = 15 files + 13/13 席只一条删除行且删的是 `关注类别：`
+  - `assert.equal(<name-only 行数>, 15)`；`assert.equal(<--stat 解析出的文件数>, 15)`
+  - `assert.equal(<Ⅰ 不成立的席数>, 0)`
+  - `assert.equal(<Ⅱ 不成立的席数>, 0)`
+  - `assert.equal(<Ⅲ 不成立的席数>, 0)`
+  - **不写「13 席 SHA 与基线表逐行相同」**——与 R8 互斥（各席 SHA 必然变）
+- **红绿证据**：红 = 按旧稿判「13 席 SHA 不变 + 2 files」→ 金态即红（15 席都变）；红 = 指针化波及 `DEFAULT_BOUNDARY` / `SDET_BOUNDARY` / `evidence-reader` 自有句 → Ⅱ 出现「边界」段以外的增删、断言红；红 = 漏删某席「关注类别：」→ Ⅰ 红；绿 = 15 files + Ⅰ 15/15 + Ⅱ 13/13 + Ⅲ 2/2
+- **单批性声明**：Ⅰ–Ⅲ 的**形态**只对本批 `$BASE` 成立（实测 `0/−1` 2 席、`+7/−6` 11 席、`+4/−5` 2 席）。后续批次（如 S-C）改卡面时需按新 `$BASE` 重算或把 Ⅱ/Ⅲ 降级为当批一次性核；**常驻测试只保留不变量**（Ⅰ + `关注类别：` = 0 + `类别：` ≥ 席数 + `gate` exit 0）
 - **对应测试**：建议 `tools/docgen/test/sb-contract-layer.test.mjs::SB-TC-32`
 - **不覆盖**：`docs/agents/**` 面（本段不涉）；基线表本身是否过期（它是 S-A 收口时落的终态快照，`docs/reports/2026-11-03-s-a-card-sha-baseline.md` 的说明段已写明取数口径 = `c01ccf3`）
 

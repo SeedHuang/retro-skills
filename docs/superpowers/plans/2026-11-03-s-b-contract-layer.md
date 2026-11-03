@@ -171,11 +171,11 @@
 **Files:** 改 `agents/*.md` ×15（生成）、`fixtures/*.evidence.json` ×15；建 `docs/reports/2026-11-03-s-b-card-sha-baseline.md`
 
 - [ ] **Step 1: 记基线**：`BASE=$(git rev-parse HEAD)` + 15 席 SHA256（写入当次账本）
-- [ ] **Step 2: 写测试（先红）**：`SB-TC-06`（`gate` exit 0 + `git diff --stat $BASE -- agents/` = 15 files + 15 份 evidence 哈希一致）、`SB-TC-25`/`SB-TC-32`（13 席在 `git diff -U0` 里只有一条删除行）、`SB-TC-08`/`SB-TC-37`（`关注类别：` = 0 且 `类别：` ≥ 15，两向判别力）、`SB-TC-26`（三条红态：`BaselineDrift` / 幂等就地改写 / `--expect-change`）
+- [ ] **Step 2: 写测试（先红）**：`SB-TC-06`（`gate` exit 0 + `git diff --stat $BASE -- agents/` = 15 files + 15 份 evidence 哈希一致）、`SB-TC-25`/`SB-TC-32`（**位置型三段**：每席恰 1 条 `关注类别：` 删行在「职责」段；非指针 13 席其余增删只在「输出格式」段；指针 2 席「边界」段至少 1 增 1 删）、`SB-TC-08`/`SB-TC-37`（`关注类别：` = 0 且 `类别：` ≥ 15，两向判别力）、`SB-TC-26`（三条红态：`BaselineDrift` / 幂等就地改写 / `--expect-change`）
 - [ ] **Step 3: 跑** → red（卡面未重生成）
-- [ ] **Step 4: 生成**：`node tools/docgen/cli.mjs generate` → 15 卡
-- [ ] **Step 5: 重记 evidence**：15 份 `fixtures/<席>.evidence.json` 的 `renderSha256` 按盘上重记（`replace --yes` 或既有流程）
-- [ ] **Step 6: 落冻结基线**：15 席 SHA 写 `docs/reports/2026-11-03-s-b-card-sha-baseline.md`（对照 S-A 那张，注明「15/15 全变，13 席只少一行」）
+- [ ] **Step 4: 生成**：`draft --kind agent --name <席>` ×15，再逐席 `replace --kind agent --name <席> --draft <草稿> --yes --expect-change <新渲染 sha256> --rejudge A1` ×15（`generate` 只比不写，**不能**当写盘通路；A1 判者 = 独立于施工者的子代理，见 spec §11.2.7 第 2 步）
+- [ ] **Step 5: 重记 evidence**：由 `replace` 同批写回 15 份 `fixtures/<席>.evidence.json` 的 `renderSha256` / `lastWrittenHash` 与 `changes`（**禁手改**）
+- [ ] **Step 6: 落冻结基线**：15 席 SHA 写 `docs/reports/2026-11-03-s-b-card-sha-baseline.md`（对照 S-A 那张，注明「15/15 全变；三分类 = 2 席 `0/−1` / 11 席 `+7/−6` / 2 席 `+4/−5`」，见 spec §11.2.7 第 4 步）
 - [ ] **Step 7: 跑**：`node tools/docgen/cli.mjs gate` → exit 0；用例全绿
 - [ ] **Step 8: 提交**：`chore(docgen): S-B 重生成 15 卡 + 15 份 evidence + 冻结基线`
 
