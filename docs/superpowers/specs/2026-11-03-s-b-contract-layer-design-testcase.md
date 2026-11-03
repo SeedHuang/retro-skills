@@ -790,9 +790,9 @@
 | A-7 | `check-quotes` 的 `K < 2` 红态要打印**实际条数**，不要只打印固定串 | SB-TC-18、39 | 按 spec §11.2.2 口径 3 的格式 `check-quotes: 语料 <K> 条（需 ≥2，fail-closed）`（`K` 取实数），两条用例的判据都锚在这个 `<K>` 上 |
 | A-8 | `check-case-assert` 的 `missing` 与 `hollow` 要各自记账，报错行要能区分 | SB-TC-21、38 | 首行固定三段 `ids <N> / hollow <K> / missing <M> => ok`；失败时逐条列 `ID（行号或 missing）`，**同一 ID 只记一处**（先判 `missing`，找到用例体后才判 `hollow`）；ID 正则是 **`TC-\d{3}`（三位）** |
 | A-9 | 纯计数判据一律落成 `node --test` 断言，不挂「命令 exit 0」 | SB-TC-05、08、09、24、32、35、37、40（全表通用，见 §0 `COUNT`） | `assert.equal($c, 0)` / `assert.ok($c >= N)`；`Select-String` / `git diff` / `git ls-files` 的退出码恒 0，不能当判据（spec §11.4 头 + AU 的 A-04 / AI 的 Q-5） |
-| A-10 | 卡面变更面按 **15 席**重生成、**15 份** `fixtures/<席>.evidence.json` 同批 | SB-TC-06、32 | 只重生成 2 卡会让 13 席的「关注类别：」行残留 → `关注类别：` 计数 ≠ 0，§11.4-8 直接红；只更新 2 份 evidence → `TC-028` 逐 15 席红 |
-| A-11 | 模板侧只改 **5 个槽的值（4 行文案）**：`ALLOW_GROUPS` / `DENY_GROUPS` / `ENV_FORMS` / `FORBIDDEN_PATHS` / `DETECTION_PATHS`；不删槽、不动 `SLOTS` 顺序 | SB-TC-05、13、31、40、**41** | 换「删槽」路线要同改 `SLOTS` 与 `validatePolicy` 的槽齐全校验，`S6-TC-C06` 的 12 槽断言直接红（议会第 1 轮 BE 的 B-02）。**模板第 11 行一行含 `DENY_GROUPS` + `ENV_FORMS` 两槽** → 是 5 个槽 / 4 行，不是 4 个槽；只改 `DENY_GROUPS` 会让 env 形态项照旧印在卡面，由 SB-TC-41 兜 |
-| A-12 | 语料件必须 json + md 成对，且经 `writeObservation` 产出（不要手写 md） | SB-TC-04 | 手写 md 与 json 的渲染结果不一致 → `RenderMismatch`；只移 json → `MdMissing`；直接写归档目录 → `ArtifactPathOutside` |
+| 卡 A-10 | 卡面变更面按 **15 席**重生成、**15 份** `fixtures/<席>.evidence.json` 同批 | SB-TC-06、32 | 只重生成 2 卡会让 13 席的「关注类别：」行残留 → `关注类别：` 计数 ≠ 0，§11.4-8 直接红；只更新 2 份 evidence → `TC-028` 逐 15 席红 |
+| 卡 A-11 | 模板侧只改 **5 个槽的值（4 行文案）**：`ALLOW_GROUPS` / `DENY_GROUPS` / `ENV_FORMS` / `FORBIDDEN_PATHS` / `DETECTION_PATHS`；不删槽、不动 `SLOTS` 顺序 | SB-TC-05、13、31、40、**41** | 换「删槽」路线要同改 `SLOTS` 与 `validatePolicy` 的槽齐全校验，`S6-TC-C06` 的 12 槽断言直接红（议会第 1 轮 BE 的 B-02）。**模板第 11 行一行含 `DENY_GROUPS` + `ENV_FORMS` 两槽** → 是 5 个槽 / 4 行，不是 4 个槽；只改 `DENY_GROUPS` 会让 env 形态项照旧印在卡面，由 SB-TC-41 兜 |
+| 卡 A-12 | 语料件必须 json + md 成对，且经 `writeObservation` 产出（不要手写 md） | SB-TC-04 | 手写 md 与 json 的渲染结果不一致 → `RenderMismatch`；只移 json → `MdMissing`；直接写归档目录 → `ArtifactPathOutside` |
 
 ## 自检（轮次 8 实跑，仓根 PowerShell 5）
 
@@ -833,17 +833,17 @@
 | 卡号 | 改动的用例 | 改法 |
 |---|---|---|
 | Q-T-01 / Q-②-2（P0） | 35 | 命令改 `(Select-String -Path tools\docgen\policy\definitions\*.mjs -Pattern 'export const <sym>' -AllMatches).Count`（去 `-Recurse`、进 `definitions\`），判据 = 每符号恰 1 行定义；注释 / 引用不计入 |
-| Q-T-04 | 05 / 31 | 05 删掉 8 个段锚与 `anchors 4/4`，只留「`逐项点名` = 0 + 4 符号名各 ≥1 + 本席组 ID 在位」；段首 / 语义句的锚**全部**交 SB-TC-31，统一 `anchors 12/12` |
-| Q-T-05 | 09 | ID 形态改 `TC-\d{3}`；加「抽取集合 `deepEqual` 30 个 `TC-\d{3}`」+「两位正则只得 4 个」的反证 |
-| Q-T-03 | 13 ③ | 不再调 `listClassMembers()`（未导出），改「`TEMPLATE_ALLOWED_LITERALS` ∩ 4 符号名 = 空集」+ 成员数 = 8 → **第 6 轮已再修**：交集对象改为**自组装 `LIST_CLASS`**、成员数改 **12**（理由见第 6 轮表） |
-| B-05 | 20 | 判据改 `exitCodeFor('DutyCategoryMisplaced') === 1`（未登记抛「未知错误码」）+ stderr 首行以该码开头；**不看进程退出码** |
-| Q-T-02 | 26 | 拆三条红态：① `BaselineDrift`；② evidence 陈旧走幂等分支「被就地改写为 newSha 且 exit 0」；③ 漏 `--expect-change` → `UnapprovedChange`；④ 带 `--expect-change` 才 exit 0 |
+| 卡 Q-T-04 | 05 / 31 | 05 删掉 8 个段锚与 `anchors 4/4`，只留「`逐项点名` = 0 + 4 符号名各 ≥1 + 本席组 ID 在位」；段首 / 语义句的锚**全部**交 SB-TC-31，统一 `anchors 12/12` |
+| 卡 Q-T-05 | 09 | ID 形态改 `TC-\d{3}`；加「抽取集合 `deepEqual` 30 个 `TC-\d{3}`」+「两位正则只得 4 个」的反证 |
+| 卡 Q-T-03 | 13 ③ | 不再调 `listClassMembers()`（未导出），改「`TEMPLATE_ALLOWED_LITERALS` ∩ 4 符号名 = 空集」+ 成员数 = 8 → **第 6 轮已再修**：交集对象改为**自组装 `LIST_CLASS`**、成员数改 **12**（理由见第 6 轮表） |
+| 卡 B-05 | 20 | 判据改 `exitCodeFor('DutyCategoryMisplaced') === 1`（未登记抛「未知错误码」）+ stderr 首行以该码开头；**不看进程退出码** |
+| 卡 Q-T-02 | 26 | 拆三条红态：① `BaselineDrift`；② evidence 陈旧走幂等分支「被就地改写为 newSha 且 exit 0」；③ 漏 `--expect-change` → `UnapprovedChange`；④ 带 `--expect-change` 才 exit 0 |
 | B-01 / Q-1（P0） | 06 / 25 / 32 | 变更面从「2 卡」改「**15 files changed**」；13 席改判「`git diff -U0` 只有一条删除行、无其它增删」；06 加「15 份 `fixtures/<席>.evidence.json` 同批」；**删掉「13 席 SHA 与基线表逐行相同」**（与 R8 互斥） |
-| B-03 | 04 | 语料件改三步（`.session/` 用写入器生成 json+md 一对 → 过 ⑥ 段四道 → 整对移入 `docs/superpowers/reviews/<次>/` 并 `git add`）；码清单补 `MdMissing` / `RenderMismatch` / `JsonNotFound` |
+| 卡 B-03 | 04 | 语料件改三步（`.session/` 用写入器生成 json+md 一对 → 过 ⑥ 段四道 → 整对移入 `docs/superpowers/reviews/<次>/` 并 `git add`）；码清单补 `MdMissing` / `RenderMismatch` / `JsonNotFound` |
 | Q-4 | 21 | hollow 判据改 token 级（参数 `trim()` ∈ {`true`,`1`,`'1'`}）；补 `assert.ok( true )` 与 `assert.ok(1)` 两条注入 |
 | Q-3 | 24 | 改覆盖 spec **新增的 §11.4-9**（边界段内仓内路径形态命中 = 0），保留「写成 `policy/definitions/paths.mjs` 必红」的负例并新增「带 `tools/` 前缀」第二负例 |
 | A-04 / Q-5 | 全表 + §0 | 新增 `COUNT` 约定；05 / 08 / 09 / 24 / 32 / 35 / 37 / 40 的纯计数判据全改 `node --test` 断言，不挂「命令 exit 0」 |
-| A-05 | §0 | `PROBE` 改「落进 `sb-contract-layer.test.mjs` 用 `node --test --test-name-pattern` 单跑」，**禁 `node -e`** |
+| 卡 A-05 | §0 | `PROBE` 改「落进 `sb-contract-layer.test.mjs` 用 `node --test --test-name-pattern` 单跑」，**禁 `node -e`** |
 | Q-②-1（RD） | **40（新增）** | 补「本席组 ID 在位」用例：非空组席漏组 ID 红、空组席（`senior-sdet`）列命令红 |
 | B-04 / Q-2 / A-01 | §4 回归清单 | `s2-card-rewrite.test.mjs` 的 `S2-TC-C09③` 补进「必红」；`tool-tiers.test.mjs` 从「可能无需改」改「必红」；`capability-baseline.mjs` + `fixtures/capability-baseline.json` 的 12 槽基线补进清单 |
 | 计数 | §1 / §3 / §4 / §7 / 附 / 本表 | §3 由 25 改 26 条；§7 判别力水位重写；附加 A-9…A-12 |
