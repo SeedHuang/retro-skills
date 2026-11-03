@@ -943,9 +943,14 @@ test('SB-TC-34 注入值不做字符串变换：加「核对」后缀 → 同形
 })
 
 // ── Task 6：15 卡重生成 + 15 份 evidence + 冻结基线（spec §11.2.7-1..4 / §11.4-6 · §11.4-8 / §11.1 R11）──
-// BASE = 本任务开工前的 HEAD（② 段回流修订后的提交）。**冻结常量、不随 HEAD 移动**：
-// 提交之后 `git diff HEAD -- agents/` 恒为 0，拿 HEAD 当基准会让 SB-TC-06 / SB-TC-32 恒绿（空判据）。
-const SB_BASE = '2c186c28e4aba776395657829aded2e14b10fca0'
+// **常驻 / 一次性两档**（spec §11.2.7 第 4 步末句「该形态断言只对本批 BASE 成立…常驻测试只留不变量」）：
+// 凡依赖「本批 BASE 的 diff 形态」的断言（文件数 / 位置型三分类）都归一次性核对，须 `SB_SHAPE_ONESHOT=1` 才跑；
+// 否则 S-C 改卡面（如删「职责」段人设套话）会被本批形态断言拦住，最可能的错修法就是改本批常量。
+const ONESHOT = process.env.SB_SHAPE_ONESHOT === '1'
+// 一次性档的比对基准：默认 = 本批冻结常量（不随 HEAD 移动——提交后 `git diff HEAD` 恒 0 会变空判据）；
+// 后续批次用 `SB_BASE=<新提交>` 显式覆盖，不改本文件。
+const SB_BASE = (process.env.SB_BASE || '').trim() || '2c186c28e4aba776395657829aded2e14b10fca0'
+if (!ONESHOT) console.log('oneshot skipped（SB_SHAPE_ONESHOT≠1）')
 const CARDS_DIR = join(ROOT, 'agents')
 const cardFiles = () => readdirSync(CARDS_DIR).filter((f) => f.endsWith('.md'))
 // 席数一律派生（`TC-C06` / `TC-C11` 的计数探针禁测试侧写死 14 / 15 字面量）
@@ -970,23 +975,26 @@ const filesChangedOf = (statOut) => Number((/(\d+) files? changed/.exec(statOut)
 const changedPathsAtBase = () => gitText(['diff', '--name-only', SB_BASE, '--', 'agents/'])
   .split(/\r?\n/).filter((l) => l.trim())
 
-test('SB-TC-06 15 卡重生成：gate exit 0 + 与 BASE 比每席都变 + 15 份 evidence 哈希对齐', () => {
+test('SB-TC-06（常驻）：gate exit 0 + 15 份 evidence 的 renderSha256 与盘上逐席一致', () => {
   const g = runGateIn(ROOT)
   assert.equal(g.status, 0, `gate 必须 exit 0（各席 disk == render）：${g.text}`)
 
-  const files = filesChangedOf(gitText(['diff', '--stat', SB_BASE, '--', 'agents/']))
-  const paths = changedPathsAtBase()
-
-  // evidence.renderSha256 == 盘上：不等的席逐个点名
+  // evidence.renderSha256 == 盘上：不等的席逐个点名（不变量：与任何 BASE 无关）
   const mismatch = cardFiles().filter((f) => {
     const seat = f.slice(0, -3)
     return evidenceOf(seat).renderSha256 !== sha256Of(readFileSync(join(CARDS_DIR, f)))
   })
 
-  console.log(`regenerate: gate ${g.status} / stat ${files} / name-only ${paths.length} / evidence mismatch ${mismatch.length}`)
+  console.log(`regenerate: gate ${g.status} / evidence mismatch ${mismatch.length}`)
+  assert.equal(mismatch.length, 0, `evidence.renderSha256 与盘上不等的席：${mismatch.join('、') || '(无)'}`)
+})
+
+test('SB-TC-06（一次性）：与 SB_BASE 比每席都变 + 每席一个路径', { skip: !ONESHOT }, () => {
+  const files = filesChangedOf(gitText(['diff', '--stat', SB_BASE, '--', 'agents/']))
+  const paths = changedPathsAtBase()
+  console.log(`regenerate(oneshot): base ${SB_BASE.slice(0, 7)} / stat ${files} / name-only ${paths.length}`)
   assert.equal(files, seatTotal(), `与 BASE 比必须每席都变（实得 ${files} / 席数 ${seatTotal()}）`)
   assert.equal(paths.length, seatTotal(), `与 BASE 比必须每席一个路径（实得 ${paths.length}）`)
-  assert.equal(mismatch.length, 0, `evidence.renderSha256 与盘上不等的席：${mismatch.join('、') || '(无)'}`)
 })
 
 test('SB-TC-08 关注点单行：`关注类别：` = 0 且 `类别：` ≥ 席数（两向合取）+ gate exit 0', () => {
@@ -1047,7 +1055,7 @@ function changesWithSections(seat) {
   return { dels, adds }
 }
 
-test('SB-TC-32 变更形态（位置型三段）：每席恰 1 条 `关注类别：` 删行在「职责」段；非指针席其余增删只在「输出格式」段；指针席「边界」段至少 1 增 1 删', () => {
+test('SB-TC-32 变更形态（位置型三段，一次性）：每席恰 1 条 `关注类别：` 删行在「职责」段；非指针席其余增删只在「输出格式」段；指针席「边界」段至少 1 增 1 删', { skip: !ONESHOT }, () => {
   const files = filesChangedOf(gitText(['diff', '--stat', SB_BASE, '--', 'agents/']))
   const paths = changedPathsAtBase()
   assert.equal(files, seatTotal(), `与 BASE 比必须每席都变（实得 ${files}）`)
@@ -1111,7 +1119,7 @@ function syncCopyCards(copy) {
 // 被指针化的 4 行在模板里的落点（4 行文案 = spec §11.3 的那 4 条清单类行）
 const TEMPLATE_LINE_ANCHORS = ['**除上述落点外', '**命令默认拒绝**', '**禁止**：', '**检测限度**']
 
-test('SB-TC-25 只改模板 4 行不重生成 → `Mismatch` exit 1；重生成后 exit 0；与 BASE 比每席都变', () => {
+test('SB-TC-25 只改模板 4 行不重生成 → `Mismatch` exit 1；重生成后 exit 0（副本内自包含）', () => {
   withRepoCopy((copy) => {
     syncCopyCards(copy)
     const bytesBefore = new Map(cardFiles().map((f) => [f, readFileSync(join(copy, 'agents', f))]))
@@ -1141,9 +1149,12 @@ test('SB-TC-25 只改模板 4 行不重生成 → `Mismatch` exit 1；重生成�
     // 只有走模板的 2 席变；其余席走 DEFAULT_BOUNDARY / SDET_BOUNDARY，模板不喂养它们
     assert.deepEqual(changed.sort(), POINTER_SEATS.map((s) => `${s}.md`).sort(), `模板改动只应波及这 2 席：${changed.join('、')}`)
   })
+})
 
-  // ④ 与 BASE 比：变更面 = 每席一个（副本不是 git 仓，基准面只能在真实仓读）
+// ④ 与 BASE 比的变更面（副本不是 git 仓，基准面只能在真实仓读）→ 归一次性核对
+test('SB-TC-25（一次性）④：与 SB_BASE 比每席都变', { skip: !ONESHOT }, () => {
   const files = filesChangedOf(gitText(['diff', '--stat', SB_BASE, '--', 'agents/']))
+  console.log(`template-only(oneshot): base ${SB_BASE.slice(0, 7)} / stat ${files}`)
   assert.equal(files, seatTotal(), `与 BASE 比必须每席都变（实得 ${files}）`)
 })
 
