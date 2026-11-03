@@ -70,10 +70,10 @@
 
 > **出处**（本任务不在 spec 内，属跨段承接）：`docs/after/20261103164513-s-a-quality-open-items-open-decisions.md:13`（S-A-Q-4 的「该做」= 重试或按需拷贝）+ 用户 2026-11-03 裁定「升必修，落 Task 0」。改法二选一即出自该条，非本计划新增设计。
 
-- [ ] **Step 1: 复现**：连跑 5 次 `node --test tools/docgen/test/sa-data-layer.test.mjs`，记录是否出现 `cpSync … ENOENT`（出现过就贴输出；未出现则记「未复现」并继续，判据仍按修法落地）
-- [ ] **Step 2: 改**：`cpSync` 包一层重试（失败一次后 `rmSync` 目标目录再复制），或把 `docs/agents` 改成按需拷贝——二选一，在代码注释写清选了哪个与为什么
-- [ ] **Step 3: 验**：`node --test tools/docgen/test/sa-data-layer.test.mjs` → `# fail 0`；再连跑 3 次同值
-- [ ] **Step 4: 提交**：`fix(docgen): withRepoCopy 复制失败重试（S-A-Q-4 升必修）`
+- [x] **Step 1: 复现**：连跑 5 次 `node --test tools/docgen/test/sa-data-layer.test.mjs`，记录是否出现 `cpSync … ENOENT`（出现过就贴输出；未出现则记「未复现」并继续，判据仍按修法落地）
+- [x] **Step 2: 改**：`cpSync` 包一层重试（失败一次后 `rmSync` 目标目录再复制），或把 `docs/agents` 改成按需拷贝——二选一，在代码注释写清选了哪个与为什么
+- [x] **Step 3: 验**：`node --test tools/docgen/test/sa-data-layer.test.mjs` → `# fail 0`；再连跑 3 次同值
+- [x] **Step 4: 提交**：`fix(docgen): withRepoCopy 复制失败重试（S-A-Q-4 升必修）`
 
 **验收：** 上述 3 次连跑均 `# fail 0`。
 **Consumes:** 无
@@ -85,13 +85,13 @@
 
 **Files:** 建 `docs/superpowers/reviews/2026-11-03-<次名>/observation-r1.json` + 同名 `.md`
 
-- [ ] **Step 1: 写测试（先红）**：在 `tools/docgen/test/sb-contract-layer.test.mjs` 写 `SB-TC-04` —— 判「语料件存在 + `items` 中带 `evidence` 的项 ≥2 + json 与 md 成对 + 过 ⑥ 段四道」
-- [ ] **Step 2: 跑**：`node --test --test-name-pattern "SB-TC-04" tools/docgen/test/sb-contract-layer.test.mjs` → 应 red（文件不存在）
-- [ ] **Step 3: 造记录**：在 `.session/reviews/2026-11-03-<次名>/` 用 `tools/observation-check/` 的写入器生成 json+md 一对；`items` 里 **≥2 条 `verdict: hit` 且每条带 `{path,line,quote}`**（quote 逐字取自源文件该行）；`coverage` 三段对账（`read + skipped = total`）
-- [ ] **Step 4: 自校验**：过 `MissingEvidence` / `RenderMismatch` / coverage 三道；不通过就改到通过
-- [ ] **Step 5: 归档**：把**这一对**整移到 `docs/superpowers/reviews/2026-11-03-<次名>/`，`git add` 两个文件（写入器不允许直写归档目录）
-- [ ] **Step 6: 跑**：同 Step 2 → green；`npm run check` 的 ⑥ 段不得新增 findings
-- [ ] **Step 7: 提交**：`test(observation): S-B 语料件（observation-r1 一对）`
+- [x] **Step 1: 写测试（先红）**：在 `tools/docgen/test/sb-contract-layer.test.mjs` 写 `SB-TC-04` —— 判「语料件存在 + `items` 中带 `evidence` 的项 ≥2 + json 与 md 成对 + 过 ⑥ 段四道」
+- [x] **Step 2: 跑**：`node --test --test-name-pattern "SB-TC-04" tools/docgen/test/sb-contract-layer.test.mjs` → 应 red（文件不存在）
+- [x] **Step 3: 造记录**：在 `.session/reviews/2026-11-03-<次名>/` 用 `tools/observation-check/` 的写入器生成 json+md 一对；`items` 里 **≥2 条 `verdict: hit` 且每条带 `{path,line,quote}`**（quote 逐字取自源文件该行）；`coverage` 三段对账（`read + skipped = total`）
+- [x] **Step 4: 自校验**：过 `MissingEvidence` / `RenderMismatch` / coverage 三道；不通过就改到通过
+- [x] **Step 5: 归档**：把**这一对**整移到 `docs/superpowers/reviews/2026-11-03-<次名>/`，`git add` 两个文件（写入器不允许直写归档目录）
+- [x] **Step 6: 跑**：同 Step 2 → green；`npm run check` 的 ⑥ 段不得新增 findings
+- [x] **Step 7: 提交**：`test(observation): S-B 语料件（observation-r1 一对）`
 
 **验收：** `node --test --test-name-pattern "SB-TC-04" …` 绿 + `npm run check` ⑥ 段 `findings 0`。
 **Consumes:** 无
@@ -103,12 +103,12 @@
 
 **Files:** 建 `tools/docgen/check-quotes.mjs`；测试同上文件
 
-- [ ] **Step 1: 写测试（先红）**：`SB-TC-03`（绿态：`files <N> / evidence <K> / bad 0 => ok`、exit 0）、`SB-TC-15/16/17/18/39`（五种红态：摘句不在文件 / 行号不含摘句 / 行号越界 / `K = 0` / `K = 1`，均 exit 1）、`SB-TC-29`（只吃 `.json`、畸形 json 抛错不跳过）、`SB-TC-30`（结构行由 `checkEvidence` 判红，不另写一套）
-- [ ] **Step 2: 跑** → 全 red（脚本不存在）
-- [ ] **Step 3: 实现**：扫 `docs/superpowers/reviews/**/observation-*.json`（文件名口径复用 `gate-scan.mjs` 的 `ARTIFACT_RE`），对 `items[]` 里带 `evidence` 的项逐个调 `checkEvidence()`；`K < 2` 打印 `check-quotes: 语料 <K> 条（需 ≥2，fail-closed）` 并 exit 1；全绿打印首行 `check-quotes: files <N> / evidence <K> / bad 0 => ok`
-- [ ] **Step 4: 跑** → 绿
-- [ ] **Step 5: 落腐化登记**：在 `docs/after/` 已有文件里补一条（或新建）——「`check-quotes` 不进总门禁；触发 = 下次改 ⑥ 段或语料件降到 1 份」
-- [ ] **Step 6: 提交**：`feat(docgen): check-quotes.mjs 引句校验器（PRD V6）`
+- [x] **Step 1: 写测试（先红）**：`SB-TC-03`（绿态：`files <N> / evidence <K> / bad 0 => ok`、exit 0）、`SB-TC-15/16/17/18/39`（五种红态：摘句不在文件 / 行号不含摘句 / 行号越界 / `K = 0` / `K = 1`，均 exit 1）、`SB-TC-29`（只吃 `.json`、畸形 json 抛错不跳过）、`SB-TC-30`（结构行由 `checkEvidence` 判红，不另写一套）
+- [x] **Step 2: 跑** → 全 red（脚本不存在）
+- [x] **Step 3: 实现**：扫 `docs/superpowers/reviews/**/observation-*.json`（文件名口径复用 `gate-scan.mjs` 的 `ARTIFACT_RE`），对 `items[]` 里带 `evidence` 的项逐个调 `checkEvidence()`；`K < 2` 打印 `check-quotes: 语料 <K> 条（需 ≥2，fail-closed）` 并 exit 1；全绿打印首行 `check-quotes: files <N> / evidence <K> / bad 0 => ok`
+- [x] **Step 4: 跑** → 绿
+- [x] **Step 5: 落腐化登记**：在 `docs/after/` 已有文件里补一条（或新建）——「`check-quotes` 不进总门禁；触发 = 下次改 ⑥ 段或语料件降到 1 份」
+- [x] **Step 6: 提交**：`feat(docgen): check-quotes.mjs 引句校验器（PRD V6）`
 
 **验收：** `node tools/docgen/check-quotes.mjs` 首行 `check-quotes: files <N> / evidence <K> / bad 0 => ok`，exit 0；清空语料后 exit 1。
 **Consumes:** Task 1
@@ -120,11 +120,11 @@
 
 **Files:** 改 `components/outputFormats.mjs`、`card-model/vocab/card-contract.mjs`
 
-- [ ] **Step 1: 写测试（先红）**：`SB-TC-01`（证据三列与 `evidence.fields` `deepEqual` + `length === 9`）、`SB-TC-02`（改 `evidence.fields` 一处，`issue-card` 必跟随）、`SB-TC-23`（抄字面版本必红）、`SB-TC-10`（`FORMAT_CHECKS` 仍 3 条且每条含「废卡」/「缺空」）、`SB-TC-22`（改成 2 条或 4 条必红）
-- [ ] **Step 2: 跑** → red
-- [ ] **Step 3: 实现**：`fields: [...HEAD, ...evidence.fields, ...TAIL]`；`issue-card.checks[0]` 改「证据三列（原文摘句 / 文件 + 行号 / 用途）缺任一 = 废卡，三列须由 check-quotes 验真」；`FORMAT_CHECKS[1]` 同义改写（仍含「废卡」「空」）
-- [ ] **Step 4: 跑** → 绿；`node --test tools/docgen/test/card-render.test.mjs` 仍绿（`S4-TC-D01` 的「无指针」断言）
-- [ ] **Step 5: 提交**：`feat(docgen): issue-card 证据三列派生 + FORMAT_CHECKS 三列口径`
+- [x] **Step 1: 写测试（先红）**：`SB-TC-01`（证据三列与 `evidence.fields` `deepEqual` + `length === 9`）、`SB-TC-02`（改 `evidence.fields` 一处，`issue-card` 必跟随）、`SB-TC-23`（抄字面版本必红）、`SB-TC-10`（`FORMAT_CHECKS` 仍 3 条且每条含「废卡」/「缺空」）、`SB-TC-22`（改成 2 条或 4 条必红）
+- [x] **Step 2: 跑** → red
+- [x] **Step 3: 实现**：`fields: [...HEAD, ...evidence.fields, ...TAIL]`；`issue-card.checks[0]` 改「证据三列（原文摘句 / 文件 + 行号 / 用途）缺任一 = 废卡，三列须由 check-quotes 验真」；`FORMAT_CHECKS[1]` 同义改写（仍含「废卡」「空」）
+- [x] **Step 4: 跑** → 绿；`node --test tools/docgen/test/card-render.test.mjs` 仍绿（`S4-TC-D01` 的「无指针」断言）
+- [x] **Step 5: 提交**：`feat(docgen): issue-card 证据三列派生 + FORMAT_CHECKS 三列口径`
 
 **验收：** 上述 5 条用例绿 + `card-render.test.mjs` 无 `# fail`。
 **Consumes:** 无
@@ -136,12 +136,12 @@
 
 **Files:** 改 `data/seats/*.json` ×15、`components/seatLoader.mjs`、`components/validateAgentData.mjs`、`components/renderCard.mjs`
 
-- [ ] **Step 1: 写测试（先红）**：`SB-TC-07`（装配产物逐席与 `categories[].label` `deepEqual`；席文件无该键）、`SB-TC-20`（席文件写非空 → `exitCodeFor('DutyCategoryMisplaced') === 1` 且 stderr 首行起码）、`SB-TC-33`（loader 仍 8 键 / `buildCards()` 仍 12 键）、`SB-TC-34`（注入 = `label` 原样，不做字符串变换）
-- [ ] **Step 2: 跑** → red
-- [ ] **Step 3: 改数据**：15 份席 JSON 删 `card.duty.categories`（用脚本批量删，禁手抄）
-- [ ] **Step 4: 实现**：`seatLoader.mjs` 注入 `duty.categories = card.categories.map(c => c.label)`（与 `duty.trigger` 同处同趟）；非空即抛 `DutyCategoryMisplaced`；`validateAgentData.mjs` 的 `EXIT[1]` 追加该码；`renderCard.mjs` 的 `dutyBlock` 删「关注类别：」分支
-- [ ] **Step 5: 跑** → 绿
-- [ ] **Step 6: 提交**：`feat(docgen): duty.categories 单源（loader 注入 + DutyCategoryMisplaced）`
+- [x] **Step 1: 写测试（先红）**：`SB-TC-07`（装配产物逐席与 `categories[].label` `deepEqual`；席文件无该键）、`SB-TC-20`（席文件写非空 → `exitCodeFor('DutyCategoryMisplaced') === 1` 且 stderr 首行起码）、`SB-TC-33`（loader 仍 8 键 / `buildCards()` 仍 12 键）、`SB-TC-34`（注入 = `label` 原样，不做字符串变换）
+- [x] **Step 2: 跑** → red
+- [x] **Step 3: 改数据**：15 份席 JSON 删 `card.duty.categories`（用脚本批量删，禁手抄）
+- [x] **Step 4: 实现**：`seatLoader.mjs` 注入 `duty.categories = card.categories.map(c => c.label)`（与 `duty.trigger` 同处同趟）；非空即抛 `DutyCategoryMisplaced`；`validateAgentData.mjs` 的 `EXIT[1]` 追加该码；`renderCard.mjs` 的 `dutyBlock` 删「关注类别：」分支
+- [x] **Step 5: 跑** → 绿
+- [x] **Step 6: 提交**：`feat(docgen): duty.categories 单源（loader 注入 + DutyCategoryMisplaced）`
 
 **验收：** 4 条用例绿 + `node tools/docgen/check-shared-refs.mjs` 仍 `keySet8 15 / keySet12 15`。
 **Consumes:** 无
@@ -153,12 +153,12 @@
 
 **Files:** 改 `templates/boundary.md.tpl`、`components/renderBoundary.mjs`
 
-- [ ] **Step 1: 写测试（先红）**：`SB-TC-05`（`逐项点名` = 0 + 4 符号名各 ≥1，**只判那 2 张卡**）、`SB-TC-13`（模板跑 `assertTemplatePure` 不抛 + 自组装清单集与白名单交集为空 + 白名单 size === 12）、`SB-TC-19`（回填一句 → 判红）、`SB-TC-24`（**只判被指针化的那 4 行**，仓内路径形态 = 0，且取到行数 = 4）、`SB-TC-27/28`（白名单不得登记清单类成员 / 删登记即红）、`SB-TC-31`（段首与语义句 12 组锚）、`SB-TC-35`（`policy/definitions/*.mjs` 里 4 个符号各恰 1 行 `export const`）、`SB-TC-40`（2 卡的「命令默认拒绝」句含本席组 ID）、`SB-TC-41`（`env.assign` 形态项命中 = 0）
-- [ ] **Step 2: 跑** → red
-- [ ] **Step 3: 改模板 4 行**：禁写路径 / 命令白名单（含本席组 ID）/ 禁止命令 + env / 检测盲区，文案按 spec §11.2.3 表；**删掉「逐项点名」字样**
-- [ ] **Step 4: 改 5 个槽值**：`forbiddenPaths()` / `allowGroups()` / `forbiddenGroups()` / `envForms()` / `detectionPaths()` 返回指针句（保留 12 槽与 `SLOTS` 顺序）；4 个符号名登记进 `TEMPLATE_ALLOWED_LITERALS`
-- [ ] **Step 5: 跑** → 绿；`assertTemplatePure()` 不抛
-- [ ] **Step 6: 提交**：`feat(docgen): 卡面边界段策略清单指针化（5 槽 / 12 槽不变）`
+- [x] **Step 1: 写测试（先红）**：`SB-TC-05`（`逐项点名` = 0 + 4 符号名各 ≥1，**只判那 2 张卡**）、`SB-TC-13`（模板跑 `assertTemplatePure` 不抛 + 自组装清单集与白名单交集为空 + 白名单 size === 12）、`SB-TC-19`（回填一句 → 判红）、`SB-TC-24`（**只判被指针化的那 4 行**，仓内路径形态 = 0，且取到行数 = 4）、`SB-TC-27/28`（白名单不得登记清单类成员 / 删登记即红）、`SB-TC-31`（段首与语义句 12 组锚）、`SB-TC-35`（`policy/definitions/*.mjs` 里 4 个符号各恰 1 行 `export const`）、`SB-TC-40`（2 卡的「命令默认拒绝」句含本席组 ID）、`SB-TC-41`（`env.assign` 形态项命中 = 0）
+- [x] **Step 2: 跑** → red
+- [x] **Step 3: 改模板 4 行**：禁写路径 / 命令白名单（含本席组 ID）/ 禁止命令 + env / 检测盲区，文案按 spec §11.2.3 表；**删掉「逐项点名」字样**
+- [x] **Step 4: 改 5 个槽值**：`forbiddenPaths()` / `allowGroups()` / `forbiddenGroups()` / `envForms()` / `detectionPaths()` 返回指针句（保留 12 槽与 `SLOTS` 顺序）；4 个符号名登记进 `TEMPLATE_ALLOWED_LITERALS`
+- [x] **Step 5: 跑** → 绿；`assertTemplatePure()` 不抛
+- [x] **Step 6: 提交**：`feat(docgen): 卡面边界段策略清单指针化（5 槽 / 12 槽不变）`
 
 **验收：** 上述用例绿；`node -e` 不出现（本任务判据全走 `node --test`）。
 **Consumes:** 无
@@ -170,14 +170,14 @@
 
 **Files:** 改 `agents/*.md` ×15（生成）、`fixtures/*.evidence.json` ×15；建 `docs/reports/2026-11-03-s-b-card-sha-baseline.md`
 
-- [ ] **Step 1: 记基线**：`BASE=$(git rev-parse HEAD)` + 15 席 SHA256（写入当次账本）
-- [ ] **Step 2: 写测试（先红）**：`SB-TC-06`（`gate` exit 0 + `git diff --stat $BASE -- agents/` = 15 files + 15 份 evidence 哈希一致）、`SB-TC-25`/`SB-TC-32`（**位置型三段**：每席恰 1 条 `关注类别：` 删行在「职责」段；非指针 13 席其余增删只在「输出格式」段；指针 2 席「边界」段至少 1 增 1 删）、`SB-TC-08`/`SB-TC-37`（`关注类别：` = 0 且 `类别：` ≥ 15，两向判别力）、`SB-TC-26`（三条红态：`BaselineDrift` / 幂等就地改写 / `--expect-change`）
-- [ ] **Step 3: 跑** → red（卡面未重生成）
-- [ ] **Step 4: 生成**：`draft --kind agent --name <席>` ×15，再逐席 `replace --kind agent --name <席> --draft <草稿> --yes --expect-change <新渲染 sha256> --rejudge A1` ×15（`generate` 只比不写，**不能**当写盘通路；A1 判者 = 独立于施工者的子代理，见 spec §11.2.7 第 2 步）
-- [ ] **Step 5: 重记 evidence**：由 `replace` 同批写回 15 份 `fixtures/<席>.evidence.json` 的 `renderSha256` / `lastWrittenHash` 与 `changes`（**禁手改**）
-- [ ] **Step 6: 落冻结基线**：15 席 SHA 写 `docs/reports/2026-11-03-s-b-card-sha-baseline.md`（对照 S-A 那张，注明「15/15 全变；三分类 = 2 席 `0/−1` / 11 席 `+7/−6` / 2 席 `+4/−5`」，见 spec §11.2.7 第 4 步）
-- [ ] **Step 7: 跑**：`node tools/docgen/cli.mjs gate` → exit 0；用例全绿
-- [ ] **Step 8: 提交**：`chore(docgen): S-B 重生成 15 卡 + 15 份 evidence + 冻结基线`
+- [x] **Step 1: 记基线**：`BASE=$(git rev-parse HEAD)` + 15 席 SHA256（写入当次账本）
+- [x] **Step 2: 写测试（先红）**：`SB-TC-06`（`gate` exit 0 + `git diff --stat $BASE -- agents/` = 15 files + 15 份 evidence 哈希一致）、`SB-TC-25`/`SB-TC-32`（**位置型三段**：每席恰 1 条 `关注类别：` 删行在「职责」段；非指针 13 席其余增删只在「输出格式」段；指针 2 席「边界」段至少 1 增 1 删）、`SB-TC-08`/`SB-TC-37`（`关注类别：` = 0 且 `类别：` ≥ 15，两向判别力）、`SB-TC-26`（三条红态：`BaselineDrift` / 幂等就地改写 / `--expect-change`）
+- [x] **Step 3: 跑** → red（卡面未重生成）
+- [x] **Step 4: 生成**：`draft --kind agent --name <席>` ×15，再逐席 `replace --kind agent --name <席> --draft <草稿> --yes --expect-change <新渲染 sha256> --rejudge A1` ×15（`generate` 只比不写，**不能**当写盘通路；A1 判者 = 独立于施工者的子代理，见 spec §11.2.7 第 2 步）
+- [x] **Step 5: 重记 evidence**：由 `replace` 同批写回 15 份 `fixtures/<席>.evidence.json` 的 `renderSha256` / `lastWrittenHash` 与 `changes`（**禁手改**）
+- [x] **Step 6: 落冻结基线**：15 席 SHA 写 `docs/reports/2026-11-03-s-b-card-sha-baseline.md`（对照 S-A 那张，注明「15/15 全变；三分类 = 2 席 `0/−1` / 11 席 `+7/−6` / 2 席 `+4/−5`」，见 spec §11.2.7 第 4 步）
+- [x] **Step 7: 跑**：`node tools/docgen/cli.mjs gate` → exit 0；用例全绿
+- [x] **Step 8: 提交**：`chore(docgen): S-B 重生成 15 卡 + 15 份 evidence + 冻结基线`
 
 **验收：** `gate` exit 0；`git diff --stat $BASE -- agents/` = `15 files changed`；15 席 SHA 与本任务 Step 6 的表逐行相等。
 **Consumes:** Task 4, Task 5
@@ -189,11 +189,11 @@
 
 **Files:** 建 `tools/docgen/check-case-assert.mjs`；测试同上文件
 
-- [ ] **Step 1: 写测试（先红）**：`SB-TC-09`（跑 S-A 那对已签件 → `ids 30 / hollow 0 / missing 0`，且 ID 集合 `deepEqual` 30 个 `TC-\d{3}`）、`SB-TC-21`（四种恒真注入 `assert.ok(true)` / `assert.ok( true )` / `assert.ok(1)` / `assert.ok('1')` 均 `hollow`）、`SB-TC-38`（删用例体 → `missing`，与 `hollow` 不混算）
-- [ ] **Step 2: 跑** → red
-- [ ] **Step 3: 实现**：从 plan 里**表头含「用例」的那张表**取 ID（`TC-\d{3}` / `S\d+-TC-[A-Z]\d\d`，去重）；逐 ID 在 testcase 里定位用例体；断言「体内 ≥1 条 `assert.*`，且不是恒真（参数 `trim()` ∈ `{true,1,'1'}`）」；输出 `ids <N> / hollow <K> / missing <M>`
-- [ ] **Step 4: 跑** → 绿（对 S-A 那对：`ids 30 / hollow 0 / missing 0`）
-- [ ] **Step 5: 提交**：`feat(docgen): check-case-assert.mjs 映射非空心校验器（PRD V7）`
+- [x] **Step 1: 写测试（先红）**：`SB-TC-09`（跑 S-A 那对已签件 → `ids 30 / hollow 0 / missing 0`，且 ID 集合 `deepEqual` 30 个 `TC-\d{3}`）、`SB-TC-21`（四种恒真注入 `assert.ok(true)` / `assert.ok( true )` / `assert.ok(1)` / `assert.ok('1')` 均 `hollow`）、`SB-TC-38`（删用例体 → `missing`，与 `hollow` 不混算）
+- [x] **Step 2: 跑** → red
+- [x] **Step 3: 实现**：从 plan 里**表头含「用例」的那张表**取 ID（`TC-\d{3}` / `S\d+-TC-[A-Z]\d\d`，去重）；逐 ID 在 testcase 里定位用例体；断言「体内 ≥1 条 `assert.*`，且不是恒真（参数 `trim()` ∈ `{true,1,'1'}`）」；输出 `ids <N> / hollow <K> / missing <M>`
+- [x] **Step 4: 跑** → 绿（对 S-A 那对：`ids 30 / hollow 0 / missing 0`）
+- [x] **Step 5: 提交**：`feat(docgen): check-case-assert.mjs 映射非空心校验器（PRD V7）`
 
 **验收：** 对 S-A 已签件的命令 exit 0 且首行 `ids 30 / hollow 0 / missing 0 => ok`。
 **Consumes:** 无
@@ -205,17 +205,17 @@
 
 **Files:** 改 `test/sa-data-layer.test.mjs`、`test/policy-pure-source.test.mjs`、`test/tool-tiers.test.mjs`、`test/s2-card-rewrite.test.mjs`、`test/support/capability-baseline.mjs`、`fixtures/capability-baseline.json`、`docs/superpowers/specs/2026-11-03-s-a-data-layer-design.md`（只加注）
 
-- [ ] **Step 1: 逐条实跑**：`node --test tools/docgen/test/sa-data-layer.test.mjs tools/docgen/test/policy-pure-source.test.mjs tools/docgen/test/tool-tiers.test.mjs tools/docgen/test/s2-card-rewrite.test.mjs` → 记下红因
-- [ ] **Step 2: 按红因改**（spec §11.2.6 的必红清单，逐行对）：
-  - [ ] `TC-006`：「逐项点名」行不存在（**不是**「20 项」）
-  - [ ] `TC-025`：`lessons/` 从卡面消失（**不是**「20 项」）
-  - [ ] `policy-pure-source`：切片锚改「指针句在位」、`marks` 去「逐项点名」、`expanded === 12` 不变、fixture 12 槽基线重记
-  - [ ] `tool-tiers`：改为「指针句在位 + 定义层成员数不变」
-  - [ ] `s2-card-rewrite`：`S2-TC-A06` 仍 3 条；`S2-TC-C09③` 第五项改「`categories[].label`（`类别：` 行）影响卡面」
-  - [ ] S-A spec 就地加注「S-B 指针化后此句失效」（不改结论）
-- [ ] **Step 3: 跑**：上述 4 个测试文件 `# fail 0`；`SB-TC-12` / `SB-TC-36` 绿（改坏的版本仍红）
-- [ ] **Step 4: 全门禁**：`npm run check`（`# fail 0` + 末行 `check 全部通过`）、`node tools/docgen/cli.mjs gate`（exit 0）、`node tools/docgen/check-quotes.mjs`（exit 0）、`node tools/docgen/check-case-assert.mjs …`（exit 0）、`node scripts/scope-sweep.mjs --check`（exit 0）、`node scripts/check-gate-record.mjs`（`bad 0`）
-- [ ] **Step 5: 提交**：`test(docgen): 同批改写 S-B 必红的 5 处已签断言 + 收口门禁`
+- [x] **Step 1: 逐条实跑**：`node --test tools/docgen/test/sa-data-layer.test.mjs tools/docgen/test/policy-pure-source.test.mjs tools/docgen/test/tool-tiers.test.mjs tools/docgen/test/s2-card-rewrite.test.mjs` → 记下红因
+- [x] **Step 2: 按红因改**（spec §11.2.6 的必红清单，逐行对）：
+  - [x] `TC-006`：「逐项点名」行不存在（**不是**「20 项」）
+  - [x] `TC-025`：`lessons/` 从卡面消失（**不是**「20 项」）
+  - [x] `policy-pure-source`：切片锚改「指针句在位」、`marks` 去「逐项点名」、`expanded === 12` 不变、fixture 12 槽基线重记
+  - [x] `tool-tiers`：改为「指针句在位 + 定义层成员数不变」
+  - [x] `s2-card-rewrite`：`S2-TC-A06` 仍 3 条；`S2-TC-C09③` 第五项改「`categories[].label`（`类别：` 行）影响卡面」
+  - [x] S-A spec 就地加注「S-B 指针化后此句失效」（不改结论）
+- [x] **Step 3: 跑**：上述 4 个测试文件 `# fail 0`；`SB-TC-12` / `SB-TC-36` 绿（改坏的版本仍红）
+- [x] **Step 4: 全门禁**：`npm run check`（`# fail 0` + 末行 `check 全部通过`）、`node tools/docgen/cli.mjs gate`（exit 0）、`node tools/docgen/check-quotes.mjs`（exit 0）、`node tools/docgen/check-case-assert.mjs …`（exit 0）、`node scripts/scope-sweep.mjs --check`（exit 0）、`node scripts/check-gate-record.mjs`（`bad 0`）
+- [x] **Step 5: 提交**：`test(docgen): 同批改写 S-B 必红的 5 处已签断言 + 收口门禁`
 
 **验收：** 步骤 4 的六条命令全 exit 0。
 **Consumes:** Task 2, Task 3, Task 4, Task 5, Task 6, Task 7
@@ -277,6 +277,14 @@
 
 | 任务 | 状态 | 提交 | 备注 |
 |---|---|---|---|
-| Task 0 | 待开工 | — | 前置：S-A-Q-4 升必修（用户 2026-11-03 裁定） |
-| Task 1 | 待开工 | — | 施工第 1 步（语料） |
-| Task 2–8 | 待开工 | — | 按 Consumes 顺序执行 |
+| Task 0 | 完成（2026-11-03） | `43e8fd3` | S-A-Q-4 升必修：`cpSync` 失败重试一次（用户裁定选项①） |
+| Task 1 | 完成（2026-11-03） | `714b10c` | 语料件 `observation-r1` 一对；三条锚点在 Task 3 重锚为 S-B 不变量（`59fbeb2`） |
+| Task 2 | 完成（2026-11-03） | `1b92564`（修 `8e50140`） | `check-quotes.mjs`；修复轮 = 腐化登记措辞与事实对齐 |
+| Task 3 | 完成（2026-11-03） | `40ced4a`（附 `59fbeb2`） | 三列派生 + 两处 checks 文案；`59fbeb2` = 语料重锚（自失效修复） |
+| Task 4 | 完成（2026-11-03） | `6f702dd` | 15 席删 `duty.categories` + loader 注入/拒载 + 不再渲染 |
+| Task 5 | 完成（2026-11-03） | `09973c8`（修 `029bb29`） | 模板 4 行 + 5 槽指针化；修复轮 = SB-TC-41 基线改构造式 |
+| Task 6 | 完成（2026-11-03） | `aef7d11`（修 `3fea32b`） | 首版 `7432346` 因 A1 判者账不合规已 revert（`d92f9fe`）；A1 由独立判者 `reviewer-ai-sb-task6-a1-20261103` 重判 15/15；② 段回流 `2c186c2` / `c7b86b9` / `633fd11` |
+| Task 7 | 完成（2026-11-03） | `6716033`（修 `e09bd78`） | `check-case-assert.mjs`；修复轮 = noassert + markdown-rows 单源 + ids 0 守卫（口径回流 `40baf22` / `2a5c25f`） |
+| Task 8 | 完成（2026-11-03） | `2cdc600`（附 `9905485`） | 40 条必红断言同批改写 + 收口；`9905485` = 基线表归因更正 |
+
+**区间总览**：`47d53e3..HEAD` 共 73 文件（`agents/` 15、`fixtures/` 15、其余为测试 / 脚本 / 文档）；plan File Structure 未列但本批新增的两个测试支撑文件 = `tools/docgen/components/cardFaceIds.mjs`（+11，S-B 组 ID 白名单）与 `scripts/test-skip-allowlist.mjs`（+5，一次性档用例名）。
