@@ -5,8 +5,8 @@
   "hashObject": "0542e02610ec67f38a7c0f143f602aca376e2f46",
   "goldenAssertion": "pass",
   "compareResult": null,
-  "renderSha256": "07F071CAE614E3BCB4FCB3224225AABECDD292D87CB6B56BDD231C44EE0D6EC4",
-  "lastWrittenHash": "07F071CAE614E3BCB4FCB3224225AABECDD292D87CB6B56BDD231C44EE0D6EC4",
+  "renderSha256": "D1278F5DC45C68CA4A89CEB393408261B5045C916EC78B596AFC7DE394BC2E5D",
+  "lastWrittenHash": "D1278F5DC45C68CA4A89CEB393408261B5045C916EC78B596AFC7DE394BC2E5D",
   "changes": [
     {
       "from": "75ACBB10EB15A17A1092EB2DCB62DBA91F8DE37DF4EB16B5E006712884324BE3",
@@ -81,6 +81,30 @@
       "rejudged": [],
       "judgeMode": "none",
       "judged": [],
+      "machineChecks": {
+        "A3": "pass",
+        "A4": "pass",
+        "A5": "pass",
+        "A6": "pass",
+        "A7": "pass"
+      }
+    },
+    {
+      "from": "07F071CAE614E3BCB4FCB3224225AABECDD292D87CB6B56BDD231C44EE0D6EC4",
+      "to": "D1278F5DC45C68CA4A89CEB393408261B5045C916EC78B596AFC7DE394BC2E5D",
+      "at": "2026-11-03T14:46:42.813Z",
+      "rejudged": [
+        "A1"
+      ],
+      "judgeMode": "subagent",
+      "judgedBy": "main-agent-2026-11-03-sb-task6-batch",
+      "judged": [
+        {
+          "key": "A1",
+          "verdict": "pass",
+          "basis": "tools/execution-matrix/criteria.md A1 + 渲染产物；重判写回 rules/.inspector-annotations.json reviewer-backend:A1 = pass（replace 机械转录）"
+        }
+      ],
       "machineChecks": {
         "A3": "pass",
         "A4": "pass",

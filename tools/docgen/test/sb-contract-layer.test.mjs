@@ -3,10 +3,11 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import { join, dirname } from 'node:path'
 import { spawnSync } from 'node:child_process'
-import { ROOT, withRepoCopy, runEsm } from './support/dev-workflow-checks.mjs'
+import { ROOT, withRepoCopy, runEsm, runCli } from './support/dev-workflow-checks.mjs'
 import { REGISTERED_IDS } from '../../observation-check/registered-ids.mjs'
 import { ARTIFACT_RE } from '../../observation-check/gate-scan.mjs'
 import { outputFormats } from '../components/outputFormats.mjs'
@@ -938,5 +939,296 @@ test('SB-TC-34 注入值不做字符串变换：加「核对」后缀 → 同形
     assert.match(ok.stdout, new RegExp(`same ${n}/${n}(?![0-9])`), ok.stdout)
 
     console.log(`transform: ${bad.stdout.trim()} / restored: ${ok.stdout.trim()}`)
+  })
+})
+
+// ── Task 6：15 卡重生成 + 15 份 evidence + 冻结基线（spec §11.2.7-1..4 / §11.4-6·§11.4-8 / §11.1 R11）──
+// BASE = 本任务开工前的 HEAD（Task 5 提交 `029bb29`）。**冻结常量、不随 HEAD 移动**：
+// 提交之后 `git diff HEAD -- agents/` 恒为 0，拿 HEAD 当基准会让 SB-TC-06/32 恒绿（空判据）。
+const SB_BASE = '029bb29974a714abaf081f52e84b2b1ee2180017'
+const CARDS_DIR = join(ROOT, 'agents')
+const seatCardFiles = () => readdirSync(CARDS_DIR).filter((f) => f.endsWith('.md'))
+// 席数一律派生（`TC-C06` / `TC-C11` 的计数探针禁测试侧写死 14/15 字面量）
+const seatTotal = () => seatCardFiles().length
+const sha256Of = (buf) => createHash('sha256').update(buf).digest('hex').toUpperCase()
+const linesWithText = (text, needle) => text.split('\n').filter((l) => l.includes(needle)).length
+
+function runGateIn(dir) {
+  const r = spawnSync(process.execPath, ['tools/docgen/cli.mjs', 'gate'], { cwd: dir, encoding: 'utf8' })
+  return { status: r.status, text: `${r.stdout ?? ''}${r.stderr ?? ''}` }
+}
+
+// 与 BASE 比的 git 读法（判据不依赖 git 的进程退出码：文件数一律从输出文本解析）
+function gitAt(args) {
+  const r = spawnSync('git', args, { cwd: ROOT, encoding: 'utf8' })
+  assert.equal(r.status, 0, `git ${args.join(' ')} 失败：${r.stderr ?? ''}`)
+  return r.stdout ?? ''
+}
+
+const filesChangedOf = (statOut) => Number((/(\d+) files? changed/.exec(statOut) ?? [])[1] ?? 0)
+
+test('SB-TC-06 15 卡重生成：gate exit 0 + 与 BASE 比 15 files / 15 行 + 15 份 evidence 哈希对齐', () => {
+  const g = runGateIn(ROOT)
+  assert.equal(g.status, 0, `gate 必须 exit 0（各席 disk == render）：${g.text}`)
+
+  const files = filesChangedOf(gitAt(['diff', '--stat', SB_BASE, '--', 'agents/']))
+  const nameOnly = gitAt(['diff', '--name-only', SB_BASE, '--', 'agents/']).split(/\r?\n/).filter((l) => l.trim())
+
+  // ④ evidence.renderSha256 == 盘上（15/15）：不清点的席逐个点名
+  const mismatch = seatCardFiles().filter((f) => {
+    const seat = f.slice(0, -3)
+    const ev = JSON.parse(readFileSync(join(ROOT, 'tools', 'docgen', 'fixtures', `${seat}.evidence.json`), 'utf8'))
+    return ev.renderSha256 !== sha256Of(readFileSync(join(CARDS_DIR, f)))
+  })
+
+  console.log(`regenerate: gate ${g.status} / stat ${files} / name-only ${nameOnly.length} / evidence mismatch ${mismatch.length}`)
+  assert.equal(files, seatTotal(), `与 BASE 比必须每席都变（实得 ${files} / 席数 ${seatTotal()}）`)
+  assert.equal(nameOnly.length, seatTotal(), `与 BASE 比必须每席一个路径（实得 ${nameOnly.length}）`)
+  assert.equal(mismatch.length, 0, `evidence.renderSha256 与盘上不等的席：${mismatch.join('、') || '(无)'}`)
+})
+
+test('SB-TC-08 关注点单行：`关注类别：` = 0 且 `类别：` ≥ 15（两向合取）+ gate exit 0', () => {
+  const files = seatCardFiles()
+  const focus = files.reduce((n, f) => n + linesWithText(readFileSync(join(CARDS_DIR, f), 'utf8'), '关注类别：'), 0)
+  const cats = files.reduce((n, f) => n + linesWithText(readFileSync(join(CARDS_DIR, f), 'utf8'), '类别：'), 0)
+  const g = runGateIn(ROOT)
+
+  console.log(`focus-lines: 关注类别 ${focus} / 类别 ${cats} / gate ${g.status}`)
+  // 两向必须同时断：只判 类别 ≥ 15 会在「关注类别 没删」时假绿，只判 关注类别 = 0 会漏掉「类别 行被一起删」
+  assert.equal(focus, 0, `「关注类别：」必须 0 命中（实得 ${focus}）`)
+  assert.ok(cats >= seatTotal(), `「类别：」必须每席一行（实得 ${cats} / 席数 ${seatTotal()}）`)
+  assert.equal(g.status, 0, `gate 必须 exit 0：${g.text}`)
+})
+
+// 逐行所属节（卡面无围栏代码块，按 `## ` 标题推进即可）
+function headingPerLine(text) {
+  const lines = text.split('\n')
+  const out = new Array(lines.length).fill('')
+  let cur = ''
+  lines.forEach((l, i) => {
+    const m = /^#{1,6}\s+(.*)$/.exec(l)
+    if (m) cur = m[1].trim()
+    out[i] = cur
+  })
+  return out
+}
+
+// 与 BASE 比的 `git diff -U0`：把每条增删行映射到**它所在的那一版文件**的节名
+// （删行取旧侧行号、增行取新侧行号；hunk 头给出两侧起点，故不需要上下文行）
+function changesWithSections(seat) {
+  const oldText = gitAt(['show', `${SB_BASE}:agents/${seat}.md`])
+  const newText = readFileSync(join(CARDS_DIR, `${seat}.md`), 'utf8')
+  const oldSec = headingPerLine(oldText)
+  const newSec = headingPerLine(newText)
+  const dels = []
+  const adds = []
+  let cur = null
+  for (const raw of gitAt(['diff', '-U0', SB_BASE, '--', `agents/${seat}.md`]).split('\n')) {
+    const line = raw.replace(/\r$/, '')
+    const m = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/.exec(line)
+    if (m) { cur = { oldStart: Number(m[1]), newStart: Number(m[2]) }; continue }
+    if (!cur || line === '') continue
+    if (line.startsWith('---') || line.startsWith('+++')) continue
+    if (line.startsWith('-')) dels.push({ line: line.slice(1), section: oldSec[cur.oldStart - 1 + dels.filter((d) => d.hunk === cur).length] , hunk: cur })
+    else if (line.startsWith('+')) adds.push({ line: line.slice(1), section: newSec[cur.newStart - 1 + adds.filter((a) => a.hunk === cur).length], hunk: cur })
+  }
+  return { dels, adds }
+}
+
+test('SB-TC-32 变更形态：15 files 全变 + 每席恰 1 条被删行 = `关注类别：` + 增删只落在 `输出格式` 段（2 席另有 `边界` 段）', () => {
+  const files = filesChangedOf(gitAt(['diff', '--stat', SB_BASE, '--', 'agents/']))
+  const nameOnly = gitAt(['diff', '--name-only', SB_BASE, '--', 'agents/']).split(/\r?\n/).filter((l) => l.trim())
+  assert.equal(files, seatTotal(), `与 BASE 比必须每席都变（实得 ${files}）`)
+  assert.equal(nameOnly.length, seatTotal(), `与 BASE 比必须每席一个路径（实得 ${nameOnly.length}）`)
+
+  // 13 席（= 15 − 2 张指针席）的「只少一行」实测不成立：11 席同时吃到 R1（`issue-card` 7 → 9 列）的
+  // `输出格式` 段变更（各 +7/−6），只有 `evidence-reader` / `senior-sdet` 两席是纯 −1。
+  // 故按「判据必须可判死」把它写成**位置型**三段（比 `a === 0 && d === 1` 更严：新增行必须落在确定段内）：
+  //   ① 15 席逐席恰 1 条被删行匹配 `^关注类别：`，且它在 `职责` 段
+  //   ② 非指针的 13 席：除那条删行外，全部增删行的所在节 = `输出格式`（= R1 的预期变更面，无第三类）
+  //   ③ 2 张指针席：`边界` 段内至少 1 增 1 删（边界段整段改写）
+  const badFocus = []
+  const badSection = []
+  const badExtra = []
+  const badBoundary = []
+  for (const f of seatCardFiles()) {
+    const seat = f.slice(0, -3)
+    const { dels, adds } = changesWithSections(seat)
+    const focusDels = dels.filter((d) => d.line.startsWith('关注类别：'))
+    if (focusDels.length !== 1) badFocus.push(`${seat}:${focusDels.length}`)
+    if (focusDels[0] && focusDels[0].section !== '职责') badSection.push(`${seat}:${focusDels[0].section || '(无)'}`)
+    if (POINTER_SEATS.includes(seat)) {
+      const boundary = [...dels, ...adds].filter((x) => x.section === '边界').length
+      if (boundary < 2) badBoundary.push(`${seat}:${boundary}`)
+    } else {
+      const stray = [...dels.filter((d) => !d.line.startsWith('关注类别：')), ...adds]
+        .filter((x) => x.section !== '输出格式')
+      if (stray.length > 0) badExtra.push(`${seat}:${stray.length}（${stray.map((x) => x.section || '(无)').join('|')}）`)
+    }
+  }
+
+  console.log(`change-shape: files ${files} / focus1 ${15 - badFocus.length}/15 / section 职责 ${15 - badSection.length}/15 / extra 0 ${13 - badExtra.length}/13 / boundary ${POINTER_SEATS.length - badBoundary.length}/${POINTER_SEATS.length}`)
+  assert.equal(badFocus.length, 0, `被删的「关注类别：」行必须每席恰 1 条：${badFocus.join('、')}`)
+  assert.equal(badSection.length, 0, `「关注类别：」行必须落在「职责」段：${badSection.join('、')}`)
+  assert.equal(badExtra.length, 0, `13 席除删行外不得在「输出格式」段之外有任何增删：${badExtra.join('、')}`)
+  assert.equal(badBoundary.length, 0, `指针席必须有「边界」段增删：${badBoundary.join('、')}`)
+})
+
+// 用副本自己的渲染器把 15 卡写回盘上（写盘字节与 `replace` 同源；`generate` 是「只比不写」，不能当写盘通路）
+const WRITE_RENDER_SRC = [
+  "import { readdirSync, writeFileSync, readFileSync } from 'node:fs'",
+  "import { join } from 'node:path'",
+  "import { renderByName } from './tools/docgen/components/renderByName.mjs'",
+  "let n = 0",
+  "for (const f of readdirSync('agents').filter((x) => x.endsWith('.md'))) {",
+  "  const seat = f.slice(0, -3)",
+  "  const out = renderByName(seat)",
+  "  if (readFileSync(join('agents', f), 'utf8') !== out) { writeFileSync(join('agents', f), out, 'utf8'); n += 1 }",
+  "}",
+  "process.stdout.write('written ' + n + '\\n')",
+].join('\n')
+
+// 前置归一：副本的 15 卡先与渲染对齐（testcase 前置「15 卡已重生成」），否则本用例会随施工时点变义
+function syncCopyCards(copy) {
+  const r = runProbeIn(copy, WRITE_RENDER_SRC)
+  assert.equal(r.status, 0, `副本重生成失败：${r.stdout}${r.stderr}`)
+  const g = runGateIn(copy)
+  assert.equal(g.status, 0, `归一后副本 gate 必须 exit 0：${g.text}`)
+}
+
+test('SB-TC-25 只改模板不重生成 → `Mismatch` exit 1；重生成后 exit 0；变更面 = 吃模板的那 2 席', () => {
+  withRepoCopy((copy) => {
+    syncCopyCards(copy)
+    const before = new Map(seatCardFiles().map((f) => [f, readFileSync(join(copy, 'agents', f))]))
+
+    const tplPath = join(copy, 'tools', 'docgen', 'templates', 'boundary.md.tpl')
+    const tpl = readFileSync(tplPath, 'utf8')
+    const hits = tpl.split('**检测限度**').length - 1
+    assert.equal(hits, 1, `模板里 '**检测限度**' 必须恰 1 处（实得 ${hits}），否则构造改错位置`)
+    writeFileSync(tplPath, tpl.replace('**检测限度**', '**检测限度（探针）**'), 'utf8')
+
+    const red = runGateIn(copy)
+    assert.notEqual(red.status, 0, `只改模板不重生成不得 exit 0：${red.text}`)
+    assert.match(red.text, /Mismatch/, red.text)
+    const named = POINTER_SEATS.filter((s) => red.text.includes(`agents/${s}.md`))
+    assert.ok(named.length >= 1, `Mismatch 必须点名受影响的卡：${red.text}`)
+
+    const w = runProbeIn(copy, WRITE_RENDER_SRC)
+    assert.equal(w.status, 0, w.stdout + w.stderr)
+    const green = runGateIn(copy)
+    assert.equal(green.status, 0, `重生成后必须 exit 0：${green.text}`)
+
+    const changed = [...before].filter(([f, buf]) => !readFileSync(join(copy, 'agents', f)).equals(buf)).map(([f]) => f)
+    console.log(`template-only: red ${red.status} / named ${named.join(',')} / green ${green.status} / changed ${changed.length}`)
+    // 只有走模板的 2 席变；其余 13 席走 DEFAULT_BOUNDARY / SDET_BOUNDARY，模板不喂养它们
+    assert.deepEqual(changed.sort(), POINTER_SEATS.map((s) => `${s}.md`).sort(), `模板改动只应波及这 2 席：${changed.join('、')}`)
+  })
+})
+
+// 副本内的 evidence / 卡读写（`replace` 只认这两处）
+const cardPath = (dir, seat) => join(dir, 'agents', `${seat}.md`)
+const evPath = (dir, seat) => join(dir, 'tools', 'docgen', 'fixtures', `${seat}.evidence.json`)
+const readJson = (p) => JSON.parse(readFileSync(p, 'utf8'))
+const writeJson = (p, v) => writeFileSync(p, `${JSON.stringify(v, null, 2)}\n`, 'utf8')
+const newestDraftOf = (dir, seat) => {
+  const box = join(dir, '.drafts')
+  const f = readdirSync(box).filter((x) => x.startsWith(`${seat}--`)).sort().pop()
+  assert.ok(f, `副本的草稿箱里必须有 ${seat} 的草稿`)
+  return join(box, f)
+}
+// 草稿复用：`replace` 失败时不清草稿（DraftNameConflict 会挡住第二次 `draft`），
+// 而渲染输入不变 → 已存在的草稿与本次渲染逐字节相同，直接复用。
+const draftOf = (dir, seat) => {
+  const box = join(dir, '.drafts')
+  const existing = existsSync(box) ? readdirSync(box).filter((x) => x.startsWith(`${seat}--`)) : []
+  if (existing.length === 0) {
+    const d = runCli(dir, ['draft', '--kind', 'agent', '--name', seat])
+    assert.equal(d.status, 0, `draft 失败：${d.stdout}${d.stderr}`)
+  }
+  return newestDraftOf(dir, seat)
+}
+
+test('SB-TC-26 `replace` 三红一正：BaselineDrift exit 2 / evidence 陈旧就地改写 exit 0 / 漏 `--expect-change` → UnapprovedChange / 带凭证 exit 0', () => {
+  withRepoCopy((copy) => {
+    syncCopyCards(copy)
+    const seat = 'reviewer-ai'
+
+    // ① baseline 陈旧：同时在 BASELINE_RULES 追加一项 + 建该文件（只建文件会先发 UnregisteredHandwritten，码不同）
+    const bm = join(copy, 'tools', 'docgen', 'components', 'baseline.mjs')
+    const bmSrc = readFileSync(bm, 'utf8')
+    const patched = bmSrc.replace('export const BASELINE_RULES = [', "export const BASELINE_RULES = [\n  'rules/zzz-drift-probe.md',")
+    assert.notEqual(patched, bmSrc, '构造失败：BASELINE_RULES 定义行未命中')
+    writeFileSync(bm, patched, 'utf8')
+    writeFileSync(join(copy, 'rules', 'zzz-drift-probe.md'), '# 探针\n', 'utf8')
+    const r1 = runCli(copy, ['replace', '--kind', 'agent', '--name', seat, '--draft', draftOf(copy, seat), '--yes'])
+    assert.equal(r1.status, 2, `baseline 陈旧必须 exit 2：${r1.stdout}${r1.stderr}`)
+    assert.match(r1.stderr, /^BaselineDrift:/m, r1.stderr)
+    // 复原两半（源码数组 + 探针文件）：只复原一半会让后续子用例先吃到 UnregisteredHandwritten
+    writeFileSync(bm, bmSrc, 'utf8')
+    rmSync(join(copy, 'rules', 'zzz-drift-probe.md'), { force: true })
+
+    // ② evidence 陈旧 + 盘上 == 渲染 → 幂等恢复（就地改写 renderSha256，exit 0，不报码）
+    const ev = readJson(evPath(copy, seat))
+    const stale = 'A'.repeat(64)
+    ev.renderSha256 = stale
+    writeJson(evPath(copy, seat), ev)
+    const r2 = runCli(copy, ['replace', '--kind', 'agent', '--name', seat, '--draft', draftOf(copy, seat), '--yes'])
+    assert.equal(r2.status, 0, `幂等分支必须 exit 0：${r2.stdout}${r2.stderr}`)
+    const ev2 = readJson(evPath(copy, seat))
+    assert.notEqual(ev2.renderSha256, stale, '幂等分支必须把 renderSha256 就地改写成新值')
+    assert.equal(ev2.renderSha256, sha256Of(readFileSync(cardPath(copy, seat))), 'renderSha256 必须等于盘上哈希')
+
+    // ③ / ④ 的前置：把盘上卡换成「旧内容」（末行多一句），并把 evidence.lastWrittenHash 对齐它
+    const renderedText = readFileSync(cardPath(copy, seat), 'utf8')
+    const oldText = `${renderedText}（旧版占位）\n`
+    writeFileSync(cardPath(copy, seat), oldText, 'utf8')
+    const ev3 = readJson(evPath(copy, seat))
+    ev3.lastWrittenHash = sha256Of(Buffer.from(oldText, 'utf8'))
+    writeJson(evPath(copy, seat), ev3)
+
+    const r3 = runCli(copy, ['replace', '--kind', 'agent', '--name', seat, '--draft', draftOf(copy, seat), '--yes'])
+    assert.notEqual(r3.status, 0, `漏 --expect-change 不得 exit 0：${r3.stdout}${r3.stderr}`)
+    assert.match(`${r3.stdout}${r3.stderr}`, /UnapprovedChange/, r3.stderr)
+
+    const newSha = sha256Of(Buffer.from(renderedText, 'utf8'))
+    const r4 = runCli(copy, ['replace', '--kind', 'agent', '--name', seat, '--draft', draftOf(copy, seat), '--yes', '--expect-change', newSha])
+    assert.equal(r4.status, 0, `带凭证必须 exit 0：${r4.stdout}${r4.stderr}`)
+    assert.equal(readFileSync(cardPath(copy, seat), 'utf8'), renderedText, '写盘内容必须逐字等于渲染')
+
+    console.log(`replace: baseline ${r1.status} / idempotent ${r2.status} / missing-proof ${r3.status} / proved ${r4.status}`)
+  })
+})
+
+test('SB-TC-37 §11.4-8 两向判别力：回填 `关注类别：` → 1 / 删一条 `类别：` → 14', () => {
+  withRepoCopy((copy) => {
+    syncCopyCards(copy)
+    const dir = join(copy, 'agents')
+    const count = (needle) => readdirSync(dir).filter((f) => f.endsWith('.md'))
+      .reduce((n, f) => n + linesWithText(readFileSync(join(dir, f), 'utf8'), needle), 0)
+
+    assert.equal(count('关注类别：'), 0, '金态必须 0 命中')
+    assert.ok(count('类别：') >= seatTotal(), '金态 `类别：` 必须每席一行')
+
+    // 形态 A：往某卡职责段插回一行
+    const a = join(dir, 'reviewer-ai.md')
+    const aText = readFileSync(a, 'utf8')
+    const backfill = aText.replace(/^(触发：.*)$/m, '$1\n关注类别：探针回填')
+    assert.notEqual(backfill, aText, '构造失败：该卡没有「触发：」行可锚')
+    writeFileSync(a, backfill, 'utf8')
+    assert.equal(count('关注类别：'), 1, '回填一行后计数必须 = 1（判红）')
+    writeFileSync(a, aText, 'utf8')
+
+    // 形态 B：删掉某卡的 `类别：` 行
+    const b = join(dir, 'reviewer-qa.md')
+    const bText = readFileSync(b, 'utf8')
+    const removed = bText.split('\n').filter((l) => !l.startsWith('类别：')).join('\n')
+    assert.notEqual(removed, bText, '构造失败：该卡没有 `类别：` 行')
+    writeFileSync(b, removed, 'utf8')
+    assert.equal(count('类别：'), seatTotal() - 1, '少一行 `类别：` 后计数必须 = 席数 − 1（判红）')
+    writeFileSync(b, bText, 'utf8')
+
+    assert.equal(count('关注类别：'), 0, '复原后必须 0 命中')
+    assert.ok(count('类别：') >= seatTotal(), '复原后 `类别：` 必须每席一行')
+    console.log(`two-way: A 1 / B 14 / restored 0,${count('类别：')} => ok`)
   })
 })
