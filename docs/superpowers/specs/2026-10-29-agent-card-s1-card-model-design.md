@@ -1,7 +1,7 @@
 # agent-card S1 定义层（F-01～F-08）设计：卡面内容模型 + 校验器
 
 > 状态：**内容已定稿，待议会 #2 签字（v6）**｜创建：2026-10-29
-> 版本增量：**v2** = 独立 sdet 首轮复核 6 条 P0（码数 36、`CARD_MODEL_CODES`、`env` 三键、产物侧形状、入口签名、表达式互斥组）；**v3** = 第二轮 2 条 P0（§4.1 `:93-99` 两个 `criterion` 分形、§4.2 `:101-113` `SCAN_FIELDS`、§7 `:208` 开放项缺列分工）；**v4** = 第三轮 2 条（§7 `:181` `manual` 豁免载体、§7 `:179` `HardcodedCount` 数字面）；**v5** = 议会 #2 第 1 轮 8 族（§8 `:223-238`、§6 `:138-159`、§7 `:180` / `:181` / `:183` / `:196`、§5 `:131-133`、§10-D16～D19）；**v6** = 议会 #2 第 2 轮（§8 `:225-226` M2 判定面粒度 + 组表序号 `:230-237`、§7 `:180` 变量本身未赋值、§6 `:147` 码表值改字段引用、§3 `:47-48` 四入口、§10-D20/D21）；**v6.1** = 收口轮记录类修正（§10-D8 位置改 PRD `:215`、§10-D22 `evidenceRequired` 不判）
+> 版本增量：**v2** = 独立 sdet 首轮复核 6 条 P0（码数 36、`CARD_MODEL_CODES`、`env` 三键、产物侧形状、入口签名、表达式互斥组）；**v3** = 第二轮 2 条 P0（§4.1 `:93-99` 两个 `criterion` 分形、§4.2 `:101-113` `SCAN_FIELDS`、§7 `:208` 开放项缺列分工）；**v4** = 第三轮 2 条（§7 `:181` `manual` 豁免载体、§7 `:179` `HardcodedCount` 数字面）；**v5** = 议会 #2 第 1 轮 8 族（§8 `:223-238`、§6 `:138-159`、§7 `:180` / `:181` / `:183` / `:196`、§5 `:131-133`、§10-D16～D19）；**v6** = 议会 #2 第 2 轮（§8 `:225-226` M2 判定面粒度 + 组表序号 `:230-237`、§7 `:180` 变量本身未赋值、§6 `:147` 码表值改字段引用、§3 `:47-48` 四入口、§10-D20/D21）；**v6.1** = 收口轮记录类修正（§10-D8 位置改 PRD `:215`、§10-D22 `evidenceRequired` 不判）；**v6.2** = `2026-11-03` S-A T4 回扫（PRD §2 D17）：§4.2 卡文本面新增 `description`（§4 的「三件事」① 同步限定为「措辞不判」），`SCAN_FIELDS` 键数仍 8、码表零新增、零增删行
 > 功能点：**F-01～F-08**（`docs/prd/20261026205821-agent-card-contract.md` §6 `:463-472`）；交付份 **S1**（同文 §8 `:516`）
 > 上级规范：同文 §3.8 `:243-284` 是 S1 **字段形状的唯一权威**；本文只给落点、形状细化与判据落地，不复制 PRD 结论
 > 测试用例文件：`2026-10-29-agent-card-s1-card-model-design-testcase.md`（同批、同目录，由独立 `senior-sdet` 在全新上下文编写；本 spec 不内联用例）
@@ -89,7 +89,7 @@ ObservationDoc = { items: [{ id, objectType?, verdict: 'hit' | 'miss' | 'na', ev
 | `evidence` | `path:line` 或命令输出首行（字符串）；**本段不判其可解析性**（证据七道归 S2 §4.3） | PRD `:253` |
 | `registeredIds` | 由 `registeredIdsOf(cards)` 派生 = 入参全部卡的 `checkItems[].id` 并集；**不再手写常量** | PRD `:310` |
 
-**形状不做的三件事**：① 不校验 `name` / `description` 的措辞（S4 渲染与 F-09 零散文在渲染侧判）；② 不校验 `tools` 的权限语义（S6 的 `capabilities` 轴）；③ 不校验 `evidence` 的行内容（S2 证据七道）。
+**形状不做的三件事**：① 不校验 `name` / `description` 的**措辞**（S4 渲染与 F-09 零散文在渲染侧判；`description` 的措辞不判，但它计入卡文本面、受 §4.2 四个文本码的词表扫描——`2026-11-03` 增量，PRD §2 D17）；② 不校验 `tools` 的权限语义（S6 的 `capabilities` 轴）；③ 不校验 `evidence` 的行内容（S2 证据七道）。
 
 ### 4.1 两个 `criterion` 的形态（防同名不同义）
 
@@ -104,10 +104,10 @@ ObservationDoc = { items: [{ id, objectType?, verdict: 'hit' | 'miss' | 'na', ev
 |---|---|---|
 | `SubjectiveLabel` | `categories[].label`、`checkItems[].label`、`checkItems[].criterion` | 其它 |
 | `InlineTermList` / `InlineThreshold` / `AmbiguousCriterion` | **仅** `checkItems[].criterion` | `Action.criterion`（它是谓词 id，不是文本） |
-| `PointerToElsewhere` / `HardcodedCount` | 卡文本面 = `duty.trigger` / `duty.categories[]` / `duty.action` / `duty.constraint` / `Action.objects[]` / `CheckItem.label` | `description`（只写触发条件）、`scenes[].why`、`rationale` |
-| `MixedTermInCard` / `ProceduralWordOutsideParliament` | 卡文本面 **∪** `rationale` | `description`、`scenes[].why` |
+| `PointerToElsewhere` / `HardcodedCount` | 卡文本面 = `duty.trigger` / `duty.categories[]` / `duty.action` / `duty.constraint` / `description` / `Action.objects[]` / `CheckItem.label` | `scenes[].why`、`rationale` |
+| `MixedTermInCard` / `ProceduralWordOutsideParliament` | 卡文本面 **∪** `rationale` | `scenes[].why` |
 
-- 判「卡文本面」时**不含** `rationale`：`rationale` 是散文的合法落点（PRD §3.7 `:223-224`），混称与程序词却是**卡级**违规（同一张卡就是同一席），故专列「∪ `rationale`」两码。
+- 判「卡文本面」时**不含** `rationale`：`rationale` 是散文的合法落点（PRD §3.7 `:223-224`），混称与程序词却是**卡级**违规（同一张卡就是同一席），故专列「∪ `rationale`」两码。**`description` 自 `2026-11-03` 起计入卡文本面**（PRD §2 D17 / S-A 的 R4）：它是 `triggerTable.when` + `notWhen` 的派生串，进卡面就得能被词表扫到，不再豁免。
 - `scenes[].why` 只判「在不在」（`MissingSceneRationale`），不做词表扫描。
 - **形态写死**：`SCAN_FIELDS` 是对象，**键 = 上表 8 个码名**（逐码一项，值 = 该码要扫的字段引用数组）；不按「扫描面相同」合并成 4 组键（合并会让「哪几个码共用一面」这件事只能靠读源码）。
 - **最小合法卡 / 最小产物文档样例**见 testcase §0.3 的 `baseCard()` / `baseDoc()`（本 spec 不内联样例，避免两处维护）。

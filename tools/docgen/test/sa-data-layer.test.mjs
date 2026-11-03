@@ -9,8 +9,7 @@ import { spawnSync } from 'node:child_process'
 import { expandRefs, loadSeatData } from '../components/seatLoader.mjs'
 import { CARD_KEYS, buildCards } from '../components/cardPipeline.mjs'
 import { SCAN_FIELDS } from '../card-model/enums.mjs'
-import { validateCardModel } from '../card-model/index.mjs'
-import { ROOT, runCli, withRepoCopy } from './support/dev-workflow-checks.mjs'
+import { ROOT, runCli, runEsm, withRepoCopy } from './support/dev-workflow-checks.mjs'
 
 const DATA = 'tools/docgen/data'
 const SEATS = `${DATA}/seats`
@@ -310,22 +309,51 @@ test('TC-009 `SCAN_FIELDS` 仍 8 键，且 4 个文本码的扫描面含 descrip
   }
 })
 
-test('TC-020/021 description 上的违规词必须报码，且 path 落在 description（指针词 / 硬编码数量 / 程序词）', async () => {
-  const { agentData } = await import('../components/agentData.mjs')
-  const { buildEnv } = await import('../components/cardPipeline.mjs')
-  const card = structuredClone(agentData.find((a) => a.name === 'senior-sdet').card)
-  const env = buildEnv('senior-sdet', [card])
-  // 半改态（只改 `CARD_TEXT_FIELDS` 不补 `surfaceTexts`）下这里恒为空：顺序 π push 之后再无 description 分支
-  const onDescription = () => validateCardModel(card, env).errors.filter((x) => /description/i.test(x.path))
-  card.description = '当需要为 PRD/spec 设计并编写测试用例；不用于：详见 §3 的口径'
-  const e1 = onDescription()
-  assert.ok(e1.some((x) => x.code === 'PointerToElsewhere'), `应报 PointerToElsewhere，实得 ${JSON.stringify(e1)}`)
-  card.description = '当需要为 PRD/spec 设计并编写测试用例；不用于：共 3 条'
-  const e2 = onDescription()
-  assert.ok(e2.some((x) => x.code === 'HardcodedCount'), `应报 HardcodedCount，实得 ${JSON.stringify(e2)}`)
-  card.description = '当需要为 PRD/spec 设计并编写测试用例；不用于：收卡'
-  const e3 = onDescription()
-  assert.ok(e3.some((x) => x.code === 'ProceduralWordOutsideParliament'), `应报 ProceduralWordOutsideParliament，实得 ${JSON.stringify(e3)}`)
+// T4-补（代码审查 P2）：注入面按 testcase TC-020 的「前置」走真实派生链 ——
+// `seats/senior-sdet.json` 的 `trigger.notWhen.text` → `descriptionOf` → 卡上 `description`。
+// 直接给 `card.description` 赋值只能证明 `surfaceTexts` 认这个 ref，证明不了「数据改了卡面就跟着改」。
+const DESC_PROBE = `
+const { buildCards, buildEnv } = await import('./tools/docgen/components/cardPipeline.mjs')
+const { validateCardModel } = await import('./tools/docgen/card-model/index.mjs')
+const b = buildCards().find((x) => x.seat === 'senior-sdet')
+const errors = validateCardModel(b.card, buildEnv('senior-sdet', [b.card])).errors
+  .filter((e) => /description/i.test(e.path))
+process.stdout.write(JSON.stringify({ description: b.card.description, errors }))
+`
+
+test('TC-020/021 description 由 notWhen 派生后必须被扫（三个码 path 落在 description），半改态归 0', () => {
+  withRepoCopy((dst) => {
+    const seatJson = join('tools', 'docgen', 'data', 'seats', 'senior-sdet.json')
+    const original = JSON.parse(readFileSync(join(dst, seatJson), 'utf8')).trigger.notWhen.text
+    assert.ok(typeof original === 'string' && original.trim() !== '', '前置：senior-sdet 必须有 notWhen.text（唯一只进 description 的面）')
+    const probe = () => {
+      const r = runEsm(dst, DESC_PROBE)
+      assert.equal(r.status, 0, r.stdout + r.stderr)
+      return JSON.parse(r.stdout)
+    }
+    // 完整态：注入句经 descriptionOf 进 description，三个不同码都必须报在 description 上
+    for (const [text, code] of [
+      ['详见 §3 的口径', 'PointerToElsewhere'],
+      ['共 3 条', 'HardcodedCount'],
+      ['收卡', 'ProceduralWordOutsideParliament'],
+    ]) {
+      rewrite(dst, seatJson, (j) => { j.trigger.notWhen.text = text })
+      const o = probe()
+      assert.ok(o.description.includes(text), `前置：注入句必须进 description，实得 ${o.description}`)
+      assert.ok(o.errors.some((e) => e.code === code), `应报 ${code} 且 path 在 description，实得 ${JSON.stringify(o.errors)}`)
+    }
+    // 复原态：原 notWhen 句对四码零命中
+    rewrite(dst, seatJson, (j) => { j.trigger.notWhen.text = original })
+    assert.deepEqual(probe().errors, [], '复原态 description 上不得有任何码')
+    // 半改态（只改 CARD_TEXT_FIELDS 不补 surfaceTexts）：表里有、实现不扫 → 命中 0（这就是判别力）
+    const p = join(dst, 'tools', 'docgen', 'card-model', 'validateCardModel.mjs')
+    const src = readFileSync(p, 'utf8')
+    const patched = src.replace(/\r?\n\s*else if \(ref === 'description'\) push\('description', card\.description\);/, '')
+    assert.notEqual(patched, src, '注入必须命中（surfaceTexts 的 description 分支仍在）')
+    writeFileSync(p, patched)
+    rewrite(dst, seatJson, (j) => { j.trigger.notWhen.text = '详见 §3 的口径' })
+    assert.deepEqual(probe().errors, [], '半改态下 /description/ 必须 0 命中（静默空转）')
+  })
 })
 
 test('TC-029 notWhen 拼接丢失（`descriptionOf` 丢 notWhen）→ gate exit 1，点名 senior-sdet', () => {
