@@ -1,7 +1,8 @@
 // PRD V6 引句校验器：语料 = `docs/superpowers/reviews/**/observation-*.json` 的 `items[].evidence`，
 // 逐条交给 `checkEvidence()`（唯一证据校验实现，本文件不另写一套）→ 任一红即 exit 1；语料 < 2 条也 exit 1（fail-closed）。
-// 不进 `npm run check`：语料是历史观察记录的产物面，归档即全仓红不可接受（spec §11.1 R3）；
-// 失效风险登记在 `docs/after/` 一条（带触发条件）。
+// 不进 `npm run check` 的**门禁段**：语料是历史观察记录的产物面，把它接成门禁段等于给「归档」加禁令（spec §11.1 R3）。
+// 注意：`npm run check` 的 ② 段跑全仓测试，`sb-contract-layer.test.mjs` 的 SB-TC-03 等用例对**真仓**语料跑本脚本 →
+// 语料归档到 < 2 条时仍会经测试面变红（没有专项报码）；耦合与张力登记在 `docs/after/` 那条（带触发条件）。
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { checkEvidence, repoRoot } from '../observation-check/evidence.mjs'
