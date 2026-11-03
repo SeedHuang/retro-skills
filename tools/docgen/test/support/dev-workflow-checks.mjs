@@ -240,12 +240,25 @@ export function readCounterFiles() {
 // 最小仓副本：gate 的 REPO_ROOT 由 cli 位置决定，故复制 tools + rules + agents 即可跑 gate
 export function withRepoCopy(fn) {
   const dst = mkdtempSync(join(tmpdir(), 'dw-copy-'));
-  try {
-    // `docs/agents/**` 也是 gate 的比对面（S4 spec §7③）：副本缺它会把正常态误报 DanglingBaselineEntry
-    // `tools/quality/**` 是 S1 词表单源（`card-model/vocab/*` 在 import 时读它）：副本缺它会 ENOENT
+  // `docs/agents/**` 也是 gate 的比对面（S4 spec §7③）：副本缺它会把正常态误报 DanglingBaselineEntry
+  // `tools/quality/**` 是 S1 词表单源（`card-model/vocab/*` 在 import 时读它）：副本缺它会 ENOENT
+  const copyAll = () => {
     for (const rel of ['tools/docgen', 'tools/execution-matrix', 'tools/quality', 'rules', 'agents', 'docs/agents']) {
       if (!existsSync(join(ROOT, rel))) continue;
       cpSync(join(ROOT, rel), join(dst, rel), { recursive: true });
+    }
+  };
+  try {
+    // S-A-Q-4（2026-11-03 用户裁定升必修）：`S2-TC-E09` 在真实仓跑 `generate --readme --apply`，
+    // `writeAll` 先在 `docs/agents/` 同目录写 `X.md.tmp-<pid>` 再 rename；`node --test` 多文件并行时，
+    // 本函数可能正 `cpSync` 该目录、枚举到已消失的目录项 → 偶发 `cpSync … ENOENT`（复跑即绿）。
+    // 选「失败一次后清空 dst 整轮重复制一次、两次都失败才抛」：这个复制根被 S-A / S4 / S5 / S6
+    // 多条用例复用，改成逐文件容错或改写清单会同时动到那些用例的比对面。
+    try {
+      copyAll();
+    } catch {
+      rmSync(dst, { recursive: true, force: true });
+      copyAll();
     }
     return fn(dst);
   } finally {
