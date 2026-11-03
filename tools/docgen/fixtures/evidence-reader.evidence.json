@@ -3,8 +3,8 @@
   "blob": "443ac757cf6bb0c32fcd2f043361993310e811b8",
   "hashObject": "443ac757cf6bb0c32fcd2f043361993310e811b8",
   "sha256": "37830E00817D42613D8B6B29088176FEE927E08D4C46E4DE00A875D0242BCD1C",
-  "renderSha256": "E91CB2E4FA871859DD9EC55244AC036FD15D9726AF7F0B394548AE1F63BC1458",
-  "lastWrittenHash": "E91CB2E4FA871859DD9EC55244AC036FD15D9726AF7F0B394548AE1F63BC1458",
+  "renderSha256": "09C4919CF3A2C73466311CB15E05D8C637130E646AEB7C20CA9832C95AC6201C",
+  "lastWrittenHash": "09C4919CF3A2C73466311CB15E05D8C637130E646AEB7C20CA9832C95AC6201C",
   "goldenAssertion": "pending",
   "compareResult": null,
   "note": "新建席按 spec §7.1 C7 走 draft → 校验即落盘（绕过 replace 迁移段），故这里没有 goldenAssertion=pass。commit 字段 = 建卡时的仓库 HEAD（本卡尚未提交，该 commit 不含此卡）；首次提交后由 replace 流程刷新。blob / hashObject = git hash-object 的结果（工作树字节的 blob 标识）。",
@@ -97,6 +97,30 @@
       "rejudged": [],
       "judgeMode": "none",
       "judged": [],
+      "machineChecks": {
+        "A3": "pass",
+        "A4": "pass",
+        "A5": "pass",
+        "A6": "pass",
+        "A7": "pass"
+      }
+    },
+    {
+      "from": "E91CB2E4FA871859DD9EC55244AC036FD15D9726AF7F0B394548AE1F63BC1458",
+      "to": "09C4919CF3A2C73466311CB15E05D8C637130E646AEB7C20CA9832C95AC6201C",
+      "at": "2026-11-03T15:05:55.612Z",
+      "rejudged": [
+        "A1"
+      ],
+      "judgeMode": "subagent",
+      "judgedBy": "reviewer-ai-sb-task6-a1-20261103",
+      "judged": [
+        {
+          "key": "A1",
+          "verdict": "pass",
+          "basis": "tools/execution-matrix/criteria.md A1 + 渲染产物；重判写回 rules/.inspector-annotations.json evidence-reader:A1 = pass（replace 机械转录）"
+        }
+      ],
       "machineChecks": {
         "A3": "pass",
         "A4": "pass",
