@@ -10,6 +10,7 @@ import { createHash } from 'node:crypto'
 import { expandRefs, loadSeatData } from '../components/seatLoader.mjs'
 import { CARD_KEYS, buildCards } from '../components/cardPipeline.mjs'
 import { SCAN_FIELDS } from '../card-model/enums.mjs'
+import { pathGroups, DETECTION_BLIND_SPOTS } from '../policy/definitions/paths.mjs'
 import { ROOT, runCli, runEsm, withRepoCopy, Q8_REMOVED_PATHS } from './support/dev-workflow-checks.mjs'
 
 const DATA = 'tools/docgen/data'
@@ -383,8 +384,26 @@ test('TC-029 notWhen 拼接丢失（`descriptionOf` 丢 notWhen）→ gate exit 
 // 三项的唯一字面在 `support/dev-workflow-checks.mjs` 的 `Q8_REMOVED_PATHS`（本文件与 `policy-pure-source` 共用）。
 const Q8_REMOVED = Q8_REMOVED_PATHS
 const cardText = (seat) => readFileSync(join('agents', `${seat}.md`), 'utf8')
+// S-B §11.2.6：卡面已指针化（禁写集合 / 命令白名单 / 禁止命令 / 检测盲区不再逐项落卡）→
+// 「删一条禁止路径 → 卡面失配」这条构造失去载体（删清单项不再改变渲染）。
+// 等价构造：改**会渲染**的定义层值（席 clause 槽）而不重生成卡 → 定义层 ≠ 卡面 → Mismatch。
+const POINTER_SYMBOLS = ['pathGroups', 'commandGroups', 'forbiddenGroups', 'DETECTION_BLIND_SPOTS']
+// 卡面 ③ 段的现形态（S-B §11.2.3）：一句指针 + 原样保留的兜底句
+const PATH_POINTER_LINE = '禁写集合 ='
+const FALLBACK_SENTENCE = '兜底句：凡 `.gitignore` 覆盖的路径一律视为禁止写入。'
+// 派生式成员数（禁手抄）：③ 段口径 = 六组展开 ∪ `spec / plan`
+const pathTokens = () => [...Object.values(pathGroups).flat().flatMap((x) => x.split('、')), 'spec / plan']
+// 判别力探针（SB-TC-12 / SB-TC-36 形态）：回填一行 → 计数必须从 0 变 1
+const scanQuota = (text) => text.split('\n').filter((l) => l.includes('逐项点名')).length
+const scanLessons = (text) => text.split('\n').filter((l) => l.includes('lessons/')).length
 
-test('TC-024 policy 删一项却不重生成 2 卡 → gate exit 1 `Mismatch`', () => {
+test('TC-024 改定义层一项却不重生成 2 卡 → gate exit 1 `Mismatch`（指针句在位）', () => {
+  // 前置（S-B 指针化的锚）：2 卡边界段已换成指针句，`逐项点名` 已清零
+  for (const seat of ['reviewer-audit', 'detective-observer']) {
+    const text = cardText(seat)
+    assert.equal(scanQuota(text), 0, `${seat}: 卡面不得再有「逐项点名」`)
+    for (const sym of POINTER_SYMBOLS) assert.ok(text.includes(`\`${sym}\``), `${seat}: 卡面缺指针符号 ${sym}`)
+  }
   withRepoCopy((dst) => {
     const p = join(dst, 'tools', 'docgen', 'policy', 'definitions', 'paths.mjs')
     const src = readFileSync(p, 'utf8')
@@ -393,48 +412,67 @@ test('TC-024 policy 删一项却不重生成 2 卡 → gate exit 1 `Mismatch`', 
     for (const item of Q8_REMOVED) {
       assert.equal(src.split(`    '${item}',\n`).length - 1, 0, `前置：Q8 已把 ${item} 从 workspace 删掉`)
     }
-    // 构造：删一项**现存**的禁写路径；判据与「删 3 项」同形（定义层 ≠ 卡面 → Mismatch）
-    const line = "    '其他评审目录',\n"
-    assert.equal(src.split(line).length - 1, 1, '删除锚必须恰 1 处')
-    writeFileSync(p, src.split(line).join(''))
+    // 构造：改一条**会渲染**的定义层值（席 clause 槽），不重生成卡 → 定义层 ≠ 卡面
+    const anchor = "'、审计表"
+    const seatsRel = join(dst, 'tools/docgen', 'policy', 'definitions', 'seats.mjs')
+    const seatsSrc = readFileSync(seatsRel, 'utf8')
+    assert.equal(seatsSrc.split(anchor).length - 1, 1, '改造锚必须恰 1 处')
+    writeFileSync(seatsRel, seatsSrc.replace(anchor, "'、审计表（改）"))
     const r = runCli(dst, ['gate'])
     assert.equal(r.status, 1, r.stdout + r.stderr)
     const out = r.stdout + r.stderr
-    assert.match(out, /Mismatch/, '删项而不重生成必须落 Mismatch')
-    assert.ok(/reviewer-audit|detective-observer/.test(out), `必须点名受影响的席，实得 ${out.slice(0, 300)}`)
+    assert.match(out, /Mismatch/, '改定义层而不重生成必须落 Mismatch')
+    assert.ok(/reviewer-audit/.test(out), `必须点名受影响的席，实得 ${out.slice(0, 300)}`)
   })
 })
 
-test('TC-006 policy 删 3 项后 2 卡「逐项点名」行 20 项、兜底句逐字在位', () => {
+test('TC-006 卡面指针化：`逐项点名` 0 命中 + 兜底句逐字在位 + 定义层仍 20 项', () => {
+  const tokens = pathTokens()
+  const baseline = JSON.parse(readFileSync('tools/docgen/fixtures/capability-baseline.json', 'utf8')).seats
   for (const seat of ['reviewer-audit', 'detective-observer']) {
-    const lines = cardText(seat).split('\n').filter((l) => l.includes('逐项点名'))
-    assert.equal(lines.length, 1, `${seat}: 「逐项点名」行必须恰 1 行`)
-    const line = lines[0]
-    const seg = line.slice(line.indexOf('逐项点名：') + '逐项点名：'.length, line.indexOf('；兜底句'))
-    const items = seg.split('、').map((x) => x.trim().replace(/^`|`$/g, '')).filter(Boolean)
-    assert.equal(items.length, 20, `${seat}: 禁写项应 20（删前 23 − 3），实得 ${items.length}`)
-    assert.ok(line.includes('兜底句：凡 `.gitignore` 覆盖的路径一律视为禁止写入。'), `${seat}: 兜底句必须逐字在位`)
+    const text = cardText(seat)
+    // S-B §11.2.6：该行整句已消失（不是「20 项变别的数」）→ 判据换成「0 命中 + 指针句在位」
+    assert.equal(scanQuota(text), 0, `${seat}: 「逐项点名」行必须整体消失（实得 ${scanQuota(text)} 行）`)
+    const line = text.split('\n').find((l) => l.includes(PATH_POINTER_LINE))
+    assert.ok(line, `${seat}: 缺禁写集合句（指针句的落点）`)
+    assert.ok(line.includes('`pathGroups`（六组）与一项模式项'), `${seat}: 禁写句必须指向策略源 pathGroups，实得：${line}`)
+    assert.ok(line.includes(FALLBACK_SENTENCE), `${seat}: 兜底句必须逐字在位`)
     for (const w of Q8_REMOVED) {
-      assert.equal(line.includes(w), false, `${seat}: 「逐项点名」行不得残留 ${w}`)
+      assert.equal(line.includes(w), false, `${seat}: 禁写句不得残留 ${w}`)
     }
+    // 定义层成员数不变：基线 23 项 − Q8 删除的 3 项 = 现定义层应仍有的 20 项（不写死 20）
+    const want = baseline[seat].forbiddenPaths.filter((x) => !Q8_REMOVED.includes(x)).length
+    assert.equal(tokens.length, want, `${seat}: 定义层成员数应 = 基线减 Q8（${want}），实得 ${tokens.length}`)
+    assert.ok(tokens.includes('spec / plan'), `${seat}: 定义层必须仍含 spec / plan`)
   }
+  // 判别力（回填一行 → 判红）：把旧形态接回卡文本，计数必须变 1
+  const injected = `${cardText('reviewer-audit')}\n**除上述落点外，任何写文件或重定向一律禁止**，逐项点名：\`a/\`；兜底句：凡 \`.gitignore\` 覆盖的路径一律视为禁止写入。`
+  assert.equal(scanQuota(injected), 1, '回填一行后计数必须恰 1（否则判据没有判别力）')
   // ④ 段补测（TC-006 步骤 ④ 的 `GATE` 面）：行内计数判不出「卡面与渲染一致」，补一次 gate
   const g = runCli(ROOT, ['gate'])
   assert.equal(g.status, 0, `TC-006④ GATE 必须 exit 0（实得 ${g.status}）：${g.stdout}${g.stderr}`)
 })
 
-test('TC-025 「逐项点名」行三项 0 命中；全卡 `lessons/` 恰 2 且都落在「检测限度」行', () => {
-  let total = 0
+test('TC-025 卡面无 `lessons/`（检测盲区已指针化）；定义层仍含该盲区项', () => {
   for (const seat of ['reviewer-audit', 'detective-observer']) {
     const text = cardText(seat)
-    const line = text.split('\n').find((l) => l.includes('逐项点名'))
-    for (const w of Q8_REMOVED) assert.equal(line.includes(w), false, `${seat}: 「逐项点名」行不得残留 ${w}`)
-    const hits = text.split('\n').filter((l) => l.includes('lessons/'))
-    total += hits.length
-    assert.equal(hits.length, 1, `${seat}: 全卡 lessons/ 应恰 1 行（检测限度段），实得 ${hits.length}`)
-    assert.ok(hits[0].includes('检测限度'), `${seat}: lessons/ 只许出现在检测限度行，实得 ${hits[0].slice(0, 60)}`)
+    // S-B §11.2.6：`lessons/` 因检测盲区改指针而从卡面消失（红因不是「行数变了」）
+    assert.equal(scanLessons(text), 0, `${seat}: 全卡 lessons/ 必须 0 命中（实得 ${scanLessons(text)} 行）`)
+    const line = text.split('\n').find((l) => l.includes('**检测限度**'))
+    assert.ok(line, `${seat}: 缺「检测限度」句`)
+    assert.ok(line.includes('`DETECTION_BLIND_SPOTS`'), `${seat}: 检测限度必须指向策略源 DETECTION_BLIND_SPOTS，实得：${line}`)
+    // 语义句保留（指针化 ≠ 删段，spec §11.2.3）
+    for (const w of ['被 gitignore', '仓外', '已提交写']) {
+      assert.ok(line.includes(w), `${seat}: 检测限度段必须保留语义要素 ${w}`)
+    }
   }
-  assert.equal(total, 2, '两卡合计 lessons/ 命中必须恰 2（= 每卡检测限度段各 1，盲区未被误删）')
+  // 定义层成员数不变：三个盲区项仍在（不丢能力）
+  for (const w of ['lessons/', '.session/', '.superpowers/']) {
+    assert.ok(DETECTION_BLIND_SPOTS.includes(w), `定义层不得丢盲区项 ${w}`)
+  }
+  // 判别力（回填一行 → 判红）：把盲区项接回卡文本，计数必须变 1
+  const injected = `${cardText('reviewer-audit')}\n- 另：被 gitignore 的 \`lessons/\` 也看不见。`
+  assert.equal(scanLessons(injected), 1, '回填一行后计数必须恰 1（否则判据没有判别力）')
 })
 
 test('TC-028 基线两处：evidence.renderSha256 == 盘上哈希（逐席）+ 2 席 lastWrittenHash + baseline.json 无哈希字段', async () => {

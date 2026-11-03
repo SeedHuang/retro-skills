@@ -14,6 +14,7 @@ import { renderCard } from './renderCard.mjs';
 import { ALLOWED_PRODUCT_NAMES, TRISTATE } from '../card-model/vocab/card-contract.mjs';
 import { CARD_SEGMENTS } from '../card-model/vocab/card-must-fields.mjs';
 import { ENV_KEYS, REPEATS, CHECK_KINDS } from '../card-model/enums.mjs';
+import { SEAT_POLICY } from '../policy/seat-policy.mjs';
 
 const FACE_SPLIT = /[/／\s、，,]+/;
 const PATH_SPAN_RE = /[^\s、，,]*(?:[/／]|:\d)[^\s、，,]*/g;
@@ -47,10 +48,20 @@ function allowedFaceTokens(card) {
   return out;
 }
 
+// S-B（§11.2.3 / R5）：卡面**合法**含本席命令组 ID（`命令默认拒绝` 句里逐组列出，如 `check.local`）——
+// 那是「本席组 ID 在位」的判据面，不是禁 id。只放本席 `allowGroups` 的键：别的席的组 / 禁止组仍判红。
+function ownGroupIds(env) {
+  const seat = env !== null && typeof env === 'object' ? env.seat : undefined;
+  const policy = seat && Object.hasOwn(SEAT_POLICY, seat) ? SEAT_POLICY[seat] : SEAT_POLICY.__default__;
+  return Array.isArray(policy.allowGroups) ? policy.allowGroups : [];
+}
+
 export function cardFaceIds(card, env) {
   const text = renderCard(card, env);
   const banned = envRegisteredIds(env);
   const allowed = allowedFaceTokens(card);
+  // 本席命令组 ID 属合法可指涉项（S-B §11.2.3）：并入「许」集，其余 token 判定不变
+  for (const g of ownGroupIds(env)) allowed.add(g);
   const tristate = new Set(TRISTATE.map((x) => String(x).trim()));
   const hits = [];
   const seen = new Set();

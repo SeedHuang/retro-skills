@@ -21,7 +21,7 @@ import { BASELINE_RULES, agentPaths } from '../components/baseline.mjs';
 import { readState } from '../state.mjs';
 import {
   ROOT, readRepo, readCounterFiles, counterProbes, stripCommentsAndStrings, isTierCountLine,
-  withRepoCopy, runCli, runEsm,
+  withRepoCopy, runCli, runEsm, Q8_REMOVED_PATHS,
 } from './support/dev-workflow-checks.mjs';
 
 const sha256 = (buf) => createHash('sha256').update(buf).digest('hex');
@@ -36,7 +36,6 @@ const FORBIDDEN_PATHS = Object.values(pathGroups).flat();
 // 卡面 ③ 段成员数口径（S5 testcase §1.1）：`代码、测试` 在定义层合写一条、卡面写作两项，
 // 故卡面成员 = 定义层数组按 `、` 再切 + `spec / plan` = 20 项（Q8 删 3 项后；本文件一律派生、不写死）
 const pathTokens = () => [...FORBIDDEN_PATHS.flatMap((x) => x.split('、')), 'spec / plan'];
-const FORBIDDEN_SPEC_PLAN = /spec\s*\/\s*plan/;   // ③ 第 6 项：`spec / plan`（正则判，兼容无空格写法）
 
 function assertBoundaryClean(text, label = '') {
   const marks = [...text.matchAll(/^## 边界$/gm)];
@@ -222,12 +221,16 @@ test('S5-TC-B02 审计边界节五段齐 + 允许写切片干净 + 禁止段两�
   const MARKS = ['整档授予', '平台无参数级授权', '不假装白名单', '不裁决他人分歧', '无中断评审',
     '.session/reviews/', 'docs/superpowers/reviews/', 'round-check', 'delivery-audit',
     '封闭清单', '任何写文件或重定向',
-    // 卡面 ③ 段 = **20 项**（`代码、测试` 在卡面写作两项；Q8 删 3 项后）：S6 §3.4 渲染把该合写元素按 `、` 拆开，
-    // 故此处取 `pathTokens()`（= 卡面派生）而非定义层数组 `FORBIDDEN_PATHS`（含合写的 `代码、测试`）
-    ...pathTokens(), '.gitignore',
-    '越权清单', 'sha256', '用户执行', '本轮结论作废', '检测限度'];
+    // S-B §11.2.3：禁写清单改指针 → 卡面须带策略符号名（成员不再逐项落卡；成员面由定义层判）
+    '`pathGroups`', '`commandGroups`', '`forbiddenGroups`', '`DETECTION_BLIND_SPOTS`',
+    '`.gitignore`', '越权清单', 'sha256', '用户执行', '本轮结论作废', '检测限度'];
   for (const w of MARKS) assert.ok(sec.includes(w), w);
-  assert.match(sec, FORBIDDEN_SPEC_PLAN, '缺 spec / plan（③ 第 6 项）');
+  assert.match(sec, /`pathGroups`（六组）与一项模式项（spec 与 plan 的两种写法）/, '缺禁写清单指针句（须含 spec / plan 的两种写法）');
+  assert.equal(/逐项点名/.test(sec), false, '③ 段不得再逐项落清单（S-B V8）');
+  // 定义层成员数不变（指针化的前提）：现定义层路径成员 = 改造前基线 − Q8 三项（不写死数字）
+  const basePaths = JSON.parse(readFileSync('tools/docgen/fixtures/capability-baseline.json', 'utf8'))
+    .seats['reviewer-audit'].forbiddenPaths.filter((x) => !Q8_REMOVED_PATHS.includes(x));
+  assert.deepEqual([...pathTokens()].sort(), [...basePaths].sort(), '定义层路径成员 ≠ 基线减 Q8');
 
   const { allowed, forbidden } = writeScopeHalves(sec, 'reviewer-audit');
   assert.ok(allowed.includes('round-check'), '允许写切片缺 round-check');
@@ -241,10 +244,12 @@ test('S5-TC-B03 侦探边界节五段齐 + 允许写切片只含 detective.md + 
   const sec = assertBoundaryClean(card('detective-observer'), 'detective-observer');
   const MARKS = ['整档授予', '平台无参数级授权', '不假装白名单', '不裁决他人分歧', '无中断评审',
     '.session/reviews/', 'detective.md', '轮初', '轮末', '封闭清单', '任何写文件或重定向',
-    ...pathTokens(), '.gitignore',   // 同上：卡面 ③ 段 = 23 项（`代码、测试` 在卡面拆成两项）
-    '越权清单', 'sha256', '用户执行', '本轮结论作废', '检测限度'];
+    // S-B §11.2.3：同上——禁写清单改指针，成员面由定义层判
+    '`pathGroups`', '`commandGroups`', '`forbiddenGroups`', '`DETECTION_BLIND_SPOTS`',
+    '`.gitignore`', '越权清单', 'sha256', '用户执行', '本轮结论作废', '检测限度'];
   for (const w of MARKS) assert.ok(sec.includes(w), w);
-  assert.match(sec, FORBIDDEN_SPEC_PLAN, '缺 spec / plan（③ 第 6 项）');
+  assert.match(sec, /`pathGroups`（六组）与一项模式项（spec 与 plan 的两种写法）/, '缺禁写清单指针句（须含 spec / plan 的两种写法）');
+  assert.equal(/逐项点名/.test(sec), false, '③ 段不得再逐项落清单（S-B V8）');
 
   const { allowed, forbidden } = writeScopeHalves(sec, 'detective-observer');
   assert.ok(allowed.includes('detective.md'), '允许写切片缺 detective.md');
@@ -268,10 +273,15 @@ test('S5-TC-B04 审计卡档位事实与输出格式（S4 迁移后：档位在�
   assert.equal((src.match(/已授 command 档/g) ?? []).length, 0);
 });
 
-test('S5-TC-B05 以「**禁止**」为界：允许段白名单 + 禁止段点名 + 允许段无裸 draft', () => {
-  // 允许 / 禁止命令清单 = 定义层 verbs 现算（S6 spec §3.6：不手抄第二份）
+test('S5-TC-B05 以「**禁止**」为界：允许段指组 + 禁止段指组 + 允许段无裸命令', () => {
+  // S-B §11.2.3：命令白名单 / 禁止命令已指针化 → 段内只认**策略符号名 + 本席组 ID**；
+  // 定义层成员数不变（每组非空）仍判——「指针化」不等于「清单被删」。
   const ALLOWED = Object.values(commandGroups).flatMap((g) => g.verbs);
-  const FORBIDDEN = Object.values(forbiddenGroups).flatMap((g) => g.verbs);
+  const ALLOW_GROUP_IDS = Object.keys(commandGroups);
+  const DENY_GROUP_IDS = Object.keys(forbiddenGroups);
+  for (const g of [...Object.values(commandGroups), ...Object.values(forbiddenGroups)]) {
+    assert.ok(Array.isArray(g.verbs) && g.verbs.length > 0, '定义层命令组不得为空（指针化的前提）');
+  }
 
   for (const seat of ['reviewer-audit', 'detective-observer']) {
     const sec = assertBoundaryClean(card(seat), seat);
@@ -284,29 +294,27 @@ test('S5-TC-B05 以「**禁止**」为界：允许段白名单 + 禁止段点名
     const allowed = sec4.slice(0, cut);
     const forbidden = sec4.slice(cut);
 
-    for (const w of ALLOWED) assert.ok(allowed.includes(w), `${seat} 允许段缺：${w}`);
-    for (const w of FORBIDDEN) assert.ok(forbidden.includes(w), `${seat} 禁止段缺：${w}`);
-    // 环境变量默认拒绝的四种形态（spec §3.3④）
+    // 允许段：指向 commandGroups + 本席组 ID 逐个在位
+    assert.ok(allowed.includes('`commandGroups`'), `${seat} 允许段缺策略符号名 commandGroups`);
+    for (const g of ALLOW_GROUP_IDS) assert.ok(allowed.includes(`\`${g}\``), `${seat} 允许段缺本席组 ID：${g}`);
+    // 禁止段：指向 forbiddenGroups 全部命令组 + 环境变量段的指针句
+    assert.ok(forbidden.includes('策略源 `forbiddenGroups` 的全部命令组'), `${seat} 禁止段缺 forbiddenGroups 指针句`);
     assert.match(forbidden, /任何形式的环境变量赋值/, `${seat} 缺总句`);
-    assert.match(forbidden, /\bset\s+[A-Za-z_]\w*=/i, `${seat} 缺 set VAR=… 形态`);
-    assert.match(forbidden, /\b[A-Z_][A-Z0-9_]*=\S+\s+node\b/, `${seat} 缺 VAR=… node … 形态`);
-    assert.match(forbidden, /\bsetx\b/i, `${seat} 缺 setx 形态`);
+    assert.ok(forbidden.includes('该组内的 env 形态项'), `${seat} 缺 env 形态项的指针句`);
+    assert.equal(DENY_GROUP_IDS.some((g) => forbidden.includes(`\`${g}\``)), false,
+      `${seat} 禁止段不得逐组落清单（该段只留 forbiddenGroups 指针）`);
 
-    const subs = [...allowed.matchAll(/cli\.mjs\s+(draft\s+[a-z-]+|[a-z-]+)/g)].map((m) => m[1]);
-    for (const s of subs) assert.ok(['gate', 'check-agents', 'diff', 'draft ls'].includes(s), `${seat} 未知子命令 ${s}`);
-    assert.equal(/draft(?!\s?ls)/.test(allowed), false, `${seat} 允许段只许 draft ls`);
-
+    // 反向：允许段不得再出现任何具体命令（清单已指针化；出现即旧形态回潮）
     const cmdsOf = (text) => [...text.matchAll(/`([^`]+)`/g)].map((m) => m[1].trim())
       .filter((s) => /^(npm run|git --no-optional-locks|node )/.test(s))
       .filter((s) => !/cli\.mjs\s/.test(s));
+    assert.deepEqual(cmdsOf(allowed), [], `${seat} 允许段不得再逐项落命令`);
+    assert.equal(/draft(?!\s?ls)/.test(allowed), false, `${seat} 允许段只许 draft ls`);
+
+    // 白名单守卫本身的判别力（正向样例 + 应拒反例），与卡面清单是否指针化无关
     const assertWithinWhitelist = (cmds, label) => {
       for (const c of cmds) assert.ok(ALLOWED.some((w) => c === w || c.startsWith(`${w} `)), `${label}出现白名单外命令：${c}`);
     };
-    const allowedCmds = cmdsOf(allowed);
-    assert.ok(allowedCmds.length >= Math.ceil(ALLOWED.length / 2), `${seat} 允许段命令未被反引号包住？`);
-    assertWithinWhitelist(allowedCmds, `${seat} 允许段`);
-
-    // 正向样例（防守卫恒红 / 收到 0 条）+ 应拒反例（防守卫恒绿）
     const SYNTH_ALLOWED = ['`npm run check`', '`git --no-optional-locks status --porcelain`',
       '`git --no-optional-locks diff`', '`git --no-optional-locks show`', '`git --no-optional-locks log`',
       '`node scripts/check-all.mjs`', '`node scripts/skill-dir.mjs`',
@@ -356,7 +364,7 @@ test('S5-TC-B06 侦探固定清单第 4 项含 --no-optional-locks status（数�
   }
 });
 
-test('S5-TC-B07 changes[] 中 to === renderSha256 的最新条 B3 落账四字段', () => {
+test('S5-TC-B07 changes[] 中 to === renderSha256 的最新条落账四字段（重判键逐键核）', () => {
   for (const [seat, p] of Object.entries({
     'reviewer-audit': 'tools/docgen/fixtures/reviewer-audit.evidence.json',
     'detective-observer': 'tools/docgen/fixtures/detective-observer.evidence.json',
@@ -368,10 +376,15 @@ test('S5-TC-B07 changes[] 中 to === renderSha256 的最新条 B3 落账四字�
     // S3 口径补充：`replace` 只在**变更触达语义键**时才要求 `--rejudge`（未触达 → `rejudged=[]`、`judgeMode='none'`，
     // 见 `cli.mjs` 的 `touchedSemanticKeys`）。故本判据分两路：触达 → B3 四字段齐；未触达 → judgeMode 必须显式记为 none。
     if (c.rejudged.length > 0) {
-      assert.ok(c.rejudged.includes('B3'), seat);
+      // S-B（§11.2.4 / R8）：删「关注类别：」行触达的语义键是 A1（不再是 B3）→ 判据改为
+      // 「rejudged 的**每个**键都必须有一条 judged 且 verdict = pass」，不再是写死的 B3
       assert.equal(c.judgeMode, 'subagent', seat);
       assert.equal(typeof c.judgedBy === 'string' && c.judgedBy.trim().length > 0, true, seat);
-      assert.equal(c.judged.find((j) => j.key === 'B3').verdict, 'pass', seat);
+      for (const k of c.rejudged) {
+        const j = c.judged.find((x) => x.key === k);
+        assert.ok(j, `${seat}: rejudged 含 ${k}，但 judged 里没有该键的判词`);
+        assert.equal(j.verdict, 'pass', `${seat}: ${k} 的判词必须 pass`);
+      }
     } else {
       assert.equal(c.judgeMode, 'none', `${seat}: 未触达语义键的变更必须显式记 judgeMode=none`);
       // 「没重判」不等于「可以伪造判词」：none 档不得带 judged / judgedBy，且结构项必须已复检

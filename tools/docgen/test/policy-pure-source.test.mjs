@@ -180,6 +180,30 @@ console.log(JSON.stringify({
   return JSON.parse(r.stdout);
 }
 
+// S-B §11.2.6（R5/R6）：卡面与 12 槽只留策略符号名（指针句）→ 「五段事实」的可枚举源改为
+// `policy --dump` 的清单导出（仍是定义层单源）。判据语义不变：基线 ⊆ 定义层、`diffFacts` 只许 Q8 三项、
+// 多一项即 plus、少一项即 minus——改坏（定义层丢项 / 多出越权项）仍必红。
+function factsFromPolicy(json, seat) {
+  const p = SEAT_POLICY[seat] ?? SEAT_POLICY.__default__;
+  const exported = (xs) => [...(xs ?? [])].flatMap((x) => String(x).split('、'));
+  return {
+    tools: p.capabilities.flatMap((c) => CAP.capabilities[c]),
+    tier: tierOfCapabilities(p.capabilities) ?? '',
+    canWrite: [...p.artifacts],
+    mustNotWrite: Object.entries(ART.artifacts).filter(([, v]) => v.host).map(([k]) => k),
+    forbiddenPaths: [...exported(Object.values(json.paths.groups).flat()), SPEC_PLAN_LABEL()],
+    // 允许命令 = **本席**被授予组的 verbs。组 ID 从 dump 的槽 7（命令白名单指针句）取——
+    // 副本里改了配置就跟着变（不吃本进程静态 import 的旧值），且槽 7 丢组 ID 时这里立刻变空 → diff 必红
+    allowCmds: [...(json.seats[seat]?.expanded?.[6] ?? '').matchAll(/`([^`]+)`/g)].map((m) => m[1])
+      .filter((g) => Object.hasOwn(CMD.commandGroups, g)).flatMap((g) => json.commands[g]?.verbs ?? []),
+    denyCmds: Object.entries(json.commands)
+      .filter(([g]) => Object.hasOwn(CMD.forbiddenGroups, g) && g !== 'env.assign').flatMap(([, v]) => v.verbs),
+    envForms: [...(json.commands['env.assign']?.verbs ?? [])],
+  };
+}
+// `spec / plan` 的卡面形态（③ 段成员之一）：与 `pathTokens()` 同一派生口径，不另写字面
+const SPEC_PLAN_LABEL = () => pathTokens().at(-1);
+
 test('S6-TC-A02 命令 8 组（允许 3 / 禁止 5）+ seatGroups 空集 + 每组 purpose 与 verbs 非空', () => {
   const G = CMD.commandGroups;                       // 允许组
   const D = CMD.forbiddenGroups;                     // 禁止组
@@ -261,26 +285,23 @@ test('S6-TC-B12 未登记席与原型链键名回落 __default__', () => {
   assert.equal(Object.hasOwn(SEAT_POLICY, '__default__'), true);
 });
 
-test('S6-TC-A06 卡面切片顺序 == 定义层组内顺序（路径 + 命令两处）', () => {
-  // 与 testcase:816 的唯一偏差：切片**去掉锚点本身**——`indexOf('逐项点名：')` 是包含式起点，
-  // 直接用会把首项切成「逐项点名：代码」（20 项恒少一项、集合恒不等，判据永远红）。语义不变，只去锚点。
-  const sec = (t) => t.slice(t.indexOf('逐项点名：') + '逐项点名：'.length, t.indexOf('；兜底句'));
-  const strip = (s) => s.trim().replace(/^`|`$/g, '');
+test('S6-TC-A06 卡面指针在位 + 组 ID 顺序 == 配置层顺序（路径 / 命令两处）', () => {
+  // S-B §11.2.6（R5/R6）：卡面不再逐项落清单 → 原「卡面切片顺序 == 定义层组内顺序」失去载体。
+  // 等价构造：① 2 卡 ③ 段必须是**指针句**（`逐项点名` 0 命中）；② 命令白名单句里的**本席组 ID**
+  // 顺序 = `SEAT_POLICY[席].allowGroups` 顺序（该槽仍是逐组列出的唯一清单）；③ 定义层成员数不变。
+  const pathPointer = /`pathGroups`（六组）与一项模式项/;
   for (const seat of ['reviewer-audit', 'detective-observer']) {
-    // ① 卡面路径段：成员数 = 20（含 `spec / plan`）+ 去掉 pattern 项后的顺序
-    const items = sec(card(seat)).split('、').map(strip).filter(Boolean);
-    assert.equal(items.length, pathTokens().length, `${seat}: ③ 段成员数应 = 定义层派生值 ${pathTokens().length}`);
-    assert.deepEqual([...items].sort(), [...pathTokens()].sort(), `${seat}: 路径项集合 ≠ 定义层派生集合`);
-    const noPattern = (a) => a.filter((x) => x !== 'spec / plan');
-    assert.deepEqual(noPattern(items), noPattern(pathTokens()), `${seat}: 组内顺序 ≠ 卡面顺序`);
-    // ② 命令段：14 条允许命令逐项出现且位置单调（= 顺序 = 定义层顺序）
-    const out = renderBoundary(seat);
-    const allowSeg = out.slice(out.indexOf('只跑下列白名单'), out.indexOf('**禁止**'));
-    const verbs = Object.values(CMD.commandGroups).flatMap((g) => g.verbs);
-    const pos = verbs.map((v) => allowSeg.indexOf(v));
-    assert.ok(pos.every((i) => i >= 0), `${seat}: 允许命令缺项`);
-    assert.deepEqual([...pos].sort((a, b) => a - b), pos, `${seat}: 允许命令顺序 ≠ 定义层顺序`);
+    const text = cardBoundary(card(seat));
+    assert.equal(countIn(text, '逐项点名'), 0, `${seat}: 卡面不得再有「逐项点名」`);
+    assert.match(text, pathPointer, `${seat}: ③ 段必须是 pathGroups 指针句`);
+    const e = dumpPolicy(ROOT).json.seats[seat].expanded;
+    const slotIds = [...e[6].matchAll(/`([^`]+)`/g)].map((m) => m[1]).filter((x) => x !== 'commandGroups');
+    assert.deepEqual(slotIds, [...SEAT_POLICY[seat].allowGroups], `${seat}: 组 ID 顺序 ≠ 配置层 allowGroups 顺序`);
   }
+  // 定义层成员数不变：路径 20 项（基线 23 − Q8 3，派生）随指针化一并核对
+  const base = baseJson().seats['reviewer-audit'].forbiddenPaths.filter((x) => !Q8_REMOVED_PATHS.includes(x));
+  assert.deepEqual([...pathTokens()].sort(), [...base].sort(), '定义层路径成员 ≠ 基线减 Q8（指针化不得顺手删项）');
+  assert.ok(commandTokens().length >= 1, '定义层允许命令不得为空（组 ID 指针外仍需成员可枚举）');
 });
 
 test('S6-TC-C06 12 槽齐（可观测值）+ 无残留 / 未定义 / 悬空标点 + 槽 6 两形态 + 可选槽缺省', () => {
@@ -312,37 +333,59 @@ test('S6-TC-C06 12 槽齐（可观测值）+ 无残留 / 未定义 / 悬空标�
   assert.equal(dumpPolicy(ROOT).json.seats['senior-sdet'].expanded.length, 12, '缺省槽不得让 expanded 变短');
 });
 
-test('S6-TC-C08 槽级分隔符：组间 `、`/`；`、组内 ` / `；DENY_GROUPS 剔除 `env.assign`', () => {
+test('S6-TC-C08 槽级指针化：5 槽改指针句、槽集仍 12、定义层成员数不变', () => {
   const e = dumpPolicy(ROOT).json.seats['reviewer-audit'].expanded;
   // 槽序 = §3.4 表行序（`spec:76` / `spec:162`）：槽 7 ALLOW→index 6 / 槽 8 DENY→index 7
   // / 槽 9 ENV_FORMS→index 8 / 槽 10 FORBIDDEN_PATHS→index 9（卡面首次出现顺序不参与判据）
-  const [allowSlot, denySlot, pathSlot, envSlot] = [e[6], e[7], e[9], e[8]];
-  assert.ok(allowSlot.includes('；'), '允许组：组间分隔符应为 ；');
-  assert.ok(allowSlot.includes(' / '), '允许组：组内分隔符应为 ` / `');
-  assert.ok(pathSlot.includes('、') && !pathSlot.includes('；'), '路径清单：统一用 、');
-  // ③ 段成员数 = **20**（`spec:89` 槽 10 = `pathGroups` 六组展开 ∪ `spec / plan`，Q8 删 3 项后）
-  assert.equal(pathSlot.split('、').filter(Boolean).length, pathTokens().length, `路径槽成员数应 = ${pathTokens().length}`);
-  assert.ok(pathSlot.includes('spec / plan'), '路径槽必须含 `spec / plan`');
+  // S-B §11.2.3：这 5 个槽的值整体换成**指针句**（保留 12 槽、`SLOTS` 顺序不动）→ 原「槽内分隔符」判据换成
+  // 「指针符号在位 + 槽仍是逐组列出的那一个（组 ID 顺序）+ 定义层成员数不变」。
+  const [allowSlot, denySlot, pathSlot, envSlot, detectSlot] = [e[6], e[7], e[9], e[8], e[10]];
+  assert.equal(e.length, 12, '槽集必须仍是 12（指针化只改槽值，不删槽）');
+  // 槽 7：指针 + 本席组 ID 逐组列出，组间 ` / `
+  assert.ok(allowSlot.includes('`commandGroups`'), '允许组：必须指向策略源 commandGroups');
+  const slotIds = [...allowSlot.matchAll(/`([^`]+)`/g)].map((m) => m[1])
+    .filter((x) => SEAT_POLICY['reviewer-audit'].allowGroups.includes(x));
+  assert.deepEqual(slotIds, [...SEAT_POLICY['reviewer-audit'].allowGroups], '允许组：组 ID 顺序 ≠ 配置层 allowGroups 顺序');
+  // 槽 8：整句指针（禁止命令不再逐条落卡）
+  assert.equal(denySlot, '`forbiddenGroups` 的全部命令组', '禁止命令槽必须是指针句');
+  // 槽 9：env 形态项归 `forbiddenGroups['env.assign']`，卡面只指「该组内的 env 形态项」
+  assert.equal(envSlot, '该组内的 env 形态项', 'env 槽必须是指针句（防漏改）');
+  // 槽 10：指针句 —— 不再含清单项，故既无 `、` 也无 `；`
+  assert.ok(pathSlot.includes('`pathGroups`（六组）与一项模式项'), '路径槽必须是指向 pathGroups 的指针句');
+  assert.equal(pathSlot.includes('、'), false, '路径槽不得再逐项落清单（`、` 连接即旧形态）');
+  assert.equal(pathSlot.includes('；'), false, '路径槽不得含组间分隔符');
+  // 槽 11：检测盲区指针
+  assert.equal(detectSlot, '`DETECTION_BLIND_SPOTS`', '检测盲区槽必须是指针句');
+  // 定义层成员数不变：DENY_GROUPS 不含 env.assign 的 verbs（该组由 env 槽单独承担）
   for (const v of CMD.forbiddenGroups['env.assign'].verbs) {
     assert.equal(denySlot.includes(v), false, `env.assign verb 混进 DENY_GROUPS：${v}`);
-    assert.ok(envSlot.includes(v), `env.assign verb 未进入 ENV_FORMS：${v}`);
   }
+  // 定义层仍可枚举（成员数 = 基线 − Q8；盲区 / env 形态项一条不少）
+  const base = baseJson().seats['reviewer-audit'].forbiddenPaths.filter((x) => !Q8_REMOVED_PATHS.includes(x));
+  assert.deepEqual([...pathTokens()].sort(), [...base].sort(), '定义层路径成员 ≠ 基线减 Q8');
+  assert.equal(probeDict().envVerbs.length, CMD.forbiddenGroups['env.assign'].verbs.length, 'env 形态项不得从定义层消失');
   const out = renderBoundary('reviewer-audit');
   assert.match(out, /任何形式的环境变量赋值/, '环境变量段整段缺失');
-  assert.ok(out.includes(CMD.forbiddenGroups['env.assign'].verbs[0]), '环境变量形态未渲染');
-  const pathSeg = out.slice(out.indexOf('逐项点名：'), out.indexOf('；兜底句'));
+  // 反向：卡面不得再渲染 env 具体形态项（§11.4-10）
+  assert.equal(out.includes(CMD.forbiddenGroups['env.assign'].verbs[0]), false, 'env 形态项不得落卡');
+  const pathSeg = out.slice(out.indexOf('禁写集合 ='), out.indexOf('；兜底句'));
   assert.equal(pathSeg.includes(', '), false, '路径段不得用 ", " 连接');
+  assert.equal(pathSeg.includes('、'), false, '路径段不得逐项落清单');
 });
 
 // ===================== T4-2：配置校验五码 / 策略数据 / 模板纯度 =====================
 
 test("S6-TC-A08 定义层值含 {{SLOT}} / $& / $' / $$ 时不得被二次展开（单趟替换）", () => {
   const PROBE = "$&|$'|$$|{{DENY_GROUPS}}";
+  // S-B §11.2.6：禁写清单已指针化（`paths.mjs` 的值不再进渲染）→ 注入点换成**仍会渲染**的定义层值
+  // （席 clause 槽 = `SEAT_CLAUSE`），判据语义不变：槽值里的 `{{槽名}}` / `$&` / `$'` / `$$` 一律原样。
+  const CLAUSE_SRC = "'、审计表；你在 `round-check.md` 核转录逐字一致'";
   withCopy((d) => {
-    // 与 testcase:872 的唯一偏差：替换值必须用**函数**形态——`String.replace` 会把替换串里的
-    // `$&` / `$'` / `$$` 当替换模式解释，直接传 JSON.stringify(PROBE) 会先破坏注入值（判据本身失效）
-    editInDir(d, 'tools/docgen/policy/definitions/paths.mjs',
-      (s) => s.replace("'配置与依赖清单'", () => JSON.stringify(PROBE)));
+    // 替换值必须用**函数**形态——`String.replace` 会把替换串里的 `$&` / `$'` / `$$` 当替换模式解释，
+    // 直接传 JSON.stringify(PROBE) 会先破坏注入值（判据本身失效）
+    editInDir(d, 'tools/docgen/policy/definitions/seats.mjs',
+      (s) => s.replace(CLAUSE_SRC,
+        () => JSON.stringify(`、审计表${PROBE}；你在 round-check.md 核转录逐字一致`)));
     const out = renderBoundaryIn(d, 'reviewer-audit');
     assert.ok(out.includes(PROBE), `注入值被二次解释 / 二次展开：${PROBE}`);
   });
@@ -795,9 +838,10 @@ test('S6-TC-D01 六个错误码各 1 个负例：exit 1 + 报文首行格式', (
 });
 
 test('S6-TC-D02 渲染与基准卡面不等 → Mismatch（gate 口径）', () => {
+  // S-B §11.2.6：清单已指针化 → 改清单项不再改变渲染；改**会渲染**的槽值（席 clause）才是等价构造
   const r = withCopy((d) => {
-    editInDir(d, 'tools/docgen/policy/definitions/paths.mjs',
-      (s) => s.replace("'其他评审目录'", "'其他评审目录X'"));
+    editInDir(d, 'tools/docgen/policy/definitions/seats.mjs',
+      (s) => s.replace("'、审计表", "'、审计表X"));
     return runCli(d, ['gate']);
   });
   assert.equal(r.status, 1);
@@ -897,29 +941,24 @@ test('S6-TC-D06 gate 侧接线：配置非法 → exit 1 + 五码之一，不得
   assert.equal(/^Mismatch:/m.test(`${r2.stdout}\n${r2.stderr}`), false);
 });
 
-test('S6-TC-E01 新增一条禁止路径 → 只改定义层 + 重生成两张卡 → gate 绿', () => {
+test('S6-TC-E01 新增一条禁止路径 → 只改定义层 + 卡面零变化 → gate 绿（指针化后的单源形态）', () => {
   withCopy((d) => {
     const snap = () => dirHashes(join(d, 'tools/docgen'));
     const before = snap();
+    const SEATS2 = ['reviewer-audit', 'detective-observer'];
+    const renderBefore = SEATS2.map((s) => renderBoundaryIn(d, s));
     editInDir(d, 'tools/docgen/policy/definitions/paths.mjs',
       (s) => s.replace("'其他评审目录',", "'其他评审目录',\n    'vendor/',"));
-    const red = runCli(d, ['gate']);
-    assert.equal(red.status, 1, '新增一条禁止路径必须让卡面失配');
-    // 与 testcase:1875 的唯一偏差：`fail(code, drift)` 的 message 缺省为码本身（cli.mjs:34）→
-    // 首行是 `Mismatch: Mismatch`，不含路径；判据保留「首行是 Mismatch」（与 D02 同形态）
-    assert.match(red.stderr, /^Mismatch:/m, red.stderr.split('\n')[0]);
-    for (const seat of ['reviewer-audit','detective-observer']) {
-      assert.ok(renderBoundaryIn(d, seat).includes('vendor/'), `${seat} 未接上定义层（渲染缺新增路径）`);
-    }
-    // 重生成两张卡 = 把渲染结果写回卡尾的边界节（与 replace 同效）；卡文本必须读**副本内**的卡
-    for (const seat of ['reviewer-audit','detective-observer']) {
-      const text = readFileSync(join(d, 'agents', `${seat}.md`), 'utf8');
-      const head = text.slice(0, text.indexOf('## 边界') + '## 边界'.length);
-      writeFileSync(join(d, `agents/${seat}.md`), `${head}\n${renderBoundaryIn(d, seat)}\n`, 'utf8');
-    }
+    // S-B §11.2.6：清单指针化后，新增一条禁止路径**不改渲染** → 卡面无需重生成，gate 仍绿；
+    // 「定义层真接上了」由 dump 侧判（否则「绿」是空转）。
     const green = runCli(d, ['gate']);
-    assert.equal(green.status, 0, green.stderr);
+    assert.equal(green.status, 0, `指针化后新增清单项不应让卡面失配：${green.stderr}`);
     assert.match(green.stdout, /baseline \d+\/\d+/);
+    SEATS2.forEach((seat, i) => assert.equal(renderBoundaryIn(d, seat), renderBefore[i],
+      `${seat}: 渲染不得随清单项变化（禁写清单已指针化）`));
+    const dump = runCli(d, ['policy', '--dump']);
+    assert.equal(dump.status, 0, dump.stderr);
+    assert.ok(JSON.parse(dump.stdout).paths.groups.workspace.includes('vendor/'), '新增项必须进定义层（否则判据空转）');
     const after = snap();
     const changed = Object.keys(after).filter((k) => before[k] !== after[k]);
     assert.deepEqual(changed, [join(d, 'tools/docgen/policy/definitions/paths.mjs').replace(/\\/g, '/')],
@@ -971,13 +1010,9 @@ test('S6-TC-E03 23 项清单副本收敛到「定义层 1 处 + 承载该段的�
     // 与 testcase:1952 的唯一偏差：`tools/docgen/fixtures/` 的基线与黄金快照与 `git show <改造前>:agents/<席>.md`
     // 同类（都是**改造前**的取证物，spec:169 步骤 0），不是「活跃策略副本」；不排除会让副本集合恒多 2 项
     .filter((f) => !f.startsWith('tools/docgen/fixtures/'));
-  // S-A 数据层（T3）后回到原 3 项：T1 曾把「渲染结果」抄进席 JSON（boundary 落进
-  // `data/seats/{reviewer-audit,detective-observer}.json`），使期望集临时变成 5；T3 用薄壳切回后，
-  // boundary 的唯一源重新是定义层（经 `boundaryBySeat` / `renderBoundary` 派生，席 JSON 不存它），
-  // 故承载该段的产物又回到「2 张卡面 + 定义层」——副本数降回 3 即单源被恢复的证据。
-  assert.deepEqual(listCopies(ROOT, files).sort(), [
-    'agents/detective-observer.md', 'agents/reviewer-audit.md',
-    'tools/docgen/policy/definitions/paths.mjs']);
+  // S-B（§11.2.3 / R5）后：卡面 ③ 段改指针句 → 2 张卡**不再是**清单副本，唯一副本回到定义层 1 处。
+  // 期望集因此缩到 1 项（不是放宽：`listCopies` 的阈值与判据不变，卡面若被写回整份清单会立刻回到集合里）。
+  assert.deepEqual(listCopies(ROOT, files).sort(), ['tools/docgen/policy/definitions/paths.mjs']);
   // spec:210 的「spec 0 条手抄」：本 spec 自身不得内联整份清单（定向单文件，不把 docs/ 并入扫描面）
   assert.deepEqual(listCopies(ROOT, [S6_SPEC]), [], 'S6 spec 自身内联了整份路径清单（应只引用定义层）');
 });
@@ -1145,14 +1180,22 @@ test('S6-TC-G04 死常量已删；tool-tiers 的 import / B08 / E05 / B14 四处
 
 test('S6-TC-G05 改定义层一条 → gate 红 → 改回绿', () => {
   withCopy((d) => {
-    const edit = (from, to) => editInDir(d, 'tools/docgen/policy/definitions/paths.mjs',
+    // S-B §11.2.6：清单指针化后改路径项不改渲染 → 改**会渲染**的槽值（席 clause），判据语义不变
+    const edit = (from, to) => editInDir(d, 'tools/docgen/policy/definitions/seats.mjs',
       (s) => s.replace(from, to));
-    edit("'其他评审目录'", "'其他评审目录X'");
+    edit("'、审计表", "'、审计表X");
     assert.equal(runCli(d, ['gate']).status, 1, '改数据后 gate 必须红（渲染没接上？）');
-    edit("'其他评审目录X'", "'其他评审目录'");
+    edit("'、审计表X", "'、审计表");
     const ok = runCli(d, ['gate']);
     assert.equal(ok.status, 0, ok.stderr);
     assert.match(ok.stdout, /baseline \d+\/\d+/);
+  });
+  // 反向守卫：改**清单项**（禁写路径）不改渲染 → gate 仍绿（指针化的可判形态，防「清单被写回卡面」回归）
+  withCopy((d) => {
+    editInDir(d, 'tools/docgen/policy/definitions/paths.mjs',
+      (s) => s.replace("'其他评审目录'", "'其他评审目录X'"));
+    const g = runCli(d, ['gate']);
+    assert.equal(g.status, 0, `清单项不落卡 → gate 必须仍绿：${g.stderr}`);
   });
 });
 
@@ -1220,9 +1263,12 @@ test('S6-TC-F02 dump 槽级展开可复算 renderBoundary；两 producer 席 == 
     // 槽 12 = DETECTION_CMD：值必须是 `commands['git.read'].verbs` 的 status 项本身（只读引用，不复制）
     assert.equal(e[11], CMD.commandGroups['git.read'].verbs.find((v) => /status/.test(v)),
       `${s}: 槽 12 = DETECTION_CMD`);
-    // 槽 10 = FORBIDDEN_PATHS：成员数 = 定义层派生（Q8 删 3 项后 20），不是写死值
-    assert.equal(e[9].split('、').filter(Boolean).length, pathTokens().length, `${s}: 槽 10 成员数应 = ${pathTokens().length}`);
-    assert.ok(e[9].includes('spec / plan'), `${s}: 槽 10 必须含 spec / plan`);
+    // 槽 10 = FORBIDDEN_PATHS：S-B（§11.2.3）起是**指针句**（不再逐项落卡）→ 判「指针在位 + 定义层成员数不变」
+    assert.ok(e[9].includes('`pathGroups`（六组）与一项模式项'), `${s}: 槽 10 必须是指针句`);
+    if (baseJson().seats[s]) {
+      const basePaths = baseJson().seats[s].forbiddenPaths.filter((x) => !Q8_REMOVED_PATHS.includes(x));
+      assert.deepEqual([...pathTokens()].sort(), [...basePaths].sort(), `${s}: 定义层路径成员 ≠ 基线减 Q8`);
+    }
   }
   // ③ 两 producer 席：dump ↔ render ↔ 卡面边界节三处一致
   for (const s of ['reviewer-audit','detective-observer']) {
@@ -1285,8 +1331,8 @@ test('S6-TC-F05 dump 幂等：连跑两次 stdout 逐字相等、无时间戳', 
   assert.equal(/20\d\d-\d\d-\d\dT/.test(a.stdout), false, 'dump 含时间戳 → 不可复算');
 });
 
-test('S6-TC-F06 dump 与 renderBoundary 同源：定义改一处两者同变', () => {
-  // ① 命令组：`check.local.verbs` 追加一条无害 verb → dump 的组长度 +1、render 出现该 verb
+test('S6-TC-F06 dump 与 renderBoundary 同源：定义改一处两者同变（清单项已指针化，只动 dump）', () => {
+  // ① 命令组：`check.local.verbs` 追加一条无害 verb → dump 的组长度 +1；渲染**不变**（清单不落卡）
   const dumpBefore = JSON.stringify(dumpPolicy(ROOT).json);
   const renderBefore = renderBoundary('reviewer-audit');
   const after = withCopy((d) => {
@@ -1296,10 +1342,10 @@ test('S6-TC-F06 dump 与 renderBoundary 同源：定义改一处两者同变', (
     return { dump: dumpPolicy(d).json, render: renderBoundaryIn(d, 'reviewer-audit') };
   });
   assert.notEqual(sha(JSON.stringify(after.dump)), sha(dumpBefore), 'dump 未跟随定义层变更');
-  assert.notEqual(sha(after.render), sha(renderBefore), 'render 未跟随定义层变更');
   assert.equal(after.dump.commands['check.local'].verbs.length,
     JSON.parse(dumpBefore).commands['check.local'].verbs.length + 1);
-  assert.ok(after.render.includes('node scripts/extra-check.mjs'), 'render 未反映定义层变更');
+  // S-B §11.2.6：命令白名单已指针化 → 加 verb 不改渲染；渲染若跟随（清单被写回卡面）即红
+  assert.equal(after.render, renderBefore, 'render 不得随清单 verb 变化（清单已指针化）');
 
   // ② 槽值：改 `SEAT_CLAUSE` 的定义 → `expanded[4]` 与 render 同变。
   // **plan 片段的目标串已过时**（它写 `clause: '、审计表'`）；T4-1 已按 plan Step 2 把该行改成
@@ -1377,7 +1423,9 @@ const CLAUSES = [
   { k: '④', why: '越权清单含「命令原文」（或给出反引号命令实例）', scope: 'seg5', re: /越权[\s\S]{0,240}(命令原文|`(git|node|npm) )/ },
   { k: '⑤', why: '用户执行复原', scope: 'seg5', re: /用户[^。]{0,6}执行|由用户[^。]{0,8}(复原|恢复)/ },
   { k: '⑥', why: '本轮结论作废', scope: 'seg5', re: /本轮[^。]{0,20}(作废|失效)|(作废|失效)[^。]{0,10}本轮/ },
-  { k: '⑦', why: '检测限度点名 .session/ 盲区', scope: 'seg5', re: /\.session\// },
+  // S-B §11.2.3：检测盲区清单改指针 → ⑦ 的判据 = ⑤ 段指向策略源 `DETECTION_BLIND_SPOTS`
+  // （盲区项本身离开卡面，`\.session\/` 不再出现；语义句由 J01 单独核）
+  { k: '⑦', why: '检测限度指向策略源 DETECTION_BLIND_SPOTS', scope: 'seg5', re: /`DETECTION_BLIND_SPOTS`/ },
   { k: '⑧', why: '检测命令带 --no-optional-locks', scope: 'seg5', re: /git --no-optional-locks status/ },
   { k: '⑨', why: '审计职责：核转录（**卡级**，不属 ⑤ 段存在性）', scope: 'card', seat: 'reviewer-audit', re: /核转录/ },
   { k: '⑩', why: '侦探职责：本席不核签（**卡级**，不属 ⑤ 段存在性）', scope: 'card', seat: 'detective-observer', re: /本席不核签/ },
@@ -1421,7 +1469,14 @@ test('S6-TC-I01 允许集逐项「用不被拦」（命令 / 可写产物 / 6 �
       applyLegalGrant(d, p);
       const r = runCli(d, ['policy', '--dump']);
       assert.equal(r.status, 0, `允许项被判红：${p.kind}:${p.id}@${p.seat}\n${r.stderr}`);
-      assert.ok(renderBoundaryIn(d, p.seat).includes(p.id), `允许项在卡面不可指涉：${p.kind}:${p.id}@${p.seat}`);
+      const card = renderBoundaryIn(d, p.seat);
+      if (p.kind === 'cmd') {
+        // S-B §11.2.3：命令清单已指针化 → 卡面只指**组**；「可指涉」= 本席组 ID 在位 + 该命令仍在 dump 的该组里
+        assert.ok(card.includes(`\`${p.group}\``), `本席组 ID 不在卡面：${p.kind}:${p.id}@${p.seat}`);
+        assert.ok(JSON.parse(r.stdout).commands[p.group].verbs.includes(p.id), `命令不在 dump 的组里：${p.id}`);
+      } else {
+        assert.ok(card.includes(p.id), `允许项在卡面不可指涉：${p.kind}:${p.id}@${p.seat}`);
+      }
     });
   }
 });
@@ -1461,6 +1516,10 @@ test('S6-TC-J01 ⑤ 段 8 条子句 + 卡级 2 条职责句', () => {
     const seg = assertNeedClauses(out, seat);      // 内部先 seg5() 再逐条断言；不抛 = 全齐
     assert.match(seg, /^越[界权]后果与限度/,
       `${seat}: ⑤ 段切点不对（现文与 spec §3.4 均写「越界后果与限度」；两写法都认）`);
+    // S-B §11.2.3 的语义句：盲区清单虽改指针，三种「看不见」的形态仍须写出来（指针化 ≠ 删段）
+    for (const w of ['被 gitignore', '仓外', '已提交写']) {
+      assert.ok(seg.includes(w), `${seat}: ⑤ 段必须保留检测盲区的语义要素 ${w}`);
+    }
   }
   // ⑨⑩ = **卡级**子句（scope:'card'）：现文在 ② 段 / 槽 5，故 V-12 的「⑤ 段」口径只覆盖 ①–⑧
   assert.equal(CLAUSES.filter((c) => c.scope === 'seg5').length, 8, '⑤ 段通用子句应为 8 条（V-12 的 ⑤ 段口径只覆盖这 8 条）');
@@ -1489,7 +1548,8 @@ test('S6-TC-J02 负例：8 类子句各删一处 → 各红一次', () => {
     { k: '③', seat: AUD, pool: /可复原/, cut: cutText(/可复原|能否复原|可恢复/g), exact: true },
     { k: '⑤', seat: AUD, pool: /用户[^。]{0,6}执行/, cut: cutText(/用户执行/g), exact: true },
     { k: '⑥', seat: AUD, pool: /本轮[^。]{0,20}(作废|失效)/, cut: cutText(/本轮[^。]{0,20}(作废|失效)/g), exact: true },
-    { k: '⑦', seat: AUD, pool: /\.session\//, cut: cutSentence(/检测限度/), exact: false },
+    // S-B §11.2.3：⑦ 的判据换成「检测限度指向 DETECTION_BLIND_SPOTS」，删除靶点仍是该整句
+    { k: '⑦', seat: AUD, pool: /`DETECTION_BLIND_SPOTS`/, cut: cutSentence(/检测限度/), exact: false },
     { k: '⑧', seat: AUD, pool: /git --no-optional-locks status/, cut: cutSentence(/检测限度/), exact: false },
     // ⑨⑩ = 卡级子句：按整卡判「职责句缺了」，不按 seg5 切片判
     { k: '⑨', seat: AUD, pool: /核转录/, cut: cutClauseAndTpl(/核转录/g, /核转录/g), exact: true },
@@ -1512,8 +1572,8 @@ test('S6-TC-J03 边界：措辞重排但要素齐 → 仍绿（哈希不等也�
     const out = renderBoundaryIn(d, 'reviewer-audit');
     assert.doesNotThrow(() => assertNeedClauses(out, 'reviewer-audit'), '② 要素齐即绿');
     assert.notEqual(sha(out), goldenOf('reviewer-audit'), '③ 合法改写必须让哈希不等（v5 口径下会被误判）');
-    assert.deepEqual(diffFacts(baseJson().seats['reviewer-audit'], factsFromText(out, probeDict(d))), q8Delta(),
-      '④ 能力除 Q8 三项外没丢（字典按副本现算）');
+    assert.deepEqual(diffFacts(baseJson().seats['reviewer-audit'], factsFromPolicy(dumpPolicy(d).json, 'reviewer-audit')), q8Delta(),
+      '④ 能力除 Q8 三项外没丢（清单源按副本现算）');
   });
 });
 
@@ -1521,7 +1581,7 @@ test('S6-TC-C01 审计席：哈希只作定位，判据 = 能力 diff 空 + J01 
   const seat = 'reviewer-audit';
   const hashEqual = sha(renderBoundary(seat)) === goldenCurOf(seat);   // ① 只取事实（当前比对键，spec:198）
   assert.equal(typeof hashEqual, 'boolean');
-  assert.deepEqual(diffFacts(baseJson().seats[seat], factsFromText(renderBoundary(seat), probeDict())),
+  assert.deepEqual(diffFacts(baseJson().seats[seat], factsFromPolicy(dumpPolicy(ROOT).json, seat)),
     q8Delta(), `${seat}: 能力 diff 必须恰为 Q8 三项`);              // ② 唯一通过判据
   assert.doesNotThrow(() => assertNeedClauses(renderBoundary(seat), seat));  // ③
   assert.match(renderBoundary(seat), /审计\s*写\s*`round-check\.md`/, '④ 槽 6：审计席应渲染「本席自写」形态');
@@ -1552,7 +1612,7 @@ test('S6-TC-C02 侦探席：同口径（哈希只作定位）', () => {
   const seat = 'detective-observer';
   const hashEqual = sha(renderBoundary(seat)) === goldenCurOf(seat);   // 当前比对键（spec:198）
   assert.equal(typeof hashEqual, 'boolean');
-  assert.deepEqual(diffFacts(baseJson().seats[seat], factsFromText(renderBoundary(seat), probeDict())),
+  assert.deepEqual(diffFacts(baseJson().seats[seat], factsFromPolicy(dumpPolicy(ROOT).json, seat)),
     q8Delta(), `${seat}: 能力 diff 必须恰为 Q8 三项`);
   assert.doesNotThrow(() => assertNeedClauses(renderBoundary(seat), seat));
   // 与 testcase:1391 的唯一偏差：⑩ 是**卡级**子句（CLAUSES 标 `scope:'card'`，J01 已裁定它不在 ⑤ 段；
@@ -1697,13 +1757,14 @@ test('S6-TC-H02 五段事实集合逐席 diff 空差', () => {
     forbiddenPaths: dict.paths, allowCmds: dict.allowVerbs, denyCmds: dict.denyVerbs, envForms: dict.envVerbs };
   for (const s of ['reviewer-audit', 'detective-observer']) {
     const before = base.seats[s];
-    const after = factsFromText(renderBoundary(s), dict);       // 判据端 = 渲染文本 + 定义层字典（不是 dump）
+    // S-B §11.2.6：卡面 / 槽值已指针化 → 判据端 = `policy --dump` 的清单导出（仍是定义层单源）
+    const after = factsFromPolicy(json, s);
     assert.deepEqual(Object.keys(before).sort(), [...FACTS_KEYS].sort(), `${s}: 基线五段键集不全`);
     assert.deepEqual(Object.keys(after).sort(), [...FACTS_KEYS].sort(), `${s}: 改造后五段键集不全`);
     assert.deepEqual(diffFacts(before, after), q8Delta(), `${s}: 除 Q8 三项外不得有差`);
     // ⑤' ③ 段成员数 = 定义层派生（Q8 后 20）：`spec / plan` 必须能被取到
     assert.equal(after.forbiddenPaths.length, pathTokens().length, `${s}: ③ 段成员数应 = ${pathTokens().length}`);
-    assert.ok(after.forbiddenPaths.includes('spec / plan'), `${s}: factsFromText 必须取到 spec / plan`);
+    assert.ok(after.forbiddenPaths.includes('spec / plan'), `${s}: 事实抽取必须取到 spec / plan`);
     // ⑤' 两端可比前提（spec:169 ④）：基线成员 ⊆ 定义层字典（否则字典同步缩水 → 差集恒空）
     for (const k of FACTS_KEYS) {
       for (const m of norm(before[k])) {
@@ -1712,20 +1773,25 @@ test('S6-TC-H02 五段事实集合逐席 diff 空差', () => {
           `${s}: 基线成员 ${k}:${m} 不在定义层字典里（基线切分口径错 或 定义层丢项 → 判据将恒真）`);
       }
     }
-    // ⑥ 交叉核对：dump 端同形事实 + 同一字典，逐项相等（`denyCmds` 已剔除 env.assign → 与 dump 槽同口径）
-    const viaDump = factsFromDump(json, s, dict);
-    for (const k of FACTS_KEYS.filter((x) => x !== 'mustNotWrite')) {
-      assert.deepEqual([...new Set(norm(viaDump[k]))].sort(), [...new Set(norm(after[k]))].sort(), `${s}: ${k} 渲染端 ≠ dump 端`);
+    // ⑥ 交叉核对（S-B 后的替身）：dump 的**清单导出**必须与定义层逐字相等（渲染侧只留指针，不再复算清单）
+    for (const [g, items] of Object.entries(json.paths.groups)) {
+      assert.deepEqual([...items], [...PTH.pathGroups[g]], `${s}: dump 的路径组 ${g} ≠ 定义层`);
     }
+    for (const g of Object.keys(CMD.commandGroups)) {
+      assert.deepEqual([...json.commands[g].verbs], [...CMD.commandGroups[g].verbs], `${s}: dump 的命令组 ${g} ≠ 定义层`);
+    }
+    // ⑥' 卡面侧的等价面：2 席只在 2 张 producer 卡上；指针句在位（清单不落卡）
+    assert.match(renderBoundary(s), /`pathGroups`（六组）与一项模式项/, `${s}: 卡面缺禁写清单指针句`);
+    assert.equal(countIn(renderBoundary(s), '逐项点名'), 0, `${s}: 卡面不得再逐项落清单`);
   }
 });
 
 test('S6-TC-H03 负例：少一项路径 → minus 出现 forbiddenPaths → 必红', () => {
   const d = withCopy((dir) => {
     editInDir(dir, 'tools/docgen/policy/definitions/paths.mjs', (s) => s.replace("'其他评审目录',", ''));
-    // 字典必须按**副本**现算，否则删掉的那项不在字典里、`minus` 恒空
+    // 清单源必须按**副本**现算，否则删掉的那项不在 dump 里、`minus` 恒空
     return diffFacts(baseJson().seats['reviewer-audit'],
-      factsFromText(renderBoundaryIn(dir, 'reviewer-audit'), probeDict(dir)));
+      factsFromPolicy(dumpPolicy(dir).json, 'reviewer-audit'));
   });
   assert.deepEqual(d.plus, []);
   const rest = withoutQ8(d.minus);
@@ -1738,7 +1804,7 @@ test('S6-TC-H04 负例：删一条允许命令 → minus 出现 allowCmds → �
   const after = withCopy((dir) => {
     editInDir(dir, 'tools/docgen/policy/definitions/commands.mjs',
       (s) => s.replace(/\s*'node scripts\/skill-dir\.mjs',/, ''));
-    return factsFromText(renderBoundaryIn(dir, 'reviewer-audit'), probeDict(dir));
+    return factsFromPolicy(dumpPolicy(dir).json, 'reviewer-audit');
   });
   const d = diffFacts(baseJson().seats['reviewer-audit'], after);
   assert.equal(after.allowCmds.length, before - 1, '改造后允许命令数应 = 基线 − 1');
@@ -1748,8 +1814,8 @@ test('S6-TC-H04 负例：删一条允许命令 → minus 出现 allowCmds → �
 });
 
 test('S6-TC-H05 越权负例：多一项（路径 / 命令 / 已登记组，各按自己那一席取基线）→ plus 必红', () => {
-  // 每项按**自己那一席**取基线（两 producer 席有基线 JSON；`senior-sdet` 用真仓库未改动的渲染现算）
-  const beforeOf = (seat) => (baseJson().seats[seat] ?? factsFromText(renderBoundary(seat), probeDict()));
+  // 每项按**自己那一席**取基线（两 producer 席有基线 JSON；`senior-sdet` 用真仓库未改动的 dump 现算）
+  const beforeOf = (seat) => (baseJson().seats[seat] ?? factsFromPolicy(dumpPolicy(ROOT).json, seat));
   const CASES = [
     ['paths', 'reviewer-audit', (d) => editInDir(d, 'tools/docgen/policy/definitions/paths.mjs',
       (s) => s.replace("'其他评审目录',", "'其他评审目录','vendor/',")), 1],
@@ -1763,7 +1829,7 @@ test('S6-TC-H05 越权负例：多一项（路径 / 命令 / 已登记组，各�
     const diff = withCopy((d) => {
       edit(d);
       dumpPolicy(d);                       // 先断 dump 成功（议会 #3 F19 / QA-15）
-      return diffFacts(beforeOf(seat), factsFromText(renderBoundaryIn(d, seat), probeDict(d)));
+      return diffFacts(beforeOf(seat), factsFromPolicy(dumpPolicy(d).json, seat));
     });
     assert.deepEqual(withoutQ8(diff.minus), [], name);
     assert.equal(diff.plus.length, expectPlus, `${name}: 越权新增未被捕获`);

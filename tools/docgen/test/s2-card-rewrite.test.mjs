@@ -368,11 +368,11 @@ test('S2-TC-C09 只红被塞的那席且 rationale 不可见', () => {
   // ③ 五个进渲染面的字段各 1 次非空
   const fields = [
     (c) => { c.duty = { ...c.duty, trigger: `${c.duty.trigger} ${ID}` } },
-    (c) => { c.duty = { ...c.duty, categories: [...(c.duty.categories ?? []), ID] } },
+    (c) => { c.categories = c.categories.map((x, i) => (i === 0 ? { ...x, label: `${x.label} ${ID}` } : x)) },
     (c) => { c.duty = { ...c.duty, action: `${c.duty.action} ${ID}` } },
     (c) => { c.duty = { ...c.duty, constraint: `${c.duty.constraint} ${ID}` } },
     (c) => { c.checkItems[0].label = `${c.checkItems[0].label} ${ID}` },
-  ]
+  ];
   assert.deepEqual(fields.map((fn) => { const m = renderMut(hitSeat, fn); return cardFaceIds(m.card, m.env).length > 0 }), [true, true, true, true, true])
 })
 

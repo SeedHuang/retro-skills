@@ -215,7 +215,7 @@ S-A 的验收 = V4 / V5 / V10（PRD §8 S-A 行）。`when` 里的 `PRD/spec/pla
 | `duty.trigger` 注入后与 `triggerTable.when` 逐字相同 | 同一事实两处的老病，注入写错不会报错、只会让斜杠串漏检 |
 | `description` 进扫描面后能报出**指针词 / 硬编码数量 / 程序词**三类码 | R4 的两处实现点缺一即空转。**注意「斜杠串」不在本段可测范围内**：8 个文本码里没有一条识别 `/`（`hasSlash` 只用于 `scenes[].id` / `signals[].type` / `trigger.*` / `check`），斜杠串清零归 S-C 的 D3 / V12 |
 | 坏数据在 `import` 期即抛错（fail-closed） | 这是「`check-shared-refs.mjs` 不进总门禁」能成立的唯一理由，必须有一条用例判 `import agentData.mjs` 的退出码，否则该裁决就是口头保证 |
-| policy 删 3 项后 2 张卡重生成 + 两处基线同批落盘（§10.2.7） | 删了不重生成 → `gate` 报 `Mismatch`；只写 `baseline.json` 不更新 2 席 `evidence.json` → 下次 `replace` 报 `EvidenceInvalid` / `TargetDrift`。**「检测限度」段的 `lessons/` 不在删除面**（R6），删后该段仍有 2 处命中属预期 |
+| policy 删 3 项后 2 张卡重生成 + 两处基线同批落盘（§10.2.7） | 删了不重生成 → `gate` 报 `Mismatch`；只写 `baseline.json` 不更新 2 席 `evidence.json` → 下次 `replace` 报 `EvidenceInvalid` / `TargetDrift`。**「检测限度」段的 `lessons/` 不在删除面**（R6），删后该段仍有 2 处命中属预期（**注（S-B，2026-11-03）**：该预期句在 S-B 指针化后**失效**——检测盲区改指策略源 `DETECTION_BLIND_SPOTS`，`lessons/` 已离开卡面，现命中数 = 0；本行「删 3 项路径」的结论不变，仅此数值预期作废） |
 
 **测试用例文件**：`2026-11-03-s-a-data-layer-design-testcase.md`（由 `senior-sdet` 在全新上下文编写；每条用例五要素齐、负例 ≥ 正例）
 

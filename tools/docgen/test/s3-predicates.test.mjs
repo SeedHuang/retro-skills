@@ -781,6 +781,10 @@ test('S3-TC-H06 必红期与回退', () => {
   // ② 回退面：整批回到 <S3-BASE>（判据表 + 15 卡 + 校验器 + 接线 + 词表派生）
   // `2026-11-03`（S-A T5 / Q8）补一项：卡面边界段的**内容源**也在定义层（`paths.mjs`），Q8 删了 3 项路径；
   // 只回退卡不回退定义层 → 旧卡（23 项）≠ 新渲染（20 项）→ 回退面不可达。故把定义层一并回退。
+  // `2026-11-03`（S-B Task 8）再补：R5/R6 把模板 4 行 + 5 个槽值改成指针句（`templates/boundary.md.tpl` +
+  // `renderBoundary.mjs`），`FORMAT_CHECKS[1]` / `outputFormats.checks[0]` 的文案也随之改写——旧卡（逐项清单 +
+  // 旧 check 文案）与新渲染器**不再自洽**。按 spec §11.2.6 的第二种口径：该步断言改为「回退后必落 Mismatch」，
+  // 不再要求 exit 0（「必红期」语义在 ① 里，不因实现改动而放宽）。
   const S3_REL = [
     'tools/docgen/card-model/vocab/predicates.mjs',
     'tools/docgen/card-model/validateCardModel.mjs',
@@ -798,8 +802,9 @@ test('S3-TC-H06 必红期与回退', () => {
       rmSync(join(copy, 'tools/docgen/card-model/validatePredicates.mjs'), { force: true })
     },
     verify: (copy, r) => {
-      assert.equal(r.code, 0)
-      assert.equal(/Mismatch/.test(r.out), false)
+      // S-B 后：只回退卡面（不回退模板 / 渲染器 / check 文案）→ 盘上 ≠ 渲染 → 必报 Mismatch
+      assert.equal(r.code, 1)
+      assert.match(r.out, /Mismatch/)
     },
   })
 })
