@@ -880,40 +880,39 @@ test('SB-TC-40 命令白名单句含本席组 ID（2 卡）；空组必写「无
   console.log(`groupIds ${POINTER_SEATS.length - badSeats.length}/${POINTER_SEATS.length} / negA missing ${missingA} => ok`)
 })
 
-test('SB-TC-41 env 槽已指针化：改前卡命中 5 / 改后渲染命中 0 / 漏改 env ≥1 / 只改一半 = 1', () => {
+test('SB-TC-41 env 槽已指针化：改前基线命中 5 / 改后渲染命中 0 / 漏改 env ≥1 / 只改一半 = 1', () => {
   const envVerbs = CMD.forbiddenGroups['env.assign'].verbs
   const envHits = (text) => envVerbs.filter((v) => text.includes(v)).length
+  const renderAll = (seat) => `const m = await import('./tools/docgen/components/renderBoundary.mjs'); process.stdout.write(m.renderBoundary(${JSON.stringify(seat)}))`
+  const OLD_ENV_FORMS = "  return CMD.forbiddenGroups['env.assign'].verbs.join(' / ');"
 
-  // ① 改前基线：取「最后改模板那次提交」里的卡（该提交自身不含重生成，故卡仍是改前形态；
-  //    用模板提交而不是 HEAD，Task 6 重生成后本基线不会漂）
-  const rev = spawnSync('git', ['log', '-1', '--format=%H', '--', 'tools/docgen/templates/boundary.md.tpl'],
-    { cwd: ROOT, encoding: 'utf8' }).stdout.trim()
-  assert.ok(rev, '前置：模板必须已有提交历史')
-  for (const seat of POINTER_SEATS) {
-    const old = spawnSync('git', ['show', `${rev}:agents/${seat}.md`], { cwd: ROOT, encoding: 'utf8' })
-    assert.equal(old.status, 0, `git show ${rev}:agents/${seat}.md 失败：${old.stderr}`)
-    assert.equal(envHits(old.stdout), 5, `${seat}: 改前卡必须命中全部 5 个 env 形态项（实得 ${envHits(old.stdout)}）`)
-  }
-
-  // ② 金态：改后渲染命中 = 0（漏改 ENV_FORMS 时这一步就是唯一会红的地方）
-  assert.equal(envHits(rendered('reviewer-audit')), 0, '改后渲染不得再出现 env 具体形态项')
-
-  // ③ 负例 A：只改 DENY_GROUPS、ENV_FORMS 保留原样 → 必须 ≥ 1
+  // ① 改前基线 = **构造式**（不锚 git 历史）：副本内把 `envForms` 还原成指针化之前的旧展开式，
+  // 再渲染一次 → 命中数必须等于该组 verb 数（= 5）。旧写法取「最后改模板那次提交」的卡，
+  // 该锚会随下一次改模板（S-C 按 R11「模板改 + 卡同批重生成」提交）移到改后形态 → envHits 0 →
+  // 凭空变红且报错文案指错方向（任务级审查 Important #1）。
   withRepoCopy((copy) => {
     const p = join(copy, 'tools', 'docgen', 'components', 'renderBoundary.mjs')
     const src = readFileSync(p, 'utf8')
-    writeFileSync(p, replaceFnBody(src, 'envForms', "  return CMD.forbiddenGroups['env.assign'].verbs.join(' / ');"), 'utf8')
-    const a = runProbeIn(copy, "const m = await import('./tools/docgen/components/renderBoundary.mjs'); process.stdout.write(m.renderBoundary('reviewer-audit'))")
-    assert.equal(a.status, 0, a.stderr)
-    assert.ok(envHits(a.stdout) >= 1, `漏改 env 槽必须能红（实得 ${envHits(a.stdout)}）`)
+    writeFileSync(p, replaceFnBody(src, 'envForms', OLD_ENV_FORMS), 'utf8')
+    const leak = runProbeIn(copy, renderAll('reviewer-audit'))
+    assert.equal(leak.status, 0, leak.stderr)
+    const oldHits = envHits(leak.stdout)
+    assert.equal(oldHits, envVerbs.length,
+      `改前基线（旧展开式）必须命中全部 ${envVerbs.length} 个 env 形态项（实得 ${oldHits}）——否则本条判据在金态之前无物可抓`)
 
-    // ④ 负例 B：ENV_FORMS 只留 1 个 verb → 命中必须 = 1（等值断言，剩 1 个即红）
+    // ③ 负例 A：`DENY_GROUPS` 已指针化、`ENV_FORMS` 保留原样 → 必须 ≥ 1（同一份渲染结果即该失误形态）
+    assert.ok(oldHits >= 1, `漏改 env 槽必须能红（实得 ${oldHits}）`)
+
+    // ④ 负例 B：`ENV_FORMS` 只留 1 个 verb → 命中必须 = 1（等值断言，剩 1 个即红）
     writeFileSync(p, replaceFnBody(src, 'envForms', "  return CMD.forbiddenGroups['env.assign'].verbs.slice(0, 1).join(' / ');"), 'utf8')
-    const b = runProbeIn(copy, "const m = await import('./tools/docgen/components/renderBoundary.mjs'); process.stdout.write(m.renderBoundary('reviewer-audit'))")
+    const b = runProbeIn(copy, renderAll('reviewer-audit'))
     assert.equal(b.status, 0, b.stderr)
     assert.equal(envHits(b.stdout), 1, `只留 1 个 verb 时必须命中 1（实得 ${envHits(b.stdout)}）`)
-    console.log(`env-slot: old 5 / new 0 / leak ${envHits(a.stdout)} / half ${envHits(b.stdout)} => ok`)
+    console.log(`env-slot: old ${oldHits}/${envVerbs.length} / new 0 / leak ${oldHits} / half ${envHits(b.stdout)} => ok`)
   })
+
+  // ② 金态：改后渲染命中 = 0（漏改 ENV_FORMS 时这一步就是唯一会红的地方）
+  assert.equal(envHits(rendered('reviewer-audit')), 0, '改后渲染不得再出现 env 具体形态项')
 
   // ⑤ 复原态（真实仓渲染）仍 = 0
   assert.equal(envHits(rendered('detective-observer')), 0, '复原后必须仍为 0')
