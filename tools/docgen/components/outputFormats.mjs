@@ -1,6 +1,22 @@
 // 输出格式合同（spec §6 :157-173）：按 `outputKind` 共享的**结构化**数据，卡面第 7 段直接渲染它。
 //
 // S4 Task 7 收口：旧模板与 `legacyOutputFormats` 已删除（原散文块留 git 历史），本文件只留结构化合同。
+
+// `evidence` 契约先落成独立对象：`issue-card` 的证据三位从它**展开派生**（S-B spec §11.2.1 R1）。
+// 抄一份字面就是第二份真相——改 `evidence.fields` 时 `issue-card` 会静默不跟随，且没有判据能发现
+// （判别力由 `SB-TC-02` / `SB-TC-23` 把住）。
+const evidence = {
+  fields: ['原文摘句', '文件 + 行号', '用途'],
+  checks: [
+    '摘句能在源文件中检索到，且行号指向的那一行包含它',
+    '查找过但没找到的项必须写明查了什么、为什么没找到',
+  ],
+}
+
+// `issue-card` 的 9 列 = 原 7 列在证据位（第 5 位）展开成三列，其余列与顺序不动
+const ISSUE_HEAD = ['编号（Q-轮-序）', '提出角色', '归属维度', '问题描述']
+const ISSUE_TAIL = ['严重级别', '建议解法']
+
 export const outputFormats = {
   audit: {
     fields: [
@@ -31,9 +47,9 @@ export const outputFormats = {
     ],
   },
   'issue-card': {
-    fields: ['编号（Q-轮-序）', '提出角色', '归属维度', '问题描述', '证据', '严重级别', '建议解法'],
+    fields: [...ISSUE_HEAD, ...evidence.fields, ...ISSUE_TAIL],
     checks: [
-      '证据栏必须写文件行号或命令输出，空 = 废卡',
+      '证据三列（原文摘句 / 文件 + 行号 / 用途）缺任一 = 废卡，三列须由 check-quotes 验真',
       '建议解法栏空 = 废卡',
       'P0 需两处冲突证据；P1 需可复现触发序列',
     ],
@@ -45,13 +61,7 @@ export const outputFormats = {
       '判定依据必须引用原文（不得转述）',
     ],
   },
-  evidence: {
-    fields: ['原文摘句', '文件 + 行号', '用途'],
-    checks: [
-      '摘句能在源文件中检索到，且行号指向的那一行包含它',
-      '查找过但没找到的项必须写明查了什么、为什么没找到',
-    ],
-  },
+  evidence,
   testcase: {
     fields: ['覆盖', '前置', '步骤', '预期', '判据'],
     checks: [

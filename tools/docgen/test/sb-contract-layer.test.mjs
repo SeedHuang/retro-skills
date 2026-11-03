@@ -6,9 +6,11 @@ import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, 
 import { tmpdir } from 'node:os'
 import { join, dirname } from 'node:path'
 import { spawnSync } from 'node:child_process'
-import { ROOT } from './support/dev-workflow-checks.mjs'
+import { ROOT, withRepoCopy, runEsm } from './support/dev-workflow-checks.mjs'
 import { REGISTERED_IDS } from '../../observation-check/registered-ids.mjs'
 import { ARTIFACT_RE } from '../../observation-check/gate-scan.mjs'
+import { outputFormats } from '../components/outputFormats.mjs'
+import { FORMAT_CHECKS } from '../card-model/vocab/card-contract.mjs'
 
 const REVIEWS = join(ROOT, 'docs', 'superpowers', 'reviews')
 
@@ -338,5 +340,172 @@ test('SB-TC-39 语料 K = 1 → exit 1（K ≥ 2 是判据，不是期望值）'
     assert.match(firstLineOf(r2), /evidence 2 \/ bad 0 => ok$/)
 
     console.log('k1: 1 => red / 2 => ok')
+  })
+})
+
+// ── Task 3：`issue-card` 证据三列派生 + 两处 checks 文案（PRD D14 / spec §11.2.1）──────
+// 探针只有一份实现：`EVIDENCE_PROBE` 在本进程用，也被 `String(...)` 注入副本子进程
+// （副本内同进程 import 会命中模块缓存，所以「改一处看是否跟随」必须走子进程）。
+const HEAD_COLS = ['编号（Q-轮-序）', '提出角色', '归属维度', '问题描述']
+const TAIL_COLS = ['严重级别', '建议解法']
+const EVIDENCE_PROBE = (fields, evidenceFields) => {
+  const HEAD = ['编号（Q-轮-序）', '提出角色', '归属维度', '问题描述']
+  const TAIL = ['严重级别', '建议解法']
+  const mid = fields.slice(4, 7)
+  const ok = JSON.stringify(mid) === JSON.stringify(evidenceFields)
+    && JSON.stringify(fields) === JSON.stringify([...HEAD, ...evidenceFields, ...TAIL])
+    && fields.length === 9
+    && evidenceFields.length === 3
+  return { ok, col7: fields[6], line: `evidence-cols: ${mid.length}/${evidenceFields.length} length ${fields.length} => ${ok ? 'ok' : 'fail'}` }
+}
+const EVIDENCE_PROBE_SRC = [
+  "import { outputFormats } from './tools/docgen/components/outputFormats.mjs'",
+  `const PROBE = ${String(EVIDENCE_PROBE)}`,
+  "const f = outputFormats['issue-card'].fields",
+  'const r = PROBE(f, outputFormats.evidence.fields)',
+  'process.stdout.write(r.line + "\\n")',
+  'process.stdout.write("fields[6]: " + r.col7 + " length " + f.length + "\\n")',
+  'process.exit(r.ok ? 0 : 1)',
+].join('\n')
+
+const OF_REL = join('tools', 'docgen', 'components', 'outputFormats.mjs')
+
+// 副本里改 `evidence.fields` 第 3 项：`'用途'` 在源里恰 1 处（多于 1 处说明构造会改错位置）
+function bumpEvidenceThird(copy) {
+  const p = join(copy, OF_REL)
+  const src = readFileSync(p, 'utf8')
+  const hits = src.split("'用途'").length - 1
+  assert.equal(hits, 1, `outputFormats.mjs 的 '用途' 必须恰 1 处（实得 ${hits}）`)
+  writeFileSync(p, src.replace("'用途'", "'用途X'"), 'utf8')
+  return p
+}
+
+test('SB-TC-01 issue-card 证据三列与 evidence.fields deepEqual（同序逐字）且总长 9', () => {
+  const fields = outputFormats['issue-card'].fields
+  const ev = outputFormats.evidence.fields
+  assert.ok(Array.isArray(fields) && Array.isArray(ev), '两处 fields 都必须是数组')
+
+  assert.equal(ev.length, 3, `evidence.fields 必须 3 项（实得 ${ev.length}：${ev.join('、')}）`)
+  assert.equal(fields.length, 9, `issue-card.fields 必须 9 列（实得 ${fields.length}：${fields.join('、')}）`)
+  // 位置判据：证据三列必须落在 4/5/6 —— 只判「9 列」会放过「三列放尾部 / 分散」的版本
+  assert.deepEqual(fields.slice(4, 7), ev, '第 5–7 位必须与 evidence.fields 结构相等（同序逐字，不是引用相等）')
+  assert.deepEqual(fields, [...HEAD_COLS, ...ev, ...TAIL_COLS], '全量 = [...HEAD, ...evidence.fields, ...TAIL]')
+
+  const r = EVIDENCE_PROBE(fields, ev)
+  assert.equal(r.ok, true, r.line)
+  console.log(r.line)
+})
+
+test('SB-TC-02 副本里改 evidence.fields 第 3 项 → issue-card 证据三列跟随', () => {
+  withRepoCopy((copy) => {
+    const before = runEsm(copy, EVIDENCE_PROBE_SRC)
+    assert.equal(before.status, 0, `副本未改动前必须为绿：${before.stdout}${before.stderr}`)
+
+    bumpEvidenceThird(copy)
+    const after = runEsm(copy, EVIDENCE_PROBE_SRC)
+    assert.equal(after.status, 0, `改 evidence.fields 后 issue-card 必须跟随：${after.stdout}${after.stderr}`)
+    assert.match(after.stdout, /=> ok/)
+    assert.match(after.stdout, /fields\[6\]: 用途X length 9/)
+
+    console.log(`follow: ${firstLineOf(after)} / 用途X length 9 => ok`)
+  })
+})
+
+test('SB-TC-23 三列抄成字面（不派生）→ 改 evidence.fields 后不跟随，探针必红', () => {
+  withRepoCopy((copy) => {
+    const p = join(copy, OF_REL)
+    const src = readFileSync(p, 'utf8')
+    const at = src.indexOf("'issue-card': {")
+    assert.ok(at >= 0, "副本的 outputFormats.mjs 必须含 'issue-card' 段")
+
+    // 抄字面：9 项字面数组，三列与当前 evidence.fields 逐字相同，但不是展开
+    const literal = JSON.stringify([...outputFormats['issue-card'].fields])
+    const body = src.slice(at).replace(/fields: \[[^\]]*\],/, `fields: ${literal},`)
+    assert.notEqual(body, src.slice(at), '构造失败：issue-card 的 fields 行没被替换成字面数组')
+    writeFileSync(p, src.slice(0, at) + body, 'utf8')
+
+    bumpEvidenceThird(copy)
+    const r = runEsm(copy, EVIDENCE_PROBE_SRC)
+    assert.notEqual(r.status, 0, `抄字面的版本必须红（三列不跟随）：${r.stdout}${r.stderr}`)
+    assert.match(r.stdout, /=> fail/)
+    assert.match(r.stdout, /fields\[6\]: 用途 length 9/, '字面版本的第 7 列不得跟随 evidence.fields 改变')
+
+    // 复原成派生形态（仅保留第 3 项改动）后必须为绿
+    writeFileSync(p, src.replace("'用途'", "'用途X'"), 'utf8')
+    const back = runEsm(copy, EVIDENCE_PROBE_SRC)
+    assert.equal(back.status, 0, `复原为派生形态后必须为绿：${back.stdout}${back.stderr}`)
+
+    console.log(`literal-copy: ${firstLineOf(r)} / derived: ${firstLineOf(back)}`)
+  })
+})
+
+// 改前字面：第 1 / 3 条不许被顺手改掉（逐字）
+const FORMAT_CHECKS_UNTOUCHED = [
+  '问题卡缺任一必填字段 = 废卡，不得只给结论。',
+  '建议解法栏缺内容或空 = 废卡，须给可执行一条。',
+]
+
+test('SB-TC-10 FORMAT_CHECKS 仍 3 条：第 2 条改三列 + 校验器，第 1 / 3 条逐字不动', () => {
+  const len = FORMAT_CHECKS.length
+  const binary = FORMAT_CHECKS.filter((s) => /废卡/.test(s) && /[缺空]/.test(s))
+  const second = FORMAT_CHECKS[1] ?? ''
+  // 三个证据列名从 evidence.fields 派生，不另写字面（否则两处都在改，判据自己就是第二份真相）
+  const cols = outputFormats.evidence.fields.filter((c) => second.includes(c))
+  const secondOk = cols.length === outputFormats.evidence.fields.length && second.includes('check-quotes')
+  const untouched = [FORMAT_CHECKS[0] === FORMAT_CHECKS_UNTOUCHED[0], FORMAT_CHECKS[2] === FORMAT_CHECKS_UNTOUCHED[1]]
+  const untouchedCount = untouched.filter(Boolean).length
+
+  console.log(`format-checks ${len} / binary ${binary.length}/3 / second ${secondOk ? 1 : 0}/1 / untouched ${untouchedCount}/2`)
+  assert.equal(len, 3, `FORMAT_CHECKS 必须仍 3 条（实得 ${len}）`)
+  assert.equal(binary.length, 3, `每条都必须同时含「废卡」与「缺 / 空」（实得 ${binary.length}/3）`)
+  assert.ok(secondOk, `第 2 条必须含三个证据列名（命中 ${cols.join('、') || '(无)'}）且含 check-quotes：${second}`)
+  assert.equal(untouchedCount, 2, '第 1 / 3 条必须逐字不动（改文案不许顺手改它们）')
+})
+
+// 副本内改 `FORMAT_CHECKS` 条数，跑既有冻结断言（`S2-TC-A06`）；命令口径见 testcase SB-TC-22
+// `NODE_TEST_CONTEXT` 必须清掉：父进程是 `node --test` 时子进程若继承它，会被判「test run() 递归」并**静默跳过**（exit 0 假绿）
+const A06_CMD = ['--test', '--test-name-pattern', 'S2-TC-A06', join('tools', 'docgen', 'test', 's2-card-rewrite.test.mjs')]
+const runA06 = (dir) => {
+  const env = { ...process.env }
+  delete env.NODE_TEST_CONTEXT
+  return spawnSync(process.execPath, A06_CMD, { cwd: dir, encoding: 'utf8', env })
+}
+
+function rewriteFormatChecks(copy, list) {
+  const p = join(copy, 'tools', 'docgen', 'card-model', 'vocab', 'card-contract.mjs')
+  const src = readFileSync(p, 'utf8')
+  const open = 'export const FORMAT_CHECKS = ['
+  const start = src.indexOf(open)
+  assert.ok(start >= 0, '副本的 card-contract.mjs 必须含 FORMAT_CHECKS 定义')
+  const end = src.indexOf('\n]', start)
+  assert.ok(end > start, 'FORMAT_CHECKS 数组必须有闭合行')
+  const body = list.map((s) => `  ${JSON.stringify(s)},`).join('\n')
+  writeFileSync(p, `${src.slice(0, start)}${open}\n${body}\n]${src.slice(end + 2)}`, 'utf8')
+  return src
+}
+
+test('SB-TC-22 FORMAT_CHECKS 变 2 条 / 变 4 条 → 既有冻结断言 S2-TC-A06 必红', () => {
+  withRepoCopy((copy) => {
+    const p = join(copy, 'tools', 'docgen', 'card-model', 'vocab', 'card-contract.mjs')
+
+    const r0 = runA06(copy)
+    assert.equal(r0.status, 0, `副本未改动前 S2-TC-A06 必须绿：${r0.stdout}${r0.stderr}`)
+
+    let src = rewriteFormatChecks(copy, FORMAT_CHECKS.slice(0, 2))
+    const r2 = runA06(copy)
+    assert.notEqual(r2.status, 0, `2 条时 S2-TC-A06 必须红（说明条数断言被放宽了）：${r2.stdout}${r2.stderr}`)
+    assert.match(`${r2.stdout}${r2.stderr}`, /S2-TC-A06/)
+
+    writeFileSync(p, src, 'utf8')
+    src = rewriteFormatChecks(copy, [...FORMAT_CHECKS, FORMAT_CHECKS[0]])
+    const r4 = runA06(copy)
+    assert.notEqual(r4.status, 0, `4 条时 S2-TC-A06 必须红：${r4.stdout}${r4.stderr}`)
+    assert.match(`${r4.stdout}${r4.stderr}`, /S2-TC-A06/)
+
+    writeFileSync(p, src, 'utf8')
+    const r5 = runA06(copy)
+    assert.equal(r5.status, 0, `复原本仓 3 条后必须为绿：${r5.stdout}${r5.stderr}`)
+
+    console.log('checks-count: 3 => ok / 2 => red / 4 => red')
   })
 })
