@@ -35,6 +35,7 @@
 | 共享片段 | `tools/docgen/data/shared.json` | 1 |
 | 逐席数据 | `tools/docgen/data/seats/<seat>.json`（文件名 = 席名） | 15 |
 | 加载 + 展开 + 注入 | `tools/docgen/components/seatLoader.mjs`（新） | 1 |
+| 12 键唯一源 | `tools/docgen/components/cardKeys.mjs`（叶模块、零 import；`cardPipeline.mjs` 只 re-export，导出面不变）——`2026-11-03` 施工期补登：若把定义留在 `cardPipeline.mjs`，`seatLoader → cardPipeline → agentData → seatLoader` 会成环，入口为 `seatLoader` 或 `cardPipeline` 时该常量处于 TDZ（实跑：两入口均 exit 1） | 1 |
 | 公开入口（**导出面不变**） | `tools/docgen/components/agentData.mjs` 改为薄壳 | 1 |
 | 引用校验器 | `tools/docgen/check-shared-refs.mjs`（PRD V5 定名） | 1 |
 
@@ -121,8 +122,9 @@ node -e "const L=require('fs').readFileSync('tools/docgen/components/agentData.m
 ### 10.2.5 加载时序与装配点
 
 1. 读 `data/shared.json` + `data/seats/*.json`（**读盘只发生在这一处**）；
+1b. **席序与目录形状（读盘前判，`2026-11-03` 施工期补登）**：席序 = `seatLoader.mjs` 的 `SEAT_ORDER`（只表达顺序；与 `seats/*.json` 的文件名集**双向恰等**，缺项 / 多项 → `InvalidInputPath`）；`seats/` 只收文件条目，非文件条目（含名为 `x.json` 的目录）→ 同码；
 2. 逐席 `expandRefs`（10.2.4）；
-3. 拆出 `trigger` → `triggerTable[<seat>]`（含 `kind` 字段位，R8；本段不校验四值）；
+3. 拆出 `trigger` → `triggerTable[<seat>]`（含 `kind` 字段位，R8；本段不校验四值）；`trigger.when` 必须为非空字符串（否则 `MissingWhen`），`trigger.route` 必须为非空字符串（否则 `TriggerMissingRoute`）——**否则 `validateAgentData` 的 route 跳过分支会静默放过**；
 4. 写入 `card.duty.trigger = triggerTable[<seat>].when`（D-a；非空残留已在 10.2.2 拒载）；
 5. 装配：`{ tools: toolsForSeat(...), ...(boundaryBySeat[...] ? { boundary } : {}), ...s }` —— **`...s` 仍置末**（R7 形态逐字不变，位置从 `agentData.mjs:295` 迁到 `seatLoader.mjs`）；
 6. **装配后断言**（`CardKeySetMismatch`，exit 1）：`seats/<seat>.json` 的 `card` 键集**恰等 8 键** = `CARD_KEYS` 去掉 `seat` / `name` / `description` / `tools` 四派生键——少一个、多一个都报；这四个派生键若写进席文件，同样在这一步被拒载（它们本会被 `...s` 静默覆盖，渲染结果与正确数据逐字节相同，V4 抓不到）。**12 键全量不在这步判**：本步产物 `agentData[i].card` 恒 8 键（15/15 席实测），12 键只在 `buildOne` 派生后成立 → 判据落 `check-shared-refs.mjs` 的 `buildCards()` 一圈（§10.2.6）；
@@ -159,7 +161,7 @@ S-A 的验收 = V4 / V5 / V10（PRD §8 S-A 行）。`when` 里的 `PRD/spec/pla
 
 | 文件 | 动什么 | 为什么必须动 |
 |---|---|---|
-| `components/cardPipeline.mjs:23` 的 `CARD_KEYS` | 加 `export`，内容与顺序不变 | 「12 键」的唯一实现点；校验器与 loader 要共用它，否则出现第二份 12 键名单 |
+| `components/cardPipeline.mjs:23` 的 `CARD_KEYS` | 加 `export`，内容与顺序不变 | 「12 键」的唯一实现点；校验器与 loader 要共用它，否则出现第二份 12 键名单（`2026-11-03` 施工期补登：定义已迁叶模块 `cardKeys.mjs`、本文件只 re-export，理由见 §10.2.1 新行） |
 | `components/validateAgentData.mjs:13-33` 的 `EXIT` 表 | 追加 4 码（10.2.6） | 不加则 `exitCodeFor` 抛「未知错误码」，新校验器无法 exit 1 |
 
 **测试侧 12 处 / 7 个文件**（这些位置把「`agentData.mjs` 的源文本 / 注释 / 计数」当判据，装配点一迁走或 Q8 一删项它们必红；处置 = 把判据改到新落点，**语义不变**）：

@@ -4,12 +4,15 @@ import { readFileSync, readdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { toolsForSeat, boundaryBySeat } from './patternRegistry.mjs'
-import { CARD_KEYS } from './cardPipeline.mjs'
+import { CARD_KEYS } from './cardKeys.mjs'
 import { exitCodeFor } from './validateAgentData.mjs'
 
-const DATA = join(dirname(fileURLToPath(import.meta.url)), '..', 'data')
-const DERIVED = ['seat', 'name', 'description', 'tools']
-const EIGHT = CARD_KEYS.filter((k) => !DERIVED.includes(k))   // 席文件 card 的合法键集（12 键去派生四键）
+// 席序（= 迁移前 `agentData` 字面的人工策划序；`docs/agents/README.md` 的行序即此序）。本常量只表达**顺序**，
+// 席位名单的唯一源仍是 `data/seats/*.json`：两者在 `loadSeatData` 读盘前双向比对，不等即 `InvalidInputPath`。
+export const SEAT_ORDER = ['reviewer-audit', 'reviewer-product', 'reviewer-interaction', 'reviewer-ui',
+  'reviewer-frontend', 'reviewer-backend', 'reviewer-ops', 'reviewer-qa', 'reviewer-ai', 'reviewer-security',
+  'reviewer-actuary', 'reviewer-reader', 'detective-observer', 'evidence-reader', 'senior-sdet']
+
 const EMPTY = /^(|\s+)$/
 const WHOLE = /^@([a-z][A-Za-z0-9]*)$/
 const PART = /\$\{@([a-z][A-Za-z0-9]*)\}/g
@@ -57,20 +60,37 @@ export function expandRefs(value, shared, seat) {
   return value
 }
 
-export function loadSeatData(dir = DATA) {
+// 默认数据目录：写成函数（而非模块级 const），使本模块的求值顺序与调用顺序无关（环内调用不会 TDZ）
+function dataDir() {
+  return join(dirname(fileURLToPath(import.meta.url)), '..', 'data')
+}
+
+export function loadSeatData(dir = dataDir()) {
+  const DERIVED = ['seat', 'name', 'description', 'tools']
+  const EIGHT = CARD_KEYS.filter((k) => !DERIVED.includes(k))   // 席文件 card 的合法键集（12 键去派生四键）
+  const seatsDir = join(dir, 'seats')
   const shared = JSON.parse(readFileSync(join(dir, 'shared.json'), 'utf8'))
   for (const [k, v] of Object.entries(shared)) {
     if (typeof v === 'string' && (v.includes('@') || v.includes('${'))) fail('NestedSharedRef', { key: k })
   }
-  const files = readdirSync(join(dir, 'seats')).filter((f) => f.endsWith('.json'))
+  // 目录形状：只收 `<seat>.json` 文件；非文件条目（含名为 `x.json` 的目录）与「席序缺项/多项」一律拒载
+  const entries = readdirSync(seatsDir, { withFileTypes: true })
+  const strays = entries.filter((d) => !(d.isFile() && d.name.endsWith('.json'))).map((d) => d.name)
+  if (strays.length) fail('InvalidInputPath', { dir: seatsDir, entries: strays })
+  const slugs = entries.map((d) => d.name.replace(/\.json$/, ''))
+  const unknown = slugs.filter((s) => !SEAT_ORDER.includes(s))
+  const absent = SEAT_ORDER.filter((s) => !slugs.includes(s))
+  if (unknown.length || absent.length) fail('InvalidInputPath', { dir: seatsDir, unknown, absent })
   const agentData = []
   const triggerTable = {}
-  for (const f of files) {
-    const raw = JSON.parse(readFileSync(join(dir, 'seats', f), 'utf8'))
+  for (const slug of SEAT_ORDER) {
+    const raw = JSON.parse(readFileSync(join(seatsDir, `${slug}.json`), 'utf8'))
     // 变量名 `s` 与展开符 `...s` 两个形态都被既有断言钉死：`tool-tiers.test.mjs` 认
     // `tools:\s*toolsForSeat\(\s*s\.name\s*\)` 且随后 `indexOf('...s', i)`（§10.2.9 要求「只换读取目标、断言文字不变」）。
     const { trigger, ...s } = expandRefs(raw, shared, raw.name)
     if (!trigger || blank(trigger.when)) fail('MissingWhen', { name: raw.name })
+    if (typeof trigger.when !== 'string') fail('MissingWhen', { name: raw.name, when: trigger.when })
+    if (typeof trigger.route !== 'string' || trigger.route.trim() === '') fail('TriggerMissingRoute', { name: raw.name })
     const dt = s.card && s.card.duty ? s.card.duty.trigger : undefined
     if (typeof dt !== 'string') fail('TriggerFieldMisplaced', { name: raw.name, key: 'duty.trigger' })
     if (dt !== '') fail('TriggerFieldMisplaced', { name: raw.name, key: 'duty.trigger', why: '第二来源' })

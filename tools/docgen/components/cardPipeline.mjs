@@ -18,11 +18,12 @@ import { registeredIdsOf, validateCardModel } from '../card-model/index.mjs'
 import { renderCard } from './renderCard.mjs'
 import { renderReadme, renderIndex } from './renderReadme.mjs'
 import { exitCodeFor } from './validateAgentData.mjs'
+import { CARD_KEYS } from './cardKeys.mjs'
 
 // `Card` = S1 §4 `:58-67` 的全量 12 键（spec §4 `:89`）；缺任一键 → 拒绝渲染
-// S-A T2：导出供 loader（席文件 8 键判）与 `check-shared-refs.mjs`（12 键全量判）共用唯一源
-export const CARD_KEYS = ['seat', 'name', 'description', 'tools', 'duty', 'scenes', 'signals', 'must', 'never',
-  'categories', 'checkItems', 'rationale']
+// S-A T2：定义已迁叶模块 `cardKeys.mjs`（切断 `seatLoader → cardPipeline → agentData → seatLoader` 的环，
+// 见该文件注释）；本文件只 re-export，导出面不变。
+export { CARD_KEYS }
 
 // 非议会席（spec §4 `:97` 点名两席）：`env.parliamentSeats` = 其余席
 const NON_PARL_SEATS = ['evidence-reader', 'senior-sdet']

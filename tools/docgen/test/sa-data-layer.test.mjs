@@ -2,7 +2,7 @@
 // 编写者：主 agent（施工者本人）；本文件是常驻测试、不是 testcase 文件，不受独立编写义务约束。
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { cpSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { expandRefs, loadSeatData } from '../components/seatLoader.mjs'
@@ -143,5 +143,44 @@ test('TC-019 席文件里写回非空 duty.trigger → 拒载 TriggerFieldMispla
     rewrite(dst, join('seats', 'reviewer-product.json'),
       (j) => { j.card.duty.trigger = '当主持人调度对 PRD/spec/plan 做产品视角评审' })   // 第二来源
     assert.throws(() => loadSeatData(dst), (e) => e.code === 'TriggerFieldMisplaced')
+  } finally { rmSync(dst, { recursive: true, force: true }) }
+})
+
+test('TC-031 席序冻结：loadSeatData 的席序与 docs/agents/README.md 的表格行序逐条相等', () => {
+  const { agentData } = loadSeatData()
+  // 锚在**已提交的生成物**上（不是把名单抄进测试）：席序一变，README 索引就会重排 → gate 报 Mismatch
+  const rows = readFileSync('docs/agents/README.md', 'utf8').split(/\r?\n/)
+    .filter((l) => l.startsWith('| ')).slice(1)          // 去掉表头（分隔行不以 `| ` 开头，天然被过滤）
+    .map((l) => l.split('|')[1].trim())
+  assert.deepEqual(agentData.map((a) => a.name), rows)
+})
+
+test('TC-032 trigger.when 类型不是字符串（数字）→ 拒载 MissingWhen（不把坏类型注入 duty.trigger）', () => {
+  const dst = copyData()
+  try {
+    rewrite(dst, join('seats', 'reviewer-product.json'), (j) => { j.trigger.when = 1 })
+    assert.throws(() => loadSeatData(dst), (e) => e.code === 'MissingWhen' && e.when === 1)
+  } finally { rmSync(dst, { recursive: true, force: true }) }
+})
+
+test('TC-033 trigger.route 缺失 / 空白 → 拒载 TriggerMissingRoute（不能靠 validateAgentData 的跳过分支放过）', () => {
+  for (const [label, mutate] of [
+    ['missing', (j) => { delete j.trigger.route }],
+    ['blank', (j) => { j.trigger.route = '   ' }],
+  ]) {
+    const dst = copyData()
+    try {
+      rewrite(dst, join('seats', 'reviewer-product.json'), mutate)
+      assert.throws(() => loadSeatData(dst), (e) => e.code === 'TriggerMissingRoute', `${label} 形态必须报 TriggerMissingRoute`)
+    } finally { rmSync(dst, { recursive: true, force: true }) }
+  }
+})
+
+test('TC-034 seats/ 下的非文件条目（名为 x.json 的目录 / 散文件）→ 拒载 InvalidInputPath', () => {
+  const dst = copyData()
+  try {
+    mkdirSync(join(dst, 'seats', 'zz-probe.json'))              // 目录冒充席文件：旧实现会 EISDIR 裸错
+    writeFileSync(join(dst, 'seats', 'zz-probe.md'), 'stray\n') // 散文件
+    assert.throws(() => loadSeatData(dst), (e) => e.code === 'InvalidInputPath' && (e.entries || []).length === 2)
   } finally { rmSync(dst, { recursive: true, force: true }) }
 })
