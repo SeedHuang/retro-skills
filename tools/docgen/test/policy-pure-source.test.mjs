@@ -965,11 +965,12 @@ test('S6-TC-E03 23 项清单副本收敛到「定义层 1 处 + 承载该段的�
     // 与 testcase:1952 的唯一偏差：`tools/docgen/fixtures/` 的基线与黄金快照与 `git show <改造前>:agents/<席>.md`
     // 同类（都是**改造前**的取证物，spec:169 步骤 0），不是「活跃策略副本」；不排除会让副本集合恒多 2 项
     .filter((f) => !f.startsWith('tools/docgen/fixtures/'));
-  // S-A 数据层（spec 2026-11-03 §10.2.9 第 12 处）后「承载该段的产物」多了两个席 JSON：
-  // 席 JSON 就是卡面文本的源，删掉它们判据会变成「不看源、只看产物」= 判别力下降
+  // S-A 数据层（T3）后回到原 3 项：T1 曾把「渲染结果」抄进席 JSON（boundary 落进
+  // `data/seats/{reviewer-audit,detective-observer}.json`），使期望集临时变成 5；T3 用薄壳切回后，
+  // boundary 的唯一源重新是定义层（经 `boundaryBySeat` / `renderBoundary` 派生，席 JSON 不存它），
+  // 故承载该段的产物又回到「2 张卡面 + 定义层」——副本数降回 3 即单源被恢复的证据。
   assert.deepEqual(listCopies(ROOT, files).sort(), [
     'agents/detective-observer.md', 'agents/reviewer-audit.md',
-    'tools/docgen/data/seats/detective-observer.json', 'tools/docgen/data/seats/reviewer-audit.json',
     'tools/docgen/policy/definitions/paths.mjs']);
   // spec:210 的「spec 0 条手抄」：本 spec 自身不得内联整份清单（定向单文件，不把 docs/ 并入扫描面）
   assert.deepEqual(listCopies(ROOT, [S6_SPEC]), [], 'S6 spec 自身内联了整份路径清单（应只引用定义层）');

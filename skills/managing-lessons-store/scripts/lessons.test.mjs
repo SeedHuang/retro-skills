@@ -1760,12 +1760,19 @@ function isRecordTranscript(file) {
  *
  *  @param {string[]} mdFiles 参与校对的 md 绝对路径
  *  @param {string} root 报错信息里相对化的基准（fixture 用临时目录）
- *  @returns {{checked:number, anchored:number, missing:string[], ambiguous:string[], skipped:number}}
+ *  @returns {{checked:number, anchored:number, missing:string[], ambiguous:string[], skipped:number, structSkipped:number}}
  */
+// **结构替换豁免（2026-11-03）**：文件被「降级 / 搬空」后，历史件（PRD / spec / plan / handoff）里的行号引用
+// 指向的是它**曾经的**内容（现已迁到别处）——按新行数校验既无意义，又会逼着人去改写已签结论。
+// 每条必须带「生效日期 + 迁去哪」；新增条目要在当次计划的「执行记录」里点名（防静默增员）。
+const STRUCT_REPLACED = {
+  'tools/docgen/components/agentData.mjs': '2026-11-03 S-A T3：327 行字面降为 8 行薄壳；数据迁 tools/docgen/data/seats/*.json、装配迁 seatLoader.mjs',
+}
 function scanLineRefs(mdFiles, root = REPO_ROOT) {
   let checked = 0
   let anchored = 0
   let skipped = 0                           // 被豁免的记录型 transcript 份数（要打印出来，避免「静默漏扫」）
+  let structSkipped = 0                     // 被结构替换豁免的行号引用条数（同样要打印，防静默漏扫）
   const missing = []                        // 找不到目标文件的引用（报错要能指到是哪条）
   const ambiguous = []                      // 重名多处（修法与「找不到」不同，单列）
   for (const f of mdFiles) {
@@ -1808,6 +1815,9 @@ function scanLineRefs(mdFiles, root = REPO_ROOT) {
       // 定位不到（文件被改名 / 重名多处）曾 `continue` 静默跳过——那条引用就悄悄不校验了。
       // 改成**计数并在末尾断言为 0**，让「跳过」与「通过」可区分（2026-10-08 OCR 指出）。
       if (!abs) continue
+      // 结构替换豁免：该文件已被降级 / 搬空，历史件的行号指向它**曾经**的内容 → 不按新行数校验
+      const rel = relative(root, abs).split('\\').join('/')
+      if (Object.prototype.hasOwnProperty.call(STRUCT_REPLACED, rel)) { structSkipped++; continue }
       const lines = readFileSync(abs, 'utf8').split(/\r?\n/)
       const ln = Number(m[2])
       assert.ok(ln <= lines.length, `${relative(root, f)} 引用 ${ref} 第 ${ln} 行，但该文件只有 ${lines.length} 行——行号漂移了`)
@@ -1835,16 +1845,16 @@ function scanLineRefs(mdFiles, root = REPO_ROOT) {
       anchored++
     }
   }
-  return { checked, anchored, missing, ambiguous, skipped }
+  return { checked, anchored, missing, ambiguous, skipped, structSkipped }
 }
 
 test('守卫：文档里的「<名>.mjs 第 N 行」引用，行号必须仍有效（防行号漂移）', () => {
   // 扫全仓 md（行号引用可能出现在 skills / docs / README 任意处）
   const { walk, scan } = makeScanner()
   const mds = walk(REPO_ROOT, ['.md'])   // `.git` / `node_modules` 等跳过目录由 makeScanner 处理，不事后filter
-  const { checked, anchored, missing, ambiguous, skipped } = scanLineRefs(mds, REPO_ROOT)
+  const { checked, anchored, missing, ambiguous, skipped, structSkipped } = scanLineRefs(mds, REPO_ROOT)
   // 豁免的份数必须打印：否则「少扫了」与「扫了没发现」看起来一样，正是这条守卫反复踩的病根
-  console.log(`  [行号守卫] 校对 ${checked} 处、锚定 ${anchored} 处；跳过 ${skipped} 份记录型文件（*-transcript.md / userconversation.md，内容不改，见 docs-convention 硬约束 4）`)
+  console.log(`  [行号守卫] 校对 ${checked} 处、锚定 ${anchored} 处；跳过 ${skipped} 份记录型文件（*-transcript.md / userconversation.md，内容不改，见 docs-convention 硬约束 4）；结构替换豁免 ${structSkipped} 处（被降级/搬空的文件，见 STRUCT_REPLACED）`)
   // 只打印不断言 = 豁免逻辑被改坏（后缀写错 / 恒 false）时仍全绿（2026-10-24 代码审查问题 3）。
   // 期望值用**字面后缀**独立算，不复用 `isRecordTranscript`——否则 helper 改坏时两边一起错、断言恒真。
   const recordMds = mds.filter((f) => {

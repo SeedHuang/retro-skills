@@ -5,8 +5,10 @@ import assert from 'node:assert/strict'
 import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { spawnSync } from 'node:child_process'
 import { expandRefs, loadSeatData } from '../components/seatLoader.mjs'
 import { CARD_KEYS, buildCards } from '../components/cardPipeline.mjs'
+import { runCli, withRepoCopy } from './support/dev-workflow-checks.mjs'
 
 const DATA = 'tools/docgen/data'
 const SEATS = `${DATA}/seats`
@@ -183,4 +185,87 @@ test('TC-034 seats/ 下的非文件条目（名为 x.json 的目录 / 散文件�
     writeFileSync(join(dst, 'seats', 'zz-probe.md'), 'stray\n') // 散文件
     assert.throws(() => loadSeatData(dst), (e) => e.code === 'InvalidInputPath' && (e.entries || []).length === 2)
   } finally { rmSync(dst, { recursive: true, force: true }) }
+})
+
+test('TC-035 席序与文件集不等（缺席 / 多出）→ 拒载 InvalidInputPath 并点名 absent / unknown', () => {
+  const forms = [
+    ['absent', (dst) => rmSync(join(dst, 'seats', 'reviewer-reader.json')),
+      (e) => (e.absent || []).includes('reviewer-reader')],
+    ['unknown', (dst) => writeFileSync(join(dst, 'seats', 'zz-probe.json'), JSON.stringify({ name: 'zz-probe' })),
+      (e) => (e.unknown || []).includes('zz-probe')],
+  ]
+  for (const [label, mutate, extra] of forms) {
+    const dst = copyData()
+    try {
+      mutate(dst)
+      assert.throws(() => loadSeatData(dst), (e) => e.code === 'InvalidInputPath' && extra(e),
+        `${label} 形态必须报 InvalidInputPath 并点名`)
+    } finally { rmSync(dst, { recursive: true, force: true }) }
+  }
+})
+
+test('TC-030 坏数据在 import 期即 fail-closed（干净 exit 0；悬空引用 exit 1 + 码名）', () => {
+  const code = "import('./tools/docgen/components/agentData.mjs').then(()=>process.exit(0),e=>{console.error(e.code);process.exit(1)})"
+  const ok = spawnSync(process.execPath, ['-e', code], { encoding: 'utf8' })
+  assert.equal(ok.status, 0, `干净数据下 import 应成功，实得 ${ok.status}：${ok.stderr}`)
+  withRepoCopy((dst) => {
+    rewrite(dst, join('tools', 'docgen', 'data', 'seats', 'reviewer-product.json'),
+      (j) => { j.card.duty.constraint = '@noSuchKey' })   // 悬空引用：必须在 import 期抛，而不是等到渲染
+    const bad = spawnSync(process.execPath, ['-e', code], { cwd: dst, encoding: 'utf8' })
+    assert.equal(bad.status, 1, bad.stdout + bad.stderr)
+    assert.match(bad.stderr, /DanglingSharedRef/)
+  })
+})
+
+test('TC-005 拆 JSON 后 15 席 disk == render、gate exit 0', () => {
+  const r = spawnSync(process.execPath, ['tools/docgen/cli.mjs', 'gate'], { encoding: 'utf8' })
+  assert.equal(r.status, 0, r.stdout + r.stderr)
+})
+
+test('TC-017 值类型漂移（`duty.action` 句子 → 数字）→ gate exit 1 `Mismatch`', () => {
+  withRepoCopy((dst) => {
+    rewrite(dst, join('tools', 'docgen', 'data', 'seats', 'reviewer-product.json'),
+      (j) => { j.card.duty.action = 1 })                  // 句子 → 数字：渲染文本必变
+    const r = runCli(dst, ['gate'])
+    assert.equal(r.status, 1, r.stdout + r.stderr)
+    assert.match(r.stdout + r.stderr, /Mismatch/)
+  })
+})
+
+test('TC-018 改了 seats/*.json 未重生成 agents/*.md → gate exit 1 `Mismatch`', () => {
+  withRepoCopy((dst) => {
+    rewrite(dst, join('tools', 'docgen', 'data', 'seats', 'reviewer-product.json'),
+      (j) => { j.card.duty.action = `${j.card.duty.action}。` })   // 加一个句号：值合法、渲染变
+    const r = runCli(dst, ['gate'])
+    assert.equal(r.status, 1, r.stdout + r.stderr)
+    assert.match(r.stdout + r.stderr, /Mismatch/)
+  })
+})
+
+test('TC-007 装配点唯一：`tools: toolsForSeat(s.name)` 恰 1 处，`...s` 紧随其后（薄壳零装配式）', () => {
+  const src = readFileSync('tools/docgen/components/seatLoader.mjs', 'utf8')
+  const hits = [...src.matchAll(/tools:\s*toolsForSeat\(\s*s\.name\s*\)/g)]
+  assert.equal(hits.length, 1, '装配式必须恰 1 处（正则与 S5-TC-D10 同一形态）')
+  const j = src.indexOf('...s', hits[0].index)
+  assert.ok(j > hits[0].index && j - hits[0].index < 400, '...s 必须紧随其后（不再允许等价写法）')
+  const shell = readFileSync('tools/docgen/components/agentData.mjs', 'utf8')
+  assert.equal([...shell.matchAll(/toolsForSeat\(/g)].length, 0, '薄壳里不得有装配式')
+})
+
+test('TC-026 薄壳必须先 import seatLoader（本地绑定，card-render 的 INJECT_BAD 依赖）', () => {
+  const shell = readFileSync('tools/docgen/components/agentData.mjs', 'utf8')
+  assert.ok(/^import .*seatLoader\.mjs/m.test(shell), '薄壳必须先 import（不得用纯再导出）')
+})
+
+test('TC-029 notWhen 拼接丢失（`descriptionOf` 丢 notWhen）→ gate exit 1，点名 senior-sdet', () => {
+  withRepoCopy((dst) => {
+    const p = join(dst, 'tools', 'docgen', 'components', 'cardPipeline.mjs')
+    const src = readFileSync(p, 'utf8')
+    const patched = src.replace('const notWhen = t.notWhen', "const notWhen = ''")
+    assert.notEqual(patched, src, '注入必须命中（notWhen 分支仍在 descriptionOf 里）')
+    writeFileSync(p, patched)
+    const r = runCli(dst, ['gate'])
+    assert.equal(r.status, 1, r.stdout + r.stderr)
+    assert.match(r.stdout + r.stderr, /senior-sdet/)
+  })
 })

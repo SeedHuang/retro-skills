@@ -127,12 +127,12 @@ test('TC-D02 agents/ 下文件恰为 agentPaths()（无凭空手写卡）', () =
 
 test('TC-D06 触发条件被改 → gate 报 Mismatch（exit 1）', () => {
   withRepoCopy((dst) => {
-    // S4 收口后 description = trigger.when 直出：改 triggerTable 的 when 即可造出「渲染 ≠ 盘上」；
-    // 必须精确改到 triggerTable 块（同一 when 文本也出现在 card.duty.trigger，裸替换会改错目标）
-    const p = join(dst, 'tools', 'docgen', 'components', 'agentData.mjs');
+    // S-A 数据层（T3）：when 的唯一源 = `seats/senior-sdet.json` 的 `trigger.when`（旧 `agentData.mjs` 字面已退场）；
+    // 该席 `card.duty.trigger` 恒为空串，故这处子串在数据里只出现 1 次，裸替换即命中唯一源
+    const p = join(dst, 'tools', 'docgen', 'data', 'seats', 'senior-sdet.json');
     const t = readFileSync(p, 'utf8');
-    const patched = t.replace(/(  'senior-sdet': \{\n    when: ')[^']*(')/, "$1当需要为 PRD/spec 设计并编写测试用例（testcase.md），或专门找出被忽视的边界与失败情形$2");
-    assert.notEqual(patched, t, '构造前提：能改到 senior-sdet 的 triggerTable.when');
+    const patched = t.replace('或专门找出被忽视的边界与失败场景', '或专门找出被忽视的边界与失败情形');
+    assert.notEqual(patched, t, '构造前提：能改到 senior-sdet 的 trigger.when');
     writeFileSync(p, patched);
     const r = runCli(dst, ['gate']);
     assert.equal(r.status, 1, r.stdout + r.stderr);
@@ -141,24 +141,10 @@ test('TC-D06 触发条件被改 → gate 报 Mismatch（exit 1）', () => {
 });
 
 test('TC-E05 手写卡绕过生成器 → gate 非 0，明细含 UnregisteredHandwritten', () => {
-  // 构造 A：把条目从 agentData 与 triggerTable 一并删掉（卡仍在原路径）→ 该卡变成「无人登记的手写卡」
-  withRepoCopy((dst) => {
-    const p = join(dst, 'tools', 'docgen', 'components', 'agentData.mjs');
-    const t = readFileSync(p, 'utf8');
-    const s = t.indexOf('  // 阅读取证员');
-    const e = t.indexOf('  // translation-self-check');
-    assert.ok(s > -1 && e > s, '构造前提：能找到 evidence-reader 条目块');
-    let patched = t.slice(0, s) + t.slice(e);
-    const withTrigger = patched;
-    patched = patched.replace(/\n  'evidence-reader': \{\n    when: '[^']*',\n    route: 'evidence-reader',\n  \},/, '');
-    assert.notEqual(patched, withTrigger, '构造前提：能删到 triggerTable 条目');
-    writeFileSync(p, patched);
-    const g = runCli(dst, ['gate']);
-    assert.notEqual(g.status, 0, '绕过生成器必须非 0');
-    const detail = runEsm(dst, "import {collectGate} from './tools/docgen/cli.mjs'; console.log(collectGate().map(d=>d.code+':'+d.path).join('|'))");
-    assert.ok(detail.stdout.includes('UnregisteredHandwritten:agents/evidence-reader.md'), detail.stdout + detail.stderr);
-  });
-  // 构造 B：另加一个手写文件
+  // 构造 A（原「从 agentData 与 triggerTable 一并删掉条目 → 该卡无人登记」）**已随数据层退场**：
+  // `seatLoader` 读盘前即断言 `SEAT_ORDER` ↔ `seats/*.json` 双向恰等（不等 → `InvalidInputPath`），
+  // 「有卡无登记」这种构造在数据源上已不可做出（删文件会被形状判据截胡、probe 也跑不到 collectGate）。
+  // 因此本用例只保留构造 B；判据（手写卡必须被 UnregisteredHandwritten 拦下）语义不变。
   withRepoCopy((dst) => {
     writeFileSync(join(dst, 'agents', 'ghost-handwritten.md'), '# 手写卡\n');
     const r = runCli(dst, ['gate']);

@@ -85,7 +85,7 @@ node -e "const L=require('fs').readFileSync('tools/docgen/components/agentData.m
 | `card` | 只写 **8 键**：`duty` / `scenes` / `signals` / `must` / `never` / `categories` / `checkItems` / `rationale`。**`seat` / `name` / `description` / `tools` 四键不得写**（前三者派生、`tools` 由档位表给；写了会被 `...s` 静默覆盖） |
 | `trigger` | `{ when, route, notWhen?, kind? }`。加载期被拆出组装成 `triggerTable[<seat>]`；条目本身不含该键 → `BASE_KEYS` 白名单（`validateAgentData.mjs:105`）与断言 15 不动 |
 | `card.duty.trigger` | **必须留键、值恒为空串**（D-a）。非空串 → 拒载，报 `TriggerFieldMisplaced`（exit 1，点名席） |
-| `boundary` / `explorePolicy` / `domain` | 仅现已有这三键的席保留，语义不变 |
+| `boundary` / `explorePolicy` / `domain` | 仅现已有这三键的席保留，语义不变。**`2026-11-03` T3 补登**：`boundaryBySeat` 提供句子的三席（`reviewer-audit` / `detective-observer` / `senior-sdet`）**不在席 JSON 里存 `boundary`**——唯一源 = policy 定义层（经 `renderBoundary` / `SDET_BOUNDARY` 派生）；只有 `evidence-reader` 的自带句仍留在 JSON（它不在 `boundaryBySeat`）。T1 导出时曾把渲染结果抄进 JSON，导致定义层失单源（`S6-TC-D02/E01/G05` 三条实红后改回） |
 
 ### 10.2.3 `@` 语法
 
@@ -179,7 +179,7 @@ S-A 的验收 = V4 / V5 / V10（PRD §8 S-A 行）。`when` 里的 `PRD/spec/pla
 | `test/card-render.test.mjs:154-159` | `INJECT_BAD` 把 `;(agentData[0].card.must[0].criterion = …)` **追加到 `agentData.mjs` 文件尾**，要求该模块作用域内有 `agentData` 本地绑定 | **薄壳必须先 `import` 再 `export`**（见 §10.2.5 第 7 步），不得用纯再导出 `export { agentData } from './seatLoader.mjs'`；否则追加语句 `ReferenceError`，多个 S4 用例整片红 |
 | `test/dev-workflow-counts.test.mjs:148` | `indexOf('  // 阅读取证员')`（与 `:149` 的 `translation-self-check` 同属一个切块构造，两处注释都依赖 `agentData.mjs` 源文本） | 与 `:146-155` 同一条处置：按 `seats/*.json` 的键路径切块，或随注释一起退役 |
 | `acceptance/replace-scenarios.mjs:14`、`:79` | `patch()` helper 把文本替换进 `agentData.mjs` 源文本。**不是死 helper**（`2026-11-03` 计划门 P1-2 实测改判）：`:196` / `:219` / `:232` / `:258` 四处调用 | 处置 = 把 `:14` 的 `DATA` 常量改指 `tools/docgen/data/seats/senior-sdet.json`（`WHEN_OLD` 那时住 `trigger.when`，命中 1），**四处调用保留**，不得删函数留 4 个断头。已知债（不在本段修，登记触发 = 下次修该验收脚本）：`:196` / `:219` 注入的 `改动 = 改组件数据 → …` 句在数据里 0 命中，属 acceptance 既有 `9/11 红` 那笔账 |
-| `test/policy-pure-source.test.mjs` 的 `S6-TC-E03`（`:953-976`） | 「23 项路径清单副本收敛到 定义层 1 处 + 承载该段的产物」的**期望文件集**恰 3 项 | **T1 施工期实测新增（计划门未预见）**：数据层拆 JSON 后，承载同一段文本的产物多了 `tools/docgen/data/seats/detective-observer.json` 与 `…/reviewer-audit.json`（席 JSON 就是卡面文本的源）→ 期望集补这 2 项 = **5 项**；判据语义不变（仍收敛到「定义层 1 + 承载产物 N」，删源文件反而会降判别力）。**不得**改成「排除 `tools/docgen/data/`」——那等于让探针不看源 |
+| `test/policy-pure-source.test.mjs` 的 `S6-TC-E03`（`:953-976`） | 「23 项路径清单副本收敛到 定义层 1 处 + 承载该段的产物」的**期望文件集**恰 3 项 | **T1 施工期实测新增（计划门未预见）**：数据层拆 JSON 后，承载同一段文本的产物多了 `tools/docgen/data/seats/detective-observer.json` 与 `…/reviewer-audit.json`（席 JSON 就是卡面文本的源）→ 期望集补这 2 项 = **5 项**。**`2026-11-03` T3 补登（改回 3 项）**：`boundary` 的唯一源回到定义层（见 §10.2.2 本条上一行），席 JSON 不再承载该段 → 期望集恢复 **3 项**（2 张卡面 + 定义层）；副本数降回 3 正是「单源已恢复」的判据。**不得**改成「排除 `tools/docgen/data/`」——那等于让探针不看源 |
 
 ### 10.2.10 本节已定的四条口径（testcase 作者提出的歧义，此处给答复）
 

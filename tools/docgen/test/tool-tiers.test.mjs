@@ -143,7 +143,7 @@ test('S5-TC-A04 三席字面档位 + 每席 tools 落在已知档位 + 未挂载
 });
 
 test('S5-TC-A05 代码探针：两文件只调 toolsForSeat，不直接读档位表', () => {
-  const agentSrc = readRepo('tools/docgen/components/agentData.mjs');
+  const agentSrc = readRepo('tools/docgen/components/seatLoader.mjs');
   const valSrc = readRepo('tools/docgen/components/validateAgentData.mjs');
   assert.ok(agentSrc.includes('toolsForSeat('));
   assert.ok(valSrc.includes('toolsForSeat('));
@@ -397,7 +397,7 @@ test('S5-TC-B08 真实 agentData 的 producer 席 boundary 等于渲染结果', 
 test('S5-TC-B09 B3 pending → 拒写盘；写回 pass 后落盘；rejudge-<席>-B3.md 四字段', () => {
   withRepoCopy((dst) => {
     // 只改审计席的渲染（新卡的本席清单条目），保证 target 盘上 ≠ 渲染、旁席不受影响
-    patchFile(dst, 'tools/docgen/components/agentData.mjs', "'审计席卡：卡片合规核对'", "'审计席卡：卡片合规核对·B09'");
+    patchFile(dst, 'tools/docgen/data/seats/reviewer-audit.json', '审计席卡：卡片合规核对', '审计席卡：卡片合规核对·B09');
     assert.equal(runCli(dst, ['draft', '--kind', 'agent', '--name', 'reviewer-audit']).status, 0);
     const draftsDir = join(dst, '.drafts');
     const draftName = readdirSync(draftsDir).find((f) => f.startsWith('reviewer-audit--'));
@@ -447,7 +447,7 @@ test('S5-TC-B09 B3 pending → 拒写盘；写回 pass 后落盘；rejudge-<席>
 
 test('S5-TC-B10 缺 DOCGEN_JUDGED_BY → UnapprovedChange exit 4 且不写盘', () => {
   withRepoCopy((dst) => {
-    patchFile(dst, 'tools/docgen/components/agentData.mjs', "'审计席卡：卡片合规核对'", "'审计席卡：卡片合规核对·B10'");
+    patchFile(dst, 'tools/docgen/data/seats/reviewer-audit.json', '审计席卡：卡片合规核对', '审计席卡：卡片合规核对·B10');
     assert.equal(runCli(dst, ['draft', '--kind', 'agent', '--name', 'reviewer-audit']).status, 0);
     const draftsDir = join(dst, '.drafts');
     const draftPath = join(draftsDir, readdirSync(draftsDir).find((f) => f.startsWith('reviewer-audit--')));
@@ -607,9 +607,9 @@ test('S5-TC-C08 只生成一席草稿 → 旁席 Mismatch 挡住 replace', () =>
   withRepoCopy((dst) => {
     // 前提：target 盘上必须 ≠ 渲染（否则先撞幂等短路 exit 0，见 cli.mjs:425-432）
     // S4 Task 7：reviewer-audit 的渲染输入已是 `card`（旧 identity/fixedList 已删）→ 漂移必须改 card 字段
-    patchFile(dst, 'tools/docgen/components/agentData.mjs', '只审各项标准是否达到，不裁技术对错', '只审各项标准是否达到（B），不裁技术对错');
+    patchFile(dst, 'tools/docgen/data/seats/reviewer-audit.json', '只审各项标准是否达到，不裁技术对错', '只审各项标准是否达到（B），不裁技术对错');
     // S4 迁移（Task 5）：detective-observer 的渲染输入已是 `card`（不再读 fixedList）→ 旁席漂移必须改 card 字段
-    patchFile(dst, 'tools/docgen/components/agentData.mjs', '只记录不裁决；观察记录原文进最终报告', '只记录不裁决（B）；观察记录原文进最终报告');
+    patchFile(dst, 'tools/docgen/data/seats/detective-observer.json', '只记录不裁决；观察记录原文进最终报告', '只记录不裁决（B）；观察记录原文进最终报告');
     assert.equal(runCli(dst, ['draft', '--kind', 'agent', '--name', 'reviewer-audit']).status, 0);
     const draftsDir = join(dst, '.drafts');
     const draftPath = join(draftsDir, readdirSync(draftsDir).find((f) => f.startsWith('reviewer-audit--')));
@@ -703,7 +703,7 @@ test('S5-TC-D09 tools 冻结后 validate / render 不抛，档位数组长度不
 });
 
 test('S5-TC-D10 条目自带 tools 的展开顺序后门：...s 在 tools 之后 + 外来 tools 被拒', () => {
-  const src = readRepo('tools/docgen/components/agentData.mjs');
+  const src = readRepo('tools/docgen/components/seatLoader.mjs');
   const hits = [...src.matchAll(/tools:\s*toolsForSeat\(\s*s\.name\s*\)/g)];
   assert.equal(hits.length, 1, '`tools: toolsForSeat(s.name)` 必须恰 1 处（空白归一后）');
   const i = hits[0].index;

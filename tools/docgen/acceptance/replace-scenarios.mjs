@@ -11,7 +11,9 @@ import assert from 'node:assert/strict';
 import { renderByName } from '../cli.mjs';
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
-const DATA = 'tools/docgen/components/agentData.mjs';
+// S-A 数据层（T3）：`patch()` 的注入目标由 `agentData.mjs` 源文本改指席 JSON（spec §10.2.9 第 11 处；
+// `WHEN_OLD` 现住该席 `trigger.when`，命中数仍须恰 1）。**四处 `patch()` 调用一律保留**，不删 helper。
+const DATA = 'tools/docgen/data/seats/senior-sdet.json';
 // 造「description 一行变化」用的数据锚点（当前 when 原文 → 删一个词）。
 // 用常量集中管理：数据再改时这里会因「命中数 ≠ 1」当场红，而不是静默改成没变化的场景。
 const WHEN_OLD = '当需要为 PRD/spec 设计并编写测试用例（testcase.md），或专门找出被忽视的边界与失败场景';
