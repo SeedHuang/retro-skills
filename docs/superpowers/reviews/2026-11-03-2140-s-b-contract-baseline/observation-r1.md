@@ -3,9 +3,9 @@
 
 | 编号 | 结论 | 依据/理由 |
 |---|---|---|
-| k01 | 命中 | tools/docgen/components/outputFormats.mjs:34「'问题描述', '证据', '严重级别'」 |
-| k02 | 命中 | agents/reviewer-audit.md:11「关注类别：卡片合规、级别匹配、答辩合规、计数一致」 |
-| k03 | 命中 | agents/reviewer-audit.md:96「逐项点名：\`代码\`、\`测试\`」 |
+| k01 | 命中 | tools/docgen/components/outputFormats.mjs:9「fields: ['原文摘句', '文件 + 行号', '用途'],」 |
+| k02 | 命中 | tools/docgen/card-model/enums.mjs:96「export const SCAN_FIELDS = Object.freeze({」 |
+| k03 | 命中 | tools/docgen/card-model/validateCardModel.mjs:17「export const CARD_MODEL_CODES = Object.freeze({」 |
 
 ## 补充项
 

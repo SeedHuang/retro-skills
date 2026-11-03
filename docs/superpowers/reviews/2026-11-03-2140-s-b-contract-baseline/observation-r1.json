@@ -7,26 +7,26 @@
       "verdict": "hit",
       "evidence": {
         "path": "tools/docgen/components/outputFormats.mjs",
-        "line": 34,
-        "quote": "'问题描述', '证据', '严重级别'"
+        "line": 9,
+        "quote": "fields: ['原文摘句', '文件 + 行号', '用途'],"
       }
     },
     {
       "id": "k02",
       "verdict": "hit",
       "evidence": {
-        "path": "agents/reviewer-audit.md",
-        "line": 11,
-        "quote": "关注类别：卡片合规、级别匹配、答辩合规、计数一致"
+        "path": "tools/docgen/card-model/enums.mjs",
+        "line": 96,
+        "quote": "export const SCAN_FIELDS = Object.freeze({"
       }
     },
     {
       "id": "k03",
       "verdict": "hit",
       "evidence": {
-        "path": "agents/reviewer-audit.md",
-        "line": 96,
-        "quote": "逐项点名：`代码`、`测试`"
+        "path": "tools/docgen/card-model/validateCardModel.mjs",
+        "line": 17,
+        "quote": "export const CARD_MODEL_CODES = Object.freeze({"
       }
     }
   ],
