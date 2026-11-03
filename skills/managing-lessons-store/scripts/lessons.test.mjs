@@ -1766,7 +1766,7 @@ function isRecordTranscript(file) {
 // 指向的是它**曾经的**内容（现已迁到别处）——按新行数校验既无意义，又会逼着人去改写已签结论。
 // 每条必须带「生效日期 + 迁去哪」；新增条目要在当次计划的「执行记录」里点名（防静默增员）。
 const STRUCT_REPLACED = {
-  'tools/docgen/components/agentData.mjs': '2026-11-03 S-A T3：327 行字面降为 8 行薄壳；数据迁 tools/docgen/data/seats/*.json、装配迁 seatLoader.mjs',
+  'tools/docgen/components/agentData.mjs': '2026-11-03 S-A T3：327 行字面降为 9 行薄壳；数据迁 tools/docgen/data/seats/*.json、装配迁 seatLoader.mjs',
 }
 function scanLineRefs(mdFiles, root = REPO_ROOT) {
   let checked = 0
