@@ -6,16 +6,6 @@
   "card": {
     "duty": {
       "trigger": "",
-      "categories": [
-        "引用闭环",
-        "触发条件",
-        "机器可判定",
-        "上下文预算",
-        "降级路径",
-        "数字取数",
-        "同措辞守卫",
-        "AI 判定语义"
-      ],
       "action": "资深 AI 领域专家，对提示词工程与指令可执行性有经验直觉",
       "constraint": "@dutyConstraintDefault"
     },

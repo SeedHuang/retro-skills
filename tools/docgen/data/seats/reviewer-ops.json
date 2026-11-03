@@ -6,13 +6,6 @@
   "card": {
     "duty": {
       "trigger": "",
-      "categories": [
-        "安装前置",
-        "诊断入口",
-        "回滚方案",
-        "升级路径",
-        "资源预算"
-      ],
       "action": "资深交付运维专家，对安装部署、诊断与回滚有经验直觉",
       "constraint": "@dutyConstraintDefault"
     },

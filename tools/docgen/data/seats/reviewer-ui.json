@@ -6,13 +6,6 @@
   "card": {
     "duty": {
       "trigger": "",
-      "categories": [
-        "视觉变量",
-        "可访问性",
-        "组件复用",
-        "多端断点",
-        "空载错三态"
-      ],
       "action": "资深 UI 设计专家，对视觉一致性与可访问性有经验直觉",
       "constraint": "@dutyConstraintDefault"
     },

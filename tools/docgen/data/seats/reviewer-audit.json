@@ -6,15 +6,6 @@
   "card": {
     "duty": {
       "trigger": "",
-      "categories": [
-        "卡片合规",
-        "级别匹配",
-        "答辩合规",
-        "计数一致",
-        "轮际对账",
-        "落点真实",
-        "证据复算"
-      ],
       "action": "资深审计专员，只审各项标准是否达到，不裁技术对错，不提新技术问题。",
       "constraint": "@dutyConstraintDefault"
     },

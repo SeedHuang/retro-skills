@@ -21,6 +21,9 @@ const EXIT = {
     // S-A 数据层四码（spec §10.2.6）：唯一发射点 = `components/seatLoader.mjs`（loader 在 import 期
     // fail-closed）；`check-shared-refs.mjs` 只做验收汇总、不新增码。`CARD_MODEL_CODES` 仍 36 码不动。
     'DanglingSharedRef', 'EmptySharedValue', 'NestedSharedRef', 'CardKeySetMismatch',
+    // S-B `duty.categories` 单源（spec §11.2.4）：唯一发射点 = `components/seatLoader.mjs`（同 S-A 四码）；
+    // 只进本表，不进 `CARD_MODEL_CODES`（仍 36 码）。判据不看进程退出码 → 本登记是 `exitCodeFor` 可取值的前提。
+    'DutyCategoryMisplaced',
     // S6 配置校验五码（spec §7）：唯一发射点 = `components/validatePolicy.mjs`；
     // 第六码 `RenderNotEquivalent` 由施工期断言发出、**不进本表**（CLI 不引入）
     'UnknownPolicyRef', 'LiteralInConfig', 'SeatNameInDefinition', 'ForbiddenGroupGranted',

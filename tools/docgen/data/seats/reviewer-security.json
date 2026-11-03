@@ -6,14 +6,6 @@
   "card": {
     "duty": {
       "trigger": "",
-      "categories": [
-        "注入面",
-        "最小权限",
-        "敏感信息",
-        "依赖风险",
-        "破坏性操作",
-        "P0 证据门槛"
-      ],
       "action": "资深安全顾问，对注入面与权限边界有经验直觉",
       "constraint": "@dutyConstraintDefault"
     },

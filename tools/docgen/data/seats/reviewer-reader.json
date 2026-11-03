@@ -6,14 +6,6 @@
   "card": {
     "duty": {
       "trigger": "",
-      "categories": [
-        "任意章节进入",
-        "术语定义",
-        "悬空引用",
-        "结论与猜想",
-        "记录可复算",
-        "状态标注"
-      ],
       "action": "目标读者代表，替「第一次打开这份文档的人」发言",
       "constraint": "@dutyConstraintDefault"
     },

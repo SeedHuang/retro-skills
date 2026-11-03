@@ -95,6 +95,12 @@ export function loadSeatData(dir = dataDir()) {
     if (typeof dt !== 'string') fail('TriggerFieldMisplaced', { name: raw.name, key: 'duty.trigger' })
     if (dt !== '') fail('TriggerFieldMisplaced', { name: raw.name, key: 'duty.trigger', why: '第二来源' })
     s.card.duty.trigger = trigger.when
+    // 同一处、同一趟的第二个装配期派生（S-B spec §11.2.4 / R7）：`duty.categories` 移出数据源，
+    // 注入值 = `card.categories[].label` 逐元素逐字（同序，不做字符串变换）。席文件写了非空值即拒载——
+    // 不拒的话数据里的旧值会被静默覆盖，渲染逐字节相同，`gate` 抓不到。
+    const dc = s.card.duty.categories
+    if (Array.isArray(dc) ? dc.length > 0 : !blank(dc)) fail('DutyCategoryMisplaced', { name: raw.name, key: 'duty.categories' })
+    s.card.duty.categories = s.card.categories.map((c) => c.label)
     // 席文件 card 的键集：恰等 8 键（= CARD_KEYS 去派生四键）；派生四键写了就拒载（spec §10.2.5 第 6 步）
     // `missing` / `extra` 两个字段必须分开给：TC-014 要点名缺的那个键，TC-015 要点名多出来的那个键
     const keys = Object.keys(s.card || {})

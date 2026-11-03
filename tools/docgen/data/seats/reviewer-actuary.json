@@ -6,13 +6,6 @@
   "card": {
     "duty": {
       "trigger": "",
-      "categories": [
-        "数字三性",
-        "数字取数命令",
-        "改造成本量化",
-        "治本对账",
-        "收益量化"
-      ],
       "action": "资深精算师，对数字真实性与成本收益账有经验直觉",
       "constraint": "@dutyConstraintDefault"
     },

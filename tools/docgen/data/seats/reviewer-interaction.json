@@ -6,15 +6,6 @@
   "card": {
     "duty": {
       "trigger": "",
-      "categories": [
-        "打断时机",
-        "无效选项",
-        "错误信息",
-        "加减模式",
-        "静默状态",
-        "脚本消费",
-        "操作反馈"
-      ],
       "action": "资深交互设计专家，对打断成本与状态可见性有经验直觉",
       "constraint": "@dutyConstraintDefault"
     },

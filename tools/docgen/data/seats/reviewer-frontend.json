@@ -6,15 +6,6 @@
   "card": {
     "duty": {
       "trigger": "",
-      "categories": [
-        "平台机制",
-        "脏状态接管",
-        "并发重入",
-        "中断恢复",
-        "读取点合法性",
-        "选型已知坑",
-        "绝对路径"
-      ],
       "action": "资深前端领域专家，H5/小程序/Electron 多端经验，六手法在此执行",
       "constraint": "@dutyConstraintDefault"
     },

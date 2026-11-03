@@ -6,14 +6,6 @@
   "card": {
     "duty": {
       "trigger": "",
-      "categories": [
-        "单元职责",
-        "边界数据流",
-        "外部交互失败",
-        "第二份真相",
-        "字段生命周期",
-        "事务与并发序"
-      ],
       "action": "资深后端领域专家，对数据流、契约与故障传播有经验直觉",
       "constraint": "@dutyConstraintDefault"
     },

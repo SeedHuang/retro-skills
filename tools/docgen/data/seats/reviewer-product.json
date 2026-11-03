@@ -6,15 +6,6 @@
   "card": {
     "duty": {
       "trigger": "",
-      "categories": [
-        "用户旅程",
-        "边界场景",
-        "交付节奏",
-        "逃生路径",
-        "隐含前置",
-        "成功指标",
-        "非目标"
-      ],
       "action": "深耕产品设计 20 年以上的产品专家，对用户旅程与交付节奏有经验直觉",
       "constraint": "@dutyConstraintDefault"
     },

@@ -509,3 +509,139 @@ test('SB-TC-22 FORMAT_CHECKS 变 2 条 / 变 4 条 → 既有冻结断言 S2-TC-
     console.log('checks-count: 3 => ok / 2 => red / 4 => red')
   })
 })
+
+// ── Task 4：`duty.categories` 单源（spec §11.2.4 / §11.1 R7 R8）────────────────────
+// 取数点 = 装配产物（`agentData[i].card`），不是席文件：席文件里该键必须已经不在（源侧由 ① 单独判）。
+const SEATS_REL = join('tools', 'docgen', 'data', 'seats')
+const seatFiles = (base) => readdirSync(join(base, SEATS_REL)).filter((f) => f.endsWith('.json'))
+
+// 同形探针（SB-TC-07 与 SB-TC-34 共用一份实现）：① 读盘判「源里无该键」；② 过 loader 逐席
+// `deepEqual(duty.categories, categories[].label)`（同序逐字，不是长度 / 包含 / 引用相等）。
+// 34 的判别力靠「改注入实现 → 同一条探针出不同数」，故探针不许各写一份。
+const DUTY_PROBE_SRC = [
+  "import { readdirSync, readFileSync } from 'node:fs'",
+  "import { join } from 'node:path'",
+  "import assert from 'node:assert/strict'",
+  "const { agentData } = await import('./tools/docgen/components/agentData.mjs')",
+  "const dir = join('tools', 'docgen', 'data', 'seats')",
+  "const files = readdirSync(dir).filter((f) => f.endsWith('.json'))",
+  "let srcHasKey = 0",
+  "for (const f of files) {",
+  "  const d = JSON.parse(readFileSync(join(dir, f), 'utf8'))",
+  "  if (d.card && d.card.duty && Object.prototype.hasOwnProperty.call(d.card.duty, 'categories')) srcHasKey += 1",
+  "}",
+  "let same = 0",
+  "for (const a of agentData) {",
+  "  try { assert.deepEqual(a.card.duty.categories, a.card.categories.map((c) => c.label)); same += 1 } catch { /* 逐席不等即计入 bad */ }",
+  "}",
+  "const bad = agentData.length - same",
+  "const ok = srcHasKey === 0 && bad === 0 && agentData.length === files.length",
+  "process.stdout.write('seats ' + agentData.length + '/' + files.length + ' / srcHasKey ' + srcHasKey + ' / same ' + same + '/' + agentData.length + ' / bad ' + bad + (ok ? ' => ok' : ' => fail') + '\\n')",
+  "process.exit(ok ? 0 : 1)",
+].join('\n')
+
+test('SB-TC-07 duty.categories 单源：席文件无该键，loader 产物逐席 deepEqual categories[].label', () => {
+  const r = runEsm(ROOT, DUTY_PROBE_SRC)
+  assert.equal(r.status, 0, `席文件仍有该键 / 逐席不等 / 席数不符：${r.stdout}${r.stderr}`)
+
+  const n = seatFiles(ROOT).length
+  assert.match(r.stdout, /srcHasKey 0\b/, r.stdout)
+  assert.match(r.stdout, new RegExp(`same ${n}/${n}(?![0-9])`), r.stdout)
+  assert.match(r.stdout, new RegExp(`seats ${n}/${n}(?![0-9])`), r.stdout)
+  console.log(r.stdout.trim())
+})
+
+// 只判「码已登记且归 1」：未登记时 `exitCodeFor` 抛「未知错误码」→ 判别力就在这里，
+// 进程退出码不能当判据（loader 在 import 期抛，未登记码的进程退出码同样是 1）。
+const EXIT_PROBE_SRC = [
+  "import { exitCodeFor } from './tools/docgen/components/validateAgentData.mjs'",
+  "try { process.stdout.write('exit ' + exitCodeFor('DutyCategoryMisplaced') + '\\n') }",
+  "catch (e) { process.stdout.write('throw ' + e.message + '\\n'); process.exit(2) }",
+].join('\n')
+
+// 子进程 import 触发加载：成功 → stdout `loaded` / exit 0；拒载 → stderr 首行 = 码 + 席 + 键。
+// 首行由探针自己拼（Node 的未捕获异常首行是代码帧，不是错误码），拼的内容全部取自抛出的错误对象。
+const LOAD_PROBE_SRC = [
+  "import('./tools/docgen/components/agentData.mjs').then(",
+  "  () => { process.stdout.write('loaded\\n'); process.exit(0) },",
+  "  (e) => { process.stderr.write(e.code + ' seat=' + (e.name ?? '') + ' key=' + (e.key ?? '') + '\\n'); process.exit(1) },",
+  ").catch((e) => { process.stderr.write('probe-failed ' + e.message + '\\n'); process.exit(3) })",
+].join('\n')
+
+test('SB-TC-20 席文件写非空 duty.categories → DutyCategoryMisplaced exit 1 并点席', () => {
+  withRepoCopy((copy) => {
+    const seat = 'reviewer-audit'
+    const p = join(copy, SEATS_REL, `${seat}.json`)
+    const original = readFileSync(p, 'utf8')
+    const doc = JSON.parse(original)
+    doc.card.duty.categories = ['验收可验证性']
+    writeFileSync(p, `${JSON.stringify(doc, null, 2)}\n`, 'utf8')
+
+    const ex = runEsm(copy, EXIT_PROBE_SRC)
+    assert.equal(ex.status, 0, `exitCodeFor('DutyCategoryMisplaced') 必须可取值（未登记会抛「未知错误码」）：${ex.stdout}${ex.stderr}`)
+    assert.match(ex.stdout, /^exit 1$/m, ex.stdout)
+
+    const bad = runEsm(copy, LOAD_PROBE_SRC)
+    assert.notEqual(bad.status, 0, `非空 duty.categories 必须拒载：${bad.stdout}${bad.stderr}`)
+    const first = (bad.stderr.split(/\r?\n/)[0] ?? '').trim()
+    assert.match(first, /^DutyCategoryMisplaced/, first)
+    assert.ok(first.includes(seat), `stderr 首行必须点席：${first}`)
+
+    // 复原：码表不随数据变，加载不再抛
+    writeFileSync(p, original, 'utf8')
+    const ex2 = runEsm(copy, EXIT_PROBE_SRC)
+    assert.equal(ex2.status, 0, ex2.stdout + ex2.stderr)
+    assert.match(ex2.stdout, /^exit 1$/m, ex2.stdout)
+    const ok = runEsm(copy, LOAD_PROBE_SRC)
+    assert.equal(ok.status, 0, `复原后必须加载成功：${ok.stdout}${ok.stderr}`)
+
+    console.log(`refusal: ${first} / restored: ${ok.stdout.trim()}`)
+  })
+})
+
+test('SB-TC-33 注入而非删除：loader 产物 duty.categories 仍在且仍 8 键，buildCards() 仍 12 键', async () => {
+  const { agentData } = await import('../components/agentData.mjs')
+  const { CARD_KEYS, buildCards } = await import('../components/cardPipeline.mjs')
+
+  const n = seatFiles(ROOT).length
+  assert.equal(agentData.length, n, `loader 席数必须 = 席文件数 ${n}（实得 ${agentData.length}）`)
+
+  const DERIVED = ['seat', 'name', 'description', 'tools']
+  const EIGHT = CARD_KEYS.filter((k) => !DERIVED.includes(k))
+  const diff = (keys, want) => keys.filter((k) => !want.includes(k)).concat(want.filter((k) => !keys.includes(k)))
+
+  const inDuty = agentData.filter((a) => a.card && a.card.duty && 'categories' in a.card.duty
+    && Array.isArray(a.card.duty.categories)).length
+  const loaderKeys8 = agentData.filter((a) => diff(Object.keys(a.card), EIGHT).length === 0).length
+  const built = buildCards()
+  const topKeys12 = built.filter((b) => diff(Object.keys(b.card), CARD_KEYS).length === 0).length
+
+  assert.equal(inDuty, n, `duty.categories 必须仍在（注入而非删除）：${inDuty}/${n}`)
+  assert.equal(loaderKeys8, n, `loader 产物顶层必须恰 8 键（注入只改 duty 内部）：${loaderKeys8}/${n}`)
+  assert.equal(built.length, n, `buildCards() 席数 ${built.length} / ${n}`)
+  assert.equal(topKeys12, n, `消费点必须恰 12 键：${topKeys12}/${n}`)
+  console.log(`inDuty ${inDuty}/${n} / loaderKeys8 ${loaderKeys8}/${n} / topKeys12 ${topKeys12}/${n}`)
+})
+
+test('SB-TC-34 注入值不做字符串变换：加「核对」后缀 → 同形探针逐席不等，判据红', () => {
+  withRepoCopy((copy) => {
+    const p = join(copy, 'tools', 'docgen', 'components', 'seatLoader.mjs')
+    const src = readFileSync(p, 'utf8')
+    const INJECT = 's.card.duty.categories = s.card.categories.map((c) => c.label)'
+    const hits = src.split(INJECT).length - 1
+    assert.equal(hits, 1, `注入实现必须恰 1 处（实得 ${hits}）：${INJECT}`)
+    writeFileSync(p, src.replace(INJECT, "s.card.duty.categories = s.card.categories.map((l) => l + '核对')"), 'utf8')
+
+    const n = seatFiles(copy).length
+    const bad = runEsm(copy, DUTY_PROBE_SRC)
+    assert.notEqual(bad.status, 0, `注入做了字符串变换必须红：${bad.stdout}${bad.stderr}`)
+    assert.match(bad.stdout, new RegExp(`bad ${n}(?![0-9])`), bad.stdout)
+
+    writeFileSync(p, src, 'utf8')
+    const ok = runEsm(copy, DUTY_PROBE_SRC)
+    assert.equal(ok.status, 0, `复原后必须为绿：${ok.stdout}${ok.stderr}`)
+    assert.match(ok.stdout, new RegExp(`same ${n}/${n}(?![0-9])`), ok.stdout)
+
+    console.log(`transform: ${bad.stdout.trim()} / restored: ${ok.stdout.trim()}`)
+  })
+})

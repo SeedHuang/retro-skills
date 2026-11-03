@@ -85,8 +85,8 @@ function dutyBlock(card) {
   const d = card && card.duty && typeof card.duty === 'object' ? card.duty : {}
   const lines = []
   if (d.trigger) lines.push(`触发：${cell(d.trigger)}`)
-  const cats = listOf(d.categories).filter(Boolean)
-  if (cats.length) lines.push(`关注类别：${cats.map(cell).join('、')}`)
+  // `duty.categories` 不再渲染（S-B spec §11.1 R8）：注入后它与「本席清单」上方的 `类别：` 行字面完全相同，
+  // 同卡印两遍是纯冗余。关注点由 `checkTable` 的 `类别：` 行承担。
   if (d.action) lines.push(`动作：${cell(d.action)}`)
   if (d.constraint) lines.push(`约束：${cell(d.constraint)}`)
   return lines.join('\n')

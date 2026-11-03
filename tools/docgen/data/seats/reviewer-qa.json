@@ -6,17 +6,6 @@
   "card": {
     "duty": {
       "trigger": "",
-      "categories": [
-        "验收可验证性",
-        "回归防护",
-        "不可重复场景",
-        "fixture 多样性",
-        "降级验证",
-        "词表覆盖",
-        "误判固化",
-        "判据判别力",
-        "教学样板自检"
-      ],
       "action": "资深测试领域专家，对验收可验证性与测试真实性有经验直觉",
       "constraint": "@dutyConstraintDefault"
     },
