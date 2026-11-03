@@ -261,10 +261,14 @@ test('TC-026 薄壳必须先 import seatLoader（本地绑定，card-render 的 
 
 // T4：在仓副本里只跑 `S1-TC-G09`（`card-model.test.mjs` 在模块顶层读 S1 spec，故副本须补该文件）。
 // `NODE_TEST_CONTEXT` 必须清掉：父进程是 `node --test` 时子进程若继承它，会以测试子进程身份退出 0。
-const ESC_G09 = (dst) => {
+// 副本必须补 S1 spec：`card-model` 的模块顶层要读它，缺文件会让子进程死于 ENOENT（假红）
+const copyS1Spec = (dst) => {
   const rel = join('docs', 'superpowers', 'specs', '2026-10-29-agent-card-s1-card-model-design.md')
   mkdirSync(dirname(join(dst, rel)), { recursive: true })
   cpSync(join(ROOT, rel), join(dst, rel))
+}
+const ESC_G09 = (dst) => {
+  copyS1Spec(dst)
   return spawnSync(process.execPath,
     ['--test', '--test-name-pattern', 'S1-TC-G09', 'tools/docgen/test/card-model.test.mjs'],
     { cwd: dst, encoding: 'utf8', env: { ...process.env, NODE_TEST_CONTEXT: undefined } })
@@ -308,6 +312,11 @@ test('TC-009 `SCAN_FIELDS` 仍 8 键，且 4 个文本码的扫描面含 descrip
   for (const k of WITHOUT) {
     assert.equal(flat(SCAN_FIELDS[k]).includes('description'), false, `${k} 不得含 description`)
   }
+  // ④ 段补测（TC-009 步骤 ④ 的 `ESC` 面）：上面只判扫描面表，判不出「冻结断言仍绿」——补一次复原态
+  withRepoCopy((dst) => {
+    const r = ESC_G09(dst)
+    assert.equal(r.status, 0, `TC-009④ ESC 必须 exit 0（实得 ${r.status}）：${r.stdout}${r.stderr}`)
+  })
 })
 
 // T4-补（代码审查 P2）：注入面按 testcase TC-020 的「前置」走真实派生链 ——
@@ -409,6 +418,9 @@ test('TC-006 policy 删 3 项后 2 卡「逐项点名」行 20 项、兜底句�
       assert.equal(line.includes(w), false, `${seat}: 「逐项点名」行不得残留 ${w}`)
     }
   }
+  // ④ 段补测（TC-006 步骤 ④ 的 `GATE` 面）：行内计数判不出「卡面与渲染一致」，补一次 gate
+  const g = runCli(ROOT, ['gate'])
+  assert.equal(g.status, 0, `TC-006④ GATE 必须 exit 0（实得 ${g.status}）：${g.stdout}${g.stderr}`)
 })
 
 test('TC-025 「逐项点名」行三项 0 命中；全卡 `lessons/` 恰 2 且都落在「检测限度」行', () => {
@@ -438,4 +450,84 @@ test('TC-028 基线两处：evidence.renderSha256 == 盘上哈希（逐席）+ 2
   const baseline = JSON.parse(readFileSync(join('tools', 'docgen', 'baseline.json'), 'utf8'))
   assert.ok(Array.isArray(baseline), 'baseline.json 应只装路径清单（数组）')
   assert.equal(baseline.filter((p) => /sha256|hash/i.test(String(p))).length, 0, 'baseline.json 不得含哈希字段')
+})
+
+// ④ 段补测（TC-011/012/013/016 的 `REFS` 面）：testcase 明写执行面 = `COPY` + `REFS`（`check-shared-refs.mjs`），
+// 且 TC-013 写明「不得对纯函数 `expandRefs` 单点断言」——上面那个块只做纯函数面，这里按明写执行面补测。
+const DATA_OF = (dst) => join(dst, 'tools', 'docgen', 'data')
+const REFS = (dst) => {
+  copyS1Spec(dst)   // 与 ESC_G09 同因：`card-model` 顶层读 S1 spec，副本缺它必 ENOENT
+  return spawnSync(process.execPath, ['tools/docgen/check-shared-refs.mjs'], { cwd: dst, encoding: 'utf8' })
+}
+
+test('TC-011（REFS 面）悬空整值引用 → check-shared-refs exit 1，输出含码名 / 键 / 席', () => {
+  withRepoCopy((dst) => {
+    rewrite(DATA_OF(dst), join('seats', 'reviewer-product.json'), (j) => { j.card.duty.constraint = '@noSuchKey' })
+    const r = REFS(dst)
+    assert.equal(r.status, 1, `REFS 必须 exit 1（实得 ${r.status}）：${r.stdout}${r.stderr}`)
+    for (const s of ['DanglingSharedRef', 'noSuchKey', 'reviewer-product']) {
+      assert.ok(r.stdout.includes(s), `输出必须含 ${s}：${r.stdout}`)
+    }
+  })
+})
+
+test('TC-012（REFS 面）共享段互引 → NestedSharedRef exit 1，且 10 秒内返回', () => {
+  withRepoCopy((dst) => {
+    rewrite(DATA_OF(dst), 'shared.json', (j) => {
+      j.dutyConstraintDefault = '${@cardRationaleHead}'
+      j.cardRationaleHead = '${@dutyConstraintDefault}'
+    })
+    const t0 = Date.now()
+    const r = REFS(dst)
+    const ms = Date.now() - t0
+    assert.equal(r.status, 1, `REFS 必须 exit 1（实得 ${r.status}）：${r.stdout}${r.stderr}`)
+    assert.match(r.stdout, /NestedSharedRef/, `输出必须点嵌套码：${r.stdout}`)
+    assert.ok(ms < 10000, `必须 10 秒内返回（实得 ${ms}ms）`)
+  })
+})
+
+test('TC-013（REFS 面）shared 侧嵌套 / seat 侧整值+插值混用 → 两者都 NestedSharedRef', () => {
+  withRepoCopy((dst) => {
+    rewrite(DATA_OF(dst), 'shared.json', (j) => { j.cardRationaleHead = '@dutyConstraintDefault' })
+    const r = REFS(dst)
+    assert.equal(r.status, 1, `REFS 必须 exit 1（实得 ${r.status}）：${r.stdout}${r.stderr}`)
+    assert.match(r.stdout, /NestedSharedRef/, `输出必须点嵌套码：${r.stdout}`)
+    assert.match(r.stdout, /cardRationaleHead/, `输出必须点键名：${r.stdout}`)
+  })
+  withRepoCopy((dst) => {
+    rewrite(DATA_OF(dst), join('seats', 'reviewer-product.json'), (j) => {
+      j.card.duty.constraint = '@dutyConstraintDefault ${@cardRationaleTail}'
+    })
+    const r = REFS(dst)
+    assert.equal(r.status, 1, `REFS 必须 exit 1（实得 ${r.status}）：${r.stdout}${r.stderr}`)
+    assert.match(r.stdout, /NestedSharedRef/, `输出必须点嵌套码：${r.stdout}`)
+    assert.match(r.stdout, /reviewer-product/, `输出必须点席名：${r.stdout}`)
+  })
+})
+
+test('TC-016（REFS 面）共享值空串 → EmptySharedValue exit 1 且点名键', () => {
+  withRepoCopy((dst) => {
+    rewrite(DATA_OF(dst), 'shared.json', (j) => { j.dutyConstraintDefault = '' })
+    const r = REFS(dst)
+    assert.equal(r.status, 1, `REFS 必须 exit 1（实得 ${r.status}）：${r.stdout}${r.stderr}`)
+    assert.match(r.stdout, /EmptySharedValue/, `输出必须点空值码：${r.stdout}`)
+    assert.match(r.stdout, /dutyConstraintDefault/, `输出必须点键名：${r.stdout}`)
+  })
+})
+
+test('TC-014/015/019/027（GATE 面）四类坏数据 → cli gate exit 1 且点名码', () => {
+  const cases = [
+    ['TC-014', (data) => rewrite(data, join('seats', 'reviewer-product.json'), (j) => { delete j.card.rationale }), /CardKeySetMismatch/],
+    ['TC-015', (data) => rewrite(data, join('seats', 'reviewer-product.json'), (j) => { j.card.returns = [] }), /CardKeySetMismatch/],
+    ['TC-019', (data) => rewrite(data, join('seats', 'reviewer-product.json'), (j) => { j.card.duty.trigger = '非空' }), /TriggerFieldMisplaced/],
+    ['TC-027', (data) => rewrite(data, join('seats', 'reviewer-product.json'), (j) => { j.kind = 'agent' }), /TriggerFieldMisplaced/],
+  ]
+  for (const [id, mutate, want] of cases) {
+    withRepoCopy((dst) => {
+      mutate(DATA_OF(dst))
+      const r = runCli(dst, ['gate'])
+      assert.equal(r.status, 1, `${id}: gate 必须 exit 1（实得 ${r.status}）：${r.stdout}${r.stderr}`)
+      assert.match(r.stdout + r.stderr, want, `${id}: 输出须含 ${want}：${r.stdout}${r.stderr}`)
+    })
+  }
 })

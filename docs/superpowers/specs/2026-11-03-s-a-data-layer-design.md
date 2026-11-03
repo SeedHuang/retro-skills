@@ -134,7 +134,7 @@ node -e "const L=require('fs').readFileSync('tools/docgen/components/agentData.m
 
 `validateAgentData.mjs` 的 `EXIT[1]` 列表追加 4 码：`DanglingSharedRef` / `EmptySharedValue` / `NestedSharedRef` / `CardKeySetMismatch`（后者 = 10.2.5 第 6 步的「席文件 `card` 恰等 8 键 / 派生键拒载」；12 键全量由 `check-shared-refs.mjs` 在 `buildCards()` 产物上判，**不新增码、也不改 `buildOne` 既有码**）；「残留 `duty.trigger`」与「`kind` 写进条目顶层」**复用**既有 `TriggerFieldMisplaced`（不新增同类码）。**`CARD_MODEL_CODES` 仍 36 码零新增**（D16④ 不动）——这 4 码住在 `validateAgentData` 的 `EXIT` 表，不进 `CARD_MODEL_CODES`。
 
-`check-shared-refs.mjs` 的判定面 = **三件**：① 悬空 0（`DanglingSharedRef`）；② 无嵌套（`NestedSharedRef`）；③ `buildCards()` 15 席 `card` 键集与 `CARD_KEYS` 恰等（12 键全量，唯一源）。前两件由 loader 在 import 期抛，第三件只有到 `buildOne` 之后才成立，故必须在本脚本里补判。
+`check-shared-refs.mjs` 的判定面 = **三件**：① 悬空 0（`DanglingSharedRef`）；② 无嵌套（`NestedSharedRef`）；③ `buildCards()` 15 席 `card` 键集与 `CARD_KEYS` 恰等（12 键全量，唯一源）。前两件由 loader 在 import 期抛，第三件只有到 `buildOne` 之后才成立，故必须在本脚本里补判。**`2026-11-03` ④ 段补测改判（实现细节）**：这两个模块必须用**动态 `import()`**——`cardPipeline` 的模块图会触发 `agentData` 的 `loadSeatData()`，静态 import 时坏数据在 import 期即抛、本文件的 `catch` 接不到（实测只剩堆栈，丢掉「码 / 键 / 席」）；失败行固定格式 `check-shared-refs: <码> key <键> / seat <席> => fail`（三样各 ≥1 命中，TC-011 判据）。
 
 `check-shared-refs.mjs` **不进 `npm run check` 的独立门禁段**：loader 在 `import` 期即 **fail-closed**（读盘即校验、坏数据在模块导入时就抛错，不等渲染），而 `agentData.mjs` 现有 29 条 `import` 保证「数据坏了必有一次 import 抛错」→ 门禁自然红。该脚本的用途是 PRD V5 的验收命令（`exit 1` 判据）与施工期定点复核，不建第二个入口。这条兜底**有**专用用例（testcase 里判 `import` 退出码的那条），不是靠推断。
 
