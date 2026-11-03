@@ -16,8 +16,8 @@
 
 ## Global Constraints
 
-- **卡面是生成物**：`agents/*.md` 只由 `node tools/docgen/cli.mjs generate` 产出，**禁止手改**。
-- **本段改动面 = 15 张卡**（不是因为边界段，而是因为删「关注类别：」行；13 席只少这一行）——spec §11.3 / §11.2.7-2。
+- **卡面是生成物**：`agents/*.md` 只由 `draft` + `replace` 产出（`generate` 只比不写），**禁止手改**。
+- **本段改动面 = 15 张卡**（三分类：2 席 `0/−1` / 11 席 `+7/−6` / 2 席 `+4/−5`）——spec §11.3 / §11.2.7-4。
 - `issue-card.fields` 的 3 个证据列**派生自** `evidence.fields`（禁抄字面）；`evidence.fields` 本身不动 —— spec §11.2.1。
 - `outputFormats` 侧只改 `issue-card.checks[0]`；`card-contract` 侧改 `FORMAT_CHECKS[1]` 且**仍 3 条**、每条含「废卡」与「缺 / 空」 —— spec §11.2.1 / R9。
 - 边界段**保留 12 槽**，只改 5 个槽值 + 4 行文案；`SLOTS` 顺序不动 —— spec §11.2.3。
@@ -251,7 +251,7 @@
 | SB-TC-22 | Task 3 | `FORMAT_CHECKS` 条数 |
 | SB-TC-23 | Task 3 | 抄字面必红 |
 | SB-TC-24 | Task 5 | 4 行内无仓内路径 |
-| SB-TC-25 | Task 6 | 13 席只少一行 |
+| SB-TC-25 | Task 6 | 只改模板不重生成 → `Mismatch`；重生成后绿 |
 | SB-TC-26 | Task 6 | 三条红态（`BaselineDrift` 等） |
 | SB-TC-27 | Task 5 | 白名单不得含清单类成员 |
 | SB-TC-28 | Task 5 | 白名单删登记即红 |
