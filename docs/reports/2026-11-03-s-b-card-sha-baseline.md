@@ -36,7 +36,7 @@
 | 形态 | 席数 | 席 | 变更内容 |
 |---|---|---|---|
 | `0 / −1` | 2 | `evidence-reader`、`senior-sdet` | 只删「职责」段的 `关注类别：` 行 |
-| `+7 / −6` | 11 | 其余 11 席（非指针） | `issue-card` 输出格式字段 7 → 9 行（+2）+ 两条 checks 文案改写（+2/−2）+ 删 `关注类别：`（−1） |
+| `+7 / −6` | 11 | 其余 11 席（非指针） | `issue-card` 输出格式：证据位 1 行拆 3 行 + 编号顺延（+5/−3）+ 两条 checks 文案改写（+2/−2）+ 删 `关注类别：`（−1） |
 | `+4 / −5` | 2 | `reviewer-audit`、`detective-observer` | 边界段 4 行改为策略符号名指针（+4/−4）+ 删 `关注类别：`（−1） |
 
 `git diff --stat 2c186c2 -- agents/` 末行 = `15 files changed, 85 insertions(+), 78 deletions(-)`；`--name-only` = 15 行。
