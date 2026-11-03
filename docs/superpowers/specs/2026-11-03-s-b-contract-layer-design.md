@@ -121,11 +121,11 @@ fields: [...HEAD, ...evidence.fields, ...TAIL]
 
 **口径**：
 
-1. 从 plan 里取「用例」列的 ID：**只认表头含「用例」的那张表**（S-A plan 的表头是 `| 用例 ID | 落在 Task |`），逐行取第 1 列做 `TC-\d{3}` / `S\d+-TC-[A-Z]\d\d` 匹配后去重（**三位**：S-A 实际 ID 是 `TC-001`…`TC-030`，按两位写只能取出 4 个唯一值）。**不**在 plan 全文正则扫——同一 ID 会在 Step 标题与代码块注释里反复出现，全文扫的去重值不稳定，会让 `ids <N>` 这个判据随排版漂。S-A 那对已签件实测 = **30**。
+1. 从 plan 里取「用例」列的 ID：**只认表头含「用例」的那张表**（S-A plan 的表头是 `| 用例 ID | 落在 Task |`），逐行取第 1 列做 `TC-\d{3}` / `S[A-Z]*-TC-[A-Z]?\d\d` 匹配后去重（**三位**：S-A 实际 ID 是 `TC-001`…`TC-030`，按两位写只能取出 4 个唯一值；`S[A-Z]*-` 前缀同时覆盖 `S3-TC-H06` 与本段自己的 `SB-TC-09`——写成 `S\d+-TC-` 时后者取不到）。**不**在 plan 全文正则扫——同一 ID 会在 Step 标题与代码块注释里反复出现，全文扫的去重值不稳定，会让 `ids <N>` 这个判据随排版漂。S-A 那对已签件实测 = **30**。**空转守卫**：`ids === 0` → 打印 `check-case-assert: ids 0（取不到用例 ID：表头/正则/文件不匹配）=> fail`，exit 1（否则任何形态都恒绿）。
 2. 在 testcase 里逐 ID 定位用例体（`### <ID>` 或 `test('<ID> …` 起、到下一个同级标题 / 下一个 `test(` 止）。
-3. 每个用例体内必须含 **≥1 条** `assert.*`，且**不是恒真断言**。**「恒真」按 token 判，不按字面**（议会第 1 轮 AI 的 Q-4 指出：字面匹配时 `assert.ok( true )` / `assert.ok(1)` 即绕过）：取 `assert.<方法>(<参数>)` 的参数侧 `trim()`，命中 `{true, 1, '1'}` 即记 `hollow`（**`hollow` = 用例体里只剩恒真断言、什么都不验**）。
+3. **`hollow` 判据**：体内**出现的** `assert.*` 若**全部**恒真即记 `hollow`。**「恒真」按 token 判，不按字面**（议会第 1 轮 AI 的 Q-4：字面匹配时 `assert.ok( true )` / `assert.ok(1)` 即绕过）：取 `assert.<方法>(<参数>)` 的参数侧 `trim()`，命中 `{true, 1, '1'}` 即算恒真。**零 assert 的用例体不判 `hollow`**（本仓 testcase 是「判据即命令」的文档形态，S-A testcase 实测 `assert.` 命中 0；若按「≥1 assert」判，§11.4-4 的金态 `hollow 0` 永远不可达——2026-11-03 实测纠偏），但必须**单独计数并在第二行可见**：`noassert <M>`（M = 体内零 assert 的用例数），**不进首行、不改 exit 码**。
 4. **ID 在 testcase 里找不到用例体 → 记 `missing`，不与 `hollow` 混算**：`missing > 0` 同 exit 1（找不到用例体等于映射悬空，和空心一样没验）。
-5. 全过 → `check-case-assert: ids <N> / hollow 0 / missing 0 => ok`（exit 0）；否则逐条列 `ID（行号或 missing）`，exit 1。
+5. 全过 → 首行 `check-case-assert: ids <N> / hollow 0 / missing 0 => ok`（exit 0），第二行 `noassert <M>`；否则逐条列 `ID（行号或 missing）`，exit 1。
 
 **不做**：不判「断言是否切题」（那是评审的事，`residual` 抽核）；不解析 plan 的其他表。
 
