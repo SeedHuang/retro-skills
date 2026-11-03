@@ -149,7 +149,7 @@ node -e "const L=require('fs').readFileSync('tools/docgen/components/agentData.m
 
 **但这两个码各自依赖「段」**（照抄会踩空，`2026-11-03` r2 测试席实测）：`EvidenceInvalid` 只在 `phase === 'migration'` 分支（`tools/docgen/cli.mjs:483-494`）；`TargetDrift`（`:534`）排在**幂等分支**（`:525-532`）之后——若盘上已等于渲染值，幂等分支先返回 0，`TargetDrift` 永不触发；`change` 段还必填 `--expect-change`（`:543`）。所以「基线不更新会不会炸」这条判据必须按段构造（evidence 哈希、`state.json` 相位、target 字节三者一起摆好），不能只改 `lastWrittenHash`。
 
-**拆 JSON 前的 15 卡冻结基线记在哪**（TC-005 判据③要用，施工者不得靠猜）：取数 = `git show HEAD:agents/<seat>.md | node -e "…sha256…"`（或直接读 `tools/docgen/fixtures/<seat>.evidence.json` 的 `renderSha256` 现值，两者必须相等——`gate` 已在判）。名单落进当次 `impact-sheet.md`。
+**拆 JSON 前的 15 卡冻结基线记在哪**（TC-005 判据③要用，施工者不得靠猜）：取数 = `git show HEAD:agents/<seat>.md | node -e "…sha256…"`（或直接读 `tools/docgen/fixtures/<seat>.evidence.json` 的 `renderSha256` 现值，两者必须相等——`gate` 已在判）。名单落进当次 `impact-sheet.md`（`2026-11-03` T6 实测改判：`docs/superpowers/reviews/<次>/` 只认 8 类文件名且必须带 `observation-rN` 产物（`tools/observation-check/gate-scan.mjs:5` / `:23`），而 `impact-sheet.md` 这个名会被 `scripts/scope-sweep.mjs:80-94` 按 mtime 自动抓成「当次改判清单」——两处门禁都不容它；故本段落点 = 一次性记录 `docs/reports/2026-11-03-s-a-card-sha-baseline.md`，R8 清单仍留 `.session/reviews/2026-11-03-s-a-plan-gate/impact-sheet.md`）。
 
 ### 10.2.8 斜杠串（V12）不在本段验收
 
@@ -164,7 +164,7 @@ S-A 的验收 = V4 / V5 / V10（PRD §8 S-A 行）。`when` 里的 `PRD/spec/pla
 | `components/cardPipeline.mjs:23` 的 `CARD_KEYS` | 加 `export`，内容与顺序不变 | 「12 键」的唯一实现点；校验器与 loader 要共用它，否则出现第二份 12 键名单（`2026-11-03` 施工期补登：定义已迁叶模块 `cardKeys.mjs`、本文件只 re-export，理由见 §10.2.1 新行） |
 | `components/validateAgentData.mjs:13-33` 的 `EXIT` 表 | 追加 4 码（10.2.6） | 不加则 `exitCodeFor` 抛「未知错误码」，新校验器无法 exit 1 |
 
-**测试侧 13 处 / 8 个文件**（这些位置把「`agentData.mjs` 的源文本 / 注释 / 计数」当判据，装配点一迁走或 Q8 一删项它们必红；处置 = 把判据改到新落点，**语义不变**；末 1 处为 `2026-11-03` T5 施工期实测新增）：
+**测试侧 14 处 / 9 个文件**（这些位置把「`agentData.mjs` 的源文本 / 注释 / 计数」当判据，装配点一迁走或 Q8 一删项它们必红；处置 = 把判据改到新落点，**语义不变**；末 2 处为 `2026-11-03` 施工期实测新增：T5 的 `S3-TC-H06` 回退集、T3 的 `lessons.test.mjs` 行号守卫豁免——后者由 T6 审计发现「plan 已声明、本表未登记」，同批补登）：
 
 | 文件:行 | 它钉住的东西 | 处置 |
 |---|---|---|
@@ -180,6 +180,7 @@ S-A 的验收 = V4 / V5 / V10（PRD §8 S-A 行）。`when` 里的 `PRD/spec/pla
 | `test/card-render.test.mjs:154-159` | `INJECT_BAD` 把 `;(agentData[0].card.must[0].criterion = …)` **追加到 `agentData.mjs` 文件尾**，要求该模块作用域内有 `agentData` 本地绑定 | **薄壳必须先 `import` 再 `export`**（见 §10.2.5 第 7 步），不得用纯再导出 `export { agentData } from './seatLoader.mjs'`；否则追加语句 `ReferenceError`，多个 S4 用例整片红 |
 | `test/dev-workflow-counts.test.mjs:148` | `indexOf('  // 阅读取证员')`（与 `:149` 的 `translation-self-check` 同属一个切块构造，两处注释都依赖 `agentData.mjs` 源文本） | 与 `:146-155` 同一条处置：按 `seats/*.json` 的键路径切块，或随注释一起退役 |
 | `acceptance/replace-scenarios.mjs:14`、`:79` | `patch()` helper 把文本替换进 `agentData.mjs` 源文本。**不是死 helper**（`2026-11-03` 计划门 P1-2 实测改判）：`:196` / `:219` / `:232` / `:258` 四处调用 | 处置 = 把 `:14` 的 `DATA` 常量改指 `tools/docgen/data/seats/senior-sdet.json`（`WHEN_OLD` 那时住 `trigger.when`，命中 1），**四处调用保留**，不得删函数留 4 个断头。已知债（不在本段修，登记触发 = 下次修该验收脚本）：`:196` / `:219` 注入的 `改动 = 改组件数据 → …` 句在数据里 0 命中，属 acceptance 既有 `9/11 红` 那笔账 |
+| `skills/managing-lessons-store/scripts/lessons.test.mjs:1765-1770`、`:1818-1820` | 「文档里写的 `<file>.mjs:行号` 必须落在该文件真实行数内 + 内容锚定」的行号守卫；`agentData.mjs` 从 327 行字面降为 8 行薄壳后，历史件（PRD / spec / plan / handoff）里 **37 处**指向它的行号引用全部越界 → 整条守卫红 | **`2026-11-03` T3 施工期实测新增（计划门未预见；口径经用户裁定 = 历史件一字不改）**：加 `STRUCT_REPLACED` 结构替换豁免白名单（本批只登记 `tools/docgen/components/agentData.mjs` 一项，每条带生效日期 + 「迁往」说明），被豁免的 37 处**照常计数并打印**（`structSkipped`），不得静默漏扫；豁免条目增员必须在当次 plan 执行记录里点名 |
 | `test/policy-pure-source.test.mjs` 的 `S6-TC-E03`（`:953-976`） | 「23 项路径清单副本收敛到 定义层 1 处 + 承载该段的产物」的**期望文件集**恰 3 项 | **T1 施工期实测新增（计划门未预见）**：数据层拆 JSON 后，承载同一段文本的产物多了 `tools/docgen/data/seats/detective-observer.json` 与 `…/reviewer-audit.json`（席 JSON 就是卡面文本的源）→ 期望集补这 2 项 = **5 项**。**`2026-11-03` T3 补登（改回 3 项）**：`boundary` 的唯一源回到定义层（见 §10.2.2 本条上一行），席 JSON 不再承载该段 → 期望集恢复 **3 项**（2 张卡面 + 定义层）；副本数降回 3 正是「单源已恢复」的判据。**不得**改成「排除 `tools/docgen/data/`」——那等于让探针不看源 |
 
 ### 10.2.10 本节已定的四条口径（testcase 作者提出的歧义，此处给答复）
