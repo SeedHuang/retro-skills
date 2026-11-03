@@ -34,9 +34,10 @@
 - **30 个 ID = `TC-001`…`TC-030`**（**三位**，spec §11.2.5 口径 1 与 §11.1 R10；写成两位只能取出 4 个唯一值——议会第 1 轮 QA 的 Q-T-05）；
 - **36 码 / 8 键** = `CARD_MODEL_CODES`（`tools/docgen/card-model/validateCardModel.mjs`）与 `SCAN_FIELDS`（`tools/docgen/card-model/enums.mjs`）的键数，spec §11.4-7 要求不变；
 - **4 符号名** = `pathGroups` / `commandGroups` / `forbiddenGroups` / `DETECTION_BLIND_SPOTS`（spec §11.1 R6）；
-- **变更形态三分类**（2026-11-03 实测，`git diff --numstat $BASE -- agents/` 可复算）：**2 席 `0 / −1`**（`evidence-reader` / `senior-sdet`，只删「关注类别：」）、**11 席 `+7 / −6`**（R1 的 `issue-card` 字段 7 → 9 行 + 两条 checks 文案 + 删「关注类别：」）、**2 张指针席 `+4 / −5`**（`reviewer-audit` / `detective-observer`，边界段 4 行 + 删「关注类别：」）。**旧稿「13 席只少一行」与 R1 互斥、2026-11-03 作废**（spec §11.2.7 第 4 步已改三分类）。
+- **变更形态三分类**（2026-11-03 实测，`git diff --numstat $BASE -- agents/` 可复算）：**2 席 `0 / −1`**（`evidence-reader` / `senior-sdet`，只删「关注类别：」）、**11 席 `+7 / −6`**（证据位 1 行拆 3 行 + 编号顺延 `+5/−3`、两条 checks 文案 `+2/−2`、删「关注类别：」`−1`）、**2 张指针席 `+4 / −5`**（`reviewer-audit` / `detective-observer`，边界段 4 行 + 删「关注类别：」）。**旧稿「13 席只少一行」与 R1 互斥、2026-11-03 作废**（spec §11.2.7 第 4 步已改三分类）。
 - **15 份 evidence 同批** = `tools/docgen/fixtures/<席>.evidence.json` 共 15 份，逐席 `renderSha256` 必须等于盘上哈希（`tools/docgen/test/sa-data-layer.test.mjs` 的 `TC-028` 口径，spec §11.2.7 第 3 步）；
 - **`关注类别：` 15 / `类别：` 30 → 0 / 15**：现状实测 `(Select-String -Path agents\*.md -Pattern '关注类别：').Count` → `15`，`… -Pattern '类别：'` → `30`（含被 `关注类别：` 顺带命中的 15 行）；R8 落地后无子串重叠，故 §11.4-8 的 `≥ 15` 是真下界。
+- **单批性判据的执行档**：`SB-TC-06` 的 `15 files / 15 name-only`、`SB-TC-25` ④、`SB-TC-32` 全节（Ⅰ/Ⅱ/Ⅲ）只对本批 `$BASE` 成立 → 落测试时归 `SB_SHAPE_ONESHOT=1` 的一次性核对（BASE 由 `SB_BASE` 覆盖、默认冻结为本批提交）；常驻档只跑不变量（`gate` exit 0 / 15 份 evidence `renderSha256` == 盘上 / `关注类别：` = 0 / `类别：` ≥ 席数）。
 
 ## 1 覆盖总表
 
@@ -73,7 +74,7 @@
 | SB-TC-29 | spec §11.2.2 输入（`ARTIFACT_RE`，`tools/observation-check/gate-scan.mjs`） | 边界 | 边界 | 机器 | `COPY` 加 `.md` + `QUOTES` | P1 |
 | SB-TC-30 | spec §11.1 R2「复用 `checkEvidence()`，不新写校验逻辑」 | 边界 | 边界 | 机器 | 语料注入结构行 + `QUOTES` | P1 |
 | SB-TC-31 | spec §11.4-3 ②（段首 / 语义句统一 `anchors 12/12`）/ §11.1 R5 / §11.2.3「保留不动」 | 边界 | 边界 | 机器 | 边界段文本探针（12 组锚） | P0 |
-| SB-TC-32 | spec §11.3（15 files 变更面）/ §11.4-6（13 席只有一条删除行）/ §11.1 R11 | 边界 | 边界 | 机器 | `git diff --stat $BASE` + `git diff -U0 $BASE` 逐席形态（`COUNT`） | P0 |
+| SB-TC-32 | spec §11.3（15 files 变更面）/ §11.4-6（位置型三段判据）/ §11.1 R11 | 边界 | 边界 | 机器 | `git diff --stat $BASE` + `git diff -U0 $BASE` 逐席形态（`COUNT`） | P0 |
 | SB-TC-33 | spec §11.1 R7 末句（注入而非删除）/ §11.2.4（loader 产物仍 8 键）/ §11.6（12 键契约本段不动） | 边界 | 边界 | 机器 | `PROBE` 键集（loader 8 键 + `buildCards()` 12 键） | P1 |
 | SB-TC-34 | spec §11.2.4「注入 = `label` 逐元素逐字（同序），不做字符串变换」 | 边界 | 边界 | 机器 | `COPY` 改注入 + `PROBE` | P0 |
 | SB-TC-35 | spec §11.1 R6 后半（符号名定义唯一、可 grep 回查）/ §11.2.8 D-a | 边界 | 边界 | 机器 | `policy\definitions\*.mjs` 的 `export const <sym>` 行数（`COUNT`） | P1 |
@@ -183,7 +184,7 @@
   - **基准必须是 `$BASE`（改前提交哈希），不得写裸 `git diff --stat -- agents/`**（spec §11.4-6：提交前后数字不同，不可复算）
 - **红绿证据**：红 = 只改模板不重生成 → `GATE` `Mismatch` exit 1（`tools/docgen/cli.mjs` 的 `compareBuffers` 逐席比对）；红（判据写法错）= 按旧稿写 `2 files changed` → 金态就红（15 席都少了「关注类别：」行，这正是 B-01 / Q-1 指出的互斥）；红 = 只重生成卡、不重生成 evidence → ④ 有不等的席；绿 = exit 0 + 15 files + 15/15 哈希对齐
 - **对应测试**：建议 `tools/docgen/test/sb-contract-layer.test.mjs::SB-TC-06`
-- **不覆盖**：`baseline 38/38` 数值（PRD §5：同式自除恒真，不作判据）；`baseline.json` 是否更新（spec §11.2.7 第 3 步：它只装路径清单、不含哈希，**「无变化即预期」**，议会第 1 轮 BE 的 C-01）；13 席「只少一行」的变更形态（SB-TC-32）；`docs/agents/**` 投影面（本段不涉）
+- **不覆盖**：`baseline 38/38` 数值（PRD §5：同式自除恒真，不作判据）；`baseline.json` 是否更新（spec §11.2.7 第 3 步：它只装路径清单、不含哈希，**「无变化即预期」**，议会第 1 轮 BE 的 C-01）；逐席变更形态（位置型三段，SB-TC-32）；`docs/agents/**` 投影面（本段不涉）
 
 ### SB-TC-07 `duty.categories` 单源：席文件已删该键，loader 产物逐席与 `categories[].label` `deepEqual`
 
@@ -446,7 +447,7 @@
 - **判据**：② `GATE` exit 1 且输出含 `Mismatch` 与至少一张受影响卡；③ exit 0；④ `assert.equal(<文件数>, 15)`（`COUNT` 形态）。**② exit 0 = 判失败**
 - **红绿证据**：红 = 改模板不改盘上卡（`tools/docgen/cli.mjs` 的 `compareBuffers` 逐席比对）；绿 = 重生成后逐字节相等 + 15 files
 - **对应测试**：建议 `tools/docgen/test/sb-contract-layer.test.mjs::SB-TC-25`
-- **不覆盖**：`docs/agents/**` 投影面（属 `--readme` 面，本段不涉）；13 席「只少一行」的形态（SB-TC-32）
+- **不覆盖**：`docs/agents/**` 投影面（属 `--readme` 面，本段不涉）；逐席变更形态（位置型三段，SB-TC-32）；④「与 BASE 比 15 files」归 `SB_SHAPE_ONESHOT=1` 的一次性核对（副本无 `.git`，常驻档跳过）
 
 ### SB-TC-26 `replace` 的三条红态：baseline 陈旧 → `BaselineDrift`；evidence 陈旧 → 被就地改写为 newSha；未带 `--expect-change` → `UnapprovedChange`
 
@@ -550,7 +551,7 @@
   - `assert.equal(<Ⅲ 不成立的席数>, 0)`
   - **不写「13 席 SHA 与基线表逐行相同」**——与 R8 互斥（各席 SHA 必然变）
 - **红绿证据**：红 = 按旧稿判「13 席 SHA 不变 + 2 files」→ 金态即红（15 席都变）；红 = 指针化波及 `DEFAULT_BOUNDARY` / `SDET_BOUNDARY` / `evidence-reader` 自有句 → Ⅱ 出现「边界」段以外的增删、断言红；红 = 漏删某席「关注类别：」→ Ⅰ 红；绿 = 15 files + Ⅰ 15/15 + Ⅱ 13/13 + Ⅲ 2/2
-- **单批性声明**：Ⅰ–Ⅲ 的**形态**只对本批 `$BASE` 成立（实测 `0/−1` 2 席、`+7/−6` 11 席、`+4/−5` 2 席）。后续批次（如 S-C）改卡面时需按新 `$BASE` 重算或把 Ⅱ/Ⅲ 降级为当批一次性核；**常驻测试只保留不变量**（Ⅰ + `关注类别：` = 0 + `类别：` ≥ 席数 + `gate` exit 0）
+- **单批性声明**：Ⅰ–Ⅲ 的**形态**只对本批 `$BASE` 成立（实测 `0/−1` 2 席、`+7/−6` 11 席、`+4/−5` 2 席）。后续批次（如 S-C）改卡面时需按新 `$BASE` 重算；**常驻测试只保留不变量**（`关注类别：` = 0 + `类别：` ≥ 席数 + `gate` exit 0 + 15 份 evidence `renderSha256` == 盘上），Ⅰ–Ⅲ 与 `15 files` 归 `SB_SHAPE_ONESHOT=1` 的一次性核对（BASE 由 `SB_BASE` 覆盖、默认冻结为本批提交）
 - **对应测试**：建议 `tools/docgen/test/sb-contract-layer.test.mjs::SB-TC-32`
 - **不覆盖**：`docs/agents/**` 面（本段不涉）；基线表本身是否过期（它是 S-A 收口时落的终态快照，`docs/reports/2026-11-03-s-a-card-sha-baseline.md` 的说明段已写明取数口径 = `c01ccf3`）
 
@@ -701,7 +702,7 @@
 | SB-TC-29 | 语料目录混入 `observation-*.md` / 畸形 json | 用宽松 glob 会按 JSON 解析 `.md`，或静默跳过坏 json | 只吃 `.json`；畸形 json 不得静默（exit 非 0） |
 | SB-TC-30 | 引用「纯结构行」 | 自写简化判定会放行表格分隔行 | `EvidenceStructuralRow`（复用既有码面） |
 | SB-TC-31 | 指针化被做成「删段」 | 段首句一删，读者失去「默认拒绝 / 越界即越权」的语义 | 2 卡 × 6 组段锚 12/12 在位 |
-| SB-TC-32 | 改动波及 13 席（`DEFAULT_BOUNDARY` / `SDET_BOUNDARY`）；或按旧稿判「13 席 SHA 不变 + 2 files」 | 2 卡走 `boundaryBySeat` 分支，改错位置会静默影响其余席；而「SHA 不变」与 R8 互斥，金态即红 | 15 files；13/13 席 `a = 0 && d = 1` 且删的是 `关注类别：` |
+| SB-TC-32 | 改动波及 13 席（`DEFAULT_BOUNDARY` / `SDET_BOUNDARY`）；或按旧稿判「13 席 SHA 不变 + 2 files」 | 2 卡走 `boundaryBySeat` 分支，改错位置会静默影响其余席；而「SHA 不变」与 R8 互斥，金态即红 | 15 files；位置型三段 —— Ⅰ 每席恰 1 条 `关注类别：` 删行在「职责」段 / Ⅱ 非指针 13 席其余增删只在「输出格式」段 / Ⅲ 指针 2 席「边界」段 ≥1 增 1 删 |
 | SB-TC-33 | 为「单源」把产物里的 `duty.categories` 删掉 / 注入时往 `card` 顶层加键 | S-C 的 V12 判据面会少一个字段；加键会同时撞 8 键断言——两种都让本段全绿看不出 | 键仍在 `duty` 内（15/15）+ loader 8 键 + 消费点 12 键 |
 | SB-TC-34 | 注入时做「后缀补齐 / 去核对」 | 「归一看起来更整齐」，实际造出第三种写法 | 逐席 `deepEqual` 失败即红（`bad 15`） |
 | SB-TC-35 | 定义计数命令写错（`-Recurse` 不存在 / 路径未进 `definitions/` / 按裸符号名计数） | 旧稿三种写法任一种都出不了「恰 1」：参数不存在 / 命中 0 / 命中 2（定义 + 引用） | `definitions\*.mjs` 里 `export const <sym>` 各恰 1 行，4/4 |
@@ -720,7 +721,7 @@
 | `tools/docgen/check-quotes.mjs` | SB-TC-03、15、16、17、18、29、30、**39**；外加 SB-TC-14（不得接进 `check-all.mjs`） | 校验器本身的绿态与五种红态都在它身上；接进总门禁会让归档即全仓红 |
 | `docs/superpowers/reviews/**/observation-*.json` | SB-TC-03、04、18、**39**；`CHECK` 的 ⑥ 段 | 语料是**历史观察记录的产物面**，清理属正常归档动作（spec §11.7） |
 | `tools/docgen/templates/boundary.md.tpl` 或 `components/renderBoundary.mjs` | SB-TC-05、13、19、24、27、28、31、25、35、**37**、**40**、**41**；外加 `tools/docgen/test/policy-pure-source.test.mjs`（切片锚 `逐项点名：` … `；兜底句` / 模板标记集 `marks` / `expanded.length === 12` / 槽索引解构）、`tools/docgen/test/tool-tiers.test.mjs`（要求卡面含全部路径项与全部 allow / forbidden verbs —— **必红**，议会第 1 轮 AU 的 A-02）、`tools/docgen/test/support/capability-baseline.mjs` 与 `tools/docgen/fixtures/capability-baseline.json`（12 槽基线，A-03） | **5 个槽（4 行文案）槽值**改指针 + 4 个新字面登记；槽集仍 12、`SLOTS` 顺序不动。**`DENY_GROUPS` 与 `ENV_FORMS` 同处模板第 11 行**，只改前者 = 漏改 env 槽，由 SB-TC-41 兜。上述三处测试**全部必红**（§11.2.6 已从「可能无需改」纠正为必红），改写口径 = 「指针句在位 + 定义层成员数不变」 |
-| `agents/*.md`（15 席全部，重生成后） | SB-TC-05、06、08、19、31、32、**37**、**40**、36；外加 `tools/docgen/test/sa-data-layer.test.mjs`（`TC-006` / `TC-025`，且 `TC-028` 逐 15 席要 evidence 哈希）与 `tools/docgen/test/s2-card-rewrite.test.mjs`（`S2-TC-C09③`：`duty.categories` 影响卡面 → 改写为「`categories[].label`（`类别：` 行）影响卡面」，B-04 / Q-2 / A-01） | **15 席全变**（2 席边界段 + 15 席删「关注类别：」行，13 席只少这一行）；两条已签断言必须同批改写且改写后仍要能红 |
+| `agents/*.md`（15 席全部，重生成后） | SB-TC-05、06、08、19、31、32、**37**、**40**、36；外加 `tools/docgen/test/sa-data-layer.test.mjs`（`TC-006` / `TC-025`，且 `TC-028` 逐 15 席要 evidence 哈希）与 `tools/docgen/test/s2-card-rewrite.test.mjs`（`S2-TC-C09③`：`duty.categories` 影响卡面 → 改写为「`categories[].label`（`类别：` 行）影响卡面」，B-04 / Q-2 / A-01） | **15 席全变**（三分类：2 席 `0/−1` / 11 席 `+7/−6` / 2 席 `+4/−5`，见 spec §11.2.7 第 4 步）；两条已签断言必须同批改写且改写后仍要能红 |
 | `tools/docgen/card-model/vocab/card-contract.mjs` 的 `FORMAT_CHECKS` | SB-TC-10、22；外加 `tools/docgen/test/s2-card-rewrite.test.mjs`（`S2-TC-A06`） | 第 2 条改文案时，`length === 3` 与 `/废卡/ && /[缺空]/` 两面必须同时满足，且第 1 / 3 条逐字不动 |
 | `tools/docgen/data/seats/*.json` 或注入实现（`duty.categories`，落 `seatLoader.mjs`） | SB-TC-07、20、33、34；外加 `tools/docgen/test/sa-data-layer.test.mjs`（12 键键集面） | 单源可判形态只有「源里无键 + 产物逐席 `deepEqual`」，其余写法都不会报错、只会显示旧值 |
 | `tools/docgen/components/renderCard.mjs` 的 `dutyBlock` | SB-TC-08、**37**、06 | 删「关注类别：」行属渲染面改动，必须重生成 15 卡并过 `gate`；两向计数是它唯一的验收锚 |
@@ -775,7 +776,7 @@
 | Q3 | `issue-card.checks` 三条全不改 vs 第 2 条改 | **只改第 2 条**，第 1 / 3 条不动 | SB-TC-10（第 ⑤ 步「第 1 / 3 条逐字不动」） |
 | Q4 | 单一来源判据用 `===` 还是结构相等 | **`deepEqual`（同序逐字）** | SB-TC-01 / SB-TC-07（取数点 = `agentData[i].card`）/ SB-TC-34 |
 | Q5 | 「用例」列取数口径 + ID 找不到的处置 | **只认表头含「用例」的那张表**；**`TC-\d{3}` 三位**（不是两位）；**新增 `missing` 计数**，`> 0` 同 exit 1 | SB-TC-09（首行三段 + ID 集合 `deepEqual`）/ SB-TC-21（`hollow` 不混算）/ SB-TC-38（`missing`） |
-| Q6 | `git diff --stat` 的比较基准 | **带基线**：`BASE = git rev-parse HEAD`（改前）+ **15 files** + 13 席「只有一条删除行」（§11.2.7 已改正「2 卡」口径） | SB-TC-06（15 files + 15 份 evidence）/ SB-TC-25 / SB-TC-32（13 席 diff 形态） |
+| Q6 | `git diff --stat` 的比较基准 | **带基线**：`BASE = git rev-parse HEAD`（改前）+ **15 files** + 位置型三段（§11.2.7 第 4 步三分类；旧「13 席只有一条删除行」已作废） | SB-TC-06（15 files + 15 份 evidence）/ SB-TC-25 / SB-TC-32（逐席位置型形态） |
 | Q7 | R8（删「关注类别：」行）无验收锚 | **新增 §11.4-8**：`关注类别：` = 0 且 `类别：` ≥ 15 | SB-TC-08（正例，两向合取）/ **SB-TC-37（两向判别力）** |
 | Q8 | `duty.categories` 注入点在 loader 还是 `buildOne` | **在 `components/seatLoader.mjs`**（与 `duty.trigger` 同处同趟），loader 产物仍 8 键 | SB-TC-07（取数点）/ SB-TC-33（loader 8 键 + 消费点 12 键） |
 
@@ -842,7 +843,7 @@
 | 卡 Q-T-03 | 13 ③ | 不再调 `listClassMembers()`（未导出），改「`TEMPLATE_ALLOWED_LITERALS` ∩ 4 符号名 = 空集」+ 成员数 = 8 → **第 6 轮已再修**：交集对象改为**自组装 `LIST_CLASS`**、成员数改 **12**（理由见第 6 轮表） |
 | 卡 B-05 | 20 | 判据改 `exitCodeFor('DutyCategoryMisplaced') === 1`（未登记抛「未知错误码」）+ stderr 首行以该码开头；**不看进程退出码** |
 | 卡 Q-T-02 | 26 | 拆三条红态：① `BaselineDrift`；② evidence 陈旧走幂等分支「被就地改写为 newSha 且 exit 0」；③ 漏 `--expect-change` → `UnapprovedChange`；④ 带 `--expect-change` 才 exit 0 |
-| B-01 / Q-1（P0） | 06 / 25 / 32 | 变更面从「2 卡」改「**15 files changed**」；13 席改判「`git diff -U0` 只有一条删除行、无其它增删」；06 加「15 份 `fixtures/<席>.evidence.json` 同批」；**删掉「13 席 SHA 与基线表逐行相同」**（与 R8 互斥） |
+| B-01 / Q-1（P0） | 06 / 25 / 32 | 变更面从「2 卡」改「**15 files changed**」；13 席改判「`git diff -U0` 只有一条删除行、无其它增删」；06 加「15 份 `fixtures/<席>.evidence.json` 同批」；**删掉「13 席 SHA 与基线表逐行相同」**（与 R8 互斥）｜**作废注（2026-11-03 Task 6 实测）**：「13 席只有一条删除行」与 R1（`issue-card` 7→9 列）互斥，已改为位置型三段（spec §11.2.7 第 4 步）；本格保留议会当时原话 |
 | 卡 B-03 | 04 | 语料件改三步（`.session/` 用写入器生成 json+md 一对 → 过 ⑥ 段四道 → 整对移入 `docs/superpowers/reviews/<次>/` 并 `git add`）；码清单补 `MdMissing` / `RenderMismatch` / `JsonNotFound` |
 | Q-4 | 21 | hollow 判据改 token 级（参数 `trim()` ∈ {`true`,`1`,`'1'`}）；补 `assert.ok( true )` 与 `assert.ok(1)` 两条注入 |
 | Q-3 | 24 | 改覆盖 spec **新增的 §11.4-9**（边界段内仓内路径形态命中 = 0），保留「写成 `policy/definitions/paths.mjs` 必红」的负例并新增「带 `tools/` 前缀」第二负例 |

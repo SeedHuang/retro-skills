@@ -12,7 +12,7 @@
 - **「写出原文引句」共 88 行**（`(Select-String agents\*.md -Pattern '写出原文引句').Count` → 88，本轮复算 = PRD §1 缺陷 7 的值），而 `outputFormats.evidence` 早已定义「摘句 / 文件 + 行号 / 用途」三列（`components/outputFormats.mjs` 的 `evidence.fields`），`tools/observation-check/evidence.mjs` 的 `checkEvidence()` 也已实现「摘句能在源文件检索到且行号那行包含它」——**这 88 行没有一条指向它们**（PRD 缺陷 7）。
 - **`issue-card` 的证据仍是 1 列**（`components/outputFormats.mjs` 的 `outputFormats['issue-card'].fields`，7 列）。1 列装三样东西，填的人只能自选其一，判的人无从二值判。
 - **策略清单被整段渲染进卡面**（PRD 缺陷 4 / Q6 / D11）：2 张卡（`reviewer-audit` / `detective-observer`）的边界段 **2198 / 2158 字符**（口径：不含 `## 边界` 标题，从下一行起至下一个 `##` 前逐行 `.Length` 求和），其中 4 行是清单类展开——禁写路径 309、命令白名单 542、禁止命令 435、检测盲区 317（`reviewer-audit` 实测）。源早已单份（`policy/**` + 模板），产物是第二份逐字长清单。**数值口径**：PRD §3 Q6 记的是 2260 / 2220（Q8 删 3 项之前）；S-A 删完复测为 **2198 / 2158**（各 −62），本 spec 一律用复测值。
-- **`categories` 两处存放**：`card.duty.categories`（纯字符串，如「验收可验证性」）与 `card.categories[].label`（如「验收可验证性核对」）同义不同字，13 席各自维护（PRD Q3 裁定「复用」）。
+- **`categories` 两处存放**：`card.duty.categories`（纯字符串，如「验收可验证性」）与 `card.categories[].label`（如「验收可验证性核对」）同义不同字，**15 席**各自维护（PRD Q3 裁定「复用」；S-B 已把前者移出数据源、改为装配期注入）。
 - **映射用例可能空心**（PRD §4 V7）：用例体写成 `assert.ok(true)` 也能让 `map` 报 `dangling 0`，映射就在，但什么都没验。
 
 ## 11.1 核心决定（不可违反）
@@ -108,7 +108,7 @@ fields: [...HEAD, ...evidence.fields, ...TAIL]
 
 | 现状 | 改为 |
 |---|---|
-| `seats/*.json` 的 `card.duty.categories` = 纯字符串数组（13 席各一份，与 `card.categories[].label` 同义不同字） | 席文件**删该键**；`card.duty.categories` 在**装配期注入**（注入点 = `components/seatLoader.mjs` 的装配函数，与 `duty.trigger` 注入同一处、同一趟）= `card.categories[].label` **逐元素逐字**（同序，含「核对」后缀，不做字符串变换——变换会造出第三种写法） |
+| `seats/*.json` 的 `card.duty.categories` = 纯字符串数组（**15 席**各一份，与 `card.categories[].label` 同义不同字） | 席文件**删该键**；`card.duty.categories` 在**装配期注入**（注入点 = `components/seatLoader.mjs` 的装配函数，与 `duty.trigger` 注入同一处、同一趟）= `card.categories[].label` **逐元素逐字**（同序，含「核对」后缀，不做字符串变换——变换会造出第三种写法） |
 | `renderCard.mjs` 的 `dutyBlock` 渲染「关注类别：…」 | 该行**不再渲染**（R8）；`dutyBlock` 只留 `trigger` / `action` / `constraint` |
 
 **注入点为什么在 loader 而不在 `buildOne`**：D17 的 `duty.trigger` 就在 loader 注入，两个「装配期派生」若分住两处，改其中一处的口径就只生效一半。loader 产物 `agentData[i].card` 仍是 8 键（注入只改 `duty` 内部，不加顶层键），故 `check-shared-refs.mjs` 的 8 键断言面不变（§11.4-5）。
@@ -149,7 +149,7 @@ fields: [...HEAD, ...evidence.fields, ...TAIL]
 3. `replace` **同批写回** **15 份** `fixtures/<席>.evidence.json` 的 `renderSha256` / `lastWrittenHash` 并追加 `changes`（`TC-028` 逐 15 席要求 `evidence.renderSha256 == 盘上哈希`）；**禁手改 evidence**。`baseline.json` 只装路径清单、不含哈希（议会第 1 轮 BE 的 C-01），**卡内容变化不改变它**——「无变化即预期」，不要去改它。
 4. 复跑 `gate` → exit 0；与**改前提交**比 `git diff --stat <BASE> -- agents/` = `15 files changed`。**变更形态按席三分类**（2026-11-03 实测，`git diff --numstat <BASE> -- agents/` 可复算；旧稿「13 席只少一行」与 R1 互斥，已作废）：
    - **2 席 `0 / −1`**（`evidence-reader` / `senior-sdet`）：只删「关注类别：」行；
-   - **11 席 `+7 / −6`**：R1 的 `issue-card` 字段 7 → 9 行（+2）+ 两条 checks 文案改写（+2/−2）+ 删「关注类别：」（−1），其余不变；
+   - **11 席 `+7 / −6`**：R1 的 `issue-card` 输出格式段——证据位由 1 行拆成 3 行、其后编号顺延（**+5/−3**）+ 两条 checks 文案改写（**+2/−2**）+ 删「关注类别：」（**−1**），其余不变；
    - **2 张指针席 `+4 / −5`**（`reviewer-audit` / `detective-observer`）：边界段 4 行改指针（+4/−4）+ 删「关注类别：」（−1）。
    判据（位置型，替掉旧的 `a === 0 && d === 1`）：① 15 席每席**恰 1 条**被删行以 `关注类别：` 开头且落在「职责」段；② 非指针 13 席除该删行外的增删**只落「输出格式」段**；③ 指针 2 席「边界」段至少 1 增 1 删。该形态断言只对本批 BASE 成立，后续批次按新 BASE 重算（常驻测试只留不变量）。
 
@@ -195,7 +195,7 @@ fields: [...HEAD, ...evidence.fields, ...TAIL]
 | `check-quotes.mjs` 的五种红态：摘句不在文件、行号不含摘句、行号越界、语料 `K = 0`、语料 `K = 1` | fail-closed 是 V6 的核心；`K = 1` 与 `K = 0` 分开测，否则「≥2 条」这条会被实现成「非空即绿」 |
 | 语料件本身过 ⑥ 段观察产物门禁（`ArtifactMissing` / `UnclassifiedArtifact` 不报） | R4 造的记录若不被 ⑥ 段认，V6 的语料随时会被归档动作带走 |
 | 卡面 4 行指针化后：段首句仍在、符号名在位、`逐项点名` 0 命中、纯度自检不抛 | 少一条都会让「指针化」退化成「删段」（读者失去「默认拒绝」这个语义） |
-| 2 卡重生成后 `gate` exit 0 + 与改前提交比 `git diff --stat <BASE> -- agents/` = **15 files**，且 13 席只有一条删除行 | 只改模板不重生成 → 下一次 `replace` 才炸；把 13 席的「只少一行」判成「也改了边界」会掩盖意外改动 |
+| 2 卡重生成后 `gate` exit 0 + 与改前提交比 `git diff --stat <BASE> -- agents/` = **15 files**，且逐席形态按 §11.2.7 第 4 步三分类判（位置型三段：每席恰 1 条 `关注类别：` 删行在「职责」段 / 非指针 13 席其余增删只在「输出格式」段 / 指针 2 席「边界」段至少 1 增 1 删） | 只改模板不重生成 → 下一次 `replace` 才炸；把「输出格式」段的预期增删误判成边界段意外改动，会掩盖真问题 |
 | `duty.categories` 注入后逐席与 `categories[].label` `deepEqual`；席文件写非空值 → `DutyCategoryMisplaced` | 单源的唯一可判形态；「注入」写错不会报错、只会让卡面显示旧值 |
 | 卡面 `关注类别：` 计数 = 0 且 `类别：` ≥ 15（R8） | 不单列就判不出：「渲染一致」在改动前后都绿 |
 | `check-case-assert` 对恒真断言必红（`assert.ok(true)` / `assert.ok( true )` / `assert.ok(1)` 三种形态） | 这是 V7 的全部意义；只测字面形态等于把绕过路径留着（议会第 1 轮 AI 的 Q-4） |
