@@ -20,7 +20,8 @@ import { renderReadme, renderIndex } from './renderReadme.mjs'
 import { exitCodeFor } from './validateAgentData.mjs'
 
 // `Card` = S1 §4 `:58-67` 的全量 12 键（spec §4 `:89`）；缺任一键 → 拒绝渲染
-const CARD_KEYS = ['seat', 'name', 'description', 'tools', 'duty', 'scenes', 'signals', 'must', 'never',
+// S-A T2：导出供 loader（席文件 8 键判）与 `check-shared-refs.mjs`（12 键全量判）共用唯一源
+export const CARD_KEYS = ['seat', 'name', 'description', 'tools', 'duty', 'scenes', 'signals', 'must', 'never',
   'categories', 'checkItems', 'rationale']
 
 // 非议会席（spec §4 `:97` 点名两席）：`env.parliamentSeats` = 其余席

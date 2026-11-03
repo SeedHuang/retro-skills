@@ -18,6 +18,9 @@ const EXIT = {
     'DescriptionDerivation', 'TriggerMissingRoute', 'TriggerConflict', 'DuplicateWhen',
     'InvalidOutputKind', 'MissingWhen', 'DraftDrift', 'DraftNameConflict', 'TargetDrift',
     'TriggerFieldMisplaced',
+    // S-A 数据层四码（spec §10.2.6）：唯一发射点 = `components/seatLoader.mjs`（loader 在 import 期
+    // fail-closed）；`check-shared-refs.mjs` 只做验收汇总、不新增码。`CARD_MODEL_CODES` 仍 36 码不动。
+    'DanglingSharedRef', 'EmptySharedValue', 'NestedSharedRef', 'CardKeySetMismatch',
     // S6 配置校验五码（spec §7）：唯一发射点 = `components/validatePolicy.mjs`；
     // 第六码 `RenderNotEquivalent` 由施工期断言发出、**不进本表**（CLI 不引入）
     'UnknownPolicyRef', 'LiteralInConfig', 'SeatNameInDefinition', 'ForbiddenGroupGranted',
