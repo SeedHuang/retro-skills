@@ -727,7 +727,7 @@ assert.equal(refused, 6, '6 个非结构键逐键都必须被拒（§4 :89）；
 - **不覆盖**：列顺序（spec 只写五列名）。
 
 > **日期注（2026-11-04，S-E 批；原文保留不删）**：上方判据代码只判表头，空格（如 `senior-sdet` 曾缺 `dimension`）会漏检。**现行实现追加**：① 数据行数 = 15；② 逐行取第 3 列（维度）非空，失败时报「index 席「<席名>」的「维度」格为空」。判据方向只收不放（表头五列与列数断言逐字不动）。锚 = spec 的结构行 `:80`。
-> 红档可重跑构造（2026-11-04 实跑）：全仓副本内删 `data/seats/senior-sdet.json` 的 `dimension` 键 → 副本内 `node tools/docgen/cli.mjs generate --readme --apply` → 该席格空 → `not ok 1 - S4-TC-B04 …` / `# fail 1`，错误信息即第 ② 条格式。
+> 红档可重跑构造（2026-11-04 实跑）：全仓副本内删 `data/seats/senior-sdet.json` 的 `dimension` 键 → 副本内 `node tools/docgen/cli.mjs generate --readme --apply` → 该席格空 → `not ok 1 - S4-TC-B04 …` / `# fail 1`，错误信息即第 ② 条格式。**写回必须无 BOM**（`fs.writeFileSync(path, text, 'utf8')`）；用 `Set-Content -Encoding UTF8` 会写入 BOM，JSON 解析当场 `SyntaxError`，红档会失真成「加载失败红」（③ 段审计 F-5 实测）。
 
 ### S4-TC-B05 `overrides[]` 每条必须带非空 `reason`
 

@@ -110,9 +110,18 @@
 | 改判 | 绿档（必须实跑） | 红档（必须可重跑构造） |
 |---|---|---|
 | V9 词面加 `十年` | 三面计数 `资深 0 / 20 年 0 / 十年 0`，`SC-TC-29` / `31` 单跑绿 | 副本把 `rationale` 首句改回「有十年以上经验的测试开发工程师。」→ 三面 `十年` ≥ 1 → 用例必红 |
-| B04 每格非空 | **T1 前 14/15**（`senior-sdet` 是唯一缺 `dimension` 键的席）→ **T1 后 15/15** → `S4-TC-B04` 绿 | 副本在 T1 后状态上删 `senior-sdet.json` 的 `dimension` 键，**并在副本内跑 `node tools/docgen/cli.mjs generate --readme --apply`** → README 该格空 → 断言红（错误信息须点名席名与列名） |
+| B04 每格非空 | **T1 前 14/15**（`senior-sdet` 是唯一缺 `dimension` 键的席）→ **T1 后 15/15** → `S4-TC-B04` 绿 | 副本在 T1 后状态上删 `senior-sdet.json` 的 `dimension` 键，**并在副本内跑 `node tools/docgen/cli.mjs generate --readme --apply`** → README 该格空 → 断言红（错误信息须点名席名与列名）。**写回必须无 BOM**（用 `fs.writeFileSync(path, text, 'utf8')`）；PowerShell 5 的 `Set-Content -Encoding UTF8` 会写入 BOM → JSON 解析当场 `SyntaxError`，红档会失真成「加载失败红」而非「断言红」（2026-11-04 ③ 段审计 F-5 实测） |
 | `dimension` 键值 | `sdet-data` TC-002(a) 绿（键集含 `dimension`、值 = `测试设计`） | 副本改值 → 断言红；副本删键 → 断言红 |
 | Task 0 迁账 | `git hash-object` 迁移前后相等（已跑：`c9740b50…`） | 不适用（纯搬迁，无判据）；`.session/reviews/2026-11-04-s-d/` 已删（`Test-Path` → False） |
+
+## 5.1 R8 处置摘要（进 git 的可核副本；正本 = 当次 `impact-sheet.md`，⑤ 段整目录迁入 `docs/reports/`）
+
+| # | 改动 | R8 处置 | 回扫结论（可复算） |
+|---|---|---|---|
+| 1 | V9 人设词面由两词面扩为三词面（加 `十年`） | 同批改 4 处（`sc-card-shape.test.mjs:605` / `:649`、S-C spec `:108` / `:151`、其 testcase 四处）+ 新登记 `I34` + `--freeze` | 改前三面合计 2（`data` 1 + `docs/agents` 1）→ 改后 0（实跑 `Select-String -Path tools\docgen\data\seats\*.json,agents\*.md,docs\agents\*.md -Pattern '十年'` → 0）；上游 PRD 不动；历史件 `2026-10-19-…-design.md:64` / `2026-10-21-…-testcase.md:855` 历史保留 |
+| 2 | `S4-TC-B04` 加「每席维度格非空」 | 同批改 `card-render.test.mjs` + S4 testcase 三处（`:279` / `:712` / `:729`） | S4 spec 正文逐字不动（锚 = `:80`）；断言红档已实跑 |
+| 3 | `senior-sdet` 补 `dimension` 并翻转「不得有该键」断言 | 同批改 `sdet-data.test.mjs` 的 `KEYS` / `:17` / `:8` 注释 | `validateAgentData` 的 `BASE_KEYS` 本就含该键 → 校验器不动 |
+| 4 | G1 文案：`rationale` 首句去资历表述 | 与 #1 同批（只加词面不改文案即当场红） | `agents/` 源卡无该句（`Select-String -Pattern '十年'` → 0） |
 
 ## 6 已知限制（触发 / 谁兜）
 
@@ -120,8 +129,9 @@
 |---|---|---|---|
 | 1 | 人设词面仍是**词面枚举**（`资深` / `20 年` / `十年`），同义表述（如「十余年」「多年」）仍漏检 | 出现新的同义资历句时 | 下一批把 V9 改位置型（人设面禁「资历年限表述」）时一并处置 |
 | 2 | B04 只判 `README.md` 的**维度列**非空，不判 `docs/agents/<席>.md:4` 单席头 | 单席头被写成空 `- 维度：` 而 README 有值时 | ④ 段抽核或下一批加「单席头同值」断言 |
-| 3 | 本批是旁路批（**待审计确认**）：④ 段不新增用例，改判只有「既有回归 + 注入取证」 | 后续批复核本批改判时 | 复核者按 §5 逐处复算红绿两档 |
+| 3 | 本批是旁路批（**① / ② 段独立审计已确认成立 2 / 0**）：④ 段不新增用例，改判只有「既有回归 + 注入取证」 | 后续批复核本批改判时 | 复核者按 §5 逐处复算红绿两档 |
 | 4 | `docs/agents/**` 重生成会刷新全部 16 份文件的 mtime，但内容差异只 2 份（`senior-sdet.md` + `README.md`） | 任何依赖 mtime 的判据 | 判「是否漏生成」用 `gate`（`baseline 38/38`），不用 mtime |
+| 5 | 本批 R8 正本（`impact-sheet.md`）住 `.session/reviews/2026-11-04-s-e/`（不进 git）；迁入 `docs/reports/2026-11-04-s-e-evidence/` 后**不会被 `findImpactSheet()` 自动发现**（脚本只扫 `.session/reviews/` 与 `docs/superpowers/reviews/`） | 换机 / 重新克隆；或后续批次想自动复用本批清单 | ⑤ 段整目录迁 `docs/reports/2026-11-04-s-e-evidence/`（同 S-D / S-C 口径），迁移 README 里写明「不会被自动发现、复算需 `--impact` 显式指定」；可核副本 = 本 plan §5.1（在 git 内） |
 
 ## 7 执行记录
 
@@ -131,5 +141,5 @@
 | T1 | **完成（2026-11-04）** | `senior-sdet.json` 加 `"dimension": "测试设计"`；`sdet-data.test.mjs` 的 `KEYS` 含该键、`:17` 改 `assert.equal(e.dimension, '测试设计')`；`generate --readme --apply` → `docs/agents` 只 2 份变；`gate` → `baseline 38/38`；`sdet-data.test.mjs` 单跑 `# tests 3 / # pass 3 / # fail 0`；`docs/agents/senior-sdet.md:4` = `- 维度：测试设计` |
 | T2 | **完成（2026-11-04）** | `rationale` 首句 →「测试开发工程师。」；`SC-TC-29` / `SC-TC-31` 词面数组加 `十年`；S-C spec §11.4 `:108` / §11.8 `:151` 与 testcase §0.2 口径 2 / `:70` / `:475` / `:477` / `:479-482` / `:497` / `:499` / `:501` / `:503` / `:506` 同步；重生成后三面 `资深 0 / 20 年 0 / 十年 0`（实跑 `Select-String` 三面合计 0）；`sc-card-shape.test.mjs` 单跑 `# tests 60 / # pass 58 / # fail 0 / # skipped 2` |
 | T3 | **完成（2026-11-04）** | `S4-TC-B04` 加「数据行 15 + 每席维度格非空」；S4 testcase 三处（表行 / 覆盖行 / 日期注与红档构造）同步；绿 = 单跑 `ok 1 - S4-TC-B04 …`；**红档实跑**（`%TEMP%` 全仓副本删 `dimension` 键 + 副本内 `generate`）→ `not ok 1 …`、错误信息 `index 席「senior-sdet」的「维度」格为空（spec :80 的 seatEntry 含 dimension）`、`# fail 1`；副本已删（`cleaned=True`） |
-| T4 | **完成（2026-11-04）** | `keywords.json` 加 `I34`（words = `两个词面` / `三条并列判据` / `只判两词面`）；`--freeze` 重写 `baseline.json`（`counts.I34 = 0`；另 `I27 7→6` / `I31 10→0` / `I33 1→0` 系实况下降）；`sweep --check` → `sweep ok`（exit 0） |
-| T5 | 进行中 | 两份 `docs/after` 已闭（G1 移入 §5.1 / S4-L4 删条）；门行 `③@S-E` 起待独立审计 |
+| T4 | **完成（2026-11-04）** | `keywords.json` 加 `I34`（words = `两个词面` / `三条并列判据` / `只判两词面`）；`--freeze` 重写 `baseline.json`（`counts.I34 = 0`）；`sweep --check` → `sweep ok`（exit 0）。**另三项下调的取证**（③ 段审计 F-4 要求）：`I27 7→6` ← `git log --oneline -1 -- tools/docgen/test/tool-tiers.test.mjs` → `9687281`；`I31 10→0` ← `git log --oneline -1 -- docs/superpowers/specs/2026-11-03-s-a-data-layer-design.md` → `5ffe400`；`I33 1→0` ← `git log --oneline -1 -- docs/superpowers/plans/2026-11-03-s-a-data-layer.md` → `e147ecd`；三者均早于本批基线 `a495656`，本批对这三个 scope 文件零改动 |
+| T5 | 进行中 | 两份 `docs/after` 已闭（G1 移入 §5.1 / S4-L4 删条）；门行 `③@S-E` / `④@S-E` / `⑤@S-E` 待落；**余项产出 = §3 第 20 行（④⑤ 四件账，落 `docs/reports/2026-11-04-s-e-evidence/`）与第 21 行（收口交接词）** |
