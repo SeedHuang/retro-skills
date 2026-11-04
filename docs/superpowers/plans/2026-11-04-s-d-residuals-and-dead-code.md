@@ -141,6 +141,8 @@
     `'tools/docgen/components/sharedBlocks.mjs': '<日期> S-D 死代码清理：整文件删除；共享块语义已上移 card-model/vocab/shared-actions.mjs'`
   - `docs/after/20261024174253-dev-workflow-mainline-open-items.md` 线 G 行：两件已删 → 按「做完即删条」整行移出。
 - **Expected**：`node --test skills/managing-lessons-store/scripts/lessons.test.mjs` → `# fail 0`，`structSkipped` 由 37 升（打印值当场记）；`Test-Path` 两文件 = False；`npm run check` 末行 `check 全部通过`。
+- **施工期实情 1（计划外但必须做）·豁免判定前移**：原计划只写「`STRUCT_REPLACED` 增 2 条」。实跑发现**不够** —— 该豁免检查在「目标文件解析成功之后」才生效（`abs` 非空后 `hasOwnProperty`），整文件删除时解析先落 `missing` → 直接红（实测 6 处历史引用全落 `missing`：`2026-10-24-dev-workflow-skeleton-testlanding.md`、`2026-10-30-agent-card-s4-render.md`、`2026-10-19-docgen-agent-batch-design-testcase.md`（2 处）、`2026-10-19-docgen-agent-senior-sdet-design-testcase.md`（2 处，含 1 处全路径写法）、`2026-10-25-docgen-policy-single-source-design-testcase.md`）。处置 = 把豁免判定**前移到解析之前**（全路径相等 或 裸名 == basename 即计 `structSkipped`），复用同一张表、不新增第二份登记。**为什么这样修而不是留墓碑文件**：留墓碑等于「清理死代码」没做成（两件仍占位），且把「删除」这种合法终态排除在豁免语义之外；前移后语义统一为「该文件已不再按原样存在」。**已知风险**：裸名按 basename 匹配，若将来出现同名新文件会误豁免 —— 当前 3 条 basename 各自唯一，已在代码注释写明「新增条目须确认 basename 仍唯一」。
+- **施工期实情 2（计划外但必须做）· 同根第二枚炸弹**：`T4` 按 `docs-convention`「做完即删条」动了一份 `docs/after` 既有件 → 撞 `S3-TC-K07 不改面`（`tools/docgen/test/s3-predicates.test.mjs`）。该用例按 `git diff --name-status $S3_BASE`（**开区间到工作树末尾**）判「历史件不许改」——与 T1 的 `SC-TC-62` **同一根因**（批内判据挂在开区间上）。按「同根则一次修好」处置：给它加 `S3_HEAD` 并冻结在 S3 收口提交 `90083cd`（实测 `git diff --name-status b5e11aa 90083cd` = 72 行、其中历史类改/删 **0** 行 → 冻结后恒绿且永久正确）。
 - **不动的面**（写明为什么）：`docs/prd/20261026205821-agent-card-contract.md:90` 的「559 行」是 PRD 的**当时实测快照**，不是活判据 → 历史保留；`docs/superpowers/specs/2026-10-19-*` 里对两文件的行号引用由 `STRUCT_REPLACED` 豁免兜住，不逐条改写。
 
 ### T5 收口
@@ -168,6 +170,7 @@
 | 22 | `tools/docgen/components/renderAgent.mjs` | D | T4 |
 | 23 | `tools/docgen/components/sharedBlocks.mjs` | D | T4 |
 | 24 | `docs/reports/2026-11-04-s-d-bypass-audit.md` | A（审计记录，非交付物） | ① / ② 段 |
+| 25 | `tools/docgen/test/s3-predicates.test.mjs` | M（T4 施工期新增：`S3-TC-K07` 加 `S3_HEAD` 冻结上界） | T4 |
 
 **第 24 行的来历**：独立审计实例在本批 ①② 判据产出中生成（`PRD §4.2 :333` 强制要求 ①② 行带两样证据，落成文件才可核）。它属**审计记录**，不属「spec / testcase / 载体文件」→ 不破坏旁路判据二；已由该审计实例在 `docs/reports/2026-11-04-s-d-bypass-audit.md` §2.3 里计数留痕。
 
@@ -194,6 +197,8 @@ T4（独立，可与 T1/T2 并行，但与 T3 不相干）──► T5
 | `SC-TC-62` 闭区间（炸弹已拆） | — | 新建探针文件 → 仍绿 → 删探针 |
 | G6 `t.skip` | 白名单删一名 → `[测试] 名单外 skip：…`、`# fail` 非 0 | 恢复 → `# skipped 7`、`# fail 0` |
 | `STRUCT_REPLACED` 增员 | 删登记 → 行号守卫 `missing`/`assert` 非 0 | 恢复 → `# fail 0`、`structSkipped` 上升 |
+| **豁免判定前移**（T4 施工期新增） | **实跑即红**：登记后删两文件 → 守卫报 `有 6 处行号引用找不到目标文件` exit 1（先于前移的原始版本，本批当场实测） | 前移后 → `structSkipped 37 → 43`（+6）、`# fail 0` |
+| **`S3-TC-K07` 闭区间**（T4 施工期新增） | **实跑即红**：删 `docs/after` 旧行 → `not ok 1043 - S3-TC-K07 不改面`、全仓 `# fail 1` | 加 `S3_HEAD=90083cd` → 单跑 `# fail 0`、全仓 `# fail 0`；`git diff --name-status b5e11aa 90083cd` 的历史类改/删 = **0** 行 |
 
 ## 6 已知限制（本批不闭合，带触发与谁兜）
 

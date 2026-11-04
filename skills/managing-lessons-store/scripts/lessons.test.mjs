@@ -1767,6 +1767,10 @@ function isRecordTranscript(file) {
 // 每条必须带「生效日期 + 迁去哪」；新增条目要在当次计划的「执行记录」里点名（防静默增员）。
 const STRUCT_REPLACED = {
   'tools/docgen/components/agentData.mjs': '2026-11-03 S-A T3：327 行字面降为 9 行薄壳；数据迁 tools/docgen/data/seats/*.json、装配迁 seatLoader.mjs',
+  // S-D T4（2026-11-04）死代码清理：两件整文件删除（旧模板退场后无生产调用方，头部停用横幅已存 2026-10-31 ~ 删除）。
+  // 历史件（spec / plan / PRD 快照）里指向它们的分行号引用指向**当时的**内容，按新行数校验无意义 → 结构替换豁免。
+  'tools/docgen/components/renderAgent.mjs': '2026-11-04 S-D T4：整文件删除（旧模板渲染语义已由 tools/docgen/card-model/** + cardPipeline 替代）',
+  'tools/docgen/components/sharedBlocks.mjs': '2026-11-04 S-D T4：整文件删除（共享块语义已上移 card-model/vocab/shared-actions.mjs）',
 }
 function scanLineRefs(mdFiles, root = REPO_ROOT) {
   let checked = 0
@@ -1794,6 +1798,18 @@ function scanLineRefs(mdFiles, root = REPO_ROOT) {
     // 保留 `：` 全角形态：Windows / 中文文档里两种都常见。
     for (const m of txt.matchAll(/((?:[A-Za-z0-9_.-]+[\\/])*[A-Za-z0-9_.-]+\.mjs)`?\s*(?:[:：]\s*|第\s*)(\d{2,4})\s*(?:行|条)?/g)) {
       const ref = m[1]
+      // 结构替换 / 删除豁免（2026-11-04 S-D T4 前移到解析之前）：原先只在「文件仍在、已按新行数解析成功」时才
+      // 查 STRUCT_REPLACED（`abs` 非空之后），于是**整文件删除**表达不了——删掉的件会让历史引用变成 `missing`
+      // 而红，只能靠留墓碑文件续命（S-D 实测：删 `renderAgent.mjs` 后 6 处历史引用全落 `missing`）。
+      // 现在改到解析前：只要该引用点名了登记过的件（全路径相等，或裸名等于其 basename），一律计 structSkipped。
+      // 语义 = 「该文件已不再按原样存在」——历史件里的行号指向它**当时**的内容，按现行行数校验无意义。
+      // 风险（已知并接受）：裸名按 basename 匹配，若将来出现同名新文件，这条引用会被误豁免；登记表只有 3 条且
+      // basename 各自唯一，故当前无歧义；新增条目时须确认 basename 仍唯一。
+      const refNorm = ref.split(/[\\/]/).join('/')
+      if (Object.keys(STRUCT_REPLACED).some((p) => refNorm === p || refNorm === p.split('/').pop())) {
+        structSkipped++
+        continue
+      }
       // 带路径前缀的先按「相对所在文档」「相对仓根」两处解析（`docs/…/x.md` 里两种写法都有）
       // ⚠️ **带路径的引用解析不到就是 `missing`，不许退回裸名查找**（2026-10-24 代码审查问题 1）：
       // 路径笔误 / 文件被移动时，按裸名兜底会**静默改用另一个同名文件**校验，这条引用就永远指向错文件

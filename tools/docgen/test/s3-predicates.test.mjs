@@ -43,6 +43,11 @@ const CRIT_TERMS = JSON.parse(readFileSync(join(REPO, 'tools/quality/observable-
 // 解析抽成纯函数，使「env 覆盖」这条路径可被直接断言（B01 判：忽略 env 的硬编码必红）
 const resolveS3Base = (env = process.env) => env.S3_BASE || 'b5e11aa'
 const S3_BASE = resolveS3Base()
+// `S3_HEAD` = S3 收口提交（S-D T4，2026-11-04）：`S3-TC-K07 不改面` 原先按 `git diff --name-status S3_BASE`
+// （**开区间到工作树末尾**）判「历史件不许改」——于是**任何后续批次**只要改/删一份 `docs/after/` 或 spec 历史件
+// 就红（S-D 实测：T4 按「做完即删条」删掉一份 `docs/after` 的旧行 → 本用例红）。这与 `SC-TC-62` 是同一根因
+// （批内判据挂在开区间上），故同批解：上界冻结在 S3 那批的收口提交，本用例从此只核「S3 那批没改历史件」。
+const S3_HEAD = (process.env.S3_BASE_HEAD || '').trim() || '90083cd'
 // 常量 12：旧 8 条 label 从 `.mjs` 源码按正则抽（不 JSON.parse）
 const OLD_LABELS = [...execFileSync('git', ['show', `${S3_BASE}:tools/docgen/card-model/vocab/predicates.mjs`], { cwd: REPO, encoding: 'utf8' }).matchAll(/label:\s*'([^']*)'/g)].map((m) => m[1])
 const MUST_IDS = SHARED_MUST.map((a) => a.criterion)
@@ -1188,9 +1193,9 @@ test('S3-TC-K06 议会引用', () => {
   assert.equal(files.reduce((n, s) => n + newLabels.filter((l) => s.includes(l)).length, 0), 0)
 })
 
-test('S3-TC-K07 不改面', (t) => {
+test('S3-TC-K07 不改面（$S3_BASE..$S3_HEAD 闭区间）', (t) => {
   // 历史类清单单源 = scope-sweep 的 HISTORY_PREFIXES（不手抄）
-  const changedRows = execFileSync('git', ['diff', '--name-status', S3_BASE], { cwd: REPO, encoding: 'utf8' })
+  const changedRows = execFileSync('git', ['diff', '--name-status', S3_BASE, S3_HEAD], { cwd: REPO, encoding: 'utf8' })
     .trim().split(/\r?\n/).filter(Boolean).map((l) => l.split('\t'))
     .map(([st, p]) => ({ st, p: p.split('\\').join('/') }))
     .filter(({ p }) => !p.startsWith('.session/') && !p.startsWith('.superpowers/') && !p.includes('2026-11-02-observable-s3'))
