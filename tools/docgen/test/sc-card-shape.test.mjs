@@ -973,6 +973,8 @@ const NEW_PATHS = [
   'docs/handoffs/2026-11-04-s-c-card-shape.md',
   // ③ 交接词：spec §11.14 步 1 只列了 ② 交接词；③ 收尾必然新写一份（本批 A 面），已由用户 2026-11-04 裁定补入
   'docs/handoffs/2026-11-04-s-c-card-shape-impl.md',
+  // ⑤ 收尾交接词：同 ③ 的成因（spec §11.14 步 1 未列），本批 A 面、由 2026-11-04 收口时补入（与 ② / ③ 交接词同类，非新口径）
+  'docs/handoffs/2026-11-04-next-batch-kickoff.md',
   'docs/superpowers/specs/2026-11-03-s-c-card-shape-design.md',
   'docs/superpowers/specs/2026-11-03-s-c-card-shape-design-testcase.md',
   AFTER_PATH,
