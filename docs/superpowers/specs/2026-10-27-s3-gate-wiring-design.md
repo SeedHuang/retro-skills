@@ -48,7 +48,7 @@ S2 交付的四段校验链**没有任何运行时入口**：`npm run check` 既
 | R6 | **旁路只一条总开关** `CHECK_BYPASS=1`（原因取 `CHECK_BYPASS_REASON`），首行打印 `BYPASS: <原因>`，只跳过 ⑥ 段判定，其余段照跑且仍可红 | PRD §5.1 `:396` + §5.2 最小化约束「子项开关」禁止——旁路只能整体 |
 | R7 | **F-24 本期交付「窗口登记件」**：15 张卡封闭清单 + 到期事件单源 + 处置纯函数 + `check` 打印窗口状态行；S1 校验器上线后才产出 findings 并由该纯函数处置 | PRD §5.2 `:416`（到期 = S4 首次重生成，事件型）；S1 当前零实现，本期不可能有 findings 源 |
 | R8 | **不新增错误码**：只用 PRD 已登记的 `RepoRootUnresolved` / `ArtifactNamingOff` / `UntrackedArtifact` / `ArtifactDirty` / `ArtifactMissing` / `UnclassifiedArtifact` + S2 四段码原样透传 | PRD §4.4 A/B 表；「新增错误码必须先登记 PRD」是既定约束 |
-| R9 | **静默 skip 守卫进首批**：`check-all` ② 段把「skipped / todo 不计」改为**按用例名白名单**（现 2 条），名单外即红 | 用户 2026-10-27 裁定（交接词开放问题 3，答「进（推荐）」；转账本目录 `progress.md` §0.1） |
+| R9 | **静默 skip 守卫进首批**：`check-all` ② 段把「skipped / todo 不计」改为**按用例名白名单**（现 7 条；S-D 2026-11-04 由 5 升 7，见 §11.2 末段），名单外即红 | 用户 2026-10-27 裁定（交接词开放问题 3，答「进（推荐）」；转账本目录 `progress.md` §0.1） |
 
 ### 11.2 机制
 
@@ -129,7 +129,7 @@ check-all.mjs
 
 > **2026-10-31 日期注（K-8/K-9 接线，现行判据）**：`n/w/b` 改由 `cardPipeline.collectCardFindings()` 逐席实算（缺卡 + 装配错误 + S1 `validateCardModel` 入口错误，finding 的 `file` 经 `baseline.cardPathOfSeat()` 派生 = 角色卡路径）后喂 `disposeCardFindings`；**层序同 `renderSeat`：装配错误即停、不再跑 S1**（否则同一根因报两条）；**阻断非空 → `check` exit 1**。行文案随之改为 `[豁免窗口] <EXEMPT_CARDS.length> 张角色卡（到期 = S4 首次重生成，EXPIRY_EVENT=<值> / EXPIRY_LANDED=<值>）；卡面 findings <n> / 告警 <w> / 阻断 <b>`——`EXPIRY_LANDED=true` 后「只告警」不再成立，行末「（S1 未上线：非达标证据）」句删除。**「卡面」限定词不变**；上段其余句按原文保留（历史）。现行判据另见 `2026-10-29-agent-card-s4-render-design.md` §7⑤ 的日期注。
 
-**静默 skip 守卫（R9）**：`check-all` ② 段在回读 `# tests N` 之外，再按用例名白名单核 `# skipped M` / `# todo M`——白名单单源 = 新增 `scripts/test-skip-allowlist.mjs` 导出的 `SKIP_ALLOWLIST`（用例名字符串数组，现 2 条；随批次同改该文件与本节）；**解析形态定死为 TAP 内联指令**：`/^\s*(?:not )?ok\s+\d+\s+-\s+(.*?)\s+#\s+(SKIP|TODO)\b/`（名字取第 1 捕获组，reason 丢弃；**不存在独立的 `# SKIP <名>` 行**）。**判据只按名字**：解析出的名字 ⊄ `SKIP_ALLOWLIST` → 红，打印 `[测试] 名单外 skip：<用例名>` / `[测试] 名单外 todo：<用例名>`；**「`# skipped M`（M>0）但该正则解析不出任何用例名」= fail-closed 红**。**不比较条数**（`M` 与名单长度可不等：`DW_RUNTIME_CHECK=1` 让 skip 真跑时为 0；S2 的「绝对基线 2」正是因此撤回）。
+**静默 skip 守卫（R9）**：`check-all` ② 段在回读 `# tests N` 之外，再按用例名白名单核 `# skipped M` / `# todo M`——白名单单源 = 新增 `scripts/test-skip-allowlist.mjs` 导出的 `SKIP_ALLOWLIST`（用例名字符串数组，**现 7 条**〔2026-11-04 S-D 由 5 升 7：`SC-TC-45` / `SC-TC-46` 由空跑改 `t.skip()`，G6 闭合〕；随批次同改该文件与本 spec 的 §11.1 R9 行与本节两处计数）；**解析形态定死为 TAP 内联指令**：`/^\s*(?:not )?ok\s+\d+\s+-\s+(.*?)\s+#\s+(SKIP|TODO)\b/`（名字取第 1 捕获组，reason 丢弃；**不存在独立的 `# SKIP <名>` 行**）。**判据只按名字**：解析出的名字 ⊄ `SKIP_ALLOWLIST` → 红，打印 `[测试] 名单外 skip：<用例名>` / `[测试] 名单外 todo：<用例名>`；**「`# skipped M`（M>0）但该正则解析不出任何用例名」= fail-closed 红**。**不比较条数**（`M` 与名单长度可不等：`DW_RUNTIME_CHECK=1` 让 skip 真跑时为 0；S2 的「绝对基线 2」正是因此撤回）。
 
 **施工期预期红**：⑥ 段在第 1 次 move（迁移演练 / 首次归档）之前，对既有归档目录应为 0 findings；施工中若出现 `UntrackedArtifact`，属迁移步骤 1 的预期态（见上）。plan 收尾的「绿」判据从「`git add` 完成」那一刻起算。
 

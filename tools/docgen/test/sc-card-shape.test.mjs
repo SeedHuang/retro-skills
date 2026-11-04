@@ -682,14 +682,16 @@ test('SC-TC-44 席位数据「主持人」字面 0 次（常驻）；${@hostTerm
   if (SHAPE) assert.equal(countWord(seatsText(), '${@hostTerm}'), 18, '一次性档：占位出现次数须 = 18')
 })
 
-test('SC-TC-45 行口径 vs 次数口径（17 行 / 18 处）——整条归一次性档', () => {
-  if (!SHAPE) return
+test('SC-TC-45 行口径 vs 次数口径（17 行 / 18 处）——整条归一次性档', (t) => {
+  // G6（S-D T2）：原为 `if (!SHAPE) return` —— 一条断言不跑却计 pass，`# skipped 0` 掩盖。改 `t.skip()` 后
+  // 默认档汇总行如实出现 skip（名字进 `SKIP_ALLOWLIST`，由 ② 段 skip 守卫按名核）。
+  if (!SHAPE) return t.skip('一次性档未开（SB_SHAPE_ONESHOT≠1）')
   assert.ok(BASE, 'SHAPE 档必须提供 SB_BASE')
   let lines = 0
   let occs = 0
   for (const s of SEATS()) {
-    const t = execFileSync('git', ['show', `${BASE}:tools/docgen/data/seats/${s}.json`], { cwd: REPO, encoding: 'utf8' })
-    for (const line of t.split(/\r?\n/)) {
+    const raw = execFileSync('git', ['show', `${BASE}:tools/docgen/data/seats/${s}.json`], { cwd: REPO, encoding: 'utf8' })
+    for (const line of raw.split(/\r?\n/)) {
       const c = line.split('主持人').length - 1
       if (c > 0) { lines += 1; occs += c }
     }
@@ -700,8 +702,9 @@ test('SC-TC-45 行口径 vs 次数口径（17 行 / 18 处）——整条归一�
   assert.equal(countWord(seatsText(), '主持人'), 0, '改后侧字面必须 0')
 })
 
-test('SC-TC-46 渲染面「主持人」总数 = 30（等价性证明）——整条归一次性档', () => {
-  if (!SHAPE) return
+test('SC-TC-46 渲染面「主持人」总数 = 30（等价性证明）——整条归一次性档', (t) => {
+  // G6（S-D T2）：同 SC-TC-45，默认档改为如实计 skip
+  if (!SHAPE) return t.skip('一次性档未开（SB_SHAPE_ONESHOT≠1）')
   const total = SEATS().reduce((n, s) => n + countWord(textOf(s), '主持人'), 0)
   assert.equal(total, 30, `渲染面总数须 = 30（实得 ${total}）`)
 })
