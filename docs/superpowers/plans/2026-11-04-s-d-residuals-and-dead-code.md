@@ -171,6 +171,7 @@
 | 23 | `tools/docgen/components/sharedBlocks.mjs` | D | T4 |
 | 24 | `docs/reports/2026-11-04-s-d-bypass-audit.md` | A（审计记录，非交付物） | ① / ② 段 |
 | 25 | `tools/docgen/test/s3-predicates.test.mjs` | M（T4 施工期新增：`S3-TC-K07` 加 `S3_HEAD` 冻结上界） | T4 |
+| 26 | `tools/docgen/test/card-render.test.mjs` | M（T5 收口期新增：`S4-TC-H03` 的「改动行数」取增+删两列） | T5 |
 
 **第 24 行的来历**：独立审计实例在本批 ①② 判据产出中生成（`PRD §4.2 :333` 强制要求 ①② 行带两样证据，落成文件才可核）。它属**审计记录**，不属「spec / testcase / 载体文件」→ 不破坏旁路判据二；已由该审计实例在 `docs/reports/2026-11-04-s-d-bypass-audit.md` §2.3 里计数留痕。
 

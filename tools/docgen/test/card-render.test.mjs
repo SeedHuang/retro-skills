@@ -350,8 +350,16 @@ test('S4-TC-H03 出数门槛：git log -1 --numstat 可跑且单席改动行数 
   const out = execFileSync('git', ['log', '-1', '--numstat', '--format=', '--', 'agents/', 'tools/docgen/'], { cwd: REPO, encoding: 'utf8' })
     .trim().split(/\r?\n/).filter(Boolean)
   assert.ok(out.length > 0, '必须取到「最近一次触及 agents/ 或 tools/docgen/ 的提交」的 numstat（§8 步 2 :191）')
-  const nums = out.map((l) => Number(l.split('\t')[0])).filter((n) => Number.isFinite(n))
-  assert.ok(nums.length > 0, 'numstat 行必须可解析出新增行数')
+  // 「改动行数」= numstat 的**增 + 删**两列（S-D T5 实施按判据方向修正，2026-11-04）：
+  // 原实现只累加第 1 列（新增），于是「纯删除提交」（例：S-D T4 删两件死代码，0 增 / 77 删）恒判 0 → 本用例
+  // 变成「最近一次触及 tools/docgen/ 的提交恰好不能是删除型」的隐性约束，与判据要表达的「改动量 > 0」不符。
+  // 工期公式的输入是工作量，删除同样是工作量；两列相加才等于「改动行数」。
+  const nums = out.map((l) => {
+    const [a, d] = l.split('\t')
+    const add = Number(a); const del = Number(d)
+    return (Number.isFinite(add) ? add : 0) + (Number.isFinite(del) ? del : 0)
+  })
+  assert.ok(nums.length > 0, 'numstat 行必须可解析出改动行数（增 + 删）')
   assert.ok(nums.reduce((a, b) => a + b, 0) > 0, '单席改动行数必须 > 0（否则工期公式无输入）')
 })
 
