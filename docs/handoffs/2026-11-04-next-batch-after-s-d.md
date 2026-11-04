@@ -6,8 +6,8 @@
 |---|---|
 | 交接时间 | 2026-11-04 18:52（本机时区，Asia/Shanghai） |
 | 项目根 | `d:\Seed\retro-skills` |
-| HEAD | **`e977b54`**（`docs(dev-workflow): ⑤@S-D 交付终签（用户原话转录）+ 旁路批首例闭环`）；工作树：**clean**（`git status --porcelain` 实跑 0 行） |
-| 验证基线 | typecheck 无（本仓无 typecheck）/ build 无（无构建）/ unit `# tests 1541 / # pass 1534 / # fail 0 / # skipped 7` + `baseline 38/38` + `0 findings` + `④ markdown 检查通过（417 个文件 / 1808 张表）` + `⑤ .session 结构检查通过（一级只含封闭清单档位；tmp/ 为空）` + `[observable] 扫描 107 个 .md / 未豁免命中 0 行 / 已豁免 6 行 / stale 0 条` + 末行 `check 全部通过`（**18:52 实跑**）；另 `rows 79 bad 0` + `gate-record ok（R1/R2/R6 全过；splitting 0）` + `sweep ok` + `check-observable ok` + `命名检查通过（docs）` + `check-plan deps → nodes 6 / edges 7`（18:52 实跑） |
+| HEAD | 最后一笔**实质**提交 = **`e977b54`**（`docs(dev-workflow): ⑤@S-D 交付终签（用户原话转录）+ 旁路批首例闭环`）；本交接词自身所在提交是其**后续一笔**，取法 = `git rev-parse --short HEAD` 当场打印（**上一份交接词曾写「HEAD 36d8e01，工作树 clean」却把 2 件留在暂存区**，下批开工第 1 步务必先实查）。工作树：**clean**（`git status --porcelain` 实跑 0 行） |
+| 验证基线 | typecheck 无（本仓无 typecheck）/ build 无（无构建）/ unit `# tests 1541 / # pass 1534 / # fail 0 / # skipped 7` + `baseline 38/38` + `0 findings` + `④ markdown 检查通过（418 个文件 / 1809 张表）` + `⑤ .session 结构检查通过（一级只含封闭清单档位；tmp/ 为空）` + `[observable] 扫描 107 个 .md / 未豁免命中 0 行 / 已豁免 6 行 / stale 0 条` + 末行 `check 全部通过`（**18:52 与 19:0x 两次实跑同值**）；另 `rows 79 bad 0` + `gate-record ok（R1/R2/R6 全过；splitting 0）` + `sweep ok` + `check-observable ok` + `命名检查通过（docs）` + `check-plan deps → nodes 6 / edges 7`（18:52 实跑）。**注**：④ 的文件 / 表数比 S-D 收尾时各多 1（417→418 / 1808→1809），差数就是本件交接词自身；下批每加一份 md，这两个数按实际漂移，**不钉死** |
 | 继任自 | `docs/handoffs/2026-11-04-next-batch-kickoff.md`（上一批收口词；本 session 覆盖其指派的 4 条残账 + 1 项功能项全段） |
 | 状态 | **有 1 个开放问题（见「开放问题」1，属开工第一问）**；磁盘与 git 状态本身可直开工 |
 
@@ -84,6 +84,7 @@
 - `(b)` S6-B 结构收敛 / `(d)` S4-L2 逐席条目数基线 —— 来源：`docs/handoffs/2026-10-31-post-s4-backlog.md:57` 与两份 `docs/after`；收敛时机：立项时。
 - `STRUCT_REPLACED` 裸名按 basename 匹配的**误豁免风险** —— 来源：plan §6 倒数第 2 行；收敛时机：出现与已删件同名的新文件时（新增登记前须确认 basename 仍唯一）。
 - 旁路 ④「不新增用例」使 S-D 三处改判只有「既有回归 + 注入取证」做证据（无专用新用例）—— 来源：plan §6 末行；收敛时机：后续批复核本批改判时按 plan §5 逐处复算红绿两档。
+- **一次未复现的 `# fail 1`**（如实记录，无归因）—— 现象：提交本交接词的那条 shell 命令里紧跟 `git commit` 跑 `npm run check`，得 `# tests 1541 / # fail 1 / # skipped 7`，但**未抓到是哪条用例**（输出被 `Select-String` 过滤掉）；随后同命令连跑两次均 `# fail 0` + `check 全部通过`。推断（未验证）：某条读取 `HEAD` / `git diff --quiet HEAD` 的用例与「刚提交」的索引刷新撞车。**触发**：再次出现时；**谁兜** = 拿到 `not ok` 行名的人（下批开工第 1 步复跑基线即可顺带验）。
 
 ## 开工前先做
 
