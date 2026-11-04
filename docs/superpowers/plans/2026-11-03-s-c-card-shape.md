@@ -210,7 +210,7 @@
 
 | 任务 | 提交 | 完成判据（命令首行） | 状态 |
 |---|---|---|---|
-| Task 0 | — | — | 未开工 |
+| Task 0 | 收口时回填 | `$BASE=eef963e96c0a2c309c83789e13da5b195b1d4e0c`；`npm run check` → `# tests 1481 / # pass 1476 / # fail 0 / # skipped 5` + `baseline 38/38` + 末行 `check 全部通过`；15 卡 `Get-FileHash` vs `docs/reports/2026-11-03-s-b-card-sha-baseline.md` → `15/15` 相等；`check-plan size` → `spec 270/350 tc 60/80 rounds 3/3 => ok`；`check-plan map` → `cases 60 / mapped 60`；`check-plan deps` → `nodes 7 / edges 10`；`docs/after/20261104101304-s-c-checkitem-returns-deferral-open-decisions.md` 存在且含「触发 / 谁兜」 | 完成 |
 | Task 1 | — | — | 未开工 |
 | Task 2 | — | — | 未开工 |
 | Task 3 | — | — | 未开工 |
