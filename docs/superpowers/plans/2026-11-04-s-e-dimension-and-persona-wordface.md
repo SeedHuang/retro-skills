@@ -91,7 +91,7 @@
 | 17 | `docs/superpowers/plans/2026-11-04-s-e-dimension-and-persona-wordface.md` | A（本件） | 主 agent |
 | 18 | `docs/reports/2026-11-04-s-e-bypass-audit.md` | A（①② 旁路审计） | 审计实例 |
 | 19 | `docs/reports/2026-11-04-s-e-plan-gate.md` | A（计划门） | 审计实例 |
-| 20 | `docs/reports/2026-11-04-s-e-quality-evidence/`（① `quality-4.md` ② `quality-4-audit.md` ③ `delivery-5-claim.md` ④ `delivery-5-audit.md`） | A（④ / ⑤ 账，进 git） | sdet / 审计 / 主 agent |
+| 20 | `docs/reports/2026-11-04-s-e-quality-evidence/`（① `quality-4.md` ② `quality-4-audit.md` ③ `step-3-audit.md`（③ 段审计记录，2026-11-04 由 `.session/reviews/2026-11-04-s-e/` 迁入） ④ `delivery-5-claim.md` ⑤ `delivery-5-audit.md`） | A（④ / ⑤ 账，进 git） | sdet / 审计 / 主 agent |
 | 21 | `docs/handoffs/2026-11-04-next-batch-after-s-e.md` | A（收口交接词） | 主 agent |
 
 **不在白名单**：`.session/**`（过程账，不进 git；`findImpactSheet` 只扫此处与 `docs/superpowers/reviews/`，故本批 `impact-sheet.md` 落 `.session/reviews/2026-11-04-s-e/`，不落 `docs/`）。
@@ -131,7 +131,7 @@
 | 2 | B04 只判 `README.md` 的**维度列**非空，不判 `docs/agents/<席>.md:4` 单席头 | 单席头被写成空 `- 维度：` 而 README 有值时 | ④ 段抽核或下一批加「单席头同值」断言 |
 | 3 | 本批是旁路批（**① / ② 段独立审计已确认成立 2 / 0**）：④ 段不新增用例，改判只有「既有回归 + 注入取证」 | 后续批复核本批改判时 | 复核者按 §5 逐处复算红绿两档 |
 | 4 | `docs/agents/**` 重生成会刷新全部 16 份文件的 mtime，但内容差异只 2 份（`senior-sdet.md` + `README.md`） | 任何依赖 mtime 的判据 | 判「是否漏生成」用 `gate`（`baseline 38/38`），不用 mtime |
-| 5 | 本批 R8 正本（`impact-sheet.md`）住 `.session/reviews/2026-11-04-s-e/`（不进 git）；迁入 `docs/reports/2026-11-04-s-e-evidence/` 后**不会被 `findImpactSheet()` 自动发现**（脚本只扫 `.session/reviews/` 与 `docs/superpowers/reviews/`） | 换机 / 重新克隆；或后续批次想自动复用本批清单 | ⑤ 段整目录迁 `docs/reports/2026-11-04-s-e-evidence/`（同 S-D / S-C 口径），迁移 README 里写明「不会被自动发现、复算需 `--impact` 显式指定」；可核副本 = 本 plan §5.1（在 git 内） |
+| 5 | 本批 R8 正本（`impact-sheet.md`）住 `.session/reviews/2026-11-04-s-e/`（不进 git）；迁入 `docs/reports/2026-11-04-s-e-quality-evidence/` 后**不会被 `findImpactSheet()` 自动发现**（脚本只扫 `.session/reviews/` 与 `docs/superpowers/reviews/`） | 换机 / 重新克隆；或后续批次想自动复用本批清单 | **修正（2026-11-04，⑤ 段实情）**：`impact-sheet.md` 必须**留在 `.session` 直到本批最后一次 `npm run check`**——迁走后 `findImpactSheet()` 返回 null，`scope-sweep --check` 会报「找不到当次 impact-sheet.md」并连带 4 条 sweep 类用例红（与 S-D 同）。故迁移时点 = **S-E+1 批开工时**（同 S-D 口径），迁入本批在盘目录 `docs/reports/2026-11-04-s-e-quality-evidence/`，迁移 README 写明「复算需 `--impact` 显式指定」；R8 的可核副本已在 git 内 = 本 plan §5.1 |
 
 ## 7 执行记录
 
@@ -142,4 +142,4 @@
 | T2 | **完成（2026-11-04）** | `rationale` 首句 →「测试开发工程师。」；`SC-TC-29` / `SC-TC-31` 词面数组加 `十年`；S-C spec §11.4 `:108` / §11.8 `:151` 与 testcase §0.2 口径 2 / `:70` / `:475` / `:477` / `:479-482` / `:497` / `:499` / `:501` / `:503` / `:506` 同步；重生成后三面 `资深 0 / 20 年 0 / 十年 0`（实跑 `Select-String` 三面合计 0）；`sc-card-shape.test.mjs` 单跑 `# tests 60 / # pass 58 / # fail 0 / # skipped 2` |
 | T3 | **完成（2026-11-04）** | `S4-TC-B04` 加「数据行 15 + 每席维度格非空」；S4 testcase 三处（表行 / 覆盖行 / 日期注与红档构造）同步；绿 = 单跑 `ok 1 - S4-TC-B04 …`；**红档实跑**（`%TEMP%` 全仓副本删 `dimension` 键 + 副本内 `generate`）→ `not ok 1 …`、错误信息 `index 席「senior-sdet」的「维度」格为空（spec :80 的 seatEntry 含 dimension）`、`# fail 1`；副本已删（`cleaned=True`） |
 | T4 | **完成（2026-11-04）** | `keywords.json` 加 `I34`（words = `两个词面` / `三条并列判据` / `只判两词面`）；`--freeze` 重写 `baseline.json`（`counts.I34 = 0`）；`sweep --check` → `sweep ok`（exit 0）。**另三项下调的取证**（③ 段审计 F-4 要求）：`I27 7→6` ← `git log --oneline -1 -- tools/docgen/test/tool-tiers.test.mjs` → `9687281`；`I31 10→0` ← `git log --oneline -1 -- docs/superpowers/specs/2026-11-03-s-a-data-layer-design.md` → `5ffe400`；`I33 1→0` ← `git log --oneline -1 -- docs/superpowers/plans/2026-11-03-s-a-data-layer.md` → `e147ecd`；三者均早于本批基线 `a495656`，本批对这三个 scope 文件零改动 |
-| T5 | 进行中 | 两份 `docs/after` 已闭（G1 移入 §5.1 / S4-L4 删条）；门行 `③@S-E` / `④@S-E` / `⑤@S-E` 待落；**余项产出 = §3 第 20 行（④⑤ 四件账，落 `docs/reports/2026-11-04-s-e-evidence/`）与第 21 行（收口交接词）** |
+| T5 | **进行中（待 ⑤ 终签）** | 两份 `docs/after` 已闭（G1 移入 §5.1 / S4-L4 删条）；门行 `①②②→③③④` 已落、`⑤@S-E` 待用户签；③ 段审计记录已迁 `docs/reports/2026-11-04-s-e-quality-evidence/step-3-audit.md`（`git hash-object` 前后相等 `a872d6fd…`）；本批 `impact-sheet.md` 按 §6 第 5 行口径**留 `.session` 至 S-E+1 开工时迁** |
