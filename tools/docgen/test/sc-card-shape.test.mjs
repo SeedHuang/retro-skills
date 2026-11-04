@@ -19,6 +19,7 @@ import { cardFaceIds } from '../components/cardFaceIds.mjs'
 import { CARD_KEYS } from '../components/cardKeys.mjs'
 import { expandRefs } from '../components/seatLoader.mjs'
 import { VERDICTS as CHECK_VERDICTS } from '../../observation-check/checks.mjs'
+import { splitRow } from '../../execution-matrix/markdown-rows.mjs'
 import * as ENUMS from '../card-model/enums.mjs'
 import * as CC from '../card-model/vocab/card-contract.mjs'
 import { CARD_MODEL_CODES } from '../card-model/validateCardModel.mjs'
@@ -33,7 +34,8 @@ const segOf = (text, seg) => String(text).split(new RegExp(`^## ${seg}`, 'm'))[1
 
 // 一次性 / 批次形态断言档（testcase §0 `SHAPE`）：现值型断言只在这一档跑，`SB_BASE` = 本批 `$BASE`
 const SHAPE = process.env.SB_SHAPE_ONESHOT === '1'
-const BASE = (process.env.SB_BASE || '').trim()
+// `$BASE` = 本批开工提交（S-C spec §11.9 施工第 0 步）：默认冻结常量，`SB_BASE` 可显式覆盖（与 SC-TC-57 同源）
+const BASE = (process.env.SB_BASE || '').trim() || 'eef963e96c0a2c309c83789e13da5b195b1d4e0c'
 
 // 契约侧期望值（只作断言面；契约本体在 `card-contract.mjs`）
 const VERDICT_TEXT3 = { hit: '命中', miss: '未命中', na: '不适用' }
@@ -899,6 +901,133 @@ test('SC-TC-57 一次性档清单：SB_BASE 换本批 $BASE，四个现值两侧
   assert.equal(r.code, 0, `一次性档必须绿：${r.out.slice(-600)}`)
   assert.equal(countOf(r.out, '# skipped (\\d+)'), 0)
   assert.equal(countOf(r.out, '# fail (\\d+)'), 0)
+})
+
+// ── H 组：回归面与回退面（V3 / V1 / §11.14）──────────────────────────────────────────────────
+
+const BATCH_CASES = 60
+const BASELINE_TESTS = 1481
+const blockCount = (file, prefix = '') => (R(file).match(new RegExp(`^\\s*test\\('${prefix}`, 'gm')) ?? []).length
+
+test('SC-TC-53 gate exit 0 且 15 席 disk == render 逐字节', () => {
+  const g = runNode(['tools/docgen/cli.mjs', 'gate'])
+  assert.equal(g.code, 0, `gate 必须 exit 0：${g.out.slice(-400)}`)
+  assert.match(g.out, /baseline 38\/38/, '末行 38/38 只作记录（PRD §5 恒真）')
+  for (const s of SEATS()) assert.equal(R(join(AGENTS_DIR, `${s}.md`)), textOf(s), `${s} 盘上必须逐字节 == 渲染`)
+})
+
+test('SC-TC-54 副本改一席 action 不重生成 → gate Mismatch exit 1', () => {
+  withRepoCopy((copy) => {
+    const p = join(copy, 'tools/docgen/data/seats', `${SEATS()[0]}.json`)
+    const src = R(p)
+    writeFileSync(p, src.replace(/("action": "[^"]*)"/, '$1（改）"'), 'utf8')
+    const r = runNode(['tools/docgen/cli.mjs', 'gate'], copy)
+    assert.notEqual(r.code, 0, '改数据不重生成不得 exit 0')
+    assert.match(r.out, /Mismatch/, r.out.slice(-400))
+  })
+})
+
+test('SC-TC-55 用例账对齐（60 块）+ plan 的 check-plan map 无缺口 / 无悬空', () => {
+  assert.equal(blockCount(SELF_PATH, 'SC-TC-'), BATCH_CASES, '本文件 test 块必须恰 = 附录 A 行数')
+  // `# tests` 口径：基线 1481 + 本批 60 = 1541；测试内**不自跑** `npm run check`（禁自递归，见文件头禁令），
+  // 实际值由 ③ 出口的 `npm run check` 记录在 plan 执行记录 / 门行。
+  assert.equal(BASELINE_TESTS + BATCH_CASES, 1541, 'floor = 基线 + 本批新增')
+  const r = runNode(['scripts/check-plan.mjs', 'map', '--plan', 'docs/superpowers/plans/2026-11-03-s-c-card-shape.md'])
+  assert.equal(r.code, 0, `check-plan map 必须 exit 0：${r.out.slice(-300)}`)
+  assert.match(r.out, /map: missing 0 dangling 0（cases 60 \/ mapped 60） => ok/)
+})
+
+test('SC-TC-56 做坏判据：删一个测试文件 → 计数低于基线必红', () => {
+  const floor = BASELINE_TESTS + blockCount(SELF_PATH, 'SC-TC-')
+  const victim = blockCount(join(REPO, 'tools/docgen/test/sdet-render.test.mjs'), '')
+  assert.ok(victim >= 1, '所选文件的用例块数必须可数')
+  const afterDelete = floor - victim
+  assert.ok(afterDelete < floor, '删文件后总数必须低于 floor')
+  assert.throws(() => assert.ok(afterDelete >= floor), '判据（>= floor）必须在此构造上红')
+})
+
+test('SC-TC-59 防回退：PRD 行数 D 17 / Q 8 / 空值 0（S-C 不得改功能点集合）', () => {
+  const prd = R(join(REPO, 'docs/prd/20261102212627-card-data-contract-and-proof/index.md'))
+  const rows = prd.split(/\r?\n/).filter((l) => l.startsWith('|'))
+  const dRows = rows.filter((r) => /^\| \*{0,2}D\d+/.test(r))
+  const qRows = rows.filter((r) => /^\| Q\d+/.test(r))
+  assert.equal(dRows.length, 17, 'D 编号行数必须 17（正则须容忍粗体行号）')
+  assert.equal(qRows.length, 8, 'Q 编号行数必须 8')
+  const empty = [...dRows.map((r) => splitRow(r)[2]), ...qRows.map((r) => splitRow(r)[3])].filter((c) => c.trim() === '')
+  assert.deepEqual(empty, [], '「依据」列与「影响面」列不得有空值')
+})
+
+// 回退面判据（spec §11.14）：按 `git diff --name-status $BASE` 的集合比，不比计数（CC-1）
+const AFTER_PATH = `docs/after/20261104101304-s-c-checkitem-${BANNED_FIELD}-deferral-open-decisions.md`
+const NEW_PATHS = [
+  'docs/handoffs/2026-11-04-s-c-card-shape.md',
+  // ③ 交接词：spec §11.14 步 1 只列了 ② 交接词；③ 收尾必然新写一份（本批 A 面），已由用户 2026-11-04 裁定补入
+  'docs/handoffs/2026-11-04-s-c-card-shape-impl.md',
+  'docs/superpowers/specs/2026-11-03-s-c-card-shape-design.md',
+  'docs/superpowers/specs/2026-11-03-s-c-card-shape-design-testcase.md',
+  AFTER_PATH,
+  'docs/superpowers/plans/2026-11-03-s-c-card-shape.md',
+  'tools/docgen/check-trigger-kind.mjs',
+  'tools/docgen/check-tristate-header.mjs',
+  'tools/docgen/test/sc-card-shape.test.mjs',
+]
+const M_PREFIXES = ['tools/docgen/', 'tools/observation-check/', 'scripts/', 'agents/', 'docs/agents/']
+const M_REALS = [
+  'docs/superpowers/specs/2026-11-03-s-a-data-layer-design.md',
+  'docs/superpowers/specs/2026-11-03-s-a-data-layer-design-testcase.md',
+  // 签后增量登记（spec §11.15 强制动作）：门行是本批交付面、回退面**不抹**它；testcase 的白名单未列，
+  // 已由用户 2026-11-04 裁定按「spec 自身强制的产物」补入（登记为偏差，不放松其它路径）
+  'skills/dev-workflow/references/gate-record.md',
+]
+const inMWhitelist = (path) => M_PREFIXES.some((p) => path.startsWith(p)) || M_REALS.includes(path) || NEW_PATHS.includes(path)
+
+const judgeNameStatus = (rows) => {
+  const aSet = new Set()
+  const nonA = []
+  for (const row of rows) {
+    const [status, ...paths] = row.split('\t')
+    if (status === 'A') { aSet.add(paths[0]); continue }
+    for (const p of paths) nonA.push(p)
+  }
+  const aOutside = [...aSet].filter((p) => !NEW_PATHS.includes(p))
+  const mOutside = nonA.filter((p) => !inMWhitelist(p))
+  return { aSet, aOutside, mOutside, nonA }
+}
+
+test('SC-TC-62 回退面复验：A 面 ⊆ 本批新增白名单、其余状态面 ⊆ 修改白名单；D6 延期落点实名可核', () => {
+  assert.ok(BASE, 'SC-TC-62 必须提供 $BASE（= 开工提交）')
+  // ②-0 盲区前置：新增件必须对 `git diff` 可见（未跟踪件 `git diff` 看不见）
+  const untracked = execFileSync('git', ['ls-files', '--others', '--exclude-standard', '--', ...NEW_PATHS], { cwd: REPO, encoding: 'utf8' })
+    .split(/\r?\n/).filter(Boolean)
+  assert.deepEqual(untracked, [], '白名单内的新增件必须已进索引 / 已跟踪')
+  const rows = execFileSync('git', ['-c', 'core.quotePath=false', 'diff', '--name-status', BASE], { cwd: REPO, encoding: 'utf8' })
+    .split(/\r?\n/).filter((l) => l.trim())
+  const { aSet, aOutside, mOutside } = judgeNameStatus(rows)
+  console.log(`name-status: rows ${rows.length} / A ${aSet.size} / A-outside ${aOutside.length} / nonA-outside ${mOutside.length}`)
+  assert.deepEqual(aOutside, [], `A 面出现白名单外路径：${aOutside.join('、')}`)
+  assert.deepEqual(mOutside, [], `其余状态面出现修改白名单外路径：${mOutside.join('、')}`)
+  // B（不许少）：`$BASE` 上**不存在**的白名单件必须都出现在 A 面——用 `git ls-tree $BASE` 现算，
+  // 不写死「哪几件是新的」：② 段的 spec / testcase / plan / docs-after 已在 `$BASE`（eef963e）里提交，
+  // 它们不是本批新增（plan 会被本批再改 → 以 M 出现，仍在白名单内）
+  const atBase = new Set(execFileSync('git', ['ls-tree', '-r', '--name-only', BASE], { cwd: REPO, encoding: 'utf8' })
+    .split(/\r?\n/).filter(Boolean))
+  const want = NEW_PATHS.filter((p) => !atBase.has(p))
+  assert.ok(want.every((p) => aSet.has(p)), `A 面缺项：${want.filter((p) => !aSet.has(p)).join('、')}`)
+  // ③ 步 2 的等价面：tools/docgen 前缀下 A 面恰 = 本批新增 3 件
+  const addedInDocgen = rows.filter((r) => r.startsWith('A\t') && r.includes('tools/docgen/')).map((r) => r.split('\t')[1]).sort()
+  assert.deepEqual(addedInDocgen, ['tools/docgen/check-trigger-kind.mjs', 'tools/docgen/check-tristate-header.mjs', 'tools/docgen/test/sc-card-shape.test.mjs'].sort())
+  // ④ 步 3–4 的复验入口可跑
+  assert.equal(runTest(['tools/docgen/test/sa-data-layer.test.mjs']).code, 0)
+  assert.equal(runNode(['tools/docgen/cli.mjs', 'gate']).code, 0)
+  // ⑤ 延期落点实名 + 触发 / 谁兜两栏在位
+  const after = R(join(REPO, AFTER_PATH))
+  assert.ok(after.includes('触发'), '必须含「触发」栏')
+  assert.ok(after.includes('下一次修订'), '必须含触发条件的可核表述')
+  assert.ok(after.includes('谁兜') && after.includes('用户'), '必须含谁兜 / 签字人')
+  // 红态：白名单外路径必须被点名（纯函数构造，不在真仓注入）
+  const fake = judgeNameStatus(['A\ttools/docgen/rogue-new.mjs', 'M\tREADME.md'])
+  assert.deepEqual(fake.aOutside, ['tools/docgen/rogue-new.mjs'])
+  assert.deepEqual(fake.mOutside, ['README.md'])
 })
 
 test('SC-TC-58 硬约束不动：列数 4 / 七段 / 36 码 / 8 键 / 12 键', () => {

@@ -1,6 +1,6 @@
 # senior-sdet
 
-- 角色：资深测试开发工程师（Senior SDET）
+- 角色：测试开发工程师（Senior SDET）
 - 维度：
 - 输出类型：testcase
 
