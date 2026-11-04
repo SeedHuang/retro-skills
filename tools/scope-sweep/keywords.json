@@ -324,6 +324,17 @@
         "docs/superpowers/specs/2026-11-03-s-a-data-layer-design.md",
         "docs/superpowers/plans/2026-11-03-s-a-data-layer.md"
       ]
+    },
+    {
+      "id": "I34",
+      "title": "V9 人设词面的旧口径（旧 = 「`资深` + `20 年`」两词面；S-E 批 2026-11-04 加严为 `资深` + `20 年` + `十年` 三词面，并在 spec §11.4 `:108` / §11.8 `:151` 与 testcase 同步）",
+      "words": ["两个词面", "三条并列判据", "只判两词面"],
+      "scope": [
+        "docs/superpowers/specs/2026-11-03-s-c-card-shape-design.md",
+        "docs/superpowers/specs/2026-11-03-s-c-card-shape-design-testcase.md",
+        "tools/docgen/test/sc-card-shape.test.mjs",
+        "tools/docgen/data/seats/senior-sdet.json"
+      ]
     }
   ]
 }

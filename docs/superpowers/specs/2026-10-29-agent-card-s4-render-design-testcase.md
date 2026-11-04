@@ -276,7 +276,7 @@ const APPEND_ONE_BYTE = (rel) => (copy) => {
 | S4-TC-B01 | V-2 / §5 `:112-117` / F-10 | 三投影同源：`dump.name` = 卡 front matter `name`（12 键后成立）、`rationale` 只进 README | 正 | 单元 | 机器 | 同上 | P0 |
 | S4-TC-B02 | V-2 / §5 / F-10 | 改数据 1 处 → README / dump 跟随、卡面因 `rationale` 不入卡面而不变 | 正 | 单元 | 机器 | 同上 | P0 |
 | S4-TC-B03 | V-2 / §3 `:53-55` / F-10 | 落盘后 15 份 README + index 15 行且链接目标全在 | 正 | 集成 | 机器 | 同上 | P0 |
-| S4-TC-B04 | §3 `:54`（index 五列）/ F-10 | index 表头列齐（席名 / 职责一句 / 维度 / 输出类型 / 链接） | 边界 | 集成 | 机器 | 同上 | P1 |
+| S4-TC-B04 | §3 `:54`（index 五列）/ §结构行 `:80`（`seatEntry` 含 `dimension`）/ F-10 | index 表头列齐（席名 / 职责一句 / 维度 / 输出类型 / 链接）**+ 每席「维度」格非空**（S-E 批 2026-11-04 加） | 边界 | 集成 | 机器 | 同上 | P1 |
 | S4-TC-B05 | V-3 / §5 `:116-119` / §12-R4 `:243` | `buildCards()` 的 `overrides[]` 每条带非空 `reason`（S1 只给 `{id,changed}`） | 负 | 单元 | 机器 | 同上 | P0 |
 | S4-TC-B06 | V-3 / §5 `:116` | README 覆盖表行数 = `overrides` 条数（0 条时表头仍在） | 边界 | 集成 | 机器 | 同上 | P0 |
 | S4-TC-B07 | §5 `:117` / PRD `:225` | dump = stdout-only：可 `JSON.parse`；`cmdDump` 分支无写盘、**不调 `writeAll`** | 边界 | 集成 + 静态 | 机器 | 同上 | P0 |
@@ -709,7 +709,7 @@ assert.equal(refused, 6, '6 个非结构键逐键都必须被拒（§4 :89）；
 
 ### S4-TC-B04 index 表头五列齐
 
-- **覆盖**：spec §3 `:54`（index 五列）/ F-10
+- **覆盖**：spec §3 `:54`（index 五列）/ F-10；**S-E 批（2026-11-04）追加「每席维度格非空」**，覆盖锚 = spec 的结构行 `:80`（`seatEntry = { name, role, dimension, outputKind, tools, card }` —— `dimension` 是该结构的必含字段，空值属漏生成而非「合法空」）
 - **来源**：spec 推导
 - **前置**：`docs/agents/README.md` 存在（B03 已过）。
 - **步骤**：① 取 index 表头行；② 五列逐项 `includes`；③ 断列数 ≥ 5。
@@ -725,6 +725,9 @@ assert.equal(refused, 6, '6 个非结构键逐键都必须被拒（§4 :89）；
   ```
 - **对应测试**：同上
 - **不覆盖**：列顺序（spec 只写五列名）。
+
+> **日期注（2026-11-04，S-E 批；原文保留不删）**：上方判据代码只判表头，空格（如 `senior-sdet` 曾缺 `dimension`）会漏检。**现行实现追加**：① 数据行数 = 15；② 逐行取第 3 列（维度）非空，失败时报「index 席「<席名>」的「维度」格为空」。判据方向只收不放（表头五列与列数断言逐字不动）。锚 = spec 的结构行 `:80`。
+> 红档可重跑构造（2026-11-04 实跑）：全仓副本内删 `data/seats/senior-sdet.json` 的 `dimension` 键 → 副本内 `node tools/docgen/cli.mjs generate --readme --apply` → 该席格空 → `not ok 1 - S4-TC-B04 …` / `# fail 1`，错误信息即第 ② 条格式。
 
 ### S4-TC-B05 `overrides[]` 每条必须带非空 `reason`
 
@@ -2326,7 +2329,7 @@ size: spec 245/350 tc 61/80 rounds 3/3 => ok
 | S4-TC-B01 | §5 `:112-117` / V-2 | F-10 | 正 | 三投影对同一字段逐字一致（`name` = dump.name） |
 | S4-TC-B02 | §5 `:112-117` / V-2 | F-10 | 正 | 改数据 1 处 → README / dump 跟随 |
 | S4-TC-B03 | §3 `:53-55` / §5 `:116` / V-2 | F-10 | 正 | 15 份 README + index 15 行 |
-| S4-TC-B04 | §3 `:54` | F-10 | 边界 | index 表头五列齐 |
+| S4-TC-B04 | §3 `:54` / §结构行 `:80` | F-10 | 边界 | index 表头五列齐 + 每席维度格非空（S-E 加） |
 | S4-TC-B05 | §5 `:116` / §5 `:119` / V-3 | F-10 | 负 | `overrides[]` 每条带 reason |
 | S4-TC-B06 | §5 `:116` / V-3 | F-10 | 边界 | 覆盖表行数 = overrides 条数 |
 | S4-TC-B07 | §5 `:117` / §3 `:71` / PRD `:225` | F-10 / F-23 | 边界 | dump stdout-only、不调 `writeAll` |

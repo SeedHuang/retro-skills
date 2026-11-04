@@ -616,13 +616,21 @@ test('S4-TC-B03 落盘后每席一份 README + index 15 行且链接目标全在
   }
 })
 
-test('S4-TC-B04 index 表头五列齐', () => {
+test('S4-TC-B04 index 表头五列齐 + 每席维度格非空', () => {
   const idx = readFileSync(join(DOC_AGENTS_DIR, 'README.md'), 'utf8')
   const header = idx.split(/\r?\n/).find((l) => l.trim().startsWith('|'))
   assert.ok(header, 'index 必须有表格表头')
   const cells = header.split('|').map((c) => c.trim()).filter(Boolean)
   assert.ok(cells.length >= 5, `index 表头必须至少 5 列（实得 ${cells.length}）`)
   for (const need of ['席名', '职责', '维度', '输出类型', '链接']) assert.ok(cells.some((c) => c.includes(need)), `index 表头缺「${need}」列（§3 :54）`)
+  // S-E 批（2026-11-04）：每席「维度」格非空（原只判表头，空格会漏；锚 = spec `:80` 的 `seatEntry` 含 dimension）
+  const dataRows = idx.split(/\r?\n/).filter((l) => l.trim().startsWith('|')).slice(2)
+  assert.equal(dataRows.length, SEATS.length, `index 数据行必须 ${SEATS.length} 行（实得 ${dataRows.length}）`)
+  for (const line of dataRows) {
+    const parts = line.split('|').slice(1, -1).map((c) => c.trim())
+    assert.ok(parts[0], `index 数据行缺席名：${line}`)
+    assert.ok(parts[2], `index 席「${parts[0]}」的「维度」格为空（spec :80 的 seatEntry 含 dimension）`)
+  }
 })
 
 test('S4-TC-B05 overrides[] 每条必须带非空 reason', () => {

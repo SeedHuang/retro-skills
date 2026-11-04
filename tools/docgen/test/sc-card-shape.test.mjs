@@ -602,7 +602,7 @@ test('SC-TC-28 副本三坏形态必红：删写回 / 回填占位 / 全席同�
 })
 
 test('SC-TC-29 人设词三面清零（含外层 role / agents / docs/agents）+ sdet-data 回归 + 占位保全', () => {
-  const words = ['资深', '20 年']
+  const words = ['资深', '20 年', '十年']
   for (const w of words) {
     assert.equal(countWord(seatsText(), w), 0, `seats 面（含外层 role）不得含「${w}」`)
     const agentsText = SEATS().map((s) => R(join(AGENTS_DIR, `${s}.md`))).join('\n')
@@ -646,7 +646,7 @@ test('SC-TC-30 回填人设必红；rationale 改写不得弄丢 ${@hostTerm} �
 
 test('SC-TC-31 人设词面边界：`20 年经验` 与 `20 年` 都须 0（面宽与 SC-TC-29 同宽）', () => {
   const faces = [seatsText(), SEATS().map((s) => R(join(AGENTS_DIR, `${s}.md`))).join('\n'), SEATS().map((s) => R(join(REPO, 'docs/agents', `${s}.md`))).join('\n')]
-  for (const w of ['20 年经验', '20 年']) assert.equal(faces.reduce((n, t) => n + countWord(t, w), 0), 0, `「${w}」必须 0`)
+  for (const w of ['20 年经验', '20 年', '十年']) assert.equal(faces.reduce((n, t) => n + countWord(t, w), 0), 0, `「${w}」必须 0`)
 })
 
 test('SC-TC-32 动作行不写三态词：英文与中文都不许（注入即红）', () => {

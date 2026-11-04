@@ -5,8 +5,8 @@ import { patternRegistry } from '../components/patternRegistry.mjs';
 
 const entry = () => agentData.find((a) => a.name === 'senior-sdet');
 // S-A 数据层（T3）：条目键集 = 外层派生键 + 注入的 tools / boundary + 新卡 `card`。
-// `dimension` 在该席本就是 undefined（JSON 存不下 undefined 键），故键集里不再列它，改用「不得有该键」判
-const KEYS = ['name', 'role', 'tools', 'outputKind', 'boundary', 'card'];
+// S-E 批（2026-11-04）：`dimension` 已补齐为 `测试设计`，键集含它，判据由「不得有该键」翻转为「值逐字相等」
+const KEYS = ['name', 'role', 'dimension', 'tools', 'outputKind', 'boundary', 'card'];
 
 test('TC-002(a)：新卡键集齐 + 四键互斥 + 9 条 checkItems + 档位/边界来自单源', () => {
   const e = entry();
@@ -14,7 +14,7 @@ test('TC-002(a)：新卡键集齐 + 四键互斥 + 9 条 checkItems + 档位/边
   for (const k of ['when', 'notWhen', 'route', 'fallback']) assert.equal(k in e, false, `条目不得含 ${k}`);
   assert.ok(e.card && typeof e.card === 'object', '必须已迁入新卡');
   assert.equal(e.card.checkItems.length, 9, '测试设计固定清单 9 条须逐条进 checkItems');
-  assert.equal('dimension' in e, false);
+  assert.equal(e.dimension, '测试设计');
   assert.equal(e.outputKind, 'testcase');
   assert.deepEqual(e.tools, ['Read', 'Glob', 'Grep', 'Write', 'Edit']);
   assert.equal(e.boundary, patternRegistry.boundaryBySeat['senior-sdet']);

@@ -1,6 +1,6 @@
 # agent-card S4 渲染层 —— 已知限制与待办（open items）
 
-> **状态**：**未决（已知限制，非阻塞交付）**。本文承接 `docs/superpowers/specs/2026-10-29-agent-card-s4-render-design-testcase.md` 与 ④ 段结论（`quality-4.md` §6 / 交付审计 `delivery-5-s4.md` §D）里**没有 git 内落点**的 4 条限制 + 2 条 P2 观察；每条写齐四项：**限制原文（`path:line`）/ 漏检样例 / 谁人工兜 / 触发信号**。
+> **状态**：**未决（已知限制，非阻塞交付）**。本文承接 `docs/superpowers/specs/2026-10-29-agent-card-s4-render-design-testcase.md` 与 ④ 段结论（`quality-4.md` §6 / 交付审计 `delivery-5-s4.md` §D）里**没有 git 内落点**的 3 条限制 + 2 条 P2 观察（原 4 条；`S4-L4` 已于 2026-11-04 S-E T1 闭合后按「闭合即删条」删除，闭合依据见 `gate-record.md` 的 `③@S-E` 行）；每条写齐四项：**限制原文（`path:line`）/ 漏检样例 / 谁人工兜 / 触发信号**。
 > **何时搬走**：某条被闭合（补基线 / 接线 / 改判据 / 填数据）后，从本文删除并把结论并入对应 spec、测试或规则；全部闭合后本文改名以 `-done` 结尾（或删除）。
 
 ## 一、未决限制
@@ -25,13 +25,6 @@
 - **漏检样例**：同时手改卡面与 README → 只报第一处；修完重跑才发现第二处，容易被读成「只有一处坏」。
 - **谁人工兜**：⑤ 段交付审计按「修一处 → 重跑 gate」多轮直至绿；④ 段 sdet 的 §6 `G-2` / `G-4` 已登记。
 - **触发信号**：下次改 `gateChecks` 的失败汇总逻辑时，同批改为逐个打印全部 drift（或加 `--all` 旗标）。
-
-### S4-L4 `senior-sdet` 的 `dimension` 为空（README index 该列为空）
-
-- **限制原文**：`tools/docgen/components/agentData.mjs` 的 `senior-sdet` 条目缺 `dimension`，导致 `docs/agents/senior-sdet.md:4`「- 维度：」为空、`docs/agents/README.md` 对应格为空（其余 14 席均有）。
-- **漏检样例**：`S4-TC-B04` 只判 index 表头五列齐，不判每格非空 → 空格漏过。
-- **谁人工兜**：⑤ 段交付审计（`delivery-5-s4.md` §H 的 P2-2）；填什么值属产品内容，需人工定。
-- **触发信号**：下次改 `agentData.mjs` 任一条目时同批补 `dimension`（值由用户/产品定）并 `node tools/docgen/cli.mjs generate --readme --apply` 重新落盘；此后可考虑给 B04 加「每格非空」断言。
 
 ## 二、已闭合（勘误即闭合，留痕备查）
 
