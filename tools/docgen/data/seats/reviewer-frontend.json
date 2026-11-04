@@ -6,7 +6,7 @@
   "card": {
     "duty": {
       "trigger": "",
-      "action": "资深前端领域专家，H5/小程序/Electron 多端经验，六手法在此执行",
+      "action": "对 spec、plan、技术方案做前端实现视角评审，逐条给出判定与理由，结论写回问题卡",
       "constraint": "@dutyConstraintDefault"
     },
     "scenes": [],
@@ -117,10 +117,10 @@
         "declarer": "前端席卡"
       }
     ],
-    "rationale": "资深前端领域专家，H5/小程序/Electron 多端经验。${@cardRationaleHead}七${@cardRationaleTail}"
+    "rationale": "以前端实现为视角：逐条核 H5、小程序与 Electron 的多端一致与实现代价。${@cardRationaleHead}七${@cardRationaleTail}"
   },
   "trigger": {
-    "when": "当主持人调度对 spec/plan/技术方案做前端实现视角评审",
+    "when": "当${@hostTerm}调度对 spec、plan、技术方案做前端实现视角评审",
     "kind": "dispatch",
     "route": "reviewer-frontend"
   }

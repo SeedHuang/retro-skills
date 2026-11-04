@@ -6,7 +6,7 @@
   "card": {
     "duty": {
       "trigger": "",
-      "action": "资深交互设计专家，对打断成本与状态可见性有经验直觉",
+      "action": "对 PRD、spec、plan 做交互视角评审，逐条给出判定与理由，结论写回问题卡",
       "constraint": "@dutyConstraintDefault"
     },
     "scenes": [],
@@ -117,10 +117,10 @@
         "declarer": "交互席卡"
       }
     ],
-    "rationale": "资深交互设计专家，对打断成本与状态可见性有经验直觉。${@cardRationaleHead}七${@cardRationaleTail}"
+    "rationale": "以交互为视角：逐条核打断成本与状态可见性。${@cardRationaleHead}七${@cardRationaleTail}"
   },
   "trigger": {
-    "when": "当主持人调度对 PRD/spec/plan 做交互视角评审",
+    "when": "当${@hostTerm}调度对 PRD、spec、plan 做交互视角评审",
     "kind": "dispatch",
     "route": "reviewer-interaction"
   }

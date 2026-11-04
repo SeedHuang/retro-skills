@@ -56,7 +56,7 @@ test('TC-B04 outputKind 与 evidence 输出格式齐，结构检查零 findings'
 
 test('TC-B05 when 不含「时调用」且不以「时」结尾', () => {
   const w = triggerTable['evidence-reader'].when;
-  assert.equal(w, '当需要通读长文并交出可核对的原文与行号（交接取证 / 事实基线回核）');
+  assert.equal(w, '当需要通读长文并交出可核对的原文与行号（交接取证、事实基线回核）');
   assert.equal(w.endsWith('时'), false);
   assert.equal(/在[^。]*中担任|时调用/.test(w), false);
 });

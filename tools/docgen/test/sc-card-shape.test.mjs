@@ -17,6 +17,7 @@ import { buildCards, buildEnv, renderSeat } from '../components/cardPipeline.mjs
 import { renderCard } from '../components/renderCard.mjs'
 import { cardFaceIds } from '../components/cardFaceIds.mjs'
 import { CARD_KEYS } from '../components/cardKeys.mjs'
+import { expandRefs } from '../components/seatLoader.mjs'
 import { VERDICTS as CHECK_VERDICTS } from '../../observation-check/checks.mjs'
 import * as ENUMS from '../card-model/enums.mjs'
 import * as CC from '../card-model/vocab/card-contract.mjs'
@@ -446,6 +447,319 @@ test('SC-TC-38 非议会席现算集合 == complement(buildEnv 的 parliamentSea
   const parl = [...buildEnv(SEATS()[0]).parliamentSeats].sort()
   const complement = SEATS().filter((s) => !parl.includes(s)).sort()
   assert.deepEqual(computed, complement, '第二处写死名单（cardPipeline 的 NON_PARL_SEATS）与现算必须一致')
+})
+
+// ── D 组：数据文案（斜杠 / 动作返回 / 人设 / HOST_TERM）────────────────────────────────────
+
+const SEAT_JSON = (seat) => join(REPO, 'tools/docgen/data/seats', `${seat}.json`)
+const seatsText = () => SEATS().map((s) => R(SEAT_JSON(s))).join('\n')
+const seatsTextInCopy = (copy) => SEATS().map((s) => R(join(copy, 'tools/docgen/data/seats', `${s}.json`))).join('\n')
+const countWord = (text, word) => text.split(word).length - 1
+
+// 四字段斜杠（项口径）：装配后逐席逐字段判 `/` 与全角 `／`（PRD V12 原话：字段路径必须钉死）
+const slashItems = () => {
+  let n = 0
+  for (const a of agentData) {
+    const fields = [a.card.duty.trigger, a.card.duty.action, a.card.duty.constraint, ...a.card.categories.map((c) => c.label)]
+    for (const v of fields) if (/[/／]/.test(String(v))) n += 1
+  }
+  return n
+}
+
+const SLASH_PROBE = [
+  "import { agentData } from './tools/docgen/components/agentData.mjs'",
+  "let n = 0, wrong = 0",
+  "for (const a of agentData) {",
+  "  const fields = [a.card.duty.trigger, a.card.duty.action, a.card.duty.constraint, ...a.card.categories.map((c) => c.label)]",
+  "  for (const v of fields) if (/[/／]/.test(String(v))) n += 1",
+  "  if (/[/／]/.test(String(a.card.duty))) wrong += 1",
+  "}",
+  "process.stdout.write('slash ' + n + ' / wrong ' + wrong)",
+].join('\n')
+
+const ACTION_PROBE = [
+  "import { agentData } from './tools/docgen/components/agentData.mjs'",
+  "const acts = agentData.map((a) => String(a.card.duty.action))",
+  "const names = [...new Set(acts.map((x) => { const m = /写回(.+?)。?$/.exec(x); return m ? m[1] : '' }))]",
+  "process.stdout.write(JSON.stringify({",
+  "  writeback: acts.filter((x) => x.includes('写回')).length,",
+  "  placeholder: acts.filter((x) => x.includes('本席产物')).length,",
+  "  names,",
+  "}))",
+].join('\n')
+
+const PERSONA_PROBE = [
+  "import { agentData } from './tools/docgen/components/agentData.mjs'",
+  "import { expectedDocs } from './tools/docgen/components/cardPipeline.mjs'",
+  "const words = ['资深', '20 年']",
+  "const cards = agentData.length",
+  "let readmeHits = 0",
+  "for (const w of words) {",
+  "  const n = expectedDocs().entries.reduce((k, e) => k + (e.readme.split(w).length - 1), 0)",
+  "  readmeHits += n",
+  "}",
+  "process.stdout.write('cards ' + cards + ' / readmeHits ' + readmeHits)",
+].join('\n')
+
+test('SC-TC-23 四字段斜杠串清零（项口径，常驻只判改后 0）', () => {
+  assert.equal(slashItems(), 0, '四字段不得再有斜杠项')
+  if (SHAPE) {
+    assert.ok(BASE, 'SHAPE 档必须提供 SB_BASE')
+    const before = execFileSync('git', ['show', `${BASE}:tools/docgen/data/seats/reviewer-qa.json`], { cwd: REPO, encoding: 'utf8' })
+    assert.ok(before.includes('/'), '改前侧应仍有斜杠（现值 13 项由 SC-TC-57 登记）')
+  }
+})
+
+test('SC-TC-24 副本注入一处 a/b → 计数 1（按项计，不是按出现次数）', () => {
+  withRepoCopy((copy) => {
+    const p = join(copy, 'tools/docgen/data/seats', `${SEATS()[0]}.json`)
+    writeFileSync(p, R(p).replace(/"action": "([^"]*)"/, '"action": "$1（PRD/spec）"'), 'utf8')
+    const out = probeIn(copy, 'probe-slash.mjs', SLASH_PROBE)
+    const m = /slash (\d+)/.exec(out)
+    assert.ok(m, out)
+    assert.equal(Number(m[1]), 1, `注入一处后必须恰 1 项（实得 ${m[1]}）`)
+    assert.throws(() => assert.equal(Number(m[1]), 0))
+  })
+})
+
+test('SC-TC-25 全角 ／ 同判（注入 PRD／spec → 计数 ≥1）', () => {
+  withRepoCopy((copy) => {
+    const p = join(copy, 'tools/docgen/data/seats', `${SEATS()[0]}.json`)
+    writeFileSync(p, R(p).replace(/"action": "([^"]*)"/, '"action": "$1（PRD／spec）"'), 'utf8')
+    const out = probeIn(copy, 'probe-slash.mjs', SLASH_PROBE)
+    const m = /slash (\d+)/.exec(out)
+    assert.ok(m, out)
+    assert.ok(Number(m[1]) >= 1, `全角形态必须同判（实得 ${m[1]}）`)
+  })
+})
+
+test('SC-TC-26 口径判别力：扫 duty 容器恒 0（假绿）vs 扫四字段有值', () => {
+  const wrong = SEATS().filter((s) => { const a = agentData.find((x) => x.name === s); return /[/／]/.test(String(a.card.duty)) }).length
+  assert.equal(wrong, 0, '错口径（容器串化）恒 0——这正是不能用它作判据的理由')
+  const right = slashItems()
+  assert.equal(right, 0, '正口径改后必须 0（改前 13 由 SC-TC-57 一次性档登记）')
+  if (!SHAPE) return
+  assert.ok(BASE, 'SHAPE 档必须提供 SB_BASE')
+  const before = SEATS().reduce((n, s) => {
+    const j = JSON.parse(execFileSync('git', ['show', `${BASE}:tools/docgen/data/seats/${s}.json`], { cwd: REPO, encoding: 'utf8' }))
+    const fields = [j.card.duty.action, j.card.duty.constraint, j.trigger.when, ...j.card.categories.map((c) => c.label)]
+    return n + fields.filter((v) => /[/／]/.test(String(v))).length
+  }, 0)
+  assert.notEqual(before, right, '改前有值、改后为 0，两值必须不等（错口径才会两侧都 0）')
+})
+
+test('SC-TC-27 duty.action 四件齐：含写回 / 产物名非占位 / ≥3 种 / 不含三态词 + tool-tiers 回归', () => {
+  const acts = SEATS().map((s) => String(agentData.find((a) => a.name === s).card.duty.action))
+  assert.equal(acts.filter((x) => x.includes('写回')).length, SEATS().length, '每席都必须写明「写回」')
+  assert.equal(acts.filter((x) => x.includes('本席产物')).length, 0, '产物名不得是占位串')
+  const names = new Set(acts.map((x) => { const m = /写回(.+?)。?$/.exec(x); return m ? m[1] : '' }))
+  assert.ok(names.size >= 3, `产物名至少 3 种不同值（实得 ${names.size}）`)
+  assert.equal([...names].filter((n) => n === '').length, 0, '每席「写回」后必须有产物名')
+  const en = Object.keys(ENUMS.VERDICTS)
+  const zh = ['命中', '未命中', '不适用']
+  const bad = acts.filter((x) => en.some((v) => x.includes(v)) || zh.some((v) => x.includes(v)))
+  assert.deepEqual(bad, [], '动作行不得写三态词（英文或中文都不写）')
+  const tt = runTest(['--test-name-pattern', 'S5-TC-C08', 'tools/docgen/test/tool-tiers.test.mjs'])
+  assert.equal(tt.code, 0, `S5-TC-C08 必须绿（构造前提已换新文案片段）：${tt.out.slice(-400)}`)
+  const ttSrc = R(join(REPO, 'tools/docgen/test/tool-tiers.test.mjs'))
+  assert.equal(ttSrc.includes('只审各项标准是否达到，不裁技术对错'), false, '旧 action 子串不得再被当构造前提')
+})
+
+test('SC-TC-28 副本三坏形态必红：删写回 / 回填占位 / 全席同名', () => {
+  const runOne = (mutate) => {
+    let out = ''
+    withRepoCopy((copy) => { mutate(copy); out = probeIn(copy, 'probe-action.mjs', ACTION_PROBE) })
+    const j = JSON.parse(out)
+    return j
+  }
+  // ① 某席「写回」→「写到」：命中席数变 席数 − 1
+  const one = runOne((copy) => {
+    const p = join(copy, 'tools/docgen/data/seats', `${SEATS()[0]}.json`)
+    writeFileSync(p, R(p).replace('结论写回', '结论写到'), 'utf8')
+  })
+  assert.equal(one.writeback, SEATS().length - 1, `删一席「写回」必须少一席（实得 ${one.writeback}）`)
+  // ② 某席产物名换成占位
+  const two = runOne((copy) => {
+    const p = join(copy, 'tools/docgen/data/seats', `${SEATS()[0]}.json`)
+    writeFileSync(p, R(p).replace(/结论写回([^"]*)"/, '结论写回本席产物"'), 'utf8')
+  })
+  assert.ok(two.placeholder >= 1, `回填占位必须命中 ≥1（实得 ${two.placeholder}）`)
+  // ③ 15 席产物名统一成同一个
+  const three = runOne((copy) => {
+    for (const s of SEATS()) {
+      const p = join(copy, 'tools/docgen/data/seats', `${s}.json`)
+      writeFileSync(p, R(p).replace(/结论写回([^"]*)"/, '结论写回交付物正文"'), 'utf8')
+    }
+  })
+  assert.equal(three.names.length, 1, `全席同名时必须只剩 1 种（实得 ${three.names.length}）`)
+})
+
+test('SC-TC-29 人设词三面清零（含外层 role / agents / docs/agents）+ sdet-data 回归 + 占位保全', () => {
+  const words = ['资深', '20 年']
+  for (const w of words) {
+    assert.equal(countWord(seatsText(), w), 0, `seats 面（含外层 role）不得含「${w}」`)
+    const agentsText = SEATS().map((s) => R(join(AGENTS_DIR, `${s}.md`))).join('\n')
+    assert.equal(countWord(agentsText, w), 0, `agents 面不得含「${w}」`)
+    const docsText = SEATS().map((s) => R(join(REPO, 'docs/agents', `${s}.md`))).join('\n')
+    assert.equal(countWord(docsText, w), 0, `docs/agents 面不得含「${w}」`)
+  }
+  const sd = runTest(['--test-name-pattern', 'TC-007', 'tools/docgen/test/sdet-data.test.mjs'])
+  assert.equal(sd.code, 0, `TC-007（role 已去「资深」）必须绿：${sd.out.slice(-400)}`)
+  if (SHAPE) assert.equal(countWord(seatsText(), '${@hostTerm}'), 18, 'SHAPE：占位总数须仍为 18')
+})
+
+test('SC-TC-30 回填人设必红；rationale 改写不得弄丢 ${@hostTerm} 占位（仍 18 / 漏 1 → 17）', () => {
+  // ① 副本把某席 rationale 开头改成「资深审阅者……」→ 人设投影面命中 ≥1
+  withRepoCopy((copy) => {
+    const p = join(copy, 'tools/docgen/data/seats', `${SEATS()[0]}.json`)
+    const src = R(p)
+    writeFileSync(p, src.replace(/"rationale": "[^"]*"/, '"rationale": "资深审阅者，按本席视角拆卡。${@cardRationaleHead}七${@cardRationaleTail}"'), 'utf8')
+    const out = probeIn(copy, 'probe-persona.mjs', PERSONA_PROBE)
+    const m = /readmeHits (\d+)/.exec(out)
+    assert.ok(m, out)
+    assert.ok(Number(m[1]) >= 1, '回填人设后 docs/agents 投影面必须命中 ≥1')
+  })
+  const detective = R(SEAT_JSON('detective-observer'))
+  assert.ok(detective.includes('${@hostTerm}失职'), '前置：detective 的引语已改占位')
+  // ② 副本换掉 detective 的开头人设句但不动占位 → 仍 18
+  withRepoCopy((copy) => {
+    const p = join(copy, 'tools/docgen/data/seats/detective-observer.json')
+    writeFileSync(p, R(p).replace('以行为核实为视角：', '以行为核实为视角（改写）：'), 'utf8')
+    const n = countWord(seatsTextInCopy(copy), '${@hostTerm}')
+    assert.equal(n, 18, `改写 rationale 后占位总数必须仍为 18（实得 ${n}）`)
+  })
+  // ③ 副本弄丢一处占位（换回字面）→ 17
+  withRepoCopy((copy) => {
+    const p = join(copy, 'tools/docgen/data/seats/detective-observer.json')
+    writeFileSync(p, R(p).replace('${@hostTerm}失职', '主持人失职'), 'utf8')
+    const n = countWord(seatsTextInCopy(copy), '${@hostTerm}')
+    assert.equal(n, 17, `漏一处必须变 17（实得 ${n}）`)
+  })
+})
+
+test('SC-TC-31 人设词面边界：`20 年经验` 与 `20 年` 都须 0（面宽与 SC-TC-29 同宽）', () => {
+  const faces = [seatsText(), SEATS().map((s) => R(join(AGENTS_DIR, `${s}.md`))).join('\n'), SEATS().map((s) => R(join(REPO, 'docs/agents', `${s}.md`))).join('\n')]
+  for (const w of ['20 年经验', '20 年']) assert.equal(faces.reduce((n, t) => n + countWord(t, w), 0), 0, `「${w}」必须 0`)
+})
+
+test('SC-TC-32 动作行不写三态词：英文与中文都不许（注入即红）', () => {
+  const acts = SEATS().map((s) => String(agentData.find((a) => a.name === s).card.duty.action))
+  const en = Object.keys(ENUMS.VERDICTS)
+  const zh = ['命中', '未命中', '不适用']
+  assert.deepEqual(acts.filter((x) => en.some((v) => x.includes(v))), [])
+  assert.deepEqual(acts.filter((x) => zh.some((v) => x.includes(v))), [])
+  for (const [probe, label] of [[en[0], '英文'], ['不适用', '中文']]) {
+    withRepoCopy((copy) => {
+      const p = join(copy, 'tools/docgen/data/seats', `${SEATS()[0]}.json`)
+      writeFileSync(p, R(p).replace(/结论写回([^"]*)"/, `结论写回$1（${probe}）"`), 'utf8')
+      const out = probeIn(copy, 'probe-action.mjs', ACTION_PROBE)
+      const j = JSON.parse(out)
+      const hit = j.names.some((n) => n.includes(probe))
+      assert.ok(hit, `${label}三态词注入后产物名片段必须可见（构造有效性）`)
+    })
+  }
+})
+
+test('SC-TC-43 shared.json.hostTerm === 主持人（唯一写死处）+ 键数 4 + sa-data 回归', () => {
+  const shared = JSON.parse(R(join(REPO, 'tools/docgen/data/shared.json')))
+  assert.equal(shared.hostTerm, '主持人')
+  assert.equal(Object.keys(shared).length, 4)
+  assert.deepEqual(Object.keys(shared).sort(), ['cardRationaleHead', 'cardRationaleTail', 'dutyConstraintDefault', 'hostTerm'])
+  assert.equal(countWord(R(join(REPO, 'tools/docgen/data/shared.json')), '主持人'), 1, '同文件不得出现第二份字面')
+  const sa = runTest(['--test-name-pattern', 'TC-001', 'tools/docgen/test/sa-data-layer.test.mjs'])
+  assert.equal(sa.code, 0, `TC-001（shared.json 键数已改 4）必须绿：${sa.out.slice(-400)}`)
+})
+
+test('SC-TC-44 席位数据「主持人」字面 0 次（常驻）；${@hostTerm} 18 次（一次性档）', () => {
+  assert.equal(countWord(seatsText(), '主持人'), 0, '席位数据不得再有字面')
+  if (SHAPE) assert.equal(countWord(seatsText(), '${@hostTerm}'), 18, '一次性档：占位出现次数须 = 18')
+})
+
+test('SC-TC-45 行口径 vs 次数口径（17 行 / 18 处）——整条归一次性档', () => {
+  if (!SHAPE) return
+  assert.ok(BASE, 'SHAPE 档必须提供 SB_BASE')
+  let lines = 0
+  let occs = 0
+  for (const s of SEATS()) {
+    const t = execFileSync('git', ['show', `${BASE}:tools/docgen/data/seats/${s}.json`], { cwd: REPO, encoding: 'utf8' })
+    for (const line of t.split(/\r?\n/)) {
+      const c = line.split('主持人').length - 1
+      if (c > 0) { lines += 1; occs += c }
+    }
+  }
+  assert.equal(lines, 17)
+  assert.equal(occs, 18)
+  assert.notEqual(lines, occs, '差值 1 = detective 的 rationale 一行 2 处（按行断会漏第 2 处）')
+  assert.equal(countWord(seatsText(), '主持人'), 0, '改后侧字面必须 0')
+})
+
+test('SC-TC-46 渲染面「主持人」总数 = 30（等价性证明）——整条归一次性档', () => {
+  if (!SHAPE) return
+  const total = SEATS().reduce((n, s) => n + countWord(textOf(s), '主持人'), 0)
+  assert.equal(total, 30, `渲染面总数须 = 30（实得 ${total}）`)
+})
+
+test('SC-TC-47 副本把 hostTerm 改「议长」→ 渲染跟随、真仓 0 命中（不落真仓）', () => {
+  const PROBE = '议长'
+  const probeSrc = [
+    "import { renderSeat } from './tools/docgen/components/cardPipeline.mjs'",
+    "const card = renderSeat(process.env.SEAT).card",
+    "process.stdout.write('probe ' + (card.split(process.env.TERM).length - 1) + ' / host ' + (card.split('主持人').length - 1))",
+  ].join('\n')
+  withRepoCopy((copy) => {
+    const p = join(copy, 'tools/docgen/data/shared.json')
+    writeFileSync(p, R(p).replace('"hostTerm": "主持人"', `"hostTerm": "${PROBE}"`), 'utf8')
+    // 选 issue-card 席（not 指针席）：其渲染面「主持人」只来自 ${@hostTerm}，不含模板 / 共享块里的既有字面
+    const out = probeIn(copy, 'probe-host.mjs', probeSrc, { SEAT: 'reviewer-product', TERM: PROBE })
+    const m = /probe (\d+) \/ host (\d+)/.exec(out)
+    assert.ok(m, out)
+    assert.ok(Number(m[1]) >= 1, '渲染必须跟随新词')
+    assert.equal(Number(m[2]), 0, '原词必须归零')
+  })
+  assert.equal(SEATS().filter((s) => R(join(AGENTS_DIR, `${s}.md`)).includes(PROBE)).length, 0, '真仓 15 卡不得被写入探针')
+})
+
+test('SC-TC-48 副本改 hostTerm 不重生成 → gate Mismatch exit 1；真仓 gate exit 0', () => {
+  withRepoCopy((copy) => {
+    const p = join(copy, 'tools/docgen/data/shared.json')
+    writeFileSync(p, R(p).replace('"hostTerm": "主持人"', '"hostTerm": "议长"'), 'utf8')
+    const r = runNode(['tools/docgen/cli.mjs', 'gate'], copy)
+    assert.notEqual(r.code, 0, '改了数据不重生成不得 exit 0')
+    assert.match(r.out, /Mismatch/, r.out.slice(-400))
+  })
+  const g = runNode(['tools/docgen/cli.mjs', 'gate'])
+  assert.equal(g.code, 0, `真仓 gate 必须 exit 0：${g.out.slice(-400)}`)
+})
+
+test('SC-TC-49 @HOST_TERM（整值）抛错；${@HOST_TERM}（大写插值）静默不展开；小写正常', () => {
+  const shared = { hostTerm: '主持人' }
+  assert.throws(() => expandRefs('@HOST_TERM', shared, 'x'), (e) => e && e.code === 'NestedSharedRef')
+  assert.equal(expandRefs('$' + '{@HOST_TERM}', shared, 'x'), '$' + '{@HOST_TERM}', '大写插值不抛也不展开（静默失败）')
+  assert.equal(expandRefs('@hostTerm', shared, 'x'), '主持人')
+  assert.equal(expandRefs('当$' + '{@hostTerm}调度', shared, 'x'), '当主持人调度')
+})
+
+test('SC-TC-60 大写形态兜底：seats 内 @HOST_TERM 0，且 15 卡 ${@ 残留 0', () => {
+  const text = seatsText()
+  assert.equal(countWord(text, '@HOST_TERM'), 0, '大写形态（含插值）合计必须 0')
+  const cards = SEATS().map((s) => R(join(AGENTS_DIR, `${s}.md`))).join('\n')
+  assert.equal(countWord(cards, '${@'), 0, '展开后卡面不得残留 ${@')
+  // 构造：副本把所有占位写成大写形态 → 渲染残留 ≥1（expandRefs 不报错，只能靠本判据抓）
+  const probeSrc = [
+    "import { renderSeat } from './tools/docgen/components/cardPipeline.mjs'",
+    "const card = renderSeat(process.env.SEAT).card",
+    "process.stdout.write('residual ' + (card.split('$' + '{@').length - 1))",
+  ].join('\n')
+  withRepoCopy((copy) => {
+    for (const s of SEATS()) {
+      const p = join(copy, 'tools/docgen/data/seats', `${s}.json`)
+      writeFileSync(p, R(p).replaceAll('${@hostTerm}', '${@HOST_TERM}'), 'utf8')
+    }
+    const out = probeIn(copy, 'probe-upper.mjs', probeSrc, { SEAT: 'detective-observer' })
+    const m = /residual (\d+)/.exec(out)
+    assert.ok(m, out)
+    assert.ok(Number(m[1]) >= 1, '大写插值必须留下字面（否则本条判据没有对象）')
+  })
 })
 
 test('SC-TC-58 硬约束不动：列数 4 / 七段 / 36 码 / 8 键 / 12 键', () => {

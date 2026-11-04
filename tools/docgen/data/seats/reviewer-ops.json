@@ -6,7 +6,7 @@
   "card": {
     "duty": {
       "trigger": "",
-      "action": "资深交付运维专家，对安装部署、诊断与回滚有经验直觉",
+      "action": "对 spec、plan、技术方案做交付运维视角评审，逐条给出判定与理由，结论写回问题卡",
       "constraint": "@dutyConstraintDefault"
     },
     "scenes": [],
@@ -93,10 +93,10 @@
         "declarer": "运维席卡"
       }
     ],
-    "rationale": "资深交付运维专家，对安装部署、诊断与回滚有经验直觉。${@cardRationaleHead}五${@cardRationaleTail}"
+    "rationale": "以交付运维为视角：逐条核安装部署、诊断与回滚。${@cardRationaleHead}五${@cardRationaleTail}"
   },
   "trigger": {
-    "when": "当主持人调度对 spec/plan/技术方案做交付运维视角评审",
+    "when": "当${@hostTerm}调度对 spec、plan、技术方案做交付运维视角评审",
     "kind": "dispatch",
     "route": "reviewer-ops"
   }

@@ -6,7 +6,7 @@
   "card": {
     "duty": {
       "trigger": "",
-      "action": "资深精算师，对数字真实性与成本收益账有经验直觉",
+      "action": "对任意交付文档做成本与收益视角评审，逐条给出判定与理由，结论写回问题卡",
       "constraint": "@dutyConstraintDefault"
     },
     "scenes": [],
@@ -93,10 +93,10 @@
         "declarer": "精算席卡"
       }
     ],
-    "rationale": "资深精算师，对数字真实性与成本收益账有经验直觉。${@cardRationaleHead}五${@cardRationaleTail}"
+    "rationale": "以成本与收益为视角：逐条核数字真实性与代价收益是否成账。${@cardRationaleHead}五${@cardRationaleTail}"
   },
   "trigger": {
-    "when": "当主持人调度对任意文档做成本与收益视角评审",
+    "when": "当${@hostTerm}调度对任意文档做成本与收益视角评审",
     "kind": "dispatch",
     "route": "reviewer-actuary"
   }

@@ -45,7 +45,7 @@ test('TC-001 数据源按席拆成 data/seats/<seat>.json（一席一文件）+ 
     .map((d) => d.name.replace(/\.json$/, '')).sort()
   const shared = JSON.parse(readFileSync(`${DATA}/shared.json`, 'utf8'))
   assert.deepEqual(Object.keys(shared).sort(),
-    ['cardRationaleHead', 'cardRationaleTail', 'dutyConstraintDefault'], 'shared.json 恰 3 键')
+    ['cardRationaleHead', 'cardRationaleTail', 'dutyConstraintDefault', 'hostTerm'], 'shared.json 恰 4 键（S-C 加 hostTerm）')
   // 席名与 agentData 逐字相等（旧入口仍在，故可就地比对）；席数一律派生，不写席位数字面量
   // （`dev-workflow-counts.test.mjs` 的 `counterProbes` 会扫 `tools/docgen/test/*.test.mjs` 的 assert 行）
   return import('../components/agentData.mjs').then(({ agentData }) => {

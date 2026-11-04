@@ -6,7 +6,7 @@
   "card": {
     "duty": {
       "trigger": "",
-      "action": "资深安全顾问，对注入面与权限边界有经验直觉",
+      "action": "对任意交付文档做安全风险视角评审，逐条给出判定与理由，结论写回问题卡",
       "constraint": "@dutyConstraintDefault"
     },
     "scenes": [],
@@ -105,10 +105,10 @@
         "declarer": "安全席卡"
       }
     ],
-    "rationale": "资深安全顾问，对注入面与权限边界有经验直觉。${@cardRationaleHead}六${@cardRationaleTail}"
+    "rationale": "以安全为视角：逐条核注入面与权限边界。${@cardRationaleHead}六${@cardRationaleTail}"
   },
   "trigger": {
-    "when": "当主持人调度对任意文档做安全风险视角评审",
+    "when": "当${@hostTerm}调度对任意文档做安全风险视角评审",
     "kind": "dispatch",
     "route": "reviewer-security"
   }

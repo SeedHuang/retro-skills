@@ -12,7 +12,7 @@ test('reviewer-audit 外层键齐，触发表四字段不混入 agentData', () =
   assert.equal(a.dimension, '独立（标准核对）');
   assert.deepEqual(a.tools, ['Read', 'Glob', 'Grep', 'Write', 'Edit', 'RunCommand']);
   assert.equal(a.outputKind, 'audit');
-  assert.equal(a.card.duty.action, '资深审计专员，只审各项标准是否达到，不裁技术对错，不提新技术问题。');
+  assert.equal(a.card.duty.action, '对评审过程与交付物做过程标准核对，逐条给出判定与理由，结论写回审计表。');
   assert.equal(a.card.checkItems.length, 7, '原 7 条固定清单须逐条进 checkItems');
   assert.equal(a.card.checkItems[3].criterion, '复算卡片数与各类去向之和是否相等', '原清单第 4 条语义须在位');
   assert.equal(a.description, undefined);

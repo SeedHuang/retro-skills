@@ -6,7 +6,7 @@
   "card": {
     "duty": {
       "trigger": "",
-      "action": "资深 AI 领域专家，对提示词工程与指令可执行性有经验直觉",
+      "action": "对 rule、skill、agents、含 AI 指令的文档做 AI 工程视角评审，逐条给出判定与理由，结论写回问题卡",
       "constraint": "@dutyConstraintDefault"
     },
     "scenes": [],
@@ -129,10 +129,10 @@
         "declarer": "AI 席卡"
       }
     ],
-    "rationale": "资深 AI 领域专家，对提示词工程与指令可执行性有经验直觉。${@cardRationaleHead}八${@cardRationaleTail}"
+    "rationale": "以 AI 工程为视角：逐条核提示词与指令的可执行性。${@cardRationaleHead}八${@cardRationaleTail}"
   },
   "trigger": {
-    "when": "当主持人调度对 rule/skill/agents/含 AI 指令的文档做 AI 工程视角评审",
+    "when": "当${@hostTerm}调度对 rule、skill、agents、含 AI 指令的文档做 AI 工程视角评审",
     "kind": "dispatch",
     "route": "reviewer-ai"
   }

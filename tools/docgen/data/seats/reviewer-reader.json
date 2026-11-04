@@ -6,7 +6,7 @@
   "card": {
     "duty": {
       "trigger": "",
-      "action": "目标读者代表，替「第一次打开这份文档的人」发言",
+      "action": "对描述性、记录型、任意文档做读者视角评审，逐条给出判定与理由，结论写回问题卡",
       "constraint": "@dutyConstraintDefault"
     },
     "scenes": [],
@@ -108,7 +108,7 @@
     "rationale": "目标读者代表，替「第一次打开这份文档的人」发言。${@cardRationaleHead}六${@cardRationaleTail}"
   },
   "trigger": {
-    "when": "当主持人调度对描述性/记录型/任意文档做读者视角评审",
+    "when": "当${@hostTerm}调度对描述性、记录型、任意文档做读者视角评审",
     "kind": "dispatch",
     "route": "reviewer-reader"
   }

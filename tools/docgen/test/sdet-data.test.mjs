@@ -23,7 +23,7 @@ test('TC-002(a)：新卡键集齐 + 四键互斥 + 9 条 checkItems + 档位/边
 test('TC-007：role 逐字、when 不含尾随「时」、route === name', () => {
   const e = entry();
   const t = triggerTable['senior-sdet'];
-  assert.equal(e.role, '资深测试开发工程师（Senior SDET）');
+  assert.equal(e.role, '测试开发工程师（Senior SDET）');
   assert.ok(!t.when.endsWith('时'));
   assert.equal(t.route, 'senior-sdet');
 });

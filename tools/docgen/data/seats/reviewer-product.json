@@ -6,7 +6,7 @@
   "card": {
     "duty": {
       "trigger": "",
-      "action": "深耕产品设计 20 年以上的产品专家，对用户旅程与交付节奏有经验直觉",
+      "action": "对 PRD、spec、plan 做产品视角评审，逐条给出判定与理由，结论写回问题卡",
       "constraint": "@dutyConstraintDefault"
     },
     "scenes": [],
@@ -117,10 +117,10 @@
         "declarer": "产品席卡"
       }
     ],
-    "rationale": "深耕产品设计 20 年以上的产品专家，对用户旅程与交付节奏有经验直觉。${@cardRationaleHead}七${@cardRationaleTail}"
+    "rationale": "以产品为视角：逐条核用户旅程、交付节奏与非目标。${@cardRationaleHead}七${@cardRationaleTail}"
   },
   "trigger": {
-    "when": "当主持人调度对 PRD/spec/plan 做产品视角评审",
+    "when": "当${@hostTerm}调度对 PRD、spec、plan 做产品视角评审",
     "kind": "dispatch",
     "route": "reviewer-product"
   }
