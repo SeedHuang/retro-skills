@@ -214,9 +214,9 @@ T4（独立，可与 T1/T2 并行，但与 T3 不相干）──► T5
 
 | # | 任务 | 状态 | 实跑证据 |
 |---|---|---|---|
-| T0 | 落 ⑤ 收口 2 件 | 待办 | |
-| T1 | `SC-TC-62` 闭区间 | 待办 | |
-| T2 | G6 `t.skip` | 待办 | |
-| T3 | 迁 11 件证据账 | 待办 | |
-| T4 | 删死代码 2 件 | 待办 | |
-| T5 | 收口 + 六行门行 | 待办 | |
+| T0 | 落 ⑤ 收口 2 件 | **完成** | 提交 `cda896f`（2 files / +92）；落库后 `npm run check` → `# tests 1541 / # pass 1536 / # fail 0 / # skipped 5` + 末行 `check 全部通过`；`git status --porcelain` 0 行 |
+| T1 | `SC-TC-62` 闭区间 | **完成** | 提交 `e153d33`；`BASE_HEAD` 默认 = `cda896f`。绿 = `name-status: rows 85 / A 5 / A-outside 0 / nonA-outside 0`；拆炸弹取证 = 新建 `docs/reports/2026-11-04-probe/rogue.md` 后复跑仍 `rows 85 / A 5 / A-outside 0`（随后删探针，`probe-removed=True`）；判据未架空 = 临时删 `NEW_PATHS` 一项 → `A 面出现白名单外路径：docs/handoffs/2026-11-04-s-c-card-shape-impl.md`、exit 1 |
+| T2 | G6 `t.skip` | **完成** | 提交 `93c78cd`；单文件 `# tests 60 / # pass 58 / # skipped 2`；全仓 `# skipped 5 → 7`。红档 = 抽掉 `SKIP_ALLOWLIST` 一条 → `[测试] 名单外 skip：SC-TC-45 行口径 vs 次数口径（17 行 / 18 处）——整条归一次性档` + `check 未通过` + exit 1 |
+| T3 | 迁 11 件证据账 | **完成** | 提交 `148f82c`（14 files / +1492 −4）；另修 **2 处 `cli.mjs` ambiguous**（`tools/docgen/cli.mjs` vs `tools/observation-check/cli.mjs`，判据 = 被引上下文 `replace --yes` + 行号 543 只在 685 行那份内）与 **1 处表格列数**（`splitRow` 在「反引号内再转义反引号」处吞竖线，改「」引号，语义不变）；行号守卫 `校对 1061 / missing 0`；`npm run check` → `④ markdown 417 文件 / 1808 表`、末行 `check 全部通过`；`SC-TC-62` 仍绿（T1 兑付证明）；`.session` 两目录已删 |
+| T4 | 删死代码 2 件 | **完成** | 提交 `9f83862` + `42705fa`（−77）；`structSkipped 37 → 43`（+6）；`# fail 0`。**两处计划外修正见 §2 的「施工期实情 1 / 2」**（豁免判定前移、`S3-TC-K07` 闭区间） |
+| T5 | 收口 + 六行门行 | **完成（③ / ④ / ⑤ 行见门账）** | 第三枚同根炸弹 `S4-TC-H03`（纯删除提交判 0）→ 改「改动行数 = 增+删」，提交 `67154a5`；**红档实跑首行** = `not ok 581 - S4-TC-H03 出数门槛：git log -1 --numstat 可跑且单席改动行数 > 0`（改前口径、commit `42705fa` = `0 增 / 53 删` + `0 增 / 24 删` → 旧「只累加增列」= 0 → 断言红）；绿档 = 全仓 `# fail 0`、末行 `check 全部通过`。收口四道门见 `③@S-D` 行 |
