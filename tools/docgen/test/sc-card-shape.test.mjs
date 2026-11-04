@@ -6,7 +6,7 @@
 // 判据禁 `node -e`；现值型断言（13 项 / 18 次 / 17 行 / 30 次）归 `SB_SHAPE_ONESHOT=1` 一次性档，常驻只留「改后 = 0」。
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { readFileSync, writeFileSync, readdirSync } from 'node:fs'
+import { readFileSync, writeFileSync, readdirSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { execFileSync, spawnSync } from 'node:child_process'
 
@@ -929,21 +929,31 @@ test('SC-TC-54 副本改一席 action 不重生成 → gate Mismatch exit 1', ()
 
 test('SC-TC-55 用例账对齐（60 块）+ plan 的 check-plan map 无缺口 / 无悬空', () => {
   assert.equal(blockCount(SELF_PATH, 'SC-TC-'), BATCH_CASES, '本文件 test 块必须恰 = 附录 A 行数')
-  // `# tests` 口径：基线 1481 + 本批 60 = 1541；测试内**不自跑** `npm run check`（禁自递归，见文件头禁令），
-  // 实际值由 ③ 出口的 `npm run check` 记录在 plan 执行记录 / 门行。
-  assert.equal(BASELINE_TESTS + BATCH_CASES, 1541, 'floor = 基线 + 本批新增')
+  // `# tests` 口径：基线 1481 + 本批**实际块数** = 1541；测试内**不自跑** `npm run check`（禁自递归，见文件头禁令），
+  // 实际值由 ③ 出口的 `npm run check` 记录在 plan 执行记录 / 门行；左侧取实际块数（写死常量会让「删一块」判不出来）。
+  assert.equal(BASELINE_TESTS + blockCount(SELF_PATH, 'SC-TC-'), 1541, 'floor = 基线 + 本批实际块数（删一块即 1540 红）')
   const r = runNode(['scripts/check-plan.mjs', 'map', '--plan', 'docs/superpowers/plans/2026-11-03-s-c-card-shape.md'])
   assert.equal(r.code, 0, `check-plan map 必须 exit 0：${r.out.slice(-300)}`)
   assert.match(r.out, /map: missing 0 dangling 0（cases 60 \/ mapped 60） => ok/)
 })
 
-test('SC-TC-56 做坏判据：删一个测试文件 → 计数低于基线必红', () => {
-  const floor = BASELINE_TESTS + blockCount(SELF_PATH, 'SC-TC-')
-  const victim = blockCount(join(REPO, 'tools/docgen/test/sdet-render.test.mjs'), '')
-  assert.ok(victim >= 1, '所选文件的用例块数必须可数')
-  const afterDelete = floor - victim
-  assert.ok(afterDelete < floor, '删文件后总数必须低于 floor')
-  assert.throws(() => assert.ok(afterDelete >= floor), '判据（>= floor）必须在此构造上红')
+test('SC-TC-56 做坏判据：副本真删 sdet-render.test.mjs → 同一命令真实计数归零且 exit 非 0', () => {
+  const victim = 'tools/docgen/test/sdet-render.test.mjs'
+  const victimBlocks = blockCount(join(REPO, victim), '')
+  assert.ok(victimBlocks >= 1, '所选文件的用例块数必须可数')
+  withRepoCopy((copy) => {
+    // 删前：真跑该文件，真实 # tests 必须等于它的块数（读数与文件现状互证）
+    const before = runTest([victim], copy)
+    assert.equal(countOf(before.out, '# tests (\\d+)'), victimBlocks, '删前真实 # tests 必须等于该文件块数')
+    assert.equal(before.code, 0, `删前该文件必须 exit 0：${before.out.slice(-300)}`)
+    rmSync(join(copy, victim), { force: true })
+    // 删后：同一命令真跑 → 用例数掉落且 exit 非 0（「删用例凑绿」会在此处必红）
+    const after = runTest([victim], copy)
+    assert.notEqual(after.code, 0, '副本内删文件后同一命令必须 exit 非 0')
+    const raw = countOf(after.out, '# tests (\\d+)')
+    const got = Number.isFinite(raw) ? raw : 0
+    assert.ok(got < victimBlocks, `删后真实计数必须低于删前（删前 ${victimBlocks} / 删后 ${got}）`)
+  })
 })
 
 test('SC-TC-59 防回退：PRD 行数 D 17 / Q 8 / 空值 0（S-C 不得改功能点集合）', () => {
