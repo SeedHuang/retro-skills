@@ -69,8 +69,8 @@ const countInRepo = (root, word) => walkFiles(root)
 
 // 子进程跑 `node --test`（判据只看 stdout 的计数行；退出码仅旁证）。
 // 必须清掉 `NODE_TEST_CONTEXT`：父测试跑在 node --test 里，该变量被继承会让子进程不打印汇总行（取数恒 NaN）。
-const runTest = (args, cwd = REPO) => {
-  const env = { ...process.env }
+const runTest = (args, cwd = REPO, extraEnv = null) => {
+  const env = { ...process.env, ...(extraEnv || {}) }
   delete env.NODE_TEST_CONTEXT
   const r = spawnSync(process.execPath, ['--test', '--test-reporter=tap', ...args], { cwd, encoding: 'utf8', env })
   return { code: r.status ?? -1, out: `${r.stdout ?? ''}${r.stderr ?? ''}` }
@@ -811,6 +811,94 @@ test('SC-TC-42 口径判别力：全树行口径 0 / 22 / 1，卡模型键面 0'
   assert.equal(lineHits(SLOT_WORDS[1]), 22, 'purpose 全树行口径 22（commands.mjs 9 + policy-pure-source.test.mjs 13）')
   assert.equal(lineHits(SLOT_WORDS[2]), 1, 'method 全树行口径 1（card-model/expression.mjs）')
   assert.equal(SLOT_WORDS.filter((w) => agentData.some((a) => Object.keys(a.card).concat(Object.keys(a.card.duty)).some((k) => k.includes(w)))).length, 0)
+})
+
+// ── G 组：`ret`+`urns` 归零与一次性档清单（R11 / §11.9 末条）─────────────────────────────────
+
+// 判据实现必须**拼接构造**该词（直接写字面 → 本文件自身命中 = 假红）
+const BANNED_FIELD = 'ret' + 'urns'
+const SELF_PATH = join(REPO, 'tools/docgen/test/sc-card-shape.test.mjs')
+const countBanned = (files) => files.reduce((n, t) => n + countWord(t, BANNED_FIELD), 0)
+const docgenFiles = () => walkFiles(join(REPO, 'tools/docgen')).filter((p) => p.endsWith('.mjs') || p.endsWith('.json'))
+
+test('SC-TC-50 该键名在 tools/docgen/** 计数 0（现 3，全在 S-A 负例夹具）', () => {
+  assert.equal(countBanned(docgenFiles().map((p) => R(p))), 0, '夹具已改名为 ghostField，全树不得再有该词')
+})
+
+test('SC-TC-51 判据实现必须拼接构造该词（写字面会让测试文件自身命中）', () => {
+  const self = R(SELF_PATH)
+  assert.equal(countWord(self, BANNED_FIELD), 0, '本文件不得含完整字面（否则它会把自己数进去）')
+  assert.ok(self.includes("'ret' + 'urns'"), '必须两段拼接构造')
+  // 反证：若写成完整字面，扫描集合（含测试文件）会命中 ≥1
+  assert.equal(countBanned(["const w = '" + BANNED_FIELD + "'"]), 1, '写字面形态必被同一计数抓到')
+})
+
+test('SC-TC-52 副本回填该键名 → 计数 ≥1 必红', () => {
+  const probeSrc = [
+    "import { readdirSync, readFileSync } from 'node:fs'",
+    "import { join } from 'node:path'",
+    "const walk = (d, out = []) => {",
+    "  for (const e of readdirSync(d, { withFileTypes: true })) {",
+    "    const p = join(d, e.name)",
+    "    if (e.isDirectory()) walk(p, out)",
+    "    else if (p.endsWith('.mjs') || p.endsWith('.json')) out.push(p)",
+    "  }",
+    "  return out",
+    "}",
+    "const word = process.env.BANNED",
+    "let n = 0",
+    "for (const p of walk('tools/docgen')) n += readFileSync(p, 'utf8').split(word).length - 1",
+    "process.stdout.write('banned ' + n)",
+  ].join('\n')
+  withRepoCopy((copy) => {
+    const p = join(copy, 'tools/docgen/data/seats', `${SEATS()[0]}.json`)
+    writeFileSync(p, R(p).replace('"checkItems"', `"${BANNED_FIELD}": [],\n    "checkItems"`), 'utf8')
+    const out = probeIn(copy, 'probe-banned.mjs', probeSrc, { BANNED: BANNED_FIELD })
+    const m = /banned (\d+)/.exec(out)
+    assert.ok(m, out)
+    assert.ok(Number(m[1]) >= 1, `回填该键名后必须命中 ≥1（实得 ${m[1]}）`)
+    assert.throws(() => assert.equal(Number(m[1]), 0))
+  })
+})
+
+test('SC-TC-57 一次性档清单：SB_BASE 换本批 $BASE，四个现值两侧各有明确取值', () => {
+  const baseText = (rel) => execFileSync('git', ['show', `${BASE || 'HEAD'}:${rel}`], { cwd: REPO, encoding: 'utf8' })
+  if (!SHAPE) {
+    // 常驻档：S-B 三条一次性用例必须 skip（不跑即不假红），且本文件不跑任何现值断言
+    const r = runTest(['tools/docgen/test/sb-contract-layer.test.mjs'])
+    assert.equal(countOf(r.out, '# skipped (\\d+)'), 3, `常驻档必须恰 3 条 skip（实得 ${countOf(r.out, '# skipped (\\d+)')}）`)
+    return
+  }
+  assert.ok(BASE, 'SHAPE 档必须提供 SB_BASE')
+  // ① `$BASE` 侧四个现值：斜杠 13 项 / 主持人 18 次 17 行 / 渲染 30
+  let beforeSlash = 0
+  let beforeLines = 0
+  let beforeOccs = 0
+  let beforeRender = 0
+  for (const s of SEATS()) {
+    const j = JSON.parse(baseText(`tools/docgen/data/seats/${s}.json`))
+    const fields = [j.card.duty.action, j.card.duty.constraint, j.trigger.when, ...j.card.categories.map((c) => c.label)]
+    beforeSlash += fields.filter((v) => /[/／]/.test(String(v))).length
+    for (const line of baseText(`tools/docgen/data/seats/${s}.json`).split(/\r?\n/)) {
+      const c = line.split('主持人').length - 1
+      if (c > 0) { beforeLines += 1; beforeOccs += c }
+    }
+    beforeRender += countWord(baseText(`agents/${s}.md`), '主持人')
+  }
+  assert.equal(beforeSlash, 13, 'BASE 侧斜杠项现值 = 13')
+  assert.equal(beforeLines, 17, 'BASE 侧行口径 = 17')
+  assert.equal(beforeOccs, 18, 'BASE 侧次数口径 = 18')
+  assert.equal(beforeRender, 30, 'BASE 侧渲染总数 = 30')
+  // ② 改后侧：0 / 0 / 18 / 30
+  assert.equal(slashItems(), 0)
+  assert.equal(countWord(seatsText(), '主持人'), 0)
+  assert.equal(countWord(seatsText(), '${@hostTerm}'), 18)
+  assert.equal(SEATS().reduce((n, s) => n + countWord(textOf(s), '主持人'), 0), 30)
+  // ③ S-B 三条一次性用例按新 BASE 重跑必须绿
+  const r = runTest(['tools/docgen/test/sb-contract-layer.test.mjs'], REPO, { SB_SHAPE_ONESHOT: '1', SB_BASE: BASE })
+  assert.equal(r.code, 0, `一次性档必须绿：${r.out.slice(-600)}`)
+  assert.equal(countOf(r.out, '# skipped (\\d+)'), 0)
+  assert.equal(countOf(r.out, '# fail (\\d+)'), 0)
 })
 
 test('SC-TC-58 硬约束不动：列数 4 / 七段 / 36 码 / 8 键 / 12 键', () => {

@@ -233,13 +233,13 @@
 - **对应测试**：建议 `tools/docgen/test/sa-data-layer.test.mjs::TC-014`
 - **不覆盖**：键值内容合法性（归 `validateCardModel`）
 
-### TC-015 席文件 `card` 多一个键（`returns`）/ 写了派生四键之一（`tools`）→ 二者都在 loader 的 8 键恰等处报 `CardKeySetMismatch`
+### TC-015 席文件 `card` 多一个键（`ghostField`）/ 写了派生四键之一（`tools`）→ 二者都在 loader 的 8 键恰等处报 `CardKeySetMismatch`
 
-- **覆盖**：spec §10.1 R2 `:20`（loader 只判「席文件 `card` 恰等 8 键 + 派生四键拒载」；全量 12 键的恰等判在 `buildCards()`，见 TC-003 段 B）/ §10.2.2 `:84`（派生四键不得写）/ §10.2.5 第 6 步 `:128` / §10.2.6 `:133`（`CardKeySetMismatch`）；交叉 PRD §4 V11①（`tools/docgen` 内 `returns` 计数 = 0）
+- **覆盖**：spec §10.1 R2 `:20`（loader 只判「席文件 `card` 恰等 8 键 + 派生四键拒载」；全量 12 键的恰等判在 `buildCards()`，见 TC-003 段 B）/ §10.2.2 `:84`（派生四键不得写）/ §10.2.5 第 6 步 `:128` / §10.2.6 `:133`（`CardKeySetMismatch`）；交叉 PRD §4 V11①（`tools/docgen` 内该词计数 = 0；**S-C 起夹具键名用 `ghostField`**，见 spec §11.2 #14 / V11 ① 改判）
 - **前置**：`COPY`；席文件 `card` 只许 8 键（spec §10.2.2 `:84`、§10.2.5 第 6 步 `:128`）
-- **步骤**：① 形态 A —— 在某一席 `tools/docgen/data/seats/<seat>.json` 的 `card` 内加 `"returns": []`（第 9 键 → loader 8 键恰等**当场报**，不等 `buildCards()`）；② `GATE`；③ 复原；④ 形态 B —— 在同一席 `card` 内加 `"tools": []`（派生键，若放行会被 `...s` 静默覆盖）；⑤ `GATE`；⑥ 复原；⑦ `Get-ChildItem tools/docgen -Recurse -File` 过滤 `.mjs` / `.json` 后 `Select-String -Pattern 'returns'` 计数
-- **预期**：② exit 1、`CardKeySetMismatch` 点席并点多余键 `returns`（该码在 loader 第 6 步触发，消费点那一圈不必跑到）；⑤ exit 1、同一码点名被拒的派生键 `tools`（**不得静默覆盖后 exit 0**——该形态若放行，渲染结果与正确数据逐字节相同，V4 抓不到）；③⑥ exit 0；⑦ 注入态计数 ≥1、复原态 = 0
-- **判据**：②⑤ `GATE` 各 exit 1 且输出同时含 `CardKeySetMismatch`、席名与对应键名（`returns` / `tools`）；③⑥ exit 0；⑦ 注入态 ≥1、复原态 = 0。**两形态都不得只拿 `UnverifiableOutput` 顶替**：`cardPipeline.mjs:91-95` 的 12 键检查只查「缺」不查「多」（多键经 `...own`（`:83`）原样进产物，`buildOne` 只会看到 13 键而不是报码），故本条只能由 loader 的 8 键恰等判死
+- **步骤**：① 形态 A —— 在某一席 `tools/docgen/data/seats/<seat>.json` 的 `card` 内加 `"ghostField": []`（第 9 键 → loader 8 键恰等**当场报**，不等 `buildCards()`）；② `GATE`；③ 复原；④ 形态 B —— 在同一席 `card` 内加 `"tools": []`（派生键，若放行会被 `...s` 静默覆盖）；⑤ `GATE`；⑥ 复原；⑦ `Get-ChildItem tools/docgen -Recurse -File` 过滤 `.mjs` / `.json` 后按该词计数
+- **预期**：② exit 1、`CardKeySetMismatch` 点席并点多余键 `ghostField`（该码在 loader 第 6 步触发，消费点那一圈不必跑到）；⑤ exit 1、同一码点名被拒的派生键 `tools`（**不得静默覆盖后 exit 0**——该形态若放行，渲染结果与正确数据逐字节相同，V4 抓不到）；③⑥ exit 0；⑦ 注入态计数 ≥1、复原态 = 0
+- **判据**：②⑤ `GATE` 各 exit 1 且输出同时含 `CardKeySetMismatch`、席名与对应键名（`ghostField` / `tools`）；③⑥ exit 0；⑦ 注入态 ≥1、复原态 = 0。**两形态都不得只拿 `UnverifiableOutput` 顶替**：`cardPipeline.mjs:91-95` 的 12 键检查只查「缺」不查「多」（多键经 `...own`（`:83`）原样进产物，`buildOne` 只会看到 13 键而不是报码），故本条只能由 loader 的 8 键恰等判死
 - **红绿证据**：红 = 「至少 8 键」/「至少 12 键」式判据放过多键（多键在 `buildCards()` 端变成 13 键，若无人判就静默进卡面）；派生键写进 `card` 被 `...s` 覆盖后渲染逐字节相同 → `gate` exit 0；绿 = 两种形态都在 loader 的 8 键恰等处各报同一码
 - **对应测试**：建议 `tools/docgen/test/sa-data-layer.test.mjs::TC-015`
 - **不覆盖**：`checkItem.returns` 的整条 D16④（归 S-C）
@@ -421,7 +421,7 @@
 | TC-012 | 两段互引成环 / 单段自引 | 递归展开 → 栈溢出，错误信息完全跑偏 | 10 秒内报 `NestedSharedRef` exit 1 并点名键（不崩栈、不挂起） |
 | TC-013 | 共享段内再引用共享段 / seat 侧 `@a ${@b}` 整值与插值混用 | 容易「只展开一层」后 exit 0，留下 `@` 原文进卡面；混用形态还容易被当「整值 + 追加文本」放行（spec §10.2.3 规则 4 `:103`） | 三种写法都 `NestedSharedRef` exit 1 并点名该键/该席；不许半展开，也不许递归展开到底 |
 | TC-014 | 装配后 `card` 少一个键（删 `rationale`） | 缺键检查在 `cardPipeline` 是通用报错、无码 | `CardKeySetMismatch` exit 1，点名缺键与席 |
-| TC-015 | 席文件 `card` 多一个键（`returns`）/ 写了派生键 `tools` | 多键被忽略（`buildOne` 只查缺键、不查多键）；派生键被 `...s` 静默覆盖后渲染与正确数据逐字节相同（V4 抓不到） | 两种形态都在 loader 的 8 键恰等处各报 `CardKeySetMismatch`；写 `tools` 的形态是派生键拒载的唯一判据 |
+| TC-015 | 席文件 `card` 多一个键（`ghostField`）/ 写了派生键 `tools` | 多键被忽略（`buildOne` 只查缺键、不查多键）；派生键被 `...s` 静默覆盖后渲染与正确数据逐字节相同（V4 抓不到） | 两种形态都在 loader 的 8 键恰等处各报 `CardKeySetMismatch`；写 `tools` 的形态是派生键拒载的唯一判据 |
 | TC-016 | 引用存在但值为 `""` / `null` / `"   "` / 非字符串被插值 | 只判「键在不在」→ 空串展开成空文本，卡面静默少一句 | 四种形态一律报 `EmptySharedValue` exit 1 |
 | TC-017 | 句子被改成数字 | 隐式 `String()` 会把语义漂移抹平成「渲染恰好相同」；本仓无类型码可兜 | `GATE` exit 1 且首行 `Mismatch`（无第二兜底） |
 | TC-018 | 改数据不重生成 | `gate` 是唯一逐字节防线，漏跑即漂移 | exit 1 `Mismatch` |

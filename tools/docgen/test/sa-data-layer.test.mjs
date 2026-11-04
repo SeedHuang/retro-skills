@@ -117,9 +117,9 @@ test('TC-014 席文件 card 少一个键（删 rationale）→ CardKeySetMismatc
   } finally { rmSync(dst, { recursive: true, force: true }) }
 })
 
-test('TC-015 多一个键（returns）/ 写派生四键（tools）→ 两种形态都报 CardKeySetMismatch', () => {
+test('TC-015 多一个键（ghostField）/ 写派生四键（tools）→ 两种形态都报 CardKeySetMismatch', () => {
   const forms = [
-    ['extra', (j) => { j.card.returns = [] }],
+    ['extra', (j) => { j.card.ghostField = [] }],
     ['derived', (j) => { j.card.tools = [] }],
   ]
   for (const [label, mutate] of forms) {
@@ -556,7 +556,7 @@ test('TC-016（REFS 面）共享值空串 → EmptySharedValue exit 1 且点名�
 test('TC-014/015/019/027（GATE 面）四类坏数据 → cli gate exit 1 且点名码', () => {
   const cases = [
     ['TC-014', (data) => rewrite(data, join('seats', 'reviewer-product.json'), (j) => { delete j.card.rationale }), /CardKeySetMismatch/],
-    ['TC-015', (data) => rewrite(data, join('seats', 'reviewer-product.json'), (j) => { j.card.returns = [] }), /CardKeySetMismatch/],
+    ['TC-015', (data) => rewrite(data, join('seats', 'reviewer-product.json'), (j) => { j.card.ghostField = [] }), /CardKeySetMismatch/],
     ['TC-019', (data) => rewrite(data, join('seats', 'reviewer-product.json'), (j) => { j.card.duty.trigger = '非空' }), /TriggerFieldMisplaced/],
     ['TC-027', (data) => rewrite(data, join('seats', 'reviewer-product.json'), (j) => { j.kind = 'agent' }), /TriggerFieldMisplaced/],
   ]

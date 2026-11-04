@@ -949,7 +949,8 @@ test('SB-TC-34 注入值不做字符串变换：加「核对」后缀 → 同形
 const ONESHOT = process.env.SB_SHAPE_ONESHOT === '1'
 // 一次性档的比对基准：默认 = 本批冻结常量（不随 HEAD 移动——提交后 `git diff HEAD` 恒 0 会变空判据）；
 // 后续批次用 `SB_BASE=<新提交>` 显式覆盖，不改本文件。
-const SB_BASE = (process.env.SB_BASE || '').trim() || '2c186c28e4aba776395657829aded2e14b10fca0'
+// **S-C 批次更新**（spec §11.9 末条 / testcase SC-TC-57）：默认值换成 S-C 的 `$BASE`（= 开工提交 `eef963e`）。
+const SB_BASE = (process.env.SB_BASE || '').trim() || 'eef963e96c0a2c309c83789e13da5b195b1d4e0c'
 if (!ONESHOT) console.log('oneshot skipped（SB_SHAPE_ONESHOT≠1）')
 const CARDS_DIR = join(ROOT, 'agents')
 const cardFiles = () => readdirSync(CARDS_DIR).filter((f) => f.endsWith('.md'))
@@ -1055,43 +1056,34 @@ function changesWithSections(seat) {
   return { dels, adds }
 }
 
-test('SB-TC-32 变更形态（位置型三段，一次性）：每席恰 1 条 `关注类别：` 删行在「职责」段；非指针席其余增删只在「输出格式」段；指针席「边界」段至少 1 增 1 删', { skip: !ONESHOT }, () => {
+test('SB-TC-32（S-C 位置型三段，一次性）：每席在「职责」「一定会」「本席清单」各有删增，且不触达其它段', { skip: !ONESHOT }, () => {
   const files = filesChangedOf(gitText(['diff', '--stat', SB_BASE, '--', 'agents/']))
   const paths = changedPathsAtBase()
   assert.equal(files, seatTotal(), `与 BASE 比必须每席都变（实得 ${files}）`)
   assert.equal(paths.length, seatTotal(), `与 BASE 比必须每席一个路径（实得 ${paths.length}）`)
 
-  const badFocusCount = []
-  const badFocusSection = []
+  // S-C 的预期变更面 = front matter（description 随 when 变，段名 ''）+ 职责（动作 / 触发两行改写）
+  // + 一定会（段末 5 行整段删除）+ 本席清单（表头「判据（…）」改写）
+  const SC_SECTIONS = ['', '职责', '一定会', '本席清单']
+  const badDuty = []
+  const badMust = []
+  const badTable = []
   const badExtra = []
-  const badBoundaryAdd = []
-  const badBoundaryDel = []
   for (const f of cardFiles()) {
     const seat = f.slice(0, -3)
     const { dels, adds } = changesWithSections(seat)
-    const focusDels = dels.filter((d) => d.line.startsWith('关注类别：'))
-    if (focusDels.length !== 1) badFocusCount.push(`${seat}:${focusDels.length}`)
-    if (focusDels[0] && focusDels[0].section !== '职责') badFocusSection.push(`${seat}:${focusDels[0].section || '(无)'}`)
-
-    if (POINTER_SEATS.includes(seat)) {
-      // Ⅲ：分别断言（不得只判「边界段合计 ≥ 2」——一次替换可能 1 增 1 删，也可能全删无增）
-      if (adds.filter((x) => x.section === '边界').length < 1) badBoundaryAdd.push(seat)
-      if (dels.filter((x) => x.section === '边界').length < 1) badBoundaryDel.push(seat)
-    } else {
-      // Ⅱ：除那条删行外，全部增删的所在节 = 「输出格式」（R1 的预期变更面，无第三类）
-      const stray = [...dels.filter((d) => !d.line.startsWith('关注类别：')), ...adds]
-        .filter((x) => x.section !== '输出格式')
-      if (stray.length > 0) badExtra.push(`${seat}:${stray.length}（${stray.map((x) => x.section || '(无)').join('|')}）`)
-    }
+    if (!dels.some((d) => d.section === '职责') || !adds.some((d) => d.section === '职责')) badDuty.push(seat)
+    if (!dels.some((d) => d.section === '一定会')) badMust.push(seat)
+    if (!dels.some((d) => d.section === '本席清单') || !adds.some((d) => d.section === '本席清单')) badTable.push(seat)
+    const stray = [...dels, ...adds].filter((x) => !SC_SECTIONS.includes(x.section))
+    if (stray.length > 0) badExtra.push(`${seat}:${stray.length}（${stray.map((x) => x.section || '(无)').join('|')}）`)
   }
 
-  const other = seatTotal() - POINTER_SEATS.length
-  console.log(`change-shape: files ${files} / focus1 ${seatTotal() - badFocusCount.length}/${seatTotal()} / section 职责 ${seatTotal() - badFocusSection.length}/${seatTotal()} / extra 0 ${other - badExtra.length}/${other} / boundary add ${POINTER_SEATS.length - badBoundaryAdd.length}/${POINTER_SEATS.length} del ${POINTER_SEATS.length - badBoundaryDel.length}/${POINTER_SEATS.length}`)
-  assert.equal(badFocusCount.length, 0, `被删的「关注类别：」行必须每席恰 1 条：${badFocusCount.join('、')}`)
-  assert.equal(badFocusSection.length, 0, `「关注类别：」行必须落在「职责」段：${badFocusSection.join('、')}`)
-  assert.equal(badExtra.length, 0, `非指针席除该删行外不得在「输出格式」段之外有任何增删：${badExtra.join('、')}`)
-  assert.equal(badBoundaryAdd.length, 0, `指针席「边界」段必须至少 1 条增行：${badBoundaryAdd.join('、')}`)
-  assert.equal(badBoundaryDel.length, 0, `指针席「边界」段必须至少 1 条删行：${badBoundaryDel.join('、')}`)
+  console.log(`change-shape(s-c): files ${files} / duty ${seatTotal() - badDuty.length}/${seatTotal()} / must ${seatTotal() - badMust.length}/${seatTotal()} / table ${seatTotal() - badTable.length}/${seatTotal()} / stray 0 ${seatTotal() - badExtra.length}/${seatTotal()}`)
+  assert.equal(badDuty.length, 0, `每席「职责」段必须各有删增：${badDuty.join('、')}`)
+  assert.equal(badMust.length, 0, `每席「一定会」段必须有删行（段末三态 5 行退场）：${badMust.join('、')}`)
+  assert.equal(badTable.length, 0, `每席「本席清单」表头必须各有删增：${badTable.join('、')}`)
+  assert.equal(badExtra.length, 0, `除这四段（含 front matter）外不得有任何增删：${badExtra.join('、')}`)
 })
 
 // 用副本自己的渲染器把 15 卡写回盘上（写盘字节与 `replace` 同源；`generate` 是「只比不写」，不能当写盘通路）
