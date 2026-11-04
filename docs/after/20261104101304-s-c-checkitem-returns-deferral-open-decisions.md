@@ -27,17 +27,16 @@
 
 ## 4 来源与复算
 
-- 议会卡原文：`.session/reviews/2026-11-04-0840-sc-card-shape-spec-parliament/cards.md` 的 `P-1`（该目录不进 git）
+- 议会卡原文：`docs/reports/2026-11-04-s-c-card-shape-evidence/parliament/cards.md` 的 `P-1`（2026-11-04 S-D T3 由 `.session/reviews/2026-11-04-0840-sc-card-shape-spec-parliament/cards.md` 迁入 git；映射见该目录 `README.md` §1）
 - spec 侧裁定：`docs/superpowers/specs/2026-11-03-s-c-card-shape-design.md` §11.12（「D6 的『逐项返回文案重写』延后」）
 - 取数：`(Select-String -Path tools\docgen\data\seats\*.json -Pattern '"criterion"').Count` → 97 条
 
 ## 5 形状改造的已知限制（⑤ 段落点，2026-11-04 追加）
 
-来源：④ 段结论表 `.session/reviews/2026-11-04-1328-s-c-quality/quality-4.md` §5（12 条 G1–G12）。本表只给**触发与谁兜**；级别、漏检哪类、该做什么见该表原文。
+来源：④ 段结论表 `docs/reports/2026-11-04-s-c-card-shape-evidence/quality/quality-4.md` §5（12 条 G1–G12；2026-11-04 S-D T3 由 `.session/reviews/2026-11-04-1328-s-c-quality/quality-4.md` 迁入 git）。本表只给**触发与谁兜**；级别、漏检哪类、该做什么见该表原文。
 
 | 事项 | 触发 | 谁兜 |
 |---|---|---|
-| G6（P2）默认档空跑仍计 pass：`SC-TC-45` / `SC-TC-46` 在非 `SB_SHAPE_ONESHOT=1` 档一条断言不跑（`# skipped 0` 掩盖），真判由一次性档兜住 | 下一批开工（S-D） | 下一批施工者改 `t.skip()` 或显式 skip 名；改判授权归用户 |
 | G1（P3）「人设身份句」同义资历表述漏检：`docs/agents/senior-sdet.md` 首句「有十年以上经验的测试开发工程师。」逃过 V9 词面（只认 `资深` / `20 年`） | `docs/agents` 下一次生成，或 V9 判据改位置型时 | 用户授权 + S-D 施工 |
 | G2（P3）spec §11.14 步 1 的 `git checkout` 清单未点名 ③ 交接词（该件已在 `SC-TC-62` 白名单） | spec 下一次修订 | 主 agent（spec 修订者） |
 | G3（P3）用例计数命令缺行首锚点会自命中：`test('SC-TC-` 得 61（多出 `tools/docgen/test/sc-card-shape.test.mjs:3` 注释示例），带锚点得 60 | ④ / ⑤ / 后续复算 | 复跑者用带锚点命令或 `blockCount(SELF_PATH,'SC-TC-')`（`tools/docgen/test/sc-card-shape.test.mjs:931`） |
@@ -54,3 +53,5 @@
 |---|---|
 | G4（首轮 P1）`SC-TC-55` 恒真算术 | `tools/docgen/test/sc-card-shape.test.mjs:934` 左值改为现场 `blockCount(SELF_PATH,'SC-TC-')`；注入 A（删一块 → `expected 60 / actual 59`）、A2（`expected 1541 / actual 1540`）、C（`actual 1542`）全红 |
 | G5（首轮 P1）`SC-TC-56` 本地算术代替真删 | `tools/docgen/test/sc-card-shape.test.mjs:940-957` 改为 `withRepoCopy` 副本真跑 → `rmSync` 真删 → 同命令 exit 非 0 且计数掉落；注入 D（`rmSync` 换 `void 0`）必红 |
+| G6（P2）默认档空跑仍计 pass | **S-D T2 闭合（2026-11-04，`93c78cd`）**：`SC-TC-45` / `SC-TC-46` 由 `if (!SHAPE) return` 改 `return t.skip('一次性档未开（SB_SHAPE_ONESHOT≠1）')`；连带同批改 `SKIP_ALLOWLIST`（5 → 7 条）与 S3 spec 两处计数（`:51` / `:132`）。绿档 = 单文件 `# tests 60 / # pass 58 / # skipped 2`、全仓 `# skipped 5 → 7`；红档 = 抽掉名单一项 → `[测试] 名单外 skip：SC-TC-45 …` + `check 未通过` + exit 1 |
+| **时限炸弹**（`SC-TC-62` 比对区间为开区间） | **S-D T1 闭合（2026-11-04，`e153d33`）**：判据由 `git diff --name-status $BASE`（到工作树末尾）改为 `$BASE..$BASE_HEAD` 闭区间，`BASE_HEAD` 冻结在 S-C 收口提交 `cda896f`（`SB_BASE_HEAD` 可显式覆盖）。绿档 = `SC-TC-62` 单跑 `name-status: rows 85 / A 5 / A-outside 0 / nonA-outside 0`；**炸弹已拆** = 在 `docs/reports/` 下新建探针文件后复跑仍绿（rows 仍 85 / A 5）；**判据未架空** = 临时删 `NEW_PATHS` 一项 → `A 面出现白名单外路径：docs/handoffs/2026-11-04-s-c-card-shape-impl.md` exit 1 |
