@@ -36,6 +36,11 @@ const segOf = (text, seg) => String(text).split(new RegExp(`^## ${seg}`, 'm'))[1
 const SHAPE = process.env.SB_SHAPE_ONESHOT === '1'
 // `$BASE` = 本批开工提交（S-C spec §11.9 施工第 0 步）：默认冻结常量，`SB_BASE` 可显式覆盖（与 SC-TC-57 同源）
 const BASE = (process.env.SB_BASE || '').trim() || 'eef963e96c0a2c309c83789e13da5b195b1d4e0c'
+// `$BASE_HEAD` = S-C 收口提交（S-D T1，2026-11-04）：把回退面判据（SC-TC-62）由**开区间**（`$BASE`..工作树末尾）
+// 收窄为**闭区间**（`$BASE`..`$BASE_HEAD`）。不改则任何后续批次的新增文件都落 A 面 → 判据恒红（实测两次），
+// 只能靠「每批往 NEW_PATHS 补名单」续命。闭区间后该判据 = 「S-C 那批的回退面」的永久可核记录；本批及后续
+// 批次的回退面改由各自 plan 白名单 + git status 兜。同族先例 = I29（S3 把 S2 的 `base..HEAD` 收窄为 `base..落地提交`）。
+const BASE_HEAD = (process.env.SB_BASE_HEAD || '').trim() || 'cda896f'
 
 // 契约侧期望值（只作断言面；契约本体在 `card-contract.mjs`）
 const VERDICT_TEXT3 = { hit: '命中', miss: '未命中', na: '不适用' }
@@ -967,7 +972,8 @@ test('SC-TC-59 防回退：PRD 行数 D 17 / Q 8 / 空值 0（S-C 不得改功�
   assert.deepEqual(empty, [], '「依据」列与「影响面」列不得有空值')
 })
 
-// 回退面判据（spec §11.14）：按 `git diff --name-status $BASE` 的集合比，不比计数（CC-1）
+// 回退面判据（spec §11.14）：按 `git diff --name-status $BASE $BASE_HEAD` 的集合比，不比计数（CC-1）；
+// 区间**闭**（S-D T1 改判）：上界冻结在 S-C 收口提交，后续批次新增文件不再落入本判据的视线
 const AFTER_PATH = `docs/after/20261104101304-s-c-checkitem-${BANNED_FIELD}-deferral-open-decisions.md`
 const NEW_PATHS = [
   'docs/handoffs/2026-11-04-s-c-card-shape.md',
@@ -1006,13 +1012,14 @@ const judgeNameStatus = (rows) => {
   return { aSet, aOutside, mOutside, nonA }
 }
 
-test('SC-TC-62 回退面复验：A 面 ⊆ 本批新增白名单、其余状态面 ⊆ 修改白名单；D6 延期落点实名可核', () => {
+test('SC-TC-62 回退面复验（$BASE..$BASE_HEAD 闭区间）：A 面 ⊆ 本批新增白名单、其余状态面 ⊆ 修改白名单；D6 延期落点实名可核', () => {
   assert.ok(BASE, 'SC-TC-62 必须提供 $BASE（= 开工提交）')
+  assert.ok(BASE_HEAD, 'SC-TC-62 必须提供 $BASE_HEAD（= 本批收口提交；闭区间上界）')
   // ②-0 盲区前置：新增件必须对 `git diff` 可见（未跟踪件 `git diff` 看不见）
   const untracked = execFileSync('git', ['ls-files', '--others', '--exclude-standard', '--', ...NEW_PATHS], { cwd: REPO, encoding: 'utf8' })
     .split(/\r?\n/).filter(Boolean)
   assert.deepEqual(untracked, [], '白名单内的新增件必须已进索引 / 已跟踪')
-  const rows = execFileSync('git', ['-c', 'core.quotePath=false', 'diff', '--name-status', BASE], { cwd: REPO, encoding: 'utf8' })
+  const rows = execFileSync('git', ['-c', 'core.quotePath=false', 'diff', '--name-status', BASE, BASE_HEAD], { cwd: REPO, encoding: 'utf8' })
     .split(/\r?\n/).filter((l) => l.trim())
   const { aSet, aOutside, mOutside } = judgeNameStatus(rows)
   console.log(`name-status: rows ${rows.length} / A ${aSet.size} / A-outside ${aOutside.length} / nonA-outside ${mOutside.length}`)
