@@ -97,6 +97,7 @@
   },
   "trigger": {
     "when": "当主持人调度对 spec/plan/技术方案做交付运维视角评审",
+    "kind": "dispatch",
     "route": "reviewer-ops"
   }
 }

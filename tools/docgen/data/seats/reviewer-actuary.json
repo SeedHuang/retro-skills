@@ -97,6 +97,7 @@
   },
   "trigger": {
     "when": "当主持人调度对任意文档做成本与收益视角评审",
+    "kind": "dispatch",
     "route": "reviewer-actuary"
   }
 }

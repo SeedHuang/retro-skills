@@ -20,9 +20,9 @@ test('reviewer-audit 外层键齐，触发表四字段不混入 agentData', () =
   assert.equal(a.route, undefined);
 });
 
-test('triggerTable reviewer-audit 只有 when/route，when 不含末尾「时」', () => {
+test('triggerTable reviewer-audit 只有 when / kind / route，when 不含末尾「时」', () => {
   const t = triggerTable['reviewer-audit'];
-  assert.deepEqual(Object.keys(t).sort(), ['route', 'when']);
+  assert.deepEqual(Object.keys(t).sort(), ['kind', 'route', 'when']);
   assert.equal(t.when, '当议会评审需要过程标准核对、轮际对账或交付审计');
   assert.ok(!t.when.endsWith('时'));
 });

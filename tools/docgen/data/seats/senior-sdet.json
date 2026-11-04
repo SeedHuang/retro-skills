@@ -144,6 +144,7 @@
   },
   "trigger": {
     "when": "当需要为 PRD/spec 设计并编写测试用例（testcase.md），或专门找出被忽视的边界与失败场景",
+    "kind": "need",
     "route": "senior-sdet",
     "notWhen": {
       "text": "修改业务代码、写实现方案、或只读的议会评审（那走 reviewer-qa）",

@@ -121,6 +121,7 @@
   },
   "trigger": {
     "when": "当主持人调度对 spec/plan/技术方案做前端实现视角评审",
+    "kind": "dispatch",
     "route": "reviewer-frontend"
   }
 }

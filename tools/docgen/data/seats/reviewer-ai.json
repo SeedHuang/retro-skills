@@ -133,6 +133,7 @@
   },
   "trigger": {
     "when": "当主持人调度对 rule/skill/agents/含 AI 指令的文档做 AI 工程视角评审",
+    "kind": "dispatch",
     "route": "reviewer-ai"
   }
 }

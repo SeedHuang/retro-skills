@@ -12,10 +12,12 @@ import { execFileSync, spawnSync } from 'node:child_process'
 
 import { REPO, AGENTS_DIR, walkFiles, runNode, coldRepo } from './support/card-fixtures.mjs'
 import { withRepoCopy } from './support/dev-workflow-checks.mjs'
-import { agentData } from '../components/agentData.mjs'
+import { agentData, triggerTable as TRIGGER } from '../components/agentData.mjs'
 import { buildCards, buildEnv, renderSeat } from '../components/cardPipeline.mjs'
 import { renderCard } from '../components/renderCard.mjs'
 import { cardFaceIds } from '../components/cardFaceIds.mjs'
+import { CARD_KEYS } from '../components/cardKeys.mjs'
+import { VERDICTS as CHECK_VERDICTS } from '../../observation-check/checks.mjs'
 import * as ENUMS from '../card-model/enums.mjs'
 import * as CC from '../card-model/vocab/card-contract.mjs'
 import { CARD_MODEL_CODES } from '../card-model/validateCardModel.mjs'
@@ -37,6 +39,8 @@ const VERDICT_TEXT3 = { hit: '命中', miss: '未命中', na: '不适用' }
 const OLD_CONST = 'TRI' + 'STATE'
 const CODES_EXPECTED = Number('3' + '6')
 const SCAN_FIELDS_EXPECTED = Number('8')
+// 席数据 card 的派生四键（S-A §10.1 R2）：8 键 = CARD_KEYS 去掉这四键
+const EIGHT_KEYS = CARD_KEYS.filter((k) => !['seat', 'name', 'description', 'tools'].includes(k))
 
 const assertVerdictHint = (hint) => {
   assert.equal(typeof hint, 'string', '必须是字符串（数组可被就地改）')
@@ -322,6 +326,126 @@ test('SC-TC-18 删层① 后守卫非空转：未登记点分 token 必红', () 
   card.duty = { ...card.duty, action: 'x 串 foo.bar y' }
   const hits = cardFaceIds(card, buildEnv(seat, [card]))
   assert.ok(hits.includes('foo.bar'), `未登记 token 必须命中：${hits.join(',')}`)
+})
+
+test('SC-TC-20 跨包三值相等：observation-check 的 Set 与 enums.VERDICTS 逐字相等', () => {
+  assert.deepEqual([...CHECK_VERDICTS].sort(), Object.keys(ENUMS.VERDICTS).sort())
+  assert.equal(CHECK_VERDICTS.size, 3)
+  assert.equal(Object.keys(ENUMS.VERDICTS).length, 3)
+})
+
+test('SC-TC-21 副本给一侧加 pass → 相等断言必红', () => {
+  const probeSrc = [
+    "import { VERDICTS } from './tools/observation-check/checks.mjs'",
+    "process.stdout.write(JSON.stringify([...VERDICTS].sort()))",
+  ].join('\n')
+  // `withRepoCopy` 的复制清单不含 `tools/observation-check` → 本条用 `coldRepo`（整仓副本，含该包）
+  coldRepo({ args: ['generate'], mutate: (cp) => {
+    const p = join(cp, 'tools/observation-check/checks.mjs')
+    const src = R(p)
+    const INJECT = 'export const VERDICTS = new Set(['
+    assert.equal(src.split(INJECT).length - 1, 1, '注入点必须恰 1 处')
+    writeFileSync(p, src.replace(INJECT, `export const VERDICTS = new Set(['pass', `), 'utf8')
+  }, verify: (cp) => {
+    const list = JSON.parse(probeIn(cp, 'probe-verdicts.mjs', probeSrc))
+    assert.equal(list.length, 4, `副本一侧应多一个值（实得 ${list.length}）`)
+    assert.throws(() => assert.deepEqual(list.sort(), Object.keys(ENUMS.VERDICTS).sort()))
+  } })
+})
+
+test('SC-TC-22 checks.mjs 的三值仍 3 个且确为 export（不得就地改 enums 凑相等）', () => {
+  assert.equal(Object.keys(ENUMS.VERDICTS).length, 3)
+  const src = R(join(REPO, 'tools/observation-check/checks.mjs'))
+  const decl = src.split(/\r?\n/).filter((l) => /^export const VERDICTS\s*=/.test(l))
+  assert.equal(decl.length, 1, '必须是行首 export 声明（恰 1 行）')
+  assert.ok(/new Set/.test(decl[0]), '右侧仍是 new Set 形态（保持原语义）')
+})
+
+test('SC-TC-33 check-trigger-kind 绿态：四值全用上、计数恰 11 / 1 / 1 / 2，输出附 when 前 12 字', () => {
+  const N = SEATS().length
+  const r = runNode(['tools/docgen/check-trigger-kind.mjs'])
+  assert.equal(r.code, 0, `脚本必须 exit 0：${r.out.slice(-400)}`)
+  const first = (r.out.split(/\r?\n/)[0] || '').trim()
+  assert.match(first, new RegExp(`^check-trigger-kind: seats ${N} / kinds \\{dispatch:11,occasion:1,moment:1,need:2\\} / bad 0 => ok$`))
+  // ③ 逐席 kind ∈ 四值（判数据声明，不看 when 句式）
+  const four = new Set(['dispatch', 'occasion', 'moment', 'need'])
+  for (const s of SEATS()) assert.ok(four.has(TRIGGER[s].kind), `${s} kind 越界：${TRIGGER[s].kind}`)
+  // ④ 输出附每席 when 前 12 字（每席一行可定位）
+  const rows = r.out.split(/\r?\n/).filter((l) => l.includes(' | '))
+  assert.equal(rows.length, N, `必须逐席附 when 前 12 字（实得 ${rows.length}）`)
+  // ⑤ 不变量：reviewer-audit 的 when 一字不动（改的是它的 duty.action）
+  assert.equal(TRIGGER['reviewer-audit'].when, '当议会评审需要过程标准核对、轮际对账或交付审计')
+  const pilot = runTest(['--test-name-pattern', 'triggerTable reviewer-audit', 'tools/docgen/test/pilot-data.test.mjs'])
+  assert.equal(pilot.code, 0, `pilot-data 键集断言（含 kind、when 逐字）必须绿：${pilot.out.slice(-400)}`)
+})
+
+test('SC-TC-34 副本某席写第五个 kind → 红态首行 => fail 且点名该席', () => {
+  withRepoCopy((copy) => {
+    const seat = 'reviewer-qa'
+    const p = join(copy, 'tools/docgen/data/seats', `${seat}.json`)
+    const src = R(p)
+    const INJECT = '"kind": "dispatch"'
+    assert.equal(src.split(INJECT).length - 1, 1, '注入点必须恰 1 处')
+    writeFileSync(p, src.replace(INJECT, '"kind": "when"'), 'utf8')
+    const r = runNode(['tools/docgen/check-trigger-kind.mjs'], copy)
+    const first = (r.out.split(/\r?\n/)[0] || '').trim()
+    assert.match(first, /=> fail/, `五值之外必须红（实得「${first}」）`)
+    assert.match(r.out, new RegExp(`${seat}: when`), '必须点名该席与实际值')
+  })
+})
+
+test('SC-TC-35 副本把非议会席写成 dispatch → 红态首行 => fail 且点名该席', () => {
+  withRepoCopy((copy) => {
+    const seat = 'senior-sdet'
+    const p = join(copy, 'tools/docgen/data/seats', `${seat}.json`)
+    const src = R(p)
+    const INJECT = '"kind": "need"'
+    assert.equal(src.split(INJECT).length - 1, 1, '注入点必须恰 1 处')
+    writeFileSync(p, src.replace(INJECT, '"kind": "dispatch"'), 'utf8')
+    const r = runNode(['tools/docgen/check-trigger-kind.mjs'], copy)
+    const first = (r.out.split(/\r?\n/)[0] || '').trim()
+    assert.match(first, /=> fail/, `非议会席非 need 必须红（实得「${first}」）`)
+    assert.match(r.out, new RegExp(seat), '必须点名该席')
+  })
+})
+
+test('SC-TC-36 名单现算：新增第 16 席（前缀非 reviewer-/detective-）写 dispatch → 红', () => {
+  withRepoCopy((copy) => {
+    const base = R(join(copy, 'tools/docgen/data/seats', `${SEATS()[0]}.json`))
+    const added = base.replace(`"name": "${SEATS()[0]}"`, '"name": "archivist"')
+    assert.ok(added.includes('"name": "archivist"'), '构造必须换掉席名')
+    writeFileSync(join(copy, 'tools/docgen/data/seats/archivist.json'), added, 'utf8')
+    const loader = join(copy, 'tools/docgen/components/seatLoader.mjs')
+    const src = R(loader)
+    const INJECT = 'export const SEAT_ORDER = ['
+    writeFileSync(loader, src.replace(INJECT, `${INJECT}'archivist', `), 'utf8')
+    const r = runNode(['tools/docgen/check-trigger-kind.mjs'], copy)
+    const first = (r.out.split(/\r?\n/)[0] || '').trim()
+    assert.match(first, new RegExp(`seats ${SEATS().length + 1}`), `席数必须现算（实得「${first}」）`)
+    assert.match(first, /=> fail/, '第 16 席写 dispatch 必须红（写死两席名单会在此假绿）')
+    assert.match(r.out, /archivist/, '必须点名新增席')
+  })
+})
+
+test('SC-TC-37 kind 不进 card、不进渲染（8 键不动 + 卡面 kind 命中 0）', () => {
+  let kindInRender = 0
+  for (const s of SEATS()) kindInRender += textOf(s).split('kind').length - 1
+  assert.equal(kindInRender, 0)
+  for (const s of SEATS()) {
+    const j = JSON.parse(R(join(REPO, 'tools/docgen/data/seats', `${s}.json`)))
+    assert.equal(Object.keys(j.card).length, EIGHT_KEYS.length, `${s} 席数据 card 必须仍 8 键`)
+    assert.equal('kind' in j.card, false, `${s} card 不得含 kind`)
+    assert.ok(TRIGGER[s].kind, `${s} triggerTable 上必须有 kind`)
+  }
+})
+
+test('SC-TC-38 非议会席现算集合 == complement(buildEnv 的 parliamentSeats)', () => {
+  const computed = SEATS().filter((s) => !s.startsWith('reviewer-') && !s.startsWith('detective-')).sort()
+  assert.equal(computed.length, 2)
+  assert.deepEqual(computed, ['evidence-reader', 'senior-sdet'])
+  const parl = [...buildEnv(SEATS()[0]).parliamentSeats].sort()
+  const complement = SEATS().filter((s) => !parl.includes(s)).sort()
+  assert.deepEqual(computed, complement, '第二处写死名单（cardPipeline 的 NON_PARL_SEATS）与现算必须一致')
 })
 
 test('SC-TC-58 硬约束不动：列数 4 / 七段 / 36 码 / 8 键 / 12 键', () => {

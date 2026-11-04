@@ -109,6 +109,7 @@
   },
   "trigger": {
     "when": "当主持人调度对任意文档做安全风险视角评审",
+    "kind": "dispatch",
     "route": "reviewer-security"
   }
 }

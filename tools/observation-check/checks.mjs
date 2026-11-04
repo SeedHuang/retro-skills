@@ -3,7 +3,8 @@ import { splitRow, escapeCell, fenceMask } from '../execution-matrix/markdown-ro
 import { MD_BANNER, MD_TITLE, MD_OPEN_SECTION, MD_NONE, MD_ITEMS_HEADER, MD_OPEN_HEADER } from './md-format.mjs';
 import { checkEvidence } from './evidence.mjs';
 
-const VERDICTS = new Set(['hit', 'miss', 'na']);
+// 判定三值（S-C spec §11.1 R4：改为 export——加性导出、零行为变化，供跨包相等断言消费）
+export const VERDICTS = new Set(['hit', 'miss', 'na']);
 const CLOSURES = new Set([null, 'no-findings', 'blocked']);
 
 function err(list, code, message, path) {

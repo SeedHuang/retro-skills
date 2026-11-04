@@ -121,6 +121,7 @@
   },
   "trigger": {
     "when": "当主持人调度对 PRD/spec/plan 做产品视角评审",
+    "kind": "dispatch",
     "route": "reviewer-product"
   }
 }

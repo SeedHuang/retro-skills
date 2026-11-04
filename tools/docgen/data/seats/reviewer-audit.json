@@ -121,6 +121,7 @@
   },
   "trigger": {
     "when": "当议会评审需要过程标准核对、轮际对账或交付审计",
+    "kind": "occasion",
     "route": "reviewer-audit"
   }
 }

@@ -145,6 +145,7 @@
   },
   "trigger": {
     "when": "当主持人调度对 spec/plan/技术方案做测试视角评审",
+    "kind": "dispatch",
     "route": "reviewer-qa"
   }
 }

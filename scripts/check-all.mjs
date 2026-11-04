@@ -215,6 +215,20 @@ if (!patternRes.ok) {
   console.error(`[execution-matrix] 模式表守卫失败：${JSON.stringify(patternRes.findings)}`)
 }
 
+// ②.7 S-C 卡面形状守卫（spec §11.2 #7 #8 / §11.3 / §11.5）：三态只在「本席清单」表头声明 + trigger.kind 四型。
+// 判法 = **只看退出码**（不解析首行：首行是给人看的，退出码才是判据）；本段不接 ⑥ 的旁路开关。
+for (const rel of ['tools/docgen/check-tristate-header.mjs', 'tools/docgen/check-trigger-kind.mjs']) {
+  const r = spawnSync(process.execPath, [rel], { cwd: root, encoding: 'utf8', env: testEnv })
+  if (r.stdout) console.log(r.stdout.trim().split(/\r?\n/)[0])
+  if (r.error) {
+    failed = true
+    console.error(`[s-c] ${rel} 进程启动失败：${r.error.message}`)
+  } else if (r.status !== 0) {
+    failed = true
+    if (r.stderr) console.error(r.stderr)
+  }
+}
+
 // ③ 技能守卫
 const c = spawnSync(process.execPath, ['skills/skill-inspector/scripts/check.mjs'], { cwd: root, encoding: 'utf8' })
 console.log(c.stdout)
