@@ -14,7 +14,6 @@ tools: {{TOOLS}}
 > 证据可复算：每行证据栏写文件:行号或命令输出首行，证据栏空 = 不成立。
 
 {{MUST_BULLETS}}
-{{TRISTATE}}
 
 ## 禁止
 {{NEVER_BULLETS}}

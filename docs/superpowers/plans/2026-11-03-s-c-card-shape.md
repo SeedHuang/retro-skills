@@ -211,7 +211,7 @@
 | 任务 | 提交 | 完成判据（命令首行） | 状态 |
 |---|---|---|---|
 | Task 0 | 收口时回填 | `$BASE=eef963e96c0a2c309c83789e13da5b195b1d4e0c`；`npm run check` → `# tests 1481 / # pass 1476 / # fail 0 / # skipped 5` + `baseline 38/38` + 末行 `check 全部通过`；15 卡 `Get-FileHash` vs `docs/reports/2026-11-03-s-b-card-sha-baseline.md` → `15/15` 相等；`check-plan size` → `spec 270/350 tc 60/80 rounds 3/3 => ok`；`check-plan map` → `cases 60 / mapped 60`；`check-plan deps` → `nodes 7 / edges 10`；`docs/after/20261104101304-s-c-checkitem-returns-deferral-open-decisions.md` 存在且含「触发 / 谁兜」 | 完成 |
-| Task 1 | — | — | 未开工 |
+| Task 1 | 收口时回填 | `node tools/docgen/check-tristate-header.mjs` → `check-tristate-header: seats 15 / ok 15 / bad 0 => ok`；`node --test tools/docgen/test/sc-card-shape.test.mjs` → `# tests 19 / # pass 19 / # fail 0`（SC-TC-01…18 + 58 + 61）；9 条冻结断言（A01/A04/A05/A10/B08/D04/D05/E05/F05）+ `sdet-render` 4/4 全绿；**已知红** = `gate` / `disk == render` 家族 46 条（15 卡尚未重生成，Task 6 收敛） | 完成 |
 | Task 2 | — | — | 未开工 |
 | Task 3 | — | — | 未开工 |
 | Task 4 | — | — | 未开工 |

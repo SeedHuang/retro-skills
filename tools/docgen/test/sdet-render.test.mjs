@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { renderByName } from '../cli.mjs';
 import { agentData } from '../components/agentData.mjs';
 import { patternRegistry } from '../components/patternRegistry.mjs';
+import { VERDICT_HINT } from '../card-model/vocab/card-contract.mjs';
 
 test('渲染 frontmatter：tools 行 + notWhen 只在 description 出现 1 次', () => {
   const r = renderByName('senior-sdet').split('\n');
@@ -18,7 +19,7 @@ test('新卡「本席清单」9 行，且逐行带该席核对面', () => {
   for (const face of ['输入空间', '状态与转移', '失败面', '判据来源', '确定性', '回归资产', '判别力', '盲点雷达', '覆盖账']) {
     assert.ok(r.includes(`${face}核对`), `缺核对面：${face}`);
   }
-  assert.ok(r.includes('| # | 条目 | 判据 | 类型 |'), '新卡表头应为「条目 / 判据 / 类型」');
+  assert.ok(r.includes(`| # | 条目 | 判据（${VERDICT_HINT}） | 类型 |`), '新卡表头应为「条目 / 判据（判定取值声明）/ 类型」的派生形态');
 });
 
 test('产物无槽位残留 + testcase 席恰 [senior-sdet]', () => {

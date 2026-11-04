@@ -71,10 +71,11 @@ const withAction = (seat, act) => renderMut(seat, (c) => { c.duty = { ...c.duty,
 const TYPE_TEXT3 = () => ['脚本' + '核对', 'AI ' + '判定', '人工' + '判定']
 
 test('S2-TC-A01 契约四导出与形状', () => {
-  assert.deepEqual(Object.keys(CC).sort(), ['ALLOWED_PRODUCT_NAMES', 'FORMAT_CHECKS', 'TRISTATE', 'TYPE_LABELS'])
+  assert.deepEqual(Object.keys(CC).sort(), ['ALLOWED_PRODUCT_NAMES', 'FORMAT_CHECKS', 'TYPE_LABELS', 'VERDICT_HINT'])
   assert.ok(existsSync(CC_SRC), 'card-contract.mjs 必须落在 tools/docgen/card-model/vocab/（Q4）')
-  assert.ok(Array.isArray(CC.TRISTATE) && Array.isArray(CC.ALLOWED_PRODUCT_NAMES) && Array.isArray(CC.FORMAT_CHECKS))
+  assert.ok(Array.isArray(CC.ALLOWED_PRODUCT_NAMES) && Array.isArray(CC.FORMAT_CHECKS))
   assert.equal(typeof CC.TYPE_LABELS, 'object')
+  assert.equal(typeof CC.VERDICT_HINT, 'string', '第三方导出仍是「判定取值」的字符串声明（S-C §11.3 表 A01）')
 })
 
 test('S2-TC-A02 TYPE_LABELS 三键中文值且键不进许', () => {
@@ -93,23 +94,35 @@ test('S2-TC-A03 类型值漂移即红', () => {
   assert.throws(() => assertTypeLabels({ ...CC.TYPE_LABELS, manual: '人工' }))
 })
 
-test('S2-TC-A04 TRISTATE 由 VERDICTS 派生的 5 行', () => {
-  assert.equal(CC.TRISTATE.length, 5)
-  assert.deepEqual(CC.TRISTATE.slice(1, 4), Object.keys(ENUMS.VERDICTS))
-  assert.equal(CC.TRISTATE[4], 'reason')
+// 三值的中文对照（S-C §11.1 R2）：只作断言侧的期望值，不是第二份契约源（契约在 `card-contract.mjs`）
+const VERDICT_TEXT3 = { hit: '命中', miss: '未命中', na: '不适用' }
+// 「判定取值」声明的形态断言（S-C §11.3 表 A04）：主语 + 三值按 `VERDICTS` 顺序带中文对照 + 两句约束
+const assertVerdictHint = (hint) => {
+  assert.equal(typeof hint, 'string', '必须是字符串（数组可被就地改，正是 B08 要拦的形态）')
+  assert.ok(hint.startsWith('判定取值：'), '必须以「判定取值：」开头（缺主语读者不知道填哪一列）')
+  let prev = -1
+  for (const v of Object.keys(ENUMS.VERDICTS)) {
+    const at = hint.indexOf(`${v}（${VERDICT_TEXT3[v]}）`)
+    assert.ok(at >= 0 && at > prev, `三值须按 VERDICTS 顺序、带中文对照：${v}`)
+    prev = at
+  }
+  assert.ok(hint.includes('reason'), '必须点到 reason')
+  assert.ok(hint.includes('缺 reason = 废卡'), '必须保留判废条款（缺 reason = 废卡）')
+  assert.ok(hint.includes('na 还须写明为何不适用'), '必须保留 na 的合法条件')
+}
+test('S2-TC-A04 判定取值声明派生自 VERDICTS（三值 + 中文对照 + reason + 两句约束）', () => {
+  assertVerdictHint(CC.VERDICT_HINT)
   assert.equal(Object.keys(ENUMS.VERDICTS).includes('reason'), false)
-  // 首行必须同时点到四个词（这里用派生清单，避免把四个字面塞进一个新数组 → 触发 A1）
-  assert.ok([...Object.keys(ENUMS.VERDICTS), 'reason'].every((t) => CC.TRISTATE[0].includes(t)))
 })
 
-const assertTristate = (list) => {
-  assert.equal(list.length, 5)
-  assert.deepEqual(list.slice(1, 4), Object.keys(ENUMS.VERDICTS))
-  assert.equal(list[4], 'reason')
-}
-test('S2-TC-A05 三态形态破坏即红', () => {
-  assert.throws(() => assertTristate([...CC.TRISTATE, 'pass']))
-  assert.throws(() => assertTristate([CC.TRISTATE[0], CC.TRISTATE[1], CC.TRISTATE[3], CC.TRISTATE[2], CC.TRISTATE[4]]))
+test('S2-TC-A05 手写三值串 / 缺 na / 顺序反 → 断言必抛', () => {
+  const order = Object.keys(ENUMS.VERDICTS)
+  const pre = '判定取值：'
+  const tail = '；miss 与 na 须写 reason，缺 reason = 废卡；na 还须写明为何不适用'
+  assert.throws(() => assertVerdictHint(order.join(' / ')), '手写三值串（无主语 / 无中文对照）必须抛')
+  assert.throws(() => assertVerdictHint(`${pre}${order.filter((v) => v !== 'na').join('、')}${tail}`), '缺 na 必须抛')
+  const reversed = [order[1], order[0], order[2]]
+  assert.throws(() => assertVerdictHint(`${pre}${reversed.join('、')}${tail}`), '顺序反必须抛')
 })
 
 test('S2-TC-A06 FORMAT_CHECKS 三条可二值判', () => {
@@ -159,16 +172,24 @@ const countDefIn = (root, pat) => walkFiles(root)
   .filter((p) => p.endsWith('.mjs') && !p.endsWith('.test.mjs'))
   .reduce((n, p) => n + (R(p).match(new RegExp(`^${pat}`, 'gm')) ?? []).length, 0)
 
-test('S2-TC-A10 三态单源且由 VERDICTS 派生', (t) => {
-  const defs = countDefIn(join(REPO, 'tools'), 'export const TRISTATE')
-  assert.equal(defs, 1, 'TRISTATE 只能在 card-contract.mjs 定义 1 次')
-  assert.deepEqual(CC.TRISTATE.slice(1, 4), Object.keys(ENUMS.VERDICTS))
+// 旧常量名（S-C 删掉的那个三态常量）：用拼接构造，避免「本文件自身命中」把扫描口径搅浑
+const OLD_CONST = 'TRI' + 'STATE'
+const countWordIn = (root, word) => walkFiles(root)
+  .filter((p) => p.endsWith('.mjs') && !p.endsWith('.test.mjs'))
+  .reduce((n, p) => n + (R(p).split(word).length - 1), 0)
+
+test('S2-TC-A10 判定取值声明单源：定义恰 1 处，且旧常量名在 tools/ 非测试面命中 0', (t) => {
+  const defs = countDefIn(join(REPO, 'tools'), 'export const VERDICT_HINT')
+  assert.equal(defs, 1, 'VERDICT_HINT 只能在 card-contract.mjs 定义 1 次')
+  assertVerdictHint(CC.VERDICT_HINT)
   assert.equal(Object.keys(ENUMS.VERDICTS).length, 3, 'enums.mjs 零改动（VERDICTS 仍 3 值、无 re-export）')
-  assert.equal(R(join(REPO, 'tools/docgen/card-model/vocab/card-must-fields.mjs')).includes('TRISTATE'), false)
-  // 构造：把四行常量抄进副本的另一模块 → 定义数 2 → 抛（不落盘）
-  const copyHit = coldRepo({ mutate: (cp) => writeFileSync(join(cp, 'tools/docgen/components/tristate-copy.mjs'), `export const TRISTATE = ['x'];\n`), args: ['generate'] })
+  assert.equal(R(join(REPO, 'tools/docgen/card-model/vocab/card-must-fields.mjs')).includes(OLD_CONST), false)
+  // S-C §11.3 表 A10 改后：旧常量名（5 行常量的容器）在非测试面必须 0
+  assert.equal(countWordIn(join(REPO, 'tools'), OLD_CONST), 0, '旧常量名必须 0 命中（非测试面）')
+  // 构造：把同名常量抄进副本的另一模块 → 定义数 2 → 抛（不落盘）
+  const copyHit = coldRepo({ mutate: (cp) => writeFileSync(join(cp, 'tools/docgen/components/verdict-copy.mjs'), `export const VERDICT_HINT = 'x';\n`), args: ['generate'] })
   t.diagnostic(`A10 副本构造 exit=${copyHit.code}（判据是本仓定义数 = 1）`)
-  const copied = countDefIn(join(REPO, 'tools'), 'export const TRISTATE')
+  const copied = countDefIn(join(REPO, 'tools'), 'export const VERDICT_HINT')
   assert.equal(copied, 1)
   assert.throws(() => assert.equal(defs + 1, 1))
 })
@@ -250,17 +271,38 @@ test('S2-TC-B07 序号跟随数据序而非 id 序', () => {
   assert.notDeepEqual(linesRev, lines, 'n ≥ 2 时两序必然不等 → 证明序号跟数据走')
 })
 
-test('S2-TC-B08 常量探针：改 TRISTATE[0] 渲染即跟随', () => {
+test('S2-TC-B08 判定取值声明是字符串：副本前插探针 → 重渲跟随；真仓 15 卡探针 0 命中', () => {
   const seat = SEATS()[0]
   const PROBE = '（S2-TC-B08 探针）'
-  const keep = CC.TRISTATE[0]
-  try {
-    CC.TRISTATE[0] = `${keep}${PROBE}`
-    assert.ok(textOf(seat).includes(PROBE), '改常量后渲染必须跟随（单源）')
-    const diskHits = SEATS().filter((s) => R(join(AGENTS_DIR, `${s}.md`)).includes(PROBE)).length
-    assert.equal(diskHits, 0, '磁盘 15 卡不得含探针（未重生）')
-  } finally { CC.TRISTATE[0] = keep }
-  assert.equal(textOf(seat).includes(PROBE), false, '还原后卡面必须归零（守构造有效）')
+  assert.equal(typeof CC.VERDICT_HINT, 'string', '必须是字符串（不可就地改：B08 改后判据的前提）')
+  assert.ok(textOf(seat).includes(CC.VERDICT_HINT), '本席表头必须含该串（渲染真把它当数据源，不是内联死字面）')
+  const diskHits = SEATS().filter((s) => R(join(AGENTS_DIR, `${s}.md`)).includes(PROBE)).length
+  assert.equal(diskHits, 0, '磁盘 15 卡不得含探针（未重生 / 探针只进副本）')
+
+  // 副本内把值**前插**探针串（不改派生逻辑），再用只打印观测值的探针脚本取数（父测试断言，不认子进程退出码）
+  const probeSrc = [
+    "import { readdirSync } from 'node:fs'",
+    "import { renderSeat } from './tools/docgen/components/cardPipeline.mjs'",
+    "const probe = process.env.S2_PROBE",
+    "let n = 0",
+    "for (const f of readdirSync('agents').filter((x) => x.endsWith('.md'))) {",
+    "  if (renderSeat(f.slice(0, -3)).card.includes(probe)) n += 1",
+    "}",
+    "process.stdout.write('followed ' + n + '\\n')",
+  ].join('\n')
+  coldRepo({ mutate: (cp) => {
+    const p = join(cp, 'tools/docgen/card-model/vocab/card-contract.mjs')
+    const src = R(p)
+    const INJECT = 'export const VERDICT_HINT = `'
+    assert.equal(src.split(INJECT).length - 1, 1, `注入点必须恰 1 处：${INJECT}`)
+    writeFileSync(p, src.replace(INJECT, `export const VERDICT_HINT = '${PROBE}' + \``), 'utf8')
+    writeFileSync(join(cp, 'probe-b08.mjs'), probeSrc, 'utf8')
+  }, args: ['generate'], verify: (cp) => {
+    const out = runNode(['probe-b08.mjs'], cp, { S2_PROBE: PROBE })
+    const m = /followed (\d+)/.exec(out.out)
+    assert.ok(m, `探针脚本必须打印观测值：${out.out}`)
+    assert.equal(Number(m[1]), SEATS().length, `副本重渲必须逐席跟随探针串（实得 ${m[1]} / 席数 ${SEATS().length}）`)
+  } })
 })
 
 // ── C 组：禁 id 守卫 ────────────────────────────────────────────────────────────────────────
@@ -443,22 +485,21 @@ test('S2-TC-D03 四列不减', () => {
   assert.throws(() => assert.equal(cols - 1, 4))
 })
 
-test('S2-TC-D04 三态 5 行逐字且在段末', () => {
+// 三态取值行（S-C §11.3 表 D04/D05）：整行 trim 后全等四词之一才算「孤立取值行」（含串不算，防正文引用假红）
+const VERDICT_LINE_SET = () => new Set([...Object.keys(ENUMS.VERDICTS), 'reason'])
+const isolatedVerdictLines = (lines) => lines.map((l) => l.trim()).filter((l) => VERDICT_LINE_SET().has(l))
+const assertNoIsolatedVerdictLines = (lines) => assert.deepEqual(isolatedVerdictLines(lines), [])
+test('S2-TC-D04 「一定会」段里不得出现孤立的取值行（hit / miss / na / reason）', () => {
   for (const s of SEATS()) {
-    const lines = segOf(R(join(AGENTS_DIR, `${s}.md`)), '一定会').split(/\r?\n/)
-    while (lines.length && lines[lines.length - 1].trim() === '') lines.pop()
-    assert.deepEqual(lines.slice(-5), CC.TRISTATE, `${s} 三态必须在「一定会」段末且逐字相等`)
+    assertNoIsolatedVerdictLines(segOf(textOf(s), '一定会').split(/\r?\n/))
   }
 })
 
-const assertTristateLines = (lines) => {
-  const tail = lines.slice(-5)
-  assert.deepEqual(tail, CC.TRISTATE)
-}
-test('S2-TC-D05 三态缺行 / 换序即红', () => {
-  const base = [...CC.TRISTATE]
-  assert.throws(() => assertTristateLines(base.filter((x) => x !== CC.TRISTATE[3])))
-  assert.throws(() => assertTristateLines([CC.TRISTATE[0], CC.TRISTATE[1], CC.TRISTATE[3], CC.TRISTATE[2], CC.TRISTATE[4]]))
+test('S2-TC-D05 回填一行孤立取值 → 必红', () => {
+  const lines = segOf(textOf(SEATS()[0]), '一定会').split(/\r?\n/)
+  for (const w of [...Object.keys(ENUMS.VERDICTS), 'reason']) {
+    assert.throws(() => assertNoIsolatedVerdictLines([...lines, w]), `回填孤立行 ${w} 必须红`)
+  }
 })
 
 test('S2-TC-D06 前提：无 0 命中', () => {
@@ -542,8 +583,8 @@ test('S2-TC-E04 许表只有一处：实现文件里没有第二份许值数组'
   assert.ok(r.code === 0 || r.code === 1)
 })
 
-const NEW_TPLS = ['{{MUST_BULLETS}}', '{{NEVER_BULLETS}}', '{{TRISTATE}}', '{{PRODUCT_NAMES}}', '{{FORMAT_CHECKS}}']
-const OLD_TPLS = ['{{MUST_TABLE}}', '{{NEVER_TABLE}}']
+const NEW_TPLS = ['{{MUST_BULLETS}}', '{{NEVER_BULLETS}}', '{{PRODUCT_NAMES}}', '{{FORMAT_CHECKS}}']
+const OLD_TPLS = ['{{MUST_TABLE}}', '{{NEVER_TABLE}}', '{{TRISTATE}}']
 test('S2-TC-E05 占位符不残留且新占位符在位', () => {
   for (const s of SEATS()) assert.equal((R(join(AGENTS_DIR, `${s}.md`)).match(/{{/g) ?? []).length, 0, `${s} 不得残留占位符`)
   const tpl = R(TPL)
@@ -731,9 +772,9 @@ test('S2-TC-F05 夹具只读不写仓（sha 锚）', () => {
   fixtureRows(() => true).slice(0, 3).forEach((r2) => renderMut(r2.b.seat, (c) => { c.must[r2.k].objects = ['deliverable.appendix'] }))
   base: {
     const s = SEATS()[0]
-    const keep = CC.TRISTATE[0]
-    try { CC.TRISTATE[0] = `${keep}` } finally { CC.TRISTATE[0] = keep }
-    assert.ok(textOf(s).length > 0)
+    // S-C §11.3 表 F05 改后：判定取值声明是**字符串**（不可就地改数组元素），故只读断言 + 渲染跟随
+    assert.equal(typeof CC.VERDICT_HINT, 'string')
+    assert.ok(textOf(s).includes(CC.VERDICT_HINT), '表头必须含该串')
   }
   assert.deepEqual(snap(), before, '夹具构造必须全在内存（不断 git status 为空，本轮工作区本来就有未提交项）')
 })

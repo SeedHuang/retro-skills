@@ -4,12 +4,12 @@
 //
 // S2 改形（spec §4 D1 / D2 / D6）：「一定会」「禁止」两段从 7 列 / 4 列表格改为 **`- <i>｜…` bullet**，
 // `i` = 该段**数据序**（从 1 起连续）。`expectedBullet(card, i)` 是**唯一翻译点**（测试只逐字比对，不重写翻译）。
-// 契约字面（类型三值 / 三态 / 许名 / 格式判句）一律 import `vocab/card-contract.mjs`，本文件 0 字面（`S2-TC-E07`）。
+// 契约字面（类型三值 / 判定取值声明 / 许名 / 格式判句）一律 import `vocab/card-contract.mjs`，本文件 0 字面（`S2-TC-E07`）。
 import { CARD_SEGMENTS } from '../card-model/vocab/card-must-fields.mjs'
 import { PREDICATES } from '../card-model/vocab/predicates.mjs'
 import { LANDINGS } from '../card-model/vocab/landings.mjs'
 import { OBJECT_NAMES, REPEAT_NAMES } from '../card-model/vocab/object-names.mjs'
-import { TYPE_LABELS, TRISTATE, ALLOWED_PRODUCT_NAMES, FORMAT_CHECKS } from '../card-model/vocab/card-contract.mjs'
+import { TYPE_LABELS, VERDICT_HINT, ALLOWED_PRODUCT_NAMES, FORMAT_CHECKS } from '../card-model/vocab/card-contract.mjs'
 import { SHARED_SCENES, MOMENTS } from '../card-model/enums.mjs'
 import { agentData } from './agentData.mjs'
 import { patternRegistry, DEFAULT_BOUNDARY } from './patternRegistry.mjs'
@@ -63,10 +63,11 @@ const mustBullets = (card) => listOf(card && card.must).map((_, k) => expectedBu
 const neverBullets = (card) => listOf(card && card.never).map((_, k) => neverBullet(card, k + 1)).join('\n')
 
 // 类型列：`CHECK_KINDS` 键 → `TYPE_LABELS` 中文值（列数仍 4，不删列，`S2-TC-D03`）
+// 表头「判据」列的括号内 = `VERDICT_HINT`（三值唯一声明处，S-C §11.3）；本文件只做字符串拼接，0 三值字面。
 function checkTable(card) {
   const cats = listOf(card.categories).map((c) => c && c.label).filter(Boolean)
   const items = listOf(card.checkItems)
-  const head = ['| # | 条目 | 判据 | 类型 |', '|---|---|---|---|']
+  const head = [`| # | 条目 | 判据（${VERDICT_HINT}） | 类型 |`, '|---|---|---|---|']
   const rows = items.map((it, i) => `| ${i + 1} | ${cell(it && it.label)} | ${cell(it && it.criterion)} | ${cell(TYPE_LABELS[it && it.check] ?? (it && it.check))} |`)
   const prefix = cats.length ? `类别：${cats.map(cell).join('、')}\n\n` : ''
   return `${prefix}${head.concat(rows).join('\n')}`
@@ -92,8 +93,6 @@ function dutyBlock(card) {
   return lines.join('\n')
 }
 
-// 三态 5 行（1 行中文解释 + 4 行常量）：逐行原样落，不加 bullet 前缀（`S2-TC-D04` 逐字比对 `TRISTATE`）
-const tristate = () => TRISTATE.join('\n')
 // 产物允许名（许）单源来自 `ALLOWED_PRODUCT_NAMES`；这句壳文案不是契约字面（`S2-TC-E07` 只扫枚举字面）
 const productNames = () => `产物字段名只许：${ALLOWED_PRODUCT_NAMES.join(' / ')}；自造键 = 不合规。`
 // 三判句只在**问题卡产物**（`outputKind = issue-card`）的席上落：它的三个字段（必填项 / 证据栏 / 建议解法栏）
@@ -112,7 +111,6 @@ export function renderCard(card, env) {
   out = fill(out, '{{TOOLS}}', listOf(card && card.tools).join(', '))
   out = fill(out, '{{DUTY}}', dutyBlock(card))
   out = fill(out, '{{MUST_BULLETS}}', mustBullets(card))
-  out = fill(out, '{{TRISTATE}}', tristate())
   out = fill(out, '{{NEVER_BULLETS}}', neverBullets(card))
   out = fill(out, '{{CHECK_TABLE}}', checkTable(card || {}))
   out = fill(out, '{{OUTPUT_FORMAT}}', outputFormatBlock(agentOutputKind(seat)))
