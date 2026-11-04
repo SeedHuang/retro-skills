@@ -762,6 +762,57 @@ test('SC-TC-60 大写形态兜底：seats 内 @HOST_TERM 0，且 15 卡 ${@ 残�
   })
 })
 
+// ── F 组：长度约束与槽位计数（Q4）────────────────────────────────────────────────────────────
+
+// 三词槽（Q4）：卡模型键面 0 命中是判据；全树取数只作口径对照（行口径）
+const SLOT_WORDS = ['needs', 'purpose', 'method']
+const labelsOfAll = () => agentData.flatMap((a) => a.card.categories.map((c) => c.label))
+const LABEL_PROBE = [
+  "import { agentData } from './tools/docgen/components/agentData.mjs'",
+  "const labels = agentData.flatMap((a) => a.card.categories.map((c) => c.label))",
+  "const max = labels.reduce((k, l) => Math.max(k, l.length), 0)",
+  "process.stdout.write('labels ' + labels.length + ' / max ' + max)",
+].join('\n')
+
+test('SC-TC-39 categories[].label 每项 ≤ 20 字（97 项，现最长 13）', () => {
+  const labels = labelsOfAll()
+  assert.equal(labels.length, 97, '类别项数不变（本段不动 categories 形状）')
+  assert.ok(labels.every((l) => l.length <= 20), `每项 ≤ 20 字（最长 ${Math.max(...labels.map((l) => l.length))}）`)
+  assert.equal(Math.max(...labels.map((l) => l.length)), 13, '现值最长 13（记录项）')
+})
+
+test('SC-TC-40 副本注入 21 字 label → 必红', () => {
+  withRepoCopy((copy) => {
+    const p = join(copy, 'tools/docgen/data/seats', `${SEATS()[0]}.json`)
+    writeFileSync(p, R(p).replace(/("label": ")[^"]*"/, `$1${'核'.repeat(21)}"`), 'utf8')
+    const out = probeIn(copy, 'probe-label.mjs', LABEL_PROBE)
+    const m = /max (\d+)/.exec(out)
+    assert.ok(m, out)
+    assert.equal(Number(m[1]), 21, `注入后最长必须变 21（实得 ${m[1]}）`)
+    assert.throws(() => assert.ok(Number(m[1]) <= 20))
+  })
+})
+
+test('SC-TC-41 三词槽在卡模型键面 0 命中（needs / purpose / method）', () => {
+  const keys = new Set(CARD_KEYS)
+  for (const a of agentData) {
+    for (const k of Object.keys(a.card)) keys.add(k)
+    for (const k of Object.keys(a.card.duty)) keys.add(k)
+  }
+  const hits = SLOT_WORDS.filter((w) => [...keys].some((k) => k.includes(w)))
+  assert.deepEqual(hits, [], '卡模型键面不得出现三词槽')
+})
+
+test('SC-TC-42 口径判别力：全树行口径 0 / 22 / 1，卡模型键面 0', () => {
+  const lineHits = (word) => walkFiles(join(REPO, 'tools/docgen'))
+    .filter((p) => (p.endsWith('.mjs') || p.endsWith('.json')) && !p.endsWith('sc-card-shape.test.mjs'))
+    .reduce((n, p) => n + R(p).split(/\r?\n/).filter((l) => l.includes(word)).length, 0)
+  assert.equal(lineHits(SLOT_WORDS[0]), 0, 'needs 全树行口径 0')
+  assert.equal(lineHits(SLOT_WORDS[1]), 22, 'purpose 全树行口径 22（commands.mjs 9 + policy-pure-source.test.mjs 13）')
+  assert.equal(lineHits(SLOT_WORDS[2]), 1, 'method 全树行口径 1（card-model/expression.mjs）')
+  assert.equal(SLOT_WORDS.filter((w) => agentData.some((a) => Object.keys(a.card).concat(Object.keys(a.card.duty)).some((k) => k.includes(w)))).length, 0)
+})
+
 test('SC-TC-58 硬约束不动：列数 4 / 七段 / 36 码 / 8 键 / 12 键', () => {
   const seat = SEATS()[0]
   const seg = segOf(textOf(seat), '本席清单')

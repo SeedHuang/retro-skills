@@ -214,7 +214,7 @@
 | Task 1 | 收口时回填 | `node tools/docgen/check-tristate-header.mjs` → `check-tristate-header: seats 15 / ok 15 / bad 0 => ok`；`node --test tools/docgen/test/sc-card-shape.test.mjs` → `# tests 19 / # pass 19 / # fail 0`（SC-TC-01…18 + 58 + 61）；9 条冻结断言（A01/A04/A05/A10/B08/D04/D05/E05/F05）+ `sdet-render` 4/4 全绿；**已知红** = `gate` / `disk == render` 家族 46 条（15 卡尚未重生成，Task 6 收敛） | 完成 |
 | Task 2 | 收口时回填 | `node tools/docgen/check-trigger-kind.mjs` → `check-trigger-kind: seats 15 / kinds {dispatch:11,occasion:1,moment:1,need:2} / bad 0 => ok`；`node --test tools/docgen/test/pilot-data.test.mjs` → `# tests 4 / # pass 4 / # fail 0`；`node --test tools/docgen/test/sc-card-shape.test.mjs` → `# tests 28 / # pass 28 / # fail 0`（新增 SC-TC-20/21/22、33…38）；`check-shared-refs` → `keySet8 15 / keySet12 15 => ok`；`scripts/check-all.mjs` 已接 ②.7 段（两脚本按退出码判） | 完成 |
 | Task 3 | 收口时回填 | 取数（`node .session/tmp/probe-s-c.mjs`，实跑）：`slashItems 0` / `persona {"资深":0,"20 年":0}` / `hostLiteral 0 hostRefs 18 upper 0` / `renderHost 30 residual 0 actionWriteback 15/15 names 5`；15 席 `duty.action` 全改「…结论写回⟨产物名⟩」，`role` 去「资深」，`shared.json` 加 `hostTerm`（键数 4）；`node --test tools/docgen/test/sc-card-shape.test.mjs` → `# tests 46 / # pass 43 / # fail 3`（**红 3 = SC-TC-29 / 31 / 48，均为「15 卡未重生成」**，Task 6 收敛）；`pilot-data` / `sdet-data` / `dev-workflow-counts` 全绿 | 完成 |
-| Task 4 | — | — | 未开工 |
+| Task 4 | 收口时回填 | `node --test --test-name-pattern "SC-TC-39|SC-TC-40|SC-TC-41|SC-TC-42" tools/docgen/test/sc-card-shape.test.mjs` → `# tests 4 / # pass 4 / # fail 0`；`labels 97 / max 13`（≤ 20 判据绿）+ 副本注入 21 字 → `max 21` 红；三词槽卡模型键面 0；全树行口径 `0 / 22 / 1` 与键面 0 不相等（口径判别力成立）；整文件 `# tests 50 / # pass 47 / # fail 3`（红 3 仍为「15 卡未重生成」） | 完成 |
 | Task 5 | — | — | 未开工 |
 | Task 6 | — | — | 未开工 |
 
