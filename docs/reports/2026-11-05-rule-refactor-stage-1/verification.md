@@ -51,3 +51,12 @@
 | PRD 状态标已定稿 | `6df2bb0` |
 | **阶段 1 施工（本交付账所指「清空提交」）** | `fd7928c`（父提交 = `6df2bb0`，V-9 的 diff 基准取父提交的 `rules/<file>`） |
 
+## 7 运行环境补充清理（2026-11-05，用户裁定）
+
+- 对象：`~/.trae-cn/skills/skill-creator` —— 账本 `~/.aas/installed.json` 里唯一的第三方安装（`github.com/anthropics/skills` @ `dbd4588`，2026-10-18 装入），`aas sync` 按「账本优先，全类豁免」把它从六类里摘出，每次都以 `aas 安装` 名义留着。
+- 事实核对：运行时是指向 `~/.aas/repos/github.com/anthropics/skills/skills/skill-creator` 的 Junction，链接可解析（健康）；本仓 `skills/`、`rules/` 对它零引用；Trae `builtin_skills/` 无同名内置件。
+- 处置（用户 2026-11-05 选「移除并销账」）：`aas remove skill-creator --purge --yes` → 摘运行时条目、销账（`entries: []`）、清缓存仓库；随后删除 purge 留下的空目录 `~/.aas/repos/github.com/anthropics`。
+- 复验：`aas doctor` 的技能段为「已就位 19 ｜ 需建链接 0 ｜ 需替换 0 ｜ 待迁移旧名 0 ｜ 自家残留 0 ｜ 孤儿(不动) 22」，**`aas 安装` 行消失**；`~/.trae-cn/skills/skill-creator` 与缓存仓库均 `Test-Path` 为 False。
+- 未动：`~/.aas/repos/local-aas-e2e2-8d3bfa00`（aas 自带 e2e 测试留下的本地缓存，2 个条目），与本条无关，未删。
+
+
