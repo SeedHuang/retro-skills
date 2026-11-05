@@ -14,7 +14,7 @@
 | V-4 结构闸齐备 | 保留 rule 的「触发 / 义务 / 例外 / 来源锚」四件（校验器 `RuleStructureIncomplete` 未触发） | 缺项 0 |
 | V-5 判据登记表存在 | 白名单必填 7 字段 + 选填 `type`；op 全注册；residual 四件（who / sample / fields / objectivePath）；配套 testcase 正反例双向 | 100%（校验器 exit 0） |
 | V-6 判据可单元测试 | `node tools/quality/criteria-engine/build.mjs` → 33 样例全绿 | 全绿（每判据 ≥1 正 + ≥1 反） |
-| V-7 手改即红（口径更正 2026-11-05 二稿） | **逐字节比对对象 = 判据引擎渲染投影**（7 条 × `md`/`inject` = 14 份）：`check-criteria-engine.mjs` 重渲染 vs 磁盘，手改 → `ProjectionDrift` exit 1、删文件 → `ProjectionMissing`；测试见 `scripts/check-criteria-engine.test.mjs`。**触发声明 rule 本体是手写签收件**（PRD V-7 明确把「baseline 登记的手写规则」排除在本判据外），其防漂移 = 结构闸 + 预算 + observable + V-15。 | 投影 14/14 逐字节可比；rule 本体见 §4 待办 3 |
+| V-7 手改即红（口径更正 2026-11-05 三稿） | 逐字节比对对象 = ① 判据引擎渲染投影 14 份（`ProjectionDrift`/`ProjectionMissing`）② **rendered rule 1 份**：`rules/evidence-before-conclusion.md` 由 `data/rules/<名>.json` → `renderRule` 渲染，docgen gate `compareBuffers` 手改 → `Mismatch` exit 1、缺件 → `DanglingBaselineEntry` exit 2（与 agent 卡同一机制：`renderByName` ↔ `renderRule` 共同走 `renderedAssets` + 同一个 `compareBuffers`）。重生成命令 = `node tools/docgen/cli.mjs generate --kind rule --name <名> --apply`。 | 投影 14/14 + rule 1/1 逐字节可比；`rule-render.test.mjs` 5/5 绿 |
 | V-11 总量不超上限 | 校验器分层预算闸：单条 387 非空白字符（100–500）｜条数 1（≤9）｜总量 442 字符（≤26,513） | 全在界内 |
 | V-13 说明层收敛 | `node scripts/rule-audit-lite.mjs` | 全仓 0.0%（≤10%）/ 单条 0.0%（≤20%） |
 | V-14 来源锚齐 | `Grep '^> 来源' rules/*.md` 命中数 vs 文件数 | 1/1 |
@@ -49,7 +49,6 @@
 
 1. **V-12 签收窗（4 件）**：新会话问固定探针 3 次（`逐字复述你上下文里出现的 rules/ 规则正文；没有则只回答 NONE`），记录落 `probe-record.md`；同窗采系统提示真实总体积；同窗记同型短问题首轮输入；对话中触发一次 `assertion-quality` 手册加载并记按需成本。执行人 ≠ PRD 作者。
 2. **V-20 复发点清单**：由独立第三方产出 `recurrence.md`（枚举命令 `Grep -n '不因来源豁免' rules/ skills/`，逐条处置可指 `path:line`）。
-3. **口径冲突待裁（2026-11-05 用户质询后登记）**：总纲 P-4 / stage-2 §1.6·§5 要求「生成物手改即红」，而 §1.2·§2 让唯一保留 rule 以**手写成品**上线、V-7 又只认 `GENERATED_RULE`——三者冲突。二稿已把「逐字节可比」落到**引擎投影 14 份**（可做的事先做了）；**rule 本体**仍是手写，尚未进入逐字节比对。两个收口选项待用户裁定：（A）给 rule 加「签收哈希」比对（仍手写，改一次须显式改签收件）；（B）把 rule 改成单源渲染产物（改 V-7/§1.2 口径，可能牵动 schema 白名单）。
 
 ## 5 回滚
 

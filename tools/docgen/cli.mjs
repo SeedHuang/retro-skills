@@ -11,6 +11,8 @@ import { validateAgentData, exitCodeFor } from './components/validateAgentData.m
 import { BASELINE_RULES, agentPaths, renderBaseline } from './components/baseline.mjs';
 import { compareBuffers, checkEnvironment } from './components/compare.mjs';
 import { renderByName } from './components/renderByName.mjs';
+import { RENDERED_RULES, renderedRuleAssets } from './components/renderedAssets.mjs';
+import { renderRule, writeRule } from './components/renderRule.mjs';
 import { buildCards, expectedDocs, writeAll } from './components/cardPipeline.mjs';
 import { validatePolicy } from './components/validatePolicy.mjs';
 import { PREDICATES } from './card-model/vocab/predicates.mjs';
@@ -43,8 +45,10 @@ export function sha256Hex(buf) { return createHash('sha256').update(buf).digest(
 // S4 Task 7：旧 agent 模板已退场，只留规则模板分支
 
 export function cmdGenerate(args) {
-  if (args.apply && !args.readme) {
-    fail('InvalidArgs', { message: 'InvalidArgs: --apply 只授权 docs/agents 落盘，必须与 --readme 同时给出' });
+  // `--apply` 两种授权落盘：① 与 `--readme` 同时（docs/agents 投影）② `--kind rule --name`（rule 正文渲染物）
+  const ruleWrite = args.apply && args.kind === 'rule' && typeof args.name === 'string'
+  if (args.apply && !args.readme && !ruleWrite) {
+    fail('InvalidArgs', { message: 'InvalidArgs: --apply 只授权 docs/agents 落盘或单条 rendered rule 落盘' });
   }
   const kind = args.kind ?? 'all';
   const name = args.name;
@@ -52,18 +56,26 @@ export function cmdGenerate(args) {
   const objs = name
     ? [{ kind: kind === 'all' ? 'agent' : kind, name, path: `${kind === 'rule' ? 'rules' : 'agents'}/${name}.md` }]
     : kind === 'all'
-      ? [...BASELINE_RULES.map((p) => ({ kind: 'rule', path: p })), ...agentPaths().map((p) => ({ kind: 'agent', path: p, name: p.slice(7, -3) }))]
+      ? [...BASELINE_RULES.map((p) => ({ kind: 'rule', path: p, name: p.slice(7, -3) })), ...agentPaths().map((p) => ({ kind: 'agent', path: p, name: p.slice(7, -3) }))]
       : kind === 'rule'
-        ? BASELINE_RULES.map((p) => ({ kind: 'rule', path: p }))
+        ? BASELINE_RULES.map((p) => ({ kind: 'rule', path: p, name: p.slice(7, -3) }))
         : agentPaths().map((p) => ({ kind: 'agent', path: p, name: p.slice(7, -3) }));
   let drift = 0;
   for (const o of objs) {
     if (o.kind === 'rule') {
-      // 阶段 1 起无生成规则：baseline rule 只做存在性 + 环境检查
+      // 渲染 rule 与 agent 卡同一机制：数据 → 渲染 → 逐字节比对；`--apply` 才落盘（手改即红）
       const p = join(REPO_ROOT, o.path);
       if (!existsSync(p)) fail('DanglingBaselineEntry', { name: o.path, path: p });
       const target = readFileSync(p, 'utf8');
       checkEnvironment(Buffer.from(target), 'target', o.path);
+      if (o.name && RENDERED_RULES.includes(o.name)) {
+        if (ruleWrite) {
+          writeRule(o.name);
+          console.log(`rendered rule 已写入：${o.path}`);
+        } else if (compareBuffers(Buffer.from(renderRule(o.name), 'utf8'), Buffer.from(target, 'utf8'))) {
+          drift += 1;
+        }
+      }
     } else {
       const agent = agentData.find((a) => a.name === o.name);
       if (!agent) fail('MissingComponentData', { name: o.name });
@@ -102,11 +114,21 @@ export function collectGate() {
   validateAgentData(agentData, triggerTable);
   const onDisk = readFileSync(baselinePath(), 'utf8');
   if (onDisk !== renderBaseline()) drifts.push({ code: 'BaselineDrift', path: baselinePath() });
+  const renderedPaths = new Set(renderedRuleAssets().map((a) => a.path));
   for (const p of BASELINE_RULES) {
+    if (renderedPaths.has(p)) continue; // 渲染 rule 走下方逐字节比对（与 agent 卡同一机制）
     const rp = join(REPO_ROOT, p);
     if (!existsSync(rp)) { drifts.push({ code: 'DanglingBaselineEntry', path: p }); continue; }
     try { checkEnvironment(Buffer.from(readFileSync(rp, 'utf8')), 'target', p); }
     catch (e) { drifts.push({ code: e.code ?? 'EnvironmentEOL', path: p }); }
+  }
+  // 渲染 rule（与 agent 卡同一机制）：数据 → 渲染 → 逐字节；手改即红、缺件即红
+  for (const a of renderedRuleAssets()) {
+    const rp = join(REPO_ROOT, a.path);
+    if (!existsSync(rp)) { drifts.push({ code: 'DanglingBaselineEntry', path: a.path }); continue; }
+    if (compareBuffers(Buffer.from(a.bytes, 'utf8'), readFileSync(rp))) {
+      drifts.push({ code: 'Mismatch', path: a.path });
+    }
   }
   let state;
   try { state = readState(); }

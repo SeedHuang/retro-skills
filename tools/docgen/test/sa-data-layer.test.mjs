@@ -36,7 +36,9 @@ const rewrite = (dst, rel, mutate) => {
 
 test('TC-001 数据源按席拆成 data/seats/<seat>.json（一席一文件）+ data/shared.json（1 份）', () => {
   const dirs = readdirSync(DATA, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name)
-  assert.deepEqual(dirs, ['seats'], 'data/ 下一级只能有 seats 一个目录')
+  // 2026-11-05（阶段 2）：data/ 下新增 `rules/`（rule 正文渲染的数据源，与席位同款「数据 → 渲染」）；
+  // 除这两族外仍不许有第三个目录（防止散落数据源）。
+  assert.deepEqual(dirs.sort(), ['rules', 'seats'], 'data/ 下一级只许 seats（席位）+ rules（rule 正文）两族')
   // 一席一文件：先取全部条目，非 `.json` 的（含子目录）一律算违规——只按 `.json` 过滤会让散文件静默通过
   const entries = readdirSync(SEATS, { withFileTypes: true })
   const strays = entries.map((d) => d.name).filter((n) => !n.endsWith('.json'))
