@@ -107,7 +107,7 @@
 | `docs/superpowers/reviews/<YYYY-MM-DD-HHMM>-<kebab-case 名字>/` | **已处置完的审查全过程账**（progress / problems / cards / 复盘指针）；与 `.session/reviews/` 同名同构，区别是**进 git** | **不删**；被后续审查取代时原文保留（历史记录） |
 | `.session/rule-checks/checklist-<YYYYMMDD-HHmmss>.md` | **一次「编辑 rule」动作的自查账**：rule-edit-checklist 快照（由 `rule-inspector` 技能的 `gen-rule-checklist.mjs` 从 `rule-edit-checklist-template` 展开，含 A–F 组检查项）。**为什么塞不进另两档**：它不是「某次审查的过程账」（挂在一次 rule 编辑动作上、与审查无关），也不是 README 的现状 | 该 rule 编辑动作收尾（全行「确认执行」）后即可删；对应结论已进 git（规则 / 测试断言 / spec）→ 删 |
 | `.session/tmp/` | **一次性中间产物**：命令日志、临时脚本、抓下来的原文、草稿。**不得放结论 / 配置 / 任何跨 session 还有用的东西**——那三类各归 `docs/` 或 `docs/after/`。**为什么预置这一档、而不是每次按需新建**：临时件是高频需求（2026-10-24 一天内就产生 6 个临时脚本），按需新建会让同一用途长出 `tmp` / `temp` / `scratch` 多个名字——同日实测就并存在 `.session/temp/` 与 `.session/tmp/` 两个同义目录；预置一名 + 限定内容，比「每个新用途当场改一次规则」少一次决策 | **session 收尾时必须为空**；有残留 = 有东西该搬去 `docs/` 或删。用完即删；不跨 session 保留。**这条有机械判据**：`npm run check` 的 ⑤ 段会逐个报出残留文件 |
-| `.session/sdd-<YYYY-MM-DD>-<主题>/` | **一次 SDD 执行的账**：task brief / task report / review / progress。对应 `.superpowers/sdd/`（插件工作区）的文件化存档 | 该次执行收尾 → 结论已进 git 后**整目录删**；确需留档则迁 `docs/superpowers/sdd/<同名>/` |
+| `.session/sdd-<YYYY-MM-DD>-<主题>/` | **一次 SDD 执行的账**：task brief / task report / review / progress。对应 `.superpowers/sdd/`（插件工作区）的文件化存档 | 该次执行收尾 → 结论已进 git 后**整目录删** |
 | `.session/temp/` | **`tmp/` 的遗留同义目录**（用户既有目录，2026-10-25 裁定保留）。**为什么塞不进已有档**：它就是上一条 `tmp/` 的同义写法，无独立语义。**新文件一律写 `tmp/`**，本档只容留存量、不再新增用途；上一行「预置一名 + 限定内容」的原则不因此改变 | 存量可随时清空；清空后该目录可删。**不构成本条先例**：再出现第三种同义名必须先归并到 `tmp/` |
 | `.session/myconversationwithai/` | **用户自有的对话归档草稿**（非审查过程账、非交接、非 SDD 账）。**为什么塞不进已有档**：`reviews/` 是审查过程账；`handoffs/` 是一次性收尾；`reports/` 要求进 git——用户 2026-10-25 明确「这个我要的」，指定留在此处。**知情风险**：`.session/` 不进 git，换机器 / 重新克隆即丢；确需长期保存时迁 `docs/reports/<主题>/` | 由用户决定；不属任何流程的清理动作。**不构成本条先例**：其它新增目录仍须先回答「为什么塞不进已有档」并经用户确认 |
 | `.session/README.md` | 这个目录现在有什么（**现状**） | 不删 |
@@ -163,7 +163,7 @@
 2. **一个用途只能有一个地方。** 待决项不要同时写在 `docs/after/` 和 `.session/` 下的任何文件 —— 两份说法必然漂移。**分工**：过程与进度 → `.session/`；结论与待决 → `docs/after/`。
 3. **过程账的操作规程走技能 `review-log`**（什么时候建、填哪些小节、什么时候删）；本节只定义**目录语义**，两者不重复。
 4. **`.session/` 已在 `.gitignore` 里**，别去掉。它进 git 就没有「短期」的意义了。
-5. **与 `.superpowers/` 的区别**：`.superpowers/sdd/` 是 SDD 执行工作区（**实测当前是空壳**：1 个文件，就是它自己的 `.gitignore`），由插件自己用；`.session/` 是**审查过程与待办的账本**，由 `review-log` / `writing-after-docs` 用。两者不合并、不互相替代。
+5. **与 `.superpowers/` 的区别**：`.superpowers/sdd/` 是 SDD 执行工作区，由插件自己管；`.session/` 是**审查过程与待办的账本**，由 `review-log` / `writing-after-docs` 用。两者不合并、不互相替代。
 
 ## 与「落地后回头扫」的衔接
 
