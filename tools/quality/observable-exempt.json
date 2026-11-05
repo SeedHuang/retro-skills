@@ -1,18 +1,6 @@
 {
   "entries": [
     {
-      "path": "rules/core-working-principles.md",
-      "contains": "被指出问题先自省（缺陷先算在我头上，不得说「机制必然」）",
-      "reason": "术语引用，不是评价：「自省」在本仓是规则概念名（本规则的固定搭配）；同段正文已给可判载体（三性验证 / 判据树 / 长期方案落点）。出处 rules/core-working-principles.md:36",
-      "reviewed": "2026-11-01"
-    },
-    {
-      "path": "rules/core-working-principles.md",
-      "contains": "必须起手先过事前三步与自省",
-      "reason": "术语引用，不是评价：「自省」指本规则的「事前三步 / 出事之后」动作名，不是对质量的形容；同节已给可判动作清单。出处 rules/core-working-principles.md:71",
-      "reviewed": "2026-11-01"
-    },
-    {
       "path": "skills/rule-inspector/references/criteria.md",
       "contains": "动作是脑内活动、无外部产物（画全貌/深度思考/自省/追根/列同族/算账/自问）",
       "reason": "术语引用，不是评价：「自省」是 `rule-inspector` 认知动作清单里的一项（清单本身是判定表），不是对规则质量的形容。出处 skills/rule-inspector/references/criteria.md:147",

@@ -1,3 +1,4 @@
+> 状态：**已归档**｜日期：2026-11-05（阶段 1 退役）｜归档原因：下沉——载体写作规范｜承接位置：carrier-conventions skill
 # 写 skill 禁止用文件路径指路，脚本守卫必须免疫路径
 
 > 来源：实测/踩坑（2026-10-09）｜证据：跨技能路径引用 4 处残留（retro-collect ×2、multi-lens-review ×2）；Node 守卫路径字符串比较在 Junction 下静默退出｜落地：2026-10-09
@@ -57,3 +58,14 @@
 本判据所属检查项的归桶归属（allShared / 两两 shared / 独有）见 `tools/execution-matrix/buckets.mjs`（单源，不在此复制）。共享项变更走「改前 vs 改后 + 用户确认」硬闸门（spec R7）。
 
 本文件的五段结构（适用范围 / 冲突裁决 / 例外 / 触发时机 / 验证）对应共享项 **来源覆盖④ / 冲突裁决⑤ / 例外从严⑥ / 触发机制⑦ / 验证闭环⑧**；这五项的判定定义行在 `rule-inspector` 判据集 §2.4（权威单源），本文件只按其语义落地为 skill 场景的结构要求，不复制判定定义行原文。
+## 承接对照表
+
+| 原节 | 去向 | 承接文件 |
+|---|---|---|
+| `## 核心判据` | 下沉 | carrier-conventions skill |
+| `## 适用范围（不因来源豁免）` | 下沉 | carrier-conventions skill |
+| `## 冲突裁决` | 下沉 | carrier-conventions skill |
+| `## 例外` | 下沉 | carrier-conventions skill |
+| `## 触发时机` | 下沉 | carrier-conventions skill |
+| `## 验证` | 下沉 | carrier-conventions skill |
+| `## 归桶索引` | 下沉 | carrier-conventions skill |

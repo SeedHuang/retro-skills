@@ -23,7 +23,16 @@ const EXEMPT_FILE = join(REPO, 'tools', 'quality', 'observable-exempt.json')
 const TC_FILE = join(REPO, 'docs', 'superpowers', 'specs', '2026-10-31-observable-criteria-rollout-design-testcase.md')
 const PRD = join(REPO, 'docs', 'prd', '20261031202331-observable-criteria-rollout', 'index.md')
 const TRIAGE = join(REPO, 'docs', 'reports', '2026-10-31-observable-s1-triage.md')
-const RULE_DOC = join(REPO, 'rules', 'observable-criteria.md')
+// 阶段 1 起规则文档已退出 `rules/`：测试取原文改读留底（`docs/bak/rules/observable-criteria.md`）
+const RULE_DOC = join(REPO, 'docs', 'bak', 'rules', 'observable-criteria.md')
+// bak 含状态头 + 承接对照表：取「原文段」= 状态头之后、`## 承接对照表` 之前的正文块
+// （与 PRD stage-1 §5 V-9 的切片口径同源，逐字等于退役前的 rule 文件）
+const ruleDocText = () => {
+  const text = readText(RULE_DOC)
+  const start = text.indexOf('\n') + 1
+  const end = text.indexOf('\n## 承接对照表')
+  return text.slice(start, end + 1)
+}
 
 const J = JSON.parse(readFileSync(TERMS_FILE, 'utf8'))
 // 常量 1 的 9 词（用「/」拼接比数组字面量：F10 要求同形数组全仓恰 1 处）
@@ -269,14 +278,14 @@ function countMdIndependently(dir) {
   return n
 }
 
-test('OCR-S1-TC-B01 scanned 为 string[]、与同口径遍历同值、仓根总数 ∈ {106,107}、.MD 计、junction 不计', () => {
+test('OCR-S1-TC-B01 scanned 为 string[]、与同口径遍历同值、总数 ≥1、.MD 计、junction 不计', () => {
   const r = jsonOf(['--check', '--json'])
   assert.ok(Array.isArray(r.json.scanned), 'scanned 必须是数组')
   const nodeCount = countMdIndependently(join(REPO, 'rules')) + countMdIndependently(join(REPO, 'skills'))
   assert.strictEqual(r.json.scanned.length, nodeCount, `scanned 数必须与独立遍历同值（${r.json.scanned.length} vs ${nodeCount}）`)
   assert.ok(nodeCount > 0)
-  assert.ok(r.json.scanned.length >= 106 && r.json.scanned.length <= 107, `仓根总数须 ∈ {106,107}，实得 ${r.json.scanned.length}`)
-  assert.ok([106, 107].includes(r.json.scanned.length))
+  // 总数不再写死（阶段 1/2/3 各会变一次）：只判「与独立遍历同值（上一条）+ ≥1」
+  assert.ok(r.json.scanned.length >= 1, `扫描总数须 ≥1，实得 ${r.json.scanned.length}`)
   assert.ok(new Set(r.json.scanned).size === r.json.scanned.length, 'scanned 不得有重复路径')
   // .MD 计入 + junction 跳过（临时根）
   const { root, cleanup } = tmpRoot({ 'rules/a.MD': '# x\n\n- 落点 `docs/a.md:12`。\n' })
@@ -838,7 +847,7 @@ test('OCR-S1-TC-E04 删键 / 改值为 --fix → 两构造各必红', () => {
 })
 
 test('OCR-S1-TC-E05 规则文档 ≤120 行 + 六锚 + 两句声明 + 120/121 边界', () => {
-  const text = readText(RULE_DOC)
+  const text = ruleDocText()
   const lines = text.split(/\r?\n/)
   const lineCount = lines.length - (text.endsWith('\n') ? 1 : 0)
   assert.ok(lineCount <= 120, `行数须 ≤120，实得 ${lineCount}`)
@@ -854,7 +863,7 @@ test('OCR-S1-TC-E05 规则文档 ≤120 行 + 六锚 + 两句声明 + 120/121 �
 })
 
 test('OCR-S1-TC-E06 副本含 pattern 原文 → exit 1（判定 5）', () => {
-  const rule = readText(RULE_DOC)
+  const rule = ruleDocText()
   const pat = J.markers.map((m) => m.pattern).find((p) => p.length >= 8)
   const r = withRoot({ 'rules/observable-criteria.md': `${rule}\n正文片段：${pat}\n` })
   assert.strictEqual(r.status, 1)
@@ -862,35 +871,39 @@ test('OCR-S1-TC-E06 副本含 pattern 原文 → exit 1（判定 5）', () => {
 })
 
 test('OCR-S1-TC-E10 单词面叙述 → 绿（不算复制词表）', () => {
-  const rule = readText(RULE_DOC)
+  const rule = ruleDocText()
   const r = withRoot({ 'rules/observable-criteria.md': `${rule}\n按本规则判「${J.terms[0]}」时，看它所在块有没有可观察标记。\n` })
   assert.strictEqual(r.status, 0)
 })
 
 test('OCR-S1-TC-E11 同行 ≥2 词枚举 → exit 1', () => {
-  const rule = readText(RULE_DOC)
+  const rule = ruleDocText()
   const enumLine = `本规则覆盖 ${J.terms.slice(0, 4).join('、')} 四类。`
   const r = withRoot({ 'rules/observable-criteria.md': `${rule}\n${enumLine}\n` })
   assert.strictEqual(r.status, 1)
   assert.ok(/check-observable fail/.test(r.last))
 })
 
-test('OCR-S1-TC-E08 分诊表对账 M+P+L=20（首日 21，1 行随载体删除退役）/ exemptedLines=L / stale=0 / L≤8 / hits=0', () => {
+test('OCR-S1-TC-E08 分诊表 20 行（历史快照）/ 现役行（排除已清空的 rules/）对账 / exemptedLines=L / stale=0 / L≤8 / hits=0', () => {
   const CATS = ['改文案', '已合格', '合法保留']
   const rows = readText(TRIAGE)
     .split(/\r?\n/)
     .filter((l) => l.startsWith('| `'))
     .filter((l) => CATS.includes((l.split('|')[4] ?? '').trim()))
-  const cats = rows.map((l) => l.split('|')[4].trim())
-  const M = cats.filter((c) => c === '改文案').length
-  const P = cats.filter((c) => c === '已合格').length
-  const L = cats.filter((c) => c === '合法保留').length
   assert.strictEqual(rows.length, 20, `分诊表在册行应 20（首日 21，1 行退役），实得 ${rows.length}`)
+  // 现役行 = 分诊表里路径仍在 `rules/` 之外的行：阶段 1 清空 `rules/` 后，指向 rules/ 的 2 行随载体消失
+  const live = rows.filter((l) => !(l.split('|')[1] ?? '').includes('`rules/'))
+  const liveCats = live.map((l) => l.split('|')[4].trim())
+  const M = liveCats.filter((c) => c === '改文案').length
+  const P = liveCats.filter((c) => c === '已合格').length
+  const L = liveCats.filter((c) => c === '合法保留').length
   // 第二源（非表格自证）：独立按「9 词 + 排除标题行」数一遍**当前**仍含主观词的行
   const raw = rawHitLines().length
   const r = jsonOf(['--check', '--json'])
-  assertTriage({ M, P, L, hits: r.json.hits.length, raw })
+  assertTriage({ M, P, L, hits: r.json.hits.length, raw, total: live.length })
   assert.strictEqual(r.json.exemptedLines, L)
+  // 豁免清单与现役「合法保留」条数同源：清单删 2 条后两者必须相等
+  assert.strictEqual(L, JSON.parse(readText(EXEMPT_FILE)).entries.length)
   assert.strictEqual(r.json.stale.length, 0)
 })
 
@@ -918,8 +931,8 @@ function rawHitLines() {
   return out
 }
 
-function assertTriage({ M, P, L, hits, raw }) {
-  assert.strictEqual(M + P + L, 20, `M+P+L 必须 = 20（首日 21 减 1 行退役），实得 ${M + P + L}`)
+function assertTriage({ M, P, L, hits, raw, total = 20 }) {
+  assert.strictEqual(M + P + L, total, `M+P+L 必须 = ${total}，实得 ${M + P + L}`)
   // 非恒真锚：当前仓里仍含主观词的正文行只可能落在「已合格」或「合法保留」两档
   assert.strictEqual(raw, P + L, `当前仍含主观词的行数应 = P + L（${P + L}），实得 ${raw}`)
   assert.ok(L <= 8, `L 必须 ≤ 8，实得 ${L}`)
@@ -1016,14 +1029,13 @@ test('OCR-S1-TC-F08 R8 sweep ok + 基线表述日期注在位', () => {
   assert.ok(baseNotes.length >= 2, `PRD 至少两处「§0.3-6b + 2026-10-31 + 21 行」基线注，实得 ${baseNotes.length}`)
 })
 
-test('OCR-S1-TC-F09 baseline 38/38 + 新规则两处登记', () => {
+test('OCR-S1-TC-F09 gate baseline N/N 与 baseline.json 同源（阶段 1：规则清单 0 条、不写死总数）', () => {
   assert.strictEqual(cli(['--check']).status, 0)
   const g = spawnSync(process.execPath, [join(REPO, 'tools', 'docgen', 'cli.mjs'), 'gate'], { cwd: REPO, encoding: 'utf8' })
-  assert.ok(/baseline 38\/38/.test(g.stdout || ''), (g.stdout || '').slice(0, 300))
-  const bj = readText(join(REPO, 'tools', 'docgen', 'baseline.json'))
-  assert.ok(bj.includes('rules/observable-criteria.md'))
+  const bj = JSON.parse(readText(join(REPO, 'tools', 'docgen', 'baseline.json')))
+  assert.ok(new RegExp(`baseline ${bj.length}\\/${bj.length}`).test(g.stdout || ''), (g.stdout || '').slice(0, 300))
   const bm = readText(join(REPO, 'tools', 'docgen', 'components', 'baseline.mjs'))
-  assert.ok(bm.includes('observable-criteria'))
+  assert.ok(/export const BASELINE_RULES = \[/.test(bm), '清单仍是单一来源常量（条数从它派生）')
 })
 
 test('OCR-S1-TC-F10 九词字面数组全仓恰 1 处（JSON 自身）；副本 >1 必红', () => {

@@ -1,3 +1,4 @@
+> 状态：**已归档**｜日期：2026-11-05（阶段 1 退役）｜归档原因：下沉——五段主干与出口签字｜承接位置：载体写作/流程 skill
 # 开发工作流主干：五段顺序、出口签字与长文取证
 
 > 来源：PRD `docs/prd/20261024073606-dev-workflow-mainline/index.md` §4 / §6 / §3.3；S1 spec `docs/superpowers/specs/2026-10-24-dev-workflow-skeleton-design.md` §5｜落地：2026-10-24
@@ -69,3 +70,13 @@
 （**不要**写 `npm run doc:sweep -- --check`：PowerShell + npm 10.9 会吞掉 `--` 后参数，跑默认分支恒 exit 0，判据等于没有。）
 
 判据：① `tasks N rows R bad 0` 且末行 `gate-record ok`；② exit 0（`sweep ok`）。任一不满足即本规则未过，不得进入下一段。
+## 承接对照表
+
+| 原节 | 去向 | 承接文件 |
+|---|---|---|
+| `## 核心判据（R1–R9）` | 下沉 | 载体写作/流程 skill |
+| `## 适用范围（不因来源豁免）` | 下沉 | 载体写作/流程 skill |
+| `## 冲突裁决` | 下沉 | 载体写作/流程 skill |
+| `## 例外` | 下沉 | 载体写作/流程 skill |
+| `## 触发时机` | 下沉 | 载体写作/流程 skill |
+| `## 验证` | 下沉 | 载体写作/流程 skill |

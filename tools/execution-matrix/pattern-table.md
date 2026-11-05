@@ -6,7 +6,7 @@
 
 | 场景 | 好（什么情况下有效） | 不好（什么情况下失效） | 来源（文件:行号） | 实测记录数 | 最近 N 次零回归 |
 |---|---|---|---|---|---|
-| 宾语可枚举 | 对象能被数出来时直接匹配不掠过 | 对象是抽象类别需归类时掠过 | `rules/no-git-write.md:14-27`（防掠过节） | 3 | 3 |
+| 宾语可枚举 | 对象能被数出来时直接匹配不掠过 | 对象是抽象类别需归类时掠过 | `docs/bak/rules/no-git-write.md:15-28`（防掠过节；阶段 1 已退役，过渡指针，阶段 3 收口） | 3 | 3 |
 | 「只有…才算例外」 | 例外能框死时 | 例外无法枚举时硬框误伤 | `skills/rule-inspector/references/criteria.md:57`（§2.4 ⑥） | 2 | 2 |
 | 触发信号可观测 | 有明确时机词时 | 触发需语义归类时 | `skills/rule-inspector/references/criteria.md:58`（§2.4 ⑦） | 3 | 3 |
 | 认知动作带去处 | 动作有自然产物时 | 产物是会话载体时应标 x2Carrier | `skills/rule-inspector/references/criteria.md:155-156`（§3.3b X1/X2） | 2 | 2 |

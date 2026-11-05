@@ -3,10 +3,11 @@
 // 与 A 组其余用例（依赖 skills/dev-workflow/**，T3 后才有）分开放，中间态不会整片红。
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readRepo, ruleHeadings, ruleItems, ruleExceptionReport, ruleVerifyReport, ruleCopyReport, section } from './support/dev-workflow-checks.mjs';
+import { readRepo, readBakRule, ruleHeadings, ruleItems, ruleExceptionReport, ruleVerifyReport, ruleCopyReport, section } from './support/dev-workflow-checks.mjs';
 
-const RULE = 'rules/dev-workflow-mainline.md';
-const rule = readRepo(RULE);
+// 阶段 1（2026-11-05）：该 rule 已退出 `rules/`，取留底原文段
+const RULE = 'docs/bak/rules/dev-workflow-mainline.md';
+const rule = readBakRule('dev-workflow-mainline.md');
 
 test('TC-A07 规则五段结构齐 + R1–R7 七条 + 例外节（存量豁免 + 时点）+ 验证节两条自查命令', () => {
   assert.deepEqual(ruleHeadings(rule), [true, true, true, true, true], '五个必备节标题');

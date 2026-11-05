@@ -1,3 +1,4 @@
+> 状态：**已归档**｜日期：2026-11-05（阶段 1 退役）｜归档原因：下沉（拆两半）——目录 / 命名 / .session 与「rule 里放什么」分开承接｜承接位置：目录/命名/.session → writing-after-docs；「rule 里放什么」→ carrier-conventions
 # 项目文档按「生命周期状态」分目录，未完成的进 `docs/after/`，临时的进 `.session/`
 
 > 来源：用户当场指令（2026-10-07）｜证据：清空 analyze 产物后重启，「collect 够不够用」这项**未定稿**的需求讨论只能留在对话里——用户原话「你记录的东西，需要有一个文档，不是记载 memory 中啊」「我建议这些文档都放到 docs/after 里面，这个可以有效地知道哪些没做以后可以做」｜**2026-10-08 补**：用户原话「好记性不如烂笔头，所有的进度、进展，我给你提的建议都要有地方落地」「每种笔记请都分好类…长期要记的可以放在 docs 下面，短期记忆的可以放在 .xxxx 类似这样的文件夹下，并在 gitignore 中添加」→ 新增「临时记录（`.session/`）」一节｜落地：2026-10-07，2026-10-08 补
@@ -176,3 +177,13 @@
 ## 适用范围
 
 **只管项目文档目录（`docs\`），不管技能目录**——后者归 `skill-assets-convention`（官方 Agent Skills 的 `scripts/` / `references/` / `assets\` 三档）。**判据不同，别混用。**
+## 承接对照表
+
+| 原节 | 去向 | 承接文件 |
+|---|---|---|
+| `## 一张表` | 下沉（拆两半） | 目录/命名/.session → writing-after-docs；「rule 里放什么」→ carrier-conventions |
+| `## 硬约束` | 下沉（拆两半） | 目录/命名/.session → writing-after-docs；「rule 里放什么」→ carrier-conventions |
+| `## 文件命名` | 下沉（拆两半） | 目录/命名/.session → writing-after-docs；「rule 里放什么」→ carrier-conventions |
+| `## 临时记录（`.session/`）：不进 git 的过程账本` | 下沉（拆两半） | 目录/命名/.session → writing-after-docs；「rule 里放什么」→ carrier-conventions |
+| `## 与「落地后回头扫」的衔接` | 下沉（拆两半） | 目录/命名/.session → writing-after-docs；「rule 里放什么」→ carrier-conventions |
+| `## 适用范围` | 下沉（拆两半） | 目录/命名/.session → writing-after-docs；「rule 里放什么」→ carrier-conventions |

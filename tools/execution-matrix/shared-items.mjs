@@ -9,7 +9,8 @@ export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..')
 // 权威载体：共享项的判定定义行只允许出现在这里（判据正文单源）
 export const AUTHORITY_FILE = join(ROOT, 'skills', 'rule-inspector', 'references', 'criteria.md');
 // 引用方载体：必须以「判据名 + 指向权威定义」的引用方式出现，不复制判定定义行原文
-export const SKILL_FILE = join(ROOT, 'rules', 'skill-authoring-convention.md');
+// 过渡态（阶段 1，2026-11-05）：该 rule 已随退役落 `docs/bak/`，阶段 3 承接进 skill 后收口
+export const SKILL_FILE = join(ROOT, 'docs', 'bak', 'rules', 'skill-authoring-convention.md');
 // agent 判据正文单源：同样不得复制共享项判定定义行原文
 export const AGENT_CRITERIA_FILE = join(ROOT, 'tools', 'execution-matrix', 'criteria.md');
 

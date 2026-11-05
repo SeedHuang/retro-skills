@@ -417,7 +417,7 @@ test('S5-TC-B09 B3 pending → 拒写盘；写回 pass 后落盘；rejudge-<席>
     const draftPath = join(draftsDir, draftName);
     const newSha = sha256(readFileSync(draftPath));
 
-    patchFile(dst, 'rules/.inspector-annotations.json', '"reviewer-audit:B3": "pass"', '"reviewer-audit:B3": "pending"');
+    patchFile(dst, 'tools/quality/.inspector-annotations.json', '"reviewer-audit:B3": "pass"', '"reviewer-audit:B3": "pending"');
     const mdRel = '.session/reviews/s5-b09/rejudge-reviewer-audit-B3.md';
     mkdirSync(join(dst, '.session/reviews/s5-b09'), { recursive: true });
     const md = (v) => `判前值：pending\n判后值：${v}\n判者标识：s5-sdet-rejudge\n判据锚：tools/execution-matrix/criteria.md:134-141\n转录人：主 agent\n`;
@@ -437,7 +437,7 @@ test('S5-TC-B09 B3 pending → 拒写盘；写回 pass 后落盘；rejudge-<席>
     assert.equal(JSON.parse(readFileSync(evPath, 'utf8')).changes.length, len0);
     assert.equal(sha256(readFileSync(cardPath)), hash0);
 
-    patchFile(dst, 'rules/.inspector-annotations.json', '"reviewer-audit:B3": "pending"', '"reviewer-audit:B3": "pass"');
+    patchFile(dst, 'tools/quality/.inspector-annotations.json', '"reviewer-audit:B3": "pending"', '"reviewer-audit:B3": "pass"');
     writeFileSync(join(dst, mdRel), md('pass'));
     const r2 = runCli(dst, args, { DOCGEN_JUDGED_BY: 's5-sdet-rejudge' });
     assert.equal(r2.status, 0, r2.stdout + r2.stderr);

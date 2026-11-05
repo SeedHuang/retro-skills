@@ -1,3 +1,4 @@
+> 状态：**已归档**｜日期：2026-11-05（阶段 1 退役）｜归档原因：下沉——条件触发 / 流程侧｜承接位置：carrier-conventions skill
 # 在写 skill 文档时，引用 reference 的指令必须接「读→产出」闭环
 
 > 来源：实测/踩坑（2026-10-11）｜证据：L1 spec §三 有 commit 格式规范，agent 在 review 分支操作时没回去翻，照样漏前缀——写读一下类指令被跳过｜落地：2026-10-11
@@ -29,3 +30,12 @@ reference 是被动资源，有效不取决于「它在」，取决于「执行�
 ## 验证
 
 写完 skill 后自查：逐个检查「引用 reference 的动作指令」——是否停在「去读」？是否接在产出/核对条件上？停在「去读」= 不合格，改写为「读→产出」闭环。
+## 承接对照表
+
+| 原节 | 去向 | 承接文件 |
+|---|---|---|
+| `## 四要素声明` | 下沉 | carrier-conventions skill |
+| `## 核心判据` | 下沉 | carrier-conventions skill |
+| `## 为什么` | 下沉 | carrier-conventions skill |
+| `## 触发时机` | 下沉 | carrier-conventions skill |
+| `## 验证` | 下沉 | carrier-conventions skill |

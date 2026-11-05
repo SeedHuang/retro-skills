@@ -131,7 +131,7 @@
 
 ### §R8 认知动作无落点（X1/X2/X3，仅认知动作型规则；判据全文见 `references/criteria.md` §3.3b，不在此复制）
 
-**判据**：规则被 annotations 判为认知动作型（`rules/.inspector-annotations.json` 标 `cognitive: true`），但 X1/X2/X3 任一 fail。2026-10-15 实测命中：`core-working-principles.md`（产物「全貌确认」块无去处、无路径绑定——旧关键词判据 96% 健康，落点断言后 86% 预警）。
+**判据**：规则被 annotations 判为认知动作型（`tools/quality/.inspector-annotations.json` 标 `cognitive: true`），但 X1/X2/X3 任一 fail。2026-10-15 实测命中：`core-working-principles.md`（产物「全貌确认」块无去处、无路径绑定——旧关键词判据 96% 健康，落点断言后 86% 预警）。
 
 **改法**（按命中的 X 逐条；词表/窗口语义以 criteria §3.3b 为准）：
 

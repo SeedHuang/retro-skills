@@ -920,7 +920,8 @@ const blockCount = (file, prefix = '') => (R(file).match(new RegExp(`^\\s*test\\
 test('SC-TC-53 gate exit 0 且 15 席 disk == render 逐字节', () => {
   const g = runNode(['tools/docgen/cli.mjs', 'gate'])
   assert.equal(g.code, 0, `gate 必须 exit 0：${g.out.slice(-400)}`)
-  assert.match(g.out, /baseline 38\/38/, '末行 38/38 只作记录（PRD §5 恒真）')
+  const bj = JSON.parse(R(join(REPO, 'tools', 'docgen', 'baseline.json')))
+  assert.match(g.out, new RegExp(`baseline ${bj.length}\\/${bj.length}`), '末行 N/N 从两清单派生（不再写死 38）')
   for (const s of SEATS()) assert.equal(R(join(AGENTS_DIR, `${s}.md`)), textOf(s), `${s} 盘上必须逐字节 == 渲染`)
 })
 

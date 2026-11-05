@@ -1,3 +1,4 @@
+> 状态：**已归档**｜日期：2026-11-05（阶段 1 退役）｜归档原因：下沉——条件触发；执行由 check-observable.mjs + 门禁第 ⑦ 段承担｜承接位置：carrier-conventions 的「判据可观察形态」references
 # 判据必须写成可观察形态（规则）
 
 > 来源：PRD `docs/prd/20261031202331-observable-criteria-rollout/index.md`（F-02 / F-10 先行产物）｜spec `docs/superpowers/specs/2026-10-31-observable-criteria-rollout-design.md` §6｜落地：2026-11-01
@@ -60,3 +61,15 @@
 | 最近一次分诊结论（S1 首日基线） | `docs/reports/2026-10-31-observable-s1-triage.md` |
 | 判定实现 | `scripts/check-observable.mjs`（唯一实现点） |
 | 门禁接入 | `scripts/check-all.mjs` 第 ⑦ 段（不可经 `CHECK_BYPASS` 旁路） |
+## 承接对照表
+
+| 原节 | 去向 | 承接文件 |
+|---|---|---|
+| `## 范围` | 下沉 | carrier-conventions 的「判据可观察形态」references |
+| `## 条件` | 下沉 | carrier-conventions 的「判据可观察形态」references |
+| `## 动作` | 下沉 | carrier-conventions 的「判据可观察形态」references |
+| `## 宾语` | 下沉 | carrier-conventions 的「判据可观察形态」references |
+| `## 触发时机` | 下沉 | carrier-conventions 的「判据可观察形态」references |
+| `## 验证` | 下沉 | carrier-conventions 的「判据可观察形态」references |
+| `## 两条声明` | 下沉 | carrier-conventions 的「判据可观察形态」references |
+| `## 去哪查` | 下沉 | carrier-conventions 的「判据可观察形态」references |

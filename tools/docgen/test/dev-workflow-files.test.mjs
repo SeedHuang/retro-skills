@@ -9,7 +9,7 @@ import { checkSkillDir } from '../../../skills/skill-inspector/scripts/check.mjs
 import {
   ROOT, readRepo, tableAt, diffStageCells, stageOrder, rowLoop, transitionReport, refsReport,
   missingSections, missingPowers, planGateReport, exitWordReport, section, inlineHeadings,
-  bareReaderRefs,
+  bareReaderRefs, readBakRule,
 } from './support/dev-workflow-checks.mjs';
 
 const SKILL = 'skills/dev-workflow/SKILL.md';
@@ -19,8 +19,8 @@ const skill = readRepo(SKILL);
 const prd = readRepo(PRD);
 const refNames = () => readdirSync(join(ROOT, REF_DIR)).filter((x) => x.endsWith('.md')).sort();
 
-test('TC-A01 三件载体在磁盘上', () => {
-  for (const p of [SKILL, 'rules/dev-workflow-mainline.md', 'agents/evidence-reader.md']) {
+test('TC-A01 三件载体在磁盘上（规则侧改判留底：阶段 1 已退出 `rules/`）', () => {
+  for (const p of [SKILL, 'docs/bak/rules/dev-workflow-mainline.md', 'agents/evidence-reader.md']) {
     assert.equal(existsSync(join(ROOT, p)), true, `缺载体：${p}`);
   }
 });
@@ -245,7 +245,7 @@ test('TC-E25 裸名 reader 不存在、且 SKILL.md / 规则里没有裸名派�
   assert.equal(existsSync(join(ROOT, 'agents', 'reader.md')), false);
   assert.equal(readdirSync(join(ROOT, 'agents')).filter((x) => /^reader\.md$/.test(x)).length, 0);
   assert.deepEqual(bareReaderRefs(skill), [], 'SKILL.md 出现裸名 reader');
-  assert.deepEqual(bareReaderRefs(readRepo('rules/dev-workflow-mainline.md')), [], '规则出现裸名 reader');
+  assert.deepEqual(bareReaderRefs(readBakRule('dev-workflow-mainline.md')), [], '规则出现裸名 reader');
 });
 
 test('TC-E26 计划门删掉三条现行命令 → `live` 为 false（强信号，R9③ 改义后）', () => {

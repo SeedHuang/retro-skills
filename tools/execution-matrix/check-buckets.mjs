@@ -22,10 +22,11 @@ export const ALLOWED_BUCKET_NAMES = [
 ];
 
 // 判据正文载体（相对仓库根）
+// 过渡态（阶段 1，2026-11-05）：skill 载体已随 rule 退役落 `docs/bak/`，阶段 3 承接进 skill 后收口
 export const CARRIER_FILES = {
   agent: 'tools/execution-matrix/criteria.md',
   rule: 'skills/rule-inspector/references/criteria.md',
-  skill: 'rules/skill-authoring-convention.md',
+  skill: 'docs/bak/rules/skill-authoring-convention.md',
 };
 
 // 判据正文里的检查项标记 → [归桶项名, 预期桶]

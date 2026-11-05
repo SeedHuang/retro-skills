@@ -3,11 +3,13 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { buildData, render, renderBlocks, validateData, assertTemplateClean, TEMPLATE_PATH } from '../components/specTestCaseGate.mjs';
 import { compareBuffers, checkEnvironment, assertInside } from '../components/compare.mjs';
+import { readBakRule } from './support/dev-workflow-checks.mjs';
 
 const TEMPLATE = () => readFileSync(TEMPLATE_PATH, 'utf8');
 
 test('V1 等价：buildData + 模板渲染 === target 逐字节（rule 侧）', () => {
-  const target = readFileSync(new URL('../../../rules/spec-testcase-gate.md', import.meta.url), 'utf8');
+  // 阶段 1（2026-11-05）：生成规则已退役，target 取 `docs/bak/rules/` 的原文段（逐字 = 旧文件）
+  const target = readBakRule('spec-testcase-gate.md');
   const data = buildData();
   assertTemplateClean(TEMPLATE());
   const rendered = render(data, TEMPLATE());

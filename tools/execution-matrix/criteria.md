@@ -17,7 +17,7 @@ A 组判定词须兼容两种模板形态（parliament 模板与 senior-sdet han
 
 ### 0.3 AI 判的落位与三态（spec R8）
 
-AI 判项（A 语义项 A1/A2 + B 组 4 项 + C 组全 4 项）判定结果写入 `rules/.inspector-annotations.json`（与 rule-inspector 共用同一文件），**键命名 = `agent 卡名:判定项名`**（如 `reviewer-audit:B2`、`reviewer-audit:C4`），值 = 三态：
+AI 判项（A 语义项 A1/A2 + B 组 4 项 + C 组全 4 项）判定结果写入 `tools/quality/.inspector-annotations.json`（与 rule-inspector 共用同一文件），**键命名 = `agent 卡名:判定项名`**（如 `reviewer-audit:B2`、`reviewer-audit:C4`），值 = 三态：
 
 | 值 | 语义 |
 |---|---|
@@ -91,7 +91,7 @@ A 组结构项（A3-A7）中**凡有「目标节」的按字样查的项（A4/A5
 | 判定方式 | **机器查（可 grep）**：判定 = 含 `## 输出格式` 块（outputKind 对应；产出形态可被下游稳定消费——议会评审、review-loop） |
 | 落位 | `check-agent.mjs`（A 结构项机器检查） |
 
-## 2 A 组：语义项（AI 判 + annotations 三态）——落位 `rules/.inspector-annotations.json`
+## 2 A 组：语义项（AI 判 + annotations 三态）——落位 `tools/quality/.inspector-annotations.json`
 
 ### A1 职责单一定位
 
@@ -111,7 +111,7 @@ A 组结构项（A3-A7）中**凡有「目标节」的按字样查的项（A4/A5
 | 判定方式 | **AI 判（语义判断）**：判定 = 含具体触发条件枚举（非「需要时/酌情」类不可判信号）；description 只写触发条件、不写流程摘要（禁「本角色将先…再…」类流程描述）。触发信号不可判则卡「什么时候被调用」无法确定，等于无触发机制 |
 | 落位 | annotations（键 `agent 卡名:A2`） |
 
-## 3 B 组：内容 4 项（AI 判 + annotations 三态）——落位 `rules/.inspector-annotations.json`
+## 3 B 组：内容 4 项（AI 判 + annotations 三态）——落位 `tools/quality/.inspector-annotations.json`
 
 ### B1 identity 真实
 
@@ -149,7 +149,7 @@ A 组结构项（A3-A7）中**凡有「目标节」的按字样查的项（A4/A5
 | 判定方式 | **AI 判**：判定 = 卡含「自由探索 / 必做 / 额外问题」类段；无自由探索要求 → `fail`（只答固定清单 = 盲点扫描退化为填空） |
 | 落位 | annotations（键 `agent 卡名:B4`） |
 
-## 4 C 组：贯穿自证 4 项（AI 判 + annotations 三态）——落位 `rules/.inspector-annotations.json`
+## 4 C 组：贯穿自证 4 项（AI 判 + annotations 三态）——落位 `tools/quality/.inspector-annotations.json`
 
 > 「自证」定义（对齐 TC-023/024/025/026）：给结论的环节都要有「独立回答 + 证据」，不是开头问一下。C 组判定基于卡文本结构（是否有逐条回答位与证据位），**不查运行时证据内容是否真实**（那归 parliament 侦探/审计核对）。
 
@@ -195,4 +195,4 @@ A 组结构项（A3-A7）中**凡有「目标节」的按字样查的项（A4/A5
 - **B 组 4 项**（AI 判）：B1 identity 真实 / B2 fixedList 判据可判 / B3 职责边界一致 / B4 自由探索触发
 - **C 组 4 项**（AI 判）：C1 固定清单逐条自证 / C2 自由探索逐条自证 / C3 结论可复算 / C4 自证贯穿不只在开头
 
-> 落位汇总：A 结构项（A3-A7）→ `tools/execution-matrix/check-agent.mjs` 机器查；A 语义项（A1/A2）+ B 组 + C 组 → AI 判落 `rules/.inspector-annotations.json` 三态，脚本只机械接收。与 docgen `validateAgentData` 的判定对象（name/tools/when 格式/route/outputKind 等数据合法性）无交集（对应 TC-047）。
+> 落位汇总：A 结构项（A3-A7）→ `tools/execution-matrix/check-agent.mjs` 机器查；A 语义项（A1/A2）+ B 组 + C 组 → AI 判落 `tools/quality/.inspector-annotations.json` 三态，脚本只机械接收。与 docgen `validateAgentData` 的判定对象（name/tools/when 格式/route/outputKind 等数据合法性）无交集（对应 TC-047）。

@@ -28,6 +28,7 @@ import { exitCodeFor } from '../components/validateAgentData.mjs'
 import { EXPIRY_LANDED, disposeCardFindings } from '../../observation-check/card-exempt.mjs'
 // 五个 helper 的**唯一实现**在 support/card-fixtures.mjs（本文件不保留第二份，plan Task 6）
 import { REPO, AGENTS_DIR, DOC_AGENTS_DIR, walkFiles, runNode, runCli, coldRepo, mutCard } from './support/card-fixtures.mjs'
+import { readBakRule } from './support/dev-workflow-checks.mjs'
 
 // ── 本文件自己的路径与夹具（五个共享 helper 已抽到 support/card-fixtures.mjs）──────────────────
 const HERE = dirname(fileURLToPath(import.meta.url))
@@ -316,7 +317,7 @@ test('S4-TC-K01 D1 / D5 的上游同批改在位（PRD §3.7 段表 9 行 + subj
 })
 
 test('S4-TC-J04 docs-convention 同批补一行 + scope-sweep --check exit 0', () => {
-  const conv = readFileSync(join(REPO, 'rules/docs-convention.md'), 'utf8')
+  const conv = readBakRule('docs-convention.md')
   assert.ok(conv.includes('docs/agents'), 'D2 :215：docs-convention 目录表必须同批补 docs/agents/ 一行（否则规则与目录两处说法）')
   const sw = runNode(['scripts/scope-sweep.mjs', '--check'])
   assert.equal(sw.code, 0, `R8 改判回扫必须 exit 0（实得 ${sw.code}）：${sw.out.slice(0, 300)}`)

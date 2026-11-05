@@ -108,7 +108,7 @@ export function renderESections(rules, scores) {
     const head = [
       `### E-${i + 1} · ${r.name}`,
       '',
-      `> 取证命令：\`node skills/rule-inspector/scripts/score.mjs --file ${r.name} --json\`（认知判定经 rules/.inspector-annotations.json 自动发现）；总分 **${s && !s.error ? `${s.total}/${s.max}（${s.level}）` : '取证失败'}**。`,
+      `> 取证命令：\`node skills/rule-inspector/scripts/score.mjs --file ${r.name} --json\`（认知判定经 tools/quality/.inspector-annotations.json 自动发现）；总分 **${s && !s.error ? `${s.total}/${s.max}（${s.level}）` : '取证失败'}**。`,
       '',
       '| # | 检查项 | 判据（score.mjs 机械判定 · criteria 对应组） | 实际输出 | 确认执行 |',
       '|---|---|---|---|---|',

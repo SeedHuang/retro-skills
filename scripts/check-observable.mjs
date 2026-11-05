@@ -18,9 +18,10 @@ import { fenceMask } from '../tools/execution-matrix/markdown-rows.mjs'
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const DEFAULT_TERMS = join(REPO_ROOT, 'tools', 'quality', 'observable-terms.json')
 const DEFAULT_EXEMPT = join(REPO_ROOT, 'tools', 'quality', 'observable-exempt.json')
-const RULE_DOC = 'observable-criteria.md'
-// 仓根扫描时的 `.md` 总数（施工期两态：规则文档落地前 106 / 落地后 107；spec §4 P-1 `:87`）
-const REPO_MD_TOTALS = [106, 107]
+// 规则文档专判（判定 5）的载体 = **精确相对路径**，只认 `rules/` 下这一份：
+// 旧写法 `rel.endsWith('observable-criteria.md')` 会把 `skills/**` 里同名 references 静默剔出判定 1–4，
+// 判定 5 随之失效（PRD `docs/prd/20261105182104-rule-refactor/prd/stage-1-rules-exit.md` §1 步骤 0）。
+const RULE_DOC_REL = 'rules/observable-criteria.md'
 const REVIEWED_FLOOR = '2026-01-01'
 
 // ── 文本工具 ──────────────────────────────────────────────────────────────
@@ -319,16 +320,14 @@ function run(argv) {
   const files = [...walkCollect(rulesDir, []), ...walkCollect(skillsDir, [])]
   const counted = walkCount(rulesDir) + walkCount(skillsDir)
   if (files.length !== counted) throw new Fail('P-1', `两次遍历数不等（收集 ${files.length} / 计数 ${counted}）`)
-  const nRules = walkCollect(rulesDir, []).length
   const nSkills = walkCollect(skillsDir, []).length
+  // 反空转四条：两次遍历数相等（上一条）、两目录存在、总数非 0、skills 非空。
+  // `rules/` 允许为空（阶段 1 清空后仍须 exit 0）；`skills/` 恒须 ≥1（它不在本改造的退出范围）。
   if (!existsSync(rulesDir) || !existsSync(skillsDir)) throw new Fail('P-1', `rules/ 与 skills/ 目录必须都在（实得 ${existsSync(rulesDir)} / ${existsSync(skillsDir)}）`)
   if (files.length === 0) throw new Fail('P-1', '扫描根下 0 个 .md（空转）')
   // 「各 ≥1」只在**扫描仓根**时强制（spec §4 P-1 `:89` 的 2026-11-01 注：已签 testcase `B12③` 的
   // 「临时根仅 1 个 .md」对照要求 exit 0，故 `--root` 测试根降为「两目录须存在 + 总数 ≥1」）。
-  if (isRepoRoot && (nRules < 1 || nSkills < 1)) throw new Fail('P-1', `仓根下 rules/ 与 skills/ 各须 ≥1 个 .md（实得 ${nRules} / ${nSkills}）`)
-  if (isRepoRoot && !REPO_MD_TOTALS.includes(files.length)) {
-    throw new Fail('P-1', `仓根 .md 总数 ${files.length} 不在允许集 ${JSON.stringify(REPO_MD_TOTALS)}`)
-  }
+  if (isRepoRoot && nSkills < 1) throw new Fail('P-1', `仓根下 skills/ 须 ≥1 个 .md（实得 ${nSkills}）`)
 
   // P-2 / P-3：清单
   const data = loadJson(opts.terms)
@@ -378,7 +377,8 @@ function run(argv) {
   for (const { rel } of sorted) scanned.push(rel)
   for (const { abs, rel } of sorted) {
     // 规则文档**另走判定 5**（spec §4 判定 5「另走 §6 的三条判据」）：不参与判定 1–4
-    if (rel.endsWith(RULE_DOC)) continue
+    // 只认精确路径 `rules/observable-criteria.md`；`skills/**` 同名 references 不得被剔除
+    if (rel === RULE_DOC_REL) continue
     let text = fileCache.get(abs)
     if (text === undefined) {
       text = readFileSync(abs, 'utf8')
@@ -404,7 +404,7 @@ function run(argv) {
   }
 
   // 规则文档专判（判定 5）
-  const ruleDoc = sorted.find((s) => s.rel.endsWith(RULE_DOC))
+  const ruleDoc = sorted.find((s) => s.rel === RULE_DOC_REL)
   let copyProblems = []
   if (ruleDoc) copyProblems = ruleDocCopies(readFileSync(ruleDoc.abs, 'utf8'), data)
 

@@ -10,6 +10,15 @@ import { fileURLToPath } from 'node:url';
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..');
 export const readRepo = (rel) => readFileSync(join(ROOT, rel), 'utf8');
 
+// 阶段 1（2026-11-05）：rule 全量退出 `rules/`，留底在 `docs/bak/rules/`。测试取「原文段」=
+// 状态头之后、`## 承接对照表` 之前的正文块（与 PRD stage-1 §5 V-9 的切片口径同源，逐字等于旧文件）。
+export function readBakRule(name) {
+  const text = readRepo(join('docs', 'bak', 'rules', name));
+  const start = text.indexOf('\n') + 1;
+  const end = text.indexOf('\n## 承接对照表');
+  return text.slice(start, end + 1);
+}
+
 // Q8（2026-11-03，PRD §3 / spec §10.1 R6）：从 `pathGroups.workspace` 删掉的 3 项本仓专属路径 —— **唯一字面**。
 // 顺序 = 改造前旧卡（`fixtures/capability-baseline.json`）里的数组序，不是 spec / plan 正文的列举序：
 // `S6-TC-H02` / `J03` / `C01` / `C02` 拿 `diffFacts()` 的 minus 做 `deepEqual`（顺序敏感），顺序错会红。

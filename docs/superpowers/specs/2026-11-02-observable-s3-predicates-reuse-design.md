@@ -185,7 +185,7 @@
 
 - **必红期声明**：S1 → S1b 期间 `npm run check` 必红（`gate` 报 `Mismatch`，**只报首条单行**）。**禁止**在此期间 cherry-pick 提交、禁止跳测试、禁止为凑绿改 `SCAN_FIELDS` / 扩豁免清单 / 改断言（改断言只许「派生化」）。
 - **回退面（第 1 轮 F12）**：`git checkout <S3-BASE> -- tools/docgen/card-model/vocab/predicates.mjs agents/` 即回到 S2 终态；`draft` 不落盘（`cli.mjs` 的 `cmdDraft` 只写草稿目录），失败可重跑；`baseline.json` 本块不改（D-15），无需回滚。
-- **不做 `baseline --write`**：`renderBaseline()` 只由「rules 清单 + 15 席路径」组成（`components/baseline.mjs:30-32`），不含 label；实跑 `baseline.json == renderBaseline()` 为真 ⇒ `--write` 是空转，`baseline 38/38` 是常量打印（`tools/docgen/cli.mjs:212`），**不作判据**（D-15）。
+- **不做 `baseline --write`**：`renderBaseline()` 只由「rules 清单 + 15 席路径」组成（`components/baseline.mjs:19-21`），不含 label；实跑 `baseline.json == renderBaseline()` 为真 ⇒ `--write` 是空转，`baseline 38/38` 是常量打印（`tools/docgen/cli.mjs:212`），**不作判据**（D-15）。
 
 ## 8 与既有件的关系（R8 回扫）
 

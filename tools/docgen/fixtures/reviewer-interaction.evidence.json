@@ -23,17 +23,17 @@
         {
           "key": "A1",
           "verdict": "pass",
-          "basis": "tools/execution-matrix/criteria.md A1 + 渲染产物；重判写回 rules/.inspector-annotations.json reviewer-interaction:A1 = pass（replace 机械转录）"
+          "basis": "tools/execution-matrix/criteria.md A1 + 渲染产物；重判写回 tools/quality/.inspector-annotations.json reviewer-interaction:A1 = pass（replace 机械转录）"
         },
         {
           "key": "A2",
           "verdict": "pass",
-          "basis": "tools/execution-matrix/criteria.md A2 + 渲染产物；重判写回 rules/.inspector-annotations.json reviewer-interaction:A2 = pass（replace 机械转录）"
+          "basis": "tools/execution-matrix/criteria.md A2 + 渲染产物；重判写回 tools/quality/.inspector-annotations.json reviewer-interaction:A2 = pass（replace 机械转录）"
         },
         {
           "key": "B3",
           "verdict": "pass",
-          "basis": "tools/execution-matrix/criteria.md B3 + 渲染产物；重判写回 rules/.inspector-annotations.json reviewer-interaction:B3 = pass（replace 机械转录）"
+          "basis": "tools/execution-matrix/criteria.md B3 + 渲染产物；重判写回 tools/quality/.inspector-annotations.json reviewer-interaction:B3 = pass（replace 机械转录）"
         }
       ],
       "machineChecks": {
@@ -102,7 +102,7 @@
         {
           "key": "A1",
           "verdict": "pass",
-          "basis": "tools/execution-matrix/criteria.md A1 + 渲染产物；重判写回 rules/.inspector-annotations.json reviewer-interaction:A1 = pass（replace 机械转录）"
+          "basis": "tools/execution-matrix/criteria.md A1 + 渲染产物；重判写回 tools/quality/.inspector-annotations.json reviewer-interaction:A1 = pass（replace 机械转录）"
         }
       ],
       "machineChecks": {
@@ -127,12 +127,12 @@
         {
           "key": "A1",
           "verdict": "pass",
-          "basis": "tools/execution-matrix/criteria.md A1 + 渲染产物；重判写回 rules/.inspector-annotations.json reviewer-interaction:A1 = pass（replace 机械转录）"
+          "basis": "tools/execution-matrix/criteria.md A1 + 渲染产物；重判写回 tools/quality/.inspector-annotations.json reviewer-interaction:A1 = pass（replace 机械转录）"
         },
         {
           "key": "A2",
           "verdict": "pass",
-          "basis": "tools/execution-matrix/criteria.md A2 + 渲染产物；重判写回 rules/.inspector-annotations.json reviewer-interaction:A2 = pass（replace 机械转录）"
+          "basis": "tools/execution-matrix/criteria.md A2 + 渲染产物；重判写回 tools/quality/.inspector-annotations.json reviewer-interaction:A2 = pass（replace 机械转录）"
         }
       ],
       "machineChecks": {

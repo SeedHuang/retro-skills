@@ -42,8 +42,9 @@ test('I1：draft/replace 对未拆槽席 → MissingComponentData（exit 2，不
   }
 });
 
-test('I3：generate --kind rule --name 精确到单对象（正：生成规则 exit 0；负：不存在 → DanglingBaselineEntry exit 2）', () => {
-  const ok = run(['generate', '--kind', 'rule', '--name', 'spec-testcase-gate']);
+test('I3：generate --name 精确到单对象（正：已接管席 exit 0；负：不存在的 rule → DanglingBaselineEntry exit 2）', () => {
+  // 阶段 1（2026-11-05）：仓内已无 rule 载体，正向样本改用已接管席；rule 侧只留负例
+  const ok = run(['generate', '--kind', 'agent', '--name', 'reviewer-qa']);
   assert.equal(ok.status, 0, ok.stdout + ok.stderr);
   assert.match(ok.stdout, new RegExp(`baseline ${N}\\/${N}`));
   const bad = run(['generate', '--kind', 'rule', '--name', 'ghost-rule']);

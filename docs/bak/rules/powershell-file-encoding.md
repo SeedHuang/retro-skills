@@ -1,3 +1,4 @@
+> 状态：**已归档**｜日期：2026-11-05（阶段 1 退役）｜归档原因：下沉——条件触发；本仓 .ps1 0 个｜承接位置：独立编码备忘 references（出列 skill）
 # PowerShell 写文本文件禁用 `-Encoding UTF8`
 
 > 来源：KB 教训（2026-09-27 首见，2026-09-28 复查时**再次踩中**）｜证据：`skills add` 对带 BOM 的 `SKILL.md` 直接报 `No skills found`；去掉 BOM 后同一命令立即报 `Found 1 skill`｜落地：2026-09-28
@@ -24,3 +25,8 @@
 **反例（本次真实触发）**：`Set-Content -LiteralPath $p -Encoding UTF8` → 文件带 BOM → `npx skills add` 报 `No valid skills found. Skills require a SKILL.md with name and description.`（而文件里 name/description 都在，真正的原因是 BOM）。
 
 **正例**：改用 `[System.IO.File]::WriteAllText(...)` 显式不带 BOM → 同一条命令立刻报 `Found 1 skill`。
+## 承接对照表
+
+| 原节 | 去向 | 承接文件 |
+|---|---|---|
+| `（全文）` | 下沉 | 独立编码备忘 references（出列 skill） |

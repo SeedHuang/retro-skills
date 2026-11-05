@@ -29,8 +29,13 @@ test('TC-C02 baseline.json 条数与派生值一致，evidence-reader 排序位�
   assert.ok(j[j.length - 1].startsWith('agents/'), 'rule 在前、agent 按字典序在后');
 });
 
-test('TC-C03 BASELINE_RULES 含新规则，agentPaths 含 evidence-reader 且条数同源', () => {
-  assert.equal(BASELINE_RULES.includes('rules/dev-workflow-mainline.md'), true);
+test('TC-C03 BASELINE_RULES 与 rules/ 目录同集（不写死条目名），agentPaths 含 evidence-reader 且条数同源', () => {
+  // 阶段 1（2026-11-05）：清单从目录派生——`rules/` 清空后为空集，阶段 2 加回 1 条时自动跟随
+  const onDisk = readdirSync(join(ROOT, 'rules'))
+    .filter((f) => f.endsWith('.md'))
+    .map((f) => `rules/${f}`)
+    .sort();
+  assert.deepEqual([...BASELINE_RULES].sort(), onDisk);
   assert.equal(agentPaths().includes('agents/evidence-reader.md'), true);
   assert.equal(agentPaths().length, agentData.length);
 });
@@ -86,7 +91,7 @@ test('TC-C09 BASELINE_RULES 加了条目但 baseline.json 未重生成 → gate 
   withRepoCopy((dst) => {
     const p = join(dst, 'tools', 'docgen', 'components', 'baseline.mjs');
     const t = readFileSync(p, 'utf8');
-    const patched = t.replace("'rules/vitest-queued-alternative.md',", "'rules/vitest-queued-alternative.md', 'rules/zzz-drift-probe.md',");
+    const patched = t.replace('export const BASELINE_RULES = [', "export const BASELINE_RULES = [\n  'rules/zzz-drift-probe.md',");
     assert.notEqual(patched, t, '构造前提：能改到 BASELINE_RULES');
     writeFileSync(p, patched);
     writeFileSync(join(dst, 'rules', 'zzz-drift-probe.md'), '# 探针\n');
@@ -162,12 +167,20 @@ test('TC-E09 全量门在计数只改一处时必红（探针在单点构造下�
 
 test('TC-E12 规则登记了但文件不存在 → gate 报 DanglingBaselineEntry（exit 2）', () => {
   withRepoCopy((dst) => {
-    renameSync(join(dst, 'rules', 'dev-workflow-mainline.md'), join(dst, 'rules', 'dev-workflow-mainline.md.bak'));
+    // 阶段 1 起 `rules/` 已清空：先「登记一条指向不存在文件的基线」+ 同步 baseline.json，
+    // 再跑 gate——否则会先报 BaselineDrift，掩盖本用例要判的 DanglingBaselineEntry
+    const p = join(dst, 'tools', 'docgen', 'components', 'baseline.mjs');
+    const t = readFileSync(p, 'utf8');
+    const patched = t.replace('export const BASELINE_RULES = [', "export const BASELINE_RULES = [\n  'rules/zzz-missing-probe.md',");
+    assert.notEqual(patched, t);
+    writeFileSync(p, patched);
+    const bw = runCli(dst, ['baseline', '--write']);
+    assert.equal(bw.status, 0, bw.stdout + bw.stderr);
     const r = runCli(dst, ['gate']);
     assert.equal(r.status, 2, r.stdout + r.stderr);
     assert.match(r.stderr, /^DanglingBaselineEntry:/m);
     const detail = runEsm(dst, "import {collectGate} from './tools/docgen/cli.mjs'; console.log(collectGate().map(d=>d.code+':'+d.path).join('|'))");
-    assert.ok(detail.stdout.includes('DanglingBaselineEntry:rules/dev-workflow-mainline.md'), detail.stdout + detail.stderr);
+    assert.ok(detail.stdout.includes('DanglingBaselineEntry:rules/zzz-missing-probe.md'), detail.stdout + detail.stderr);
   });
 });
 

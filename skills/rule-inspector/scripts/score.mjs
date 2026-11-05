@@ -13,6 +13,9 @@ const LINE_OVER_LEN = 200                           // 来源行 >200 字符 = �
 // ⑨ 判据可观察（S3 spec §5）：判据面唯一源 = tools/quality/observable-terms.json 的 markers；
 // 本文件只读该 JSON，不写第二份词面、不读豁免清单（不建第二套豁免判定）。
 const OBSERVABLE_TERMS = JSON.parse(readFileSync(new URL('../../../tools/quality/observable-terms.json', import.meta.url), 'utf8'))
+// annotations 仓级落点：阶段 1（2026-11-05）随 `rules/` 退役迁到 `tools/quality/`
+// （PRD `docs/prd/20261105182104-rule-refactor/prd/stage-1-rules-exit.md` §1 步骤 0）。
+const REPO_ANNOTATIONS = fileURLToPath(new URL('../../../tools/quality/.inspector-annotations.json', import.meta.url))
 
 // 验证节 = 标题恰为 `## 验证` 或 `### 验证`（多处取第一个）；节内 ≥1 行命中 markers 正则即 pass。
 // 围栏代码块内的行不算（与 `check-observable.mjs` 的 `evaluateText` 同一跳过口径；示例代码不得代替真判据）。
@@ -332,7 +335,7 @@ export function scoreFile(filePath, rulesDir, opts = {}) {
       }
       const x3Done = opts.x3Done === true || opts.x3Done === 'true'
       g('执行力度', 'X3触发前置', x3Done,
-        '触发在应激时刻且未前置显式化（AI 判，经 annotations x3Done 传入，判定依据须可复核）', '应激时刻触发需前置显式化：任务开头先声明；AI 判定后写进 rules/.inspector-annotations.json')
+        '触发在应激时刻且未前置显式化（AI 判，经 annotations x3Done 传入，判定依据须可复核）', '应激时刻触发需前置显式化：任务开头先声明；AI 判定后写进 tools/quality/.inspector-annotations.json')
     }
     g('执行力度', '⑧验证闭环', VERIFY_RE.test(body),
       '未定义怎么确认遵守了', '补「验证」小节：自检命令/检查点/报告要求')
@@ -392,11 +395,11 @@ function median(nums) {
 }
 
 export function scoreDir(dir, opts = {}) {
-  // annotations 自动发现：未显式传 --annotations 且 rulesDir 下存在 .inspector-annotations.json → 自动加载（显式传参优先）。
-  // 认知动作判定资产化（spec §4.5）：判定落仓内文件，不依赖调用者每次重判。
+  // annotations 自动发现：未显式传 --annotations 时自动加载（显式传参优先）。
+  // 扫描目录内的本地件优先（技能在任意目录复用时自洽），缺则回落仓级 `tools/quality/` 落点。
   if (!opts.annotations) {
-    const annPath = join(dir, '.inspector-annotations.json')
-    if (existsSync(annPath)) {
+    const annPath = [join(dir, '.inspector-annotations.json'), REPO_ANNOTATIONS].find((p) => existsSync(p))
+    if (annPath) {
       let ann
       try { ann = JSON.parse(stripBom(readFileSync(annPath, 'utf8'))) }
       catch (e) { throw new Error(`annotations 解析失败：${annPath}（须为 JSON 对象，如 {"文件名":{"cognitive":true,"x3Done":true}}）——${e.message}`) }
@@ -462,8 +465,8 @@ export function cli(argv = process.argv.slice(2)) {
     // --file 模式同样自动发现 annotations（同 scoreDir：两种入口判定资产化必须一致生效，
     // 否则逐条 --file --cognitive 复核时 x3Done 传不进去 → X3 永远红——round-3 补的洞）。
     // 显式 --annotations 优先于自动发现（与 --dir 分支同语义，OCR R14 :432）。
-    const annPath = args.annotationsFile ?? join(rulesDir, '.inspector-annotations.json')
-    if (existsSync(annPath)) {
+    const annPath = args.annotationsFile ?? [join(rulesDir, '.inspector-annotations.json'), REPO_ANNOTATIONS].find((p) => existsSync(p))
+    if (annPath && existsSync(annPath)) {
       let ann
       try { ann = JSON.parse(stripBom(readFileSync(annPath, 'utf8'))) }
       catch (e) { console.error(`annotations 解析失败：${annPath}（${e.message}）`); process.exit(1) }

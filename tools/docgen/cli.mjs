@@ -9,7 +9,6 @@ import { agentData, triggerTable, AGENT_KINDS } from './components/agentData.mjs
 import { patternRegistry } from './components/patternRegistry.mjs';
 import { validateAgentData, exitCodeFor } from './components/validateAgentData.mjs';
 import { BASELINE_RULES, agentPaths, renderBaseline } from './components/baseline.mjs';
-import * as spec from './components/specTestCaseGate.mjs';
 import { compareBuffers, checkEnvironment } from './components/compare.mjs';
 import { renderByName } from './components/renderByName.mjs';
 import { buildCards, expectedDocs, writeAll } from './components/cardPipeline.mjs';
@@ -33,7 +32,8 @@ const DOC_AGENTS_DIR = join(REPO_ROOT, 'docs', 'agents');
 // baseline 清单路径可用 DOCGEN_BASELINE_PATH 重定向（与 state / evidence / drafts 同款测试隔离位）：
 // 测试写的是临时文件，不再与非同进程的 gate 抢同一个共享文件（并发 truncate 窗口会让 gate 误报 BaselineDrift）
 const baselinePath = () => process.env.DOCGEN_BASELINE_PATH || join(dirname(fileURLToPath(import.meta.url)), 'baseline.json');
-const GENERATED_RULE = 'rules/spec-testcase-gate.md'; // 唯一生成规则（Ruling S3）
+// 阶段 1（2026-11-05）：唯一生成规则 `rules/spec-testcase-gate.md` 已随退役下沉，生成/比对分支同步裁停
+// （PRD `docs/prd/20261105182104-rule-refactor/prd/stage-1-rules-exit.md` §1 步骤 0）
 
 // fields.message：可选人读信息（stderr 契约要写出哈希 / 下一步命令，spec §3.3）
 function fail(code, fields = {}) { const e = new Error(fields.message ?? code); e.code = code; Object.assign(e, fields); e.exitCode = exitCodeFor(code); throw e; }
@@ -41,9 +41,6 @@ function fail(code, fields = {}) { const e = new Error(fields.message ?? code); 
 export function sha256Hex(buf) { return createHash('sha256').update(buf).digest('hex').toUpperCase(); }
 
 // S4 Task 7：旧 agent 模板已退场，只留规则模板分支
-function readTemplate() {
-  return readFileSync(spec.TEMPLATE_PATH, 'utf8');
-}
 
 export function cmdGenerate(args) {
   if (args.apply && !args.readme) {
@@ -62,15 +59,11 @@ export function cmdGenerate(args) {
   let drift = 0;
   for (const o of objs) {
     if (o.kind === 'rule') {
-      // Ruling S3：只对生成规则逐字节比对；其余 baseline rule 存在性 + 环境检查
+      // 阶段 1 起无生成规则：baseline rule 只做存在性 + 环境检查
       const p = join(REPO_ROOT, o.path);
       if (!existsSync(p)) fail('DanglingBaselineEntry', { name: o.path, path: p });
       const target = readFileSync(p, 'utf8');
       checkEnvironment(Buffer.from(target), 'target', o.path);
-      if (o.path === GENERATED_RULE) {
-        const rendered = spec.render(spec.buildData(), readTemplate());
-        if (compareBuffers(Buffer.from(rendered), Buffer.from(target))) drift += 1;
-      }
     } else {
       const agent = agentData.find((a) => a.name === o.name);
       if (!agent) fail('MissingComponentData', { name: o.name });
@@ -109,13 +102,7 @@ export function collectGate() {
   validateAgentData(agentData, triggerTable);
   const onDisk = readFileSync(baselinePath(), 'utf8');
   if (onDisk !== renderBaseline()) drifts.push({ code: 'BaselineDrift', path: baselinePath() });
-  const tpl = readTemplate();
-  const target = readFileSync(join(REPO_ROOT, GENERATED_RULE), 'utf8');
-  if (compareBuffers(Buffer.from(spec.render(spec.buildData(), tpl)), Buffer.from(target))) {
-    drifts.push({ code: 'Mismatch', path: GENERATED_RULE });
-  }
   for (const p of BASELINE_RULES) {
-    if (p === GENERATED_RULE) continue;
     const rp = join(REPO_ROOT, p);
     if (!existsSync(rp)) { drifts.push({ code: 'DanglingBaselineEntry', path: p }); continue; }
     try { checkEnvironment(Buffer.from(readFileSync(rp, 'utf8')), 'target', p); }
@@ -392,10 +379,10 @@ function buildJudged(name, keys) {
     const verdict = v === 'pass' ? 'pass' : v.startsWith('fail') ? 'fail' : null;
     if (!verdict) {
       fail('UnapprovedChange', {
-        message: `${name}:${key} 报为重判键，但 rules/.inspector-annotations.json 的值是 ${raw === undefined ? '缺失' : JSON.stringify(raw)}（非 pass/fail）——重判未完成，先让独立子代理判完并写回，再运行 node tools/docgen/cli.mjs diff --kind agent --name ${name}`,
+        message: `${name}:${key} 报为重判键，但 tools/quality/.inspector-annotations.json 的值是 ${raw === undefined ? '缺失' : JSON.stringify(raw)}（非 pass/fail）——重判未完成，先让独立子代理判完并写回，再运行 node tools/docgen/cli.mjs diff --kind agent --name ${name}`,
       });
     }
-    return { key, verdict, basis: `tools/execution-matrix/criteria.md ${key} + 渲染产物；重判写回 rules/.inspector-annotations.json ${name}:${key} = ${raw}（replace 机械转录）` };
+    return { key, verdict, basis: `tools/execution-matrix/criteria.md ${key} + 渲染产物；重判写回 tools/quality/.inspector-annotations.json ${name}:${key} = ${raw}（replace 机械转录）` };
   });
 }
 

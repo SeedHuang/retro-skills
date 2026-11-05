@@ -7,7 +7,8 @@ import { renderByName } from '../docgen/components/renderByName.mjs';
 import { splitRow, fenceMask } from './markdown-rows.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const ANNOTATIONS = join(ROOT, 'rules', '.inspector-annotations.json');
+// 阶段 1（2026-11-05）：annotations 随 `rules/` 退役迁到 `tools/quality/`
+const ANNOTATIONS = join(ROOT, 'tools', 'quality', '.inspector-annotations.json');
 const AGENTS_DIR = join(ROOT, 'agents');
 
 // AI 判的 10 键（A 语义 2 + B 4 + C 4）——键命名 = `agent 卡名:判定项名`

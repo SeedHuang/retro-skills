@@ -13,9 +13,10 @@ export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..')
 export const PATTERN_TABLE = join(ROOT, 'tools', 'execution-matrix', 'pattern-table.md');
 
 // 判据正文载体（TC-040 的扫描范围）
+// 过渡态（阶段 1，2026-11-05）：skill 载体已随 rule 退役落 `docs/bak/`，阶段 3 承接进 skill 后收口
 export const CRITERIA_CARRIERS = [
   'skills/rule-inspector/references/criteria.md',
-  'rules/skill-authoring-convention.md',
+  'docs/bak/rules/skill-authoring-convention.md',
   'tools/execution-matrix/criteria.md',
 ];
 

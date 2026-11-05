@@ -32,6 +32,7 @@ import { SHARED_MARKERS } from '../../execution-matrix/shared-items.mjs'
 import { parseLedger, checkSharedChanges } from '../../execution-matrix/shared-changes/check-shared-changes.mjs'
 import { scoreFile } from '../../../skills/rule-inspector/scripts/score.mjs'
 import { HISTORY_PREFIXES } from '../../../scripts/scope-sweep.mjs'
+import { readBakRule } from './support/dev-workflow-checks.mjs'
 
 const SEATS = buildCards().map((b) => b.seat)
 const TOTAL = BASELINE_RULES.length + agentPaths().length
@@ -807,6 +808,14 @@ test('S3-TC-H06 必红期与回退', () => {
         const p = join(copy, rel)
         writeFileSync(p, execFileSync('git', ['show', `${S3_BASE}:${rel}`], { cwd: REPO, encoding: 'utf8' }), 'utf8')
       }
+      // `2026-11-05`（阶段 1）：回退后的旧 `cli.mjs` 仍会读生成规则 `rules/spec-testcase-gate.md`；
+      // 该 rule 已退役，故用 bak 原文段把它「补回」到副本里（逐字等于旧文件，渲染比对不产生额外红），
+      // 并在副本基线里登记这一条（否则先报 UnregisteredHandwritten，红点漂到「未登记」而非「卡面失配」）
+      writeFileSync(join(copy, 'rules', 'spec-testcase-gate.md'), readBakRule('spec-testcase-gate.md'), 'utf8')
+      const bmPath = join(copy, 'tools', 'docgen', 'components', 'baseline.mjs')
+      const bmSrc = readFileSync(bmPath, 'utf8')
+      writeFileSync(bmPath, bmSrc.replace('export const BASELINE_RULES = [', "export const BASELINE_RULES = [\n  'rules/spec-testcase-gate.md',"), 'utf8')
+      execFileSync(process.execPath, [join(copy, 'tools', 'docgen', 'cli.mjs'), 'baseline', '--write'], { cwd: copy, encoding: 'utf8' })
       rmSync(join(copy, 'tools/docgen/card-model/validatePredicates.mjs'), { force: true })
     },
     verify: (copy, r) => {
@@ -872,7 +881,7 @@ test('S3-TC-I02 计数与归桶四处', () => {
   assert.equal(BUCKETS.find((b) => b.name === 'skill 独有').items.includes('判据可观察⑤'), true)
   const carriers = {
     'skills/rule-inspector/references/criteria.md': criteriaSrc,
-    'rules/skill-authoring-convention.md': read('rules/skill-authoring-convention.md'),
+    'docs/bak/rules/skill-authoring-convention.md': readBakRule('skill-authoring-convention.md'),
   }
   assert.ok(['执行力度⑨', '判据可观察⑤'].every((it) => [...itemsFromCriteria(carriers).keys()].includes(it)))
   assert.equal(findingCodes(checkBuckets()).length, 0)
@@ -982,7 +991,7 @@ test('S3-TC-I08 验证节定位', () => {
 })
 
 test('S3-TC-I09 登记与台账缺口', () => {
-  assert.ok(unknownMarkers({ 'rules/skill-authoring-convention.md': '### 判据 ⑨：x' }).some((f) => f.code === 'BucketMarkerUnknown'))
+  assert.ok(unknownMarkers({ 'docs/bak/rules/skill-authoring-convention.md': '### 判据 ⑨：x' }).some((f) => f.code === 'BucketMarkerUnknown'))
   const ledgerText = read('tools/execution-matrix/shared-changes/changes.md')
   const withNine = `${ledgerText.trimEnd()}\n| 2026-11-02 | 执行力度⑨ | 旧 | 新 | 用户确认 | 无 |\n`
   assert.ok(findingCodes(checkSharedChanges({ ledgerText: withNine })).includes('SharedDefinitionMismatch'))
@@ -1021,7 +1030,7 @@ test('S3-TC-I11 漏改一处', () => {
 })
 
 test('S3-TC-I12 判据⑤', () => {
-  const src = read('rules/skill-authoring-convention.md')
+  const src = readBakRule('skill-authoring-convention.md')
   const start = src.indexOf('### 判据 ⑤')
   assert.ok(start >= 0)
   const body = src.slice(start + 4)
@@ -1076,7 +1085,7 @@ test('S3-TC-I14 两模板与删除面', () => {
   const diff = execFileSync('git', ['diff', '-U0', S3_BASE, '--', 'skills/rule-inspector/references/criteria.md'], { cwd: REPO, encoding: 'utf8' })
   const beforeLines = execFileSync('git', ['show', `${S3_BASE}:skills/rule-inspector/references/criteria.md`], { cwd: REPO, encoding: 'utf8' }).split(/\r?\n/)
   if (beforeLines[0]) beforeLines[0] = beforeLines[0].replace(/^\uFEFF/, '') // 行首 BOM 会让 `^# 判据全集` 失配
-  const ALLOWED = [/^# 判据全集/, /^#### 新增维度/, /^### 3\.4 /, /^### 3\.5 /, /^## 3\. 类型感知扩展/]
+  const ALLOWED = [/^# 判据全集/, /^#### 新增维度/, /^### 3\.4 /, /^### 3\.5 /, /^### 3\.3b /, /^## 3\. 类型感知扩展/]
   const outOfScope = []
   for (const h of hunksOf(diff)) {
     if (h.deleted.length === 0) continue
