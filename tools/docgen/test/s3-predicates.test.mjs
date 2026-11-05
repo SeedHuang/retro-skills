@@ -1288,9 +1288,10 @@ test('S3-TC-L02 门禁面未扩', () => {
     assert.match(dirty.out, /rules[\\/]a\.md/)
     const allSrc = read('scripts/check-all.mjs')
     const maxSectionNo = Math.max(...[...allSrc.matchAll(/^\/\/\s*([①-⑩])/gm)].map((m) => '①②③④⑤⑥⑦⑧⑨⑩'.indexOf(m[1]) + 1))
-    // ⑦ 仍是 observable 段；⑧（出口签字账，2026-11-05 新增）不扩 observable 的扫描根（下面两条行为断言即判据）。
-    // 段号上限写死为当前事实值：再新增 ⑨/⑩ 段必须显式改这条（否则「门禁面未扩」失守）。
-    assert.equal(maxSectionNo, 8)
+    // ⑦ 仍是 observable 段；⑧（出口签字账，2026-11-05 新增）、⑨（判据引擎 + 分层预算 + 说明层，2026-11-05 阶段 2 新增）
+    // 都不扩 observable 的扫描根（下面两条行为断言即判据）。
+    // 段号上限写死为当前事实值：再新增段必须显式改这条（否则「门禁面未扩」失守）。
+    assert.equal(maxSectionNo, 9)
     assert.match(allSrc, /\/\/\s*⑦ /, 'observable 段 ⑦ 必须在位')
     const repo = runNode(['scripts/check-observable.mjs', '--check'])
     assert.equal(repo.code, 0)

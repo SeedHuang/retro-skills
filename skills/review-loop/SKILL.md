@@ -51,7 +51,7 @@ description: 循环审查未提交改动或最近 N 次 commit 的代码与文�
    - **项目配置文件例外**：`.opencodereview/rule.json` 与 `.reviewconfig/project-type` 按分支前置第 4 步的规矩留到收尾提交，不进这个前置 commit。
 4. 机械问题**不算 OCR 评论**——不喂给 OCR 重复审，也不进 problems.md 的 OCR 处置流程。
 
-**不因来源豁免**：子代理、脚本执行本技能时同样先过 `npm run check`。
+**来源不豁免**：子代理、脚本执行本技能时同样先过 `npm run check`。
 
 **为什么前置**：机械问题用工程工具查得又快又准（实测全仓语法检查 209ms + 测试 866ms vs OCR 单次 ~74 万 token / 4m39s）；把机械层剥离后，OCR 只审它真正擅长的逻辑 / 语义 / 跨文件一致性。
 

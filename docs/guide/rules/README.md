@@ -1,129 +1,25 @@
 # 全局规则清单：各自的作用与适用范围
 
-> 这是 README「技能与规则」的展开指南，README 只保留速查表以控制篇幅。规则与技能同逻辑，三字段一一对应：**什么时候生效 / 核心判据 / 不管什么**。**规则源在 `rules/`，改源即生效（运行时是只读链接）。**
+> 阶段 2（2026-11-05）起：**保留集 = 1 条触发声明**（`rules/evidence-before-conclusion.md`）。
+> 原规则已全量退役（共 23 份），原文逐字留底在 `docs/bak/rules/`（承接去向见各 bak 文件的状态头与「承接对照表」，搬运在阶段 3 收口）。
+> 规则源在 `rules/`，改源即生效（运行时是只读链接；增删后跑 `aas sync`）。
 
-### 1. `import-path-choice` — 前端 import 路径按归属选择
+## 保留集
 
-- **什么时候生效**：写 / 改前端代码 import 语句时（项目配置了 `@/` 别名）。
-- **核心判据**：业务模块内部资源用相对路径（≤2 层 `../`）、公共资源用 `@/` 别名；跨 3 层以上一律用 `@/`。
-- **不管什么**：其它语言 / 非前端代码；未配置 `@/` 别名的项目。
+### 1. `evidence-before-conclusion` — 说出口的结论必须有可核出处
 
-### 2. `list-empty-state` — 列表空态统一用 antd Empty
+- **什么时候生效**：输出任何结论（判断 / 建议 / 数据 / 事实陈述）之前。
+- **核心判据**：按四站过闸，顺序固定，每站缺证据 = 不合格——① 出处站：带锚（`path:line` / 「命令 + 输出首行」/ 引用件路径）；② 范围站：写「适用于 X；不适用于 Y」+ 可追推导链（每步带锚）；③ 目标站：写「回答什么问题」；④ 数字站：含数字时附取数命令 + 复算结果。查不到时写「查了什么 + 退出码 + 输出首行」三件。
+- **不管什么**：纯偏好 / 纯建议、不声称任何事实依据的表述不适用；复杂推导的材料细则按需加载 `assertion-quality`。
 
-- **什么时候生效**：使用 antd 的项目中写 / 改列表型组件（列表、Table、List）时。
-- **核心判据**：数据源为空时空态必须用 antd `Empty` 组件渲染，不得用纯文本占位。
-- **不管什么**：不使用 antd 的项目。
+## 退役清单（原文在 `docs/bak/rules/`）
 
-### 3. `styled-component-file` — styled.xxx 定义放独立 sc.tsx
+| 原规则 | 去向 |
+|---|---|
+| `how-i-must-reason` / `data-support-triple` | 合并 → 触发声明 + `assertion-quality` |
+| `core-working-principles` / `plain-language-to-user` / `powershell-file-encoding` | 下沉 → 对应 skill / references |
+| `reference-read-output-loop` / `skill-authoring-convention` / `skill-assets-convention` / `observable-criteria` / `rules-single-source` / `docs-convention`（「rule 里放什么」半） | 下沉 → `carrier-conventions` + `writing-after-docs` |
+| `spec-testcase-gate` / `dev-workflow-mainline` / `landing-sweep` | 下沉 → 载体写作 / 流程 skill（阶段 3） |
+| `global-ask-before-acting` / `import-guard` / `import-path-choice` / `styled-component-file` / `list-empty-state` / `ts-expect-error` / `vitest-queued-alternative` / `no-git-write` / `poll-deferred-at-start` | 删除（平台机制已覆盖 / 工具链专属 / 按需触发） |
 
-- **什么时候生效**：使用 styled-components 的项目中写 / 改 styled 定义时。
-- **核心判据**：`styled.xxx` 定义必须放独立 `sc.tsx` 文件，不得写在业务组件文件里。
-- **不管什么**：不使用 styled-components 的项目。
-
-### 4. `core-working-principles` — 事前三步：画全貌、写计划、算长远账
-
-- **什么时候生效**：处理任何代码 / 规则问题时（每轮最先，优先级最高）；被质疑或出事后自省时。
-- **核心判据**：动手前必做三步——① **画全貌**：本质 / 同族 / 边界 / 验收 / 影响面 + 联动四问（治本了吗 / 有副作用吗 / 跨问题联动吗 / 跨页面跨项目吗），未输出「全貌确认」块不得动笔；② **写计划**：修 bug 也写 spec，先整体后局部；③ **算账**：把成本摊到长远看，短期省事往往是长期欠债。出事自省必须给**长期方案**并落到载体，优先级 ① 工程化（eslint / CLI / script / 类型检查 / 测试）→ ② rule → ③ skill，选载体前先搜已有工具，有轮子就复用。
-- **不管什么**：说出口的单个结论依据够不够硬（归 `how-i-must-reason`）；规则与技能正文怎么组织（归 `skill-authoring-convention`）。
-
-### 5. `data-support-triple` — 数据支撑判断要过真实·合理·有效三性
-
-- **什么时候生效**：结论里出现数字 / 比例 / 占比时（写作、回答、报告的当下）；引用别人的数据或我上一轮的数据时；被追问「你这个数哪来的」时。
-- **核心判据**：数据先过三性闸门，任一不过 = 不得引用、不得输出该判断——**真实**（能说清从哪个来源挖的、怎么数的、与来源逐条对得上）→ **合理**（讲得清「数据 → 结论」每一步怎么串，中间不跳步）→ **有效**（能拿过来用：直接解决问题，或是一把钥匙里的一环）。判定顺序固定，真实不过后面两性不用看。不因来源豁免：「我记得 / 印象里」的数、别处转述的预估、上一轮我自己的输出，同样要过三性。
-- **不管什么**：纯偏好 / 纯建议类表述（一旦声明了数据就回到三性闸门）；依据怎么标来源、数字怎么算实测（归 `how-i-must-reason`）。
-
-### 6. `docs-convention` — 项目文档按生命周期状态分目录
-
-- **什么时候生效**：写 / 归类项目文档时。
-- **核心判据**：文档第一分类维度是生命周期状态——已定稿进 `specs/`、排期进 `plans/`、交接进 `handoffs/`、**未决进 `docs/after/`**、临时进 `.session/`；一主题一份，命名小写 kebab-case；`after/` 另带 `YYYYMMDDHHmmss-` 创建时间前缀。
-- **不管什么**：技能目录语义（归 `skill-assets-convention`）。
-
-### 7. `global-ask-before-acting` — 沟通中未获授权禁止写操作
-
-- **什么时候生效**：用户主动发起沟通时（沟通模式）。
-- **核心判据**：先讲清想法 + 给倾向 → 等授权 → 才动手；写操作有封闭清单；只读探查是唯一例外。
-- **不管什么**：执行模式（用户明确给执行指令后退出本规则）。
-
-### 8. `how-i-must-reason` — 在输出带数据的结论前，必须先过验证闸门
-
-- **什么时候生效**：被问事实 / 要下断言 / 报告带数字 / 收到质疑 / 每轮收尾。
-- **核心判据**：回答前先自检三句，任一答不上不得输出——① 这是事实断言吗？② 我验证过吗（没验证 → 现在去查，**凭记忆不算验证**）？③ 查得到吗（查不到 → 明说查了什么、为什么拿不到，不得说成「需要你定」）？带断言的结论必须附可复核来源（文档位置 / 命令输出 / 源码行号）。判据不得是「感觉 / 规模 / 记忆」；遇到问题先判性质（漏一个 case vs 机制本身错）；能自己定就自己定，不把选项罗列回去；数字一律实测并随数字写取数命令；反驳用户必须带依据 + 认输判据。
-- **不管什么**：内容对错（review 的事）、语气（归 `plain-language-to-user`）、动手前授权（归 `global-ask-before-acting`）；数据本身够不够格当依据（归 `data-support-triple`）。
-
-### 9. `import-guard` — 编辑代码禁止丢失 import
-
-- **什么时候生效**：编辑 `.ts/.tsx/.js/.jsx` 文件时。
-- **核心判据**：同一文件只发一次 SearchReplace；import 变更与代码变更合并进同一次；分阶段跑 `tsc --noEmit` 验证；编辑确认只信磁盘读回，不信工具回执。
-- **不管什么**：非代码文件（无 import，但仍要核读回）。
-
-### 10. `landing-sweep` — 落地后回头扫声明它的地方
-
-- **什么时候生效**：一件事「落地」（建脚本 / 加规则 / 完成待办）之后。
-- **核心判据**：回头扫四类声明它的地方（源码注释 / README / 架构文档 spec·plan / 规则正文），过时描述与数字改掉；数字只留一处并附取数命令。
-- **不管什么**：落地动作本身。
-
-### 11. `no-git-write` — 全局 Git 写操作禁令
-
-- **什么时候生效**：任何可能改工作区或 `.git` 的操作前。
-- **核心判据**：除非用户在当前对话明确要求，否则禁止主动执行任何 git 写操作（commit / push / merge / checkout / add 等）；读操作（status / log / diff）随时可跑；plan、子代理、脚本里的 commit 步骤都不算授权。
-- **不管什么**：git 读操作。
-
-### 12. `plain-language-to-user` — 给用户看的解释一律用大白话
-
-- **什么时候生效**：给用户（人）的任何解释、评审、方案、报告。
-- **核心判据**：不用行话与内部编号；不省机理（讲清为什么会这样）；抽象说法必须落到具体例子；一句话一件事。
-- **不管什么**：代码注释与内部文档的措辞。
-
-### 13. `poll-deferred-at-start` — 开工时轮询推迟项
-
-- **什么时候生效**：会话开始时。
-- **核心判据**：用 `managing-lessons-store` 跑推迟项轮询，逐条核对「复活信号」；报告必须带计数（如「推迟项 N 条，命中 M」）。
-- **不管什么**：轮询之外的事项管理。
-
-### 14. `powershell-file-encoding` — PowerShell 写文本禁用 -Encoding UTF8
-
-- **什么时候生效**：PowerShell 5.1 写文本文件时。
-- **核心判据**：禁止 `-Encoding UTF8`（会写 UTF-8 BOM，导致下游解析报错）；用 `[IO.File]::WriteAllText` 显式指定无 BOM；写完自查文件头三字节。
-- **不管什么**：其它语言 / 工具的文本写入。
-
-### 15. `reference-read-output-loop` — 引用 reference 的指令必须接「读→产出」闭环
-
-- **什么时候生效**：写 / 修订 skill 文档时（SKILL.md / references / scripts / assets）。
-- **核心判据**：凡是「不读 reference 就做不对」的动作指令，必须把「读」接进动作完成的必要条件——写成「按 `<reference>` 的 X 执行，做完核对 / 产出 Y，缺 Y 不合格」，让「不读 → 做不对 → 检查不过 → 流程卡住」；`读一下` / `建议读` / `见 §N` 这类读完无要求的写法 AI 会跳过，等于没写。
-- **不管什么**：与「引用 reference」无关的动作指令；跨技能引用该用什么写法（归 `skill-authoring-convention`）。
-
-### 16. `rules-single-source` — 全局规则只建在源仓库
-
-- **什么时候生效**：新建 / 删除 / 修改全局规则时。
-- **核心判据**：规则一律建在 `rules/`（本仓库），禁止直接写运行时 `~\.trae-cn\user_rules\`；改已有内容改源即生效；新增 / 删除后必须跑 `aas sync`；收尾跑 `aas` 体检，「需建链接」应为 0。
-- **不管什么**：运行时目录（只读，改了会被同步冲掉）。
-
-### 17. `skill-assets-convention` — 技能目录语义遵循官方标准
-
-- **什么时候生效**：写 / 组织技能（SKILL.md / scripts / references / assets）时。
-- **核心判据**：三档官方语义——`scripts\`（可执行）、`references\`（按需加载的文档）、`assets\`（输出用的模板）；产物骨架不内联进 SKILL.md，只留指针。
-- **不管什么**：项目文档目录（归 `docs-convention`）。
-
-### 18. `skill-authoring-convention` — 写 skill 禁止用文件路径指路
-
-- **什么时候生效**：写 / 修订 skill（SKILL.md / scripts / references / assets）时。
-- **核心判据**：跨技能引用用技能名、禁止写对方技能内部路径；本技能内自引用用相对路径；脚本「直接运行 vs 被 import」判断禁止路径字符串比较（用 `realpathSync` 归一）。
-- **不管什么**：读已有 skill 做检查 / 审查（唯一例外）。
-
-### 19. `ts-expect-error` — @ts-expect-error 只在 TS 实际报错时使用
-
-- **什么时候生效**：添加 `@ts-expect-error` 之前。
-- **核心判据**：先验证该行 TypeScript 确实报错；跑 `tsc --noEmit` 或看 IDE 诊断；若出现 `Unused '@ts-expect-error' directive.` 直接删除该注释。
-- **不管什么**：——
-
-### 20. `vitest-queued-alternative` — Vitest 受限环境 stuck 时改用替代验证
-
-- **什么时候生效**：受限环境中 Vitest 无限 stuck 在 `[queued]` 状态。
-- **核心判据**：不反复重试，改用 `GetDiagnostics` + `tsc --noEmit` + 检查最终产物文件结构来验证正确性；测试文件本身保留，在可跑环境正常执行。
-- **不管什么**：——
-
-### 21. `dev-workflow-mainline` — 开发工作流主干：五段顺序与出口签字
-
-- **什么时候生效**：进入五段主干（① PRD / ② 技术设计 / 计划门 / ③ 实现 / ④ 质量 / ⑤ 交付）任一段之前；写或改 `docs/devworkflows/<任务>/gate-record.md`；在 plan 阶段想加 spec 没写的设计；引用对话记录 / 评审账 / 规范原文下结论时。
-- **核心判据**：R1 出口未齐不得开工；R2 不得自签（签字人 ≠ 申报人）；R3 议会只在 ① 与 ② 后两处、计划门不设议会；R4 plan 新增设计必须回流 spec；R5 功能点集合变动必须回 PRD 重签 §0；R6 功能块滚动拆（同一任务「拆 spec 中」数据行 ≤ 1）；R7 长文结论必须来自 `evidence-reader` 取证（带 `path:line`）；R8 改判同批回扫；R9 技能侧不得装项目账。
-- **不管什么**：评审流程（`parliament`）、拆 spec（`prd-to-specs`）、写 testcase（`spec-testcase-gate`）；本规则生效前已定稿的存量 spec 按例外处理。
+逐条字符数与处置依据见 PRD `docs/prd/20261105182104-rule-refactor/prd/stage-1-rules-exit.md` §3。

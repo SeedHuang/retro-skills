@@ -1,0 +1,9 @@
+{
+  "rule": "materials-four",
+  "cases": [
+    { "input": { "isCompoundDerivation": true, "source": "docs/a.md:12", "chain": "step1→step2", "boundary": "适用于本仓", "target": "要不要拆" }, "expect": "pass" },
+    { "input": { "isCompoundDerivation": true, "source": "", "chain": "step1→step2", "boundary": "适用于本仓", "target": "要不要拆" }, "expect": "fail" },
+    { "input": { "isCompoundDerivation": true, "source": "docs/a.md:12", "chain": "", "boundary": "适用于本仓", "target": "要不要拆" }, "expect": "fail" },
+    { "input": { "isCompoundDerivation": false }, "expect": "pass" }
+  ]
+}

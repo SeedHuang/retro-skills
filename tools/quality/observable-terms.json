@@ -1,6 +1,7 @@
 {
   "terms": ["自省", "客观", "诚实", "宽松", "严格", "清晰", "准确", "显著", "良好"],
   "criterionTerms": ["处置", "依据", "充分", "合理", "及时", "适当"],
+  "sharedPhrases": ["不因来源豁免"],
   "markers": [
     { "kind": "compare", "pattern": "(>=|<=|==|===|!=|≥|≤|＝|>|<)\\s*[^，。；\\s]+" },
     { "kind": "pathline", "pattern": "(path:line|[A-Za-z0-9_./\\\\-]+\\.(md|mjs|js|json|ts|tsx|yml|yaml|tpl):\\d+)" },

@@ -477,6 +477,31 @@ if (gateRun.error) {
   console.error(`[gate-record] 退出 0 但首行不是「tasks N rows R bad 0」：${gateFirst}`)
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// ⑨ 判据引擎 + 分层预算 + 说明层（S2）：跑 `scripts/check-criteria-engine.mjs` 与
+// `scripts/rule-audit-lite.mjs`。首行契约 = `判据 N 条 / 绿 M / 红 K`；末行 `criteria-engine ok`。
+// 本段**不走旁路开关**（旁路只跳 ⑥）。
+// ─────────────────────────────────────────────────────────────────────────────
+const ceRun = spawnSync(process.execPath, [join(root, 'scripts', 'check-criteria-engine.mjs')], { cwd: root, encoding: 'utf8' })
+const ceLines = (ceRun.stdout || '').trim().split(/\r?\n/).filter(Boolean)
+if (ceLines[0]) console.log(ceLines[0])
+if (ceRun.status !== 0) {
+  failed = true
+  if (ceLines.length > 1) console.error(ceLines.slice(1).join('\n'))
+  if (ceRun.stderr) console.error(ceRun.stderr)
+} else if (!/^判据 \d+ 条 \/ 绿 \d+ \/ 红 \d+$/.test(ceLines[0] ?? '')) {
+  failed = true
+  console.error(`[criteria-engine] 退出 0 但首行不是「判据 N 条 / 绿 M / 红 K」：${ceLines[0]}`)
+}
+const auditRun = spawnSync(process.execPath, [join(root, 'scripts', 'rule-audit-lite.mjs')], { cwd: root, encoding: 'utf8' })
+const auditLines = (auditRun.stdout || '').trim().split(/\r?\n/).filter(Boolean)
+if (auditLines[0]) console.log(auditLines[0])
+if (auditRun.status !== 0) {
+  failed = true
+  if (auditLines.length > 1) console.error(auditLines.slice(1).join('\n'))
+  if (auditRun.stderr) console.error(auditRun.stderr)
+}
+
 if (failed) {
   console.error('check 未通过')
   process.exitCode = 1          // 不要 process.exit(1)：管道/CI 下会截断 stdout，正好隐藏要报的 findings

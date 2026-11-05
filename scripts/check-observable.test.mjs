@@ -897,8 +897,11 @@ test('OCR-S1-TC-E08 分诊表 20 行（历史快照）/ 现役行（排除已清
   const M = liveCats.filter((c) => c === '改文案').length
   const P = liveCats.filter((c) => c === '已合格').length
   const L = liveCats.filter((c) => c === '合法保留').length
-  // 第二源（非表格自证）：独立按「9 词 + 排除标题行」数一遍**当前**仍含主观词的行
-  const raw = rawHitLines().length
+  // 第二源（非表格自证）：独立按「9 词 + 排除标题行」数一遍**当次分诊表在册文件**里仍含主观词的行
+  // （阶段 2 起新增 skills 不在分诊表内，按文件限定，避免把新内容混进这张历史对账表）
+  const triageFiles = new Set(rows
+    .map((l) => (l.split('|')[1] ?? '').trim().replace(/^`|`$/g, '').replace(/:\d+$/, '').replace(/\\/g, '/')))
+  const raw = rawHitLines(triageFiles).length
   const r = jsonOf(['--check', '--json'])
   assertTriage({ M, P, L, hits: r.json.hits.length, raw, total: live.length })
   assert.strictEqual(r.json.exemptedLines, L)
@@ -908,8 +911,9 @@ test('OCR-S1-TC-E08 分诊表 20 行（历史快照）/ 现役行（排除已清
 })
 
 // 原始命中行（「9 词 + 排除标题行」口径，按行计）——与分诊表各自的独立来源
-function rawHitLines() {
+function rawHitLines(onlyFiles = null) {
   const out = []
+  const relOf = (p) => p.slice(REPO.length).replace(/^[\\/]+/, '').split('\\').join('/')
   for (const dir of ['rules', 'skills']) {
     const walk = (d) => {
       for (const e of readdirSync(d, { withFileTypes: true })) {
@@ -917,6 +921,7 @@ function rawHitLines() {
         const p = join(d, e.name)
         if (e.isDirectory()) walk(p)
         else if (e.name.toLowerCase().endsWith('.md')) {
+          if (onlyFiles && !onlyFiles.has(relOf(p))) continue
           const lines = readText(p).split(/\r?\n/)
           lines.forEach((l, i) => {
             // 取数命令口径 = 9 词 + 排除标题行（**不排除围栏**，与 spec §9.3 `:175` 的 Select-String 同口径）

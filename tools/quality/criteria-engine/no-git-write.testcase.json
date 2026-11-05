@@ -1,0 +1,12 @@
+{
+  "rule": "no-git-write",
+  "cases": [
+    { "input": { "command": "git status" }, "expect": "pass" },
+    { "input": { "command": "git remote -v" }, "expect": "pass" },
+    { "input": { "command": "git commit -m x", "userNamed": false }, "expect": "fail" },
+    { "input": { "command": "git commit -m x", "userNamed": true }, "expect": "pass" },
+    { "input": { "command": "git push --force", "userNamed": false }, "expect": "fail" },
+    { "input": { "command": "npm run check" }, "expect": "pass" },
+    { "input": { "command": "" }, "expect": "pass" }
+  ]
+}

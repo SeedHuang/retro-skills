@@ -45,6 +45,9 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 | 库未初始化 / 库要搬家 / 会话开始轮询 / 看库的规模与薄弱面 | `managing-lessons-store` |
 | 审查最近一次提交引入的冗余代码，抽取合并、出审计报告 | `dry-refactor-newadd` |
 | 要把一个需求按「PRD → 技术设计 → 计划门 → 实现 → 质量 → 交付」走完，或判断现在卡在哪一段、本段出口齐没齐 | `dev-workflow` |
+| 要写 / 改 rule、skill、agent、references 的正文，或判断内容该放哪一层 | `carrier-conventions` |
+| 要写或复核一条会影响别人决策的断言（判断 / 数据 / 方案），或验别人的话站不站得住 | `assertion-quality` |
+| 要给用户讲清楚一件事（说人话、讲机理、举例子） | `plain-language` |
 
 典型闭环：**喊入口 → 采事实 → 复盘分析 → 归置落地 → 验证（`retro-verify`）**。落地的载体（规则 / 技能 / 自动化）在活链上，**改源即生效**——下次对话自动带着，不需要任何人记得"上次学到了什么"；改完由 `retro-verify` 看**有没有真管用**。
 

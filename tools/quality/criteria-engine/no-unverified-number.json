@@ -1,0 +1,13 @@
+{
+  "id": "no-unverified-number",
+  "impl": "script",
+  "type": "条件触发",
+  "title": "项目统计数字必须附取数命令",
+  "when": { "field": "hasStatistic", "op": "eq", "value": true },
+  "assert": [
+    { "field": "command", "op": "nonEmpty" },
+    { "field": "command", "op": "containsAny", "values": ["node ", "Get-ChildItem", "grep", "rg "] }
+  ],
+  "residual": { "who": "reviewer-audit", "sample": 3, "fields": ["command"], "objectivePath": "取数命令格式可枚举化后压回机判" },
+  "landing": "answer"
+}

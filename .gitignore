@@ -22,3 +22,7 @@ skills-lock.json
 
 # ── docgen 测试临时目录：故障注入副本，可随时重建 ──────────────
 tools/docgen-spike/.tmp-test/
+
+# ── 阶段 2（2026-11-05）：判据引擎/自动化产物的两个非源目录 ──────────
+.screenshots/
+tmp/

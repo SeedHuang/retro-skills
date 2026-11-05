@@ -1,0 +1,18 @@
+{
+  "id": "anchor-present",
+  "impl": "script",
+  "type": "持续适用",
+  "title": "结论必须带可核出处锚",
+  "when": { "field": "isConclusion", "op": "eq", "value": true },
+  "assert": [
+    { "field": "anchor", "op": "nonEmpty" },
+    { "field": "anchor", "op": "containsAny", "values": [":", "exit", "命令"] }
+  ],
+  "residual": {
+    "who": "reviewer-audit",
+    "sample": 3,
+    "fields": ["anchor"],
+    "objectivePath": "出处锚四件套（hash + path + line + 行摘录）可形式化后压回机判"
+  },
+  "landing": "答案 / 交付账"
+}
