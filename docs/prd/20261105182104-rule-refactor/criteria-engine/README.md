@@ -47,11 +47,17 @@
 criteria-engine/
   <id>.json            判据（唯一真源）
   <id>.testcase.json   独立测试（判据/测试分离）
+  carriers/<name>.json 载体正文（rule 正文唯一真源；用 `criteria` 引用判据 id）
   schema.mjs           算子表 + judge 唯一实现 + 结构校验
+  carriers.mjs         载体正文校验 + 渲染（单一 DSL 的另一半）
   interpreters.mjs     投影注册表（可插拔）
   build.mjs            编排：加载 → 校验 → 判定 → 渲染
   README.md            本文件
 ```
+
+> **2026-11-05 补**：载体正文（rule 的触发/义务/例外文案）不再另立一套 docgen 数据——它与判据同住本目录：
+> `carriers/<name>.json` 是正文数据（`kind/name/criteria/title/...`），`carriers.mjs` 负责校验与渲染；
+> docgen 的 `renderedAssets` 只消费这里的渲染结果，并做逐字节比对（手改即红）。
 
 ## 六、四条硬设计裁定（改动需重裁）
 

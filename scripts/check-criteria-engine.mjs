@@ -11,6 +11,7 @@ import { join, resolve, dirname, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { check, checkTestcase, judge, CRITERION_TYPES } from '../tools/quality/criteria-engine/schema.mjs'
 import { interpreters } from '../tools/quality/criteria-engine/interpreters.mjs'
+import { listCarriers, checkCarrier, renderCarrierData } from '../tools/quality/criteria-engine/carriers.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const TERMS_FILE = 'tools/quality/observable-terms.json'
@@ -113,6 +114,23 @@ function run(root) {
   }
   if (ruleMd.length > BUDGET.maxCount) findings.push({ code: 'RuleCountOverBudget', count: ruleMd.length, max: BUDGET.maxCount })
   if (total > BUDGET.maxTotal) findings.push({ code: 'RuleTotalOverBudget', chars: total, max: BUDGET.maxTotal })
+
+  // 载体正文（rule 正文数据，单一 DSL）：结构 + criteria 引用必须存在 + 渲染物逐字节（手改即红）
+  const carriers = listCarriers()
+  for (const name of carriers) {
+    const file = `${ENGINE_DIR}/carriers/${name}.json`
+    let carrier
+    try { carrier = loadJson(resolve(root, file)) } catch (e) { findings.push({ file, code: 'CarrierUnreadable', message: e.message }); continue }
+    const errs = []
+    checkCarrier(carrier, file, errs, ids)
+    for (const e of errs) findings.push({ file, code: 'CarrierSchema', message: e })
+    const projRel = `${RULES_DIR}/${name}.md`
+    const projAbs = resolve(root, projRel)
+    if (!existsSync(projAbs)) { findings.push({ file: projRel, code: 'CarrierProjectionMissing' }); continue }
+    if (strip(readFileSync(projAbs, 'utf8')) !== renderCarrierData(carrier)) {
+      findings.push({ file: projRel, code: 'CarrierProjectionDrift', message: '手改 rule 正文（与 carriers/<名>.json 渲染结果不一致）' })
+    }
+  }
 
   // V-2：承接面（skills/** + tools/quality/**）不得出现共享片段（唯一源在 docs/bak 归档与权威判据）
   const phrases = loadJson(resolve(root, TERMS_FILE)).sharedPhrases ?? []

@@ -11,8 +11,7 @@ import { validateAgentData, exitCodeFor } from './components/validateAgentData.m
 import { BASELINE_RULES, agentPaths, renderBaseline } from './components/baseline.mjs';
 import { compareBuffers, checkEnvironment } from './components/compare.mjs';
 import { renderByName } from './components/renderByName.mjs';
-import { RENDERED_RULES, renderedRuleAssets } from './components/renderedAssets.mjs';
-import { renderRule, writeRule } from './components/renderRule.mjs';
+import { RENDERED_RULES, renderedRuleAssets, writeRenderedRule, renderRenderedRule } from './components/renderedAssets.mjs';
 import { buildCards, expectedDocs, writeAll } from './components/cardPipeline.mjs';
 import { validatePolicy } from './components/validatePolicy.mjs';
 import { PREDICATES } from './card-model/vocab/predicates.mjs';
@@ -70,9 +69,9 @@ export function cmdGenerate(args) {
       checkEnvironment(Buffer.from(target), 'target', o.path);
       if (o.name && RENDERED_RULES.includes(o.name)) {
         if (ruleWrite) {
-          writeRule(o.name);
+          writeRenderedRule(o.name);
           console.log(`rendered rule 已写入：${o.path}`);
-        } else if (compareBuffers(Buffer.from(renderRule(o.name), 'utf8'), Buffer.from(target, 'utf8'))) {
+        } else if (compareBuffers(Buffer.from(renderRenderedRule(o.name), 'utf8'), Buffer.from(target, 'utf8'))) {
           drift += 1;
         }
       }

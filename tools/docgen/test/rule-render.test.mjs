@@ -8,14 +8,14 @@ import { join, resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { coldRepo, runCli } from './support/card-fixtures.mjs'
 import { RENDERED_RULES, renderedRuleAssets } from '../components/renderedAssets.mjs'
-import { renderRule } from '../components/renderRule.mjs'
+import { renderCarrier } from '../../quality/criteria-engine/carriers.mjs'
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..')
 const NAME = 'evidence-before-conclusion'
 const REL = `rules/${NAME}.md`
 
 test('渲染 rule 与磁盘逐字节相等，且非空白字符 = 387', () => {
-  const rendered = renderRule(NAME)
+  const rendered = renderCarrier(NAME)
   assert.equal(rendered, readFileSync(join(REPO, REL), 'utf8'), '渲染结果必须与磁盘逐字节相等')
   assert.equal(rendered.replace(/\s/g, '').length, 387, '触发声明非空白字符必须保持 387')
 })
@@ -46,7 +46,7 @@ test('删 rendered rule → gate DanglingBaselineEntry exit 2', () => {
 test('改数据不重生成 → 红；generate --apply 重生成后绿', () => {
   coldRepo({
     mutate: (copy) => {
-      const dataPath = join(copy, 'tools', 'docgen', 'data', 'rules', `${NAME}.json`)
+      const dataPath = join(copy, 'tools', 'quality', 'criteria-engine', 'carriers', `${NAME}.json`)
       const d = JSON.parse(readFileSync(dataPath, 'utf8'))
       d.exceptions = '例外：改过的例外句。'
       writeFileSync(dataPath, JSON.stringify(d, null, 2) + '\n', 'utf8')

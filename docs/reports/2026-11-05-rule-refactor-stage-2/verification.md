@@ -14,7 +14,7 @@
 | V-4 结构闸齐备 | 保留 rule 的「触发 / 义务 / 例外 / 来源锚」四件（校验器 `RuleStructureIncomplete` 未触发） | 缺项 0 |
 | V-5 判据登记表存在 | 白名单必填 7 字段 + 选填 `type`；op 全注册；residual 四件（who / sample / fields / objectivePath）；配套 testcase 正反例双向 | 100%（校验器 exit 0） |
 | V-6 判据可单元测试 | `node tools/quality/criteria-engine/build.mjs` → 33 样例全绿 | 全绿（每判据 ≥1 正 + ≥1 反） |
-| V-7 手改即红（口径更正 2026-11-05 三稿） | 逐字节比对对象 = ① 判据引擎渲染投影 14 份（`ProjectionDrift`/`ProjectionMissing`）② **rendered rule 1 份**：`rules/evidence-before-conclusion.md` 由 `data/rules/<名>.json` → `renderRule` 渲染，docgen gate `compareBuffers` 手改 → `Mismatch` exit 1、缺件 → `DanglingBaselineEntry` exit 2（与 agent 卡同一机制：`renderByName` ↔ `renderRule` 共同走 `renderedAssets` + 同一个 `compareBuffers`）。重生成命令 = `node tools/docgen/cli.mjs generate --kind rule --name <名> --apply`。 | 投影 14/14 + rule 1/1 逐字节可比；`rule-render.test.mjs` 5/5 绿 |
+| V-7 手改即红（口径更正 2026-11-05 四稿：单一 DSL） | 逐字节比对对象 = ① 判据引擎渲染投影 14 份（`ProjectionDrift`/`ProjectionMissing`）② **rendered rule 1 份**：`rules/evidence-before-conclusion.md` 由 `criteria-engine/carriers/<名>.json` → `renderCarrier` 渲染，`compareBuffers` 手改 → `Mismatch`/`CarrierProjectionDrift`、缺件 → `DanglingBaselineEntry`/`CarrierProjectionMissing`。**载体正文与判据同住判据引擎、同一套 DSL**（carrier 用 `criteria` 引用判据 id，引用不存在即红），docgen 只消费渲染结果（`renderedAssets`），不另存文案。 | 投影 14/14 + rule 1/1 逐字节可比；`rule-render.test.mjs` 5/5、`check-criteria-engine.test.mjs` 3/3 绿 |
 | V-11 总量不超上限 | 校验器分层预算闸：单条 387 非空白字符（100–500）｜条数 1（≤9）｜总量 442 字符（≤26,513） | 全在界内 |
 | V-13 说明层收敛 | `node scripts/rule-audit-lite.mjs` | 全仓 0.0%（≤10%）/ 单条 0.0%（≤20%） |
 | V-14 来源锚齐 | `Grep '^> 来源' rules/*.md` 命中数 vs 文件数 | 1/1 |
@@ -38,8 +38,8 @@
 
 ## 3 本批改动面
 
-- 引擎：`tools/quality/criteria-engine/`（三件套 + 7 判据 + 7 testcase + 渲染投影）；白名单加选填 `type`、residual 加 `objectivePath`。
-- 触发声明：`rules/evidence-before-conclusion.md`（387 非空白字符）；`tools/docgen/components/baseline.mjs` 回填 1 条并重生成 `baseline.json`（16 条）。
+- 引擎：`tools/quality/criteria-engine/`（三件套 + 7 判据 + 7 testcase + 渲染投影 + **`carriers/` 载体正文数据 + `carriers.mjs`**）；白名单加选填 `type`、residual 加 `objectivePath`。
+- 触发声明：`rules/evidence-before-conclusion.md`（387 非空白字符）——**正文由 `carriers/evidence-before-conclusion.json` 渲染**（单一 DSL，`criteria` 引用 3 条判据）；`baseline.mjs` 回填 1 条并重生成 `baseline.json`（16 条）。
 - 三个新 skill：`skills/carrier-conventions/`（本体 + 5 references）、`skills/assertion-quality/`（本体 + manual/cases）、`skills/plain-language/`（本体）；`skilldependencies/*.json` + `manifest.json` + 两份 README + 技能指南同批登记。
 - 门禁：`scripts/check-criteria-engine.mjs`、`scripts/rule-audit-lite.mjs` 落 ⑨ 段（不走 `CHECK_BYPASS`）；`observable-terms.json` 增 `sharedPhrases`。
 - 去重（V-2）：共享项 ④ 措辞「不因来源豁免」→「来源不豁免」（`criteria.md` / `writing-guide.md` / `review-loop`），台账 2026-11-05 行三件齐。

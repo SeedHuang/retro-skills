@@ -1,5 +1,7 @@
 {
+  "kind": "rule",
   "name": "evidence-before-conclusion",
+  "criteria": ["anchor-present", "target-present", "materials-four"],
   "title": "说出口的结论必须有可核出处",
   "trigger": "输出任何结论（判断 / 建议 / 数据 / 事实陈述）之前",
   "source": "rule 改造 PRD（2026-11-05 D-10 终裁）",
