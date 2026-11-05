@@ -10,6 +10,7 @@ import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs'
 import { join, resolve, dirname, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { check, checkTestcase, judge, CRITERION_TYPES } from '../tools/quality/criteria-engine/schema.mjs'
+import { interpreters } from '../tools/quality/criteria-engine/interpreters.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const TERMS_FILE = 'tools/quality/observable-terms.json'
@@ -84,6 +85,18 @@ function run(root) {
       const got = judge(rule, c.input)
       if (got === c.expect) green += 1
       else { red += 1; findings.push({ file: entry.name, code: 'CaseMismatch', case: i, expect: c.expect, got }) }
+    }
+
+    // 逐字节比对（stage-2 §1.6 / §5）：渲染物手改即红。重渲染 vs 磁盘逐字节；缺文件也红。
+    // 「不新立第二套」= 复用同一份 interpreters（唯一投影实现），不在校验器里再写一份渲染逻辑。
+    for (const it of interpreters) {
+      const projRel = `${ENGINE_DIR}/${rule.id}.${it.ext}`
+      const projAbs = resolve(root, projRel)
+      const expected = it.render(rule)
+      if (!existsSync(projAbs)) { findings.push({ file: projRel, code: 'ProjectionMissing' }); continue }
+      if (strip(readFileSync(projAbs, 'utf8')) !== expected) {
+        findings.push({ file: projRel, code: 'ProjectionDrift', message: '手改渲染物（重渲染结果与磁盘不一致）' })
+      }
     }
   }
 

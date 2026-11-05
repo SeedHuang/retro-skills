@@ -39,3 +39,22 @@ test('V-16：逐条判据注入冲突样例 → 校验器 exit 1 并点名该判
     }
   }
 })
+
+test('渲染物逐字节（stage-2 §1.6）：手改投影 1 字节 → exit 1 点名文件；删投影 → ProjectionMissing', () => {
+  const root = copyRoot()
+  try {
+    const proj = join(root, 'tools', 'quality', 'criteria-engine', 'anchor-present.md')
+    writeFileSync(proj, readFileSync(proj, 'utf8') + '\n手改一行\n', 'utf8')
+    const drift = spawnSync(process.execPath, [CLI, '--root', root], { encoding: 'utf8' })
+    assert.equal(drift.status, 1, `手改渲染物后必须 exit 1（${drift.stdout}${drift.stderr}）`)
+    assert.match(`${drift.stdout}${drift.stderr}`, /ProjectionDrift/, '必须报 ProjectionDrift')
+    assert.match(`${drift.stdout}${drift.stderr}`, /anchor-present\.md/, '必须点名被改的投影文件')
+
+    rmSync(proj, { force: true })
+    const missing = spawnSync(process.execPath, [CLI, '--root', root], { encoding: 'utf8' })
+    assert.equal(missing.status, 1)
+    assert.match(`${missing.stdout}${missing.stderr}`, /ProjectionMissing/)
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
+})
