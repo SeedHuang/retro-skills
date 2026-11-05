@@ -29,7 +29,8 @@ const DATE_FILE_RE = /^\d{4}-\d{2}-\d{2}-[a-z0-9][a-z0-9-]*\.md$/
 // 目录名是否带时间戳：YYYYMMDDHHmmss- 或 YYYY-MM-DD-
 export const DIR_STAMP_RE = /^(\d{14}|\d{4}-\d{2}-\d{2})-/
 // 「带戳目录名」的严格形态（目录层判据）：按规则类选 14 位 / 日期
-const STAMP_DIR_NAME_RE = /^\d{14}-[a-z0-9][a-z0-9-]*$/
+// 14 位戳目录的目录名正则（唯一实现）：`check-gate-record.mjs` 也 import 这一份，不另写第二份
+export const STAMP_DIR_NAME_RE = /^\d{14}-[a-z0-9][a-z0-9-]*$/
 const DATE_DIR_NAME_RE = /^\d{4}-\d{2}-\d{2}-[a-z0-9][a-z0-9-]*$/
 const stampDirNameRe = (isStamp) => (isStamp ? STAMP_DIR_NAME_RE : DATE_DIR_NAME_RE)
 const BAD_GENERIC_RE = /[\u3400-\u9fff\s_]/
@@ -38,7 +39,7 @@ const SINGLETON_RE = /^(README|index|overview)\.md$|^[a-z0-9-]+-index\.md$/
 
 // 课题目录制：一个课题一个目录，根层不放散文件
 const RESEARCH_DIR = 'docs/research'
-export const STAMP_DIRS = ['docs/prd', 'docs/after', RESEARCH_DIR]
+export const STAMP_DIRS = ['docs/prd', 'docs/after', RESEARCH_DIR, 'docs/devworkflows']
 export const DATE_DIRS = ['docs/superpowers/specs', 'docs/superpowers/plans', 'docs/handoffs']
 
 // 直接躺在课题目录制根层的 .md（不属于任何课题）

@@ -2,7 +2,7 @@
 
 **只允许写**：{{WRITE_SCOPE}}。{{ARTIFACTS}}{{SEAT_CLAUSE}}
 
-**禁止写**：{{HOST_RULE}}、不得写 `skills/dev-workflow/references/gate-record.md`（签字原文由申报人转录，你只核转录是否逐字一致）、以及 ③ 所列全部路径。
+**禁止写**：{{HOST_RULE}}、不得写 `docs/devworkflows/**/gate-record.md`（签字原文由申报人转录，你只核转录是否逐字一致）、以及 ③ 所列全部路径。
 
 **除上述落点外，任何写文件或重定向一律禁止**，禁写集合 = 策略源 {{FORBIDDEN_PATHS}}；兜底句：凡 `.gitignore` 覆盖的路径一律视为禁止写入。
 

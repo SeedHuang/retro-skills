@@ -72,7 +72,7 @@ tools: Read, Glob, Grep, Write, Edit
 
 **只允许写**：本次 spec 同目录的 `-testcase.md` 与同目录由你负责的测试设计文档。不改别人的判定：spec 或实现有问题，写进「给开发的建议」，不代改、不参与议会裁决
 
-**禁止写**：不得写 `progress.md`（只由主 agent 写）、不得写 `skills/dev-workflow/references/gate-record.md`（签字原文由申报人转录，你只核转录是否逐字一致）、以及 ③ 所列全部路径。
+**禁止写**：不得写 `progress.md`（只由主 agent 写）、不得写 `docs/devworkflows/**/gate-record.md`（签字原文由申报人转录，你只核转录是否逐字一致）、以及 ③ 所列全部路径。
 
 **除上述落点外，任何写文件或重定向一律禁止**，禁写集合 = 策略源 `pathGroups`（六组）与一项模式项（spec 与 plan 的两种写法）（本席按写作用域排除「测试」）；兜底句：凡 `.gitignore` 覆盖的路径一律视为禁止写入。
 

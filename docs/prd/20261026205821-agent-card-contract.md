@@ -622,3 +622,7 @@
 ## 附录 C　日期注（2026-11-01）
 
 （2026-11-01 日期注：类型三值、三态行与产物允许名的**实现唯一源** = `tools/docgen/card-model/vocab/card-contract.mjs`；§3.4 原文保留不改。注落在文末，不改动任何既有正文行号。）
+
+## 附录 D　载体停用（2026-11-05）
+
+本文提到的 `skills/dev-workflow/references/gate-record.md` 已迁至 `docs/devworkflows/<YYYYMMDDHHmmss>-<任务名>/gate-record.md`；旧路径删除提交由 `git log --diff-filter=D -1 --format=%H -- skills/dev-workflow/references/gate-record.md` 取回。正文与结论不改（历史签字件）。本注落在文末，理由同附录 C：S2 的 `I03 / I05` 要求本文零删除行，且 §3.4 / 词表行号仍是第三方用例的活锚（新增顶行会让 5 处行号锚 +1）。

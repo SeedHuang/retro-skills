@@ -236,7 +236,7 @@ test('S5-TC-B02 审计边界节五段齐 + 允许写切片干净 + 禁止段两�
   assert.equal(allowed.includes('progress.md'), false, 'progress.md 只由主持人写，不得进允许写切片');
   assert.equal(allowed.includes('新建快照'), false, '不得把「新建快照文件」写进允许写切片');
   assert.match(forbidden, /不得写\s*`?progress\.md`?/, '§3.3②：两席均不得写 progress.md');
-  assert.match(forbidden, /不得写\s*`?(?:skills\/dev-workflow\/references\/)?gate-record\.md`?/, '§3.3②：两席均不得写 gate-record.md');
+  assert.match(forbidden, /不得写\s*`?(?:skills\/dev-workflow\/references\/|docs\/devworkflows\/\*\*\/)gate-record\.md`?/, '§3.3②：两席均不得写 gate-record.md');
 });
 
 test('S5-TC-B03 侦探边界节五段齐 + 允许写切片只含 detective.md + 禁止段两条「不得写」', () => {
@@ -255,7 +255,7 @@ test('S5-TC-B03 侦探边界节五段齐 + 允许写切片只含 detective.md + 
   assert.equal(allowed.includes('progress.md'), false, 'progress.md 只由主持人写');
   assert.equal(allowed.includes('新建快照'), false, '不得把「新建快照文件」写进允许写切片');
   assert.match(forbidden, /不得写\s*`?progress\.md`?/);
-  assert.match(forbidden, /不得写\s*`?(?:skills\/dev-workflow\/references\/)?gate-record\.md`?/);
+  assert.match(forbidden, /不得写\s*`?(?:skills\/dev-workflow\/references\/|docs\/devworkflows\/\*\*\/)gate-record\.md`?/);
 });
 
 test('S5-TC-B04 审计卡档位事实与输出格式（S4 迁移后：档位在边界段、格式在结构化合同）', () => {
@@ -526,7 +526,7 @@ test('S5-TC-B13 正文提及旧短语不误红；两个 helper 与 B02/B03 共�
   assert.equal(allowed.includes('progress.md'), false);
   assert.ok(allowed.includes('round-check'));
   assert.match(forbidden, /不得写\s*`?progress\.md`?/);
-  assert.match(forbidden, /不得写\s*`?(?:skills\/dev-workflow\/references\/)?gate-record\.md`?/);
+  assert.match(forbidden, /不得写\s*`?(?:skills\/dev-workflow\/references\/|docs\/devworkflows\/\*\*\/)gate-record\.md`?/);
 });
 
 test('S5-TC-B14 半改态（producer 席缺 boundary）必须被拒，不得静默回落默认只读句', () => {

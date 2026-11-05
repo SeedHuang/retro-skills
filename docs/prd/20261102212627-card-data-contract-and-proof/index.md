@@ -1,6 +1,6 @@
 # 卡面数据契约与证据形式（PRD，已裁定）
 
-> 状态：**已裁定（需求侧）｜承载面待 ② 段议**｜创建 2026-11-02｜来源：2026-11-02 与用户的逐轮讨论（起点 = 「`agents/reviewer-actuary.md` 里 `hit`/`miss`/`na`/`reason` 四行是什么意思」）
+> 状态：**已裁定（需求侧）｜承载面待 ② 段议**　**载体已迁（2026-11-05）**：本文提到的 `skills/dev-workflow/references/gate-record.md` 已迁至 `docs/devworkflows/<YYYYMMDDHHmmss>-<任务名>/gate-record.md`；旧路径删除提交由 `git log --diff-filter=D -1 --format=%H -- skills/dev-workflow/references/gate-record.md` 取回。正文与结论不改（历史签字件）。｜创建 2026-11-02｜来源：2026-11-02 与用户的逐轮讨论（起点 = 「`agents/reviewer-actuary.md` 里 `hit`/`miss`/`na`/`reason` 四行是什么意思」）
 > **去向**：拆成可施工 spec 进 `docs/superpowers/specs/`；本文件**保留不删**（PRD 生命周期 = 被取代时原文保留）。
 > **与已签件的关系**：不改 `observable-criteria-rollout` PRD（S1/S2/S3 已签收口）；与 `agent-card-contract` / `agent-card-s4-render` 的冲突点在 §5 单列。
 > **口径约定**：本文件所有字符数、处数均附取数命令；未标口径的数字一律不算证据。

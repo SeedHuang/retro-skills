@@ -1,6 +1,6 @@
 # 可观察判据与卡面表达重构（PRD）
 
-> **状态**：**已定稿（2026-10-31）**——议会 #1 通过（5 席 / 60 卡 / 19 族，P0 = 0；审计两表终验「通过」）+ 用户签字（原话「通过，签字」）｜**创建** 2026-10-31 20:23（Asia/Shanghai）｜**2026-10-31 更新**：用户确认 ① 走议会 #1、补主干图、D-01～D-06 按建议（A-5～A-7）；议会后按 19 族返工（见 `.session/reviews/2026-10-31-204101-observable-criteria-prd/`）
+> **状态**：**已定稿（2026-10-31）**　**载体已迁（2026-11-05）**：本文提到的 `skills/dev-workflow/references/gate-record.md` 已迁至 `docs/devworkflows/<YYYYMMDDHHmmss>-<任务名>/gate-record.md`；旧路径删除提交由 `git log --diff-filter=D -1 --format=%H -- skills/dev-workflow/references/gate-record.md` 取回。正文与结论不改（历史签字件）。——议会 #1 通过（5 席 / 60 卡 / 19 族，P0 = 0；审计两表终验「通过」）+ 用户签字（原话「通过，签字」）｜**创建** 2026-10-31 20:23（Asia/Shanghai）｜**2026-10-31 更新**：用户确认 ① 走议会 #1、补主干图、D-01～D-06 按建议（A-5～A-7）；议会后按 19 族返工（见 `.session/reviews/2026-10-31-204101-observable-criteria-prd/`）
 > **来源**：2026-10-31 与用户的对话——起点是「agent 卡面里全是 id，AI 读得懂吗」，收敛到「用户写 agent / rule / skill 时用的抽象、主观、模糊的话，必须被翻译成具体、客观、精确、可执行的判据，并让三个载体复用同一套规则」。
 > **与本 PRD 的关系**：`agent-card-contract`（2026-10-26）定义了卡面的**结构**；本 PRD 解决它的**表达与可判定性**，并把同一口径外延到 `rules/` 与 `skills/`。
 

@@ -1119,11 +1119,12 @@ test('S3-TC-J03 dev-workflow 指针', () => {
   const pointerLines = section.filter((l) => l.includes('observable-criteria'))
   assert.equal(pointerLines.length, 1)
   assert.ok(pointerLines[0].includes('npm run check:observable'))
-  const num = execFileSync('git', ['diff', '--numstat', S3_BASE, '--', 'skills/dev-workflow/SKILL.md'], { cwd: REPO, encoding: 'utf8' }).trim().split(/\s+/)
-  assert.equal(Number(num[1] ?? 0), 0)
+  // 2026-11-05 载体迁移（签字账迁 docs/devworkflows）有意改了段表里的路径单元格，
+  // 「对本仓零删除」不再成立；保留 J03 的真锚 = 段表仍是六段、顺序不变。
   const seg = (text) => text.split('## 段表')[1].split(/^## /m)[0]
-  const before = execFileSync('git', ['show', `${S3_BASE}:skills/dev-workflow/SKILL.md`], { cwd: REPO, encoding: 'utf8' })
-  assert.deepEqual(seg(src).split(/\r?\n/), seg(before).split(/\r?\n/))
+  const segCells = seg(src).split(/\r?\n/).map((l) => l.split('|')[1]?.trim())
+  const SIX = ['①', '②', '②→③', '③', '④', '⑤']
+  assert.deepEqual(segCells.filter((c) => SIX.includes(c)), SIX)
 })
 
 test('S3-TC-J04 指针行复制', () => {
@@ -1278,7 +1279,10 @@ test('S3-TC-L02 门禁面未扩', () => {
     assert.match(dirty.out, /rules[\\/]a\.md/)
     const allSrc = read('scripts/check-all.mjs')
     const maxSectionNo = Math.max(...[...allSrc.matchAll(/^\/\/\s*([①-⑩])/gm)].map((m) => '①②③④⑤⑥⑦⑧⑨⑩'.indexOf(m[1]) + 1))
-    assert.equal(maxSectionNo, 7)
+    // ⑦ 仍是 observable 段；⑧（出口签字账，2026-11-05 新增）不扩 observable 的扫描根（下面两条行为断言即判据）。
+    // 段号上限写死为当前事实值：再新增 ⑨/⑩ 段必须显式改这条（否则「门禁面未扩」失守）。
+    assert.equal(maxSectionNo, 8)
+    assert.match(allSrc, /\/\/\s*⑦ /, 'observable 段 ⑦ 必须在位')
     const repo = runNode(['scripts/check-observable.mjs', '--check'])
     assert.equal(repo.code, 0)
     assert.match(repo.out.trim().split(/\r?\n/).pop(), /check-observable ok/)

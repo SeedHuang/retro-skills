@@ -457,6 +457,26 @@ if (obsJson) {
   console.error('[observable] --json 首行不可解析（校验器前置不过？）')
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// ⑧ 出口签字账（按任务分目录）：跑 `scripts/check-gate-record.mjs`。
+// `tasks 0` / 任务目录缺 gate-record.md / 任一行不合规 → check 非 0。
+// 计数单源 = 子进程 stdout 首行 `tasks N rows R bad B`；本段不重算、不解析细节。
+// 本段**不走旁路开关**（旁路只跳 ⑥，见上方 `:51-56`）。
+// ─────────────────────────────────────────────────────────────────────────────
+const gateRun = spawnSync(process.execPath, [join(root, 'scripts', 'check-gate-record.mjs')], { cwd: root, encoding: 'utf8' })
+const gateFirst = (gateRun.stdout || '').split(/\r?\n/)[0]
+if (gateRun.stdout) console.log(gateFirst)
+if (gateRun.error) {
+  failed = true
+  console.error(`[gate-record] 进程启动失败：${gateRun.error.message}`)
+} else if (gateRun.status !== 0) {
+  failed = true
+  if (gateRun.stderr) console.error(gateRun.stderr)
+} else if (!/^tasks \d+ rows \d+ bad 0$/.test(gateFirst)) {
+  failed = true
+  console.error(`[gate-record] 退出 0 但首行不是「tasks N rows R bad 0」：${gateFirst}`)
+}
+
 if (failed) {
   console.error('check 未通过')
   process.exitCode = 1          // 不要 process.exit(1)：管道/CI 下会截断 stdout，正好隐藏要报的 findings

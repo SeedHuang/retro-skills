@@ -2,7 +2,7 @@
 
 ## 入口条件
 
-- 计划门的 `gate-record.md` 行已齐六列，审计已本人读并签字。
+- 计划门的 `docs/devworkflows/<任务目录>/gate-record.md` 行已齐六列，审计已本人读并签字。
 - 施工所用的 spec 与 testcase 已定稿（不是「边做边补」的草稿）。
 
 ## 出口判据
@@ -36,4 +36,4 @@
 
 ## 收口后
 
-产出 `gate-record.md` 里 ③ 的那一行：六列齐，「核了什么」写 `npm run check` 输出首行或结论行。缺行不得进入 ④。
+产出任务目录下 `gate-record.md` 里 ③ 的那一行：六列齐，「核了什么」写 `npm run check` 输出首行或结论行。缺行不得进入 ④。

@@ -27,7 +27,7 @@ export const SLOTS = ['SEAT', 'TIER', 'CAPABILITIES', 'ARTIFACTS', 'SEAT_CLAUSE'
 // S-B §11.2.3：4 个策略符号名（指针句里出现的反引号项）不是定义层单点成员，必须登记；
 // 它们都不是清单类成员（组 ID / verb / 路径项），故不触发末尾的 `ALLOWED_LITERALS:` 自检。
 export const TEMPLATE_ALLOWED_LITERALS = new Set([
-  'skills/dev-workflow/references/gate-record.md',
+  'docs/devworkflows/**/gate-record.md',
   '.gitignore',
   'DOCGEN_*',
   'sha256',

@@ -1,6 +1,6 @@
 ---
 name: dev-workflow
-description: 当任务要走「需求 → 技术设计 → 计划门 → 实现 → 质量 → 交付」这条主干、需要判断现在该进哪一段或本段出口齐没齐时使用；也用于需要长文取证（只交原文 + 行号）的场合。不用于：单点代码修改或缺陷定位（走 review-loop / systematic-debugging）、议会内部流程（走 parliament）、把 PRD 拆成 spec（走 prd-to-specs）。
+description: 当任务要走「需求 → 技术设计 → 计划门 → 实现 → 质量 → 交付」这条主干、需要判断现在该进哪一段或本段出口齐没齐时使用；也用于需要长文取证（只交原文 + 行号）的场合。签字账落 docs/devworkflows/<任务目录>/gate-record.md（一任务一份，模板在 references/gate-record-template.md）。不用于：单点代码修改或缺陷定位（走 review-loop / systematic-debugging）、议会内部流程（走 parliament）、把 PRD 拆成 spec（走 prd-to-specs）。
 ---
 
 # 开发工作流主干（五段 + 两插点）
@@ -11,12 +11,12 @@ description: 当任务要走「需求 → 技术设计 → 计划门 → 实现 
 
 | 段 | 名称 | 入口 | 出口判据 | 谁签 | 议会 |
 |---|---|---|---|---|---|
-| ① | PRD（需求产生 + 产品设计） | 开工前按 `references/stage-1-prd.md` 的出口判据逐条核，产出**已核清单**（`references/gate-record.md` 的表格行），缺清单不得进入下一段 | §0 四栏齐 + 依据可核；功能点清单与流程图双向一一对应 | **用户**（产品经理为申报人，不签）；审计核 §0 | **议会 #1** |
-| ② | 技术设计 | 开工前按 `references/stage-2-tech-design.md` 的出口判据逐条核，产出**已核清单**（`references/gate-record.md` 的表格行），缺清单不得进入下一段 | spec + testcase 一件齐；差异清单留痕；内部对齐零未决 | **审计**（核议会 #2 放行 + 两条计数；主 agent / sdet 为申报人） | **议会 #2** |
-| ②→③ | 计划门 | 开工前按 `references/stage-2b-plan-gate.md` 的三条核对逐条核，产出**已核清单**（`references/gate-record.md` 的表格行），缺清单不得进入下一段 | 功能点全覆盖 / 依赖无环 / 功能块↔testcase 一一映射 | 脚本 + **审计本人读并签字** | **无议会** |
-| ③ | 技术实现 | 开工前按 `references/stage-3-implementation.md` 的出口判据逐条核，产出**已核清单**（`references/gate-record.md` 的表格行），缺清单不得进入下一段 | 施工完成、`npm run check` 绿 | **审计**（核 `npm run check` 输出；开发为申报人） | 无 |
-| ④ | 质量保证 | 开工前按 `references/stage-4-quality.md` 的出口判据逐条核，产出**已核清单**（`references/gate-record.md` 的表格行），缺清单不得进入下一段 | testcase 全过；负例与边界条数 ≥ 正例 | **sdet**（开发为申报人） | 无 |
-| ⑤ | 产品交付 | 开工前按 `references/stage-5-delivery.md` 的出口判据逐条核，产出**已核清单**（`references/gate-record.md` 的表格行），缺清单不得进入下一段 | 交付审计（含数字签字项） | **用户**（交付终验；审计是审计表作者，不签验收） | 无 |
+| ① | PRD（需求产生 + 产品设计） | 开工前按 `references/stage-1-prd.md` 的出口判据逐条核，产出**已核清单**（`docs/devworkflows/<任务目录>/gate-record.md` 的表格行），缺清单不得进入下一段 | §0 四栏齐 + 依据可核；功能点清单与流程图双向一一对应 | **用户**（产品经理为申报人，不签）；审计核 §0 | **议会 #1** |
+| ② | 技术设计 | 开工前按 `references/stage-2-tech-design.md` 的出口判据逐条核，产出**已核清单**（`docs/devworkflows/<任务目录>/gate-record.md` 的表格行），缺清单不得进入下一段 | spec + testcase 一件齐；差异清单留痕；内部对齐零未决 | **审计**（核议会 #2 放行 + 两条计数；主 agent / sdet 为申报人） | **议会 #2** |
+| ②→③ | 计划门 | 开工前按 `references/stage-2b-plan-gate.md` 的三条核对逐条核，产出**已核清单**（`docs/devworkflows/<任务目录>/gate-record.md` 的表格行），缺清单不得进入下一段 | 功能点全覆盖 / 依赖无环 / 功能块↔testcase 一一映射 | 脚本 + **审计本人读并签字** | **无议会** |
+| ③ | 技术实现 | 开工前按 `references/stage-3-implementation.md` 的出口判据逐条核，产出**已核清单**（`docs/devworkflows/<任务目录>/gate-record.md` 的表格行），缺清单不得进入下一段 | 施工完成、`npm run check` 绿 | **审计**（核 `npm run check` 输出；开发为申报人） | 无 |
+| ④ | 质量保证 | 开工前按 `references/stage-4-quality.md` 的出口判据逐条核，产出**已核清单**（`docs/devworkflows/<任务目录>/gate-record.md` 的表格行），缺清单不得进入下一段 | testcase 全过；负例与边界条数 ≥ 正例 | **sdet**（开发为申报人） | 无 |
+| ⑤ | 产品交付 | 开工前按 `references/stage-5-delivery.md` 的出口判据逐条核，产出**已核清单**（`docs/devworkflows/<任务目录>/gate-record.md` 的表格行），缺清单不得进入下一段 | 交付审计（含数字签字项） | **用户**（交付终验；审计是审计表作者，不签验收） | 无 |
 
 **表里 6 行而叫「五段」**：`②→③` 是**门**不是段——它有独立签字人与脚本判据，塞进 ③ 的入口会把它埋掉。读表时数段请数 ①②③④⑤。
 
@@ -30,7 +30,7 @@ description: 当任务要走「需求 → 技术设计 → 计划门 → 实现 
 
 - **计划门不设议会**：脚本能查的集合比对，人不比脚本准（PRD §6）。
 - **议会有条件**：议会列的段，收口 = 出口判据齐 **且** 该议会通过（P0 = 0、必修项清零）。不通过 → 留在本段，按 `parliament` 技能的收敛规则循环，**不得带未收敛项进入下一段**；议会通过之前不得进入下一段。不通过的记录写在议会自己的评审账里，不另建第二处。
-- **旁路（PRD §4.2）**：单点小改（功能点集合 diff 为空 + 无新增交付物）不进议会，`gate-record.md` 的 ① / ② 行写「旁路 + 集合 diff 为空 + 无新增交付物」，**签字人 = 审计（单一签字）**，「核了什么」= F 集合差集结论（`git diff -U0` 的 §10 hunk）+ `git diff --name-only` 清单（缺 = 旁路无效）；其余出口判据按 PRD §4.2 的替换表执行。误判（集合变了却走旁路）按功能增删类漂移回 PRD 重签 §0。
+- **旁路（PRD §4.2）**：单点小改（功能点集合 diff 为空 + 无新增交付物）不进议会，任务目录下的 `gate-record.md` 的 ① / ② 行写「旁路 + 集合 diff 为空 + 无新增交付物」，**签字人 = 审计（单一签字）**，「核了什么」= F 集合差集结论（`git diff -U0` 的 §10 hunk）+ `git diff --name-only` 清单（缺 = 旁路无效）；其余出口判据按 PRD §4.2 的替换表执行。误判（集合变了却走旁路）按功能增删类漂移回 PRD 重签 §0。
 
 ## ① 的过渡口径（S2 前有效，产品经理卡落地即删）
 ① 的签字人写「用户签字」；产品经理一职由主 agent 代拟，PRD 头部注明「代拟：主 agent」——代拟者不签字。「市场调研结论」入口在 S2 前由用户提供或省略。
@@ -56,6 +56,7 @@ description: 当任务要走「需求 → 技术设计 → 计划门 → 实现 
 ## 指针
 
 - 每段判据：`references/stage-1-prd.md`、`references/stage-2-tech-design.md`、`references/stage-2b-plan-gate.md`、`references/stage-3-implementation.md`、`references/stage-4-quality.md`、`references/stage-5-delivery.md`
-- 出口核对记录表（R1–R7 的唯一证据载体）：`references/gate-record.md`
+- 出口核对记录表（R1–R9 的唯一证据载体）：`docs/devworkflows/<YYYYMMDDHHmmss>-<任务名>/gate-record.md`（进 ① 时建目录，格式复制 `references/gate-record-template.md`）
+- 签字账模板（格式唯一源）：`references/gate-record-template.md`
 - 判据类文本的可观察判据：以 `observable-criteria` 规则为准，机判 = `npm run check:observable`（末行 `check-observable ok` 且 exit 0）
 - 强制约束：`rules/dev-workflow-mainline.md`（每轮自动加载）

@@ -4,6 +4,7 @@
 
 - 用户给出想法、或给出市场 / 用户研究结论；或已有 PRD 被判定需要重开本段。
 - 上游无前置段（本段是主干起点）。S2 之前「市场调研结论」入口由用户提供或省略，不阻塞。
+- **进本段第一件事**：建任务目录 `docs/devworkflows/<YYYYMMDDHHmmss>-<任务名>/`（时间戳 = 任务创建时刻），并把 `references/gate-record-template.md` 复制为其中的 `gate-record.md`。旁路任务同样建目录；无 PRD 的任务同样建目录（本段可写「不适用」行）。
 
 ## 出口判据
 
@@ -39,4 +40,4 @@
 
 ## 收口后
 
-产出 `references/gate-record.md` 里 ① 的那一行：六列齐，「核了什么」写命令输出首行或 `path:line`。缺行不得进入 ②。
+产出任务目录下 `gate-record.md` 里 ① 的那一行（路径 `docs/devworkflows/<YYYYMMDDHHmmss>-<任务名>/gate-record.md`）：六列齐，「核了什么」写命令输出首行或 `path:line`。缺行不得进入 ②。

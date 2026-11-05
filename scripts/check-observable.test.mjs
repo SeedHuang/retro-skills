@@ -875,7 +875,7 @@ test('OCR-S1-TC-E11 同行 ≥2 词枚举 → exit 1', () => {
   assert.ok(/check-observable fail/.test(r.last))
 })
 
-test('OCR-S1-TC-E08 分诊表对账 M+P+L=21 / exemptedLines=L / stale=0 / L≤8 / hits=0', () => {
+test('OCR-S1-TC-E08 分诊表对账 M+P+L=20（首日 21，1 行随载体删除退役）/ exemptedLines=L / stale=0 / L≤8 / hits=0', () => {
   const CATS = ['改文案', '已合格', '合法保留']
   const rows = readText(TRIAGE)
     .split(/\r?\n/)
@@ -885,7 +885,7 @@ test('OCR-S1-TC-E08 分诊表对账 M+P+L=21 / exemptedLines=L / stale=0 / L≤8
   const M = cats.filter((c) => c === '改文案').length
   const P = cats.filter((c) => c === '已合格').length
   const L = cats.filter((c) => c === '合法保留').length
-  assert.strictEqual(rows.length, 21, `分诊表应 21 行，实得 ${rows.length}`)
+  assert.strictEqual(rows.length, 20, `分诊表在册行应 20（首日 21，1 行退役），实得 ${rows.length}`)
   // 第二源（非表格自证）：独立按「9 词 + 排除标题行」数一遍**当前**仍含主观词的行
   const raw = rawHitLines().length
   const r = jsonOf(['--check', '--json'])
@@ -919,7 +919,7 @@ function rawHitLines() {
 }
 
 function assertTriage({ M, P, L, hits, raw }) {
-  assert.strictEqual(M + P + L, 21, `M+P+L 必须 = 21（首日基线），实得 ${M + P + L}`)
+  assert.strictEqual(M + P + L, 20, `M+P+L 必须 = 20（首日 21 减 1 行退役），实得 ${M + P + L}`)
   // 非恒真锚：当前仓里仍含主观词的正文行只可能落在「已合格」或「合法保留」两档
   assert.strictEqual(raw, P + L, `当前仍含主观词的行数应 = P + L（${P + L}），实得 ${raw}`)
   assert.ok(L <= 8, `L 必须 ≤ 8，实得 ${L}`)

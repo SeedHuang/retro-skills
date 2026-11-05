@@ -8,17 +8,17 @@
 ((Get-ChildItem rules,skills -Recurse -Filter *.md | Select-String -Pattern '自省|客观|诚实|宽松|严格|清晰|准确|显著|良好') | Where-Object { $_.Line -notmatch '^\s*#' } | Select-Object -Unique Path,LineNumber | Measure-Object).Count
 ```
 
-实跑 = **21**。
+实跑 = **21**（2026-11-05：其中 1 行随载体 `skills/dev-workflow/references/gate-record.md` 删除而退役，在册 20 行）。
 
 > 分类口径（三档互斥）：**改文案** = 能把评价换成可判表述（`M`）；**已合格** = 命中行所在最小语义块内本来就有可观察标记（`P`，**不为它补豁免**）；**合法保留** = 只许「术语引用 / 词表自身」（`L`，入豁免且 `reason` 写术语出处）。
 
-## 逐行结论（21 行）
+## 逐行结论（首日 21 行；在册 20 行）
 
 | path:line | 命中词 | 块内 marker（有/无） | 分类（改文案 / 已合格 / 合法保留） | 处置 | 豁免 reason |
 |---|---|---|---|---|---|
 | `rules/core-working-principles.md:36` | 自省 | 无 | 合法保留 | 不改（术语引用） | 术语引用，不是评价：「自省」是本仓规则概念名；同段已给可判载体（三性验证 / 判据树 / 长期方案落点）。出处 `rules/core-working-principles.md:36` |
 | `rules/core-working-principles.md:71` | 自省 | 无 | 合法保留 | 不改（术语引用） | 术语引用，不是评价：「自省」指本规则「事前三步 / 出事之后」的动作名；同节已给可判动作清单。出处 `rules/core-working-principles.md:71` |
-| `skills/dev-workflow/references/gate-record.md:14` | 宽松 | 有 | 已合格 | 不改不豁免 | — |
+| `skills/dev-workflow/references/gate-record.md:14` | 宽松 | 有 | 已退役 | 载体已删除（2026-11-05，签字账迁 `docs/devworkflows/`） | — |
 | `skills/parliament/SKILL.md:20` | 客观 | 有 | 已合格 | 不改不豁免 | — |
 | `skills/parliament/assets/agent-template.md:13` | 自省,客观,诚实 | 无 | 改文案 | 改：`包容、客观、理性、自省、诚实；` → `逐条按证据判分歧、不确定项如实标注；` | — |
 | `skills/parliament/assets/progress.md:100` | 客观 | 有 | 已合格 | 不改不豁免 | — |

@@ -25,17 +25,18 @@ test('TC-A01 三件载体在磁盘上', () => {
   }
 });
 
-test('TC-A02 references 恰七份（双向全集）+ gate-record.md 六列表头在位', () => {
+test('TC-A02 references 恰七份（双向全集）+ gate-record-template.md 六列表头在位', () => {
   const r = refsReport(refNames());
   assert.equal(r.count, 7, `references 应恰 7 份，实为 ${r.count}`);
   assert.deepEqual(r.missing, []);
   assert.deepEqual(r.extra, []);
   assert.equal(r.exact, true);
 
-  const gateRecord = readRepo(`${REF_DIR}/gate-record.md`);
+  const tpl = readRepo(`${REF_DIR}/gate-record-template.md`);
   for (const col of ['段', '出口判据（逐条）', '核了什么（命令输出首行 或 path:line）', '申报人', '签字人', '结论']) {
-    assert.ok(gateRecord.includes(col), `gate-record.md 缺列名：${col}`);
+    assert.ok(tpl.includes(col), `gate-record-template.md 缺列名：${col}`);
   }
+  assert.equal(existsSync(join(ROOT, REF_DIR, 'gate-record.md')), false, '技能侧不得再装任务账（R9）');
 });
 
 test('TC-A03 SKILL.md frontmatter 有 name: dev-workflow 与 description（含「不用于」）', () => {
@@ -382,12 +383,9 @@ test('P56 两份段文档不再写「按 ### TC- 落盘」，改为「### TC-* �
   }
 });
 
-test('P62 gate-record 的 4 条历史 ②→③ 行不得被改写成脚本输出（段值锁定，不按总数）', () => {
-  const rows = readRepo(`${REF_DIR}/gate-record.md`)
-    .split(/\r?\n/)
-    .filter((l) => /^\|\s*②→③/.test(l));
-  const historical = rows.filter((l) => /^\|\s*②→③(@S6|@S2|@S3)?\s*\|/.test(l));
-  assert.equal(historical.length, 4, '历史四条（②→③ / @S6 / @S2 / @S3）必须在位');
-  assert.ok(historical.every((r) => /脚本未落地|手工/.test(r)), '历史措辞必须保留');
-  assert.ok(historical.every((r) => !/coverage: gap|deps: cycle|map: missing/.test(r)), '历史行不得贴脚本首行');
+test('P62 签字账已迁到 docs/devworkflows：技能侧只留模板，任务账由 check-gate-record 判', () => {
+  assert.equal(existsSync(join(ROOT, REF_DIR, 'gate-record.md')), false, 'references/gate-record.md 必须已删除');
+  const tpl = readRepo(`${REF_DIR}/gate-record-template.md`);
+  assert.ok(tpl.includes('docs/devworkflows/<YYYYMMDDHHmmss>-<任务名>/gate-record.md'), '模板必须写明实例落点');
+  assert.ok(tpl.includes('[[段]]'), '模板必须留一行 [[...]] 占位，确保整份复制后不触发判据');
 });

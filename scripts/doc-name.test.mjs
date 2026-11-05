@@ -40,6 +40,21 @@ test('创建时刻类：docs/prd 与 docs/after 必须 14 位时间戳前缀（�
   } finally { rmSync(root, { recursive: true, force: true }) }
 })
 
+test('创建时刻类：docs/devworkflows 任务目录必须 14 位时间戳前缀', () => {
+  const root = fixture([
+    'docs/devworkflows/20260102030405-task-wa/gate-record.md',
+    'docs/devworkflows/task-b/gate-record.md',
+  ])
+  try {
+    assert.equal(judge(join(root, 'docs/devworkflows/20260102030405-task-wa/gate-record.md'), root).ok, true)
+    const bad = judge(join(root, 'docs/devworkflows/task-b/gate-record.md'), root)
+    assert.equal(bad.ok, true)
+    assert.equal(bad.kind, 'pending-dir')
+    const res = checkTree('docs', root)
+    assert.ok(res.findings.some((f) => f.rel === 'docs/devworkflows/task-b/' && f.kind === 'stamp-dir'), JSON.stringify(res.findings))
+  } finally { rmSync(root, { recursive: true, force: true }) }
+})
+
 test('定稿日期类：specs / plans / handoffs 必须 YYYY-MM-DD 前缀', () => {
   const root = fixture([
     'docs/superpowers/specs/2026-01-02-ok.md',
