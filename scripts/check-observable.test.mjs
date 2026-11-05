@@ -9,7 +9,7 @@
 //     故本文件不得出现以「双引号 + 首词」起头的数组字面量 —— 需要时用 `J.terms` 拼接）。
 import test from 'node:test'
 import assert from 'node:assert'
-import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, symlinkSync, rmSync, readdirSync } from 'node:fs'
+import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, symlinkSync, rmSync, readdirSync, existsSync } from 'node:fs'
 import { join, dirname, resolve } from 'node:path'
 import { tmpdir } from 'node:os'
 import { spawnSync } from 'node:child_process'
@@ -988,11 +988,22 @@ test('OCR-S1-TC-F06 删日期注 → 必红', () => {
   assert.throws(() => assertDateNote(c))
 })
 
-test('OCR-S1-TC-F07 tools/docgen/policy/** 零改动', () => {
-  const a = spawnSync('git', ['diff', '--stat', 'HEAD', '--', 'tools/docgen/policy'], { cwd: REPO, encoding: 'utf8' })
+// 2026-11-05 增量（S6-B 签后登记）：`tools/docgen/policy/**` 不再断言「零改动」——S6-B 按已签 spec
+// 明确改动 `paths` / `seats` / 新增 `writeScopes` 三处。判据改为「只许这 3 个登记文件，其余 policy 文件零改动」。
+test('OCR-S1-TC-F07 tools/docgen/policy/** 只许 S6-B 登记的 3 个文件（其余零改动）', () => {
+  const ALLOWED = ['definitions/paths.mjs', 'definitions/seats.mjs', 'definitions/writeScopes.mjs']
+  // 三个登记文件必须仍在（否则「只许改动」会漏掉删除：`git status` 的 D 行也落在允许集内）
+  for (const f of ALLOWED) {
+    assert.ok(existsSync(join(REPO, 'tools/docgen/policy', f)), `登记文件不得被删除：${f}`)
+  }
+  const a = spawnSync('git', ['diff', '--name-only', 'HEAD', '--', 'tools/docgen/policy'], { cwd: REPO, encoding: 'utf8' })
   const b = spawnSync('git', ['status', '--porcelain', '--', 'tools/docgen/policy'], { cwd: REPO, encoding: 'utf8' })
-  assert.strictEqual((a.stdout || '').trim(), '')
-  assert.strictEqual((b.stdout || '').trim(), '')
+  assert.equal(a.status, 0, `git diff 执行失败：${a.error?.message ?? a.stderr}`)
+  assert.equal(b.status, 0, `git status 执行失败：${b.error?.message ?? b.stderr}`)
+  const rel = (line) => line.replace(/^[ MADRCU?!]{1,2}\s+/, '').replace('tools/docgen/policy/', '').trim()
+  const changed = [...(a.stdout || '').split(/\r?\n/), ...(b.stdout || '').split(/\r?\n/)].map(rel).filter(Boolean)
+  const outside = changed.filter((f) => !ALLOWED.includes(f))
+  assert.deepEqual(outside, [], `policy 下出现未登记的改动：${outside.join('、')}`)
 })
 
 test('OCR-S1-TC-F08 R8 sweep ok + 基线表述日期注在位', () => {

@@ -24,7 +24,7 @@ import * as ART from '../policy/definitions/artifacts.mjs';
 import * as SEATS from '../policy/definitions/seats.mjs';
 import { SEAT_POLICY } from '../policy/seat-policy.mjs';   // 配置层（spec §3.3）：对象键 = 席 slug，三键只持登记 ID
 import { TIERS, tierOfCapabilities } from '../policy/definitions/tiers.mjs';
-import { renderBoundary } from '../components/renderBoundary.mjs';
+import { renderBoundary, SLOTS } from '../components/renderBoundary.mjs';
 
 const ROOT = process.cwd();            // `node --test` 以仓库根为 cwd；不得写成测试文件相对路径
 const ID = /^[a-z][a-z0-9.:-]*$/;      // = spec §3.4 归码谓词（与实现同一口径，不另造）
@@ -94,10 +94,10 @@ const grantGroup = (dir, seat, group) => {
 };
 
 // ---- 判据侧派生（禁止手抄）：路径清单全部从定义层取（testcase §0.3）----
-// pathItems() = **19**（18 个数组元素 + 1 个 pattern 源串）=「定义层有几个值」，**不是** ③ 段成员数（见 §0.1）
-const pathItems = () => [...Object.values(PTH.pathGroups).flat(), PTH.FORBIDDEN_SPEC_PLAN.pattern.source];
-// pathTokens() = **20**（③ 段成员数）：`代码、测试` 在卡面写作两项，故按「、」再切一次；`spec / plan` 恒在末位
-const pathTokens = () => [...Object.values(PTH.pathGroups).flat().flatMap((x) => x.split('、')), 'spec / plan'];
+// pathItems() = **20**（19 个项对象 + 1 个 pattern 源串）=「定义层有几个值」，**不是** ③ 段成员数（见 §0.1）
+const pathItems = () => [...Object.values(PTH.pathGroups).flat().map((x) => x.text), PTH.FORBIDDEN_SPEC_PLAN.pattern.source];
+// pathTokens() = **20**（③ 段成员数）：项已是单 token（S6-B 把 `代码、测试` 拆两项），故不再按「、」再切；`spec / plan` 恒在末位
+const pathTokens = () => [...Object.values(PTH.pathGroups).flat().map((x) => x.text), 'spec / plan'];
 // Q8（2026-11-03，PRD §3 / spec §10.1 R6）：`pathGroups.workspace` 删了 3 项本仓专属路径（字面 = `Q8_REMOVED_PATHS`）。
 // 下列用例以**改造前旧卡**（`capability-baseline.json`，23 项）为 `before`，故 diff 必须**恰等于**这 3 条 minus；
 // 其余任何差仍判红（不放宽成「不看 minus」，也不改基线——基线必须早于 `policy/` 出现，见 H07a）。
@@ -171,7 +171,7 @@ console.log(JSON.stringify({
   tools: Object.values(CAP.capabilities).flat(),
   tiers: Object.keys(TIERS),
   artifacts: Object.keys(ART.artifacts),
-  paths: [...groups.flatMap((x) => x.split('、')), 'spec / plan'],
+  paths: [...groups.map((x) => x.text), 'spec / plan'],
   allowVerbs: Object.values(CMD.commandGroups).flatMap((g) => g.verbs),
   denyVerbs: Object.entries(CMD.forbiddenGroups).filter(([g]) => g !== 'env.assign').flatMap(([, g]) => g.verbs),
   envVerbs: [...CMD.forbiddenGroups['env.assign'].verbs],
@@ -222,22 +222,21 @@ test('S6-TC-A02 命令 8 组（允许 3 / 禁止 5）+ seatGroups 空集 + 每�
   assert.deepEqual(Object.keys(CMD.seatGroups ?? {}), [], '本轮 seatGroups 必须是空集（只允许副本内构造）');
 });
 
-test('S6-TC-A04 路径 6 组：18 数组元素 / 19 定义层点名 / 20 卡面成员', () => {
+test('S6-TC-A04 路径 6 组：19 项对象 / 20 定义层点名 / 20 卡面成员', () => {
   const P = PTH.pathGroups;
   assert.deepEqual(Object.keys(P), ['code','governance','docs.input','build','ledger','workspace']);
-  assert.deepEqual(P.code, ['代码、测试']);
-  assert.deepEqual(P.governance, ['rules/','skills/','agents/']);
-  assert.deepEqual(P['docs.input'], ['docs/prd/']);
-  assert.deepEqual(P.build, ['tools/','scripts/','配置与依赖清单']);
+  assert.deepEqual(P.code.map((i) => i.text), ['代码','测试']);
+  assert.deepEqual(P.governance.map((i) => i.text), ['rules/','skills/','agents/']);
+  assert.deepEqual(P['docs.input'].map((i) => i.text), ['docs/prd/']);
+  assert.deepEqual(P.build.map((i) => i.text), ['tools/','scripts/','配置与依赖清单']);
   // **成员名逐项断言**（只比长度 → `docs/reports/` 换成 `docs/misc/` 也绿，等于没判）
-  assert.deepEqual(P.ledger, ['docs/after/','docs/handoffs/','docs/reports/','docs/superpowers/retro/'],
+  assert.deepEqual(P.ledger.map((i) => i.text), ['docs/after/','docs/handoffs/','docs/reports/','docs/superpowers/retro/'],
     'ledger 组必须逐项相等（换名不换数 → 必红）');
-  assert.deepEqual(P.workspace, ['.superpowers/','*.local.md','**/ledger.md','.trae/','node_modules/','其他评审目录'],
+  assert.deepEqual(P.workspace.map((i) => i.text), ['.superpowers/','*.local.md','**/ledger.md','.trae/','node_modules/','其他评审目录'],
     'workspace 恰 6 项且按定义层顺序逐项相等（Q8 删 3 项后；换名不换数 / 调序 → 必红）');
-  // 计数：绝对数 19 写死一次（Plan T5 Step 3 要求）；`flat` 的 18 由上面六组 `deepEqual` 的成员集钉住。
-  // 不写 `flat === pathItems().length - 1` —— 那是恒真式（`pathItems()` 定义就是 `flat()` 再拼 1），无判别力。
-  assert.equal(pathItems().length, 19);                                  // 18 数组元素 + 1 pattern 源串
-  assert.equal(pathTokens().length, pathItems().length + 1);             // 20 = 19 + 1（按 `、` 再切 + `spec / plan`）
+  // 计数：绝对数 20 写死一次；`flat` 的 19 由上面六组成员集钉住（S6-B：`代码、测试` 拆两项）。
+  assert.equal(pathItems().length, 20);                                  // 19 项对象 + 1 pattern 源串
+  assert.equal(pathTokens().length, pathItems().length);                 // 20 = 20（项已是单 token，不再按 `、` 再切）
   assert.ok(pathTokens().includes('spec / plan'), '`spec / plan` 必须进成员集合（否则 ③ 段少一项）');
   assert.ok(PTH.FORBIDDEN_SPEC_PLAN.pattern instanceof RegExp);
   assert.match('spec / plan', PTH.FORBIDDEN_SPEC_PLAN.pattern);
@@ -304,12 +303,13 @@ test('S6-TC-A06 卡面指针在位 + 组 ID 顺序 == 配置层顺序（路径 /
   assert.ok(commandTokens().length >= 1, '定义层允许命令不得为空（组 ID 指针外仍需成员可枚举）');
 });
 
-test('S6-TC-C06 12 槽齐（可观测值）+ 无残留 / 未定义 / 悬空标点 + 槽 6 两形态 + 可选槽缺省', () => {
+test('S6-TC-C06 15 槽齐（可观测值）+ 无残留 / 未定义 / 悬空标点 + 槽 6 两形态 + 可选槽缺省', () => {
   const SLOTS = ['SEAT', 'TIER', 'CAPABILITIES', 'ARTIFACTS', 'SEAT_CLAUSE', 'ESCALATION_WRITER',
-    'ALLOW_GROUPS', 'DENY_GROUPS', 'ENV_FORMS', 'FORBIDDEN_PATHS', 'DETECTION_PATHS', 'DETECTION_CMD'];
+    'ALLOW_GROUPS', 'DENY_GROUPS', 'ENV_FORMS', 'FORBIDDEN_PATHS', 'DETECTION_PATHS', 'DETECTION_CMD',
+    'ROLE_KIND', 'WRITE_SCOPE', 'HOST_RULE'];
   const tpl = readFileSync('tools/docgen/templates/boundary.md.tpl', 'utf8');
   const slots = new Set([...tpl.matchAll(/\{\{([A-Z_]+)\}\}/g)].map((m) => m[1]));
-  assert.deepEqual([...slots].sort(), [...SLOTS].sort(), '槽集 ≠ §3.4 表的 12 个');
+  assert.deepEqual([...slots].sort(), [...SLOTS].sort(), '槽集 ≠ §3.4 表的 15 个');
   for (const s of SLOTS) assert.ok(countIn(tpl, `{{${s}}}`) >= 1, `槽 ${s} 未被引用`);
   for (const seat of ['reviewer-audit', 'detective-observer', 'senior-sdet']) {
     const out = renderBoundary(seat);
@@ -322,7 +322,7 @@ test('S6-TC-C06 12 槽齐（可观测值）+ 无残留 / 未定义 / 悬空标�
   // ⑤ 槽 6（{{ESCALATION_WRITER}}）两形态（spec:85）：本席自写 / 他席写
   assert.match(renderBoundary('reviewer-audit'), /审计\s*写\s*`round-check\.md`/, '审计席：应渲染「本席自写」形态');
   assert.match(renderBoundary('detective-observer'), /交\s*审计\s*在\s*`round-check\.md`\s*独立复算/, '侦探席：应渲染「他席写」形态');
-  // ⑥ 可选槽缺省（spec:57）：三席 display 全写死；`senior-sdet` 的 clause / escalationWriter **缺省未声明** → 空串、12 项不变
+  // ⑥ 可选槽缺省（spec:57）：三席 display 全写死；`senior-sdet` 的 escalationWriter **缺省未声明** → 空串、槽数不变
   for (const s of ['reviewer-audit', 'detective-observer', 'senior-sdet']) {
     assert.ok(String(SEATS.SEATS[s].display).trim().length > 0, `${s}: display 必须写死非空`);
   }
@@ -330,17 +330,17 @@ test('S6-TC-C06 12 槽齐（可观测值）+ 无残留 / 未定义 / 悬空标�
   assert.ok(sd.length > 0, 'senior-sdet 必须能渲染成功（可选槽缺省不是渲染失败）');
   assert.equal(/undefined|null|NaN/.test(sd), false, '缺省槽渲染出未定义值');
   assert.equal(/[、，；：]{2,}|[、，；：]\s*[。；]/.test(sd), false, '缺省槽留下悬空标点');
-  assert.equal(dumpPolicy(ROOT).json.seats['senior-sdet'].expanded.length, 12, '缺省槽不得让 expanded 变短');
+  assert.equal(dumpPolicy(ROOT).json.seats['senior-sdet'].expanded.length, SLOTS.length, '缺省槽不得让 expanded 变短');
 });
 
-test('S6-TC-C08 槽级指针化：5 槽改指针句、槽集仍 12、定义层成员数不变', () => {
+test('S6-TC-C08 槽级指针化：5 槽改指针句、槽集仍 15、定义层成员数不变', () => {
   const e = dumpPolicy(ROOT).json.seats['reviewer-audit'].expanded;
   // 槽序 = §3.4 表行序（`spec:76` / `spec:162`）：槽 7 ALLOW→index 6 / 槽 8 DENY→index 7
   // / 槽 9 ENV_FORMS→index 8 / 槽 10 FORBIDDEN_PATHS→index 9（卡面首次出现顺序不参与判据）
-  // S-B §11.2.3：这 5 个槽的值整体换成**指针句**（保留 12 槽、`SLOTS` 顺序不动）→ 原「槽内分隔符」判据换成
+  // S-B §11.2.3：这 5 个槽的值整体换成**指针句**（保留 15 槽、`SLOTS` 顺序不动）→ 原「槽内分隔符」判据换成
   // 「指针符号在位 + 槽仍是逐组列出的那一个（组 ID 顺序）+ 定义层成员数不变」。
   const [allowSlot, denySlot, pathSlot, envSlot, detectSlot] = [e[6], e[7], e[9], e[8], e[10]];
-  assert.equal(e.length, 12, '槽集必须仍是 12（指针化只改槽值，不删槽）');
+  assert.equal(e.length, SLOTS.length, '槽集必须仍是 15（指针化只改槽值，不删槽）');
   // 槽 7：指针 + 本席组 ID 逐组列出，组间 ` / `
   assert.ok(allowSlot.includes('`commandGroups`'), '允许组：必须指向策略源 commandGroups');
   const slotIds = [...allowSlot.matchAll(/`([^`]+)`/g)].map((m) => m[1])
@@ -455,7 +455,7 @@ test('S6-TC-B01 三席 + __default__ 策略数据等价；黄金 4 键齐（哈�
   for (const s of SEATS.SEAT_NAMES) assert.ok(String(SEATS.SEATS[s].display).trim().length > 0, `${s}: display 必须写死非空`);
   assert.equal(SEATS.SEATS['senior-sdet'].display, '测试开发');
   assert.equal(Object.hasOwn(SEATS.SEATS['senior-sdet'], 'escalationWriter'), false, 'senior-sdet 应**缺省** escalationWriter（未声明）');
-  assert.equal(SEATS.SEATS['senior-sdet'].clause ?? '', '', "senior-sdet 的 clause 缺省值必须是 ''");
+  assert.equal(SEATS.SEATS['senior-sdet'].clause, '不改别人的判定：spec 或实现有问题，写进「给开发的建议」，不代改、不参与议会裁决', 'senior-sdet 的 clause 必须是旧句第三段（S6-B §3.3）');
   assert.equal(SEATS.SEATS.__default__.clause, '', "__default__.clause 必须为 ''");
   // 判定函数结构里没有哈希位
   assert.equal(verdict.length, 1);
@@ -704,11 +704,11 @@ test('S6-TC-C09 显式 undefined 的槽值 → TemplateImpure（「缺省未声�
   // ①②③ 显式 undefined ≠ 缺省：必须 TemplateImpure，且片段 = 槽名
   const bad = withCopy((d) => {
     editInDir(d, 'tools/docgen/policy/definitions/seats.mjs',
-      (s) => s.replace(/'senior-sdet':\s*\{/, "'senior-sdet': { clause: undefined,"));
+      (s) => s.replace(/(['"]senior-sdet['"]:\s*\{[\s\S]*?)clause: '[^']*'/, '$1clause: undefined'));
     return runCli(d, ['policy', '--dump']);
   });
   assert.equal(bad.status, 1, '显式 undefined 必须判红');
-  assert.match(bad.stderr.split('\n')[0], /^TemplateImpure: .*boundary\.md\.tpl:.*SEAT_CLAUSE$/);
+  assert.match(bad.stderr, /TemplateImpure: .*boundary\.md\.tpl:.*SEAT_CLAUSE/);
 });
 
 // ===================== T5：档位表 = 定义层同一对象引用（A01） =====================
@@ -945,10 +945,11 @@ test('S6-TC-E01 新增一条禁止路径 → 只改定义层 + 卡面零变化 �
   withCopy((d) => {
     const snap = () => dirHashes(join(d, 'tools/docgen'));
     const before = snap();
-    const SEATS2 = ['reviewer-audit', 'detective-observer'];
+    const SEATS2 = ['reviewer-audit', 'detective-observer', 'senior-sdet'];
     const renderBefore = SEATS2.map((s) => renderBoundaryIn(d, s));
     editInDir(d, 'tools/docgen/policy/definitions/paths.mjs',
-      (s) => s.replace("'其他评审目录',", "'其他评审目录',\n    'vendor/',"));
+      (s) => s.replace("{ id: 'other-reviews', text: '其他评审目录' },",
+        "{ id: 'other-reviews', text: '其他评审目录' }, { id: 'vendor', text: 'vendor/' },"));
     // S-B §11.2.6：清单指针化后，新增一条禁止路径**不改渲染** → 卡面无需重生成，gate 仍绿；
     // 「定义层真接上了」由 dump 侧判（否则「绿」是空转）。
     const green = runCli(d, ['gate']);
@@ -972,13 +973,20 @@ test('S6-TC-E02 V-8 两形态：已登记席加组 = 1 处数据；新增席 = 2
     console.log(JSON.stringify(Object.fromEntries(['reviewer-audit','detective-observer','senior-sdet']
       .map((s) => [s, createHash('sha256').update(renderBoundary(s)).digest('hex')]))))`).stdout);
   const before = hashesOf(ROOT);
-  // ① 已登记席加组 → 只改 seat-policy.mjs 一处（数据），只该席渲染变，gate 仍绿
+  // ① 已登记席加组 → 只改 seat-policy.mjs 一处（数据），只该席渲染变；3 席接模板后卡面未重出 → gate 报 Mismatch，
+  //    副本内按渲染重写该卡后 gate 复绿
   withCopy((d) => {
     grantGroup(d, 'senior-sdet', 'check.local');
     assert.deepEqual(changedFiles(ROOT, d), ['policy/seat-policy.mjs'], 'V-8①：已登记席加组只应改配置层一处');
     const after = hashesOf(d);
     assert.deepEqual(Object.keys(after).filter((n) => after[n] !== before[n]), ['senior-sdet']);
-    assert.equal(runCli(d, ['gate']).status, 0, '卡面必须零变化（12 席不接渲染层）');
+    assert.equal(runCli(d, ['gate']).status, 1, '数据变了、卡未重出 → gate 必须报 Mismatch');
+    // 副本内按渲染重写该卡（与 gate 的逐字节基准同一产出：renderByName）
+    const full = runEsm(d, "import {renderByName} from './tools/docgen/components/renderByName.mjs';process.stdout.write(renderByName('senior-sdet'))");
+    assert.equal(full.status, 0, `副本渲染失败：${full.stderr}`);
+    writeFileSync(join(d, 'agents', 'senior-sdet.md'), full.stdout, 'utf8');
+    const ok = runCli(d, ['gate']);
+    assert.equal(ok.status, 0, `副本内重写卡面后 gate 必须复绿：${ok.stderr}`);
     const sd = renderBoundaryIn(d, 'senior-sdet');
     assert.equal(/undefined|null|NaN/.test(sd), false, '缺省槽渲染出未定义值');
     assert.equal(/[、，；：]{2,}|[、，；：]\s*[。；]/.test(sd), false, '缺省槽留下悬空标点');
@@ -1076,7 +1084,7 @@ test('S6-TC-E07 定义层单源：policy/ 下无第二份边界/清单常量文�
   const files = ls.stdout.trim().split('\n').map((f) => f.replace('tools/docgen/policy/', ''));
   assert.deepEqual(files.sort(), ['definitions/artifacts.mjs','definitions/capabilities.mjs',
     'definitions/commands.mjs','definitions/paths.mjs','definitions/seats.mjs','definitions/tiers.mjs',
-    'seat-policy.mjs']);
+    'definitions/writeScopes.mjs','seat-policy.mjs']);
   const marks = ['只允许写','逐项点名','命令默认拒绝'];
   for (const f of files) {
     const t = readFileSync(`tools/docgen/policy/${f}`, 'utf8');
@@ -1153,10 +1161,10 @@ test('S6-TC-G03 默认边界句的 11 席、evidence-reader 与 senior-sdet 专�
   const sd = agentData.find((a) => a.name === 'senior-sdet');
   assert.equal(typeof sd.boundary, 'string', 'senior-sdet 迁移后必须注入专用 boundary（B3 裁定 2026-10-31）');
   assert.equal(sd.boundary, patternRegistry.boundaryBySeat['senior-sdet']);
-  assert.ok(sd.boundary.includes('只写'), '专用边界必须写「只写」清单（S4 §5.1 :132）');
+  assert.ok(sd.boundary.includes('只允许写'), '专用边界必须写「只允许写」清单（S4 §5.1 :132）');
   assert.equal(sha(DEFAULT_BOUNDARY), goldenOf('default-boundary'));
   assert.equal(sha(agentData.find((a) => a.name === 'evidence-reader').boundary), goldenOf('evidence-reader-boundary'));
-  assert.equal(sha(sd.boundary), goldenOf('senior-sdet-boundary'), 'senior-sdet 专用边界句黄金必须对位');
+  assert.equal(sha(sd.boundary), goldenCurOf('senior-sdet'), 'senior-sdet 专用边界句黄金必须对位');
 });
 
 test('S6-TC-G04 死常量已删；tool-tiers 的 import / B08 / E05 / B14 四处同批改判', () => {
@@ -1206,7 +1214,7 @@ test('S6-TC-G05 改定义层一条 → gate 红 → 改回绿', () => {
 
 // 标题不写「N 档」：S5-TC-E04 的计数守卫（dev-workflow-checks.mjs:192 `isTierCountLine`）
 // 会把**任何非注释行**里的档位计数当硬编码判红，标题是字符串、剥不掉
-test('S6-TC-F01 dump 顶层八键齐 / tiers 档位表齐（值 = 工具名）/ commands 8 组 / 每席 expanded 12 项', () => {
+test('S6-TC-F01 dump 顶层八键齐 / tiers 档位表齐（值 = 工具名）/ commands 8 组 / 每席 expanded 15 项', () => {
   const { json } = dumpPolicy(ROOT);
   assert.deepEqual(Object.keys(json).sort(),
     ['artifacts','capabilities','commands','detectionBlindSpots','paths','seatGroups','seats','tiers']);
@@ -1233,12 +1241,12 @@ test('S6-TC-F01 dump 顶层八键齐 / tiers 档位表齐（值 = 工具名）/ 
   assert.match('spec / plan', new RegExp(json.paths.patterns.specPlan), '源串必须能命中卡面形态 spec / plan');
   assert.deepEqual(json.detectionBlindSpots, ['.session/','.superpowers/','lessons/'], '检测盲区必须恰 3 项');
   assert.equal(typeof json.seatGroups, 'object');
-  // seats 键 = 配置层登记席（3 席 + `__default__`），每席 {display, expanded[12]}
+  // seats 键 = 配置层登记席（3 席 + `__default__`），每席 {display, expanded[15]}
   assert.deepEqual(Object.keys(json.seats).sort(), Object.keys(SEAT_POLICY).sort(), 'dump 的 seats 键 ≠ 配置层登记席');
   for (const [s, v] of Object.entries(json.seats)) {
     assert.ok(String(v.display).trim().length > 0, `${s}: display 缺失`);
     assert.ok(Array.isArray(v.expanded), s);
-    assert.equal(v.expanded.length, 12, `${s}: expanded 必须是 12 个槽值（不是整段边界文本）`);
+    assert.equal(v.expanded.length, SLOTS.length, `${s}: expanded 必须是全部槽值（不是整段边界文本）`);
   }
 });
 
@@ -1249,7 +1257,7 @@ test('S6-TC-F02 dump 槽级展开可复算 renderBoundary；两 producer 席 == 
   for (const s of seats) {
     const out = renderBoundary(s);
     const e = json.seats[s].expanded;
-    assert.equal(e.length, 12, s);
+    assert.equal(e.length, SLOTS.length, s);
     // ① 槽值确实是渲染原料（不是另拼一份）
     for (const v of e) assert.ok(out.includes(v), `${s} 槽值不在渲染文本里：${v}`);
     // ② 可派生的定位槽：槽 1 / 2 / 3 / 10 / 12（§3.4 表行序，第 n 行 → index n−1）
@@ -1274,11 +1282,11 @@ test('S6-TC-F02 dump 槽级展开可复算 renderBoundary；两 producer 席 == 
   for (const s of ['reviewer-audit','detective-observer']) {
     assert.equal(cardBoundary(card(s)).trim(), renderBoundary(s).trim(), s);
   }
-  // ④ senior-sdet：只有 read/write 档与空组；槽 5 / 槽 6 缺省 = 空串，expanded 仍 12 项
+  // ④ senior-sdet：只有 read/write 档与空组；槽 5 = clause（非空）、槽 6 缺省 = 空串，expanded 仍 15 项
   const sd = json.seats['senior-sdet'];
   assert.equal(sd.expanded.join('').includes('docgen.read'), false, 'senior-sdet 不得含 producer 的允许组');
-  assert.equal(sd.expanded.length, 12, '缺省槽不得让 expanded 变短');
-  assert.equal(sd.expanded[4], '', '槽 5 = SEAT_CLAUSE：缺省未声明 → 空串');
+  assert.equal(sd.expanded.length, SLOTS.length, '缺省槽不得让 expanded 变短');
+  assert.equal(sd.expanded[4], SEATS.SEATS['senior-sdet'].clause, '槽 5 = SEAT_CLAUSE：必须等于 seats.mjs 的 clause');
   assert.equal(sd.expanded[5], '', '槽 6 = ESCALATION_WRITER：缺省未声明 → 空串');
   assert.equal(/undefined|null|NaN/.test(renderBoundary('senior-sdet')), false, '缺省槽渲染出未定义值');
 });
@@ -1775,7 +1783,7 @@ test('S6-TC-H02 五段事实集合逐席 diff 空差', () => {
     }
     // ⑥ 交叉核对（S-B 后的替身）：dump 的**清单导出**必须与定义层逐字相等（渲染侧只留指针，不再复算清单）
     for (const [g, items] of Object.entries(json.paths.groups)) {
-      assert.deepEqual([...items], [...PTH.pathGroups[g]], `${s}: dump 的路径组 ${g} ≠ 定义层`);
+      assert.deepEqual([...items], PTH.pathGroups[g].map((i) => i.text), `${s}: dump 的路径组 ${g} ≠ 定义层投影`);
     }
     for (const g of Object.keys(CMD.commandGroups)) {
       assert.deepEqual([...json.commands[g].verbs], [...CMD.commandGroups[g].verbs], `${s}: dump 的命令组 ${g} ≠ 定义层`);
@@ -1788,7 +1796,8 @@ test('S6-TC-H02 五段事实集合逐席 diff 空差', () => {
 
 test('S6-TC-H03 负例：少一项路径 → minus 出现 forbiddenPaths → 必红', () => {
   const d = withCopy((dir) => {
-    editInDir(dir, 'tools/docgen/policy/definitions/paths.mjs', (s) => s.replace("'其他评审目录',", ''));
+    editInDir(dir, 'tools/docgen/policy/definitions/paths.mjs',
+      (s) => s.replace(/\s*\{ id: 'other-reviews', text: '其他评审目录' \},\r?\n/, '\n'));
     // 清单源必须按**副本**现算，否则删掉的那项不在 dump 里、`minus` 恒空
     return diffFacts(baseJson().seats['reviewer-audit'],
       factsFromPolicy(dumpPolicy(dir).json, 'reviewer-audit'));
@@ -1818,7 +1827,8 @@ test('S6-TC-H05 越权负例：多一项（路径 / 命令 / 已登记组，各�
   const beforeOf = (seat) => (baseJson().seats[seat] ?? factsFromPolicy(dumpPolicy(ROOT).json, seat));
   const CASES = [
     ['paths', 'reviewer-audit', (d) => editInDir(d, 'tools/docgen/policy/definitions/paths.mjs',
-      (s) => s.replace("'其他评审目录',", "'其他评审目录','vendor/',")), 1],
+      (s) => s.replace("{ id: 'other-reviews', text: '其他评审目录' },",
+        "{ id: 'other-reviews', text: '其他评审目录' }, { id: 'vendor', text: 'vendor/' },")), 1],
     ['cmds', 'reviewer-audit', (d) => editInDir(d, 'tools/docgen/policy/definitions/commands.mjs',
       (s) => s.replace("'node scripts/skill-dir.mjs',", "'node scripts/skill-dir.mjs','node scripts/extra.mjs',")), 1],
     // 度量席必须是 `senior-sdet` 自己：`reviewer-audit` 本就持有 `docgen.read` → plus 恒 0、判据失效

@@ -27,7 +27,13 @@ export function dumpPolicy(_dir = process.cwd()) {
       tiers: TIERS,
       commands: { ...CMD.commandGroups, ...CMD.forbiddenGroups, ...CMD.seatGroups },
       seatGroups: CMD.seatGroups,
-      paths: { groups: PTH.pathGroups, patterns: { specPlan: PTH.FORBIDDEN_SPEC_PLAN.pattern.source } },
+      paths: {
+        // S6-B §3.1 / D1'：定义层项对象在此**投影为 text 字符串数组**，`policy --dump` 的形状不变
+        groups: Object.fromEntries(
+          Object.entries(PTH.pathGroups).map(([group, items]) => [group, items.map((item) => item.text)]),
+        ),
+        patterns: { specPlan: PTH.FORBIDDEN_SPEC_PLAN.pattern.source },
+      },
       detectionBlindSpots: PTH.DETECTION_BLIND_SPOTS,
       artifacts: ART.artifacts,
       seats,

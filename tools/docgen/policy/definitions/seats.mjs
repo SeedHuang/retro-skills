@@ -14,7 +14,12 @@ export const SEATS = {
     clause: '（轮初 / 轮末快照原文、观察记录、比对结论），且本席不核签',
     escalationWriter: { slug: 'reviewer-audit', artifact: 'round-check.md' },
   },
-  'senior-sdet': { display: '测试开发' },
+  'senior-sdet': {
+    display: '测试开发',
+    // S6-B（2026-11-05）：写作用域 + 旧专用句第三段（不改别人的判定）落 clause；边界句由渲染器产出
+    writeScope: 'spec.testcase',
+    clause: '不改别人的判定：spec 或实现有问题，写进「给开发的建议」，不代改、不参与议会裁决',
+  },
   __default__: { display: '默认席', clause: '' },
 };
 

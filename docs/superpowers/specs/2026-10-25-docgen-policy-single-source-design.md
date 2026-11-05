@@ -5,6 +5,7 @@
 > 测试用例文件：`2026-10-25-docgen-policy-single-source-design-testcase.md`（同批由独立 `senior-sdet` 编写，本 spec 不内联用例）
 > 原型与取舍记录：`docs/after/20261025094353-docgen-policy-single-source-open-decisions.md`
 > 规模：spec ≤350 行 / testcase ≤80 条 / 议会 ≤3 轮（PRD §4.1 功能块判据）
+> **签后增量（2026-11-04，日期注）**：非评审席边界结构收敛（S6-B）另立 spec `2026-11-04-s6-b-boundary-convergence-design.md`；该件 §3.8 列明与本 spec 冲突处以它为准的六处（`pathGroups` 形态 / `seats` 字段 / 槽集 12→15 / 槽 10 / 收口范围 2→3 席 / V-1③ 计数）。本 spec 原文与结论不删不改。
 
 ## 1 全貌
 

@@ -335,6 +335,15 @@
         "tools/docgen/test/sc-card-shape.test.mjs",
         "tools/docgen/data/seats/senior-sdet.json"
       ]
+    },
+    {
+      "id": "I35",
+      "title": "S6-B 结构收敛的旧口径（旧 = 槽集 12 / 路径三数（数组元素 21·定义层点名 22·卡面成员 23，Q8 前值）；现行 = 槽集 15 / 19·20·20，见 S6-B spec §3.8）",
+      "words": ["槽集 12 个", "恰 12 槽", "12 个槽", "数组元素 21"],
+      "scope": [
+        "docs/superpowers/specs/2026-11-04-s6-b-boundary-convergence-design.md",
+        "docs/superpowers/specs/2026-11-04-s6-b-boundary-convergence-design-testcase.md"
+      ]
     }
   ]
 }

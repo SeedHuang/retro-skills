@@ -391,8 +391,8 @@ const POINTER_SYMBOLS = ['pathGroups', 'commandGroups', 'forbiddenGroups', 'DETE
 // 卡面 ③ 段的现形态（S-B §11.2.3）：一句指针 + 原样保留的兜底句
 const PATH_POINTER_LINE = '禁写集合 ='
 const FALLBACK_SENTENCE = '兜底句：凡 `.gitignore` 覆盖的路径一律视为禁止写入。'
-// 派生式成员数（禁手抄）：③ 段口径 = 六组展开 ∪ `spec / plan`
-const pathTokens = () => [...Object.values(pathGroups).flat().flatMap((x) => x.split('、')), 'spec / plan']
+// 派生式成员数（禁手抄）：③ 段口径 = 六组展开（项已是单 token）∪ `spec / plan`
+const pathTokens = () => [...Object.values(pathGroups).flat().map((x) => x.text), 'spec / plan']
 // 判别力探针（SB-TC-12 / SB-TC-36 形态）：回填一行 → 计数必须从 0 变 1
 const scanQuota = (text) => text.split('\n').filter((l) => l.includes('逐项点名')).length
 const scanLessons = (text) => text.split('\n').filter((l) => l.includes('lessons/')).length

@@ -28,10 +28,10 @@ test('产物无槽位残留 + testcase 席恰 [senior-sdet]', () => {
   assert.deepEqual(agentData.filter((a) => a.outputKind === 'testcase').map((a) => a.name), ['senior-sdet']);
 });
 
-test('边界段 = 该席专用句（允许写 testcase），不是只读评审角色', () => {
+test('边界段 = 该席走渲染（允许写 testcase），不是只读评审角色', () => {
   const r = renderByName('senior-sdet');
   const sec = r.slice(r.lastIndexOf('## 边界'));
   assert.equal(sec.includes('你是只读评审角色'), false, '边界不得退回默认只读句（B3 裁定 2026-10-31）');
-  assert.ok(sec.includes('只写'), '边界必须写「只写」清单');
+  assert.ok(sec.includes('只允许写'), '边界必须写「只允许写」清单');
   assert.equal(sec.includes(patternRegistry.boundaryBySeat['senior-sdet']), true, '边界必须是 boundaryBySeat 的单源句');
 });

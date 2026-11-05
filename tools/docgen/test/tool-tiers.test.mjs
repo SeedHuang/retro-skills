@@ -32,10 +32,9 @@ const clone = () => structuredClone(agentData).map((a) => ({ ...a, ...(a.tools ?
 const producerSeats = () => Object.keys(patternRegistry.tierBySeat).filter((n) => patternRegistry.tierBySeat[n] === 'producer');
 
 // ── 共用前提（P0 前置）：B02 / B03 / B05 / B13 共享，模块顶层声明一次（抄进各 test() 会漏项或 ReferenceError）──
-const FORBIDDEN_PATHS = Object.values(pathGroups).flat();
-// 卡面 ③ 段成员数口径（S5 testcase §1.1）：`代码、测试` 在定义层合写一条、卡面写作两项，
-// 故卡面成员 = 定义层数组按 `、` 再切 + `spec / plan` = 20 项（Q8 删 3 项后；本文件一律派生、不写死）
-const pathTokens = () => [...FORBIDDEN_PATHS.flatMap((x) => x.split('、')), 'spec / plan'];
+const FORBIDDEN_PATHS = Object.values(pathGroups).flat().map((item) => item.text);
+// 卡面 ③ 段成员数口径（S6-B §3.1）：项已是单 token（`代码` / `测试` 各一项），卡面成员 = 19 + `spec / plan` = 20
+const pathTokens = () => [...FORBIDDEN_PATHS, 'spec / plan'];
 
 function assertBoundaryClean(text, label = '') {
   const marks = [...text.matchAll(/^## 边界$/gm)];

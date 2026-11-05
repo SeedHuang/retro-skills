@@ -10,6 +10,7 @@ import * as CMD from '../policy/definitions/commands.mjs';
 import * as PTH from '../policy/definitions/paths.mjs';
 import * as ART from '../policy/definitions/artifacts.mjs';
 import * as SEATS from '../policy/definitions/seats.mjs';
+import { writeScopes } from '../policy/definitions/writeScopes.mjs';
 import { SEAT_POLICY } from '../policy/seat-policy.mjs';
 
 const TPL_REL = 'tools/docgen/templates/boundary.md.tpl';
@@ -17,16 +18,15 @@ const TPL_PATH = join(dirname(fileURLToPath(import.meta.url)), '..', 'templates'
 // 导入期读取（spec:195）：读取失败 = 未捕获异常，不承诺任何错误码 / 退出码；换行统一 `\n`、去掉末尾空行
 const TPL = readFileSync(TPL_PATH, 'utf8').replace(/\r\n/g, '\n').replace(/\n+$/, '');
 
-// 12 槽，顺序 = spec §3.4 表行序（不是卡面首次出现顺序）
+// 15 槽，顺序 = spec §3.4 表行序（不是卡面首次出现顺序）；旧 12 槽位置不动，`ROLE_KIND` / `WRITE_SCOPE` / `HOST_RULE` 追加末位
 export const SLOTS = ['SEAT', 'TIER', 'CAPABILITIES', 'ARTIFACTS', 'SEAT_CLAUSE', 'ESCALATION_WRITER',
-  'ALLOW_GROUPS', 'DENY_GROUPS', 'ENV_FORMS', 'FORBIDDEN_PATHS', 'DETECTION_PATHS', 'DETECTION_CMD'];
+  'ALLOW_GROUPS', 'DENY_GROUPS', 'ENV_FORMS', 'FORBIDDEN_PATHS', 'DETECTION_PATHS', 'DETECTION_CMD',
+  'ROLE_KIND', 'WRITE_SCOPE', 'HOST_RULE'];
 
 // 结构性文本白名单（§3.4 纯度规则 3）：只登记**非清单类**成员；登记清单类成员本身即违规（不变量 6）
 // S-B §11.2.3：4 个策略符号名（指针句里出现的反引号项）不是定义层单点成员，必须登记；
 // 它们都不是清单类成员（组 ID / verb / 路径项），故不触发末尾的 `ALLOWED_LITERALS:` 自检。
 export const TEMPLATE_ALLOWED_LITERALS = new Set([
-  '.session/reviews/<本次>/',
-  'docs/superpowers/reviews/<本次>/',
   'skills/dev-workflow/references/gate-record.md',
   '.gitignore',
   'DOCGEN_*',
@@ -84,9 +84,29 @@ function envForms() {
   return '该组内的 env 形态项';
 }
 
-// 槽 10 = 指针句：禁写集合 = `pathGroups` 六组 + 一项模式项（`spec / plan` 两种写法，卡面不加反引号）
-function forbiddenPaths() {
-  return `${code('pathGroups')}（六组）与一项模式项（spec 与 plan 的两种写法）`;
+// 槽 10 = 指针句：禁写集合 = `pathGroups` 六组 + 一项模式项（`spec / plan` 两种写法，卡面不加反引号）。
+// S6-B §3.5：按席写作用域有排除项时，在**基准句整句之后**追加排除注（不插进原句内部）。
+const PATH_ITEM_TEXT = new Map(
+  Object.values(PTH.pathGroups).flat().map((item) => [item.id, item.text]),
+);
+function scopeOfSeat(seat) {
+  const s = seatOf(seat);
+  const id = hasOwn(s, 'writeScope') ? s.writeScope : 'review.ledger';
+  // 渲染层是全函数：未知 / 空 / 非字符串 scope 取 null（槽值渲染空串），判红与发码归 validatePolicy
+  if (typeof id !== 'string' || id === '' || !hasOwn(writeScopes, id)) return null;
+  return writeScopes[id];
+}
+function forbiddenPaths(seat) {
+  const base = `${code('pathGroups')}（六组）与一项模式项（spec 与 plan 的两种写法）`;
+  const scope = scopeOfSeat(seat);
+  const exclusions = scope && Array.isArray(scope.excludePathItems) ? scope.excludePathItems : [];
+  if (exclusions.length === 0) return base;
+  const texts = exclusions
+    .map((id) => PATH_ITEM_TEXT.get(id))
+    .filter((t) => typeof t === 'string' && t !== '')
+    .map((t) => `「${t}」`)
+    .join('、');
+  return texts === '' ? base : `${base}（本席按写作用域排除${texts}）`;
 }
 
 // 槽 11 = 指针句：检测盲区归 `DETECTION_BLIND_SPOTS`
@@ -139,9 +159,12 @@ export function slotValues(seat) {
     ALLOW_GROUPS: allowGroups(slotSource(p, 'allowGroups', 'ALLOW_GROUPS', [])),
     DENY_GROUPS: denyGroups(),
     ENV_FORMS: envForms(),
-    FORBIDDEN_PATHS: forbiddenPaths(),
+    FORBIDDEN_PATHS: forbiddenPaths(seat),
     DETECTION_PATHS: detectionPaths(),
     DETECTION_CMD: detectionCmd(),
+    ROLE_KIND: scopeOfSeat(seat)?.roleKind ?? '',
+    WRITE_SCOPE: scopeOfSeat(seat)?.label ?? '',
+    HOST_RULE: scopeOfSeat(seat)?.hostRule ?? '',
   };
   for (const k of SLOTS) if (values[k] === undefined || values[k] === null) impure(k);
   return values;
@@ -156,7 +179,7 @@ function listClassMembers() {
   const ids = [...Object.keys(CAP.capabilities), ...Object.keys(CMD.commandGroups),
     ...Object.keys(CMD.forbiddenGroups), ...Object.keys(PTH.pathGroups)];
   const multiWordVerbs = [...verbsOf(CMD.commandGroups), ...verbsOf(CMD.forbiddenGroups)].filter((v) => /\s/.test(v));
-  const paths = [...Object.values(PTH.pathGroups).flat().flatMap((x) => x.split('、')),
+  const paths = [...Object.values(PTH.pathGroups).flat().flatMap((x) => x.text.split('、')),
     ...PTH.DETECTION_BLIND_SPOTS, SPEC_PLAN_LABEL];
   return new Set([...ids, ...multiWordVerbs, ...paths]);
 }

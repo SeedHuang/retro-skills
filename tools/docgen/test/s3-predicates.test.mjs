@@ -795,9 +795,12 @@ test('S3-TC-H06 必红期与回退', () => {
     'tools/docgen/card-model/validateCardModel.mjs',
     'tools/docgen/card-model/vocab/subjective-terms.mjs',
     'tools/docgen/cli.mjs',
-    'tools/docgen/policy/definitions/paths.mjs',
     ...SEATS.map((s) => `agents/${s}.md`),
   ]
+  // `2026-11-05`（S6-B）：**不回退** `policy/definitions/paths.mjs` —— S6-B 把路径项改为 `{id,text}` 且新增
+  // `writeScopes.mjs`；回退到 S3_BASE（字符串数组 + 无 writeScopes）会让 `validatePolicy` 先发
+  // `UnknownPolicyRef: paths:item=(missing)`，红点从「卡面失配」漂到「配置形态」。本步只要「回退后必红」，
+  // 故保留新定义层、只回退判据表与卡面 → gate 报 Mismatch。
   coldRepo({
     mutate: (copy) => {
       for (const rel of S3_REL) {

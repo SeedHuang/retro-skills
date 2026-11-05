@@ -9,6 +9,8 @@ import { tierOfCapabilities } from '../policy/definitions/tiers.mjs';
 import * as CMD from '../policy/definitions/commands.mjs';
 import * as ART from '../policy/definitions/artifacts.mjs';
 import * as SEATS from '../policy/definitions/seats.mjs';
+import * as PTH from '../policy/definitions/paths.mjs';
+import { writeScopes } from '../policy/definitions/writeScopes.mjs';
 import { SEAT_POLICY } from '../policy/seat-policy.mjs';
 import { SLOTS, assertTemplatePure, slotValues } from './renderBoundary.mjs';
 import { toolsForSeat } from './patternRegistry.mjs';
@@ -195,6 +197,67 @@ export function validatePolicy() {
       }
     }
     for (const v of verbs) if (!allowVerbs.has(v)) fail('ForbiddenGroupGranted', `${m[1]}:${g}:not-allowed`);
+  }
+
+  // ---- S6-B 不变量 10 / 13 / 14：路径项 ID、写作用域引用、按 scope 排除白名单、scope 绑定 ----
+  // 必须在末尾的 `slotValues` 全量循环**之前**：否则未知 scope 在渲染期取空串前先撞别的判据，
+  // `UnknownPolicyRef: <席>:writeScope=…` 永远发不出来（S6-B §3.3 / §5）。
+  const RESERVED_IDS = new Set(['constructor', '__proto__', 'prototype', 'toString', 'valueOf', 'hasOwnProperty']);
+  const ITEM_ID_RE = /^[a-z][a-z0-9.-]*$/;
+  const itemIds = new Set();
+  for (const item of Object.values(PTH.pathGroups).flat()) {
+    const id = item?.id;
+    const text = item?.text;
+    if (typeof id !== 'string' || !ITEM_ID_RE.test(id) || RESERVED_IDS.has(id)) {
+      fail('UnknownPolicyRef', `paths:item=${typeof id === 'string' ? id : '(missing)'}`);
+    }
+    if (typeof text !== 'string' || text.trim() === '') fail('UnknownPolicyRef', `paths:item=${id}`);
+    if (itemIds.has(id)) fail('UnknownPolicyRef', `paths:item=${id}:duplicate`);
+    itemIds.add(id);
+  }
+  const scopeKeys = Object.keys(writeScopes);
+  if (scopeKeys.length !== 2 || !scopeKeys.includes('review.ledger') || !scopeKeys.includes('spec.testcase')) {
+    const extra = scopeKeys.find((k) => !['review.ledger', 'spec.testcase'].includes(k)) ?? '(missing)';
+    fail('ForbiddenGroupGranted', `writeScope=${extra}:not-allowed`);
+  }
+  const ALLOWED_EXCLUSIONS = { 'review.ledger': [], 'spec.testcase': ['code.test'] };
+  for (const [scope, def] of Object.entries(writeScopes)) {
+    if (typeof def?.roleKind !== 'string' || def.roleKind.trim() === ''
+      || typeof def?.label !== 'string' || def.label.trim() === ''
+      || typeof def?.hostRule !== 'string' || def.hostRule.trim() === '') {
+      fail('UnknownPolicyRef', `writeScope=${scope}:empty`);
+    }
+    if (!Array.isArray(def?.excludePathItems)) fail('UnknownPolicyRef', `writeScope=${scope}:excludePathItem=(invalid)`);
+    const seenExclusions = new Set();
+    for (const e of def.excludePathItems) {
+      if (typeof e !== 'string' || !itemIds.has(e)) fail('UnknownPolicyRef', `writeScope=${scope}:excludePathItem=${e}`);
+      if (seenExclusions.has(e)) fail('UnknownPolicyRef', `writeScope=${scope}:excludePathItem=${e}:duplicate`);
+      seenExclusions.add(e);
+      if (!ALLOWED_EXCLUSIONS[scope].includes(e)) {
+        fail('ForbiddenGroupGranted', `writeScope=${scope}:excludePathItem=${e}:not-allowed`);
+      }
+    }
+  }
+  for (const seat of Object.keys(SEATS.SEATS)) {
+    if (seat === '__default__') continue;
+    const s = SEATS.SEATS[seat];
+    if (!hasOwn(s, 'writeScope')) continue;
+    const v = s.writeScope;
+    const shown = typeof v === 'string' && v.trim() !== '' ? v : '(missing)';
+    if (typeof v !== 'string' || v.trim() === '' || !scopeKeys.includes(v)) {
+      fail('UnknownPolicyRef', `${seat}:writeScope=${shown}`);
+    }
+    if (v === 'spec.testcase' && seat !== 'senior-sdet') {
+      fail('ForbiddenGroupGranted', `${seat}:writeScope=spec.testcase:not-allowed`);
+    }
+  }
+  // 显示名扫描面（S6-B §3.3）：只判 `roleKind` / `label` 是否含任一席 `display`，不把 writeScopes 并入 DEF_FILES
+  const wsSrc = stripComments(readFileSync(join(DEF_DIR, 'writeScopes.mjs'), 'utf8'));
+  for (const seat of Object.keys(SEATS.SEATS)) {
+    const display = SEATS.SEATS[seat]?.display;
+    if (typeof display === 'string' && display.trim() !== '' && wsSrc.includes(display)) {
+      fail('SeatNameInDefinition', `${DEF_REL}/writeScopes.mjs`);
+    }
   }
 
   // ---- 不变量 6：模板违反 §3.4 纯度三条 / 白名单登记清单类成员 → TemplateImpure ----

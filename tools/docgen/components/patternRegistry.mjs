@@ -25,18 +25,14 @@ export function resolveDomain(agent) {
   return d || DOMAIN;
 }
 
-// 非评审席的专用边界句（2026-10-31 迁移裁定：`senior-sdet` 职责是写 `testcase.md`，与评审席模板的
-// 「评审席 / 只允许写本次评审账本 / 禁写『代码、测试』」结构不同构 → 与 `DEFAULT_BOUNDARY` 同住本文件，
-// 句子只写一份；结构收敛（按席排除禁写组 + 模板去「评审席」化）归 S6-B，见 docs/after/…-open-decisions）
-export const SDET_BOUNDARY = '你是测试设计角色：只写本次 spec 同目录的 `-testcase.md` 与同目录由你负责的测试设计文档；禁写业务代码、spec / plan 正文、`rules/`、`skills/`、`agents/` 及上述清单外的任何路径。不改别人的判定：spec 或实现有问题，写进「给开发的建议」，不代改、不参与议会裁决。';
-
 // 席名 → 边界句（只登记显式声明槽位的席；其余席走 DEFAULT_BOUNDARY）。
-// 两评审席的值 = `renderBoundary(席)` 的渲染结果（spec §3.6）；`senior-sdet` 为非评审席、用专用常量；
+// 三席的值 = `renderBoundary(席)` 的渲染结果（spec §3.6 / S6-B §3.6：`senior-sdet` 由写作用域数据渲染，
+// 该席专用边界常量已删，句子回归「数据 → 渲染」单源）。
 // 单独导出是为了让 agentData 的 map 直接按席取句（spec §5），registry 内引用同一对象（不是第二份表）
 export const boundaryBySeat = {
   'reviewer-audit': renderBoundary('reviewer-audit'),
   'detective-observer': renderBoundary('detective-observer'),
-  'senior-sdet': SDET_BOUNDARY,
+  'senior-sdet': renderBoundary('senior-sdet'),
 };
 
 // 席名 → 档位名（唯一来源 = `SEAT_POLICY` 的 capabilities，spec §3.6）：由 `SEAT_NAMES` 逐席派生，
