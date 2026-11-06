@@ -1,18 +1,22 @@
 {
   "id": "no-git-write",
   "impl": "script",
+  "type": "持续适用",
+  "scope": "global",
   "title": "Git 写操作必须用户当面点名",
-  "when": { "field": "command", "op": "nonEmpty" },
+  "when": { "field": "command", "op": "nonEmpty", "label": "命令执行" },
   "assert": [
     {
+      "label": "Git 写操作",
       "op": "notForbiddenCommand",
       "field": "command",
+      "probe": { "kind": "manual" },
       "allow": ["git status", "git log", "git diff", "git show", "git branch", "git remote -v"],
       "forbid": ["git commit", "git push", "git pull", "git merge", "git rebase", "git reset", "git revert", "git cherry-pick", "git checkout", "git restore", "git clean", "git stash", "git tag", "git add", "git config", "git remote"],
       "conflict": "longestAllowWins",
-      "unless": { "field": "userNamed", "op": "eq", "value": true }
+      "unless": { "field": "userNamed", "op": "eq", "value": true, "label": "用户点名" }
     }
   ],
-  "residual": { "who": "reviewer-audit", "sample": 3, "fields": ["userNamed"] },
+  "residual": { "who": "reviewer-audit", "sample": 3, "fields": ["userNamed"], "objectivePath": "「当面点名」由对话原文可查后压回机判" },
   "landing": "command-record"
 }

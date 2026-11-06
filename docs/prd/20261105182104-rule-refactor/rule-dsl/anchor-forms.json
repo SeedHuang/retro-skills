@@ -1,0 +1,28 @@
+{
+  "id": "anchor-forms",
+  "impl": "script",
+  "type": "条件触发",
+  "scope": "global",
+  "title": "结论必须带可核查的锚",
+  "when": { "field": "writesConclusion", "op": "eq", "value": true, "label": "输出结论前" },
+  "assert": [
+    {
+      "label": "可核查锚",
+      "probe": { "kind": "manual" },
+      "anyOf": [
+        { "field": "anchorPathLine", "op": "nonEmpty", "name": "path:line" },
+        { "field": "anchorCommandOutput", "op": "nonEmpty", "name": "命令 + 输出首行" },
+        { "field": "anchorReference", "op": "nonEmpty", "name": "引用件路径" }
+      ]
+    },
+    {
+      "label": "有效锚",
+      "probe": { "kind": "manual" },
+      "field": "anchorText",
+      "op": "notContains",
+      "values": ["见上文", "同上"]
+    }
+  ],
+  "residual": { "who": "reviewer-audit", "sample": 3, "fields": ["anchorPathLine", "anchorCommandOutput", "anchorReference"], "objectivePath": "锚四件套可形式化后压回机判" },
+  "landing": "答案"
+}
