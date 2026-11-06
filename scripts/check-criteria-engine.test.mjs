@@ -61,6 +61,20 @@ test('rule 正文投影：删 rules/<id>.md → RuleProjectionMissing；改 json
   }
 })
 
+test('build：缺 testcase → exit 1 且输出契约文案，不 TypeError 崩溃（阶段 2b A-13 回归）', () => {
+  const root = copyRoot()
+  try {
+    const tc = join(root, 'tools', 'quality', 'criteria-engine', 'evidence-before-conclusion.testcase.json')
+    rmSync(tc, { force: true })
+    const r = spawnSync(process.execPath, [join(root, 'tools', 'quality', 'criteria-engine', 'build.mjs')], { encoding: 'utf8' })
+    assert.equal(r.status, 1, `缺 testcase 必须 exit 1（${r.stdout}${r.stderr}）`)
+    assert.match(`${r.stdout}${r.stderr}`, /判据无 testcase（evidence-before-conclusion\.testcase\.json）→ 未验证，不得渲染/)
+    assert.doesNotMatch(`${r.stdout}${r.stderr}`, /TypeError/, '不得因 entry 为 undefined 直接崩溃')
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
+})
+
 test('渲染物逐字节（stage-2 §1.6）：手改投影 1 字节 → exit 1 点名文件；删投影 → ProjectionMissing', () => {
   const root = copyRoot()
   try {

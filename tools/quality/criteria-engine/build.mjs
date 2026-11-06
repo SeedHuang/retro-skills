@@ -27,7 +27,7 @@ for (const { name, rule } of rules) {
   for (const f of found) errors.push(`${name}: ${f.code}：${f.message}`)
   const entry = tcByRule.get(rule.id)
   if (!entry) errors.push(`${name}: 判据无 testcase（${rule.id}.testcase.json）→ 未验证，不得渲染`)
-  if (found.length) { console.log(`${name}: 结构错误，跳过判定与渲染`); continue }
+  if (found.length || !entry) { console.log(`${name}: 结构错误，跳过判定与渲染`); continue }
   for (const [i, c] of entry.tc.cases.entries()) {
     total++
     const got = judge(rule, c.input)

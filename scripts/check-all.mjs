@@ -492,6 +492,9 @@ if (ceRun.status !== 0) {
 } else if (!/^判据 \d+ 条 \/ 绿 \d+ \/ 红 \d+$/.test(ceLines[0] ?? '')) {
   failed = true
   console.error(`[criteria-engine] 退出 0 但首行不是「判据 N 条 / 绿 M / 红 K」：${ceLines[0]}`)
+} else if (ceLines.length > 1) {
+  // 透传末行 `criteria-engine ok`：SDET I-04 要求全仓门禁输出能自证 ⑨ 段已通过
+  console.log(ceLines[ceLines.length - 1])
 }
 const auditRun = spawnSync(process.execPath, [join(root, 'scripts', 'rule-audit-lite.mjs')], { cwd: root, encoding: 'utf8' })
 const auditLines = (auditRun.stdout || '').trim().split(/\r?\n/).filter(Boolean)
@@ -500,6 +503,8 @@ if (auditRun.status !== 0) {
   failed = true
   if (auditLines.length > 1) console.error(auditLines.slice(1).join('\n'))
   if (auditRun.stderr) console.error(auditRun.stderr)
+} else if (auditLines.length > 1) {
+  console.log(auditLines[auditLines.length - 1])
 }
 
 if (failed) {
