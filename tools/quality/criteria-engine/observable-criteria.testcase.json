@@ -1,8 +1,8 @@
 {
   "rule": "observable-criteria",
   "cases": [
-    { "input": { "gateRun": true, "checkObservableExit": 0 }, "expect": "pass" },
-    { "input": { "gateRun": true, "checkObservableExit": 1 }, "expect": "fail" },
-    { "input": { "gateRun": false, "checkObservableExit": 1 }, "expect": "pass" }
+    { "input": { "checkObservableExit": 0 }, "expect": "pass" },
+    { "input": { "checkObservableExit": 1 }, "expect": "fail" },
+    { "input": { "checkObservableExit": "0" }, "expect": "fail" }
   ]
 }

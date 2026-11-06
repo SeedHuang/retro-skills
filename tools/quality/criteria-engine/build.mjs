@@ -22,11 +22,12 @@ const tcByRule = new Map(tcs.map(({ name, tc }) => [tc.rule, { name, tc }]))
 
 for (const { name, tc } of tcs) checkTestcase(tc, name, ruleIds, errors)
 for (const { name, rule } of rules) {
-  const before = errors.length
-  check(rule, name, errors)
+  const found = []
+  check(rule, name, found)
+  for (const f of found) errors.push(`${name}: ${f.code}：${f.message}`)
   const entry = tcByRule.get(rule.id)
   if (!entry) errors.push(`${name}: 判据无 testcase（${rule.id}.testcase.json）→ 未验证，不得渲染`)
-  if (errors.length > before) { console.log(`${name}: 结构错误，跳过判定与渲染`); continue }
+  if (found.length) { console.log(`${name}: 结构错误，跳过判定与渲染`); continue }
   for (const [i, c] of entry.tc.cases.entries()) {
     total++
     const got = judge(rule, c.input)

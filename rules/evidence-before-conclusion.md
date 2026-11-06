@@ -1,19 +1,13 @@
 # 说出口的结论必须有可核出处
 
-> 来源：`evidence-before-conclusion.json`（判据 json，由 build 渲染，手改即红）
-> 触发：`writesConclusion 等于 true`
+> 触发：输出结论前
 
 义务（全部成立才合规；缺一件 = 不合格）：
-- anchor 非空
-- anchor 包含任一字面量 : / exit / 命令
-- scope 非空
-- target 非空
-- numbersCommand 非空（例外：hasNumbers 等于 false 时豁免）
-- lookupReport 非空（例外：lookupHit 等于 true 时豁免）
-- source 非空（例外：isCompoundDerivation 等于 false 时豁免）
-- chain 非空（例外：isCompoundDerivation 等于 false 时豁免）
-- boundary 非空（例外：isCompoundDerivation 等于 false 时豁免）
+1. 可核查锚（以下任一：path:line 或 命令 + 输出首行 或 引用件路径）
+2. 适用范围：必须非空
+3. 回答目标：必须非空
+4. 数字取数命令：必须非空（例外：不含统计数字）
+5. 查无记录：必须非空（例外：已查到结果）
 
-残余（抽检）：anchor / scope / target · reviewer-audit ×3
-
-产物：答案 / 交付账
+另见：skills/assertion-quality/SKILL.md
+落点：答案 / 交付账

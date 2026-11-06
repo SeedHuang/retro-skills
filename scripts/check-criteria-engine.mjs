@@ -9,9 +9,9 @@
 import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs'
 import { join, resolve, dirname, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { check, checkTestcase, judge, CRITERION_TYPES } from '../tools/quality/criteria-engine/schema.mjs'
+import { check, checkTestcase, judge } from '../tools/quality/criteria-engine/schema.mjs'
 import { interpreters } from '../tools/quality/criteria-engine/interpreters.mjs'
-import { listRuleIds, renderRuleData } from '../tools/quality/criteria-engine/rules.mjs'
+import { renderRuleData } from '../tools/quality/criteria-engine/rules.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const TERMS_FILE = 'tools/quality/observable-terms.json'
@@ -37,13 +37,14 @@ function walkMd(dir, out = []) {
   return out
 }
 
-// 结构闸（V-4）：保留 rule 的「触发 / 义务 / 例外 / 来源锚」四件
+// 结构闸（V-4）：保留 rule 的「触发 / 义务 / 例外 / 判定动作」四件；不再要求「来源锚」
+const ACTION_GATE = /(path:line|退出码|\bexit\b|命令|计数\s*=|非空|为空|枚举[：:]|diff|运行 `|检查 `|读取 `|统计 `|列出文件名)/
 function structureGate(text, file) {
   const missing = []
   if (!/触发/.test(text)) missing.push('触发')
   if (!/(义务|必须|禁止|不得)/.test(text)) missing.push('义务')
-  if (!/(例外|除非|只许)/.test(text)) missing.push('例外')
-  if (!/^> 来源/m.test(text)) missing.push('来源锚')
+  if (!/(例外|除非|只许|不再|不得)/.test(text)) missing.push('例外')
+  if (!ACTION_GATE.test(text)) missing.push('判定动作')
   return missing.length ? [{ file, code: 'RuleStructureIncomplete', missing }] : []
 }
 
@@ -67,25 +68,18 @@ function run(root) {
   for (const { name, rule } of rules) {
     const errs = []
     check(rule, name, errs)
-    // V-3：判据类型必须落数据（三值枚举）
-    if (rule.type === undefined) findings.push({ file: name, code: 'TypeMissing' })
-    else if (!CRITERION_TYPES.includes(rule.type)) findings.push({ file: name, code: 'TypeInvalid', type: rule.type })
-    // V-5：residual 四件（who / sample / fields / 客观化路径）
-    const res = rule.residual ?? {}
-    if (typeof res.who !== 'string' || res.who.trim() === '') findings.push({ file: name, code: 'ResidualWhoMissing' })
-    if (!Number.isInteger(res.sample) || res.sample <= 0) findings.push({ file: name, code: 'ResidualSampleInvalid' })
-    if (typeof res.objectivePath !== 'string' || res.objectivePath.trim() === '') findings.push({ file: name, code: 'ResidualObjectivePathMissing' })
-    for (const e of errs) findings.push({ file: name, code: 'Schema', message: e })
+    // check() 直接产出 {code,message}，不再统一包成 Schema
+    for (const e of errs) findings.push({ file: name, code: e.code, message: e.message })
 
     const entry = tcs.find((t) => t.tc.rule === rule.id)
-    if (!entry) { findings.push({ file: name, code: 'TestcaseMissing' }); red += 1; continue }
+    if (!entry) { findings.push({ file: name, code: 'TestcaseMissing', message: rule.id }); red += 1; continue }
     const tcErrs = []
     checkTestcase(entry.tc, entry.name, ids, tcErrs)
     for (const e of tcErrs) findings.push({ file: entry.name, code: 'TestcaseSchema', message: e })
     for (const [i, c] of entry.tc.cases.entries()) {
       const got = judge(rule, c.input)
       if (got === c.expect) green += 1
-      else { red += 1; findings.push({ file: entry.name, code: 'CaseMismatch', case: i, expect: c.expect, got }) }
+      else { red += 1; findings.push({ file: entry.name, code: 'CaseMismatch', message: `case ${i} expect: ${c.expect} got: ${got}` }) }
     }
 
     // 逐字节比对（stage-2 §1.6 / §5）：渲染物手改即红。重渲染 vs 磁盘逐字节；缺文件也红。
@@ -109,15 +103,17 @@ function run(root) {
     const text = readFileSync(join(rulesAbs, f), 'utf8')
     const n = nonWs(text).length
     total += n
-    if (n > BUDGET.maxChars) findings.push({ file: `rules/${f}`, code: 'RuleOverBudget', chars: n, max: BUDGET.maxChars })
-    if (n < BUDGET.minChars) findings.push({ file: `rules/${f}`, code: 'RuleUnderBudget', chars: n, min: BUDGET.minChars })
+    if (n > BUDGET.maxChars) findings.push({ file: `rules/${f}`, code: 'RuleOverBudget', message: `chars=${n} max: ${BUDGET.maxChars}` })
+    if (n < BUDGET.minChars) findings.push({ file: `rules/${f}`, code: 'RuleUnderBudget', message: `chars=${n} min: ${BUDGET.minChars}` })
     for (const g of structureGate(text, `rules/${f}`)) findings.push(g)
   }
-  if (ruleMd.length > BUDGET.maxCount) findings.push({ code: 'RuleCountOverBudget', count: ruleMd.length, max: BUDGET.maxCount })
-  if (total > BUDGET.maxTotal) findings.push({ code: 'RuleTotalOverBudget', chars: total, max: BUDGET.maxTotal })
+  if (ruleMd.length > BUDGET.maxCount) findings.push({ code: 'RuleCountOverBudget', message: `count=${ruleMd.length} max: ${BUDGET.maxCount}` })
+  if (total > BUDGET.maxTotal) findings.push({ code: 'RuleTotalOverBudget', message: `chars=${total} max: ${BUDGET.maxTotal}` })
 
   // rule 正文投影（data + script）：正文必须由判据 json 渲染得出（手改即红、缺件即红）
-  const registeredRules = listRuleIds()
+  // 登记表从 `--root` 指向的引擎目录读，保证临时根与现仓同一套口径
+  const rulesJsonAbs = resolve(root, ENGINE_DIR, 'rules.json')
+  const registeredRules = existsSync(rulesJsonAbs) ? (loadJson(rulesJsonAbs).rules ?? []) : []
   for (const id of registeredRules) {
     const ruleAbs = resolve(root, ENGINE_DIR, `${id}.json`)
     if (!existsSync(ruleAbs)) { findings.push({ file: `${ENGINE_DIR}/${id}.json`, code: 'RuleDataMissing' }); continue }
@@ -144,7 +140,9 @@ function run(root) {
 
   console.log(`判据 ${rules.length} 条 / 绿 ${green} / 红 ${red}`)
   for (const f of findings) {
-    const detail = f.message ?? f.type ?? f.rule ?? f.phrase ?? f.case ?? ''
+    let detail = f.message
+    if (!detail && Array.isArray(f.missing)) detail = `missing: ${f.missing.join(' / ')}`
+    if (!detail) detail = f.rule ?? f.phrase ?? f.type ?? ''
     console.error(`[criteria-engine] ${f.file ?? ''} ${f.code}${detail ? `：${detail}` : ''}`)
   }
   if (findings.length === 0) {

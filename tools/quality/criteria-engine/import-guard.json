@@ -2,13 +2,14 @@
   "id": "import-guard",
   "impl": "script",
   "type": "条件触发",
+  "scope": "global",
   "title": "编辑代码后必须真实验证且 import 不丢",
-  "when": { "field": "edited", "op": "eq", "value": true },
+  "when": { "field": "edited", "op": "eq", "value": true, "label": "编辑代码后" },
   "assert": [
-    { "field": "verifyCommand", "op": "nonEmpty" },
-    { "field": "verifyOutput", "op": "nonEmpty" },
-    { "field": "importTogether", "op": "eq", "value": true },
-    { "field": "reread", "op": "eq", "value": true }
+    { "label": "验证命令", "field": "verifyCommand", "op": "nonEmpty", "probe": { "kind": "manual" } },
+    { "label": "验证输出", "field": "verifyOutput", "op": "nonEmpty", "probe": { "kind": "manual" } },
+    { "label": "import 未丢失", "field": "importTogether", "op": "eq", "value": true, "probe": { "kind": "manual" } },
+    { "label": "回读证据", "field": "reread", "op": "eq", "value": true, "probe": { "kind": "manual" } }
   ],
   "residual": { "who": "reviewer-audit", "sample": 3, "fields": ["verifyOutput", "importTogether"], "objectivePath": "验证输出可解析后可压回机判；import 完整性由编译器兜底" },
   "landing": "edit-record"

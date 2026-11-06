@@ -12,18 +12,17 @@ import { fileURLToPath } from 'node:url'
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const RULES = join(ROOT, 'rules')
 
-// 结构行不计说明层：标题行（索引）与 `> 触发` / `> 来源`（V-4 结构闸的件）、`残余（抽检）：` / `产物：`
-// （判据元数据，由 json 渲染）都不是「说明」。
-const STRUCT = /^(#{1,6}\s|>\s*触发|>\s*来源|残余（抽检）：|产物：)/
+// 结构行不计说明层：标题行（索引）与 `> 触发`（V-4 结构闸的件）、`另见：` / `落点：`
+// （§4.1 渲染元数据）、`残余（抽检）：` / `产物：` 都不是「说明」。阶段 2b 起 `> 来源` 已从渲染正文删除。
+const STRUCT = /^(#{1,6}\s|>\s*触发|另见：|落点：|残余（抽检）：|产物：)/
 const OBLIGATION = /义务|必须|禁止|不得|不许|缺一|不合格|写「|加载|执行|附|跑/
 const ACTION = /path:line|退出码|\bexit\b|命令|计数\s*=|非空|为空|枚举[：:]|diff/
 const BOUNDARY = /例外|除非|只许|不再|不适用/
-const SOURCE = /^>\s*来源/
 const nonWs = (s) => s.replace(/\s/g, '')
 const isExplain = (line) => {
   const t = line.trim()
   if (t === '') return false
-  if (STRUCT.test(t) || SOURCE.test(t)) return false
+  if (STRUCT.test(t)) return false
   if (OBLIGATION.test(t) || ACTION.test(t) || BOUNDARY.test(t)) return false
   return true
 }

@@ -1,12 +1,8 @@
 【evidence-before-conclusion】说出口的结论必须有可核出处
-触发：writesConclusion 等于 true
-要求：anchor 非空
-要求：anchor 包含任一字面量 : / exit / 命令
-要求：scope 非空
-要求：target 非空
-要求：numbersCommand 非空（例外：hasNumbers 等于 false）
-要求：lookupReport 非空（例外：lookupHit 等于 true）
-要求：source 非空（例外：isCompoundDerivation 等于 false）
-要求：chain 非空（例外：isCompoundDerivation 等于 false）
-要求：boundary 非空（例外：isCompoundDerivation 等于 false）
-产物：答案 / 交付账
+触发：输出结论前
+1. 可核查锚（以下任一：path:line 或 命令 + 输出首行 或 引用件路径）
+2. 适用范围：必须非空
+3. 回答目标：必须非空
+4. 数字取数命令：必须非空（例外：不含统计数字）
+5. 查无记录：必须非空（例外：已查到结果）
+落点：答案 / 交付账

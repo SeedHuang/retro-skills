@@ -2,16 +2,20 @@
   "id": "observable-criteria",
   "impl": "script",
   "type": "持续适用",
+  "scope": "global",
   "title": "判据正文不得留不可观察评价",
-  "when": { "field": "gateRun", "op": "eq", "value": true },
+  "when": { "always": true },
   "assert": [
-    { "field": "checkObservableExit", "op": "eq", "value": 0 }
+    {
+      "label": "可观察检查",
+      "name": "check-observable 退出码",
+      "probe": { "kind": "command", "run": "node scripts/check-observable.mjs --check", "take": "exit" },
+      "field": "checkObservableExit",
+      "op": "eq",
+      "value": 0
+    }
   ],
-  "residual": {
-    "who": "reviewer-audit",
-    "sample": 3,
-    "fields": ["checkObservableExit"],
-    "objectivePath": "已是脚本判定，无残余；词表扩充由 tools/quality/observable-terms.json 单一维护"
-  },
-  "landing": "node scripts/check-observable.mjs --check（末行 check-observable ok、exit 0）"
+  "residual": { "who": "reviewer-audit", "sample": 3, "fields": ["checkObservableExit"], "objectivePath": "已是脚本判定，无残余；词表扩充由 tools/quality/observable-terms.json 单一维护" },
+  "refs": ["skills/carrier-conventions/references/observable.md"],
+  "landing": "check-observable 输出"
 }

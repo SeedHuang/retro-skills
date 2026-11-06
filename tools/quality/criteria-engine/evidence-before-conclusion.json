@@ -2,24 +2,37 @@
   "id": "evidence-before-conclusion",
   "impl": "script",
   "type": "持续适用",
+  "scope": "global",
   "title": "说出口的结论必须有可核出处",
-  "when": { "field": "writesConclusion", "op": "eq", "value": true },
+  "when": { "field": "claimsEvidence", "op": "eq", "value": true, "label": "输出结论前" },
   "assert": [
-    { "field": "anchor", "op": "nonEmpty" },
-    { "field": "anchor", "op": "containsAny", "values": [":", "exit", "命令"] },
-    { "field": "scope", "op": "nonEmpty" },
-    { "field": "target", "op": "nonEmpty" },
-    { "field": "numbersCommand", "op": "nonEmpty", "unless": { "field": "hasNumbers", "op": "eq", "value": false } },
-    { "field": "lookupReport", "op": "nonEmpty", "unless": { "field": "lookupHit", "op": "eq", "value": true } },
-    { "field": "source", "op": "nonEmpty", "unless": { "field": "isCompoundDerivation", "op": "eq", "value": false } },
-    { "field": "chain", "op": "nonEmpty", "unless": { "field": "isCompoundDerivation", "op": "eq", "value": false } },
-    { "field": "boundary", "op": "nonEmpty", "unless": { "field": "isCompoundDerivation", "op": "eq", "value": false } }
+    {
+      "label": "可核查锚",
+      "probe": { "kind": "manual" },
+      "anyOf": [
+        { "field": "anchorPathLine", "op": "matches", "pattern": ":\\d+", "name": "path:line" },
+        { "field": "anchorCommandOutput", "op": "containsAny", "values": ["exit", "退出码", "→"], "name": "命令 + 输出首行" },
+        { "field": "anchorReference", "op": "containsAny", "values": ["/", "\\"], "name": "引用件路径" }
+      ]
+    },
+    { "label": "适用范围", "field": "applicability", "op": "nonEmpty", "probe": { "kind": "manual" } },
+    { "label": "回答目标", "field": "target", "op": "nonEmpty", "probe": { "kind": "manual" } },
+    {
+      "label": "数字取数命令", "field": "numbersCommand", "op": "nonEmpty",
+      "probe": { "kind": "manual" },
+      "unless": { "field": "hasNumbers", "op": "eq", "value": false, "label": "不含统计数字" }
+    },
+    {
+      "label": "查无记录", "field": "missReport", "op": "nonEmpty",
+      "probe": { "kind": "manual" },
+      "unless": { "field": "lookupHit", "op": "eq", "value": true, "label": "已查到结果" }
+    }
   ],
   "residual": {
-    "who": "reviewer-audit",
-    "sample": 3,
-    "fields": ["anchor", "scope", "target"],
-    "objectivePath": "锚四件套（hash + path + line + 行摘录）可形式化后压回机判；范围/目标同题性可由判例库样本收敛"
+    "who": "reviewer-audit", "sample": 3,
+    "fields": ["anchorPathLine", "anchorCommandOutput", "anchorReference", "applicability", "target"],
+    "objectivePath": "锚四件套可形式化后压回机判；范围/目标同题性由判例库样本收敛"
   },
+  "refs": ["skills/assertion-quality/SKILL.md"],
   "landing": "答案 / 交付账"
 }

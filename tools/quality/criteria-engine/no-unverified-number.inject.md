@@ -1,5 +1,5 @@
 【no-unverified-number】项目统计数字必须附取数命令
-触发：hasStatistic 等于 true
-要求：command 非空
-要求：command 包含任一字面量 node  / Get-ChildItem / grep / rg 
-产物：answer
+触发：含统计数字
+1. 取数命令：必须非空
+2. 命令形态：必须包含以下任一：node  / Get-ChildItem / grep / rg 
+落点：answer
