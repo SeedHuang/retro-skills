@@ -4,7 +4,7 @@
 > **需求**：[stage-2b-rule-dsl-expressiveness.md](./stage-2b-rule-dsl-expressiveness.md)
 > **实现规格**：[stage-2b-spec.md](./stage-2b-spec.md)（本文所有「逐字」内容以 spec 为准，二者必须同时在场）
 > **验收合同**：[stage-2b-testcase-sdet.md](./stage-2b-testcase-sdet.md)（170 条，R5 已一致）
-> **状态**：待施工
+> **状态**：已完成（2026-11-06；170 条验收全 PASS，账见 `docs/reports/2026-11-06-rule-refactor-stage-2b/verification.md`）
 
 **目标**：让 `rules/<id>.md` 只能由判据 json 经脚本渲染产出，使规则正文具备逻辑组合、算子谓词、判定动作与人读表述，手改即红。
 
@@ -66,7 +66,7 @@ renderTrigger(rule) -> string
 renderObligation(node, index) -> string   // 含 `1. ` 编号前缀
 ```
 
-- [ ] **步骤 1：记录基线**
+- [x] **步骤 1：记录基线**
 
 ```powershell
 node tools\quality\criteria-engine\build.mjs
@@ -75,7 +75,7 @@ node scripts\check-criteria-engine.mjs
 
 期望：前者末行 `rule-dsl ok`、样例 34 条；后者首行 `判据 5 条 / 绿 34 / 红 0`、末行 `criteria-engine ok`。把两次输出粘到任务记录里，作为改动前基线。
 
-- [ ] **步骤 2：写失败测试（临时文件，不进仓）**
+- [x] **步骤 2：写失败测试（临时文件，不进仓）**
 
 在 `$env:TEMP\s2b-schema.test.mjs` 写入：
 
@@ -157,7 +157,7 @@ assert.equal(
 console.log('schema 2b ok')
 ```
 
-- [ ] **步骤 3：跑测试确认失败**
+- [x] **步骤 3：跑测试确认失败**
 
 ```powershell
 node "$env:TEMP\s2b-schema.test.mjs"
@@ -165,7 +165,7 @@ node "$env:TEMP\s2b-schema.test.mjs"
 
 期望：失败（当前 `OPS` 只有 4 个；`renderObligation` 不存在）。
 
-- [ ] **步骤 4：重写 `schema.mjs`**
+- [x] **步骤 4：重写 `schema.mjs`**
 
 按 spec 落实现，逐字内容照抄，不自行改写文案：
 
@@ -215,11 +215,11 @@ const depthOf = (c) => {
 }
 ```
 
-- [ ] **步骤 5：改写 `interpreters.mjs`**
+- [x] **步骤 5：改写 `interpreters.mjs`**
 
 三处 `render` 全部改为调用 `renderTrigger(rule)` / `renderObligation(a, i)`；模板逐字按 spec §4.1（`:135-146`）。`md` / `inject` / `rule` 都不再出现「来源」，不再渲染 `残余（抽检）`。
 
-- [ ] **步骤 6：适配 `build.mjs`**
+- [x] **步骤 6：适配 `build.mjs`**
 
 把 `check` 调用改为结构化结果：
 
@@ -229,7 +229,7 @@ check(rule, name, found)
 for (const f of found) errors.push(`${name}: ${f.code}：${f.message}`)
 ```
 
-- [ ] **步骤 7：跑临时测试**
+- [x] **步骤 7：跑临时测试**
 
 ```powershell
 node "$env:TEMP\s2b-schema.test.mjs"
@@ -237,7 +237,7 @@ node "$env:TEMP\s2b-schema.test.mjs"
 
 期望：输出 `schema 2b ok`。
 
-- [ ] **步骤 8：记录中间态（不提交）**
+- [x] **步骤 8：记录中间态（不提交）**
 
 ```powershell
 node tools\quality\criteria-engine\build.mjs
@@ -258,7 +258,7 @@ node tools\quality\criteria-engine\build.mjs
 - 消费任务 1 的 `check()` 结构化输出、`renderTrigger` / `renderObligation`、`CRITERION_TYPES`。
 - 产出 spec §5.1 的全部 code；成功行逐字按 spec §5.4（`:317-334`）。
 
-- [ ] **步骤 1：建临时绿夹具根**
+- [x] **步骤 1：建临时绿夹具根**
 
 用一个最小合法判据做门禁自测，不依赖现仓红灯数据：
 
@@ -298,7 +298,7 @@ node "$T\tools\quality\criteria-engine\build.mjs"
 
 期望：末行 `rule-dsl ok`，生成 `r2b-base.md` / `r2b-base.inject.md`。
 
-- [ ] **步骤 2：确认门禁当前是红的**
+- [x] **步骤 2：确认门禁当前是红的**
 
 ```powershell
 node "$T\scripts\check-criteria-engine.mjs" --root $T
@@ -306,7 +306,7 @@ node "$T\scripts\check-criteria-engine.mjs" --root $T
 
 期望：当前实现缺 `ScopeMissing` / `RuleWithoutProbe` 等 code，无法通过新夹具。把它作为本任务的失败测试。
 
-- [ ] **步骤 3：重写 `check-criteria-engine.mjs`**
+- [x] **步骤 3：重写 `check-criteria-engine.mjs`**
 
 按 spec §5 落实现，保持现有输出契约：
 
@@ -321,14 +321,14 @@ const ACTION_GATE = /(path:line|退出码|\bexit\b|命令|计数\s*=|非空|为�
 - 预算文案逐字：`chars=<实际值>` + `max: 500` / `min: 100`（spec §5.1 `:268`）。
 - 成功行逐字按 spec §5.4：`判据 <N> 条 / 绿 <M> / 红 <K>` 与 `criteria-engine ok`。
 
-- [ ] **步骤 4：改 `rule-audit-lite.mjs`**
+- [x] **步骤 4：改 `rule-audit-lite.mjs`**
 
 - `STRUCT` 删掉 `>\s*来源` 分支。
 - 删除 `SOURCE` 常量与 `isExplain` 中的 `SOURCE.test(t)`。
 
 改完的结构行只保留：标题行、`> 触发`、`残余（抽检）：`、`产物：`。
 
-- [ ] **步骤 5：临时夹具转绿**
+- [x] **步骤 5：临时夹具转绿**
 
 ```powershell
 node "$T\scripts\check-criteria-engine.mjs" --root $T
@@ -336,7 +336,7 @@ node "$T\scripts\check-criteria-engine.mjs" --root $T
 
 期望：首行 `判据 1 条 / 绿 3 / 红 0`；末行 `criteria-engine ok`；exit 0。
 
-- [ ] **步骤 6：三条判红冒烟**
+- [x] **步骤 6：三条判红冒烟**
 
 ```powershell
 # ① ScopeMissing
@@ -370,7 +370,7 @@ node "$T\scripts\check-criteria-engine.mjs" --root $T
 # 期望 exit 1，stderr 含 RuleStructureIncomplete、missing 含「判定动作」、不含「来源锚」
 ```
 
-- [ ] **步骤 7：跑校验器自测**
+- [x] **步骤 7：跑校验器自测**
 
 ```powershell
 node --test scripts\check-criteria-engine.test.mjs
@@ -378,7 +378,7 @@ node --test scripts\check-criteria-engine.test.mjs
 
 期望：全部 pass。该用例（V-16）会把每条判据的第一条样例期望翻转后要求 exit 1 并点名 `<id>.testcase.json`；若新 code 让输出只剩 code 而无文件名，会在这里红——先修输出格式再继续。
 
-- [ ] **步骤 8：不提交**
+- [x] **步骤 8：不提交**
 
 任务 2 结束时现仓仍红（数据未补槽），保持工作区，不创建 commit。
 
@@ -395,7 +395,7 @@ node --test scripts\check-criteria-engine.test.mjs
 
 **接口**：消费任务 1 的 schema；产出物供任务 4 与门禁使用。
 
-- [ ] **步骤 1：补 `import-guard.json`**
+- [x] **步骤 1：补 `import-guard.json`**
 
 ```json
 {
@@ -416,7 +416,7 @@ node --test scripts\check-criteria-engine.test.mjs
 }
 ```
 
-- [ ] **步骤 2：补 `no-git-write.json`**
+- [x] **步骤 2：补 `no-git-write.json`**
 
 ```json
 {
@@ -443,7 +443,7 @@ node --test scripts\check-criteria-engine.test.mjs
 }
 ```
 
-- [ ] **步骤 3：补 `no-unverified-number.json`**
+- [x] **步骤 3：补 `no-unverified-number.json`**
 
 ```json
 {
@@ -462,7 +462,7 @@ node --test scripts\check-criteria-engine.test.mjs
 }
 ```
 
-- [ ] **步骤 4：补 `observable-criteria.json`（probe 迁移）**
+- [x] **步骤 4：补 `observable-criteria.json`（probe 迁移）**
 
 ```json
 {
@@ -488,7 +488,7 @@ node --test scripts\check-criteria-engine.test.mjs
 }
 ```
 
-- [ ] **步骤 5：确认旧样例语义未变**
+- [x] **步骤 5：确认旧样例语义未变**
 
 ```powershell
 git diff --stat -- tools/quality/criteria-engine/import-guard.testcase.json tools/quality/criteria-engine/no-git-write.testcase.json tools/quality/criteria-engine/no-unverified-number.testcase.json tools/quality/criteria-engine/observable-criteria.testcase.json
@@ -496,7 +496,7 @@ git diff --stat -- tools/quality/criteria-engine/import-guard.testcase.json tool
 
 期望：输出为空（4 份 testcase 字节不变）。
 
-- [ ] **步骤 6：跑构建，确认只剩 evidence 红**
+- [x] **步骤 6：跑构建，确认只剩 evidence 红**
 
 ```powershell
 node tools\quality\criteria-engine\build.mjs
@@ -516,7 +516,7 @@ node tools\quality\criteria-engine\build.mjs
 
 **接口**：消费任务 1 的 `anyOf` / `unless` / `manual`；产出 H-06b 要求的 13/13。
 
-- [ ] **步骤 1：覆盖 json**
+- [x] **步骤 1：覆盖 json**
 
 把 `evidence-before-conclusion.json` 整体替换为 spec §7.3 的完整 json（`:409-446`）。字段顺序、字段名逐字照抄，尤其：
 
@@ -525,7 +525,7 @@ node tools\quality\criteria-engine\build.mjs
 - `missReport` 的例外是 `lookupHit eq true`；
 - 删除 `source` / `chain` / `boundary` / `isCompoundDerivation`。
 
-- [ ] **步骤 2：重写 13 条 testcase**
+- [x] **步骤 2：重写 13 条 testcase**
 
 按下面 13 条逐条写入，字段名必须与 json 完全一致：
 
@@ -547,7 +547,7 @@ node tools\quality\criteria-engine\build.mjs
 
 > 旧样例 10–12 的 `source` / `chain` / `boundary` 三例随字段删除而退出；其「复杂推导」语义按 spec §7.3 归 `assertion-quality`，不在本判据内。新模型用三个类型化锚字段表达形态，且每个 `anyOf` 分支带形态算子（`anchorPathLine` 须含 `:行号`，`anchorCommandOutput` 须含 `exit` / `退出码` / `→`，`anchorReference` 须含路径分隔符），故「锚形态非法」保留为第 4 条反例；空串天然不匹配同一分支，三锚全空由同一语义覆盖。
 
-- [ ] **步骤 3：构建并重渲染**
+- [x] **步骤 3：构建并重渲染**
 
 ```powershell
 node tools\quality\criteria-engine\build.mjs
@@ -563,7 +563,7 @@ rule 正文投影 1 份（rules/<id>.md）
 rule-dsl ok
 ```
 
-- [ ] **步骤 4：核渲染逐字**
+- [x] **步骤 4：核渲染逐字**
 
 ```powershell
 Get-Content rules\evidence-before-conclusion.md -Raw
@@ -571,7 +571,7 @@ Get-Content rules\evidence-before-conclusion.md -Raw
 
 期望：与 spec §7.3 的渲染逐字一致（`:451-465`），全文无「来源」，含 `（以下任一：` 与两处 `（例外：`。
 
-- [ ] **步骤 5：核旧字段名已清**
+- [x] **步骤 5：核旧字段名已清**
 
 ```powershell
 Select-String -Path tools\quality\criteria-engine\evidence-before-conclusion.testcase.json -Pattern 'lookupReport|isCompoundDerivation' -SimpleMatch
@@ -579,7 +579,7 @@ Select-String -Path tools\quality\criteria-engine\evidence-before-conclusion.tes
 
 期望：无输出（退出码 1）。
 
-- [ ] **步骤 6：全量门禁 + 预算**
+- [x] **步骤 6：全量门禁 + 预算**
 
 ```powershell
 node scripts\check-criteria-engine.mjs
@@ -588,7 +588,7 @@ node scripts\rule-audit-lite.mjs
 
 期望：前者首行 `判据 5 条 / 绿 34 / 红 0`、末行 `criteria-engine ok`；后者末行 `rule-audit-lite ok`。
 
-- [ ] **步骤 6b：docgen 渲染物基线**
+- [x] **步骤 6b：docgen 渲染物基线**
 
 `rules/<id>.md` 同时是 docgen 的渲染物（`tools/docgen/components/renderedAssets.mjs` 调 `rules.mjs` 的 `renderRule`），两个消费面必须同一份字节：
 
@@ -611,7 +611,7 @@ node --test tools\docgen\test\rule-render.test.mjs
 
 期望：全部 pass。
 
-- [ ] **步骤 7：提交（绿点 A）**
+- [x] **步骤 7：提交（绿点 A）**
 
 ```powershell
 git add tools/quality/criteria-engine/schema.mjs tools/quality/criteria-engine/interpreters.mjs tools/quality/criteria-engine/build.mjs tools/quality/criteria-engine/*.json tools/quality/criteria-engine/*.md scripts/check-criteria-engine.mjs scripts/rule-audit-lite.mjs rules/evidence-before-conclusion.md
@@ -634,7 +634,7 @@ git commit -m "feat(criteria-engine): 补齐 rule DSL 逻辑组合、算子与�
 
 **接口**：消费任务 1~4 的引擎；产出 V-2b-1 的 22 条口径与现仓 38 条口径。
 
-- [ ] **步骤 1：新增现仓 `anchor-forms`**
+- [x] **步骤 1：新增现仓 `anchor-forms`**
 
 json 逐字照抄 spec §7.4（`:471-498`）；testcase 按 spec §7.4 的 4 行（`:500-507`）落成：
 
@@ -650,7 +650,7 @@ json 逐字照抄 spec §7.4（`:471-498`）；testcase 按 spec §7.4 的 4 行
 }
 ```
 
-- [ ] **步骤 2：跑现仓构建**
+- [x] **步骤 2：跑现仓构建**
 
 ```powershell
 node tools\quality\criteria-engine\build.mjs
@@ -660,7 +660,7 @@ node tools\quality\criteria-engine\build.mjs
 
 > 新增登记后 `RENDERED_RULES` 变为 2 条（`RENDERED_RULES = listRuleIds()`），docgen 基线需同步：`node tools\docgen\cli.mjs generate --kind rule --name anchor-forms --apply`，再 `node tools\docgen\cli.mjs gate`。
 
-- [ ] **步骤 3：同步 pilot 引擎**
+- [x] **步骤 3：同步 pilot 引擎**
 
 ```powershell
 Copy-Item tools\quality\criteria-engine\schema.mjs docs\prd\20261105182104-rule-refactor\rule-dsl\schema.mjs -Force
@@ -669,18 +669,18 @@ Copy-Item tools\quality\criteria-engine\interpreters.mjs docs\prd\20261105182104
 
 再改 pilot `build.mjs`：`check` 调用改为结构化适配（同任务 1 步骤 6）；解释器写盘循环加 `if (!it.ext) continue`。
 
-- [ ] **步骤 4：补 pilot 3 份 json**
+- [x] **步骤 4：补 pilot 3 份 json**
 
 按任务 3 同样的方式补 `scope:"global"`、`when.label`、`assert[i].label`、`assert[i].probe`（3 份都是 `manual`，`no-git-write` 的 `unless` 补 `label:"用户点名"`）。**判据语义与样例输入不得改**。
 
-- [ ] **步骤 5：pilot 复制 anchor-forms**
+- [x] **步骤 5：pilot 复制 anchor-forms**
 
 ```powershell
 Copy-Item tools\quality\criteria-engine\anchor-forms.json docs\prd\20261105182104-rule-refactor\rule-dsl\ -Force
 Copy-Item tools\quality\criteria-engine\anchor-forms.testcase.json docs\prd\20261105182104-rule-refactor\rule-dsl\ -Force
 ```
 
-- [ ] **步骤 6：核 pilot 旧样例字节不变**
+- [x] **步骤 6：核 pilot 旧样例字节不变**
 
 ```powershell
 git diff --stat -- docs/prd/20261105182104-rule-refactor/rule-dsl/import-guard.testcase.json docs/prd/20261105182104-rule-refactor/rule-dsl/no-git-write.testcase.json docs/prd/20261105182104-rule-refactor/rule-dsl/no-unverified-number.testcase.json
@@ -688,7 +688,7 @@ git diff --stat -- docs/prd/20261105182104-rule-refactor/rule-dsl/import-guard.t
 
 期望：输出为空。
 
-- [ ] **步骤 7：跑 pilot 构建**
+- [x] **步骤 7：跑 pilot 构建**
 
 ```powershell
 node docs\prd\20261105182104-rule-refactor\rule-dsl\build.mjs
@@ -696,7 +696,7 @@ node docs\prd\20261105182104-rule-refactor\rule-dsl\build.mjs
 
 期望：4 条判据各输出样例数（3 旧 = 18 条，新 = 4 条），总计 `样例 22 条，错误 0 条`，末行 `rule-dsl ok`。
 
-- [ ] **步骤 8：跑 pilot 门禁 + 预算**
+- [x] **步骤 8：跑 pilot 门禁 + 预算**
 
 ```powershell
 node scripts\check-criteria-engine.mjs --root docs\prd\20261105182104-rule-refactor\rule-dsl
@@ -704,7 +704,7 @@ node scripts\check-criteria-engine.mjs --root docs\prd\20261105182104-rule-refac
 
 期望：`rules/` 下只有 anchor-forms 时 exit 0；若 pilot 无 `rules/` 目录，先在 pilot 建 `rules/` 并写入 `anchor-forms.md`。逐条核 K-03：`anchor-forms.md` 非空白字符在 100–500。
 
-- [ ] **步骤 9：提交（绿点 B）**
+- [x] **步骤 9：提交（绿点 B）**
 
 ```powershell
 git add tools/quality/criteria-engine/anchor-forms.json tools/quality/criteria-engine/anchor-forms.testcase.json tools/quality/criteria-engine/*.md docs/prd/20261105182104-rule-refactor/rule-dsl/
@@ -722,7 +722,7 @@ git commit -m "test(criteria-engine): 新增 anchor-forms 判据并同步 pilot"
 
 **接口**：无代码接口；产物是 `rule-writer` 的判据引擎分支说明与细则。
 
-- [ ] **步骤 1：README §六追加三条裁定**
+- [x] **步骤 1：README §六追加三条裁定**
 
 逐条追加（标题逐字）：
 
@@ -732,7 +732,7 @@ label 只命名（名词短语；连接词由结构树产出，谓词由算子�
 判定动作与记录落点分离（probe 回答「怎么取」，landing 回答「记在哪」）
 ```
 
-- [ ] **步骤 2：写 `references/criteria-dsl.md`**
+- [x] **步骤 2：写 `references/criteria-dsl.md`**
 
 必含八节，标题逐字：`字段表`、`条件语法`、`label`、`算子表`、`probe`、`渲染`、`校验闸`、`验收命令`。内容来源是 spec §2~§8 的操作版；不复制 spec 全文，只给可执行规则与两个验收命令：
 
@@ -741,7 +741,7 @@ node tools\quality\criteria-engine\build.mjs
 node scripts\check-criteria-engine.mjs
 ```
 
-- [ ] **步骤 3：SKILL.md 加指针**
+- [x] **步骤 3：SKILL.md 加指针**
 
 在 `## 判据与写作指引去哪读` 的列表末尾加一行：
 
@@ -749,7 +749,7 @@ node scripts\check-criteria-engine.mjs
 - 判据引擎 rule（`<id>.json` + `<id>.testcase.json`）的字段、算子、probe、渲染与校验闸：`references/criteria-dsl.md`
 ```
 
-- [ ] **步骤 4：全量验收**
+- [x] **步骤 4：全量验收**
 
 ```powershell
 node tools\quality\criteria-engine\build.mjs
@@ -760,7 +760,7 @@ node docs\prd\20261105182104-rule-refactor\rule-dsl\build.mjs
 
 期望：全部 exit 0；现仓 `判据 6 条 / 绿 38 / 红 0`；pilot `样例 22 条，错误 0 条`。
 
-- [ ] **步骤 5：出品核对（J-01 / J-02 / J-03）**
+- [x] **步骤 5：出品核对（J-01 / J-02 / J-03）**
 
 ```powershell
 Get-ChildItem -Path "$HOME\.trae-cn","$HOME\.aas" -Recurse -File -ErrorAction SilentlyContinue |
@@ -776,7 +776,7 @@ Test-Path "$HOME\.trae-cn\skills\rule-writer"
 
 期望：`False`（若为 `True` 且指向本仓活链，按 J-03 记 fail）。
 
-- [ ] **步骤 6：提交（绿点 C）**
+- [x] **步骤 6：提交（绿点 C）**
 
 ```powershell
 git add tools/quality/criteria-engine/README.md skills/rule-writer/SKILL.md skills/rule-writer/references/criteria-dsl.md

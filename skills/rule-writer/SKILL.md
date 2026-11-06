@@ -41,3 +41,5 @@ description: 从需求写一条合规规则，或按 inspector 处方优化已�
 ## 产出与验收边界
 
 产出是**草稿**（写在 use-rule-skills 草稿箱，命名 `<规则名>--<YYYYMMDD-HHMMSS>.md`）；合规以 rule-inspector 评分为准，验收/循环走 use-rule-skills；不经入口直用本技能 = 产出未验收草稿。
+
+**判据引擎 rule 分支（例外）**：写入 `<id>.json` + `<id>.testcase.json` 时，交付落点是本仓 `tools/quality/criteria-engine/`（恰两个数据文件），不进 use-rule-skills 草稿箱、不产出散文 `.md`；构建产物与校验命令见 `references/criteria-dsl.md`。
