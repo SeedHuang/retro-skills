@@ -1,0 +1,12 @@
+{
+  "rule": "import-guard",
+  "cases": [
+    { "input": { "edited": true, "verifyCommand": "npx tsc --noEmit", "verifyOutput": "Found 0 errors", "importTogether": true, "reread": true }, "expect": "pass" },
+    { "input": { "edited": true, "verifyCommand": "", "verifyOutput": "", "importTogether": true, "reread": true }, "expect": "fail" },
+    { "input": { "edited": true, "verifyCommand": "npx tsc --noEmit", "verifyOutput": "Found 0 errors", "importTogether": false, "reread": true }, "expect": "fail" },
+    { "input": { "edited": true, "verifyCommand": "npx tsc --noEmit", "verifyOutput": "Found 0 errors", "importTogether": true, "reread": false }, "expect": "fail" },
+    { "input": { "edited": false }, "expect": "pass" },
+    { "input": { "edited": true, "verifyCommand": "npx tsc --noEmit", "verifyOutput": "", "importTogether": true, "reread": true }, "expect": "fail" },
+    { "input": { "edited": true, "verifyCommand": "", "verifyOutput": "Found 0 errors", "importTogether": true, "reread": true }, "expect": "fail" }
+  ]
+}

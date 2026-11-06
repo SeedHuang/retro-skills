@@ -1,6 +1,6 @@
 # rule 改造项目（PRD 总纲）
 
-> 状态：**已定稿**｜创建：2026-11-03｜修订：2026-11-05（第 4 轮议会评审 + 审计复跑后定稿；用户 2026-11-05 确认）
+> 状态：**已定稿**｜创建：2026-11-03｜修订：2026-11-06（追加阶段 2b：DSL 表达力补齐，见 [stage-2b](./stage-2b-rule-dsl-expressiveness.md)）
 > 被改造对象：`D:\Seed\retro-skills`。**写范围**：本 PRD 与 `criteria-engine/README.md` 已授权落在该仓 `docs/prd/` 内（授权：2026-11-05 用户「提交议会审核一下」+ 后续施工裁定）；`rules/`、`skills/`、`tools/` 的写操作由用户执行，或按阶段任务单独授权。
 
 ## 1 这份总纲回答什么
@@ -24,6 +24,7 @@
 |---|---|---|---|
 | **1** | [stage-1-rules-exit.md](./stage-1-rules-exit.md) | bak 全量留底 + 23 条一次性退出 `rules/`（真空期已裁） | 注入 −100%（源 + 运行时链接）、bak 23/23 逐字零改动、V-1/V-18 双绿 |
 | **2** | [stage-2-new-mode-pilot.md](./stage-2-new-mode-pilot.md) | 判据引擎转正 + 触发声明上线 + 三新 skill 首批试验 + 门禁 | `rules/` = 1 条；V-12 签收窗**四任务全绿**（逐项 `path:line` 可指） |
+| **2b** | [stage-2b-rule-dsl-expressiveness.md](./stage-2b-rule-dsl-expressiveness.md)（[施工计划](./stage-2b-plan.md)） | DSL 表达力补齐：逻辑组合 + 算子 + probe + 表述层；正文只能由 json 渲染 | 旧 18 样例不改全绿；手改正文即红；label 违规可判红 |
 | **3** | [stage-3-skill-overhaul.md](./stage-3-skill-overhaul.md) | 19 个老 skill 向判据引擎模式改造 + 12 条下沉承接 | 12 条承接零遗漏（逐条 path:line 可指） |
 | **4** | [stage-4-agent-criteria.md](./stage-4-agent-criteria.md) | agent 卡面判据分流迁入判据引擎 | 义务文本零变化（diff 证）+ 分流逐条记录 |
 

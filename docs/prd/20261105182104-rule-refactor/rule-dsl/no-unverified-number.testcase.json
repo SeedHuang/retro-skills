@@ -1,0 +1,9 @@
+{
+  "rule": "no-unverified-number",
+  "cases": [
+    { "input": { "hasStatistic": true, "command": "node tmp/x.mjs" }, "expect": "pass" },
+    { "input": { "hasStatistic": true, "command": "" }, "expect": "fail" },
+    { "input": { "hasStatistic": true, "command": "我觉得是 30%" }, "expect": "fail" },
+    { "input": { "hasStatistic": false }, "expect": "pass" }
+  ]
+}
