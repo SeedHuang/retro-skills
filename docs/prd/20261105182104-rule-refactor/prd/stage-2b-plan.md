@@ -531,21 +531,21 @@ node tools\quality\criteria-engine\build.mjs
 
 | # | 输入 | expect | 覆盖 |
 |---|---|---|---|
-| 1 | `writesConclusion:true`，`anchorPathLine:"docs/a.md:12"`，`applicability:"适用于本仓"`，`target:"要不要拆"`，`hasNumbers:false`，`lookupHit:true` | pass | path:line 形态 |
-| 2 | `writesConclusion:true`，`anchorCommandOutput:"npm run check → exit 0"`，其余同 1 | pass | 命令 + 输出首行 |
-| 3 | `writesConclusion:true`，`anchorReference:"skills/x/SKILL.md"`，其余同 1 | pass | 引用件路径 |
-| 4 | `writesConclusion:true`，`anchorPathLine:""`、`anchorCommandOutput:""`、`anchorReference:""`，其余同 1 | fail | 三锚全空 |
-| 5 | `writesConclusion:true`，锚同 1，`applicability:""` | fail | 范围空 |
-| 6 | `writesConclusion:true`，锚同 1，`target:""` | fail | 目标空 |
-| 7 | `writesConclusion:true`，锚同 1，`hasNumbers:true`，`numbersCommand:""` | fail | 有数字无命令 |
-| 8 | `writesConclusion:true`，锚同 1，`hasNumbers:true`，`numbersCommand:"node -e ..."` | pass | 有数字有命令 |
-| 9 | `writesConclusion:true`，锚同 1，`hasNumbers:false` | pass | 无数字豁免 |
-| 10 | `writesConclusion:true`，锚同 1，`lookupHit:false`，`missReport:""` | fail | 查不到无记录 |
-| 11 | `writesConclusion:true`，锚同 1，`lookupHit:false`，`missReport:"查了 a.md:12，exit 1，首行 X"` | pass | 查不到有记录 |
-| 12 | `writesConclusion:true`，锚同 1，`lookupHit:true`，`missReport:""` | pass | 查得免记录 |
-| 13 | `writesConclusion:false` | pass | 不触发 |
+| 1 | `claimsEvidence:true`，`anchorPathLine:"docs/a.md:12"`，`applicability:"适用于本仓"`，`target:"要不要拆"`，`hasNumbers:false`，`lookupHit:true` | pass | path:line 形态 |
+| 2 | `claimsEvidence:true`，`anchorCommandOutput:"npm run check → exit 0"`，其余同 1 | pass | 命令 + 输出首行 |
+| 3 | `claimsEvidence:true`，`anchorReference:"skills/x/SKILL.md"`，其余同 1 | pass | 引用件路径 |
+| 4 | `claimsEvidence:true`，`anchorPathLine:"我记得是这样"`、`anchorCommandOutput:""`、`anchorReference:""`，其余同 1 | fail | 无有效锚（形态非法；空串同判 fail，兼覆盖三锚全空） |
+| 5 | `claimsEvidence:true`，锚同 1，`applicability:""` | fail | 范围空 |
+| 6 | `claimsEvidence:true`，锚同 1，`target:""` | fail | 目标空 |
+| 7 | `claimsEvidence:true`，锚同 1，`hasNumbers:true`，`numbersCommand:""` | fail | 有数字无命令 |
+| 8 | `claimsEvidence:true`，锚同 1，`hasNumbers:true`，`numbersCommand:"node -e ..."` | pass | 有数字有命令 |
+| 9 | `claimsEvidence:true`，锚同 1，`hasNumbers:false` | pass | 无数字豁免 |
+| 10 | `claimsEvidence:true`，锚同 1，`lookupHit:false`，`missReport:""` | fail | 查不到无记录 |
+| 11 | `claimsEvidence:true`，锚同 1，`lookupHit:false`，`missReport:"查了 a.md:12，exit 1，首行 X"` | pass | 查不到有记录 |
+| 12 | `claimsEvidence:true`，锚同 1，`lookupHit:true`，`missReport:""` | pass | 查得免记录 |
+| 13 | `claimsEvidence:false` | pass | 不触发 |
 
-> 旧样例 10–12 的 `source` / `chain` / `boundary` 三例随字段删除而退出；其「复杂推导」语义按 spec §7.3 归 `assertion-quality`，不在本判据内。新模型用三个类型化锚字段表达形态，写不出「无形态依据的锚」，因此「锚形态非法」并入第 4 条（三锚全空）。
+> 旧样例 10–12 的 `source` / `chain` / `boundary` 三例随字段删除而退出；其「复杂推导」语义按 spec §7.3 归 `assertion-quality`，不在本判据内。新模型用三个类型化锚字段表达形态，且每个 `anyOf` 分支带形态算子（`anchorPathLine` 须含 `:行号`，`anchorCommandOutput` 须含 `exit` / `退出码` / `→`，`anchorReference` 须含路径分隔符），故「锚形态非法」保留为第 4 条反例；空串天然不匹配同一分支，三锚全空由同一语义覆盖。
 
 - [ ] **步骤 3：构建并重渲染**
 

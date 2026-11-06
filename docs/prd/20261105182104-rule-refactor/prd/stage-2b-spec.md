@@ -417,10 +417,11 @@ H-06b 的旧名禁查清单 = `lookupReport`、`isCompoundDerivation`，**按键
   "assert": [
     {
       "label": "可核查锚",
+      "probe": { "kind": "manual" },
       "anyOf": [
-        { "field": "anchorPathLine", "op": "nonEmpty", "name": "path:line" },
-        { "field": "anchorCommandOutput", "op": "nonEmpty", "name": "命令 + 输出首行" },
-        { "field": "anchorReference", "op": "nonEmpty", "name": "引用件路径" }
+        { "field": "anchorPathLine", "op": "matches", "pattern": ":\\d+", "name": "path:line" },
+        { "field": "anchorCommandOutput", "op": "containsAny", "values": ["exit", "退出码", "→"], "name": "命令 + 输出首行" },
+        { "field": "anchorReference", "op": "containsAny", "values": ["/", "\\"], "name": "引用件路径" }
       ]
     },
     { "label": "适用范围", "field": "applicability", "op": "nonEmpty", "probe": { "kind": "manual" } },
@@ -464,7 +465,9 @@ H-06b 的旧名禁查清单 = `lookupReport`、`isCompoundDerivation`，**按键
 落点：答案 / 交付账
 ```
 
-13 条样例按新字段名重写，语义保持：正例（有锚 / 有取数命令 / 查得时免记录）、反例（锚空 / 锚形态非法 / 范围空 / 目标空 / 有数字无命令 / 查不到无记录 / 不触发）。
+13 条样例按新字段名重写，语义保持：正例（有锚 / 有取数命令 / 查得时免记录）、反例（无有效锚 / 范围空 / 目标空 / 有数字无命令 / 查不到无记录 / 不触发）。
+
+锚形态校验落在 `anyOf` 三个分支的算子里（`matches` / `containsAny`），**不用 `nonEmpty` + 形态的嵌套 `allOf`**：组合子项按 `name` 渲染，故 §7.3 的义务行逐字不变；空串天然不匹配，「三锚全空」与「形态非法」由同一条反例覆盖（样例取旧例「我记得是这样」的等价输入 `anchorPathLine: "我记得是这样"`）。
 
 ### 7.4 anchor-forms（pilot 与现仓都落这份）
 
@@ -479,6 +482,7 @@ H-06b 的旧名禁查清单 = `lookupReport`、`isCompoundDerivation`，**按键
   "assert": [
     {
       "label": "可核查锚",
+      "probe": { "kind": "manual" },
       "anyOf": [
         { "field": "anchorPathLine", "op": "nonEmpty", "name": "path:line" },
         { "field": "anchorCommandOutput", "op": "nonEmpty", "name": "命令 + 输出首行" },
@@ -487,6 +491,7 @@ H-06b 的旧名禁查清单 = `lookupReport`、`isCompoundDerivation`，**按键
     },
     {
       "label": "有效锚",
+      "probe": { "kind": "manual" },
       "field": "anchorText",
       "op": "notContains",
       "values": ["见上文", "同上"]
