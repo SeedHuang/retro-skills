@@ -1,0 +1,21 @@
+{
+  "rule": "evidence-before-conclusion",
+  "cases": [
+    {
+      "input": { "writesConclusion": true, "anchor": "docs/a.md:12", "scope": "适用于本仓", "target": "要不要拆", "hasNumbers": false, "lookupHit": true, "isCompoundDerivation": false },
+      "expect": "pass"
+    },
+    { "input": { "writesConclusion": true, "anchor": "", "scope": "适用于本仓", "target": "要不要拆", "hasNumbers": false, "lookupHit": true }, "expect": "fail" },
+    { "input": { "writesConclusion": true, "anchor": "我记得是这样", "scope": "适用于本仓", "target": "要不要拆", "hasNumbers": false, "lookupHit": true }, "expect": "fail" },
+    { "input": { "writesConclusion": true, "anchor": "docs/a.md:12", "scope": "", "target": "要不要拆", "hasNumbers": false, "lookupHit": true }, "expect": "fail" },
+    { "input": { "writesConclusion": true, "anchor": "docs/a.md:12", "scope": "适用于本仓", "target": "", "hasNumbers": false, "lookupHit": true }, "expect": "fail" },
+    { "input": { "writesConclusion": true, "anchor": "docs/a.md:12", "scope": "适用于本仓", "target": "要不要拆", "hasNumbers": true, "numbersCommand": "", "lookupHit": true }, "expect": "fail" },
+    { "input": { "writesConclusion": true, "anchor": "docs/a.md:12", "scope": "适用于本仓", "target": "要不要拆", "hasNumbers": true, "numbersCommand": "node -e ...", "lookupHit": true, "isCompoundDerivation": false }, "expect": "pass" },
+    { "input": { "writesConclusion": true, "anchor": "docs/a.md:12", "scope": "适用于本仓", "target": "要不要拆", "hasNumbers": false, "lookupHit": false, "lookupReport": "" }, "expect": "fail" },
+    { "input": { "writesConclusion": true, "anchor": "docs/a.md:12", "scope": "适用于本仓", "target": "要不要拆", "hasNumbers": false, "lookupHit": false, "lookupReport": "查了 a.md:12，exit 1，首行 X", "isCompoundDerivation": false }, "expect": "pass" },
+    { "input": { "writesConclusion": true, "anchor": "docs/a.md:12", "scope": "适用于本仓", "target": "要不要拆", "hasNumbers": false, "lookupHit": true, "isCompoundDerivation": true, "source": "", "chain": "s1→s2", "boundary": "限本仓" }, "expect": "fail" },
+    { "input": { "writesConclusion": true, "anchor": "docs/a.md:12", "scope": "适用于本仓", "target": "要不要拆", "hasNumbers": false, "lookupHit": true, "isCompoundDerivation": true, "source": "docs/a.md:12", "chain": "", "boundary": "限本仓" }, "expect": "fail" },
+    { "input": { "writesConclusion": true, "anchor": "docs/a.md:12", "scope": "适用于本仓", "target": "要不要拆", "hasNumbers": false, "lookupHit": true, "isCompoundDerivation": true, "source": "docs/a.md:12", "chain": "s1→s2", "boundary": "" }, "expect": "fail" },
+    { "input": { "writesConclusion": false }, "expect": "pass" }
+  ]
+}

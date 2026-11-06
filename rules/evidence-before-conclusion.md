@@ -1,16 +1,19 @@
 # 说出口的结论必须有可核出处
 
-> 触发：输出任何结论（判断 / 建议 / 数据 / 事实陈述）之前
-> 来源：rule 改造 PRD（2026-11-05 D-10 终裁）
+> 来源：`evidence-before-conclusion.json`（判据 json，由 build 渲染，手改即红）
+> 触发：`writesConclusion 等于 true`
 
-义务：按四站过闸，顺序固定，每站缺证据 = 不合格：
-1. 出处站：带锚——`path:line`、或「命令 + 输出首行」、或引用件路径
-2. 范围站：写「适用于 X；不适用于 Y」+ 可追推导链（每步带锚）
-3. 目标站：写「回答什么问题」
-4. 数字站：含数字时附取数命令 + 复算结果
+义务（全部成立才合规；缺一件 = 不合格）：
+- anchor 非空
+- anchor 包含任一字面量 : / exit / 命令
+- scope 非空
+- target 非空
+- numbersCommand 非空（例外：hasNumbers 等于 false 时豁免）
+- lookupReport 非空（例外：lookupHit 等于 true 时豁免）
+- source 非空（例外：isCompoundDerivation 等于 false 时豁免）
+- chain 非空（例外：isCompoundDerivation 等于 false 时豁免）
+- boundary 非空（例外：isCompoundDerivation 等于 false 时豁免）
 
-查不到：写「查了什么 + 退出码 + 输出首行」三件；不得只写「需要你定」。
+残余（抽检）：anchor / scope / target · reviewer-audit ×3
 
-复杂推导（用于签字 / 送审 / 对外交付，或会改变已签产物）：加载 assertion-quality（name=assertion-quality），按其材料六字段与四步程序执行；工具或技能不可用时，按本条四站逐站写证据，缺哪站标「降级执行·缺 X 站」。
-
-例外：纯偏好 / 纯建议、不声称任何事实依据的表述不适用本条。
+产物：答案 / 交付账

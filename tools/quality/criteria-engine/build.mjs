@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { judge, check, checkTestcase } from './schema.mjs'
 import { interpreters } from './interpreters.mjs'
+import { listRuleIds, writeRule } from './rules.mjs'
 
 const DIR = path.dirname(fileURLToPath(import.meta.url))
 const errors = []
@@ -12,7 +13,7 @@ const errors = []
 const loadJson = (file) => JSON.parse(readFileSync(file, 'utf8').replace(/^\uFEFF/, ''))
 
 let total = 0
-const ruleFiles = readdirSync(DIR).filter((n) => n.endsWith('.json') && !n.endsWith('.testcase.json') && !n.endsWith('.schema.json'))
+const ruleFiles = readdirSync(DIR).filter((n) => n.endsWith('.json') && !n.endsWith('.testcase.json') && n !== 'rules.json')
 const tcFiles = readdirSync(DIR).filter((n) => n.endsWith('.testcase.json'))
 const rules = ruleFiles.map((name) => ({ name, rule: loadJson(path.join(DIR, name)) }))
 const tcs = tcFiles.map((name) => ({ name, tc: loadJson(path.join(DIR, name)) }))
@@ -32,11 +33,18 @@ for (const { name, rule } of rules) {
     if (got !== c.expect) errors.push(`${entry.name}: cases[${i}] 期望 ${c.expect} 实得 ${got} ← ${JSON.stringify(c.input)}`)
   }
   if (!errors.length) {
-    for (const it of interpreters) writeFileSync(path.join(DIR, `${rule.id}.${it.ext}`), it.render(rule), 'utf8')
+    for (const it of interpreters) if (it.ext) writeFileSync(path.join(DIR, `${rule.id}.${it.ext}`), it.render(rule), 'utf8')
   }
   console.log(`${name}: ${entry.tc.cases.length} 条样例已判（测试在 ${entry.name}）`)
 }
 for (const e of errors) console.log('RED ' + e)
+// rule 正文投影（唯一入口）：登记在 rules.json 的判据 id → rules/<id>.md（散文本体由 md 解释器渲染）
+if (errors.length === 0) {
+  for (const id of listRuleIds()) {
+    try { writeRule(id) } catch (err) { errors.push(`rule 正文渲染失败 ${id}: ${err.message}`) }
+  }
+}
 console.log(`\n解释器 ${interpreters.length} 个（${interpreters.map((i) => i.id).join(' / ')}），样例 ${total} 条，错误 ${errors.length} 条`)
+console.log(`rule 正文投影 ${listRuleIds().length} 份（rules/<id>.md）`)
 console.log(errors.length === 0 ? 'rule-dsl ok' : 'rule-dsl FAIL')
 process.exit(errors.length === 0 ? 0 : 1)

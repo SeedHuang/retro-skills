@@ -12,8 +12,9 @@ import { fileURLToPath } from 'node:url'
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const RULES = join(ROOT, 'rules')
 
-// 结构行不计说明层：标题行（索引）与 `> 触发` 行（V-4 结构闸的「触发」件）不是「说明」。
-const STRUCT = /^(#{1,6}\s|>\s*触发)/
+// 结构行不计说明层：标题行（索引）与 `> 触发` / `> 来源`（V-4 结构闸的件）、`残余（抽检）：` / `产物：`
+// （判据元数据，由 json 渲染）都不是「说明」。
+const STRUCT = /^(#{1,6}\s|>\s*触发|>\s*来源|残余（抽检）：|产物：)/
 const OBLIGATION = /义务|必须|禁止|不得|不许|缺一|不合格|写「|加载|执行|附|跑/
 const ACTION = /path:line|退出码|\bexit\b|命令|计数\s*=|非空|为空|枚举[：:]|diff/
 const BOUNDARY = /例外|除非|只许|不再|不适用/

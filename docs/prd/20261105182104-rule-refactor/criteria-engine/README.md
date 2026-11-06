@@ -45,19 +45,19 @@
 
 ```
 criteria-engine/
-  <id>.json            判据（唯一真源）
+  <id>.json            判据（唯一真源；rule 正文也由它渲染）
   <id>.testcase.json   独立测试（判据/测试分离）
-  carriers/<name>.json 载体正文（rule 正文唯一真源；用 `criteria` 引用判据 id）
+  rules.json           投影注册：哪些判据 id 额外产出 rules/<id>.md
   schema.mjs           算子表 + judge 唯一实现 + 结构校验
-  carriers.mjs         载体正文校验 + 渲染（单一 DSL 的另一半）
-  interpreters.mjs     投影注册表（可插拔）
+  interpreters.mjs     投影注册表（md / inject / rule；rule 投影 = rules/<id>.md）
+  rules.mjs            rule 正文投影的取数/渲染/落盘（唯一入口）
   build.mjs            编排：加载 → 校验 → 判定 → 渲染
   README.md            本文件
 ```
 
-> **2026-11-05 补**：载体正文（rule 的触发/义务/例外文案）不再另立一套 docgen 数据——它与判据同住本目录：
-> `carriers/<name>.json` 是正文数据（`kind/name/criteria/title/...`），`carriers.mjs` 负责校验与渲染；
-> docgen 的 `renderedAssets` 只消费这里的渲染结果，并做逐字节比对（手改即红）。
+> **2026-11-05 更正**：rule 正文不再有独立数据族（不再有 carriers / 散文数据）。
+> 正文 = 判据 json 经 `rule` 解释器渲染出的投影；散文只是产物，不是数据。
+> 手改 `rules/<id>.md` 即红（`RuleProjectionDrift` / gate `Mismatch`），改 json 后重跑 `build.mjs`。
 
 ## 六、四条硬设计裁定（改动需重裁）
 

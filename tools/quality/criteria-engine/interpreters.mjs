@@ -44,4 +44,25 @@ export const interpreters = [
       return lines.join('\n') + '\n'
     },
   },
+  {
+    id: 'rule',
+    ext: null,
+    describe: 'rule 正文投影（= rules/<id>.md，仍由判据 json 渲染；散文只是投影，不是数据）',
+    render(rule) {
+      const lines = [`# ${rule.title}`, '',
+        `> 来源：\`${rule.id}.json\`（判据 json，由 build 渲染，手改即红）`,
+        `> 触发：\`${renderCond(rule.when)}\``, '',
+        '义务（全部成立才合规；缺一件 = 不合格）：']
+      for (const a of rule.assert) {
+        lines.push(`- ${renderCond(a)}${a.unless ? `（例外：${renderCond(a.unless)} 时豁免）` : ''}`)
+        if (a.op === 'notForbiddenCommand') {
+          lines.push(`  - 允许：${a.allow.join(' / ')}`)
+          lines.push(`  - 禁止：${a.forbid.join(' / ')}`)
+        }
+      }
+      lines.push('', `残余（抽检）：${rule.residual.fields.join(' / ')} · ${rule.residual.who} ×${rule.residual.sample}`, '',
+        `产物：${rule.landing}`, '')
+      return lines.join('\n')
+    },
+  },
 ]

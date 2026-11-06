@@ -1,8 +1,0 @@
-{
-  "rule": "target-present",
-  "cases": [
-    { "input": { "isConclusion": true, "target": "要不要做 wrapper" }, "expect": "pass" },
-    { "input": { "isConclusion": true, "target": "" }, "expect": "fail" },
-    { "input": { "isConclusion": false, "target": "" }, "expect": "pass" }
-  ]
-}

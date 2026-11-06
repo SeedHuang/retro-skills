@@ -11,7 +11,7 @@ import { join, resolve, dirname, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { check, checkTestcase, judge, CRITERION_TYPES } from '../tools/quality/criteria-engine/schema.mjs'
 import { interpreters } from '../tools/quality/criteria-engine/interpreters.mjs'
-import { listCarriers, checkCarrier, renderCarrierData } from '../tools/quality/criteria-engine/carriers.mjs'
+import { listRuleIds, renderRuleData } from '../tools/quality/criteria-engine/rules.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const TERMS_FILE = 'tools/quality/observable-terms.json'
@@ -53,7 +53,7 @@ function run(root) {
   const rulesAbs = resolve(root, RULES_DIR)
   if (!existsSync(engineAbs)) throw new Fail(`判据引擎目录不存在：${ENGINE_DIR}`)
 
-  const ruleFiles = readdirSync(engineAbs).filter((n) => n.endsWith('.json') && !n.endsWith('.testcase.json'))
+  const ruleFiles = readdirSync(engineAbs).filter((n) => n.endsWith('.json') && !n.endsWith('.testcase.json') && n !== 'rules.json')
   const tcFiles = readdirSync(engineAbs).filter((n) => n.endsWith('.testcase.json'))
   const rules = ruleFiles.map((name) => ({ name, rule: loadJson(join(engineAbs, name)) }))
   const tcs = tcFiles.map((name) => ({ name, tc: loadJson(join(engineAbs, name)) }))
@@ -91,6 +91,7 @@ function run(root) {
     // 逐字节比对（stage-2 §1.6 / §5）：渲染物手改即红。重渲染 vs 磁盘逐字节；缺文件也红。
     // 「不新立第二套」= 复用同一份 interpreters（唯一投影实现），不在校验器里再写一份渲染逻辑。
     for (const it of interpreters) {
+      if (!it.ext) continue // rule 投影单独核（models / rules.md）
       const projRel = `${ENGINE_DIR}/${rule.id}.${it.ext}`
       const projAbs = resolve(root, projRel)
       const expected = it.render(rule)
@@ -115,20 +116,18 @@ function run(root) {
   if (ruleMd.length > BUDGET.maxCount) findings.push({ code: 'RuleCountOverBudget', count: ruleMd.length, max: BUDGET.maxCount })
   if (total > BUDGET.maxTotal) findings.push({ code: 'RuleTotalOverBudget', chars: total, max: BUDGET.maxTotal })
 
-  // 载体正文（rule 正文数据，单一 DSL）：结构 + criteria 引用必须存在 + 渲染物逐字节（手改即红）
-  const carriers = listCarriers()
-  for (const name of carriers) {
-    const file = `${ENGINE_DIR}/carriers/${name}.json`
-    let carrier
-    try { carrier = loadJson(resolve(root, file)) } catch (e) { findings.push({ file, code: 'CarrierUnreadable', message: e.message }); continue }
-    const errs = []
-    checkCarrier(carrier, file, errs, ids)
-    for (const e of errs) findings.push({ file, code: 'CarrierSchema', message: e })
-    const projRel = `${RULES_DIR}/${name}.md`
+  // rule 正文投影（data + script）：正文必须由判据 json 渲染得出（手改即红、缺件即红）
+  const registeredRules = listRuleIds()
+  for (const id of registeredRules) {
+    const ruleAbs = resolve(root, ENGINE_DIR, `${id}.json`)
+    if (!existsSync(ruleAbs)) { findings.push({ file: `${ENGINE_DIR}/${id}.json`, code: 'RuleDataMissing' }); continue }
+    let rule
+    try { rule = loadJson(ruleAbs) } catch (e) { findings.push({ file: `${ENGINE_DIR}/${id}.json`, code: 'RuleDataUnreadable', message: e.message }); continue }
+    const projRel = `${RULES_DIR}/${id}.md`
     const projAbs = resolve(root, projRel)
-    if (!existsSync(projAbs)) { findings.push({ file: projRel, code: 'CarrierProjectionMissing' }); continue }
-    if (strip(readFileSync(projAbs, 'utf8')) !== renderCarrierData(carrier)) {
-      findings.push({ file: projRel, code: 'CarrierProjectionDrift', message: '手改 rule 正文（与 carriers/<名>.json 渲染结果不一致）' })
+    if (!existsSync(projAbs)) { findings.push({ file: projRel, code: 'RuleProjectionMissing' }); continue }
+    if (strip(readFileSync(projAbs, 'utf8')) !== renderRuleData(rule)) {
+      findings.push({ file: projRel, code: 'RuleProjectionDrift', message: '手改 rule 正文（与判据 json 渲染结果不一致）' })
     }
   }
 

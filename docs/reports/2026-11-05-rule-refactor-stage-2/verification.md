@@ -10,16 +10,17 @@
 |---|---|---|
 | S2-V1 rule 条数收敛且门禁绿 | `Get-ChildItem rules\*.md` 计数；`node scripts/check-all.mjs` 末行 | **1**；`check 全部通过` exit 0 |
 | V-2 无重复副本 | `check-criteria-engine.mjs` 的 `SharedPhraseCopy`（承接面 = `skills/**` + `tools/quality/**`，片段登记于 `observable-terms.json` 的 `sharedPhrases`） | **0** |
-| V-3 类型全部落数据 | 引擎 7 份 `<id>.json` 逐份读 `type`（三值枚举）；校验器 `TypeMissing/TypeInvalid` 未触发 | **7/7** |
+| V-3 类型全部落数据 | 引擎 5 份 `<id>.json` 逐份读 `type`（三值枚举）；校验器 `TypeMissing/TypeInvalid` 未触发 | **5/5** |
 | V-4 结构闸齐备 | 保留 rule 的「触发 / 义务 / 例外 / 来源锚」四件（校验器 `RuleStructureIncomplete` 未触发） | 缺项 0 |
 | V-5 判据登记表存在 | 白名单必填 7 字段 + 选填 `type`；op 全注册；residual 四件（who / sample / fields / objectivePath）；配套 testcase 正反例双向 | 100%（校验器 exit 0） |
-| V-6 判据可单元测试 | `node tools/quality/criteria-engine/build.mjs` → 33 样例全绿 | 全绿（每判据 ≥1 正 + ≥1 反） |
-| V-7 手改即红（口径更正 2026-11-05 四稿：单一 DSL） | 逐字节比对对象 = ① 判据引擎渲染投影 14 份（`ProjectionDrift`/`ProjectionMissing`）② **rendered rule 1 份**：`rules/evidence-before-conclusion.md` 由 `criteria-engine/carriers/<名>.json` → `renderCarrier` 渲染，`compareBuffers` 手改 → `Mismatch`/`CarrierProjectionDrift`、缺件 → `DanglingBaselineEntry`/`CarrierProjectionMissing`。**载体正文与判据同住判据引擎、同一套 DSL**（carrier 用 `criteria` 引用判据 id，引用不存在即红），docgen 只消费渲染结果（`renderedAssets`），不另存文案。 | 投影 14/14 + rule 1/1 逐字节可比；`rule-render.test.mjs` 5/5、`check-criteria-engine.test.mjs` 3/3 绿 |
-| V-11 总量不超上限 | 校验器分层预算闸：单条 387 非空白字符（100–500）｜条数 1（≤9）｜总量 442 字符（≤26,513） | 全在界内 |
+| V-6 判据可单元测试 | `node tools/quality/criteria-engine/build.mjs` → 34 样例全绿 | 全绿（每判据 ≥1 正 + ≥1 反） |
+| V-7 手改即红（口径更正 2026-11-05 终稿：data + script） | 逐字节比对对象 = ① 判据引擎渲染投影（`<id>.md` / `<id>.inject.md`）② **rule 正文投影** `rules/evidence-before-conclusion.md`：正文由**判据 json**经 `rule` 解释器渲染（无独立散文数据），手改 → `RuleProjectionDrift` / gate `Mismatch`，缺件 → `RuleProjectionMissing` / `DanglingBaselineEntry`。 | 投影逐字节可比；`rule-render.test.mjs` 5/5、`check-criteria-engine.test.mjs` 3/3 绿 |
+| **S2-P2 口径更正（2026-11-05 用户裁定）** | **PRD §2 的「手写成品文案（387 非空白字符）」作废**：rule 正文改为判据 json 渲染投影（data + script，散文只是产物），实测 **435** 非空白字符（仍在 100–500 区间）。依据 = 用户 2026-11-05「不能写散文……严格按照 rule-dsl 的模式来做 rule」。 | 已落数据 + 渲染器；387 不再作为判据 |
+| V-11 总量不超上限 | 校验器分层预算闸：单条 435 非空白字符（100–500）｜条数 1（≤9）｜总量 511 字符（≤26,513） | 全在界内 |
 | V-13 说明层收敛 | `node scripts/rule-audit-lite.mjs` | 全仓 0.0%（≤10%）/ 单条 0.0%（≤20%） |
 | V-14 来源锚齐 | `Grep '^> 来源' rules/*.md` 命中数 vs 文件数 | 1/1 |
 | V-15 边界未丢 | bak 23 份「例外/除非/只许/不再/不得」逐份计数 vs `git show fd7928c^:rules/<file>` | 23/23 逐份相等；总量 **89**（与 PRD 一致） |
-| V-16 script 判据可判红 | `node --test scripts/check-criteria-engine.test.mjs`：逐条注入冲突样例 → exit 1 并点名 | 7/7 可判红 |
+| V-16 script 判据可判红 | `node --test scripts/check-criteria-engine.test.mjs`：逐条注入冲突样例 → exit 1 并点名 | 5/5 可判红 |
 | V-17 单条 500 目标区 | 同 V-11 的单条计数 | 0 条无记录超标 |
 | V-12 注入不缺关键条 | §6 签收窗四任务 | **待办（需新会话；执行人 ≠ PRD 作者）** |
 | V-19 副本基线 | 见 `copies-baseline.md`（归档面 = 20、承接面 = 0；PRD 的 15 与可复算值差异已写明） | 承接面 0；归档面 = 基线 |
@@ -38,8 +39,8 @@
 
 ## 3 本批改动面
 
-- 引擎：`tools/quality/criteria-engine/`（三件套 + 7 判据 + 7 testcase + 渲染投影 + **`carriers/` 载体正文数据 + `carriers.mjs`**）；白名单加选填 `type`、residual 加 `objectivePath`。
-- 触发声明：`rules/evidence-before-conclusion.md`（387 非空白字符）——**正文由 `carriers/evidence-before-conclusion.json` 渲染**（单一 DSL，`criteria` 引用 3 条判据）；`baseline.mjs` 回填 1 条并重生成 `baseline.json`（16 条）。
+- 引擎：`tools/quality/criteria-engine/`（三件套 + 5 判据 + 5 testcase + 渲染投影 + **`rules.json` / `rules.mjs` / `rule` 解释器**）；白名单加选填 `type`、residual 加 `objectivePath`。
+- 触发声明：`rules/evidence-before-conclusion.md`（**由判据 json 渲染**，435 非空白字符；散文不是数据）；`baseline.mjs` 回填 1 条并重生成 `baseline.json`（16 条）。
 - 三个新 skill：`skills/carrier-conventions/`（本体 + 5 references）、`skills/assertion-quality/`（本体 + manual/cases）、`skills/plain-language/`（本体）；`skilldependencies/*.json` + `manifest.json` + 两份 README + 技能指南同批登记。
 - 门禁：`scripts/check-criteria-engine.mjs`、`scripts/rule-audit-lite.mjs` 落 ⑨ 段（不走 `CHECK_BYPASS`）；`observable-terms.json` 增 `sharedPhrases`。
 - 去重（V-2）：共享项 ④ 措辞「不因来源豁免」→「来源不豁免」（`criteria.md` / `writing-guide.md` / `review-loop`），台账 2026-11-05 行三件齐。

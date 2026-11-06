@@ -20,7 +20,7 @@ function copyRoot() {
 
 test('V-16：逐条判据注入冲突样例 → 校验器 exit 1 并点名该判据', () => {
   const ruleFiles = readdirSync(join(REPO, 'tools', 'quality', 'criteria-engine'))
-    .filter((n) => n.endsWith('.json') && !n.endsWith('.testcase.json'))
+    .filter((n) => n.endsWith('.json') && !n.endsWith('.testcase.json') && n !== 'rules.json')
   assert.ok(ruleFiles.length >= 4, '引擎里至少 4 条判据（3 条试点 + 触发声明判痕）')
   for (const f of ruleFiles) {
     const root = copyRoot()
@@ -40,25 +40,22 @@ test('V-16：逐条判据注入冲突样例 → 校验器 exit 1 并点名该判
   }
 })
 
-test('载体正文（carriers/）：引用不存在的判据 → 红；手改正文 → CarrierProjectionDrift', () => {
+test('rule 正文投影：删 rules/<id>.md → RuleProjectionMissing；改 json 不重生成 → RuleProjectionDrift', () => {
   const root = copyRoot()
   try {
-    const cPath = join(root, 'tools', 'quality', 'criteria-engine', 'carriers', 'evidence-before-conclusion.json')
-    const c = JSON.parse(readFileSync(cPath, 'utf8'))
-    c.criteria = [...c.criteria, 'ghost-criterion']
-    writeFileSync(cPath, JSON.stringify(c, null, 2) + '\n', 'utf8')
-    const badRef = spawnSync(process.execPath, [CLI, '--root', root], { encoding: 'utf8' })
-    assert.equal(badRef.status, 1)
-    assert.match(`${badRef.stdout}${badRef.stderr}`, /ghost-criterion/, '必须点名不存在的判据 id')
-
-    const c2 = JSON.parse(readFileSync(cPath, 'utf8'))
-    c2.criteria = c2.criteria.filter((x) => x !== 'ghost-criterion')
-    writeFileSync(cPath, JSON.stringify(c2, null, 2) + '\n', 'utf8')
     const rulePath = join(root, 'rules', 'evidence-before-conclusion.md')
-    writeFileSync(rulePath, `${readFileSync(rulePath, 'utf8')}手改\n`, 'utf8')
+    rmSync(rulePath, { force: true })
+    const missing = spawnSync(process.execPath, [CLI, '--root', root], { encoding: 'utf8' })
+    assert.equal(missing.status, 1)
+    assert.match(`${missing.stdout}${missing.stderr}`, /RuleProjectionMissing/)
+
+    const jsonPath = join(root, 'tools', 'quality', 'criteria-engine', 'evidence-before-conclusion.json')
+    const rule = JSON.parse(readFileSync(jsonPath, 'utf8'))
+    rule.title = '改过的标题'
+    writeFileSync(jsonPath, JSON.stringify(rule, null, 2) + '\n', 'utf8')
     const drift = spawnSync(process.execPath, [CLI, '--root', root], { encoding: 'utf8' })
     assert.equal(drift.status, 1)
-    assert.match(`${drift.stdout}${drift.stderr}`, /CarrierProjectionDrift/)
+    assert.match(`${drift.stdout}${drift.stderr}`, /RuleProjectionMissing|RuleProjectionDrift/)
   } finally {
     rmSync(root, { recursive: true, force: true })
   }
@@ -67,12 +64,12 @@ test('载体正文（carriers/）：引用不存在的判据 → 红；手改正
 test('渲染物逐字节（stage-2 §1.6）：手改投影 1 字节 → exit 1 点名文件；删投影 → ProjectionMissing', () => {
   const root = copyRoot()
   try {
-    const proj = join(root, 'tools', 'quality', 'criteria-engine', 'anchor-present.md')
+    const proj = join(root, 'tools', 'quality', 'criteria-engine', 'evidence-before-conclusion.md')
     writeFileSync(proj, readFileSync(proj, 'utf8') + '\n手改一行\n', 'utf8')
     const drift = spawnSync(process.execPath, [CLI, '--root', root], { encoding: 'utf8' })
     assert.equal(drift.status, 1, `手改渲染物后必须 exit 1（${drift.stdout}${drift.stderr}）`)
     assert.match(`${drift.stdout}${drift.stderr}`, /ProjectionDrift/, '必须报 ProjectionDrift')
-    assert.match(`${drift.stdout}${drift.stderr}`, /anchor-present\.md/, '必须点名被改的投影文件')
+    assert.match(`${drift.stdout}${drift.stderr}`, /evidence-before-conclusion\.md/, '必须点名被改的投影文件')
 
     rmSync(proj, { force: true })
     const missing = spawnSync(process.execPath, [CLI, '--root', root], { encoding: 'utf8' })

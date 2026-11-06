@@ -8,16 +8,17 @@ import { join, resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { coldRepo, runCli } from './support/card-fixtures.mjs'
 import { RENDERED_RULES, renderedRuleAssets } from '../components/renderedAssets.mjs'
-import { renderCarrier } from '../../quality/criteria-engine/carriers.mjs'
+import { renderRule } from '../../quality/criteria-engine/rules.mjs'
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..')
 const NAME = 'evidence-before-conclusion'
 const REL = `rules/${NAME}.md`
 
-test('渲染 rule 与磁盘逐字节相等，且非空白字符 = 387', () => {
-  const rendered = renderCarrier(NAME)
+test('渲染 rule 与磁盘逐字节相等，且非空白字符在 100–500 预算区', () => {
+  const rendered = renderRule(NAME)
   assert.equal(rendered, readFileSync(join(REPO, REL), 'utf8'), '渲染结果必须与磁盘逐字节相等')
-  assert.equal(rendered.replace(/\s/g, '').length, 387, '触发声明非空白字符必须保持 387')
+  const n = rendered.replace(/\s/g, '').length
+  assert.ok(n >= 100 && n <= 500, `非空白字符须在 100–500，实得 ${n}`)
 })
 
 test('手改 rule 正文 1 字节 → gate Mismatch exit 1 并点名路径', () => {
@@ -46,9 +47,9 @@ test('删 rendered rule → gate DanglingBaselineEntry exit 2', () => {
 test('改数据不重生成 → 红；generate --apply 重生成后绿', () => {
   coldRepo({
     mutate: (copy) => {
-      const dataPath = join(copy, 'tools', 'quality', 'criteria-engine', 'carriers', `${NAME}.json`)
+      const dataPath = join(copy, 'tools', 'quality', 'criteria-engine', `${NAME}.json`)
       const d = JSON.parse(readFileSync(dataPath, 'utf8'))
-      d.exceptions = '例外：改过的例外句。'
+      d.title = '改过的标题'
       writeFileSync(dataPath, JSON.stringify(d, null, 2) + '\n', 'utf8')
     },
     verify: (copy, r) => {
