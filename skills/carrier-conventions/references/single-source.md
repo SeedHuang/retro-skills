@@ -8,6 +8,7 @@
 |---|---|
 | 改已有规则 | 改源文件即生效；不要在运行时目录里改 |
 | 新建 / 增删规则 | 只建在源目录，然后跑 `aas sync` |
+| 不出品的条目 | 在 `sync.config.json` 对应 target 加 `exclude: ["<源条目名>"]`（精确名，非 glob）；排除项不建链接，运行时已有同名条目也不接管 |
 | 核对 | `Get-ChildItem ~/.trae-cn/user_rules` 的条目应指向源文件；指向已删文件 = 断链 |
 
 ## 为什么不能直接写运行时
@@ -21,3 +22,4 @@
 | 源为唯一 | `git status` 里 `rules/` 的改动来自源仓库提交 |
 | 运行时无断链 | 跑 `aas sync` 后：`user_rules` 下逐条 `Test-Path $_.Target` 全为 True |
 | 清退有据 | 删除规则后跑 `aas sync --rm-old`，残留条目数 = 0 |
+| 不出品有据 | 全量 `aas sync` 后，`Test-Path` 该条目运行时路径 = False；体检该段 `需建链接 0` 并打印 `⊘ 已排除` |
