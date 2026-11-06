@@ -135,3 +135,14 @@ J-01 / J-02 用户目录命中 0；J-03 `~/.trae-cn/skills/rule-writer` 不存�
 - `matches` 正则是否过强 / 是否只用于「内容形态」；
 - residual 抽检是否真的执行；
 - `project:<name>` 的发布过滤实现后，需补 I-11 的端到端验收。
+
+## 9 后续处置（2026-11-06 用户裁定）
+
+验收时 `anchor-forms` 被登记进 `rules.json` 并发布为第二条全局规则。复核发现它与 `evidence-before-conclusion` 的锚义务重叠（且形态校验更弱），属验收夹具漏进生产面。已取消发布、保留判据：
+
+- `rules.json` 只留 `evidence-before-conclusion`；
+- 删除 `rules/anchor-forms.md`；docgen `BASELINE_RULES` 回到 1 条、`baseline.json` 17 → 16；
+- `aas sync --rm-old` 清掉 `user_rules/rule-anchor-forms.md`；
+- 判据与 4 条样例仍留在 `tools/quality/criteria-engine/`（现仓仍 6 条 / 38 样例），pilot 侧 `rules/anchor-forms.md` 保留（K-03 用）。
+
+本文 §3 中「已发布 / user_rules 两条」仅描述验收当时状态，以此节为最终处置。
