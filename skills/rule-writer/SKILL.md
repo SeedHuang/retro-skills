@@ -34,6 +34,7 @@ description: 从需求写一条合规规则，或按 inspector 处方优化已�
 
 - 判据全集（来源类型枚举 / 层级规范 / 三检验 / 评分维度 / 标题一致性）：调用 `rule-inspector` 技能
 - 四要素写作指引 + 执行力度 9 项 + 认知动作 X 组自查表 + 冗余度 4 项 + 标题一致性三句 + 例子：`references/writing-guide.md`
+- 判据引擎 rule（`<id>.json` + `<id>.testcase.json`）的字段、算子、probe、渲染与校验闸：`references/criteria-dsl.md`
 - 产出骨架（输出用模板）：`assets/rule-skeleton.md`
 - 报告模板（验收/循环由入口产出）：入口 `use-rule-skills` 技能
 
