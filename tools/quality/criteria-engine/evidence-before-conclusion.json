@@ -33,6 +33,6 @@
     "fields": ["anchorPathLine", "anchorCommandOutput", "anchorReference", "applicability", "target"],
     "objectivePath": "锚四件套可形式化后压回机判；范围/目标同题性由判例库样本收敛"
   },
-  "refs": ["skills/assertion-quality/SKILL.md"],
+  "refs": ["assertion-quality"],
   "landing": "答案 / 交付账"
 }

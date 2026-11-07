@@ -17,7 +17,7 @@
 | `when` | 是 | 条件节点或 `{ "always": true }` | `Schema` |
 | `assert` | 是 | 非空数组，每项是条件节点 | `Schema` |
 | `residual` | 是 | `{who, sample≥1, fields[], objectivePath}` | `Residual*` / `FieldLabelMissing` |
-| `refs` | 否 | 字符串数组 | `Schema` |
+| `refs` | 否 | 字符串数组；`scope: global` 的规则必须写技能名（如 `assertion-quality`），不得写路径 | `Schema` |
 | `landing` | 是 | 记录落点 | `Schema` |
 
 ## 2 条件语法

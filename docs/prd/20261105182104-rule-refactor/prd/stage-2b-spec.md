@@ -442,7 +442,7 @@ H-06b 的旧名禁查清单 = `lookupReport`、`isCompoundDerivation`，**按键
     "fields": ["anchorPathLine", "anchorCommandOutput", "anchorReference", "applicability", "target"],
     "objectivePath": "锚四件套可形式化后压回机判；范围/目标同题性由判例库样本收敛"
   },
-  "refs": ["skills/assertion-quality/SKILL.md"],
+  "refs": ["assertion-quality"],
   "landing": "答案 / 交付账"
 }
 ```
@@ -461,7 +461,7 @@ H-06b 的旧名禁查清单 = `lookupReport`、`isCompoundDerivation`，**按键
 4. 数字取数命令：必须非空（例外：不含统计数字）
 5. 查无记录：必须非空（例外：已查到结果）
 
-另见：skills/assertion-quality/SKILL.md
+另见：assertion-quality
 落点：答案 / 交付账
 ```
 

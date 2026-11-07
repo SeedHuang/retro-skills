@@ -9,5 +9,5 @@
 4. 数字取数命令：必须非空（例外：不含统计数字）
 5. 查无记录：必须非空（例外：已查到结果）
 
-另见：skills/assertion-quality/SKILL.md
+另见：assertion-quality
 落点：答案 / 交付账

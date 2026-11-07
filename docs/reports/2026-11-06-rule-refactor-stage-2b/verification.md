@@ -146,3 +146,13 @@ J-01 / J-02 用户目录命中 0；J-03 `~/.trae-cn/skills/rule-writer` 不存�
 - 判据与 4 条样例仍留在 `tools/quality/criteria-engine/`（现仓仍 6 条 / 38 样例），pilot 侧 `rules/anchor-forms.md` 保留（K-03 用）。
 
 本文 §3 中「已发布 / user_rules 两条」仅描述验收当时状态，以此节为最终处置。
+
+## 10 可移植性修正（2026-11-07）
+
+`evidence-before-conclusion` 是 `scope: global`，会发布到 `~/.trae-cn/user_rules/`；原文 `refs: ["skills/assertion-quality/SKILL.md"]` 是仓内相对路径，在其他项目运行时无法解析。已改为技能名指针：
+
+- `refs: ["assertion-quality"]`，渲染为 `另见：assertion-quality`（技能按名加载，不依赖 cwd）；
+- `criteria-dsl.md` 的 `refs` 口径补为「global 规则必须写技能名，不得写路径」；
+- spec §7.3 的 json 与渲染逐字同步。
+
+未新增 `RefsNotPortable` 门禁：现有 170 条验收夹具普遍使用 `refs: ["skills/x.md"]`，加门禁会让夹具批量变红，需先重写 SDET 口径；本轮只修实际发布物并立约定。
