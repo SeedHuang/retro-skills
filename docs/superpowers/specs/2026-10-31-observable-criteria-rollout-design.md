@@ -141,7 +141,7 @@
 | `tools/docgen/card-model/vocab/criterion-terms.mjs` | 改为派生（删字面值） | 本块 |
 | `docs/prd/20261026205821-agent-card-contract.md:271` | 原文保留 + 日期注「词表自 2026-10-31 起以 `tools/quality/observable-terms.json` 为唯一源」 | 本块 |
 | `tools/docgen/test/card-model.test.mjs:350-355` | 改为「从 JSON 派生 + 交集空」（不再对 PRD 行逐字） | 本块 |
-| `tools/docgen/policy/**` | **零改动**（S6 已签） | — |
+| `tools/docgen/policy/**` | **零改动**（S6 已签）（**2026-11-05 注**：S6-B 放宽为 3 个登记文件 `paths` / `seats` / `writeScopes`；**2026-11-07 注**：review 三技能归档、命令路径改指 `scripts/review-ledger/`，`definitions/commands.mjs` 入集，扩为 4 个） | — |
 | `tools/docgen/components/baseline.mjs` + `tools/docgen/baseline.json` | **必须登记新规则**：`rules/observable-criteria.md` 属手写规则，未进 `BASELINE_RULES` → `node tools/docgen/cli.mjs gate` 报 `UnregisteredHandwritten`；登记后跑 `node tools/docgen/cli.mjs baseline --write`，`baseline N/N` 由 37 变 **38**（门行取证随本块更新） | 本块 |
 | `scripts/scope-sweep/keywords.json` | 本块不改口径；**改 23→77→21 基线表述**（D18）须同批落当次 `impact-sheet.md` 并跑 `--check` | 本块按需 |
 

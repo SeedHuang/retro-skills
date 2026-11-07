@@ -3,10 +3,7 @@
   "skill": "prd-to-specs",
   "dependencies": {
     "skills": [
-      { "name": "evolving-skills" },
-      { "name": "parliament" },
-      { "name": "retro-collect" },
-      { "name": "retro-analyze" }
+      { "name": "parliament" }
     ]
   }
 }

@@ -234,7 +234,7 @@ function assertSync(target) {
   const rwSkill = src('skills/rule-writer/SKILL.md')
   const guide = src('skills/rule-writer/references/writing-guide.md')
   const skeleton = src('skills/rule-writer/assets/rule-skeleton.md')
-  const ledgerTpl = src('skills/review-log/assets/review-progress-template.md')
+  const ledgerTpl = src('bak_skill/review-log/assets/review-progress-template.md')
   const checklist = src('skills/rule-inspector/assets/rule-edit-checklist-template.md')
   assert.ok(score.includes('⑨判据可观察'), '① score.mjs 缺 ⑨')
   assert.ok(criteria.includes('判据可观察'), '① criteria 缺 ⑨')
@@ -1048,14 +1048,14 @@ test('S3-TC-I13 六项核销', () => {
     'skills/rule-writer/SKILL.md': read('skills/rule-writer/SKILL.md'),
     'skills/rule-writer/references/writing-guide.md': read('skills/rule-writer/references/writing-guide.md'),
     'skills/rule-writer/assets/rule-skeleton.md': read('skills/rule-writer/assets/rule-skeleton.md'),
-    'skills/review-log/assets/review-progress-template.md': read('skills/review-log/assets/review-progress-template.md'),
+    'bak_skill/review-log/assets/review-progress-template.md': read('bak_skill/review-log/assets/review-progress-template.md'),
     'skills/rule-inspector/assets/rule-edit-checklist-template.md': read('skills/rule-inspector/assets/rule-edit-checklist-template.md'),
   })
   const kill = [
     ['skills/rule-inspector/scripts/score.mjs', /⑨判据可观察/g],
     ['skills/rule-inspector/references/recipes.md', /判据可观察/g],
     ['skills/rule-writer/references/writing-guide.md', /判据可观察/g],
-    ['skills/review-log/assets/review-progress-template.md', /判据可观察/g],
+    ['bak_skill/review-log/assets/review-progress-template.md', /判据可观察/g],
     ['skills/rule-inspector/assets/rule-edit-checklist-template.md', /判据可观察/g],
     ['skills/rule-inspector/references/criteria.md', /判据可观察/g],
   ]
@@ -1068,7 +1068,7 @@ test('S3-TC-I13 六项核销', () => {
 })
 
 test('S3-TC-I14 两模板与删除面', () => {
-  const ledgerTpl = read('skills/review-log/assets/review-progress-template.md')
+  const ledgerTpl = read('bak_skill/review-log/assets/review-progress-template.md')
   const nos = ledgerTpl.split(/\r?\n/).map((l) => l.match(/^\|\s*(\d+)\s*\|/)).filter(Boolean).map((m) => Number(m[1]))
   const EXPECTED_ROWS = 36 // counter-probe: off（查账表模板行数，非 baseline / 席位计数）
   assert.equal(Math.max(...nos), EXPECTED_ROWS)

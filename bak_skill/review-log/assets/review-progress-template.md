@@ -6,7 +6,7 @@
 ## 范围（一旦定下，后续轮次只在其上做增量）
 
 - **范围**：<工作区未提交 / 最近 N 次 commit / 那一个 commit（hash）>
-- **审查启动**：<HH:MM:SS>（= 开始全部 review 的时刻，取数：`node skills/review-log/scripts/time.mjs`；总耗时计时的起点。⚠️ 这条命令**必须带完整路径**、从仓库根跑——`scripts/time.mjs` 不存在，去掉 `skills/review-log/` 前缀会报 `Cannot find module`。命令要能跑通，优先于「本技能内引用用相对路径」那条规矩）
+- **审查启动**：<HH:MM:SS>（= 开始全部 review 的时刻，取数：`node scripts/review-ledger/time.mjs`；总耗时计时的起点。⚠️ 这条命令**必须带完整路径**、从仓库根跑——`time.mjs` 不在 `scripts/` 根下，去掉 `review-ledger/` 会报 `Cannot find module`。命令要能跑通，优先于「本技能内引用用相对路径」那条规矩）
 - **母分支 / 分支名**：<母分支 = 触发时的当前分支> / <新建的分支名（分支前置第 5 步必写，漏了中断恢复/收尾找不到母分支）>
 - **起始 diff**：**<N> 文件 +<A> / -<B>**（取数命令：`git diff --stat`）
 - **未跟踪新增**（取数命令：`git status --porcelain`）：<逐条列；这是本次审查的一部分，别漏>
@@ -22,11 +22,11 @@
 
 - 取数命令：`ocr session list`
 - **耗时口径（用户裁定 2026-10-14，勿用「建分支→commit」代替）**：
-  - **每轮耗时** = 从「开始那一轮 review」到「那一轮 review 结束」——起 = 该轮动手时刻（跑 `node skills/review-log/scripts/time.mjs` 记下），止 = 该轮三段处置完成、核销判定落账时（再跑一次 time.mjs）；差值分钟向上取整。
+  - **每轮耗时** = 从「开始那一轮 review」到「那一轮 review 结束」——起 = 该轮动手时刻（跑 `node scripts/review-ledger/time.mjs` 记下），止 = 该轮三段处置完成、核销判定落账时（再跑一次 time.mjs）；差值分钟向上取整。
   - **总耗时** = 从「开始全部 review」到「全部 review 修复结束」——起 = 范围节「审查启动」，止 = 复查轮核销干净时；= 各轮耗时之和（核对一致）。
   - **不是「建分支 → commit」**：建分支是分支前置，commit 是收尾动作，都不计入 review 耗时。
-- **取数动作强制**：起/止各跑一次 `node skills/review-log/scripts/time.mjs`，把两次输出直接抄进账本——**没有跑脚本取数就填的耗时 = 无效**（agent 无内置时钟，2026-10-14 实测教训）。
-- **⚠️ 每轮起止/耗时必须填**：起/止必须成对（`起~止`）；**填不出就写「未取数」，不许留空、不许只留 ⬜**（留空与「没跑」在文件里长得一样）。收尾跑 `node skills/review-log/scripts/review-ledger-gate.mjs <progress.md 路径>` 验证——exit 1 = 有轮次账缺起止或耗时，不得收口（2026-10-20 落地；**每轮必填核对见下方验证查账表第 35 项**）。
+- **取数动作强制**：起/止各跑一次 `node scripts/review-ledger/time.mjs`，把两次输出直接抄进账本——**没有跑脚本取数就填的耗时 = 无效**（agent 无内置时钟，2026-10-14 实测教训）。
+- **⚠️ 每轮起止/耗时必须填**：起/止必须成对（`起~止`）；**填不出就写「未取数」，不许留空、不许只留 ⬜**（留空与「没跑」在文件里长得一样）。收尾跑 `node scripts/review-ledger/review-ledger-gate.mjs <progress.md 路径>` 验证——exit 1 = 有轮次账缺起止或耗时，不得收口（2026-10-20 落地；**每轮必填核对见下方验证查账表第 35 项**）。
 - **OCR `session id` 必须记** —— 它是唯一能回溯「当时报了哪些」的凭据。
 - **⚠️ 如果相邻两轮报的是同一批**：说明范围没有做增量，两轮都在审全量 diff。记下来，并在「重复劳动」小节说明。
 
@@ -126,7 +126,7 @@
 | 32 | 合并收尾（工作区/范围预检/用户确认/rebase/删分支） | 全部轮次后 | review-loop SKILL 收尾 6 步 | |
 | 33 | retro 归档（session 结束前搬 docs/superpowers/retro/） | 停下/合并前/最后一轮 | `Test-Path docs/superpowers/retro/<那一次>`（review-log 归档节） | |
 | 34 | 最终结论（轮数/总耗时/核销/未验证项单列） | 全部轮次后 | loop.md §4 输出格式 | |
-| 35 | 轮次账起止/耗时必填（起~止成对；填不出写「未取数」，不许留空/只留 ⬜） | 每轮收尾 | `node skills/review-log/scripts/review-ledger-gate.mjs <progress.md 路径>` → exit 0（review-log 模板轮次账说明，2026-10-20 新增，超出 spec 34 项快照） | |
+| 35 | 轮次账起止/耗时必填（起~止成对；填不出写「未取数」，不许留空/只留 ⬜） | 每轮收尾 | `node scripts/review-ledger/review-ledger-gate.mjs <progress.md 路径>` → exit 0（review-log 模板轮次账说明，2026-10-20 新增，超出 spec 34 项快照） | |
 | 36 | 改规则正文 → 判据可观察 | 改了 rules/*.md 正文 | `node scripts/check-observable.mjs --check` → 末行 `check-observable ok` 且 exit 0（rule-inspector ⑨ / skill 判据⑤） | |
 
 > 归因三选一（「未执行」必填，判据见 spec §2.2）：**rule 缺/没写清** → 补 rule；**skill 缺/没写清**（含措辞弱如「建议」）→ 补 skill；**载体写清了、执行侧没做** → 进复盘/KB，不改载体，反复复发 → 升级工程化（机器可判），不是改措辞。

@@ -102,8 +102,12 @@ const pathTokens = () => [...Object.values(PTH.pathGroups).flat().map((x) => x.t
 // 下列用例以**改造前旧卡**（`capability-baseline.json`，23 项）为 `before`，故 diff 必须**恰等于**这 3 条 minus；
 // 其余任何差仍判红（不放宽成「不看 minus」，也不改基线——基线必须早于 `policy/` 出现，见 H07a）。
 const Q8_MINUS = Q8_REMOVED_PATHS.map((p) => `forbiddenPaths: ${p}`);
-const q8Delta = () => ({ minus: [...Q8_MINUS], plus: [] });
-const withoutQ8 = (arr) => arr.filter((x) => !Q8_MINUS.includes(x));
+// 2026-11-07（review 三技能归档）：timer 脚本随 `review-log` 迁出 `skills/` → `scripts/review-ledger/time.mjs`。
+// 基线是**改造前旧卡**，故这条命令路径的 −/＋ 各一条必须登记；其余任何差仍判红。
+const ARCHIVE_MINUS = ['allowCmds: node skills/review-log/scripts/time.mjs'];
+const ARCHIVE_PLUS = ['allowCmds: node scripts/review-ledger/time.mjs'];
+const baseDelta = () => ({ minus: [...Q8_MINUS, ...ARCHIVE_MINUS], plus: [...ARCHIVE_PLUS] });
+const withoutBase = (arr) => arr.filter((x) => !Q8_MINUS.includes(x) && !ARCHIVE_MINUS.includes(x) && !ARCHIVE_PLUS.includes(x));
 // 读配置侧唯一口径（testcase §0.3 / spec:131）：`Object.hasOwn`，否则 `constructor` / `__proto__` 会取到原型链上的值
 const policyOf = (n) => (Object.hasOwn(SEAT_POLICY, n) ? SEAT_POLICY[n] : SEAT_POLICY.__default__);
 // 卡文本（A06 ① 切的是**卡面**，不是渲染结果——两席的卡在 T5 才重出）
@@ -1580,8 +1584,8 @@ test('S6-TC-J03 边界：措辞重排但要素齐 → 仍绿（哈希不等也�
     const out = renderBoundaryIn(d, 'reviewer-audit');
     assert.doesNotThrow(() => assertNeedClauses(out, 'reviewer-audit'), '② 要素齐即绿');
     assert.notEqual(sha(out), goldenOf('reviewer-audit'), '③ 合法改写必须让哈希不等（v5 口径下会被误判）');
-    assert.deepEqual(diffFacts(baseJson().seats['reviewer-audit'], factsFromPolicy(dumpPolicy(d).json, 'reviewer-audit')), q8Delta(),
-      '④ 能力除 Q8 三项外没丢（清单源按副本现算）');
+    assert.deepEqual(diffFacts(baseJson().seats['reviewer-audit'], factsFromPolicy(dumpPolicy(d).json, 'reviewer-audit')), baseDelta(),
+      '④ 能力除 Q8 三项 + 归档一条外没丢（清单源按副本现算）');
   });
 });
 
@@ -1590,7 +1594,7 @@ test('S6-TC-C01 审计席：哈希只作定位，判据 = 能力 diff 空 + J01 
   const hashEqual = sha(renderBoundary(seat)) === goldenCurOf(seat);   // ① 只取事实（当前比对键，spec:198）
   assert.equal(typeof hashEqual, 'boolean');
   assert.deepEqual(diffFacts(baseJson().seats[seat], factsFromPolicy(dumpPolicy(ROOT).json, seat)),
-    q8Delta(), `${seat}: 能力 diff 必须恰为 Q8 三项`);              // ② 唯一通过判据
+    baseDelta(), `${seat}: 能力 diff 必须恰为 Q8 三项 + 归档一条`);              // ② 唯一通过判据
   assert.doesNotThrow(() => assertNeedClauses(renderBoundary(seat), seat));  // ③
   assert.match(renderBoundary(seat), /审计\s*写\s*`round-check\.md`/, '④ 槽 6：审计席应渲染「本席自写」形态');
   // ⑤ 黄金**基线键**的来源 = 改造前（旧卡边界节），不是改造后渲染自哈希
@@ -1621,7 +1625,7 @@ test('S6-TC-C02 侦探席：同口径（哈希只作定位）', () => {
   const hashEqual = sha(renderBoundary(seat)) === goldenCurOf(seat);   // 当前比对键（spec:198）
   assert.equal(typeof hashEqual, 'boolean');
   assert.deepEqual(diffFacts(baseJson().seats[seat], factsFromPolicy(dumpPolicy(ROOT).json, seat)),
-    q8Delta(), `${seat}: 能力 diff 必须恰为 Q8 三项`);
+    baseDelta(), `${seat}: 能力 diff 必须恰为 Q8 三项 + 归档一条`);
   assert.doesNotThrow(() => assertNeedClauses(renderBoundary(seat), seat));
   // 与 testcase:1391 的唯一偏差：⑩ 是**卡级**子句（CLAUSES 标 `scope:'card'`，J01 已裁定它不在 ⑤ 段；
   // 现文落在槽 5「只允许写」段）→ 按整卡判，不按 seg5 切片判（照切片写会恒红，且与 J01 口径冲突）
@@ -1769,7 +1773,7 @@ test('S6-TC-H02 五段事实集合逐席 diff 空差', () => {
     const after = factsFromPolicy(json, s);
     assert.deepEqual(Object.keys(before).sort(), [...FACTS_KEYS].sort(), `${s}: 基线五段键集不全`);
     assert.deepEqual(Object.keys(after).sort(), [...FACTS_KEYS].sort(), `${s}: 改造后五段键集不全`);
-    assert.deepEqual(diffFacts(before, after), q8Delta(), `${s}: 除 Q8 三项外不得有差`);
+    assert.deepEqual(diffFacts(before, after), baseDelta(), `${s}: 除 Q8 三项 + 归档一条外不得有差`);
     // ⑤' ③ 段成员数 = 定义层派生（Q8 后 20）：`spec / plan` 必须能被取到
     assert.equal(after.forbiddenPaths.length, pathTokens().length, `${s}: ③ 段成员数应 = ${pathTokens().length}`);
     assert.ok(after.forbiddenPaths.includes('spec / plan'), `${s}: 事实抽取必须取到 spec / plan`);
@@ -1777,6 +1781,7 @@ test('S6-TC-H02 五段事实集合逐席 diff 空差', () => {
     for (const k of FACTS_KEYS) {
       for (const m of norm(before[k])) {
         if (Q8_MINUS.includes(`${k}: ${m}`)) continue;   // Q8 有意删除：基线里在、定义层已删（见 Q8_MINUS 注释）
+        if (ARCHIVE_MINUS.includes(`${k}: ${m}`)) continue;   // 归档：旧 timer 路径已迁到 scripts/review-ledger/（见 ARCHIVE_MINUS 注释）
         assert.ok(POOL[k].includes(m),
           `${s}: 基线成员 ${k}:${m} 不在定义层字典里（基线切分口径错 或 定义层丢项 → 判据将恒真）`);
       }
@@ -1802,8 +1807,8 @@ test('S6-TC-H03 负例：少一项路径 → minus 出现 forbiddenPaths → 必
     return diffFacts(baseJson().seats['reviewer-audit'],
       factsFromPolicy(dumpPolicy(dir).json, 'reviewer-audit'));
   });
-  assert.deepEqual(d.plus, []);
-  const rest = withoutQ8(d.minus);
+  assert.deepEqual(withoutBase(d.plus), []);
+  const rest = withoutBase(d.minus);
   assert.deepEqual(rest, ['forbiddenPaths: 其他评审目录'], `删一项路径后 minus 应恰为该一项，实得 ${JSON.stringify(rest)}`);
   assert.equal(verdict(d), 'fail');
 });
@@ -1817,8 +1822,8 @@ test('S6-TC-H04 负例：删一条允许命令 → minus 出现 allowCmds → �
   });
   const d = diffFacts(baseJson().seats['reviewer-audit'], after);
   assert.equal(after.allowCmds.length, before - 1, '改造后允许命令数应 = 基线 − 1');
-  assert.deepEqual(withoutQ8(d.minus).map((x) => x.replace(/^allowCmds: /, '')), ['node scripts/skill-dir.mjs']);
-  assert.deepEqual(d.plus, []);
+  assert.deepEqual(withoutBase(d.minus).map((x) => x.replace(/^allowCmds: /, '')), ['node scripts/skill-dir.mjs']);
+  assert.deepEqual(withoutBase(d.plus), []);
   assert.equal(verdict(d), 'fail');
 });
 
@@ -1841,8 +1846,8 @@ test('S6-TC-H05 越权负例：多一项（路径 / 命令 / 已登记组，各�
       dumpPolicy(d);                       // 先断 dump 成功（议会 #3 F19 / QA-15）
       return diffFacts(beforeOf(seat), factsFromPolicy(dumpPolicy(d).json, seat));
     });
-    assert.deepEqual(withoutQ8(diff.minus), [], name);
-    assert.equal(diff.plus.length, expectPlus, `${name}: 越权新增未被捕获`);
+    assert.deepEqual(withoutBase(diff.minus), [], name);
+    assert.equal(withoutBase(diff.plus).length, expectPlus, `${name}: 越权新增未被捕获`);
     assert.equal(verdict(diff), 'fail');
   }
   // 负例：只挂载不登记席级组 → dump 直接红（UnknownPolicyRef），不允许静默放行

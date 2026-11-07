@@ -1,5 +1,5 @@
 // review-ledger-numbers.mjs —— 机械核对评审账本里的数字（防「副本漂移」）
-// 用法：node skills/review-log/scripts/review-ledger-numbers.mjs <review 目录>
+// 用法：node scripts/review-ledger/review-ledger-numbers.mjs <review 目录>
 //   <review 目录> 下需有 progress.md（缺 = 用法错误，exit 2）；problems.md / cards.md 可缺
 //   （缺 cards.md 时跳过依赖它的 C2，并在 stderr 给 WARN）。
 //
@@ -213,7 +213,7 @@ export function check(dir) {
 function main(argv) {
   const dir = argv[2]
   if (!dir) {
-    console.error('用法：node skills/review-log/scripts/review-ledger-numbers.mjs <review 目录>')
+    console.error('用法：node scripts/review-ledger/review-ledger-numbers.mjs <review 目录>')
     return 2
   }
   if (!existsSync(dir)) {

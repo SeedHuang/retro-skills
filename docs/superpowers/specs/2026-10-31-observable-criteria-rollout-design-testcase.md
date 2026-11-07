@@ -5,7 +5,7 @@
 > **编写者**：senior-sdet（独立实例，全新上下文，未参与该 spec 写作与施工）
 > **独立性声明**：本文件由独立实例编写，与 spec 作者、施工者不同人；只读 spec / PRD / `scripts/check-all.mjs` / `scripts/scope-sweep.mjs` / `tools/docgen/card-model/vocab/*` / `tools/docgen/components/baseline.mjs`，未改 spec / PRD / 代码 / 规则；对实现的观察只作「来源补充」，不放宽任何 spec 推导用例
 > **状态**：待 ② 段议会 #2 与 spec 同批评审（未签字）；已按 spec §11 **Q6～Q24** 与 §10 **D9～D27** 逐条对齐（对齐记录见 §9，冲突登记见 §10）；**2026-11-01 改口径**：词表 **10 → 9**（剔 `完整`，D26）、**标题行不参与判定**（D27）、分诊基线 **77 → 21**；用例落点为 ③ 段实现产出的 `tools/quality/observable-terms.json` / `tools/quality/observable-exempt.json` / `scripts/check-observable.mjs` / `rules/observable-criteria.md` / `scripts/check-all.mjs` ⑦ 段，本文件只定用例与断言，不含实现
-> **编写日期**：2026-10-31（2026-11-01 修订：9 词 / 标题不扫 / 21 行基线）｜**用例总数 78**（正 31 / 负 34 / 边界 13）｜ID 前缀 `OCR-S1-TC-`
+> **编写日期**：2026-10-31（2026-11-01 修订：9 词 / 标题不扫 / 21 行基线；2026-11-07 修订：F07 由「零改动」放宽为「只许 4 个登记文件」，新增 `definitions/commands.mjs`）｜**用例总数 78**（正 31 / 负 34 / 边界 13）｜ID 前缀 `OCR-S1-TC-`
 > **命名与落点**：`rules/spec-testcase-gate.md` 判据 1 —— 与 spec 同目录，文件名 = spec 去掉 `.md` 后加 `-testcase.md`；spec §9.1 已外链本文件，spec 正文不内联用例
 
 ---
@@ -75,7 +75,7 @@
 | 新规则登记 baseline（`baseline` 37 → **38**） | §8 `:143`、D23 `:206` | F09（正） | 正 |
 | `card-model.test.mjs` 同批改派生 | §8 `:141` | F04（正） | 正 |
 | PRD `:271` 原文保留 + 日期注 + 5 词 ⊆ `J.terms` | §8 `:140` | F05（正）/ F06（负） | 正 · 负 |
-| `tools/docgen/policy/**` 零改动 | §8 `:142` | F07（正） | 正 |
+| `tools/docgen/policy/**` 只许登记集变动（4 文件） | §8 `:142` | F07（正） | 正 |
 | R8（`scope-sweep --check` exit 0）+ **23 → 77 → 21 基线表述同批落**（D18） | §8 `:144`、D18 `:199`、PRD §5 `:224`、PRD §9.2 V-10 `:333` | F08（正） | 正 |
 | V-10 全量门禁（本批由 ④ 段门行取证，测试不自递归） | §9.2 `:161`、Q21 `:234` | F09（正） | 正 |
 | V-9 同一判据实现点恰 1（S1 面局部） | PRD §9.2 `:332` | F10（边界） | 边界 |
@@ -185,7 +185,7 @@
 | OCR-S1-TC-F04 | 正 | §8 `:141` | `card-model.test.mjs` 已改「从 JSON 派生 + 交集空」 | `node --test tools/docgen/test/card-model.test.mjs`；静态检查该文件**不含旧五词字面数组形态**（`export const subjectiveTerms = Object.freeze(['自省'`） | exit 0、`# fail 0`；旧字面数组形态命中 0（不再对 PRD 行逐字） | `assert.strictEqual(status,0); assert(/# fail 0/.test(out)); assert(!/export const subjectiveTerms = Object\.freeze\(\['自省'/.test(testSrc))` |
 | OCR-S1-TC-F05 | 正 | §8 `:140` | PRD `docs/prd/20261026205821-agent-card-contract.md` 在位 | ① 读 `:271` 该行原文；② 从该行切出 5 词（按 `、` / `，` 拆）；③ 查文件内日期注与指针 | 5 词原文仍逐字在；**切出的 5 词逐个 ⊆ `J.terms`**（9 词表仍含这 5 个）；同文件出现 `2026-10-31` 与 `tools/quality/observable-terms.json` | `assert(line.includes('自省') && line.includes('严格')); assert(five.every(w => J.terms.includes(w))); assert(text.includes('2026-10-31') && text.includes('tools/quality/observable-terms.json'))` |
 | OCR-S1-TC-F06 | 负 | §8 `:140` | 同 F05 | `c = text.replace('2026-10-31', '')`（删日期注），跑 F05 第 ③ 段断言 | 必须红（原文保留不等于「加注」） | `assert.throws(() => assertDateNote(c))` |
-| OCR-S1-TC-F07 | 正 | §8 `:142` | `tools/docgen/policy/**` 在位 | `git diff --stat <base> -- tools/docgen/policy`；`git status --porcelain tools/docgen/policy` | 两命令输出均为空（S6 已签，零改动） | `assert.strictEqual(diffStat.trim(),''); assert.strictEqual(porcelain.trim(),'')` |
+| OCR-S1-TC-F07 | 正 | §8 `:142` | `tools/docgen/policy/**` 在位 | `git diff --name-only HEAD -- tools/docgen/policy`；`git status --porcelain -- tools/docgen/policy` | 变更集 ⊆ 登记集（`definitions/paths.mjs`、`definitions/seats.mjs`、`definitions/writeScopes.mjs`、`definitions/commands.mjs`），且四个登记文件均仍存在（2026-11-05 S6-B 由「零改动」放宽为 3 个；2026-11-07 归档改命令路径后 `commands.mjs` 入集，扩为 4 个） | `assert.deepEqual(changed.filter((f) => !ALLOWED.includes(f)), [])` |
 | OCR-S1-TC-F08 | 正 | §8 `:144`、D18 `:199`、PRD §5 `:223`、PRD §9.2 V-10 `:332` | `tools/scope-sweep/keywords.json` 与 baseline 在位 | ① `node scripts/scope-sweep.mjs --check`；② 读 PRD `:223` 与 `:300`，断「23 → 77 → 21」的基线表述已同批加日期注 | ① exit 0（`sweep ok`）；② 两行各含 `2026-10-31` 与 `21`（原文不改、只加注） | `assert.strictEqual(status,0); assert(out.includes('sweep ok')); assert(/2026-10-31/.test(l223) && /21/.test(l223)); assert(/2026-10-31/.test(l300) && /21/.test(l300))` |
 | OCR-S1-TC-F09 | 正 | §9.2 V-10 `:161`、§8 `:143`、D23 `:206`、Q21 `:234` | 本块已落地；**不 spawn** `npm run check` / `check-all` | ① 单跑 `node scripts/check-observable.mjs --check`；② `node tools/docgen/cli.mjs gate`；③ 读 `tools/docgen/baseline.json` 与 `tools/docgen/components/baseline.mjs` | ① exit 0、末行 ok；② stdout 含 `baseline 38/38`；③ 两处均含 `rules/observable-criteria.md`（新规则已登记，`UnregisteredHandwritten` 不再触发） | `assert.strictEqual(s1,0); assert(/baseline 38\/38/.test(out2)); assert(baselineJson.includes('rules/observable-criteria.md')); assert(baselineMjs.includes('observable-criteria'))` |
 | OCR-S1-TC-F10 | 边界 | PRD §9.2 V-9 `:331`（S1 面：同一判据实现点恰 1） | 全仓 `tools/` + `scripts/` 已落地 | ① 静态扫常量 1 九词的字面数组形态（`['自省'` 起头）：`Get-ChildItem tools,scripts -Recurse -Include *.mjs,*.json` + `Select-String`；② 内存构造在 `tools/quality/` 外再放一份同形数组的文件路径清单（不落盘），喂同一断言函数 | ① 命中恰 1 处 = `observable-terms.json`、派生文件 0 处；② 副本数 >1 必红 | `assert.strictEqual(hits.length,1); assert(hits[0].path.endsWith('tools/quality/observable-terms.json')); assert.throws(() => assertSingleCopy([jsonPath, copyPath]))` |

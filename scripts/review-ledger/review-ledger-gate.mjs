@@ -1,5 +1,5 @@
 // review-ledger-gate.mjs —— 机械核对 progress.md 轮次账的完整性
-// 用法：node skills/review-log/scripts/review-ledger-gate.mjs <progress.md 路径>
+// 用法：node scripts/review-ledger/review-ledger-gate.mjs <progress.md 路径>
 //
 // 为什么要有它：2026-10-20 实测——轮次账最后一轮只填起点、耗时留空，靠模板/查账表这类 AI 层规则拦不住
 // （agent 自觉失效）。本脚本把「每轮起止/耗时必填」变成机器可判，收尾时跑它，坏账本直接 exit 1。
@@ -17,7 +17,7 @@ import { readFileSync } from 'node:fs'
 const target = process.argv[2]
 
 if (!target) {
-  console.error('用法：node skills/review-log/scripts/review-ledger-gate.mjs <progress.md 路径>')
+  console.error('用法：node scripts/review-ledger/review-ledger-gate.mjs <progress.md 路径>')
   process.exit(2)
 }
 

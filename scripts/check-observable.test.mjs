@@ -1008,9 +1008,12 @@ test('OCR-S1-TC-F06 删日期注 → 必红', () => {
 
 // 2026-11-05 增量（S6-B 签后登记）：`tools/docgen/policy/**` 不再断言「零改动」——S6-B 按已签 spec
 // 明确改动 `paths` / `seats` / 新增 `writeScopes` 三处。判据改为「只许这 3 个登记文件，其余 policy 文件零改动」。
-test('OCR-S1-TC-F07 tools/docgen/policy/** 只许 S6-B 登记的 3 个文件（其余零改动）', () => {
-  const ALLOWED = ['definitions/paths.mjs', 'definitions/seats.mjs', 'definitions/writeScopes.mjs']
-  // 三个登记文件必须仍在（否则「只许改动」会漏掉删除：`git status` 的 D 行也落在允许集内）
+// 2026-11-07 增量（review 三技能归档）：`definitions/commands.mjs` 的 check.local 命令由
+// `node skills/review-log/scripts/time.mjs` 改为 `node scripts/review-ledger/time.mjs`——账本脚本随
+// `review-log` 迁出 `skills/`，旧路径已不存在。该文件进入登记集（4 个）。
+test('OCR-S1-TC-F07 tools/docgen/policy/** 只许登记的 4 个文件（其余零改动）', () => {
+  const ALLOWED = ['definitions/paths.mjs', 'definitions/seats.mjs', 'definitions/writeScopes.mjs', 'definitions/commands.mjs']
+  // 登记文件必须仍在（否则「只许改动」会漏掉删除：`git status` 的 D 行也落在允许集内）
   for (const f of ALLOWED) {
     assert.ok(existsSync(join(REPO, 'tools/docgen/policy', f)), `登记文件不得被删除：${f}`)
   }

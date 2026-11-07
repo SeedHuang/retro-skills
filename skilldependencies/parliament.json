@@ -2,10 +2,6 @@
   "schemaVersion": 1,
   "skill": "parliament",
   "dependencies": {
-    "skills": [
-      { "name": "evolving-skills" },
-      { "name": "retro-collect" },
-      { "name": "retro-analyze" }
-    ]
+    "skills": []
   }
 }

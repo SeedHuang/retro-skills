@@ -1,6 +1,6 @@
 ---
 name: dev-workflow
-description: 当任务要走「需求 → 技术设计 → 计划门 → 实现 → 质量 → 交付」这条主干、需要判断现在该进哪一段或本段出口齐没齐时使用；也用于需要长文取证（只交原文 + 行号）的场合。签字账落 docs/devworkflows/<任务目录>/gate-record.md（一任务一份，模板在 references/gate-record-template.md）。不用于：单点代码修改或缺陷定位（走 review-loop / systematic-debugging）、议会内部流程（走 parliament）、把 PRD 拆成 spec（走 prd-to-specs）。
+description: 当任务要走「需求 → 技术设计 → 计划门 → 实现 → 质量 → 交付」这条主干、需要判断现在该进哪一段或本段出口齐没齐时使用；也用于需要长文取证（只交原文 + 行号）的场合。签字账落 docs/devworkflows/<任务目录>/gate-record.md（一任务一份，模板在 references/gate-record-template.md）。不用于：单点代码修改或缺陷定位（走 systematic-debugging 等专用流程）、议会内部流程（走 parliament）、把 PRD 拆成 spec（走 prd-to-specs）。
 ---
 
 # 开发工作流主干（五段 + 两插点）

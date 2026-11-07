@@ -4,7 +4,6 @@
   "dependencies": {
     "skills": [
       { "name": "parliament" },
-      { "name": "evolving-skills" },
       { "name": "review-log" }
     ]
   }

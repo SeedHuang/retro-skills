@@ -1,6 +1,6 @@
 ---
 name: skill-inspector
-description: 体检 skills/ 里的技能——按 skill-authoring-convention 判据评分、出报告、给处方、修复优化。当用户说『体检 skills / 优化 skill / 检查技能』时触发。不自动触发。Do not use for 新建规则（那走 use-rule-skills）、改载体施工（那走 evolving-skills）。
+description: 体检 skills/ 里的技能——按 skill-authoring-convention 判据评分、出报告、给处方、修复优化。当用户说『体检 skills / 优化 skill / 检查技能』时触发。不自动触发。Do not use for 新建规则（那走 use-rule-skills）。
 ---
 
 # skill-inspector：判据驱动的技能检察员

@@ -2,9 +2,6 @@
   "schemaVersion": 1,
   "skill": "rule-inspector",
   "dependencies": {
-    "skills": [
-      { "name": "evolving-skills" },
-      { "name": "managing-lessons-store" }
-    ]
+    "skills": []
   }
 }
