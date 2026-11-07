@@ -84,7 +84,7 @@ label 只许名词短语（≤12 字符、不含逻辑词/情态词/标点）；
 
 ## 6 渲染
 
-`rules/<id>.md`、`<id>.md` 共用同一模板；`<id>.inject.md` 为压缩投影：
+`rules/<id>.md` 与 `<id>.md` 共用同一模板：
 
 ```markdown
 # {title}

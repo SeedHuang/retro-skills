@@ -165,3 +165,13 @@ J-01 / J-02 用户目录命中 0；J-03 `~/.trae-cn/skills/rule-writer` 不存�
 - 现仓计数回到 **5 条判据 / 34 条样例**；`check` 变为 `判据 5 条 / 绿 34 / 红 0`；
 - pilot 副本保留（K-03 仍用），H-02~H-05、I-01、K-03 的验收记录仍然有效；
 - 本次 170 条验收是在删除前（6 条 / 38 样例）执行的；A-01、I-01b、I-03 的数字属验收当时口径，删除后的数字以此节为准。
+
+## 12 inject 投影删除（2026-11-07）
+
+复核确认 `inject` 投影只有“生成 + 防漂移校验”两个动作，没有运行时消费者：真正进 Trae 上下文的是 `rules/<id>.md`（`rule` 投影）；仓库内无脚本按 `id === 'inject'` 取用，skills / agents 无读取指令，aas 无引用，用户目录无链接指向它。据此：
+
+- 从 `interpreters.mjs` 删除 `inject` 解释器与 `renderInject`，引擎只剩 `md` / `rule`；
+- 删除 5 份 `.inject.md`（evidence / no-git-write / no-unverified-number / import-guard / observable-criteria）；
+- 现仓计数不变：**5 条判据 / 34 条样例**；`build` 输出 `解释器 2 个（md / rule）`；
+- `criteria-engine/README.md`、`criteria-dsl.md`、spec §6.1 / §7.5、PRD G-5 同步；
+- pilot `rule-dsl/` 副本保留（历史验收夹具，仍含 inject），不在本次删除范围。

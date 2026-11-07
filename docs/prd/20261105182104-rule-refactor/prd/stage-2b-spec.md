@@ -340,11 +340,13 @@ evidence-before-conclusion: 13 条样例已判（测试在 evidence-before-concl
 | 位置 | 内容 | 发布 |
 |---|---|---|
 | `tools/quality/criteria-engine/<id>.json` + `<id>.testcase.json` | 判据与测试 | 否 |
-| `tools/quality/criteria-engine/<id>.md` + `<id>.inject.md` | 引擎目录投影 | 否 |
+| `tools/quality/criteria-engine/<id>.md` | 引擎目录投影 | 否 |
 | `rules/<id>.md` | 部署物 | 是（按 `scope`） |
 | `skills/rule-writer/` | 生产工具 | 否 |
 
-`rules.json` 只登记「额外产出 `rules/<id>.md`」的判据 id；未登记判据仍产出引擎目录 `md` / `inject.md`。
+`rules.json` 只登记「额外产出 `rules/<id>.md`」的判据 id；未登记判据仍产出引擎目录 `md`。
+
+> 2026-11-07：`inject` 投影无运行时消费者，已删除；解释器只剩 `md` / `rule`。
 
 ### 6.2 出品判据（可机判）
 
@@ -517,7 +519,7 @@ H-06b 的旧名禁查清单 = `lookupReport`、`isCompoundDerivation`，**按键
 
 ### 7.5 pilot 根
 
-`docs/prd/20261105182104-rule-refactor/rule-dsl/`，文件：`schema.mjs` / `interpreters.mjs` / `build.mjs` / 4 份 `<id>.json` / 4 份 `<id>.testcase.json` / 生成物 `<id>.md` + `<id>.inject.md`。旧 3 份 testcase 字节不变。
+`docs/prd/20261105182104-rule-refactor/rule-dsl/`，文件：`schema.mjs` / `interpreters.mjs` / `build.mjs` / 4 份 `<id>.json` / 4 份 `<id>.testcase.json` / 生成物 `<id>.md`。旧 3 份 testcase 字节不变。
 
 ### 7.6 文档与技能
 

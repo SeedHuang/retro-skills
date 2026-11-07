@@ -5,6 +5,7 @@
 > **实现规格**：[stage-2b-spec.md](./stage-2b-spec.md)（本文所有「逐字」内容以 spec 为准，二者必须同时在场）
 > **验收合同**：[stage-2b-testcase-sdet.md](./stage-2b-testcase-sdet.md)（170 条，R5 已一致）
 > **状态**：已完成（2026-11-06；170 条验收全 PASS，账见 `docs/reports/2026-11-06-rule-refactor-stage-2b/verification.md`）
+> **后续复核（2026-11-07）**：`inject` 投影无运行时消费者，已从引擎删除（解释器 2 个：md / rule）；下文涉及 `<id>.inject.md` 的期望均为历史记录。
 
 **目标**：让 `rules/<id>.md` 只能由判据 json 经脚本渲染产出，使规则正文具备逻辑组合、算子谓词、判定动作与人读表述，手改即红。
 
