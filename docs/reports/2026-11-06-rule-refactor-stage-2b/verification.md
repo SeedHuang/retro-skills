@@ -156,3 +156,12 @@ J-01 / J-02 用户目录命中 0；J-03 `~/.trae-cn/skills/rule-writer` 不存�
 - spec §7.3 的 json 与渲染逐字同步。
 
 未新增 `RefsNotPortable` 门禁：现有 170 条验收夹具普遍使用 `refs: ["skills/x.md"]`，加门禁会让夹具批量变红，需先重写 SDET 口径；本轮只修实际发布物并立约定。
+
+## 11 anchor-forms 判据删除（2026-11-07）
+
+“取消发布、保留夹具”只解决了发布面，判据配置本身仍与 `evidence-before-conclusion` 的锚义务重复。按“不留重复配置”复核后：
+
+- 删除现仓 `tools/quality/criteria-engine/anchor-forms.{json,testcase.json,md,inject.md}`；
+- 现仓计数回到 **5 条判据 / 34 条样例**；`check` 变为 `判据 5 条 / 绿 34 / 红 0`；
+- pilot 副本保留（K-03 仍用），H-02~H-05、I-01、K-03 的验收记录仍然有效；
+- 本次 170 条验收是在删除前（6 条 / 38 样例）执行的；A-01、I-01b、I-03 的数字属验收当时口径，删除后的数字以此节为准。

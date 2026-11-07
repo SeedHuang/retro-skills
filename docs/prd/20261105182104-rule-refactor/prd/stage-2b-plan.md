@@ -624,6 +624,8 @@ git commit -m "feat(criteria-engine): 补齐 rule DSL 逻辑组合、算子与�
 
 ## 任务 5：anchor-forms + pilot 同步（绿点 B）
 
+> 2026-11-07 复核：`anchor-forms` 与 `evidence-before-conclusion` 的锚义务重复，现仓判据与发布物已删除（5 条 / 34 样例），pilot 副本保留用于 K-03。原步骤保留为历史记录。
+
 **文件**
 - 新增：`tools/quality/criteria-engine/anchor-forms.json` + `.testcase.json`
 - 修改：`tools/quality/criteria-engine/rules.json`（登记 `anchor-forms`，使其产出 `rules/anchor-forms.md`，K-03 需要该文件）

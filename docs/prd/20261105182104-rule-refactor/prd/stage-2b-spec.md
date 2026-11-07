@@ -471,6 +471,8 @@ H-06b 的旧名禁查清单 = `lookupReport`、`isCompoundDerivation`，**按键
 
 ### 7.4 anchor-forms（pilot 与现仓都落这份）
 
+> 2026-11-07 复核：该判据与 `evidence-before-conclusion` 的锚义务重复。现仓判据（json / testcase / md / inject）与发布物已删除，现仓回到 5 条 / 34 样例；pilot 副本保留用于 K-03。下方 json 仅作历史设计记录。
+
 ```json
 {
   "id": "anchor-forms",

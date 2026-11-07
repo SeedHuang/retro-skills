@@ -2,7 +2,7 @@
 // 计数一律从这两个来源派生（gate / check-all / 测试同源），本文件不写死条数
 // 阶段 1（2026-11-05）：23 条 rule 全量退出 `rules/` → 本数组收敛为 0
 // 阶段 2（2026-11-05）：触发声明 `rules/evidence-before-conclusion.md` 上线，保留集 = 1 条
-// 阶段 2b（2026-11-06）：`anchor-forms` 判据保留为测试夹具，**不发布**（与 evidence 锚义务重叠，用户裁定）
+// 阶段 2b（2026-11-06）：`anchor-forms` 与 evidence 锚义务重复，已删除现仓判据与发布物，保留集仍 = 1 条
 // （PRD `docs/prd/20261105182104-rule-refactor/prd/stage-2-new-mode-pilot.md` §1 步骤 1–2）
 import { agentData } from './agentData.mjs';
 

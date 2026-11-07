@@ -1,9 +1,0 @@
-{
-  "rule": "anchor-forms",
-  "cases": [
-    { "input": { "writesConclusion": true, "anchorCommandOutput": "npm run check → exit 0", "anchorText": "有锚" }, "expect": "pass" },
-    { "input": { "writesConclusion": true, "anchorPathLine": "", "anchorCommandOutput": "", "anchorReference": "", "anchorText": "有锚" }, "expect": "fail" },
-    { "input": { "writesConclusion": true, "anchorReference": "skills/x/SKILL.md", "anchorText": "见上文" }, "expect": "fail" },
-    { "input": { "writesConclusion": false, "anchorText": "" }, "expect": "pass" }
-  ]
-}
