@@ -1,7 +1,8 @@
-import { readFileSync, writeFileSync, existsSync, renameSync, rmSync, mkdirSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { agentData } from './components/agentData.mjs';
+import { writeFileAtomic } from './atomicWrite.mjs';
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 export const statePath = () => process.env.DOCGEN_STATE_PATH || join(ROOT, 'state.json');
@@ -36,16 +37,7 @@ export function readState() {
 }
 
 export function writeState(state) {
-  const p = statePath();
-  mkdirSync(dirname(p), { recursive: true });
-  const tmp = `${p}.tmp-${process.pid}`;
-  try {
-    writeFileSync(tmp, `${JSON.stringify(state, null, 2)}\n`);
-    renameSync(tmp, p);
-  } catch (e) {
-    rmSync(tmp, { force: true });
-    throw e;
-  }
+  writeFileAtomic(statePath(), `${JSON.stringify(state, null, 2)}\n`);
 }
 
 export function setAgentState(name, value) {

@@ -8,7 +8,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readSharedDefinitions } from '../shared-items.mjs';
-import { splitRow } from '../markdown-rows.mjs';
+import { parseTableRows } from '../markdown-rows.mjs';
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 export const LEDGER = join(ROOT, 'tools', 'execution-matrix', 'shared-changes', 'changes.md');
@@ -19,23 +19,9 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 // 解析变更记录表（表头：日期 | 共享项 | 改前版 | 改后版 | 用户确认 | 受影响引用方）
 export function parseLedger(text) {
-  const records = [];
-  for (const line of text.split(/\r?\n/)) {
-    if (!/^\s*\|/.test(line)) continue;
-    const cells = splitRow(line);
-    if (cells.length < 6) continue;
-    if (cells[0] === '日期') continue;                        // 表头
-    if (/^:?-{2,}:?$/.test(cells[0])) continue;              // 分隔行
-    records.push({
-      date: cells[0],
-      item: cells[1],
-      before: cells[2],
-      after: cells[3],
-      confirmed: cells[4],
-      affected: cells[5],
-    });
-  }
-  return records;
+  return parseTableRows(text, { headerFirstCell: '日期', minCells: 6 }).map((c) => ({
+    date: c[0], item: c[1], before: c[2], after: c[3], confirmed: c[4], affected: c[5],
+  }));
 }
 
 export function checkSharedChanges(opts = {}) {

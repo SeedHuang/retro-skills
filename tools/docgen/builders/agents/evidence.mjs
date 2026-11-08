@@ -1,8 +1,9 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync, renameSync, rmSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 // 语义键的权威单源（10 键），从执行力度矩阵导入
 import { SEMANTIC_KEYS } from '../../../execution-matrix/check-agent.mjs';
+import { writeFileAtomic } from './atomicWrite.mjs';
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 export const evidenceDir = () => process.env.DOCGEN_EVIDENCE_DIR || join(ROOT, 'fixtures');
@@ -81,15 +82,5 @@ export function readEvidence(name) {
 }
 
 export function writeEvidence(name, data) {
-  const p = evidencePath(name);
-  mkdirSync(dirname(p), { recursive: true });
-  // 原子写（与 state.mjs writeState 同构）：崩溃不留下半截 JSON
-  const tmp = `${p}.tmp-${process.pid}`;
-  try {
-    writeFileSync(tmp, `${JSON.stringify(data, null, 2)}\n`);
-    renameSync(tmp, p);
-  } catch (e) {
-    rmSync(tmp, { force: true });
-    throw e;
-  }
+  writeFileAtomic(evidencePath(name), `${JSON.stringify(data, null, 2)}\n`);
 }

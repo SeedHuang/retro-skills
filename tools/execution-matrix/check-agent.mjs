@@ -177,9 +177,8 @@ export function checkSemantic(ann, name) {
   return findings;
 }
 
-// 渲染卡（docgen 模板产物）跑全套检查
-export function checkAgent(name) {
-  const card = renderByName(name);
+// 两条取卡通路的共同收尾：结构项 + 语义十键 → 统一返回形态（字段与顺序只在这里写一次，勿各写一份）
+function finishCheck(card, name) {
   const { findings: struct, notes } = checkStruct(card);
   const semantic = checkSemantic(readAnnotations(), name);
   return {
@@ -190,21 +189,18 @@ export function checkAgent(name) {
   };
 }
 
+// 渲染卡（docgen 模板产物）跑全套检查
+export function checkAgent(name) {
+  return finishCheck(renderByName(name), name);
+}
+
 // 真卡路径：直接读 agents/<name>.md（handwritten 模板卡不在 docgen 渲染范围内，须走真卡）
 export function checkAgentFile(name) {
   const path = join(AGENTS_DIR, `${name}.md`);
   if (!existsSync(path)) {
     return { ok: false, findings: [{ code: 'CardNotFound', name }], notes: [], a1a2From: 'annotations' };
   }
-  const card = readFileSync(path, 'utf8');
-  const { findings: struct, notes } = checkStruct(card);
-  const semantic = checkSemantic(readAnnotations(), name);
-  return {
-    ok: struct.length === 0 && semantic.length === 0,
-    findings: [...struct, ...semantic],
-    notes,
-    a1a2From: 'annotations',
-  };
+  return finishCheck(readFileSync(path, 'utf8'), name);
 }
 
 export function checkAgentFromText(card) {

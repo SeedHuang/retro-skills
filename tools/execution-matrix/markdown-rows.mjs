@@ -35,6 +35,21 @@ export function splitRow(line) {
   return cells;
 }
 
+// markdown 表格**数据行**解析（唯一实现，check-pattern-table.mjs 与 check-shared-changes.mjs 共用）：
+// 跳过非表格行、列数不足的行、表头行（按首格字面量）、分隔行。返回每行的单元格数组。
+export function parseTableRows(text, { headerFirstCell, minCells = 1 } = {}) {
+  const rows = [];
+  for (const line of text.split(/\r?\n/)) {
+    if (!/^\s*\|/.test(line)) continue;
+    const cells = splitRow(line);
+    if (cells.length < minCells) continue;
+    if (headerFirstCell !== undefined && cells[0] === headerFirstCell) continue;   // 表头
+    if (/^:?-{2,}:?$/.test(cells[0])) continue;                                      // 分隔行
+    rows.push(cells);
+  }
+  return rows;
+}
+
 // 单元格转义（splitRow 的**逆**）：换行压成 <br>；反斜杠双写；竖线与反引号加反斜杠。
 // 顺序不可换：必须先双写反斜杠、再补 `\|`，才可逆（反过来会把新加的转义符再吃掉一半）。
 // 为什么与 splitRow 同文件：转义与切分是一对互逆口径，分开放必漂移——实测漏转反斜杠时该行被切出 4 列。

@@ -9,7 +9,6 @@ export { SHARED_SCENES };
 export const SEAT_SCENES = Object.freeze({});
 
 const listOf = (seatScenes, seat) => seatScenes[seat] || [];
-const otherSeats = (seatScenes, seat) => Object.keys(seatScenes).filter((k) => k !== seat);
 
 // `DuplicateScene`（§7 :168）两子面：① 同 id 在本卡出现 2 次；② 共用 id 又出现在本席登记表。
 export function duplicateScene(scenes, index, seatScenes, seat) {

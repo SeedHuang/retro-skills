@@ -7,7 +7,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { splitRow } from './markdown-rows.mjs';
+import { parseTableRows } from './markdown-rows.mjs';
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 export const PATTERN_TABLE = join(ROOT, 'tools', 'execution-matrix', 'pattern-table.md');
@@ -26,23 +26,9 @@ const MIN_SEED_ROWS = 5;
 
 // 解析模式表数据行（跳过表头与分隔行）
 export function parsePatternTable(text) {
-  const rows = [];
-  for (const line of text.split(/\r?\n/)) {
-    if (!/^\s*\|/.test(line)) continue;
-    const cells = splitRow(line);
-    if (cells.length < 6) continue;
-    if (cells[0] === '场景') continue;                       // 表头
-    if (/^:?-{2,}:?$/.test(cells[0])) continue;              // 分隔行
-    rows.push({
-      scenario: cells[0],
-      good: cells[1],
-      bad: cells[2],
-      source: cells[3],
-      records: cells[4],
-      zero: cells[5],
-    });
-  }
-  return rows;
+  return parseTableRows(text, { headerFirstCell: '场景', minCells: 6 }).map((c) => ({
+    scenario: c[0], good: c[1], bad: c[2], source: c[3], records: c[4], zero: c[5],
+  }));
 }
 
 // 解析来源单元格里的 `文件:行号`（或 `文件:起-止`）

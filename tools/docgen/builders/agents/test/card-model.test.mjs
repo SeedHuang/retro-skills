@@ -60,7 +60,6 @@ const pickSubject = (i = 0) => {
   assert.ok(ks.length > i, `SUBJECTS 至少需 ${i + 1} 项「display 非空 + validator 在位」（当前 ${ks.length}；§5 :131）`);
   return ks[i];
 };
-const DISPLAY0 = () => SUB.SUBJECTS[pickSubject(0)].display;
 
 const baseEnv = (p = {}) => ({
   seat: SEAT,

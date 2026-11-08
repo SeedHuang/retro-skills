@@ -19,6 +19,7 @@ import { validatePredicates } from './card-model/validatePredicates.mjs';
 import { dumpPolicy } from './components/dumpPolicy.mjs';
 import { readState, writeState, setAgentState, statePath } from './state.mjs';
 import { readEvidence, writeEvidence, evidencePath } from './evidence.mjs';
+import { writeFileAtomic } from './atomicWrite.mjs';
 // 结构层与语义键来自 check-agent；渲染器已抽到 renderByName.mjs，故 check-agent 不再 import 本文件（无环）
 import { checkStruct, readAnnotations, SEMANTIC_KEYS } from '../../../execution-matrix/check-agent.mjs';
 import { fenceMask } from '../../../execution-matrix/markdown-rows.mjs';
@@ -267,18 +268,9 @@ export function cmdCheckAgents() {
 }
 
 export function cmdBaselineWrite() {
-  // 原子写（与 state.mjs writeState / evidence.mjs writeEvidence 同构）：`writeFileSync` 先截断后写入，
-  // 并发读方（另一个进程的 gate）会在窗口里看到空文件 → 误报 BaselineDrift。rename 原子替换消掉该窗口。
-  const p = baselinePath();
-  mkdirSync(dirname(p), { recursive: true });
-  const tmp = `${p}.tmp-${process.pid}`;
-  try {
-    writeFileSync(tmp, renderBaseline(), 'utf8');
-    renameSync(tmp, p);
-  } catch (e) {
-    rmSync(tmp, { force: true });
-    throw e;
-  }
+  // 原子写：`writeFileSync` 先截断后写入，并发读方（另一个进程的 gate）会在窗口里看到空文件 → 误报 BaselineDrift。
+  // 实现单源 = atomicWrite.mjs（与 state / evidence 共用）。
+  writeFileAtomic(baselinePath(), renderBaseline());
   console.log(`baseline.json 已写入（${BASELINE_RULES.length + agentPaths().length} 条）`);
   return 0;
 }
