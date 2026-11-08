@@ -3,9 +3,9 @@
 
 | 编号 | 结论 | 依据/理由 |
 |---|---|---|
-| k01 | 命中 | tools/docgen/components/outputFormats.mjs:9「fields: ['原文摘句', '文件 + 行号', '用途'],」 |
-| k02 | 命中 | tools/docgen/card-model/enums.mjs:96「export const SCAN_FIELDS = Object.freeze({」 |
-| k03 | 命中 | tools/docgen/card-model/validateCardModel.mjs:17「export const CARD_MODEL_CODES = Object.freeze({」 |
+| k01 | 命中 | tools/docgen/builders/agents/components/outputFormats.mjs:9「fields: ['原文摘句', '文件 + 行号', '用途'],」 |
+| k02 | 命中 | tools/docgen/builders/agents/card-model/enums.mjs:96「export const SCAN_FIELDS = Object.freeze({」 |
+| k03 | 命中 | tools/docgen/builders/agents/card-model/validateCardModel.mjs:17「export const CARD_MODEL_CODES = Object.freeze({」 |
 
 ## 补充项
 

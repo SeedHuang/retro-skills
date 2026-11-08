@@ -6,7 +6,7 @@
       "id": "k01",
       "verdict": "hit",
       "evidence": {
-        "path": "tools/docgen/components/outputFormats.mjs",
+        "path": "tools/docgen/builders/agents/components/outputFormats.mjs",
         "line": 9,
         "quote": "fields: ['原文摘句', '文件 + 行号', '用途'],"
       }
@@ -15,7 +15,7 @@
       "id": "k02",
       "verdict": "hit",
       "evidence": {
-        "path": "tools/docgen/card-model/enums.mjs",
+        "path": "tools/docgen/builders/agents/card-model/enums.mjs",
         "line": 96,
         "quote": "export const SCAN_FIELDS = Object.freeze({"
       }
@@ -24,7 +24,7 @@
       "id": "k03",
       "verdict": "hit",
       "evidence": {
-        "path": "tools/docgen/card-model/validateCardModel.mjs",
+        "path": "tools/docgen/builders/agents/card-model/validateCardModel.mjs",
         "line": 17,
         "quote": "export const CARD_MODEL_CODES = Object.freeze({"
       }
