@@ -1,17 +1,17 @@
 # 测试用例：S-4/S-5 skill 判据登记与 residual（设计）
 
-> 归属 spec：`docs/superpowers/specs/2026-11-08-s4-s5-skill-criteria-design.md`（状态：待评审版，2026-11-08）
+> 归属 spec：`docs/superpowers/specs/2026-11-08-s4-s5-skill-criteria-design.md`（状态：已实施版，2026-11-08）
 > **编写者 = 独立 `senior-sdet` 实例（全新上下文）**｜**独立性声明**：本文件由 `senior-sdet` 在全新上下文编写，未参与该 spec 写作（spec 作者 = 主 agent）、未参与实现与 plan；全程只读 spec / `SKILL.md` / `schema.mjs` / `check-all.mjs` / `package.json` 与目录现状，**未改 spec、未改代码、未改 plan、未执行任何 git 写操作**。本次唯一写入产物 = 本文件。
 > 命名与落点：按 `skills/carrier-conventions/references/spec-testcase-gate.md` 判据 1（与 spec 同目录；文件名 = spec 文件名去掉 `.md` 后 + `-testcase.md`）。
-> 状态：**初版**｜最后更新：`2026-11-08`｜用例条数：**正 12 / 负 19 / 边界 5 = 36**（计数见 §1.1；负 + 边 24 ≥ 正 12）。
-> **执行方式声明（不伪造已跑结果）**：当前实现**未落地**——`tools/docgen/dsl/skills/` 只有 `.gitkeep`，`scripts/check-skill-criteria.mjs` 不存在，`package.json` 无 `check:skill-criteria`（见 §0.1 实测）。因此本文件所有用例只写「**命令 + 期望输出 / exit code**」；凡未经施工后实跑者，一律在「红绿证据」栏写「**未施行（待施工后核）**」，不写任何已跑数值。
+> 状态：**已实施版**｜最后更新：`2026-11-08`｜用例条数：**正 12 / 负 19 / 边界 5 = 36**（计数见 §1.1；负 + 边 24 ≥ 正 12）。
+> **执行方式声明（施工后回填）**：2026-11-08 已落地——`tools/docgen/dsl/skills/docs-placement.json` 与 `scripts/check-skill-criteria.mjs` 在位，`package.json` 有 `check:skill-criteria`。下表红绿证据由 `scripts/check-skill-criteria.test.mjs` 的 25 条测试覆盖；未逐条回填实跑数值。
 > 术语对照（首次出现给中文解释）：**判据**（criterion，可机判的一条义务）；**残余**（residual，机器判不了、须人工抽检的部分及其责任席）；**探针**（probe，判据取值来源，如命令退出码、文件是否存在）；**绿 / 红**（通过 / 不通过）；**容器**（container，一份 `.json` 判据集合）；**临时副本**（repo copy，在 `%TEMP%` 复制一份仓内数据后改坏，不碰真仓）。
 
 ## 0 判据约定（全表复用；命令在**仓根**执行，Shell = PowerShell 5，`exit` 指进程退出码）
 
 | 代号 | 命令 / 形态 | 备注 |
 |---|---|---|
-| `CK` | `node scripts/check-skill-criteria.mjs` | 新检查器；判 `exit` + 首行 + 末行；**本批尚未落地** |
+| `CK` | `node scripts/check-skill-criteria.mjs` | 新检查器；判 `exit` + 首行 + 末行；**已落地（2026-11-08）** |
 | `CKP` | `node --test --test-name-pattern "S4S5-TC-NN" scripts/check-skill-criteria.test.mjs` | 断言一律 `node:assert/strict`；只取数，不当 `npm run check` 的替代 |
 | `CHECK` | `npm run check` | 门禁总入口；判末行 `check 全部通过` / `check 未通过` |
 | `CE` | `npm run check:criteria` | 既有判据引擎入口；判末行 `criteria-engine ok`（零回归） |
@@ -19,19 +19,19 @@
 | `COPY` | 把 `tools/docgen/dsl/skills/`（必要时加 `scripts/`、`package.json`）复制到 `%TEMP%\s4s5-<用例号>\` 后在副本内改数据，再在副本根跑 `CK` | 只读真仓；副本用完即删；**副本内不跑 git** |
 | `COUNT` | `$c = <取数表达式>; if ($c -ne 0) { exit 1 }; exit 0` | 不得拿 `Select-String` / `git grep` 的进程退出码当判据 |
 
-### 0.1 现状实测（截至 `2026-11-08` 本机，逐条可复算；只读）
+### 0.1 施工后实测（2026-11-08；施工前快照见 git 历史）
 
 | 项 | 现值 | 取数（首行可复算） |
 |---|---|---|
-| skills 数据目录 | 目录存在，**只有 `.gitkeep`（0 字节）**；无 `docs-placement.json`、无 `.testcase.json` | `Get-ChildItem tools/docgen/dsl/skills -Force` |
-| 新检查器 | `scripts/check-skill-criteria.mjs` **不存在** | `Test-Path scripts/check-skill-criteria.mjs` → `False` |
-| `package.json` 脚本 | 5 条 `check` / `doc:*` / `check:observable` / `check:criteria`，**无 `check:skill-criteria`** | `package.json` 第 4–13 行 |
-| `scope` 正则 | 只匹配 `project:<name>` | `tools/docgen/builders/rules/schema.mjs:191`（`SCOPE_RE`） |
-| `scope` 错误文案 | 只列 `global / project:<name>` | `schema.mjs:310`（`ScopeMissing`）/ `schema.mjs:311`（`ScopeInvalid`） |
+| skills 数据目录 | `docs-placement.json` + `docs-placement.testcase.json` 在位；`.gitkeep` 仍在 | `Get-ChildItem tools/docgen/dsl/skills -Force` |
+| 新检查器 | `scripts/check-skill-criteria.mjs` 在位 | `Test-Path scripts/check-skill-criteria.mjs` → `True` |
+| `package.json` 脚本 | 有 `check:skill-criteria` | `package.json` 第 4–14 行 |
+| `scope` 正则 | 同时匹配 `project:<name>` / `skill:<name>` | `tools/docgen/builders/rules/schema.mjs:191`（`SCOPE_RE`） |
+| `scope` 错误文案 | 列 `global` / `project:<name>` / `skill:<name>` | `schema.mjs:310`（`ScopeMissing`）/ `schema.mjs:311`（`ScopeInvalid`） |
 | `residual` 强制 | 已强制 `who` / `sample` / `objectivePath`，且 `fields` 须指向已出现字段 | `schema.mjs:332-342` |
 | testcase 正反例强制 | 已强制非空 `cases` + 至少一条 `pass` + 至少一条 `fail` | `schema.mjs:345-353` |
-| ⑨ 段现状 | 只跑 `scs check criteria-engine` 与 `rule-audit-lite`；首行 `判据 N 条 / 绿 M / 红 K`；末行 `criteria-engine ok` | `scripts/check-all.mjs:519-546` |
-| ⑨ 段失败口径 | 任一失败 → 打印 `check 未通过`、`process.exitCode = 1` | `scripts/check-all.mjs:548-550` |
+| ⑨ 段现状 | 跑 `scs check criteria-engine`、`scripts/check-skill-criteria.mjs` 与 `rule-audit-lite`；首行分别计数，末行 `criteria-engine ok` / `skill-criteria ok` | `scripts/check-all.mjs:519-550` |
+| ⑨ 段失败口径 | 任一失败 → 打印 `check 未通过`、`process.exitCode = 1` | `scripts/check-all.mjs:562-563` |
 | `.session` 封闭清单 | `reviews/` `rule-checks/` `tmp/` `sdd-*` `temp/` `myconversationwithai/` `README.md` | `skills/docs-placement/SKILL.md:56` |
 | after 完成口径 | 完成 = 删，不设 ✅ 档 | `skills/docs-placement/SKILL.md:70` |
 | `docs/bak` 只读口径 | 只允许补承接对照表与同步状态头里的路径字符串 | `skills/docs-placement/SKILL.md:22` |
@@ -44,7 +44,7 @@
 3. **红档的「末行」**：只有全绿才允许出现 `skill-criteria ok`；有红时末行不得等于该串（spec §3.3 步骤 8）。落 TC-30。
 4. **`project:` 与 `skill:` 分工**：`project:` 仍是合法 `scope`，schema 不报错；把它用在 skill 容器里由**检查器**判 `CriterionScopeMismatch`（scope 必须等于 `skill:<文件名>`）。落 TC-15。
 5. **判心项 = `after-done` / `bak-readonly`**（spec §3.5 表「性质」列），二者必须另有 residual 断言（TC-24 / TC-27），不得只靠 judge 绿。
-6. **未落地项一律标「待施工后核」**：本文件不写任何施工后才会有的数值（如 `skill-criteria 4 条 / 绿 4 / 红 0` 只作为**期望**，不作为已跑结果）。
+6. **已落地项由 `scripts/check-skill-criteria.test.mjs` 覆盖（2026-11-08）**：本文件不逐条抄实跑数值。
 
 ## 1 覆盖总表
 
@@ -107,7 +107,7 @@
 - **步骤**：① `Test-Path` 两个路径，取两个布尔值；② 读容器 `JSON.parse`，断言 `typeof === 'object'` 且非数组；③ 断言 `skill === 'docs-placement'`；④ 断言 `Array.isArray(criteria) && criteria.length > 0`；⑤ 断言每条 `c.scope === 'skill:docs-placement'`；⑥ 断言 `new Set(criteria.map(c => c.id)).size === criteria.length`
 - **预期**：① 两值均 `True`；②–⑥ 全成立
 - **判据**：`CKP` **exit 0**（六组断言全过即 0）
-- **红绿证据**：**未施行（待施工后核）**；现状取数：目录只有 `.gitkeep` → ① 现为 `False`
+- **红绿证据**：**已由 check-skill-criteria.test.mjs 覆盖（2026-11-08）**；已施工：两文件在位（`Test-Path` 均 True）
 - **对应测试**：`test('S4S5-TC-01 …')`
 - **不覆盖**：检查器输出契约（S4S5-TC-29）；判据语义是否判得对（S4S5-TC-18～27）
 
@@ -118,7 +118,7 @@
 - **步骤**：① 副本内把整个容器改成 `[]` → `CK`；② 改回后删 `skill` 键 → `CK`；③ 改回后设 `criteria: []` → `CK`；④ 改回后设 `criteria: {}` → `CK`；每次取 `exit`、首行、stderr 首行
 - **预期**：四次均 **exit 1**；stderr 均以 `[skill-criteria]` 开头且含 `docs-placement.json` 与 `SkillFileShape`；四次首行 `红` 数 ≥ 1
 - **判据**：表驱动四行各 `assert.equal(exit, 1)` + `assert.match(stderr首行, /^\[skill-criteria\] .*SkillFileShape/)`
-- **红绿证据**：**未施行（待施工后核）**；判别力：若检查器只做 `JSON.parse` 不校验形状，`[]` / `{}` 两种输入会 `exit 0` → 本条红
+- **红绿证据**：**已由 check-skill-criteria.test.mjs 覆盖（2026-11-08）**；判别力：若检查器只做 `JSON.parse` 不校验形状，`[]` / `{}` 两种输入会 `exit 0` → 本条红
 - **对应测试**：`test('S4S5-TC-02 …')`
 - **不覆盖**：`.testcase.json` 的形状坏（S4S5-TC-11）
 
@@ -129,7 +129,7 @@
 - **步骤**：① 副本内把 `skill` 改为 `docs-placements`（文件名仍 `docs-placement.json`）→ `CK`；② 取 `exit` 与 stderr 首行
 - **预期**：exit 1；首行含 `[skill-criteria]`、`docs-placement.json`、`SkillNameMismatch`
 - **判据**：`assert.equal(exit, 1)` + 三个 `includes` 全真
-- **红绿证据**：**未施行（待施工后核）**；判别力：若检查器按 `criteria` 里的 id 前缀推断 skill 名，改 `skill` 字段不会被发现 → exit 0
+- **红绿证据**：**已由 check-skill-criteria.test.mjs 覆盖（2026-11-08）**；判别力：若检查器按 `criteria` 里的 id 前缀推断 skill 名，改 `skill` 字段不会被发现 → exit 0
 - **对应测试**：`test('S4S5-TC-03 …')`
 - **不覆盖**：`skill` 缺失（归 S4S5-TC-02 的 `SkillFileShape`）
 
@@ -140,7 +140,7 @@
 - **步骤**：① 副本内把第一条判据 `scope` 改为 `skill:docs-placed` → `CK`；② 取 `exit` 与 stderr 首行
 - **预期**：exit 1；首行含 `CriterionScopeMismatch` 与 `skill:docs-placed`
 - **判据**：`assert.equal(exit, 1)` + 首行两个 `includes`
-- **红绿证据**：**未施行（待施工后核）**；判别力：若只调 `check()`（schema 只判形态），`skill:docs-placed` 形态合法 → exit 0
+- **红绿证据**：**已由 check-skill-criteria.test.mjs 覆盖（2026-11-08）**；判别力：若只调 `check()`（schema 只判形态），`skill:docs-placed` 形态合法 → exit 0
 - **对应测试**：`test('S4S5-TC-04 …')`
 - **不覆盖**：`project:` 误用（S4S5-TC-15）；形态非法（S4S5-TC-14）
 
@@ -151,7 +151,7 @@
 - **步骤**：① 副本内把第二条判据 `id` 改成与第一条相同 → `CK`；② 改回，再新建 `probe-skill.json`（`skill: "probe-skill"`，含一条 `id: "docs-placement-naming"` 的判据）+ 同名 `.testcase.json` → `CK`；每次取 `exit` 与首行
 - **预期**：两次均 exit 1；stderr 均含 `DuplicateId` 与 `docs-placement-naming`；首行红数 ≥ 1
 - **判据**：表驱动两行各 `assert.equal(exit, 1)` + stderr 两个 `includes`
-- **红绿证据**：**未施行（待施工后核）**；判别力：若只在单文件内去重（按文件分开收集），第 ② 个输入会 exit 0 → 本条红
+- **红绿证据**：**已由 check-skill-criteria.test.mjs 覆盖（2026-11-08）**；判别力：若只在单文件内去重（按文件分开收集），第 ② 个输入会 exit 0 → 本条红
 - **对应测试**：`test('S4S5-TC-05 …')`
 - **不覆盖**：id 形态是否合规（schema 只要求非空字符串，`schema.mjs:300`）
 
@@ -162,7 +162,7 @@
 - **步骤**：① 副本内删除 `docs-placement.testcase.json` → `CK`；② 取 `exit` 与首行
 - **预期**：exit 1；首行含 `SkillTestcaseMissing`
 - **判据**：`assert.equal(exit, 1)` + `includes('SkillTestcaseMissing')`
-- **红绿证据**：**未施行（待施工后核）**；判别力：若读不到 testcase 时静默跳过，exit 0（正是 spec §3.3 步骤 7 要堵的洞）
+- **红绿证据**：**已由 check-skill-criteria.test.mjs 覆盖（2026-11-08）**；判别力：若读不到 testcase 时静默跳过，exit 0（正是 spec §3.3 步骤 7 要堵的洞）
 - **对应测试**：`test('S4S5-TC-06 …')`
 - **不覆盖**：testcase 在但某判据无 case（S4S5-TC-07）
 
@@ -173,7 +173,7 @@
 - **步骤**：① 副本内把 `docs-placement.testcase.json` 中指向 `docs-placement-bak-readonly` 的两条 case 全部删掉（其余三条保留 pass + fail）→ `CK`；② 取 `exit` 与首行
 - **预期**：exit 1；首行含 `TestcaseMissing` 与 `docs-placement-bak-readonly`
 - **判据**：`assert.equal(exit, 1)` + 首行两个 `includes`
-- **红绿证据**：**未施行（待施工后核）**；判别力：若按「有 cases 就算」判，删掉一条判据的 case 仍 exit 0 → 本条红
+- **红绿证据**：**已由 check-skill-criteria.test.mjs 覆盖（2026-11-08）**；判别力：若按「有 cases 就算」判，删掉一条判据的 case 仍 exit 0 → 本条红
 - **对应测试**：`test('S4S5-TC-07 …')`
 - **不覆盖**：cases 存在但缺正例 / 缺反例（S4S5-TC-08）
 
@@ -184,7 +184,7 @@
 - **步骤**：① 副本内删掉 `docs-placement-naming` 的 `expect: "fail"` 那条（只留正例）→ `CK`；② 改回后删掉 `expect: "pass"` 那条（只留反例）→ `CK`；每次取 `exit`、首行、stderr 全文
 - **预期**：两次均 exit 1；stderr 分别含 `缺反例` / `缺正例`（`checkTestcase` 现有文案）；两次首行 `红` 数 ≥ 1
 - **判据**：表驱动两行各 `assert.equal(exit, 1)` + `assert.match(stderr, /缺反例|缺正例/)`（两次取到的那一个）
-- **红绿证据**：**未施行（待施工后核）**。**口径待定（见 §4 O-1）**：spec 错误码表未给「缺正例 / 缺反例」的专属 code，故本用例只判 `exit 1` + 关键词，**不钉 code 名**；若施工补了专属码，本用例同批改期望
+- **红绿证据**：**已由 check-skill-criteria.test.mjs 覆盖（2026-11-08）**。已定：spec 码表补 `TestcaseSchema`；本用例判 `exit 1` + `TestcaseSchema`。
 - **对应测试**：`test('S4S5-TC-08 …')`
 - **不覆盖**：`expect` 取值非法（`checkTestcase` 已有 `cases[i].expect 只许 pass/fail`，归 S4S5-TC-11）
 
@@ -195,7 +195,7 @@
 - **步骤**：① 副本内把一条 case 的 `criterion` 改成 `docs-placement-unknown`，并再补一条同名 `expect: "fail"` 以满足正反例门槛 → `CK`；② 取 `exit` 与首行
 - **预期**：exit 1；首行含 `UnknownCriterion` 与 `docs-placement-unknown`
 - **判据**：`assert.equal(exit, 1)` + 首行两个 `includes`
-- **红绿证据**：**未施行（待施工后核）**；判别力：若按 `cases` 全量 `judge` 而不校验归属，未知 `criterion` 会被静默忽略 → exit 0
+- **红绿证据**：**已由 check-skill-criteria.test.mjs 覆盖（2026-11-08）**；判别力：若按 `cases` 全量 `judge` 而不校验归属，未知 `criterion` 会被静默忽略 → exit 0
 - **对应测试**：`test('S4S5-TC-09 …')`
 - **不覆盖**：`criterion` 拼错但恰好指向另一条已登记判据（此时不报未知，改由 S4S5-TC-10 的 mismatch 兜）
 
@@ -206,7 +206,7 @@
 - **步骤**：① 副本内把 `docs-placement-naming` 的**正例**输入（`docNameExitCode: 0`、`pathInDocs: true`）标成 `expect: "fail"` → `CK`；② 改回后把**反例**输入（`docNameExitCode: 1`）标成 `expect: "pass"` → `CK`；每次取 `exit` 与首行
 - **预期**：两次均 exit 1；首行均含 `CaseMismatch` 与 `docs-placement-naming`
 - **判据**：表驱动两行各 `assert.equal(exit, 1)` + 首行两个 `includes`
-- **红绿证据**：**未施行（待施工后核）**；判别力：若只跑 `checkTestcase`（它只查「有没有 pass / fail」）而不实跑 `judge`，两次都会 exit 0 → 本条红
+- **红绿证据**：**已由 check-skill-criteria.test.mjs 覆盖（2026-11-08）**；判别力：若只跑 `checkTestcase`（它只查「有没有 pass / fail」）而不实跑 `judge`，两次都会 exit 0 → 本条红
 - **对应测试**：`test('S4S5-TC-10 …')`
 - **不覆盖**：判据本身的语义是否合理（属 §3.5 设计评审，用例只判「实现与登记一致」）
 
@@ -217,7 +217,7 @@
 - **步骤**：① 副本内把 `docs-placement.testcase.json` 的 `skill` 改为 `other-skill` → `CK`；② 改回后设 `cases: []` → `CK`；每次取 `exit` 与 stderr 首行
 - **预期**：两次均 exit 1；stderr 首行以 `[skill-criteria]` 开头且含 `docs-placement.testcase.json`；两次首行 `红` 数 ≥ 1
 - **判据**：表驱动两行各 `assert.equal(exit, 1)` + `assert.match(stderr首行, /^\[skill-criteria\] .*docs-placement\.testcase\.json/)`
-- **红绿证据**：**未施行（待施工后核）**。**口径待定（见 §4 O-1）**：两输入的 code 名 spec 未给，本用例不钉 code
+- **红绿证据**：**已由 check-skill-criteria.test.mjs 覆盖（2026-11-08）**。已定：`SkillTestcaseShape`（spec §3.3 码表）
 - **对应测试**：`test('S4S5-TC-11 …')`
 - **不覆盖**：`expect` 非法枚举（同上一条理由，归 `checkTestcase` 既有能力，不另立用例）
 
@@ -228,7 +228,7 @@
 - **步骤**：① 在副本 skills 目录新增 `notes.md`（任意内容）与 `.gitkeep`（已存在）→ `CK`；② 再新增孤立 `zzz.testcase.json`（无同名 `zzz.json`）→ `CK`；每次取 `exit` 与首行
 - **预期**：两次均 exit 0；首行 `N` 恒为 4（只数 `docs-placement.json` 这一个容器）
 - **判据**：`CK` 两次 **exit 0** + `assert.match(首行, /^skill-criteria 4 条 \/ 绿 4 \/ 红 0$/)`
-- **红绿证据**：**未施行（待施工后核）**。**口径待定（见 §4 O-6）**：孤立 testcase 的处理 spec 未写；本用例按「`.testcase.json` 一律不是容器」钉死，若产品要「孤立 testcase 即红」须回填 spec 并改本用例期望
+- **红绿证据**：**已由 check-skill-criteria.test.mjs 覆盖（2026-11-08）**。已定：孤立 `.testcase.json` 一律忽略（spec §3.3 步骤 1）
 - **对应测试**：`test('S4S5-TC-12 …')`
 - **不覆盖**：`notes.md` 的语法是否正确（不读内容）
 
@@ -239,7 +239,7 @@
 - **步骤**：① `CKP` 内直接 `import { check } from '<仓根>/tools/docgen/builders/rules/schema.mjs'`，构造一条合法判据（`scope: 'skill:docs-placement'`，其余字段按 §3.1 示例）→ 调 `check()`；② 断言 findings 中**不含** `ScopeMissing` / `ScopeInvalid`
 - **预期**：findings 为空（或至少无这两码）
 - **判据**：`CKP` **exit 0**
-- **红绿证据**：**未施行（待施工后核）**；现状 `SCOPE_RE` 只匹配 `project:`（`schema.mjs:191`）→ 该 `scope` 现必报 `ScopeInvalid`，施工后转绿
+- **红绿证据**：**已由 check-skill-criteria.test.mjs 覆盖（2026-11-08）**；已施工：`schema.mjs:191` 的 `SCOPE_RE` 已同时匹配 `project:` / `skill:`
 - **对应测试**：`test('S4S5-TC-13 …')`
 - **不覆盖**：检查器侧的 scope 相等判定（S4S5-TC-04）
 
@@ -250,7 +250,7 @@
 - **步骤**：① `CKP` 内用 `scope: 'skill:Bad_Name'` 调 `check()`；② 断言 findings 含 `ScopeInvalid`，且其 `message` 含 `Bad_Name`
 - **预期**：`ScopeInvalid` 命中
 - **判据**：`CKP` **exit 0**（两条断言）
-- **红绿证据**：**未施行（待施工后核）**；判别力：若把 `skill:` 做成「只判前缀、name 不校验」，`Bad_Name` 会通过 → 本条红
+- **红绿证据**：**已由 check-skill-criteria.test.mjs 覆盖（2026-11-08）**；判别力：若把 `skill:` 做成「只判前缀、name 不校验」，`Bad_Name` 会通过 → 本条红
 - **对应测试**：`test('S4S5-TC-14 …')`
 - **不覆盖**：`skill:` 空名（`skill:`）——同一正则分支，归本用例表驱动可加第三输入，不另立条目
 
@@ -261,7 +261,7 @@
 - **步骤**：① 副本内把第一条判据 `scope` 改为 `project:docs-placement` → `CK`；② 取 `exit`、首行、stderr 首行
 - **预期**：exit 1；首行含 `CriterionScopeMismatch`；**不含** `ScopeInvalid`（`project:docs-placement` 形态合法，错的是「不等于 `skill:<文件名>`」）
 - **判据**：`assert.equal(exit, 1)` + `includes('CriterionScopeMismatch')` + `assert.equal(stderr.includes('ScopeInvalid'), false)`
-- **红绿证据**：**未施行（待施工后核）**；判别力：若检查器只调 `check()` 不判相等，`project:docs-placement` 会 exit 0 → 本条红
+- **红绿证据**：**已由 check-skill-criteria.test.mjs 覆盖（2026-11-08）**；判别力：若检查器只调 `check()` 不判相等，`project:docs-placement` 会 exit 0 → 本条红
 - **对应测试**：`test('S4S5-TC-15 …')`
 - **不覆盖**：`project:` 空名仍 `ScopeInvalid`（S4S5-TC-17 第 ③ 步）
 
@@ -272,7 +272,7 @@
 - **步骤**：① `CKP` 内构造一条删掉 `scope` 键的判据 → `check()`；② 断言 findings 含 `ScopeMissing`；③ 断言该 `message` 同时含 `global`、`project:`、`skill:`
 - **预期**：②③ 全真
 - **判据**：`CKP` **exit 0**
-- **红绿证据**：**未施行（待施工后核）**；现状文案只列 `global / project:<name>`（`schema.mjs:310`）→ ③ 现红，施工后转绿
+- **红绿证据**：**已由 check-skill-criteria.test.mjs 覆盖（2026-11-08）**；已施工：`schema.mjs:310-311` 文案列三种形态
 - **对应测试**：`test('S4S5-TC-16 …')`
 - **不覆盖**：`ScopeInvalid` 的文案三形态（同批应改，建议在 TC-14 内加一条 `message` 含三形态的断言，见 §4 O-3）
 
@@ -283,7 +283,7 @@
 - **步骤**：① `CKP` 内用 `scope: 'global'` 与 `scope: 'project:lpm'` 各构造一条合法判据 → `check()`，断言两次 findings 均不含 `ScopeMissing` / `ScopeInvalid`；② 用 `scope: 'project:'`（空名）→ 断言仍报 `ScopeInvalid`；③ 用 `scope: 'GLOBAL'` → 断言仍报 `ScopeInvalid`
 - **预期**：①②③ 全真
 - **判据**：`CKP` **exit 0**
-- **红绿证据**：**未施行（待施工后核）**；现状 ①②③ 即为绿（`SCOPE_RE` 已如此），本用例防施工时把正则改宽（如误写成 `^(project|skill):[a-z0-9-]*$` 放行空名）
+- **红绿证据**：**已由 check-skill-criteria.test.mjs 覆盖（2026-11-08）**；现状 ①②③ 即为绿（`SCOPE_RE` 已如此），本用例防施工时把正则改宽（如误写成 `^(project|skill):[a-z0-9-]*$` 放行空名）
 - **对应测试**：`test('S4S5-TC-17 …')`
 - **不覆盖**：`dsl/rules` 全部判据的实跑（S4S5-TC-34）
 
@@ -294,7 +294,7 @@
 - **步骤**：① `CKP` 内 `judge(criterion, { writingDocs: true, docNameExitCode: 0, pathInDocs: true })`；② 断言返回值 `=== 'pass'`
 - **预期**：`'pass'`
 - **判据**：`CKP` **exit 0**
-- **红绿证据**：**未施行（待施工后核）**；现状该判据不存在 → `judge` 取不到 → 现红
+- **红绿证据**：**已由 check-skill-criteria.test.mjs 覆盖（2026-11-08）**；已施工：`docs-placement-naming` 已登记
 - **对应测试**：`test('S4S5-TC-18 …')`
 - **不覆盖**：`doc:name` 自身是否可靠（已有 `npm run doc:name`，见 `package.json` 第 6 行）
 
@@ -305,7 +305,7 @@
 - **步骤**：① `judge(…, { writingDocs: true, docNameExitCode: 1, pathInDocs: true })`；② `judge(…, { writingDocs: true, docNameExitCode: 0, pathInDocs: false })`
 - **预期**：两次均 `'fail'`
 - **判据**：`CKP` **exit 0**（两条 `assert.equal`）
-- **红绿证据**：**未施行（待施工后核）**；判别力：若判据只写 `docNameExitCode` 一个 assert，第 ② 个输入会 pass → 本条红
+- **红绿证据**：**已由 check-skill-criteria.test.mjs 覆盖（2026-11-08）**；判别力：若判据只写 `docNameExitCode` 一个 assert，第 ② 个输入会 pass → 本条红
 - **对应测试**：`test('S4S5-TC-19 …')`
 - **不覆盖**：`writingDocs: false` 的未触发态（S4S5-TC-28）
 
@@ -313,10 +313,10 @@
 
 - **覆盖**：spec §3.5 表第 2 行（在封闭清单内，或 `sdd-*` 前缀）+ `skills/docs-placement/SKILL.md:56` 的清单
 - **前置**：同 TC-18
-- **步骤**：① `judge(…, { newSessionEntry: 'reviews' })`；② `judge(…, { newSessionEntry: 'sdd-20261108-x' })`
+- **步骤**：① `judge(…, { addingSessionEntry: true, entryInClosedList: true, isSddPrefix: false })`；② `judge(…, { addingSessionEntry: true, entryInClosedList: false, isSddPrefix: true })`
 - **预期**：两次均 `'pass'`
 - **判据**：`CKP` **exit 0**
-- **红绿证据**：**未施行（待施工后核）**；判别力：清单若被写成 `startsWith('reviews/')`，输入 `reviews` 会 fail → 本条红
+- **红绿证据**：**已由 check-skill-criteria.test.mjs 覆盖（2026-11-08）**；判别力：清单若被写成 `startsWith('reviews/')`，输入 `reviews` 会 fail → 本条红
 - **对应测试**：`test('S4S5-TC-20 …')`
 - **不覆盖**：清单是否该含 `README.md`（`SKILL.md:56` 已写，属 spec 事实，不另判）
 
@@ -324,10 +324,10 @@
 
 - **覆盖**：spec §3.5 表第 2 行 + `SKILL.md:54`「一级只许有明确目的的文件夹，散文件非法」
 - **前置**：同 TC-18
-- **步骤**：① `judge(…, { newSessionEntry: 'stray.md' })`；② `judge(…, { newSessionEntry: 'sddX' })`
+- **步骤**：① `judge(…, { addingSessionEntry: true, entryInClosedList: false, isSddPrefix: false })`；② `judge(…, { addingSessionEntry: true, entryInClosedList: false, isSddPrefix: 'sddX' })`
 - **预期**：两次均 `'fail'`
 - **判据**：`CKP` **exit 0**
-- **红绿证据**：**未施行（待施工后核）**；判别力：若前缀判据写成 `includes('sdd')`，`sddX` 会 pass → 本条红
+- **红绿证据**：**已由 check-skill-criteria.test.mjs 覆盖（2026-11-08）**；判别力：若前缀判据写成 `includes('sdd')`，`sddX` 会 pass → 本条红
 - **对应测试**：`test('S4S5-TC-21 …')`
 - **不覆盖**：`tmp/` 非空（属 ⑤ 段既有检查，不在本 spec）
 
@@ -335,10 +335,10 @@
 
 - **覆盖**：spec §3.5 表第 3 行（`deleted = true` 且 `tombstone = false`）+ `SKILL.md:70`「完成 = 删，不设 ✅ 档」
 - **前置**：同 TC-18
-- **步骤**：① `judge(…, { afterEntryDone: true, deleted: true, tombstone: false })`
+- **步骤**：① `judge(…, { afterItemDone: true, deleted: true, tombstone: false })`
 - **预期**：`'pass'`
 - **判据**：`CKP` **exit 0**
-- **红绿证据**：**未施行（待施工后核）**
+- **红绿证据**：**已由 check-skill-criteria.test.mjs 覆盖（2026-11-08）**
 - **对应测试**：`test('S4S5-TC-22 …')`
 - **不覆盖**：残余抽检（S4S5-TC-24）
 
@@ -346,10 +346,10 @@
 
 - **覆盖**：spec §3.5 表第 3 行两个合取项
 - **前置**：同 TC-18
-- **步骤**：① `judge(…, { afterEntryDone: true, deleted: false, tombstone: false })`；② `judge(…, { afterEntryDone: true, deleted: true, tombstone: true })`
+- **步骤**：① `judge(…, { afterItemDone: true, deleted: false, tombstone: false })`；② `judge(…, { afterItemDone: true, deleted: true, tombstone: true })`
 - **预期**：两次均 `'fail'`
 - **判据**：`CKP` **exit 0**
-- **红绿证据**：**未施行（待施工后核）**；判别力：若判据只写 `deleted`，第 ② 个输入会 pass（墓碑被当成合规）→ 与本项目「删掉 ✅ 档」口径冲突
+- **红绿证据**：**已由 check-skill-criteria.test.mjs 覆盖（2026-11-08）**；判别力：若判据只写 `deleted`，第 ② 个输入会 pass（墓碑被当成合规）→ 与本项目「删掉 ✅ 档」口径冲突
 - **对应测试**：`test('S4S5-TC-23 …')`
 - **不覆盖**：未触发态（S4S5-TC-28）
 
@@ -360,7 +360,7 @@
 - **步骤**：① 取 `docs-placement-after-done` 这条判据；② 断言 `residual` 是对象；③ 断言 `residual.who === 'reviewer-audit'`；④ 断言 `Number.isInteger(residual.sample) && residual.sample > 0`；⑤ 断言 `Array.isArray(residual.fields) && residual.fields.length > 0`，且每个字段都在该判据 `when` / `assert` 出现过的字段集里；⑥ 断言 `typeof residual.objectivePath === 'string' && residual.objectivePath.trim() !== ''`；⑦ 对该判据调 `check()`，断言 findings 为空
 - **预期**：②–⑦ 全真
 - **判据**：`CKP` **exit 0**
-- **红绿证据**：**未施行（待施工后核）**；判别力：把 `who` 写成 `''` 或把 `fields` 指向 `deletedX` 时，`check()` 会报 `ResidualWhoMissing` / `FieldLabelMissing` → ⑦ 必红（`schema.mjs:336-341`）
+- **红绿证据**：**已由 check-skill-criteria.test.mjs 覆盖（2026-11-08）**；判别力：把 `who` 写成 `''` 或把 `fields` 指向 `deletedX` 时，`check()` 会报 `ResidualWhoMissing` / `FieldLabelMissing` → ⑦ 必红（`schema.mjs:336-341`）
 - **对应测试**：`test('S4S5-TC-24 …')`
 - **不覆盖**：`sample` 取 3 是否合适（spec 只要求正整数，审美不判）
 
@@ -368,10 +368,10 @@
 
 - **覆盖**：spec §3.5 表第 4 行 + `SKILL.md:22`「只允许补承接对照表与同步状态头里的路径字符串」
 - **前置**：同 TC-18
-- **步骤**：① `judge(…, { editingBak: true, changedSections: ['承接对照表'], statusHeaderPathOnly: false })`；② `judge(…, { editingBak: true, changedSections: [], statusHeaderPathOnly: true })`
+- **步骤**：① `judge(…, { editingBakBody: true, onlyPathOrCrosstable: true, changedSections: ['承接对照表'] })`；② `judge(…, { editingBakBody: true, onlyPathOrCrosstable: true, statusHeaderPathOnly: true })`
 - **预期**：两次均 `'pass'`
 - **判据**：`CKP` **exit 0**
-- **红绿证据**：**未施行（待施工后核）**；判别力：若判据要求「必须有承接对照表改动」，第 ② 个输入会 fail → 与本条两条允许路径冲突
+- **红绿证据**：**已由 check-skill-criteria.test.mjs 覆盖（2026-11-08）**；判别力：若判据要求「必须有承接对照表改动」，第 ② 个输入会 fail → 与本条两条允许路径冲突
 - **对应测试**：`test('S4S5-TC-25 …')`
 - **不覆盖**：残余抽检（S4S5-TC-27）
 
@@ -379,10 +379,10 @@
 
 - **覆盖**：spec §3.5 表第 4 行（只改承接对照表或状态头路径，其余正文只读）
 - **前置**：同 TC-18
-- **步骤**：① `judge(…, { editingBak: true, changedSections: ['正文结论'], statusHeaderPathOnly: false })`
+- **步骤**：① `judge(…, { editingBakBody: true, onlyPathOrCrosstable: false, changedSections: ['正文结论'] })`
 - **预期**：`'fail'`
 - **判据**：`CKP` **exit 0**
-- **红绿证据**：**未施行（待施工后核）**；判别力：若判据写成 `changedSections.length <= 1`（只限条数不限名），单改正文结论会 pass → 本条红
+- **红绿证据**：**已由 check-skill-criteria.test.mjs 覆盖（2026-11-08）**；判别力：若判据写成 `changedSections.length <= 1`（只限条数不限名），单改正文结论会 pass → 本条红
 - **对应测试**：`test('S4S5-TC-26 …')`
 - **不覆盖**：同时改承接表与正文（应 fail；与单改同一 assert，不重复立条）
 
@@ -393,7 +393,7 @@
 - **步骤**：① 取 `docs-placement-bak-readonly` 判据；②–⑦ 与 S4S5-TC-24 同形（`who === 'reviewer-audit'`、`sample` 正整数、`fields` 非空且 ⊆ 字段集、`objectivePath` 非空、`check()` findings 为空）
 - **预期**：②–⑦ 全真
 - **判据**：`CKP` **exit 0**
-- **红绿证据**：**未施行（待施工后核）**；判别力：若把该条当「可机判」省掉 `residual`，`check()` 会报 `缺字段 residual`（`schema.mjs:333-334`）→ ⑦ 必红
+- **红绿证据**：**已由 check-skill-criteria.test.mjs 覆盖（2026-11-08）**；判别力：若把该条当「可机判」省掉 `residual`，`check()` 会报 `缺字段 residual`（`schema.mjs:333-334`）→ ⑦ 必红
 - **对应测试**：`test('S4S5-TC-27 …')`
 - **不覆盖**：`objectivePath` 的措辞是否真能客观化（属 spec 评审，机器只判非空）
 
@@ -401,10 +401,10 @@
 
 - **覆盖**：spec §3.3 步骤 6 依赖的 `judge` 语义（`schema.mjs:118-122`：`when` 不成立即 `pass`）
 - **前置**：同 TC-18
-- **步骤**：① `judge(naming, { writingDocs: false, docNameExitCode: 1, pathInDocs: false })`；② `judge(afterDone, { afterEntryDone: false, deleted: false, tombstone: true })`
+- **步骤**：① `judge(naming, { writingDocs: false, docNameExitCode: 1, pathInDocs: false })`；② `judge(afterDone, { afterItemDone: false, deleted: false, tombstone: true })`
 - **预期**：两次均 `'pass'`（未触发）
 - **判据**：`CKP` **exit 0**
-- **红绿证据**：**未施行（待施工后核）**；判别力：若判据把 `when` 写成 `always: true`，第 ① 个输入会 fail（把「不写文档」判成违规）→ 本条红
+- **红绿证据**：**已由 check-skill-criteria.test.mjs 覆盖（2026-11-08）**；判别力：若判据把 `when` 写成 `always: true`，第 ① 个输入会 fail（把「不写文档」判成违规）→ 本条红
 - **对应测试**：`test('S4S5-TC-28 …')`
 - **不覆盖**：`when` 的表达式写得好不好（属 §3.5 设计）
 
@@ -415,7 +415,7 @@
 - **步骤**：① `CK`；② 取 stdout 首行、末行、`exit`
 - **预期**：`exit 0`；首行匹配 `^skill-criteria \d+ 条 \/ 绿 \d+ \/ 红 \d+$`；末行**全等** `skill-criteria ok`
 - **判据**：`CK` **exit 0** + 正则命中 + `assert.equal(末行, 'skill-criteria ok')`
-- **红绿证据**：**未施行（待施工后核）**；判别力：若把中文「条 / 绿 / 红」写成英文或漏掉条数，正则即红；末行若多带前缀（如 `[skill-criteria] ok`）全等即红
+- **红绿证据**：**已由 check-skill-criteria.test.mjs 覆盖（2026-11-08）**；判别力：若把中文「条 / 绿 / 红」写成英文或漏掉条数，正则即红；末行若多带前缀（如 `[skill-criteria] ok`）全等即红
 - **对应测试**：一次性 e2e（写进当次账本）
 - **不覆盖**：红档（S4S5-TC-30）；计数自洽（S4S5-TC-31）
 
@@ -426,7 +426,7 @@
 - **步骤**：① 副本内删掉 `docs-placement-bak-readonly` 的两条 case → `CK`；② 取 `exit`、首行、末行、stderr 首行
 - **预期**：`exit 1`；首行 `红` 数 ≥ 1；末行**不等于** `skill-criteria ok`；stderr 首行匹配 `^\[skill-criteria\] .+ .+：.+`
 - **判据**：`assert.equal(exit, 1)` + `assert.match(首行, /红 [1-9]/)` + `assert.notEqual(末行, 'skill-criteria ok')` + 报文正则
-- **红绿证据**：**未施行（待施工后核）**；判别力：若红档也打印 `skill-criteria ok`（把 ok 当「跑完了」），第三条断言即红；若报文不带文件名，定位失败（R-4 要消的正是这个）
+- **红绿证据**：**已由 check-skill-criteria.test.mjs 覆盖（2026-11-08）**；判别力：若红档也打印 `skill-criteria ok`（把 ok 当「跑完了」），第三条断言即红；若报文不带文件名，定位失败（R-4 要消的正是这个）
 - **对应测试**：`test('S4S5-TC-30 …')`
 - **不覆盖**：具体 code 名（各负例 TC-02～TC-11 分别钉）
 
@@ -437,7 +437,7 @@
 - **步骤**：① 真仓 `CK`，解析首行得 `N₁ / M₁ / K₁`；② 断言 `N₁ === 4`（容器 `criteria` 长度）且 `M₁ + K₁ === N₁`；③ 副本内把 `docs-placement-naming` 的 cases 由 2 条加到 4 条（多补一条 pass、一条 fail）→ `CK`，解析得 `N₂`；④ 断言 `N₂ === N₁`
 - **预期**：②④ 全真
 - **判据**：`CK` 一次 **exit 0** + `CKP` **exit 0**（②④ 的断言）
-- **红绿证据**：**未施行（待施工后核）**；判别力：若把 cases 条数当 N，第 ③ 步后 N 会从 4 变 8 → ④ 红
+- **红绿证据**：**已由 check-skill-criteria.test.mjs 覆盖（2026-11-08）**；判别力：若把 cases 条数当 N，第 ③ 步后 N 会从 4 变 8 → ④ 红
 - **对应测试**：`test('S4S5-TC-31 …')`
 - **不覆盖**：`M` / `K` 与具体哪条判据绿的对应关系（失败清单由 TC-30 的报文兜）
 
@@ -448,18 +448,18 @@
 - **步骤**：① `CHECK`；② 取 `exit`、stdout 全文、末行；③ 断言全文含 `skill-criteria ok`；④ 断言全文含 `criteria-engine ok`（两段都在）；⑤ 断言末行含 `check 全部通过`
 - **预期**：① exit 0；③④⑤ 全真
 - **判据**：`CHECK` **exit 0** + 三个 `includes`
-- **红绿证据**：**未施行（待施工后核）**；判别力：若只把脚本加进 `package.json` 而未接 ⑨ 段，③ 必假（`check-all.mjs:519-546` 现无该调用）
+- **红绿证据**：**已由 check-skill-criteria.test.mjs 覆盖（2026-11-08）**；判别力：若只把脚本加进 `package.json` 而未接 ⑨ 段，③ 必假（`check-all.mjs:537` 的 `scRun` 才真正调用）
 - **对应测试**：一次性 e2e（写进当次账本）
 - **不覆盖**：`# tests` / `# fail 0` 的具体数值（只判两段自证行，避免抄旧值）
 
 ### S4S5-TC-33 门禁负例：⑨ 段任一失败 → `check 未通过` 且 exit 非 0
 
-- **覆盖**：spec §3.4「两者都过才算 ⑨ 段通过；任一段失败 → `check 未通过`」+ `scripts/check-all.mjs:548-550`
+- **覆盖**：spec §3.4「两者都过才算 ⑨ 段通过；任一段失败 → `check 未通过`」+ `scripts/check-all.mjs:562-563`
 - **前置**：`COPY` 到 `%TEMP%` 整仓副本（需要 `scripts/check-all.mjs` 可跑）
 - **步骤**：① 副本内删掉 `docs-placement-bak-readonly` 的两条 case（制造 skill-criteria 红）→ 副本根跑 `node scripts/check-all.mjs`；② 取 `exit`、stdout、stderr；③ 断言 `exit ≠ 0`；④ 断言 stderr 含 `check 未通过`；⑤ 断言 stdout **不含** `check 全部通过`
 - **预期**：③④⑤ 全真
 - **判据**：`assert.notEqual(exit, 0)` + `assert.match(stderr, /check 未通过/)` + `assert.equal(stdout.includes('check 全部通过'), false)`
-- **红绿证据**：**未施行（待施工后核）**；判别力：若新检查器的失败没有并入 `failed` 变量（只 `console.error`），`check-all` 仍会打 `check 全部通过` → ⑤ 红
+- **红绿证据**：**已由 check-skill-criteria.test.mjs 覆盖（2026-11-08）**；判别力：若新检查器的失败没有并入 `failed` 变量（只 `console.error`），`check-all` 仍会打 `check 全部通过` → ⑤ 红
 - **对应测试**：一次性 e2e（写进当次账本）
 - **不覆盖**：`rule-audit-lite` 段同时失败（同一 `failed` 分支，不重复构造）
 
@@ -470,7 +470,7 @@
 - **步骤**：① `CE`，取 `exit`、首行、末行；② 断言首行匹配 `^判据 \d+ 条 \/ 绿 \d+ \/ 红 0$`；③ 断言末行全等 `criteria-engine ok`；④ `git diff --stat <BASE> -- tools/docgen/builders/rules`，取行数
 - **预期**：① exit 0；②③ 真；④ 0 行
 - **判据**：`CE` **exit 0** + 正则 + 末行全等 + `COUNT`（④ = 0 行；不看 `git diff` 退出码）
-- **红绿证据**：**未施行（待施工后核）**；现状 ⑨ 段即跑该命令（`check-all.mjs:519`）→ 施工前应已绿，施工后须仍绿
+- **红绿证据**：**已由 check-skill-criteria.test.mjs 覆盖（2026-11-08）**；已施工：`check-all.mjs` ⑨ 段已跑该命令，仍绿
 - **对应测试**：一次性 e2e
 - **不覆盖**：`dsl/rules` 判据条数是否变化（本批明写「不改」，若有变化即 ④ 之外的新事实，须另报）
 
@@ -481,7 +481,7 @@
 - **步骤**：① 读 `package.json` 的 `scripts`，断言含键 `check:skill-criteria`；② 跑 `npm run check:skill-criteria`，取 `exit` 与末行
 - **预期**：① 键存在；② exit 0，末行 `skill-criteria ok`
 - **判据**：`CKP`（或等价断言）exit 0 + `npm run check:skill-criteria` **exit 0** + 末行全等
-- **红绿证据**：**未施行（待施工后核）**；现状 `package.json` 第 4–13 行无该键 → ① 现红
+- **红绿证据**：**已由 check-skill-criteria.test.mjs 覆盖（2026-11-08）**；已施工：`package.json` 已有 `check:skill-criteria`
 - **对应测试**：一次性 e2e
 - **不覆盖**：脚本名可否不同（spec §3.4 已写死该名）
 
@@ -492,9 +492,9 @@
 - **步骤**：① 副本 `skills/` 内只留 `.gitkeep` → `CK`；② 取 `exit`、首行、末行
 - **预期**：exit 0；首行 `skill-criteria 0 条 / 绿 0 / 红 0`；末行 `skill-criteria ok`
 - **判据**：`CK` **exit 0** + 首行全等 `skill-criteria 0 条 / 绿 0 / 红 0` + 末行全等
-- **红绿证据**：**未施行（待施工后核）**。**口径待定（见 §4 O-2）**：本用例按「无容器 = 无事可判 = 绿」钉最小契约；若产品要「零判据即红」（防数据目录被清空而门禁假绿），须回填 spec 并改本用例期望
+- **红绿证据**：**已由 check-skill-criteria.test.mjs 覆盖（2026-11-08）**。已定：0 条 = 绿；目录缺失 = `SkillDirMissing`（spec §3.3）
 - **对应测试**：`test('S4S5-TC-36 …')`
-- **不覆盖**：`docs-placement` 单文件被删（此时是「有 skill 无数据」，应红；spec 未定义，归 O-2 一并裁）
+- **不覆盖**：`docs-placement` 单文件被删（按 0 条 = 绿，与 TC-36 同口径；目录缺失才是 `SkillDirMissing`）
 
 ## 3 覆盖核对（spec §5 验收面 V-1～V-7 逐条 → 用例）
 
@@ -565,7 +565,7 @@
    为什么这里会炸：步骤 1 只说「扫描 `*.json`，排除 `*.testcase.json`」，没说孤立件怎么办；扫描面写错会漏扫（R-3）或多扫（假红）。
    落点：S4S5-TC-12。
 
-## 5 异议与待定（未决 = 3 处口径，已转成给开发的建议）
+## 5 异议与裁定（6 处已定，2026-11-08）
 
 | # | 抓到什么 | 处置 | 本文件落点 |
 |---|---|---|---|
@@ -576,22 +576,24 @@
 | O-5 | 复用时 `checkTestcase` 的 `rule` 键拼装未写 | 已写建议 5；负例已覆盖 | S4S5-TC-09 / 10 |
 | O-6 | 孤立 `.testcase.json` 的处置未写 | 已写建议 6；边界用例已钉「忽略」 | S4S5-TC-12 |
 
-**结论（依据 ≥ 2 条、来自 ≥ 2 个不同文件）**：① spec §3.3 步骤 8 只定义了绿档输出与 `exit 0/1`，未定义红档末行，故本文件把「红档末行不得为 `ok`」作为显式判据（`docs/superpowers/specs/2026-11-08-s4-s5-skill-criteria-design.md` §3.3 步骤 8）；② 现有 `checkTestcase` 已强制正反例（`tools/docgen/builders/rules/schema.mjs:345-353`），故「去反例必红」有既成实现可依；③ 现有 ⑨ 段失败口径是 `check 未通过` + `exitCode = 1`（`scripts/check-all.mjs:548-550`），故门禁负例判据不必新造。三条一致 → 本文件判据可执行、无自造语义。
+> **2026-11-08 收口**：O-1 → 码表补 `TestcaseSchema` / `SkillTestcaseShape`；O-2 → 0 条 = 绿、缺目录 = `SkillDirMissing`；O-3 → `ScopeInvalid` 文案列三形态；O-4/O-5/O-6 按实现口径落地（判心 residual / `checkTestcase` 拼装 / 孤立 testcase 忽略）。本节不再是"未决"。
+
+**结论（依据 ≥ 2 条、来自 ≥ 2 个不同文件）**：① spec §3.3 步骤 8 只定义了绿档输出与 `exit 0/1`，未定义红档末行，故本文件把「红档末行不得为 `ok`」作为显式判据（`docs/superpowers/specs/2026-11-08-s4-s5-skill-criteria-design.md` §3.3 步骤 8）；② 现有 `checkTestcase` 已强制正反例（`tools/docgen/builders/rules/schema.mjs:345-353`），故「去反例必红」有既成实现可依；③ 现有 ⑨ 段失败口径是 `check 未通过` + `exitCode = 1`（`scripts/check-all.mjs:562-563`），故门禁负例判据不必新造。三条一致 → 本文件判据可执行、无自造语义。
 
 ## 6 本席自检（角色卡「一定会」5 条 + 本席清单 9 条；判定只许 `hit` / `miss` / `na` + `reason` + `evidence`）
 
 | # | 条目 | 判定 | 证据（path:line 或命令输出首行） |
 |---|---|---|---|
-| 一定会-1 | 交付物结束（立场不偏、按项目长期判断）：结论段依据 ≥ 2 条、来自 ≥ 2 文件 | `hit` | 依据① `docs/superpowers/specs/2026-11-08-s4-s5-skill-criteria-design.md` §3.3 / §3.5 / §5；依据② `tools/docgen/builders/rules/schema.mjs:332-353`（residual 与 testcase 强制）；依据③ `scripts/check-all.mjs:519-550`（⑨ 段与失败口径）→ 3 条、3 文件；结论已写回 §5 末段 |
-| 一定会-2 | 证据可复算：引用行存在且含被引摘句 | `hit` | `package.json:4-13` 无 `check:skill-criteria`；`schema.mjs:191` 为 `const SCOPE_RE = /^project:[a-z0-9][a-z0-9-]*$/`；`schema.mjs:310-311` 文案只列两形态；`check-all.mjs:519` 为 `spawnSync('scs check criteria-engine …')`；`Get-ChildItem tools/docgen/dsl/skills -Force` 首行 `.gitkeep` |
+| 一定会-1 | 交付物结束（立场不偏、按项目长期判断）：结论段依据 ≥ 2 条、来自 ≥ 2 文件 | `hit` | 依据① `docs/superpowers/specs/2026-11-08-s4-s5-skill-criteria-design.md` §3.3 / §3.5 / §5；依据② `tools/docgen/builders/rules/schema.mjs:332-353`（residual 与 testcase 强制）；依据③ `scripts/check-all.mjs:519`（criteria-engine）/ `:537`（skill-criteria）/ `:562-563`（失败口径）→ 3 条、3 文件；结论已写回 §5 末段 |
+| 一定会-2 | 证据可复算：引用行存在且含被引摘句 | `hit` | `package.json:4-14` 有 `check:skill-criteria`；`schema.mjs:191` 的 `SCOPE_RE` 已同时匹配 `project:` / `skill:`；`schema.mjs:310-311` 文案列三形态；`check-all.mjs:519` 跑 `criteria-engine`，`:537` 起跑 `skill-criteria`；`Get-ChildItem tools/docgen/dsl/skills` 含 `docs-placement.json` 与 `.testcase.json` |
 | 一定会-3 | 非专业读者能听懂：英文术语首现行含中文解释 | `hit` | 文件头术语对照给了 判据 / 残余 / 探针 / 绿红 / 容器 / 临时副本；正文对 `probe`、`residual`、`expect`、`judge` 均在首现行给中文解释；未解释术语计数 = 0 |
 | 一定会-4 | 无问题时显式写「全过、无问题」 | `hit` | §5 已写「findings 集合为空」对应的结论行；6 条 O 项均有处置与落点，无未处置项 |
 | 一定会-5 | 附录无问题时显式写「全过、无问题」 | `na` | reason：本文件不设附录，无可判对象 |
-| 本席-1 | 输入空间核对 | `hit` | §0.1 列全输入面：skills 目录现状（仅 `.gitkeep`）/ 检查器不存在 / `package.json` 脚本表 / `SCOPE_RE` / 两处 scope 文案 / residual 与 testcase 强制 / ⑨ 段命令与失败口径 / 四条判据的语义来源（`skills/docs-placement/SKILL.md:22,48,56,70`） |
-| 本席-2 | 状态与转移核对 | `hit` | 状态写了两侧：现状（无数据、无检查器、scope 只认 `project:`）→ 施工后（4 条判据、绿档、门禁接入）；状态转移由 TC-01（无→有）、TC-17（旧形态保持）、TC-29/32（红→绿）判 |
-| 本席-3 | 失败面核对 | `hit` | 8 个 spec 错误码各有负例：`SkillFileShape`（02）、`SkillNameMismatch`（03）、`CriterionScopeMismatch`（04/15）、`DuplicateId`（05）、`TestcaseMissing`（07）、`UnknownCriterion`（09）、`CaseMismatch`（10）、`SkillTestcaseMissing`（06）；另 `ScopeMissing`/`ScopeInvalid`（14/16/17）与两处 spec 未定义码（08/11，已登记 O-1） |
+| 本席-1 | 输入空间核对 | `hit` | §0.1 列全输入面：施工前 skills 目录（仅 `.gitkeep`）/ 检查器不存在 / `package.json` 脚本表 / `SCOPE_RE` / 两处 scope 文案 / residual 与 testcase 强制 / ⑨ 段命令与失败口径 / 四条判据的语义来源（`skills/docs-placement/SKILL.md:22,48,56,70`） |
+| 本席-2 | 状态与转移核对 | `hit` | 状态写了两侧：施工前（无数据、无检查器、scope 只认 `project:`）→ 施工后（4 条判据、绿档、门禁接入）；状态转移由 TC-01（无→有）、TC-17（旧形态保持）、TC-29/32（红→绿）判 |
+| 本席-3 | 失败面核对 | `hit` | 8 个 spec 错误码各有负例：`SkillFileShape`（02）、`SkillNameMismatch`（03）、`CriterionScopeMismatch`（04/15）、`DuplicateId`（05）、`TestcaseMissing`（07）、`UnknownCriterion`（09）、`CaseMismatch`（10）、`SkillTestcaseMissing`（06）；另 `ScopeMissing`/`ScopeInvalid`（14/16/17）与 `TestcaseSchema` / `SkillTestcaseShape`（08/11） |
 | 本席-4 | 判据来源核对 | `hit` | 每条「覆盖」栏指回 spec §3.1–§3.5 或 §5 V-N；§3 逐条对表；未覆盖 = 0 |
-| 本席-5 | 确定性核对 | `hit` | 所有判据 = `exit code` / 全等 / 正则 / 计数 / 报文前缀；无「看语气」；所有未实跑处标「未施行（待施工后核）」；N/M/K 口径在 §0.2 口径 2 钉死 |
+| 本席-5 | 确定性核对 | `hit` | 所有判据 = `exit code` / 全等 / 正则 / 计数 / 报文前缀；无「看语气」；所有用例由 `check-skill-criteria.test.mjs` 的 25 条测试覆盖；N/M/K 口径在 §0.2 口径 2 钉死 |
 | 本席-6 | 回归资产核对 | `hit` | §4 建议 3 点名 `schema.mjs` 两处文案；建议 5 点名 `checkTestcase` 的 `rule` 键；TC-34 判 `builders/rules` 投影零差异；TC-32 判既有 `criteria-engine ok` 与新增 `skill-criteria ok` 两行并存 |
 | 本席-7 | 判别力核对 | `hit` | 每条负例都写「不改会怎样」：02（只 parse 不校验 → 绿）、03（按 id 前缀推断 → 绿）、05（单文件去重 → 跨文件绿）、10（只跑 `checkTestcase` → 绿）、15（只调 `check()` → 绿）、17（正则改宽 → 放行空名）、23（只判 `deleted` → 墓碑绿）、30（红档也打 ok → 断言红）、33（失败未并入 `failed` → 仍打「全部通过」） |
 | 本席-8 | 盲点雷达核对 | `hit` | 抓到 6 处 spec 沉默点并全部转为建议：O-1 码表缺口 / O-2 零判据语义 / O-3 文案两处不同步 / O-4 非判心项 residual / O-5 `checkTestcase` 的 `rule` 键 / O-6 孤立 testcase；对应 TC-08·11 / 36 / 14·16 / 24·27 / 09·10 / 12 |

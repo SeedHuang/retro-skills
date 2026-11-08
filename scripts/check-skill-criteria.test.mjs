@@ -260,12 +260,21 @@ test('S4S5-TC-14/16 skill name 非法 / 缺 scope', () => {
   const e1 = []
   check(bad, 'probe.json', e1)
   assert.ok(e1.some((x) => x.code === 'ScopeInvalid'))
+  for (const scope of ['GLOBAL', 'project:Bad_Name']) {
+    const badScope = clone(base)
+    badScope.scope = scope
+    const e = []
+    check(badScope, 'probe.json', e)
+    assert.ok(e.some((x) => x.code === 'ScopeInvalid'), `${scope}: ${JSON.stringify(e)}`)
+  }
   const missing = clone(base)
   delete missing.scope
   const e2 = []
   check(missing, 'probe.json', e2)
   const hit = e2.find((x) => x.code === 'ScopeMissing')
   assert.ok(hit)
+  assert.match(hit.message, /global/)
+  assert.match(hit.message, /project:<name>/)
   assert.match(hit.message, /skill:<name>/)
 })
 
@@ -292,6 +301,12 @@ test('S4S5-TC-18～28 docs-placement 四组判据的 pass/fail 与 residual', ()
   }
   for (const c of doc.criteria) {
     for (const k of ['who', 'sample', 'fields', 'objectivePath']) assert.ok(c.residual?.[k] !== undefined, `${c.id} 缺 residual.${k}`)
+    assert.equal(typeof c.residual.who, 'string')
+    assert.ok(Number.isInteger(c.residual.sample) && c.residual.sample > 0)
+    assert.ok(Array.isArray(c.residual.fields) && c.residual.fields.length > 0)
+  }
+  for (const id of ['docs-placement-after-done', 'docs-placement-bak-readonly']) {
+    assert.equal(byId.get(id).residual.who, 'reviewer-audit', `${id} residual.who`)
   }
 })
 
@@ -314,6 +329,20 @@ test('S4S5-TC-29/30/31 输出契约与计数自洽', () => {
     assert.equal(Number(m[1]), 4)
     assert.equal(Number(m[2]) + Number(m[3]), 4)
     assert.doesNotMatch(bad.stdout.trim().split(/\r?\n/).at(-1), /^skill-criteria ok$/)
+  } finally {
+    t.done()
+  }
+})
+
+test('S4S5-TC-31b 已知判据加 case 不改 N', () => {
+  const t = tempSkills()
+  try {
+    const c = t.cases()
+    c.cases.push({ criterion: 'docs-placement-naming', input: { writingDocs: true, docNameExitCode: 0, pathInDocs: true }, expect: 'pass' })
+    t.saveCases(c)
+    const r = run(t.dir)
+    assert.equal(r.status, 0, r.stdout + r.stderr)
+    assert.match(r.stdout, /^skill-criteria 4 条 \/ 绿 4 \/ 红 0$/m)
   } finally {
     t.done()
   }

@@ -125,6 +125,8 @@ tools/docgen/dsl/skills/
 | `UnknownCriterion` | testcase 的 `criterion` 不在本文件判据里 |
 | `CaseMismatch` | `judge` 结果与 `expect` 不一致 |
 | `CaseInputInvalid` | `judge` 因 `input` 为 null / 非对象而抛错 |
+| `TestcaseSchema` | 用例缺正例 / 反例，或 `checkTestcase` 结构校验失败 |
+| `SkillTestcaseShape` | `.testcase.json` 不是对象 / `skill` 不匹配 / `cases` 非空数组不成立 |
 | `SkillTestcaseMissing` | 整个 `.testcase.json` 缺失 |
 | `SkillDirMissing` | `tools/docgen/dsl/skills/` 目录不存在（fail-closed） |
 
