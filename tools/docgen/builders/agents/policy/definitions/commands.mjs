@@ -24,10 +24,10 @@ export const commandGroups = {
   'docgen.read': {
     purpose: 'docgen 只读子命令（gate / check-agents / diff / draft ls）',
     verbs: [
-      'node tools/docgen/cli.mjs gate',
-      'node tools/docgen/cli.mjs check-agents',
-      'node tools/docgen/cli.mjs diff --kind agent --name <席>',
-      'node tools/docgen/cli.mjs draft ls',
+      'node tools/docgen/builders/agents/cli.mjs gate',
+      'node tools/docgen/builders/agents/cli.mjs check-agents',
+      'node tools/docgen/builders/agents/cli.mjs diff --kind agent --name <席>',
+      'node tools/docgen/builders/agents/cli.mjs draft ls',
     ],
   },
 };

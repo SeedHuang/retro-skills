@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 import { BASELINE_RULES, agentPaths } from '../components/baseline.mjs';
 
-const CLI = 'tools/docgen/cli.mjs';
+const CLI = 'tools/docgen/builders/agents/cli.mjs';
 // gate 打印的 baseline N/N 从两清单派生：正则由常量拼，只改字面量的写法下次加席必红
 const N = BASELINE_RULES.length + agentPaths().length;
 const run = (args, env = {}) => spawnSync(process.execPath, [CLI, ...args], { encoding: 'utf8', env: { ...process.env, DOCGEN_DRAFTS_DIR: mkdtempSync(join(tmpdir(), 'dg-draft-')), ...env } });
@@ -55,7 +55,7 @@ test('字节反例：副本仓注入一字节 → generate 判漂移 exit 1（�
     cpSync('agents', join(dst, 'agents'), { recursive: true });
     const target = join(dst, 'agents', 'reviewer-qa.md');
     appendFileSync(target, ' ');
-    const r = spawnSync(process.execPath, ['tools/docgen/cli.mjs', 'generate', '--kind', 'agent', '--name', 'reviewer-qa'], {
+    const r = spawnSync(process.execPath, ['tools/docgen/builders/agents/cli.mjs', 'generate', '--kind', 'agent', '--name', 'reviewer-qa'], {
       cwd: dst, encoding: 'utf8', env: { ...process.env, DOCGEN_DRAFTS_DIR: join(dst, '.drafts') },
     });
     assert.equal(r.status, 1, r.stdout + r.stderr);

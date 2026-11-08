@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 
-const CLI = 'tools/docgen/cli.mjs';
+const CLI = 'tools/docgen/builders/agents/cli.mjs';
 const draftBox = () => mkdtempSync(join(tmpdir(), 'dg-box-'));
 const run = (args, box) => spawnSync(process.execPath, [CLI, ...args], { encoding: 'utf8', env: { ...process.env, DOCGEN_DRAFTS_DIR: box } });
 

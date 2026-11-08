@@ -36,8 +36,8 @@
       "scope": [
         "docs/superpowers/specs/2026-10-25-docgen-policy-single-source-design.md",
         "docs/superpowers/specs/2026-10-25-docgen-policy-single-source-design-testcase.md",
-        "tools/docgen/components/patternRegistry.mjs",
-        "tools/docgen/test/tool-tiers.test.mjs"
+        "tools/docgen/builders/agents/components/patternRegistry.mjs",
+        "tools/docgen/builders/agents/test/tool-tiers.test.mjs"
       ]
     },
     {
@@ -108,7 +108,7 @@
         "skills/dev-workflow/references/stage-2b-plan-gate.md",
         "skills/dev-workflow/references/stage-2-tech-design.md",
         "skills/dev-workflow/references/stage-4-quality.md",
-        "tools/docgen/test/support/dev-workflow-checks.mjs"
+        "tools/docgen/builders/agents/test/support/dev-workflow-checks.mjs"
       ]
     },
     {
@@ -119,7 +119,7 @@
         "skills/dev-workflow/references/stage-2b-plan-gate.md",
         "skills/dev-workflow/references/stage-2-tech-design.md",
         "skills/dev-workflow/references/stage-4-quality.md",
-        "tools/docgen/test/support/dev-workflow-checks.mjs"
+        "tools/docgen/builders/agents/test/support/dev-workflow-checks.mjs"
       ]
     },
     {
@@ -130,7 +130,7 @@
         "skills/dev-workflow/references/stage-2b-plan-gate.md",
         "skills/dev-workflow/references/stage-2-tech-design.md",
         "skills/dev-workflow/references/stage-4-quality.md",
-        "tools/docgen/test/support/dev-workflow-checks.mjs"
+        "tools/docgen/builders/agents/test/support/dev-workflow-checks.mjs"
       ]
     },
     {
@@ -227,8 +227,8 @@
       "title": "subjectiveHit 判定口径：token 全等 → substring（单实现点 = vocab/subjective-terms.mjs）",
       "words": ["token 全等"],
       "scope": [
-        "tools/docgen/card-model/vocab/subjective-terms.mjs",
-        "tools/docgen/card-model/validateCardModel.mjs"
+        "tools/docgen/builders/agents/card-model/vocab/subjective-terms.mjs",
+        "tools/docgen/builders/agents/card-model/validateCardModel.mjs"
       ]
     },
     {
@@ -245,10 +245,10 @@
         "代他人填写其本人应填的表"
       ],
       "scope": [
-        "tools/docgen/card-model/vocab/predicates.mjs",
+        "tools/docgen/builders/agents/card-model/vocab/predicates.mjs",
         "tools/execution-matrix/criteria.md",
-        "tools/docgen/test/pilot-render.test.mjs",
-        "tools/docgen/test/evidence-reader.test.mjs"
+        "tools/docgen/builders/agents/test/pilot-render.test.mjs",
+        "tools/docgen/builders/agents/test/evidence-reader.test.mjs"
       ]
     },
     {
@@ -256,7 +256,7 @@
       "title": "S6-TC-G01 卡面差异记账面（旧 = 只认 `-s6-eval/capability-diff.md` 的逐文件命中；S3 起受理当次 impact-sheet 的批级说明）",
       "words": ["capability-diff.md"],
       "scope": [
-        "tools/docgen/test/policy-pure-source.test.mjs"
+        "tools/docgen/builders/agents/test/policy-pure-source.test.mjs"
       ]
     },
     {
@@ -264,7 +264,7 @@
       "title": "S5-TC-B07 变更段重判（旧 = 任何卡面变更都必须带 B3；S3 起按「是否触达语义键」分两路）",
       "words": ["rejudged.includes", "judgeMode"],
       "scope": [
-        "tools/docgen/test/tool-tiers.test.mjs"
+        "tools/docgen/builders/agents/test/tool-tiers.test.mjs"
       ]
     },
     {
@@ -272,8 +272,8 @@
       "title": "计数探针扫描面（旧 = 扫全部 `*.test.mjs`；S3 起排除 s3-predicates.test.mjs —— 其 35/36 是表变量名与码表规模）",
       "words": ["readCounterFiles", "counterProbes"],
       "scope": [
-        "tools/docgen/test/support/dev-workflow-checks.mjs",
-        "tools/docgen/test/dev-workflow-counts.test.mjs"
+        "tools/docgen/builders/agents/test/support/dev-workflow-checks.mjs",
+        "tools/docgen/builders/agents/test/dev-workflow-counts.test.mjs"
       ]
     },
     {
@@ -281,7 +281,7 @@
       "title": "S2 本批判据的比对区间（旧 = `base..HEAD` / 现行 blob；S3 起收窄为 `base..S2 落地提交`）",
       "words": ["base..HEAD"],
       "scope": [
-        "tools/docgen/test/s2-card-rewrite.test.mjs"
+        "tools/docgen/builders/agents/test/s2-card-rewrite.test.mjs"
       ]
     },
     {
@@ -290,7 +290,7 @@
       "words": ["findings 集合为空时正文含"],
       "scope": [
         "docs/superpowers/specs/2026-11-02-observable-s3-predicates-reuse-design.md",
-        "tools/docgen/card-model/vocab/predicates.mjs"
+        "tools/docgen/builders/agents/card-model/vocab/predicates.mjs"
       ]
     },
     {
@@ -331,8 +331,8 @@
       "scope": [
         "docs/superpowers/specs/2026-11-03-s-c-card-shape-design.md",
         "docs/superpowers/specs/2026-11-03-s-c-card-shape-design-testcase.md",
-        "tools/docgen/test/sc-card-shape.test.mjs",
-        "tools/docgen/data/seats/senior-sdet.json"
+        "tools/docgen/builders/agents/test/sc-card-shape.test.mjs",
+        "tools/docgen/dsl/agents/seats/senior-sdet.json"
       ]
     },
     {

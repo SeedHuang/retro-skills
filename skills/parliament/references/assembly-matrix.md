@@ -28,4 +28,4 @@
 
 ## 自扩展（加席）
 
-复制现有角色数据 → 填新席清单（`tools/docgen/components/agentData.mjs` + `triggerTable`）→ 跑 `node tools/docgen/cli.mjs generate --kind agent --name <新席>` → 走草稿 → 确认 → 替换；**禁止手改 `agents/*.md`**。
+复制现有角色数据 → 填新席清单（`tools/docgen/builders/agents/components/agentData.mjs` + `triggerTable`）→ 跑 `node tools/docgen/builders/agents/cli.mjs generate --kind agent --name <新席>` → 走草稿 → 确认 → 替换；**禁止手改 `agents/*.md`**。

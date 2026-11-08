@@ -21,11 +21,11 @@ import * as LAND from '../card-model/vocab/landings.mjs'
 import * as ON from '../card-model/vocab/object-names.mjs'
 import * as SH from '../card-model/vocab/shared-actions.mjs'
 import * as CM from '../card-model/index.mjs'
-import { checkStruct } from '../../execution-matrix/check-agent.mjs'
+import { checkStruct } from '../../../../execution-matrix/check-agent.mjs'
 import { touchedSemanticKeys } from '../cli.mjs'
 import { cmdDump } from '../cli.mjs'
 import { exitCodeFor } from '../components/validateAgentData.mjs'
-import { EXPIRY_LANDED, disposeCardFindings } from '../../observation-check/card-exempt.mjs'
+import { EXPIRY_LANDED, disposeCardFindings } from '../../../../observation-check/card-exempt.mjs'
 // 五个 helper 的**唯一实现**在 support/card-fixtures.mjs（本文件不保留第二份，plan Task 6）
 import { REPO, AGENTS_DIR, DOC_AGENTS_DIR, walkFiles, runNode, runCli, coldRepo, mutCard } from './support/card-fixtures.mjs'
 import { readBakRule } from './support/dev-workflow-checks.mjs'
@@ -153,7 +153,7 @@ const WRITE_ALL = () => {
 }
 
 const INJECT_BAD = (predicate = 'no.such.predicate') => (copy) => {
-  const p = join(copy, 'tools/docgen/components/agentData.mjs')
+  const p = join(copy, 'tools/docgen/builders/agents/components/agentData.mjs')
   const src = readFileSync(p, 'utf8')
   assert.ok(src.length > 0, 'agentData.mjs 必须非空')
   writeFileSync(p, `${src}\n;(agentData[0].card.must[0].criterion = '${predicate}');\n`, 'utf8')
@@ -182,7 +182,7 @@ test('S4-TC-A07 4 个 vocab/ 表的导出面恰为 spec 写死的 8 个名字', 
     const ns = VOCAB_NS[file]
     assert.ok(ns && typeof ns === 'object', `${file} 必须可 import（否则导出面无从断言）`)
     assert.deepEqual(Object.keys(ns).sort(), [...names].sort(), `${file} 运行时导出面必须恰为 ${names.join('/')}（多一 / 少一 / 改名即红）`)
-    const src = readFileSync(join(REPO, 'tools/docgen/card-model/vocab', file), 'utf8')
+    const src = readFileSync(join(REPO, 'tools/docgen/builders/agents/card-model/vocab', file), 'utf8')
     const statics = [...src.matchAll(/^export const (\w+)/gm)].map((m) => m[1]).sort()
     assert.deepEqual(statics, [...names].sort(), `${file} 静态 export 面必须与运行时一致（实得 ${statics.join('/')}）`)
     total += names.length
@@ -223,19 +223,19 @@ test('S4-TC-D02 testcase 块存在且写「跑哪条命令 + 什么算失败」'
 // 本 Task 落两条**不依赖真席**的用例（静态面 + 落盘原子面）。
 
 test('S4-TC-I04 数据源单向：renderCard / cardPipeline 无 readFileSync / AGENTS_DIR', () => {
-  const RC = readFileSync(join(REPO, 'tools/docgen/components/renderCard.mjs'), 'utf8')
-  const PL = readFileSync(join(REPO, 'tools/docgen/components/cardPipeline.mjs'), 'utf8')
+  const RC = readFileSync(join(REPO, 'tools/docgen/builders/agents/components/renderCard.mjs'), 'utf8')
+  const PL = readFileSync(join(REPO, 'tools/docgen/builders/agents/components/cardPipeline.mjs'), 'utf8')
   assert.ok(RC.length > 0 && PL.length > 0, '两个渲染模块必须已落（否则本用例空转）')
   const scan = (src) => ['readFileSync', 'readdirSync', 'AGENTS_DIR'].filter((w) => src.includes(w))
   assert.deepEqual(scan(RC), [], `renderCard 不得读 agents/（V-6 / §3 :73），实得 ${scan(RC).join(',')}`)
   assert.deepEqual(scan(PL), [], `cardPipeline 不得读 agents/（V-6），实得 ${scan(PL).join(',')}`)
-  const CLI = readFileSync(join(REPO, 'tools/docgen/cli.mjs'), 'utf8')
+  const CLI = readFileSync(join(REPO, 'tools/docgen/builders/agents/cli.mjs'), 'utf8')
   assert.ok(CLI.includes('AGENTS_DIR') && CLI.includes('readFileSync'), 'gate 侧（cli.mjs）必须仍读 agents/ 作比对（对照面）')
   const hits = coldRepo({ mutate: (copy) => {
-    const p = join(copy, 'tools/docgen/components/renderCard.mjs')
+    const p = join(copy, 'tools/docgen/builders/agents/components/renderCard.mjs')
     writeFileSync(p, `${readFileSync(p, 'utf8')}\nimport { readFileSync as __rf } from 'node:fs';\n`, 'utf8')
   }, args: ['gate'], verify: (copy) => {
-    const src = readFileSync(join(copy, 'tools/docgen/components/renderCard.mjs'), 'utf8')
+    const src = readFileSync(join(copy, 'tools/docgen/builders/agents/components/renderCard.mjs'), 'utf8')
     assert.ok(scan(src).length > 0, '注入 readFileSync 后扫描必须命中（否则探针面写错 → I04 是假绿）')
   } })
   assert.ok(hits.code === 0 || hits.code === 1, '副本 gate 只要跑完即可（本用例判扫描命中）')
@@ -245,7 +245,7 @@ test('S4-TC-J02 写盘后无 .part / tmp 残留', () => {
   const st = execFileSync('git', ['status', '--porcelain', '--untracked-files=all'], { cwd: REPO, encoding: 'utf8' })
   const stray = st.split(/\r?\n/).filter(Boolean).filter((l) => /\.part(\.|$)|\btmp\b|\btmp-/.test(l))
   assert.deepEqual(stray, [], `写盘后不得残留 tmp / .part（§7① :179）：${stray.slice(0, 5).join(' | ')}`)
-  const WA = readFileSync(join(REPO, 'tools/docgen/components/cardPipeline.mjs'), 'utf8')
+  const WA = readFileSync(join(REPO, 'tools/docgen/builders/agents/components/cardPipeline.mjs'), 'utf8')
   assert.ok(WA.length > 0, 'cardPipeline.mjs 必须已落（§3 :71）')
   assert.ok(WA.includes('.tmp-'), 'writeAll 的临时文件命名必须含 `.tmp-<pid>` 形态（§3 :71②）')
 })
@@ -261,7 +261,7 @@ test('S4-TC-A08 touchedSemanticKeys 认「职责」段（A1/A2 锚点迁移，§
   }
   const k2 = touchedSemanticKeys('description: 旧\n## 职责\n同\n', 'description: 新\n## 职责\n同\n')
   assert.ok(k2.includes('A2'), `description 行改动必须触发 A2，实得 ${k2.join(',')}`)
-  const CLI = readFileSync(join(REPO, 'tools/docgen/cli.mjs'), 'utf8')
+  const CLI = readFileSync(join(REPO, 'tools/docgen/builders/agents/cli.mjs'), 'utf8')
   assert.ok(CLI.includes('职责'), 'cli.mjs 的段名映射必须同批补「职责」（§10-D11 :224；否则铺满后改职责永不触发 A1 重判）')
 })
 
@@ -409,21 +409,21 @@ test('S4-TC-A02 数据层逐键删除：6 非结构键被拒 + 6 结构键由派
 test('S4-TC-F05 接管完整性：删一席 / 非 replaced 席带人读投影 → 必红（对照必绿）', () => {
   const drop = SEATS[0]
   const r1 = coldRepo({ mutate: (copy) => {
-    const p = join(copy, 'tools/docgen/state.json')
+    const p = join(copy, 'tools/docgen/builders/agents/state.json')
     const st = JSON.parse(readFileSync(p, 'utf8'))
     assert.ok(st && st.agents && typeof st.agents === 'object', 'state.json 必须有 agents 对象')
     assert.ok(Object.prototype.hasOwnProperty.call(st.agents, drop), `${drop} 必须先在 state 里`)
     delete st.agents[drop]
     writeFileSync(p, `${JSON.stringify(st, null, 2)}\n`, 'utf8')
   }, args: ['gate'], verify: (copy) => {
-    const st = JSON.parse(readFileSync(join(copy, 'tools/docgen/state.json'), 'utf8'))
+    const st = JSON.parse(readFileSync(join(copy, 'tools/docgen/builders/agents/state.json'), 'utf8'))
     assert.equal(Object.keys(st.agents).length, SEATS.length - 1, '副本 state 必须真的少一席（否则空转）')
   } })
   assert.equal(r1.code, 1, `state 缺一席必须 gate exit 1（实得 ${r1.code}）：${r1.out.slice(0, 300)}`)
   assert.ok(r1.out.includes(drop), `必须点名缺的那一席 ${drop}`)
   const mid = SEATS[1]
   const r2 = coldRepo({ mutate: (copy) => {
-    const p = join(copy, 'tools/docgen/state.json')
+    const p = join(copy, 'tools/docgen/builders/agents/state.json')
     const st = JSON.parse(readFileSync(p, 'utf8'))
     st.agents[mid] = 'suspended' // 非 replaced（值域仅 replaced / suspended，state.mjs:9）
     writeFileSync(p, `${JSON.stringify(st, null, 2)}\n`, 'utf8')
@@ -693,7 +693,7 @@ test('S4-TC-B07 dump = stdout-only（不落盘、可 JSON.parse、不调 writeAl
   const d = JSON.parse(r.out.trim())
   assert.ok(d && typeof d === 'object', 'dump 输出必须是 JSON 对象')
   assert.equal(d.seat, s, 'dump.seat 必须 = 请求的席名')
-  const SRC = readFileSync(join(REPO, 'tools/docgen/cli.mjs'), 'utf8')
+  const SRC = readFileSync(join(REPO, 'tools/docgen/builders/agents/cli.mjs'), 'utf8')
   // 锚 `export function cmdDump`，不用裸 `cmdDump`：后者若先在注释 / 派发表里出现，切片会从错处开始（假绿或假红）
   const i = SRC.indexOf('export function cmdDump')
   assert.ok(i >= 0, 'cli.mjs 必须有 `export function cmdDump`（§5 :117）')
@@ -861,7 +861,7 @@ test('S4-TC-E01 共享层单源：判据 id 在 shared-actions.mjs 里恰好出�
   const SM = SH.SHARED_MUST, SN = SH.SHARED_NEVER
   assert.ok(Array.isArray(SM) && SM.length > 0, '§4 :91 共享层 must 必须非空数组')
   assert.ok(Array.isArray(SN) && SN.length > 0, '§4 :91 共享层 never 必须非空数组')
-  const SRC = readFileSync(join(REPO, 'tools/docgen/card-model/vocab/shared-actions.mjs'), 'utf8')
+  const SRC = readFileSync(join(REPO, 'tools/docgen/builders/agents/card-model/vocab/shared-actions.mjs'), 'utf8')
   assert.ok(SRC.length > 0)
   const all = [...SM, ...SN]
   assert.ok(all.length > 0, '共享动作总数不得为 0（否则循环空转）')
@@ -932,7 +932,7 @@ test('S4-TC-E05 use 白名单：只能取本席声明过的共享 id', () => {
 
 test('S4-TC-F01 正常路径：`generate` 只比不写、15 卡逐字节 = 渲染产物', () => {
   WRITE_ALL() // 前置：落盘实现存在（§3 :71）
-  const CLI = readFileSync(join(REPO, 'tools/docgen/cli.mjs'), 'utf8')
+  const CLI = readFileSync(join(REPO, 'tools/docgen/builders/agents/cli.mjs'), 'utf8')
   assert.ok(CLI.includes('writeAll'), 'cli.mjs 必须出现 writeAll（draft / replace / generate --readme --apply 三处共用，§3 :71②）')
   assert.ok(CLI.includes('--readme') && CLI.includes('--apply'), 'cli.mjs 必须有 --readme / --apply 显式旗标（§3 :71③）')
   const r = runCli(['generate'])
@@ -976,7 +976,7 @@ test('S4-TC-F02 单席原子 + 零写盘：坏卡 → 该席被拒 / 31 份不�
 })
 
 test('S4-TC-F03 卡面手改即红（现状已生效，防回退）', () => {
-  const CLI = readFileSync(join(REPO, 'tools/docgen/cli.mjs'), 'utf8')
+  const CLI = readFileSync(join(REPO, 'tools/docgen/builders/agents/cli.mjs'), 'utf8')
   assert.ok(CLI.includes("state.agents[a.name] === 'replaced'"), 'collectGate 的逐席比对代码必须仍在（§7② :180 现状已生效，防回退）')
   const rel = `agents/${SEATS[0]}.md`
   const r = coldRepo({ mutate: APPEND_ONE_BYTE(rel), args: ['gate'],
@@ -1004,7 +1004,7 @@ test('S4-TC-F04 README 手改 / 缺文件即红（比对面 = 31 份）', () => 
 })
 
 test('S4-TC-F06 `state.agents` 键集 = 席集双向相等、值域合法、全部 `replaced`', () => {
-  const st = JSON.parse(readFileSync(join(REPO, 'tools/docgen/state.json'), 'utf8'))
+  const st = JSON.parse(readFileSync(join(REPO, 'tools/docgen/builders/agents/state.json'), 'utf8'))
   assert.ok(st && st.agents && typeof st.agents === 'object', 'state.json 必须有 agents 对象')
   const keys = Object.keys(st.agents)
   assert.ok(keys.length > 0, 'state.agents 不得为空（否则双向相等空转）')
@@ -1033,7 +1033,7 @@ test('S4-TC-F08 旧模板退场：`templates/` 两文件不存在 + 代码面 0 
   const OLD_TPL = 'agent.md' + '.tpl'
   const OLD_TPL_2 = 'agent-handwritten.md' + '.tpl'
   const TPL = [OLD_TPL, OLD_TPL_2]
-  for (const t of TPL) assert.equal(existsSync(join(REPO, 'tools/docgen/templates', t)), false, `判据①：旧模板 ${t} 必须已删除（§7⑥ :184）`)
+  for (const t of TPL) assert.equal(existsSync(join(REPO, 'tools/docgen/builders/agents/templates', t)), false, `判据①：旧模板 ${t} 必须已删除（§7⑥ :184）`)
   const mjs = walkFiles(join(REPO, 'tools', 'docgen')).filter((p) => p.endsWith('.mjs'))
   assert.ok(mjs.length > 0, 'tools/docgen/**/*.mjs 不得为空（否则 0 命中是假绿）')
   const hits = mjs.filter((p) => TPL.some((t) => readFileSync(p, 'utf8').includes(t)))
@@ -1048,7 +1048,7 @@ test('S4-TC-F08 旧模板退场：`templates/` 两文件不存在 + 代码面 0 
 })
 
 test('S4-TC-F09 旧模板探针判别力：往 `.mjs` 代码面注入 → 命中 ≥ 1', () => {
-  const rel = 'tools/docgen/components/renderCard.mjs'
+  const rel = 'tools/docgen/builders/agents/components/renderCard.mjs'
   const INJECT_TPL = 'agent.md' + '.tpl' // 同 F08：不以字面量出现在本文件（否则扫描集合自命中）
   const r = coldRepo({ mutate: (copy) => {
     const p = join(copy, rel)
@@ -1066,7 +1066,9 @@ test('S4-TC-F09 旧模板探针判别力：往 `.mjs` 代码面注入 → 命中
   const scanSet = walkFiles(join(REPO, 'tools', 'docgen')).filter((p) => p.endsWith('.mjs'))
   assert.ok(scanSet.length > 0, '判据②的扫描集合不得为空')
   assert.equal(scanSet.every((p) => p.endsWith('.mjs')), true, '判据②的扫描集合必须全是 .mjs（不得把 .md 卡面混进来）')
-  assert.equal(scanSet.some((p) => p.split(/[\\/]/).includes('agents')), false, '扫描集合不得包含 agents/（§7⑥ :184 已收窄）')
+  // 以仓根为基准判「是否落进 agents/」：`tools/docgen/builders/agents/` 里的 `agents` 是构建器目录，不是产物卡面
+  const repoRel = (p) => p.split(/[\\/]/).join('/').slice(REPO.split(/[\\/]/).join('/').length + 1)
+  assert.equal(scanSet.some((p) => repoRel(p).startsWith('agents/')), false, '扫描集合不得包含仓根 agents/（§7⑥ :184 已收窄）')
 })
 
 // ── 2026-10-31 ④ 段：G 组（S1 零 errors / 零散文 / 共享层副本 / 散文落点 / P-B 扫描）────────────
@@ -1144,14 +1146,14 @@ test('S4-TC-G03 副本口径：改共享层 1 处 → 受影响的席数 = use �
   assert.ok(typeof NEW === 'string' && NEW !== crit, '必须取到一个已登记、且不同于原值的谓词 id（否则构造无效）')
   const needle = `criterion: '${crit}'`
   const seen = coldRepo({ mutate: (copy) => {
-    const p = join(copy, 'tools/docgen/card-model/vocab/shared-actions.mjs')
+    const p = join(copy, 'tools/docgen/builders/agents/card-model/vocab/shared-actions.mjs')
     const src = readFileSync(p, 'utf8')
     assert.equal(src.split(needle).length - 1, 1, '副本内必须恰好 1 处 `criterion: 原值`（否则替换会打到 id 行 / 多处）')
     writeFileSync(p, src.replace(needle, `criterion: '${NEW}'`), 'utf8')
   }, args: ['generate'], verify: (copy) => {
     // 副本内**重新渲染**（`generate` 只比不写，盘上卡面仍是旧串 → 原式「读盘计数」恒 0）；
     // 渲染走副本自己的模块实例（路径唯一 → 独立的 ESM 注册表，不污染本进程的 PIPE）。
-    const mod = pathToFileURL(join(copy, 'tools/docgen/components/cardPipeline.mjs')).href
+    const mod = pathToFileURL(join(copy, 'tools/docgen/builders/agents/components/cardPipeline.mjs')).href
     const script = `const m = await import(${JSON.stringify(mod)});const out = {};for (const b of m.buildCards()) out[b.seat] = m.renderSeat(b.seat).card;process.stdout.write(JSON.stringify(out));`
     const r = runNode(['--input-type=module', '-e', script], copy)
     assert.equal(r.code, 0, `副本内渲染必须跑通（实得 ${r.code}）：${r.out.slice(0, 300)}`)
@@ -1314,7 +1316,7 @@ test('S4-TC-H02 全集口径 = 落地时点 agents/*.md 全集（派生 = 席集
   assert.deepEqual([...CARD_FILES].sort(), [...SEATS].sort(), `卡面文件集必须 = 席集（多=${CARD_FILES.filter((s) => !SEATS.includes(s)).join(',') || '无'} / 少=${SEATS.filter((s) => !CARD_FILES.includes(s)).join(',') || '无'}）`)
   assert.ok(CARD_FILES.length > 0, '卡文件集不得为空')
   const SRC = ['cardPipeline.mjs', 'renderCard.mjs', 'renderReadme.mjs']
-    .map((f) => readFileSync(join(REPO, 'tools/docgen/components', f), 'utf8')).join('\n')
+    .map((f) => readFileSync(join(REPO, 'tools/docgen/builders/agents/components', f), 'utf8')).join('\n')
   assert.ok(SRC.length > 0, '三个渲染模块必须已落（否则本断言空转）')
   assert.equal(/const\s+SEATS\s*=\s*\[/.test(SRC), false, '渲染模块不得写死席名数组（必须从 agentData 派生，F-11）')
 })

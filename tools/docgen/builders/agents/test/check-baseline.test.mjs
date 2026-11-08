@@ -6,10 +6,10 @@ import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 import { BASELINE_RULES, agentPaths } from '../components/baseline.mjs';
 
-const CLI = 'tools/docgen/cli.mjs';
+const CLI = 'tools/docgen/builders/agents/cli.mjs';
 // 两清单条数一律派生（gate 打印值与 baseline.json 长度同源）：本文件不写死任何条数
 const N = BASELINE_RULES.length + agentPaths().length;
-const REPO_BASELINE = 'tools/docgen/baseline.json';
+const REPO_BASELINE = 'tools/docgen/builders/agents/baseline.json';
 const box = () => mkdtempSync(join(tmpdir(), 'dg-cb-'));
 // DOCGEN_BASELINE_PATH：baseline 的读写目标重定向到临时目录——本文件绝不写真实仓（并行套件共享态）
 const run = (args, b, env = {}) => spawnSync(process.execPath, [CLI, ...args], {

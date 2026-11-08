@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..');
+export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..', '..', '..');
 export const readRepo = (rel) => readFileSync(join(ROOT, rel), 'utf8');
 
 // 阶段 1（2026-11-05）：rule 全量退出 `rules/`，留底在 `docs/bak/rules/`。测试取「原文段」=
@@ -238,7 +238,7 @@ export function counterProbes(files) {
 }
 
 export function readCounterFiles() {
-  const dir = join(ROOT, 'tools', 'docgen', 'test');
+  const dir = join(ROOT, 'tools', 'docgen', 'builders', 'agents', 'test');
   const out = {};
   for (const f of readdirSync(dir).filter((x) => x.endsWith('.test.mjs'))) {
     out[f] = readFileSync(join(dir, f), 'utf8');
@@ -286,7 +286,7 @@ export function withRepoCopy(fn) {
 }
 
 export function runCli(dir, args, env = {}) {
-  const r = spawnSync(process.execPath, ['tools/docgen/cli.mjs', ...args], {
+  const r = spawnSync(process.execPath, ['tools/docgen/builders/agents/cli.mjs', ...args], {
     cwd: dir,
     encoding: 'utf8',
     env: { ...process.env, DOCGEN_DRAFTS_DIR: join(dir, '.drafts'), ...env },

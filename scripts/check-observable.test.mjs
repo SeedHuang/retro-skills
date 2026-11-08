@@ -12,7 +12,7 @@ import assert from 'node:assert'
 import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, symlinkSync, rmSync, readdirSync, existsSync } from 'node:fs'
 import { join, dirname, resolve } from 'node:path'
 import { tmpdir } from 'node:os'
-import { spawnSync } from 'node:child_process'
+import { spawnSync, execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -468,14 +468,14 @@ test('OCR-S1-TC-E12 全改文案但 hit 未清 → 必红', () => {
 
 // ── F 组：与既有件一致性 / R8 / baseline ─────────────────────────────────
 test('OCR-S1-TC-F01 两个 vocab 派生自 JSON、字面 0、frozen、交集空', async () => {
-  const a = await import('../tools/docgen/card-model/vocab/subjective-terms.mjs')
-  const b = await import('../tools/docgen/card-model/vocab/criterion-terms.mjs')
+  const a = await import('../tools/docgen/builders/agents/card-model/vocab/subjective-terms.mjs')
+  const b = await import('../tools/docgen/builders/agents/card-model/vocab/criterion-terms.mjs')
   const noLiteral = (src, words) => {
     for (const t of words) assert.strictEqual(countOccurrences(src, t), 0, `派生文件不得再写词面：${t}`)
   }
   // 两张表各查各的字面（F01 判据原文要求「两文件字面出现均 0」——主观词 9 个 + 判据词 6 个都要查）
-  noLiteral(readText(join(REPO, 'tools', 'docgen', 'card-model', 'vocab', 'subjective-terms.mjs')), [...J.terms, ...J.criterionTerms])
-  noLiteral(readText(join(REPO, 'tools', 'docgen', 'card-model', 'vocab', 'criterion-terms.mjs')), [...J.criterionTerms, ...J.terms])
+  noLiteral(readText(join(REPO, 'tools', 'docgen', 'builders', 'agents', 'card-model', 'vocab', 'subjective-terms.mjs')), [...J.terms, ...J.criterionTerms])
+  noLiteral(readText(join(REPO, 'tools', 'docgen', 'builders', 'agents', 'card-model', 'vocab', 'criterion-terms.mjs')), [...J.criterionTerms, ...J.terms])
   assert.deepStrictEqual(a.subjectiveTerms, J.terms)
   assert.deepStrictEqual(b.criterionTerms, J.criterionTerms)
   assert.ok(Object.isFrozen(a.subjectiveTerms))
@@ -494,11 +494,11 @@ test('OCR-S1-TC-F02 旧字面数组形态源码 → 必红', () => {
 test('OCR-S1-TC-F04 card-model.test.mjs 改派生后绿 + 旧字面数组 0', () => {
   const env = { ...process.env }
   delete env.NODE_TEST_CONTEXT
-  const r = spawnSync(process.execPath, ['--test', '--test-reporter=tap', join(REPO, 'tools', 'docgen', 'test', 'card-model.test.mjs')], { cwd: REPO, encoding: 'utf8', env })
+  const r = spawnSync(process.execPath, ['--test', '--test-reporter=tap', join(REPO, 'tools', 'docgen', 'builders', 'agents', 'test', 'card-model.test.mjs')], { cwd: REPO, encoding: 'utf8', env })
   const out = (r.stdout || '') + (r.stderr || '')
   assert.strictEqual(r.status, 0, out.slice(-2000))
   assert.ok(/# fail 0/.test(out), out.slice(-500))
-  const src = readText(join(REPO, 'tools', 'docgen', 'test', 'card-model.test.mjs'))
+  const src = readText(join(REPO, 'tools', 'docgen', 'builders', 'agents', 'test', 'card-model.test.mjs'))
   assert.ok(!new RegExp(`export const subjectiveTerms = Object\\.freeze\\(\\[\\s*['"]${J.terms[0]}`).test(src), '不得残留旧字面数组形态')
 })
 
@@ -520,23 +520,36 @@ test('OCR-S1-TC-F06 删日期注 → 必红', () => {
   assert.throws(() => assertDateNote(c))
 })
 
-// 2026-11-05 增量（S6-B 签后登记）：`tools/docgen/policy/**` 不再断言「零改动」——S6-B 按已签 spec
+// 2026-11-05 增量（S6-B 签后登记）：`tools/docgen/builders/agents/policy/**` 不再断言「零改动」——S6-B 按已签 spec
 // 明确改动 `paths` / `seats` / 新增 `writeScopes` 三处。判据改为「只许这 3 个登记文件，其余 policy 文件零改动」。
 // 2026-11-07 增量（review 三技能归档）：`definitions/commands.mjs` 的 check.local 命令由
 // `node skills/review-log/scripts/time.mjs` 改为公共 CLI `scs time`（2026-11-08）——账本脚本随
 // `review-log` 迁出 `skills/`。该文件进入登记集（4 个）。
-test('OCR-S1-TC-F07 tools/docgen/policy/** 只许登记的 4 个文件（其余零改动）', () => {
+test('OCR-S1-TC-F07 tools/docgen/builders/agents/policy/** 只许登记的 4 个文件（其余零改动）', () => {
   const ALLOWED = ['definitions/paths.mjs', 'definitions/seats.mjs', 'definitions/writeScopes.mjs', 'definitions/commands.mjs']
+  const DIR = 'tools/docgen/builders/agents/policy'
+  const OLD = 'tools/docgen/policy'
   // 登记文件必须仍在（否则「只许改动」会漏掉删除：`git status` 的 D 行也落在允许集内）
   for (const f of ALLOWED) {
-    assert.ok(existsSync(join(REPO, 'tools/docgen/policy', f)), `登记文件不得被删除：${f}`)
+    assert.ok(existsSync(join(REPO, DIR, f)), `登记文件不得被删除：${f}`)
   }
-  const a = spawnSync('git', ['diff', '--name-only', 'HEAD', '--', 'tools/docgen/policy'], { cwd: REPO, encoding: 'utf8' })
-  const b = spawnSync('git', ['status', '--porcelain', '--', 'tools/docgen/policy'], { cwd: REPO, encoding: 'utf8' })
-  assert.equal(a.status, 0, `git diff 执行失败：${a.error?.message ?? a.stderr}`)
-  assert.equal(b.status, 0, `git status 执行失败：${b.error?.message ?? b.stderr}`)
-  const rel = (line) => line.replace(/^[ MADRCU?!]{1,2}\s+/, '').replace('tools/docgen/policy/', '').trim()
-  const changed = [...(a.stdout || '').split(/\r?\n/), ...(b.stdout || '').split(/\r?\n/)].map(rel).filter(Boolean)
+  // 2026-11-08 目录统一：policy/ 整体下沉一层。判据改为「按内容与 HEAD 的旧落点比」，
+  // 否则整目录搬迁会让每个文件都相对 HEAD 变成新增（`git diff NAME` 判不出「只是搬家」）。
+  // 枚举必须含未跟踪件（`--others`）：只查索引会让「新增 policy 文件未 git add」逃过守卫。
+  const tracked = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '--', DIR], { cwd: REPO, encoding: 'utf8' })
+    .trim().split(/\r?\n/).filter(Boolean)
+  const changed = []
+  for (const f of [...new Set(tracked)]) {
+    const relFile = f.slice(DIR.length + 1)
+    let old
+    try {
+      old = execFileSync('git', ['show', `HEAD:${OLD}/${relFile}`], { cwd: REPO, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
+    } catch {
+      changed.push(relFile)   // HEAD 上不存在 = 新增件
+      continue
+    }
+    if (old !== readFileSync(join(REPO, f), 'utf8')) changed.push(relFile)
+  }
   const outside = changed.filter((f) => !ALLOWED.includes(f))
   assert.deepEqual(outside, [], `policy 下出现未登记的改动：${outside.join('、')}`)
 })
@@ -553,10 +566,10 @@ test('OCR-S1-TC-F08 R8 sweep ok + 基线表述日期注在位', () => {
 
 test('OCR-S1-TC-F09 gate baseline N/N 与 baseline.json 同源（阶段 1：规则清单 0 条、不写死总数）', () => {
   assert.strictEqual(cli(['--check']).status, 0)
-  const g = spawnSync(process.execPath, [join(REPO, 'tools', 'docgen', 'cli.mjs'), 'gate'], { cwd: REPO, encoding: 'utf8' })
-  const bj = JSON.parse(readText(join(REPO, 'tools', 'docgen', 'baseline.json')))
+  const g = spawnSync(process.execPath, [join(REPO, 'tools', 'docgen', 'builders', 'agents', 'cli.mjs'), 'gate'], { cwd: REPO, encoding: 'utf8' })
+  const bj = JSON.parse(readText(join(REPO, 'tools', 'docgen', 'builders', 'agents', 'baseline.json')))
   assert.ok(new RegExp(`baseline ${bj.length}\\/${bj.length}`).test(g.stdout || ''), (g.stdout || '').slice(0, 300))
-  const bm = readText(join(REPO, 'tools', 'docgen', 'components', 'baseline.mjs'))
+  const bm = readText(join(REPO, 'tools', 'docgen', 'builders', 'agents', 'components', 'baseline.mjs'))
   assert.ok(/export const BASELINE_RULES = \[/.test(bm), '清单仍是单一来源常量（条数从它派生）')
 })
 

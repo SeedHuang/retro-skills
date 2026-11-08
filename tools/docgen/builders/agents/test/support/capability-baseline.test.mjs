@@ -32,7 +32,7 @@ test('emit 守卫：缺 --commit 抛缺参数（不取 HEAD 兜底）', () => {
   assert.throws(() => emit({}), /--commit/);
 });
 test('emit：改造前 commit 通过守卫，只写指定 out-dir', () => {
-  const base = JSON.parse(readFileSync('tools/docgen/fixtures/capability-baseline.json', 'utf8'));
+  const base = JSON.parse(readFileSync('tools/docgen/builders/agents/fixtures/capability-baseline.json', 'utf8'));
   const dir = mkdtempSync(join(tmpdir(), 'cap-baseline-'));
   try {
     emit({ commit: base.sourceCommit, 'out-dir': dir });

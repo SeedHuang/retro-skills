@@ -5,8 +5,8 @@
 // 语料归档到 < 2 条时仍会经测试面变红（没有专项报码）；耦合与张力登记在 `docs/after/` 那条（带触发条件）。
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { checkEvidence, repoRoot } from '../observation-check/evidence.mjs'
-import { ARTIFACT_RE } from '../observation-check/gate-scan.mjs'
+import { checkEvidence, repoRoot } from '../../../observation-check/evidence.mjs'
+import { ARTIFACT_RE } from '../../../observation-check/gate-scan.mjs'
 
 const fail = (line) => { console.log(line); process.exit(1) }
 

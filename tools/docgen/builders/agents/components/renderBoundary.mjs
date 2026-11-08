@@ -13,7 +13,7 @@ import * as SEATS from '../policy/definitions/seats.mjs';
 import { writeScopes } from '../policy/definitions/writeScopes.mjs';
 import { SEAT_POLICY } from '../policy/seat-policy.mjs';
 
-const TPL_REL = 'tools/docgen/templates/boundary.md.tpl';
+const TPL_REL = 'tools/docgen/builders/agents/templates/boundary.md.tpl';
 const TPL_PATH = join(dirname(fileURLToPath(import.meta.url)), '..', 'templates', 'boundary.md.tpl');
 // 导入期读取（spec:195）：读取失败 = 未捕获异常，不承诺任何错误码 / 退出码；换行统一 `\n`、去掉末尾空行
 const TPL = readFileSync(TPL_PATH, 'utf8').replace(/\r\n/g, '\n').replace(/\n+$/, '');

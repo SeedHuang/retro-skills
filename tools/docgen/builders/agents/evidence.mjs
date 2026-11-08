@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync, renameSync, rmSync 
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 // 语义键的权威单源（10 键），从执行力度矩阵导入
-import { SEMANTIC_KEYS } from '../execution-matrix/check-agent.mjs';
+import { SEMANTIC_KEYS } from '../../../execution-matrix/check-agent.mjs';
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 export const evidenceDir = () => process.env.DOCGEN_EVIDENCE_DIR || join(ROOT, 'fixtures');

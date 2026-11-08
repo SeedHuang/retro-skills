@@ -10,7 +10,7 @@ import { patternRegistry } from '../components/patternRegistry.mjs';
 import { diffSet } from '../components/compare.mjs';
 
 const name = process.argv[2];
-if (!name) { console.error('InvalidArgs: 用法：node tools/docgen/acceptance/golden-assert.mjs <name>'); process.exit(2); }
+if (!name) { console.error('InvalidArgs: 用法：node tools/docgen/builders/agents/acceptance/golden-assert.mjs <name>'); process.exit(2); }
 
 function fail(code, message) { const e = new Error(message); e.code = code; throw e; }
 
@@ -18,7 +18,7 @@ function main() {
   // R6 ① name 合法性 → ② 阶段判定（不碰 git、不读 evidence）→ ③ readEvidence → ④ git / 写盘
   assertAgentName(name);
   if (readState().agents[name] === 'replaced') {
-    fail('MigrationPhaseClosed', `${name} 已迁移（state=replaced），golden-assert 已关闭；正确通路 = node tools/docgen/cli.mjs diff --kind agent --name ${name} → replace --expect-change <凭证>`);
+    fail('MigrationPhaseClosed', `${name} 已迁移（state=replaced），golden-assert 已关闭；正确通路 = node tools/docgen/builders/agents/cli.mjs diff --kind agent --name ${name} → replace --expect-change <凭证>`);
   }
   const evidence = readEvidence(name);
   const snapshot = execFileSync('git', ['show', `${evidence.commit}:agents/${name}.md`], { encoding: 'utf8' });

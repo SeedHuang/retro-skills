@@ -8,8 +8,8 @@ import { tmpdir } from 'node:os'
 import { join, dirname } from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { ROOT, withRepoCopy, runEsm, runCli } from './support/dev-workflow-checks.mjs'
-import { REGISTERED_IDS } from '../../observation-check/registered-ids.mjs'
-import { ARTIFACT_RE } from '../../observation-check/gate-scan.mjs'
+import { REGISTERED_IDS } from '../../../../observation-check/registered-ids.mjs'
+import { ARTIFACT_RE } from '../../../../observation-check/gate-scan.mjs'
 import { outputFormats } from '../components/outputFormats.mjs'
 import { FORMAT_CHECKS } from '../card-model/vocab/card-contract.mjs'
 import { renderBoundary, assertTemplatePure, TEMPLATE_ALLOWED_LITERALS } from '../components/renderBoundary.mjs'
@@ -59,7 +59,7 @@ test('SB-TC-04 归档语料 observation-r1 成对入索引，且覆盖三段对�
   console.log(`corpus: pair ${present.length}/${present.length} evidence ${withEvidence.length}/${doc.items.length} => ok`)
 })
 
-// ── Task 2：PRD V6 引句校验器（`tools/docgen/check-quotes.mjs`）────────────────
+// ── Task 2：PRD V6 引句校验器（`tools/docgen/builders/agents/check-quotes.mjs`）────────────────
 // 语料发现口径与脚本同源（`ARTIFACT_RE`）；本段只编排「注入 → 跑 → 复原」，不重写任何证据判定
 // （那归 `tools/observation-check/evidence.mjs` 的 `checkEvidence`，SB-TC-30 判这一点）。
 
@@ -91,7 +91,7 @@ function countEvidence(files) {
 }
 
 function runQuotes(cwd = ROOT) {
-  const r = spawnSync(process.execPath, ['tools/docgen/check-quotes.mjs'], { cwd, encoding: 'utf8' })
+  const r = spawnSync(process.execPath, ['tools/docgen/builders/agents/check-quotes.mjs'], { cwd, encoding: 'utf8' })
   const stdout = r.stdout ?? ''
   const stderr = r.stderr ?? ''
   return { status: r.status, stdout, stderr, text: `${stdout}${stderr}` }
@@ -130,7 +130,7 @@ function withQuotesCopy(fn) {
       cpSync(join(ROOT, rel), join(dst, rel), { recursive: true })
     }
     mkdirSync(join(dst, 'tools', 'docgen'), { recursive: true })
-    cpSync(join(ROOT, 'tools', 'docgen', 'check-quotes.mjs'), join(dst, 'tools', 'docgen', 'check-quotes.mjs'))
+    cpSync(join(ROOT, 'tools', 'docgen', 'builders', 'agents', 'check-quotes.mjs'), join(dst, 'tools', 'docgen', 'builders', 'agents', 'check-quotes.mjs'))
     // 证据判定要读源文件：被引路径从语料自身派生（写死成字面量即第二份真相）
     const cited = new Set()
     for (const f of observationJson(join(dst, 'docs', 'superpowers', 'reviews'))) {
@@ -365,7 +365,7 @@ const EVIDENCE_PROBE = (fields, evidenceFields) => {
   return { ok, col7: fields[6], line: `evidence-cols: ${mid.length}/${evidenceFields.length} length ${fields.length} => ${ok ? 'ok' : 'fail'}` }
 }
 const EVIDENCE_PROBE_SRC = [
-  "import { outputFormats } from './tools/docgen/components/outputFormats.mjs'",
+  "import { outputFormats } from './tools/docgen/builders/agents/components/outputFormats.mjs'",
   `const PROBE = ${String(EVIDENCE_PROBE)}`,
   "const f = outputFormats['issue-card'].fields",
   'const r = PROBE(f, outputFormats.evidence.fields)',
@@ -374,7 +374,7 @@ const EVIDENCE_PROBE_SRC = [
   'process.exit(r.ok ? 0 : 1)',
 ].join('\n')
 
-const OF_REL = join('tools', 'docgen', 'components', 'outputFormats.mjs')
+const OF_REL = join('tools', 'docgen', 'builders', 'agents', 'components', 'outputFormats.mjs')
 
 // 副本里改 `evidence.fields` 第 3 项：`'用途'` 在源里恰 1 处（多于 1 处说明构造会改错位置）
 function bumpEvidenceThird(copy) {
@@ -470,7 +470,7 @@ test('SB-TC-10 FORMAT_CHECKS 仍 3 条：第 2 条改三列 + 校验器，第 1 
 
 // 副本内改 `FORMAT_CHECKS` 条数，跑既有冻结断言（`S2-TC-A06`）；命令口径见 testcase SB-TC-22
 // `NODE_TEST_CONTEXT` 必须清掉：父进程是 `node --test` 时子进程若继承它，会被判「test run() 递归」并**静默跳过**（exit 0 假绿）
-const A06_CMD = ['--test', '--test-name-pattern', 'S2-TC-A06', join('tools', 'docgen', 'test', 's2-card-rewrite.test.mjs')]
+const A06_CMD = ['--test', '--test-name-pattern', 'S2-TC-A06', join('tools', 'docgen', 'builders', 'agents', 'test', 's2-card-rewrite.test.mjs')]
 const runA06 = (dir) => {
   const env = { ...process.env }
   delete env.NODE_TEST_CONTEXT
@@ -478,7 +478,7 @@ const runA06 = (dir) => {
 }
 
 function rewriteFormatChecks(copy, list) {
-  const p = join(copy, 'tools', 'docgen', 'card-model', 'vocab', 'card-contract.mjs')
+  const p = join(copy, 'tools', 'docgen', 'builders', 'agents', 'card-model', 'vocab', 'card-contract.mjs')
   const src = readFileSync(p, 'utf8')
   const open = 'export const FORMAT_CHECKS = ['
   const start = src.indexOf(open)
@@ -492,7 +492,7 @@ function rewriteFormatChecks(copy, list) {
 
 test('SB-TC-22 FORMAT_CHECKS 变 2 条 / 变 4 条 → 既有冻结断言 S2-TC-A06 必红', () => {
   withRepoCopy((copy) => {
-    const p = join(copy, 'tools', 'docgen', 'card-model', 'vocab', 'card-contract.mjs')
+    const p = join(copy, 'tools', 'docgen', 'builders', 'agents', 'card-model', 'vocab', 'card-contract.mjs')
 
     const r0 = runA06(copy)
     assert.equal(r0.status, 0, `副本未改动前 S2-TC-A06 必须绿：${r0.stdout}${r0.stderr}`)
@@ -518,7 +518,7 @@ test('SB-TC-22 FORMAT_CHECKS 变 2 条 / 变 4 条 → 既有冻结断言 S2-TC-
 
 // ── Task 4：`duty.categories` 单源（spec §11.2.4 / §11.1 R7 R8）────────────────────
 // 取数点 = 装配产物（`agentData[i].card`），不是席文件：席文件里该键必须已经不在（源侧由 ① 单独判）。
-const SEATS_REL = join('tools', 'docgen', 'data', 'seats')
+const SEATS_REL = join('tools', 'docgen', 'dsl', 'agents', 'seats')
 const seatFiles = (base) => readdirSync(join(base, SEATS_REL)).filter((f) => f.endsWith('.json'))
 
 // 同形探针（SB-TC-07 与 SB-TC-34 共用一份实现）：① 读盘判「源里无该键」；② 过 loader 逐席
@@ -528,8 +528,8 @@ const DUTY_PROBE_SRC = [
   "import { readdirSync, readFileSync } from 'node:fs'",
   "import { join } from 'node:path'",
   "import assert from 'node:assert/strict'",
-  "const { agentData } = await import('./tools/docgen/components/agentData.mjs')",
-  "const dir = join('tools', 'docgen', 'data', 'seats')",
+  "const { agentData } = await import('./tools/docgen/builders/agents/components/agentData.mjs')",
+  "const dir = join('tools', 'docgen', 'dsl', 'agents', 'seats')",
   "const files = readdirSync(dir).filter((f) => f.endsWith('.json'))",
   "let srcHasKey = 0",
   "for (const f of files) {",
@@ -560,7 +560,7 @@ test('SB-TC-07 duty.categories 单源：席文件无该键，loader 产物逐席
 // 只判「码已登记且归 1」：未登记时 `exitCodeFor` 抛「未知错误码」→ 判别力就在这里，
 // 进程退出码不能当判据（loader 在 import 期抛，未登记码的进程退出码同样是 1）。
 const EXIT_PROBE_SRC = [
-  "import { exitCodeFor } from './tools/docgen/components/validateAgentData.mjs'",
+  "import { exitCodeFor } from './tools/docgen/builders/agents/components/validateAgentData.mjs'",
   "try { process.stdout.write('exit ' + exitCodeFor('DutyCategoryMisplaced') + '\\n') }",
   "catch (e) { process.stdout.write('throw ' + e.message + '\\n'); process.exit(2) }",
 ].join('\n')
@@ -568,7 +568,7 @@ const EXIT_PROBE_SRC = [
 // 子进程 import 触发加载：成功 → stdout `loaded` / exit 0；拒载 → stderr 首行 = 码 + 席 + 键。
 // 首行由探针自己拼（Node 的未捕获异常首行是代码帧，不是错误码），拼的内容全部取自抛出的错误对象。
 const LOAD_PROBE_SRC = [
-  "import('./tools/docgen/components/agentData.mjs').then(",
+  "import('./tools/docgen/builders/agents/components/agentData.mjs').then(",
   "  () => { process.stdout.write('loaded\\n'); process.exit(0) },",
   "  (e) => { process.stderr.write(e.code + ' seat=' + (e.name ?? '') + ' key=' + (e.key ?? '') + '\\n'); process.exit(1) },",
   ").catch((e) => { process.stderr.write('probe-failed ' + e.message + '\\n'); process.exit(3) })",
@@ -651,13 +651,13 @@ function runProbeIn(dir, src) {
 }
 
 const PURE_PROBE = [
-  "import { assertTemplatePure } from './tools/docgen/components/renderBoundary.mjs'",
+  "import { assertTemplatePure } from './tools/docgen/builders/agents/components/renderBoundary.mjs'",
   "try { assertTemplatePure(); process.stdout.write('pure ok\\n'); process.exit(0) }",
   "catch (e) { process.stderr.write('PROBE ' + (e.code ?? '') + ' ' + (e.fragment ?? '') + '\\n'); process.exit(1) }",
 ].join('\n')
 
 function patchRenderBoundary(copy, mutate) {
-  const p = join(copy, 'tools', 'docgen', 'components', 'renderBoundary.mjs')
+  const p = join(copy, 'tools', 'docgen', 'builders', 'agents', 'components', 'renderBoundary.mjs')
   const src = readFileSync(p, 'utf8')
   const out = mutate(src)
   assert.notEqual(out, src, '构造失败：副本的 renderBoundary.mjs 未被修改')
@@ -753,7 +753,7 @@ test('SB-TC-24 被指针化的 4 行内无仓内路径形态（取到行数必�
     assert.ok(pathFormHits(negA) >= 1, `${seat}: 负例 A 必须命中 ≥1（旧版只 grep 一个目录字面时此形态全绿）`)
 
     // 负例 B：带目录前缀 + 反引号
-    const negB = ['禁写集合见 `tools/docgen/policy/definitions/paths.mjs`', ...four.slice(1)].join('\n')
+    const negB = ['禁写集合见 `tools/docgen/builders/agents/policy/definitions/paths.mjs`', ...four.slice(1)].join('\n')
     assert.ok(pathFormHits(negB) >= 1, `${seat}: 负例 B 必须命中 ≥1`)
   }
   console.log('pointer-lines: 4/4 lines / pathforms 0 / negA ≥1 / negB ≥1 => ok')
@@ -782,7 +782,7 @@ test('SB-TC-27 白名单登记清单类成员（agents/）→ ALLOWED_LITERALS: 
 test('SB-TC-28 新反引号项未登记（删掉 commandGroups）→ TemplateImpure 抛错', () => {
   withRepoCopy((copy) => {
     // 构造「模板里留着被反引号包住的 commandGroups」：把该槽换成字面符号（替代 slot 注入，纯度为判模板文本）
-    const tplPath = join(copy, 'tools', 'docgen', 'templates', 'boundary.md.tpl')
+    const tplPath = join(copy, 'tools', 'docgen', 'builders', 'agents', 'templates', 'boundary.md.tpl')
     const tpl = readFileSync(tplPath, 'utf8')
     const injected = tpl.replace('{{ALLOW_GROUPS}}', '`commandGroups`')
     assert.notEqual(injected, tpl, '构造失败：模板里没有 {{ALLOW_GROUPS}} 槽可换')
@@ -833,7 +833,7 @@ test('SB-TC-31 保留面：5 个槽（4 行文案）的段首句与语义句 2 �
 })
 
 test('SB-TC-35 4 个符号名各恰 1 行 export const（定义层 definitions/*.mjs，不 -Recurse）', () => {
-  const dir = join(ROOT, 'tools', 'docgen', 'policy', 'definitions')
+  const dir = join(ROOT, 'tools', 'docgen', 'builders', 'agents', 'policy', 'definitions')
   const files = readdirSync(dir).filter((f) => f.endsWith('.mjs'))
   const counts = POINTER_SYMBOLS.map((sym) => ({
     sym,
@@ -846,7 +846,7 @@ test('SB-TC-35 4 个符号名各恰 1 行 export const（定义层 definitions/*
 })
 
 const COMMAND_LINE_PROBE = (seat) => [
-  "const m = await import('./tools/docgen/components/renderBoundary.mjs')",
+  "const m = await import('./tools/docgen/builders/agents/components/renderBoundary.mjs')",
   `const line = m.renderBoundary(${JSON.stringify(seat)}).split('\\n').find((l) => l.includes('命令默认拒绝')) ?? ''`,
   "process.stdout.write(line + '\\n')",
 ].join('\n')
@@ -869,7 +869,7 @@ test('SB-TC-40 命令白名单句含本席组 ID（有组 2 卡）；空组必�
 
   // ③ 负例 B：副本内把该席 allowGroups 改成 [] → 该句必须写「无白名单命令」且不含具体命令
   withRepoCopy((copy) => {
-    const p = join(copy, 'tools', 'docgen', 'policy', 'seat-policy.mjs')
+    const p = join(copy, 'tools', 'docgen', 'builders', 'agents', 'policy', 'seat-policy.mjs')
     const src = readFileSync(p, 'utf8')
     const patched = src.replace(/(\{ capabilities: \['read',\s*'write',\s*'exec'\], allowGroups: )\[[^\]]*\]/, '$1[]')
     assert.notEqual(patched, src, '构造失败：reviewer-audit 的 allowGroups 未改成 []')
@@ -888,7 +888,7 @@ test('SB-TC-40 命令白名单句含本席组 ID（有组 2 卡）；空组必�
 test('SB-TC-41 env 槽已指针化：改前基线命中 5 / 改后渲染命中 0 / 漏改 env ≥1 / 只改一半 = 1', () => {
   const envVerbs = CMD.forbiddenGroups['env.assign'].verbs
   const envHits = (text) => envVerbs.filter((v) => text.includes(v)).length
-  const renderAll = (seat) => `const m = await import('./tools/docgen/components/renderBoundary.mjs'); process.stdout.write(m.renderBoundary(${JSON.stringify(seat)}))`
+  const renderAll = (seat) => `const m = await import('./tools/docgen/builders/agents/components/renderBoundary.mjs'); process.stdout.write(m.renderBoundary(${JSON.stringify(seat)}))`
   const OLD_ENV_FORMS = "  return CMD.forbiddenGroups['env.assign'].verbs.join(' / ');"
 
   // ① 改前基线 = **构造式**（不锚 git 历史）：副本内把 `envForms` 还原成指针化之前的旧展开式，
@@ -896,7 +896,7 @@ test('SB-TC-41 env 槽已指针化：改前基线命中 5 / 改后渲染命中 0
   // 该锚会随下一次改模板（S-C 按 R11「模板改 + 卡同批重生成」提交）移到改后形态 → envHits 0 →
   // 凭空变红且报错文案指错方向（任务级审查 Important #1）。
   withRepoCopy((copy) => {
-    const p = join(copy, 'tools', 'docgen', 'components', 'renderBoundary.mjs')
+    const p = join(copy, 'tools', 'docgen', 'builders', 'agents', 'components', 'renderBoundary.mjs')
     const src = readFileSync(p, 'utf8')
     writeFileSync(p, replaceFnBody(src, 'envForms', OLD_ENV_FORMS), 'utf8')
     const leak = runProbeIn(copy, renderAll('reviewer-audit'))
@@ -925,7 +925,7 @@ test('SB-TC-41 env 槽已指针化：改前基线命中 5 / 改后渲染命中 0
 
 test('SB-TC-34 注入值不做字符串变换：加「核对」后缀 → 同形探针逐席不等，判据红', () => {
   withRepoCopy((copy) => {
-    const p = join(copy, 'tools', 'docgen', 'components', 'seatLoader.mjs')
+    const p = join(copy, 'tools', 'docgen', 'builders', 'agents', 'components', 'seatLoader.mjs')
     const src = readFileSync(p, 'utf8')
     const INJECT = 's.card.duty.categories = s.card.categories.map((c) => c.label)'
     const hits = src.split(INJECT).length - 1
@@ -963,10 +963,10 @@ const seatTotal = () => cardFiles().length
 const sha256Of = (buf) => createHash('sha256').update(buf).digest('hex').toUpperCase()
 const countLines = (text, needle) => text.split('\n').filter((l) => l.includes(needle)).length
 const cardTextOf = (seat) => readFileSync(join(CARDS_DIR, `${seat}.md`), 'utf8')
-const evidenceOf = (seat) => JSON.parse(readFileSync(join(ROOT, 'tools', 'docgen', 'fixtures', `${seat}.evidence.json`), 'utf8'))
+const evidenceOf = (seat) => JSON.parse(readFileSync(join(ROOT, 'tools', 'docgen', 'builders', 'agents', 'fixtures', `${seat}.evidence.json`), 'utf8'))
 
 function runGateIn(dir) {
-  const r = spawnSync(process.execPath, ['tools/docgen/cli.mjs', 'gate'], { cwd: dir, encoding: 'utf8' })
+  const r = spawnSync(process.execPath, ['tools/docgen/builders/agents/cli.mjs', 'gate'], { cwd: dir, encoding: 'utf8' })
   return { status: r.status, text: `${r.stdout ?? ''}${r.stderr ?? ''}` }
 }
 
@@ -1094,7 +1094,7 @@ test('SB-TC-32（S-C 位置型三段，一次性）：每席在「职责」「�
 const WRITE_RENDER_SRC = [
   "import { readdirSync, writeFileSync, readFileSync } from 'node:fs'",
   "import { join } from 'node:path'",
-  "import { renderByName } from './tools/docgen/components/renderByName.mjs'",
+  "import { renderByName } from './tools/docgen/builders/agents/components/renderByName.mjs'",
   "let n = 0",
   "for (const f of readdirSync('agents').filter((x) => x.endsWith('.md'))) {",
   "  const seat = f.slice(0, -3)",
@@ -1120,7 +1120,7 @@ test('SB-TC-25 只改模板 4 行不重生成 → `Mismatch` exit 1；重生成�
     syncCopyCards(copy)
     const bytesBefore = new Map(cardFiles().map((f) => [f, readFileSync(join(copy, 'agents', f))]))
 
-    const tplPath = join(copy, 'tools', 'docgen', 'templates', 'boundary.md.tpl')
+    const tplPath = join(copy, 'tools', 'docgen', 'builders', 'agents', 'templates', 'boundary.md.tpl')
     let tpl = readFileSync(tplPath, 'utf8')
     for (const anchor of TEMPLATE_LINE_ANCHORS) {
       const hits = tpl.split(anchor).length - 1
@@ -1156,7 +1156,7 @@ test('SB-TC-25（一次性）④：与 SB_BASE 比每席都变', { skip: !ONESHO
 
 // 副本内的 evidence / 卡读写（`replace` 只认这两处）
 const copyCardPath = (dir, seat) => join(dir, 'agents', `${seat}.md`)
-const copyEvPath = (dir, seat) => join(dir, 'tools', 'docgen', 'fixtures', `${seat}.evidence.json`)
+const copyEvPath = (dir, seat) => join(dir, 'tools', 'docgen', 'builders', 'agents', 'fixtures', `${seat}.evidence.json`)
 const readJson = (p) => JSON.parse(readFileSync(p, 'utf8'))
 const writeJson = (p, v) => writeFileSync(p, `${JSON.stringify(v, null, 2)}\n`, 'utf8')
 const newestDraftOf = (dir, seat) => {
@@ -1183,7 +1183,7 @@ test('SB-TC-26 `replace` 三红一正：BaselineDrift exit 2 / evidence 陈旧�
     const seat = 'reviewer-ai'
 
     // ① baseline 陈旧：同时在 BASELINE_RULES 追加一项 + 建该文件（只建文件会先发 UnregisteredHandwritten，码不同）
-    const bm = join(copy, 'tools', 'docgen', 'components', 'baseline.mjs')
+    const bm = join(copy, 'tools', 'docgen', 'builders', 'agents', 'components', 'baseline.mjs')
     const bmSrc = readFileSync(bm, 'utf8')
     const patched = bmSrc.replace('export const BASELINE_RULES = [', "export const BASELINE_RULES = [\n  'rules/zzz-drift-probe.md',")
     assert.notEqual(patched, bmSrc, '构造失败：BASELINE_RULES 定义行未命中')
@@ -1262,7 +1262,7 @@ test('SB-TC-37 §11.4-8 两向判别力：回填 `关注类别：` → 1 红 / �
   })
 })
 
-// ── Task 7：PRD V7 映射非空心校验器（`tools/docgen/check-case-assert.mjs`，spec §11.2.5 / §11.4-4 / §11.1 R10）──
+// ── Task 7：PRD V7 映射非空心校验器（`tools/docgen/builders/agents/check-case-assert.mjs`，spec §11.2.5 / §11.4-4 / §11.1 R10）──
 // 首次实测输入 = S-A 那对已签件（S-B 自身 plan 在 ③ 之前不存在）；注入面一律是 testcase 的**副本**，不动已签件。
 const SA_PLAN = join(ROOT, 'docs', 'superpowers', 'plans', '2026-11-03-s-a-data-layer.md')
 const SA_TESTCASE = join(ROOT, 'docs', 'superpowers', 'specs', '2026-11-03-s-a-data-layer-design-testcase.md')
@@ -1271,7 +1271,7 @@ const SA_TESTCASE = join(ROOT, 'docs', 'superpowers', 'specs', '2026-11-03-s-a-d
 const CASE_ID_RE = /S[A-Z]*-TC-[A-Z]?\d\d|TC-\d{3}/
 
 function runCase(plan = SA_PLAN, testcase = SA_TESTCASE) {
-  const r = spawnSync(process.execPath, ['tools/docgen/check-case-assert.mjs', '--plan', plan, '--testcase', testcase], { cwd: ROOT, encoding: 'utf8' })
+  const r = spawnSync(process.execPath, ['tools/docgen/builders/agents/check-case-assert.mjs', '--plan', plan, '--testcase', testcase], { cwd: ROOT, encoding: 'utf8' })
   const stdout = r.stdout ?? ''
   return { status: r.status, stdout, text: `${stdout}${r.stderr ?? ''}` }
 }
@@ -1463,7 +1463,7 @@ test('SB-TC-40（补测）空组态仍列命令 → 该判据能红（金态 0 �
     assert.equal(CMD_WORDS.test(clean.stdout), false, `金态不得出现具体命令字样：${clean.stdout}`)
 
     // ② 残缺实现：该席 allowGroups 改 []（= 空组态）+ allowGroups() 空组分支仍吐命令
-    const seatPolicy = join(copy, 'tools', 'docgen', 'policy', 'seat-policy.mjs')
+    const seatPolicy = join(copy, 'tools', 'docgen', 'builders', 'agents', 'policy', 'seat-policy.mjs')
     const spSrc = readFileSync(seatPolicy, 'utf8')
     const line = spSrc.split('\n').find((l) => l.trim().startsWith("'reviewer-audit'"))
     assert.ok(line, "构造失败：seat-policy.mjs 里找不到 reviewer-audit 行")
@@ -1472,7 +1472,7 @@ test('SB-TC-40（补测）空组态仍列命令 → 该判据能红（金态 0 �
     writeFileSync(seatPolicy, spPatched, 'utf8')
 
     // renderBoundary 的先像要留着，复原时逐字回写（否则「复原 0」只验了「组非空 → 分支不进入」）
-    const rbPath = join(copy, 'tools', 'docgen', 'components', 'renderBoundary.mjs')
+    const rbPath = join(copy, 'tools', 'docgen', 'builders', 'agents', 'components', 'renderBoundary.mjs')
     const rbSrc = readFileSync(rbPath, 'utf8')
     patchRenderBoundary(copy, (src) => {
       const hits = src.split(EMPTY_BRANCH).length - 1

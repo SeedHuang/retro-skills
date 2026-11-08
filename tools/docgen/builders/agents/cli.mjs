@@ -20,13 +20,13 @@ import { dumpPolicy } from './components/dumpPolicy.mjs';
 import { readState, writeState, setAgentState, statePath } from './state.mjs';
 import { readEvidence, writeEvidence, evidencePath } from './evidence.mjs';
 // 结构层与语义键来自 check-agent；渲染器已抽到 renderByName.mjs，故 check-agent 不再 import 本文件（无环）
-import { checkStruct, readAnnotations, SEMANTIC_KEYS } from '../execution-matrix/check-agent.mjs';
-import { fenceMask } from '../execution-matrix/markdown-rows.mjs';
+import { checkStruct, readAnnotations, SEMANTIC_KEYS } from '../../../execution-matrix/check-agent.mjs';
+import { fenceMask } from '../../../execution-matrix/markdown-rows.mjs';
 
 // 对外仍从 cli 导出（既有测试/调用方按 cli.mjs 取渲染器）；实现已移入 components/renderByName.mjs
 export { renderByName };
 
-const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
+const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..');
 const AGENTS_DIR = join(REPO_ROOT, 'agents');
 // 人读投影落点（spec §10-D2 / §3 `:53-56`）：只由 `generate --readme --apply` 落盘，手改即 gate 报 Mismatch
 const DOC_AGENTS_DIR = join(REPO_ROOT, 'docs', 'agents');
@@ -387,7 +387,7 @@ function judgeId(name) {
   const id = (process.env.DOCGEN_JUDGED_BY || '').trim();
   if (!id) {
     fail('UnapprovedChange', {
-      message: `缺少判者标识：--rejudge ${name} 非空时必须用 DOCGEN_JUDGED_BY 给出重判子代理实例（例：DOCGEN_JUDGED_BY=reviewer-ai-2026-10-21-a2-rejudge node tools/docgen/cli.mjs replace …），否则 changes[].judgedBy 无法落账；本次未写盘`,
+      message: `缺少判者标识：--rejudge ${name} 非空时必须用 DOCGEN_JUDGED_BY 给出重判子代理实例（例：DOCGEN_JUDGED_BY=reviewer-ai-2026-10-21-a2-rejudge node tools/docgen/builders/agents/cli.mjs replace …），否则 changes[].judgedBy 无法落账；本次未写盘`,
     });
   }
   return id;
@@ -400,7 +400,7 @@ function buildJudged(name, keys) {
     const verdict = v === 'pass' ? 'pass' : v.startsWith('fail') ? 'fail' : null;
     if (!verdict) {
       fail('UnapprovedChange', {
-        message: `${name}:${key} 报为重判键，但 tools/quality/.inspector-annotations.json 的值是 ${raw === undefined ? '缺失' : JSON.stringify(raw)}（非 pass/fail）——重判未完成，先让独立子代理判完并写回，再运行 node tools/docgen/cli.mjs diff --kind agent --name ${name}`,
+        message: `${name}:${key} 报为重判键，但 tools/quality/.inspector-annotations.json 的值是 ${raw === undefined ? '缺失' : JSON.stringify(raw)}（非 pass/fail）——重判未完成，先让独立子代理判完并写回，再运行 node tools/docgen/builders/agents/cli.mjs diff --kind agent --name ${name}`,
       });
     }
     return { key, verdict, basis: `tools/execution-matrix/criteria.md ${key} + 渲染产物；重判写回 tools/quality/.inspector-annotations.json ${name}:${key} = ${raw}（replace 机械转录）` };
@@ -547,7 +547,7 @@ export function cmdReplace(args) {
   let judgedBy = null;
   let machineChecks = null;
   if (phase === 'change') {
-    const nextStep = `下一步运行 node tools/docgen/cli.mjs diff --kind agent --name ${name}`;
+    const nextStep = `下一步运行 node tools/docgen/builders/agents/cli.mjs diff --kind agent --name ${name}`;
     if (args.expectChange === undefined) {
       fail('UnapprovedChange', { message: `盘上=${oldSha} 渲染=${newSha} 缺 --expect-change；${nextStep}` });
     }

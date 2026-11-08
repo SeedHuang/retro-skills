@@ -8,7 +8,7 @@ import { agentData, triggerTable } from '../components/agentData.mjs';
 import { validateAgentData, exitCodeFor } from '../components/validateAgentData.mjs';
 import { collectGate } from '../cli.mjs';
 
-const CLI = 'tools/docgen/cli.mjs';
+const CLI = 'tools/docgen/builders/agents/cli.mjs';
 const stateFile = () => join(mkdtempSync(join(tmpdir(), 'dg-state-')), 'state.json');
 const run = (args, env = {}) => spawnSync(process.execPath, [CLI, ...args], {
   encoding: 'utf8',
@@ -69,7 +69,7 @@ test('collectGate 收集漂移而不抛：人为制造清单外 agent 文件', (
 });
 
 test('golden-assert 在缺 evidence 时 exit 2（EvidenceInvalid）', () => {
-  const r = spawnSync(process.execPath, ['tools/docgen/acceptance/golden-assert.mjs', 'ghost'], {
+  const r = spawnSync(process.execPath, ['tools/docgen/builders/agents/acceptance/golden-assert.mjs', 'ghost'], {
     encoding: 'utf8', env: { ...process.env, DOCGEN_EVIDENCE_DIR: mkdtempSync(join(tmpdir(), 'dg-ev-')) },
   });
   assert.equal(r.status, 2);

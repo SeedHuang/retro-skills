@@ -6,7 +6,7 @@ import { CARD_SEGMENTS } from '../card-model/vocab/card-must-fields.mjs';
 import { renderByName } from '../cli.mjs';
 
 // S4 Task 7：旧手写卡模板已退场，本席断言改为新卡等价面（7 段 + 9 条 checkItems 逐条在位）
-const tpl = () => readFileSync('tools/docgen/templates/agent-card.md.tpl', 'utf8');
+const tpl = () => readFileSync('tools/docgen/builders/agents/templates/agent-card.md.tpl', 'utf8');
 const entry = () => agentData.find((a) => a.name === 'senior-sdet');
 
 test('TC-006：新卡 7 段齐且顺序 = CARD_SEGMENTS 单源', () => {

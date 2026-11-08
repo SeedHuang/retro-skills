@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readdirSync, readFileSync, mkdtempSync, cpSync, appendFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir, homedir } from 'node:os';
-import { checkSkillDir } from '../../../skills/skill-inspector/scripts/check.mjs';
+import { checkSkillDir } from '../../../../../skills/skill-inspector/scripts/check.mjs';
 import {
   ROOT, readRepo, tableAt, diffStageCells, stageOrder, rowLoop, transitionReport, refsReport,
   missingSections, missingPowers, planGateReport, exitWordReport, section, inlineHeadings,

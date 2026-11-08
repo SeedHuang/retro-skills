@@ -126,9 +126,9 @@ export function cardBoundary(text) {
   return i < 0 ? '' : String(text).slice(i + '## 边界'.length).replace(/^\r?\n+/, '').trim();
 }
 
-// 基线 JSON 读取（`tools/docgen/fixtures/capability-baseline.json`，含 `sourceCommit`）
+// 基线 JSON 读取（`tools/docgen/builders/agents/fixtures/capability-baseline.json`，含 `sourceCommit`）
 export function baseJson(root = process.cwd()) {
-  return JSON.parse(readFileSync(join(root, 'tools', 'docgen', 'fixtures', 'capability-baseline.json'), 'utf8'));
+  return JSON.parse(readFileSync(join(root, 'tools', 'docgen', 'builders', 'agents', 'fixtures', 'capability-baseline.json'), 'utf8'));
 }
 
 // CLI 出口（等价于 plan Task 1 Step 5 的两条内联命令）：`emit(['--commit', '<40 位 sha>'])`
@@ -145,11 +145,17 @@ export function emit(argv = process.argv.slice(2)) {
   if (!commit) throw new Error('emit 需要 --commit <40 位 sha>：基线必须显式给定改造前 commit，不取 HEAD 兜底');
   if (!/^[0-9a-f]{40}$/.test(commit)) throw new Error(`emit 需要 40 位 commit：${commit}`);
   const has = (p) => spawnSync('git', ['cat-file', '-e', `${commit}:${p}`], { encoding: 'utf8' }).status === 0;
-  const policyDir = ['tools', 'docgen', 'policy'].join('/');   // 派生式：本文件源码不得出现定义层路径字面量（`testcase:2608` H07 ③）
-  if (has(policyDir) || has('tools/docgen/components/renderBoundary.mjs')) {
+  const policyDir = ['tools', 'docgen', 'builders', 'agents', 'policy'].join('/');   // 派生式：本文件源码不得出现定义层路径字面量（`testcase:2608` H07 ③）
+  // 2026-11-08 目录统一：改造后标志有两个落点——旧仓 `tools/docgen/policy/` 与迁移后 `builders/agents/policy/`。
+  // 两个都查，否则 S6 改造后到本次迁移之间的提交（只含旧落点）会被误当成「改造前」，把改造后卡写成基线。
+  const legacyPolicyDir = ['tools', 'docgen', 'policy'].join('/');
+  const hasPostRefactor = has(policyDir) || has(legacyPolicyDir)
+    || has(['tools', 'docgen', 'builders', 'agents', 'components', 'renderBoundary.mjs'].join('/'))
+    || has(['tools', 'docgen', 'components', 'renderBoundary.mjs'].join('/'));
+  if (hasPostRefactor) {
     throw new Error(`emit 拒绝：commit ${commit} 已含改造后文件（${policyDir} 或 renderBoundary.mjs），不是改造前基线`);
   }
-  const outDir = arg('--out-dir') ?? join('tools', 'docgen', 'fixtures');
+  const outDir = arg('--out-dir') ?? join('tools', 'docgen', 'builders', 'agents', 'fixtures');
   const seats = ['reviewer-audit', 'detective-observer'];
   const cardOf = (s) => execFileSync('git', ['show', `${commit}:agents/${s}.md`], { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
   const baseline = { sourceCommit: commit, seats: Object.fromEntries(seats.map((s) => [s, factsFromBaselineText(cardOf(s))])) };

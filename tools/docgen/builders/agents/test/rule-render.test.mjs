@@ -8,9 +8,9 @@ import { join, resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { coldRepo, runCli } from './support/card-fixtures.mjs'
 import { RENDERED_RULES, renderedRuleAssets } from '../components/renderedAssets.mjs'
-import { renderRule } from '../../quality/criteria-engine/rules.mjs'
+import { renderRule } from '../../../../quality/criteria-engine/rules.mjs'
 
-const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..')
+const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..', '..')
 const NAME = 'evidence-before-conclusion'
 const REL = `rules/${NAME}.md`
 

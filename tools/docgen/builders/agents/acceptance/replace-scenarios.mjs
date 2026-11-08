@@ -10,29 +10,29 @@ import { createHash } from 'node:crypto';
 import assert from 'node:assert/strict';
 import { renderByName } from '../cli.mjs';
 
-const REPO = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
+const REPO = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..', '..');
 // S-A 数据层（T3）：`patch()` 的注入目标由 `agentData.mjs` 源文本改指席 JSON（spec §10.2.9 第 11 处；
 // `WHEN_OLD` 现住该席 `trigger.when`，命中数仍须恰 1）。**四处 `patch()` 调用一律保留**，不删 helper。
-const DATA = 'tools/docgen/data/seats/senior-sdet.json';
+const DATA = 'tools/docgen/dsl/agents/seats/senior-sdet.json';
 // 造「description 一行变化」用的数据锚点（当前 when 原文 → 删一个词）。
 // 用常量集中管理：数据再改时这里会因「命中数 ≠ 1」当场红，而不是静默改成没变化的场景。
 const WHEN_OLD = '当需要为 PRD/spec 设计并编写测试用例（testcase.md），或专门找出被忽视的边界与失败场景';
 const WHEN_NEW = '当需要为 PRD/spec 设计并编写测试用例（testcase.md），或找出被忽视的边界与失败场景';
 const sha = (b) => createHash('sha256').update(b).digest('hex').toUpperCase();
-const stateFile = (c) => join(c, 'tools/docgen/state.json');
-const evidenceFile = (c, name = 'reviewer-audit') => join(c, 'tools/docgen/fixtures', `${name}.evidence.json`);
+const stateFile = (c) => join(c, 'tools/docgen/builders/agents/state.json');
+const evidenceFile = (c, name = 'reviewer-audit') => join(c, 'tools/docgen/builders/agents/fixtures', `${name}.evidence.json`);
 const evidence = (c, name = 'reviewer-audit') => JSON.parse(readFileSync(evidenceFile(c, name), 'utf8'));
 
 function copyRepo() {
   const dst = mkdtempSync(join(tmpdir(), 'dg-rep-'));
   const files = execFileSync('git', ['-c', 'core.quotePath=false', 'ls-files'], { cwd: REPO, encoding: 'utf8' }).trim().split('\n');
   const extra = [
-    'tools/docgen/state.json',
-    'tools/docgen/state.mjs',
-    'tools/docgen/evidence.mjs',
+    'tools/docgen/builders/agents/state.json',
+    'tools/docgen/builders/agents/state.mjs',
+    'tools/docgen/builders/agents/evidence.mjs',
     // 新增文件在提交前不在 git ls-files 里：显式带上，否则副本的 check-agent 加载即 ENOENT
-    'tools/docgen/components/renderByName.mjs',
-    'tools/docgen/components/outputFormats.mjs',
+    'tools/docgen/builders/agents/components/renderByName.mjs',
+    'tools/docgen/builders/agents/components/outputFormats.mjs',
   ];
   for (const f of [...new Set([...files, ...extra])]) {
     if (!f || f.startsWith('.git/')) continue;
@@ -48,15 +48,15 @@ const envFor = (copy) => ({
   ...process.env,
   DOCGEN_DRAFTS_DIR: join(copy, '.drafts'),
   DOCGEN_STATE_PATH: stateFile(copy),
-  DOCGEN_EVIDENCE_DIR: join(copy, 'tools/docgen/fixtures'),
+  DOCGEN_EVIDENCE_DIR: join(copy, 'tools/docgen/builders/agents/fixtures'),
 });
 
 function run(copy, args, extraEnv = {}) {
-  return spawnSync(process.execPath, [join(copy, 'tools/docgen/cli.mjs'), ...args], { cwd: copy, encoding: 'utf8', env: { ...envFor(copy), ...extraEnv } });
+  return spawnSync(process.execPath, [join(copy, 'tools/docgen/builders/agents/cli.mjs'), ...args], { cwd: copy, encoding: 'utf8', env: { ...envFor(copy), ...extraEnv } });
 }
 
 function runTool(copy, tool, args) {
-  return spawnSync(process.execPath, [join(copy, 'tools/docgen/acceptance', `${tool}.mjs`), ...args], { cwd: copy, encoding: 'utf8', env: envFor(copy) });
+  return spawnSync(process.execPath, [join(copy, 'tools/docgen/builders/agents/acceptance', `${tool}.mjs`), ...args], { cwd: copy, encoding: 'utf8', env: envFor(copy) });
 }
 
 function seedEvidence(copy, name = 'reviewer-audit') {

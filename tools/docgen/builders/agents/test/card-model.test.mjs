@@ -19,7 +19,7 @@ import * as ST from '../card-model/vocab/subjective-terms.mjs';
 import * as CT from '../card-model/vocab/criterion-terms.mjs';
 
 const CM_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'card-model');
-const REPO = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..'); // = 仓库根
+const REPO = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..', '..'); // = 仓库根
 const SEAT = 'detective-observer'; // 非议会席（ProceduralWordOutsideParliament 的对照面）
 const PARL = 'reviewer-audit'; // 议会席（豁免面）
 const ID = /^[a-z][a-z0-9.:-]*$/;
@@ -254,7 +254,7 @@ const TABLE = [
     mutate: (c) => {
       c.checkItems[0].check = 'ai';
       c.checkItems[0].rubric = { positive: [{ text: '有证据行', source: 'agents/detective-observer.md:12' }], negative: [], boundary: [] };
-      c.checkItems[0].audit = { sample: '每轮每条 ≥1', command: 'node tools/docgen/cli.mjs gate' };
+      c.checkItems[0].audit = { sample: '每轮每条 ≥1', command: 'node tools/docgen/builders/agents/cli.mjs gate' };
     } },
   // ── 开放项（3，fn 型：产物侧入口 validateOpenItems(doc, env, cards)，§6 :139；第三参必传）
   { fam: '开放项', code: 'EmptyOpenWithoutReason', path: null, kind: 'fn',
@@ -452,7 +452,7 @@ test('S1-TC-H01 EmptyOpenWithoutReason 与「0 条须可核理由」', () => {
 test('S1-TC-H02 deriveScope 8 段路径映射逐项（顺序敏感最长前缀）', () => {
   const MAP = [
     ['agents/detective-observer.md', 'card'],
-    ['tools/docgen/card-model/enums.mjs', 'code'],
+    ['tools/docgen/builders/agents/card-model/enums.mjs', 'code'],
     ['scripts/check-all.mjs', 'code'],
     ['docs/superpowers/specs/x.md', 'doc'], // 只命中 `docs/` 一段 → doc
     ['docs/superpowers/reviews/x/progress.md', 'process'], // 最长前缀 `docs/superpowers/reviews/` 先命中 → process
@@ -683,7 +683,7 @@ test('S1-TC-K01 env 11 键接口逐键对账 + 缺键 → UnverifiableOutput（p
 });
 
 test('S1-TC-K02 §4 已列 cmd?/impl? 可注入，未列字段不做 closed-world', () => {
-  green(run((c) => { c.checkItems[0] = { ...c.checkItems[0], check: 'script', cmd: 'node tools/docgen/cli.mjs gate' }; }));
+  green(run((c) => { c.checkItems[0] = { ...c.checkItems[0], check: 'script', cmd: 'node tools/docgen/builders/agents/cli.mjs gate' }; }));
   green(run((c) => { c.checkItems[0] = { ...c.checkItems[0], check: 'script', impl: 'ledger.row.exists' }; }));
   only(run((c) => { c.checkItems[0] = { ...c.checkItems[0], check: 'script' }; }), 'FalseScriptCheck', 'checkItems[0]');
   green(run((c) => { c.checkItems[0] = { ...c.checkItems[0], check: 'script', cmd: 'x', evidenceRequired: true }; }));
@@ -831,13 +831,13 @@ test('S1-TC-F03 MissingCriterionImpl 的两个判定面与 FalseScriptCheck 的�
   assert.deepEqual([...codes(both)].sort(), ['FalseScriptCheck', 'MissingCriterionImpl']);
   assert.equal(new Set(pathsOf(both)).size, 2, '两码必须落在不同 path（否则违 M1，也说明「同一 CheckItem 上互斥」被误实现成同 path）');
   // ④ 新增的 CheckItem 面：非 manual 条目缺 criterion 也报同码；manual 条目缺 criterion 仍豁免
-  only(run((c) => { c.checkItems[0].check = 'script'; c.checkItems[0].cmd = 'node tools/docgen/cli.mjs gate'; delete c.checkItems[0].criterion; }),
+  only(run((c) => { c.checkItems[0].check = 'script'; c.checkItems[0].cmd = 'node tools/docgen/builders/agents/cli.mjs gate'; delete c.checkItems[0].criterion; }),
     'MissingCriterionImpl', 'checkItems[0].criterion'); // 非 manual（script + cmd）→ 报
   green(run((c) => { delete c.checkItems[0].criterion; })); // manual → 豁免（不报）
   // ⑤ 两处 path 不同 → 同一次返回里同码报两次、互不抑制（§6 :157 只要求同 path 唯一，M1 允许）
   const twice = run((c) => {
     delete c.must[0].criterion;
-    c.checkItems[0].check = 'script'; c.checkItems[0].cmd = 'node tools/docgen/cli.mjs gate';
+    c.checkItems[0].check = 'script'; c.checkItems[0].cmd = 'node tools/docgen/builders/agents/cli.mjs gate';
     delete c.checkItems[0].criterion;
   });
   assert.deepEqual(codes(twice), ['MissingCriterionImpl', 'MissingCriterionImpl'],
@@ -1040,7 +1040,7 @@ test('S1-TC-G04 MissingAiAudit：6 形态必红 + 合法 ai 条目绿', () => {
         negative: [{ text: '只写结论', source: 'agents/detective-observer.md:20' }],
         boundary: [{ text: '一行为空', source: 'agents/detective-observer.md:30' }],
       },
-      audit: { sample: '每轮每条 ≥1', command: 'node tools/docgen/cli.mjs gate' },
+      audit: { sample: '每轮每条 ≥1', command: 'node tools/docgen/builders/agents/cli.mjs gate' },
     };
     return c;
   };
@@ -1183,7 +1183,7 @@ test('S1-TC-J01 全字段卡正向（F-01 / F-04）', () => {
   rich.signals.push({ type: sig, observer: '轮末快照', match: '产物出现' });
   rich.must.push({ ...rich.must[0], id: 'observe2', trigger: { scene: 'local.extra', moment: Object.keys(M.MOMENTS)[1], repeat: Object.keys(M.REPEATS)[1] } });
   rich.categories.push({ key: 'observe2', label: '补充观察项' });
-  rich.checkItems.push({ id: 'k02', subject: pickSubject(0), label: `${SUB.SUBJECTS[pickSubject(0)].display}补充行`, criterion: '补充行带路径与行号', check: 'script', cmd: 'node tools/docgen/cli.mjs gate' });
+  rich.checkItems.push({ id: 'k02', subject: pickSubject(0), label: `${SUB.SUBJECTS[pickSubject(0)].display}补充行`, criterion: '补充行带路径与行号', check: 'script', cmd: 'node tools/docgen/builders/agents/cli.mjs gate' });
   const r = M.validateCardModel(rich, baseEnv());
   green(r);
   for (const s of rich.scenes) assert.ok(M.SHARED_SCENES[s.id] || s.why, `局部场景 ${s.id} 必须带 why`);
@@ -1236,7 +1236,7 @@ test('S1-TC-J05 与 S6 双向零耦合（V-6）', () => {
     const bad = importLines(p).filter((l) => /policy\//.test(l));
     assert.deepEqual(bad, [], `${p} 不得 import policy/**（V-6 单向）`);
   }
-  const polFiles = walk(join(REPO, 'tools/docgen/policy'));
+  const polFiles = walk(join(REPO, 'tools/docgen/builders/agents/policy'));
   assert.ok(polFiles.length >= 7, `前置：policy 下至少 7 个模块，实得 ${polFiles.length}`);
   for (const p of polFiles) {
     const bad = importLines(p).filter((l) => /card-model/.test(l));

@@ -1,5 +1,5 @@
 // 卡面相关测试的**共享夹具**（plan Task 6 / 计划门 P2-2：一处实现、多文件 import，不得复制第二份）。
-// 消费方：`tools/docgen/test/card-render.test.mjs`、`tools/docgen/test/s2-card-rewrite.test.mjs`。
+// 消费方：`tools/docgen/builders/agents/test/card-render.test.mjs`、`tools/docgen/builders/agents/test/s2-card-rewrite.test.mjs`。
 // 五个 helper 的口径（testcase §0 常量 4）：`walkFiles` / `runNode` / `runCli` / `coldRepo`（mkdtemp 副本）/ `mutCard`（内存改卡并还原）。
 import { readFileSync, readdirSync, existsSync, writeFileSync, mkdirSync, cpSync, mkdtempSync, rmSync } from 'node:fs'
 import { join, dirname } from 'node:path'
@@ -9,7 +9,7 @@ import { execFileSync, spawnSync } from 'node:child_process'
 import { agentData } from '../../components/agentData.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
-export const REPO = join(HERE, '..', '..', '..', '..')
+export const REPO = join(HERE, '..', '..', '..', '..', '..', '..')
 export const AGENTS_DIR = join(REPO, 'agents')
 export const DOC_AGENTS_DIR = join(REPO, 'docs', 'agents')
 
@@ -29,7 +29,7 @@ export const runNode = (args, cwd = REPO, env = null) => {
   const r = spawnSync(process.execPath, args, { cwd, encoding: 'utf8', env: env ? { ...process.env, ...env } : process.env })
   return { code: r.status ?? -1, out: `${r.stdout ?? ''}${r.stderr ?? ''}` }
 }
-export const runCli = (args, cwd = REPO, env = null) => runNode(['tools/docgen/cli.mjs', ...args], cwd, env)
+export const runCli = (args, cwd = REPO, env = null) => runNode(['tools/docgen/builders/agents/cli.mjs', ...args], cwd, env)
 // 公共 CLI（`scs`）：`check observable` / `check criteria-engine` 的实现已迁出本仓，测试改走全局命令。
 export const runScs = (args, cwd = REPO, env = null) => {
   const r = spawnSync('scs', args, {
@@ -41,7 +41,7 @@ export const runScs = (args, cwd = REPO, env = null) => {
   return { code: r.status ?? -1, out: `${r.stdout ?? ''}${r.stderr ?? ''}` }
 }
 
-// 临时副本（同 `tools/docgen/acceptance/cold-run.mjs` 的做法）：已跟踪 + 未跟踪未忽略文件一起复制。
+// 临时副本（同 `tools/docgen/builders/agents/acceptance/cold-run.mjs` 的做法）：已跟踪 + 未跟踪未忽略文件一起复制。
 // 为什么补 `--others`：`docs/agents/**` 是新增未提交文件，只复制 `ls-files` 会让副本缺生成物 → 恒红 / 恒绿。
 export const coldRepo = ({ mutate = null, args = ['gate'], verify = null, env = null } = {}) => {
   const copy = mkdtempSync(join(tmpdir(), 's2-tc-'))
@@ -60,8 +60,8 @@ export const coldRepo = ({ mutate = null, args = ['gate'], verify = null, env = 
   mkdirSync(join(copy, '.drafts'), { recursive: true })
   const r = runCli(args, copy, {
     DOCGEN_DRAFTS_DIR: join(copy, '.drafts'),
-    DOCGEN_STATE_PATH: join(copy, 'tools/docgen/state.json'),
-    DOCGEN_EVIDENCE_DIR: join(copy, 'tools/docgen/fixtures'),
+    DOCGEN_STATE_PATH: join(copy, 'tools/docgen/builders/agents/state.json'),
+    DOCGEN_EVIDENCE_DIR: join(copy, 'tools/docgen/builders/agents/fixtures'),
     ...(env ?? {}),
   })
   try { if (verify) verify(copy, r) } finally { rmSync(copy, { recursive: true, force: true }) }

@@ -9,11 +9,11 @@ import { validateAgentData } from '../components/validateAgentData.mjs';
 import { patternRegistry, DEFAULT_BOUNDARY, DOMAIN } from '../components/patternRegistry.mjs';
 import { renderSeat } from '../components/cardPipeline.mjs';
 import { PREDICATES } from '../card-model/vocab/predicates.mjs';
-import { checkAgentFile } from '../../execution-matrix/check-agent.mjs';
+import { checkAgentFile } from '../../../../execution-matrix/check-agent.mjs';
 import { ROOT, readRepo, withRepoCopy, runCli, runEsm } from './support/dev-workflow-checks.mjs';
 
 const CARD = 'agents/evidence-reader.md';
-const CARD_TPL = 'tools/docgen/templates/agent-card.md.tpl';
+const CARD_TPL = 'tools/docgen/builders/agents/templates/agent-card.md.tpl';
 const card = readRepo(CARD);
 const tpl = readRepo(CARD_TPL);
 const base = agentData.find((a) => a.name === 'evidence-reader');
@@ -94,7 +94,7 @@ test('TC-B11 reader 卡不再有「自由探索」散文节（S4 迁移后由一
   assert.equal(tpl.includes('{{EXPLORE}}'), false, '新卡模板无 {{EXPLORE}} 槽');
   assert.equal(tpl.includes('现场生成 3-5 个'), false);
 
-  const texts = [readRepo('tools/docgen/components/patternRegistry.mjs')];
+  const texts = [readRepo('tools/docgen/builders/agents/components/patternRegistry.mjs')];
   assert.deepEqual(texts.map((t) => t.includes('现场生成 3-5 个')), [true], '旧句只留在 patternRegistry（未被任何渲染路径消费）');
   assert.deepEqual(texts.map((t) => (t.match(/本节不适用/g) ?? []).length), [1], 'DEFAULT_EXPLORE_NONE 文本只留在 patternRegistry');
 });
@@ -127,7 +127,7 @@ test('TC-B12 boundary + explorePolicy 被 BASE_KEYS 接受（不判非法），�
 });
 
 test('TC-D01 gate 逐字节兜住既有席；给 reviewer-qa.md 注入一字节必报 Mismatch', () => {
-  const n = readRepo('tools/docgen/baseline.json');
+  const n = readRepo('tools/docgen/builders/agents/baseline.json');
   assert.ok(JSON.parse(n).length > 0);
   const ok = runCli(ROOT, ['gate']);
   assert.equal(ok.status, 0, ok.stdout + ok.stderr);
@@ -139,7 +139,7 @@ test('TC-D01 gate 逐字节兜住既有席；给 reviewer-qa.md 注入一字节�
     assert.equal(bad.status, 1, bad.stdout + bad.stderr);
     assert.match(bad.stderr, /^Mismatch:/m);
     // CLI 只打错误码（stderr 契约不打印 path）；「点名哪一席」由 collectGate 明细给出
-    const detail = runEsm(dst, "import {collectGate} from './tools/docgen/cli.mjs'; console.log(collectGate().map(d=>d.code+':'+d.path).join('|'))");
+    const detail = runEsm(dst, "import {collectGate} from './tools/docgen/builders/agents/cli.mjs'; console.log(collectGate().map(d=>d.code+':'+d.path).join('|'))");
     assert.ok(detail.stdout.includes('Mismatch:agents/reviewer-qa.md'), detail.stdout + detail.stderr);
   });
 });
@@ -226,7 +226,7 @@ test('TC-E07 给另一席注入一字节 → gate 必报 Mismatch（第二个独
     const r = runCli(dst, ['gate']);
     assert.equal(r.status, 1, r.stdout + r.stderr);
     assert.match(r.stderr, /^Mismatch:/m);
-    const detail = runEsm(dst, "import {collectGate} from './tools/docgen/cli.mjs'; console.log(collectGate().map(d=>d.code+':'+d.path).join('|'))");
+    const detail = runEsm(dst, "import {collectGate} from './tools/docgen/builders/agents/cli.mjs'; console.log(collectGate().map(d=>d.code+':'+d.path).join('|'))");
     assert.ok(detail.stdout.includes('Mismatch:agents/reviewer-ai.md'), detail.stdout + detail.stderr);
   });
 });

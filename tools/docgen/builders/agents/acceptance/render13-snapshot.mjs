@@ -9,7 +9,7 @@ import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { renderCard } from '../components/renderCard.mjs';
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..', '..');
 const flag = (k) => {
   const i = process.argv.indexOf(k);
   return i >= 0 ? process.argv[i + 1] : undefined;
@@ -24,11 +24,11 @@ for (const tok of process.argv.slice(2)) {
   }
 }
 if (!outPath) {
-  console.error('用法：node tools/docgen/acceptance/render13-snapshot.mjs --out <输出文件>');
+  console.error('用法：node tools/docgen/builders/agents/acceptance/render13-snapshot.mjs --out <输出文件>');
   process.exit(2);
 }
 
-const template = readFileSync(join(ROOT, 'tools/docgen/templates/agent-card.md.tpl'), 'utf8');
+const template = readFileSync(join(ROOT, 'tools/docgen/builders/agents/templates/agent-card.md.tpl'), 'utf8');
 const card = {
   seat: 'fixture-13',
   name: 'fixture-13',

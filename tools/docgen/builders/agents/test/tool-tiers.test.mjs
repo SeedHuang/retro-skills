@@ -104,7 +104,7 @@ test('S5-TC-A03 boundaryBySeat 两席 + 值非空 + 键真实 + 白名单由它�
   }
   const names = new Set(agentData.map((a) => a.name));
   for (const n of Object.keys(patternRegistry.boundaryBySeat)) assert.ok(names.has(n), `boundaryBySeat 含不存在的席：${n}`);
-  const vSrc = readRepo('tools/docgen/components/validateAgentData.mjs');
+  const vSrc = readRepo('tools/docgen/builders/agents/components/validateAgentData.mjs');
   assert.match(vSrc, /Object\.keys\(patternRegistry\.boundaryBySeat\)/);
   assert.equal(/new Set\(\['evidence-reader', 'reviewer-audit', 'detective-observer'\]\)/.test(vSrc), false);
 });
@@ -141,8 +141,8 @@ test('S5-TC-A04 三席字面档位 + 每席 tools 落在已知档位 + 未挂载
 });
 
 test('S5-TC-A05 代码探针：两文件只调 toolsForSeat，不直接读档位表', () => {
-  const agentSrc = readRepo('tools/docgen/components/seatLoader.mjs');
-  const valSrc = readRepo('tools/docgen/components/validateAgentData.mjs');
+  const agentSrc = readRepo('tools/docgen/builders/agents/components/seatLoader.mjs');
+  const valSrc = readRepo('tools/docgen/builders/agents/components/validateAgentData.mjs');
   assert.ok(agentSrc.includes('toolsForSeat('));
   assert.ok(valSrc.includes('toolsForSeat('));
   assert.equal(/s\.name === 'senior-sdet'\s*\?/.test(agentSrc), false);
@@ -227,7 +227,7 @@ test('S5-TC-B02 审计边界节五段齐 + 允许写切片干净 + 禁止段两�
   assert.match(sec, /`pathGroups`（六组）与一项模式项（spec 与 plan 的两种写法）/, '缺禁写清单指针句（须含 spec / plan 的两种写法）');
   assert.equal(/逐项点名/.test(sec), false, '③ 段不得再逐项落清单（S-B V8）');
   // 定义层成员数不变（指针化的前提）：现定义层路径成员 = 改造前基线 − Q8 三项（不写死数字）
-  const basePaths = JSON.parse(readFileSync('tools/docgen/fixtures/capability-baseline.json', 'utf8'))
+  const basePaths = JSON.parse(readFileSync('tools/docgen/builders/agents/fixtures/capability-baseline.json', 'utf8'))
     .seats['reviewer-audit'].forbiddenPaths.filter((x) => !Q8_REMOVED_PATHS.includes(x));
   assert.deepEqual([...pathTokens()].sort(), [...basePaths].sort(), '定义层路径成员 ≠ 基线减 Q8');
 
@@ -267,7 +267,7 @@ test('S5-TC-B04 审计卡档位事实与输出格式（S4 迁移后：档位在�
   const edge = text.slice(text.lastIndexOf('## 边界'));
   assert.ok(edge.includes('`producer` 档'), '档位事实必须写在边界段（S6 单源）');
   assert.equal(edge.includes('`command` 档'), false);
-  const src = readRepo('tools/docgen/components/outputFormats.mjs');
+  const src = readRepo('tools/docgen/builders/agents/components/outputFormats.mjs');
   assert.equal((src.match(/已授 producer 档/g) ?? []).length, 0, '旧散文句随 legacy 块一并删除（S4 Task 7 收口）');
   assert.equal((src.match(/已授 command 档/g) ?? []).length, 0);
 });
@@ -317,7 +317,7 @@ test('S5-TC-B05 以「**禁止**」为界：允许段指组 + 禁止段指组 + 
     const SYNTH_ALLOWED = ['`npm run check`', '`git --no-optional-locks status --porcelain`',
       '`git --no-optional-locks diff`', '`git --no-optional-locks show`', '`git --no-optional-locks log`',
       '`node scripts/check-all.mjs`', '`node scripts/skill-dir.mjs`',
-      '`node tools/docgen/cli.mjs gate`', '`node tools/docgen/cli.mjs draft ls`'];
+      '`node tools/docgen/builders/agents/cli.mjs gate`', '`node tools/docgen/builders/agents/cli.mjs draft ls`'];
     const synthCmds = cmdsOf(SYNTH_ALLOWED.join('\n'));
     assert.ok(synthCmds.length >= 6, '正向样例未收到命令，样例失效');
     assert.doesNotThrow(() => assertWithinWhitelist(synthCmds, '正向样例'));
@@ -365,8 +365,8 @@ test('S5-TC-B06 侦探固定清单第 4 项含 --no-optional-locks status（数�
 
 test('S5-TC-B07 changes[] 中 to === renderSha256 的最新条落账四字段（重判键逐键核）', () => {
   for (const [seat, p] of Object.entries({
-    'reviewer-audit': 'tools/docgen/fixtures/reviewer-audit.evidence.json',
-    'detective-observer': 'tools/docgen/fixtures/detective-observer.evidence.json',
+    'reviewer-audit': 'tools/docgen/builders/agents/fixtures/reviewer-audit.evidence.json',
+    'detective-observer': 'tools/docgen/builders/agents/fixtures/detective-observer.evidence.json',
   })) {
     const ev = JSON.parse(readRepo(p));
     const hits = ev.changes.filter((c) => c.to === ev.renderSha256);
@@ -409,7 +409,7 @@ test('S5-TC-B08 真实 agentData 的 producer 席 boundary 等于渲染结果', 
 test('S5-TC-B09 B3 pending → 拒写盘；写回 pass 后落盘；rejudge-<席>-B3.md 四字段', () => {
   withRepoCopy((dst) => {
     // 只改审计席的渲染（新卡的本席清单条目），保证 target 盘上 ≠ 渲染、旁席不受影响
-    patchFile(dst, 'tools/docgen/data/seats/reviewer-audit.json', '审计席卡：卡片合规核对', '审计席卡：卡片合规核对·B09');
+    patchFile(dst, 'tools/docgen/dsl/agents/seats/reviewer-audit.json', '审计席卡：卡片合规核对', '审计席卡：卡片合规核对·B09');
     assert.equal(runCli(dst, ['draft', '--kind', 'agent', '--name', 'reviewer-audit']).status, 0);
     const draftsDir = join(dst, '.drafts');
     const draftName = readdirSync(draftsDir).find((f) => f.startsWith('reviewer-audit--'));
@@ -424,7 +424,7 @@ test('S5-TC-B09 B3 pending → 拒写盘；写回 pass 后落盘；rejudge-<席>
     writeFileSync(join(dst, mdRel), md('pending'));
 
     const cardPath = join(dst, 'agents/reviewer-audit.md');
-    const evPath = join(dst, 'tools/docgen/fixtures/reviewer-audit.evidence.json');
+    const evPath = join(dst, 'tools/docgen/builders/agents/fixtures/reviewer-audit.evidence.json');
     const len0 = JSON.parse(readFileSync(evPath, 'utf8')).changes.length;
     const hash0 = sha256(readFileSync(cardPath));
     const args = ['replace', '--kind', 'agent', '--name', 'reviewer-audit', '--draft', draftPath,
@@ -459,13 +459,13 @@ test('S5-TC-B09 B3 pending → 拒写盘；写回 pass 后落盘；rejudge-<席>
 
 test('S5-TC-B10 缺 DOCGEN_JUDGED_BY → UnapprovedChange exit 4 且不写盘', () => {
   withRepoCopy((dst) => {
-    patchFile(dst, 'tools/docgen/data/seats/reviewer-audit.json', '审计席卡：卡片合规核对', '审计席卡：卡片合规核对·B10');
+    patchFile(dst, 'tools/docgen/dsl/agents/seats/reviewer-audit.json', '审计席卡：卡片合规核对', '审计席卡：卡片合规核对·B10');
     assert.equal(runCli(dst, ['draft', '--kind', 'agent', '--name', 'reviewer-audit']).status, 0);
     const draftsDir = join(dst, '.drafts');
     const draftPath = join(draftsDir, readdirSync(draftsDir).find((f) => f.startsWith('reviewer-audit--')));
     const newSha = sha256(readFileSync(draftPath));
     const cardPath = join(dst, 'agents/reviewer-audit.md');
-    const evPath = join(dst, 'tools/docgen/fixtures/reviewer-audit.evidence.json');
+    const evPath = join(dst, 'tools/docgen/builders/agents/fixtures/reviewer-audit.evidence.json');
     const len0 = JSON.parse(readFileSync(evPath, 'utf8')).changes.length;
     const hash0 = sha256(readFileSync(cardPath));
 
@@ -499,7 +499,7 @@ test('S5-TC-B11 盘上已变但 lastWrittenHash 未更新 → TargetDrift exit 1
 test('S5-TC-B12 盘上 == 渲染 → 幂等短路 exit 0、changes 不追加', () => {
   withRepoCopy((dst) => {
     const cardPath = join(dst, 'agents/reviewer-audit.md');
-    const evPath = join(dst, 'tools/docgen/fixtures/reviewer-audit.evidence.json');
+    const evPath = join(dst, 'tools/docgen/builders/agents/fixtures/reviewer-audit.evidence.json');
     const len0 = JSON.parse(readFileSync(evPath, 'utf8')).changes.length;
     const hash0 = sha256(readFileSync(cardPath));
     assert.equal(runCli(dst, ['draft', '--kind', 'agent', '--name', 'reviewer-audit']).status, 0);
@@ -577,7 +577,7 @@ test('S5-TC-C03 往卡注入一字节 → gate exit 1、Mismatch', () => {
     const r = runCli(dst, ['gate']);
     assert.equal(r.status, 1, r.stdout + r.stderr);
     assert.match(r.stderr, /^Mismatch:/m);
-    const detail = runEsm(dst, "import {collectGate} from './tools/docgen/cli.mjs'; console.log(collectGate().map(d=>d.code+':'+d.path).join('|'))");
+    const detail = runEsm(dst, "import {collectGate} from './tools/docgen/builders/agents/cli.mjs'; console.log(collectGate().map(d=>d.code+':'+d.path).join('|'))");
     assert.ok(detail.stdout.includes('Mismatch:agents/reviewer-audit.md'), detail.stdout);
   });
 });
@@ -593,10 +593,10 @@ test('S5-TC-C04 两卡 diff 报零差异', () => {
 test('S5-TC-C05 只改 producer 数组顺序（集合不变）→ 校验绿、gate 红', () => {
   withRepoCopy((dst) => {
     // S6 起档位表下沉到定义层（spec §3.2）：构造前提的落点随之下移，判据语义不变
-    patchFile(dst, 'tools/docgen/policy/definitions/tiers.mjs',
+    patchFile(dst, 'tools/docgen/builders/agents/policy/definitions/tiers.mjs',
       "producer: ['Read', 'Glob', 'Grep', 'Write', 'Edit', 'RunCommand']",
       "producer: ['Glob', 'Read', 'Grep', 'Edit', 'Write', 'RunCommand']");
-    const v = runEsm(dst, "import {validateAgentData} from './tools/docgen/components/validateAgentData.mjs'; import {agentData, triggerTable} from './tools/docgen/components/agentData.mjs'; try { validateAgentData(agentData, triggerTable); console.log('OK'); } catch (e) { console.log('THREW ' + e.code); }");
+    const v = runEsm(dst, "import {validateAgentData} from './tools/docgen/builders/agents/components/validateAgentData.mjs'; import {agentData, triggerTable} from './tools/docgen/builders/agents/components/agentData.mjs'; try { validateAgentData(agentData, triggerTable); console.log('OK'); } catch (e) { console.log('THREW ' + e.code); }");
     assert.match(v.stdout, /OK/, v.stdout + v.stderr);
     const g = runCli(dst, ['gate']);
     assert.equal(g.status, 1, g.stdout + g.stderr);
@@ -605,7 +605,7 @@ test('S5-TC-C05 只改 producer 数组顺序（集合不变）→ 校验绿、ga
 
 test('S5-TC-C06 连跑两次 gate 输出一致、卡与 evidence 哈希不变', () => {
   const files = ['agents/reviewer-audit.md', 'agents/detective-observer.md',
-    'tools/docgen/fixtures/reviewer-audit.evidence.json', 'tools/docgen/fixtures/detective-observer.evidence.json'];
+    'tools/docgen/builders/agents/fixtures/reviewer-audit.evidence.json', 'tools/docgen/builders/agents/fixtures/detective-observer.evidence.json'];
   const before = files.map((f) => sha256(readRepo(f)));
   const g1 = runCli(ROOT, ['gate']);
   const g2 = runCli(ROOT, ['gate']);
@@ -619,9 +619,9 @@ test('S5-TC-C08 只生成一席草稿 → 旁席 Mismatch 挡住 replace', () =>
   withRepoCopy((dst) => {
     // 前提：target 盘上必须 ≠ 渲染（否则先撞幂等短路 exit 0，见 cli.mjs:425-432）
     // S4 Task 7：reviewer-audit 的渲染输入已是 `card`（旧 identity/fixedList 已删）→ 漂移必须改 card 字段
-    patchFile(dst, 'tools/docgen/data/seats/reviewer-audit.json', '结论写回审计表', '结论写回审计表（B）');
+    patchFile(dst, 'tools/docgen/dsl/agents/seats/reviewer-audit.json', '结论写回审计表', '结论写回审计表（B）');
     // S4 迁移（Task 5）：detective-observer 的渲染输入已是 `card`（不再读 fixedList）→ 旁席漂移必须改 card 字段
-    patchFile(dst, 'tools/docgen/data/seats/detective-observer.json', '只记录不裁决；观察记录原文进最终报告', '只记录不裁决（B）；观察记录原文进最终报告');
+    patchFile(dst, 'tools/docgen/dsl/agents/seats/detective-observer.json', '只记录不裁决；观察记录原文进最终报告', '只记录不裁决（B）；观察记录原文进最终报告');
     assert.equal(runCli(dst, ['draft', '--kind', 'agent', '--name', 'reviewer-audit']).status, 0);
     const draftsDir = join(dst, '.drafts');
     const draftPath = join(draftsDir, readdirSync(draftsDir).find((f) => f.startsWith('reviewer-audit--')));
@@ -629,7 +629,7 @@ test('S5-TC-C08 只生成一席草稿 → 旁席 Mismatch 挡住 replace', () =>
       '--expect-change', sha256(readFileSync(draftPath)).toUpperCase(), '--yes']);
     assert.equal(r.status, 1, r.stdout + r.stderr);
     assert.match(r.stderr, /^Mismatch:/m);
-    const detail = runEsm(dst, "import {collectGate} from './tools/docgen/cli.mjs'; console.log(collectGate().map(d=>d.code+':'+d.path).join('|'))");
+    const detail = runEsm(dst, "import {collectGate} from './tools/docgen/builders/agents/cli.mjs'; console.log(collectGate().map(d=>d.code+':'+d.path).join('|'))");
     assert.ok(detail.stdout.includes('Mismatch:agents/detective-observer.md'), detail.stdout);
   });
 });
@@ -715,7 +715,7 @@ test('S5-TC-D09 tools 冻结后 validate / render 不抛，档位数组长度不
 });
 
 test('S5-TC-D10 条目自带 tools 的展开顺序后门：...s 在 tools 之后 + 外来 tools 被拒', () => {
-  const src = readRepo('tools/docgen/components/seatLoader.mjs');
+  const src = readRepo('tools/docgen/builders/agents/components/seatLoader.mjs');
   const hits = [...src.matchAll(/tools:\s*toolsForSeat\(\s*s\.name\s*\)/g)];
   assert.equal(hits.length, 1, '`tools: toolsForSeat(s.name)` 必须恰 1 处（空白归一后）');
   const i = hits[0].index;
@@ -734,8 +734,8 @@ test('S5-TC-E04 全仓测试零硬编码档位数量 + 旧计数注释守卫 + �
   for (const [f, s] of Object.entries(readCounterFiles())) {
     assert.deepEqual(s.split(/\r?\n/).filter(isTierCountLine), [], f);
   }
-  assert.equal(/readOnly 12|sdet 1|command 2/.test(readRepo('tools/docgen/components/validateAgentData.mjs')), false);
-  assert.equal((readRepo('tools/docgen/test/tool-tiers.test.mjs').match(/[四五六]档/g) ?? []).length, 0, '样例行必须运行时拼接，否则本文件自伤');
+  assert.equal(/readOnly 12|sdet 1|command 2/.test(readRepo('tools/docgen/builders/agents/components/validateAgentData.mjs')), false);
+  assert.equal((readRepo('tools/docgen/builders/agents/test/tool-tiers.test.mjs').match(/[四五六]档/g) ?? []).length, 0, '样例行必须运行时拼接，否则本文件自伤');
   // 夹具先落到常量：直接内联在 assert 行里会被 counterProbes 的「assert 行含 14/15」探针误判（自伤）
   const FIXTURE = 'const a = 15; // 注释里的 15 不算';
   assert.deepEqual(counterProbes({ 'fixture.test.mjs': FIXTURE }).baseline, []);
@@ -755,7 +755,7 @@ test('S5-TC-E06 review-fixes I5 样本必须是运行时 readOnly 席（不是 d
   assert.equal(tierOf(sample.name), 'readOnly');
   sample.tools = [...toolsForSeat(sample.name), 'Write'];
   assert.throws(() => validateAgentData(d, triggerTable), (e) => e.code === 'ToolsViolation');
-  const src = readRepo('tools/docgen/test/review-fixes.test.mjs');
+  const src = readRepo('tools/docgen/builders/agents/test/review-fixes.test.mjs');
   assert.equal(/data\[0\]\.tools = \[\.\.\.patternRegistry\.tools\.readOnly, 'Write'\]/.test(src), false);
 });
 

@@ -11,7 +11,7 @@ import { tierOf, toolsForSeat } from '../components/patternRegistry.mjs';
 import { cmdDraft, cmdReplace } from '../cli.mjs';
 import { BASELINE_RULES, agentPaths } from '../components/baseline.mjs';
 
-const CLI = 'tools/docgen/cli.mjs';
+const CLI = 'tools/docgen/builders/agents/cli.mjs';
 // gate 打印的 baseline N/N 与两清单同源：正则从常量拼，不写死条数
 const N = BASELINE_RULES.length + agentPaths().length;
 // J3 fix：模块级单一草稿箱，after 清理，不逐调用 mkdtempSync 泄漏

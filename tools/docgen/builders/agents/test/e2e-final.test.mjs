@@ -5,7 +5,7 @@ import { spawnSync } from 'node:child_process';
 import { renderBaseline, BASELINE_RULES, agentPaths } from '../components/baseline.mjs';
 import { agentData, triggerTable } from '../components/agentData.mjs';
 
-const CLI = 'tools/docgen/cli.mjs';
+const CLI = 'tools/docgen/builders/agents/cli.mjs';
 const run = (args) => spawnSync(process.execPath, [CLI, ...args], { encoding: 'utf8', env: { ...process.env, DOCGEN_DRAFTS_DIR: '.tmp-test/drafts' } });
 
 test('W4：锚点席 description 形态（S4 收口后全席 = trigger.when 直出 + notWhen 后缀）', () => {

@@ -62,7 +62,7 @@ export function expandRefs(value, shared, seat) {
 
 // 默认数据目录：写成函数（而非模块级 const），使本模块的求值顺序与调用顺序无关（环内调用不会 TDZ）
 function dataDir() {
-  return join(dirname(fileURLToPath(import.meta.url)), '..', 'data')
+  return join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'dsl', 'agents')
 }
 
 export function loadSeatData(dir = dataDir()) {

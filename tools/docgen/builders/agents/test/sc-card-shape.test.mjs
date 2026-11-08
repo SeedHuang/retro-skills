@@ -18,8 +18,8 @@ import { renderCard } from '../components/renderCard.mjs'
 import { cardFaceIds } from '../components/cardFaceIds.mjs'
 import { CARD_KEYS } from '../components/cardKeys.mjs'
 import { expandRefs } from '../components/seatLoader.mjs'
-import { VERDICTS as CHECK_VERDICTS } from '../../observation-check/checks.mjs'
-import { splitRow } from '../../execution-matrix/markdown-rows.mjs'
+import { VERDICTS as CHECK_VERDICTS } from '../../../../observation-check/checks.mjs'
+import { splitRow } from '../../../../execution-matrix/markdown-rows.mjs'
 import * as ENUMS from '../card-model/enums.mjs'
 import * as CC from '../card-model/vocab/card-contract.mjs'
 import { CARD_MODEL_CODES } from '../card-model/validateCardModel.mjs'
@@ -119,11 +119,11 @@ test('SC-TC-04 card-contract.mjs 导出面恰等四名（多一 / 少一 / 改�
 
 test('SC-TC-05 副本回填一个导出（旧常量名）→ 导出名长度必多一', () => {
   const probeSrc = [
-    "import * as CC from './tools/docgen/card-model/vocab/card-contract.mjs'",
+    "import * as CC from './tools/docgen/builders/agents/card-model/vocab/card-contract.mjs'",
     "process.stdout.write(JSON.stringify(Object.keys(CC).sort()))",
   ].join('\n')
   withRepoCopy((copy) => {
-    const p = join(copy, 'tools/docgen/card-model/vocab/card-contract.mjs')
+    const p = join(copy, 'tools/docgen/builders/agents/card-model/vocab/card-contract.mjs')
     writeFileSync(p, `${R(p)}\nexport const ${OLD_CONST} = []\n`, 'utf8')
     const keys = JSON.parse(probeIn(copy, 'probe-exports.mjs', probeSrc))
     assert.equal(keys.length, 5, `副本导出名应多一个（实得 ${keys.length}）`)
@@ -137,13 +137,13 @@ test('SC-TC-06 定义恰 1 处 + 旧常量名 0 命中 + cardFaceIds 层① 删�
     .reduce((n, p) => n + (R(p).match(/^export const VERDICT_HINT/gm) ?? []).length, 0)
   assert.equal(defs, 1, 'VERDICT_HINT 只能在 card-contract.mjs 定义 1 次')
   assert.equal(countInRepo(join(REPO, 'tools'), OLD_CONST), 0, '旧常量名在非测试面必须 0 命中')
-  const idsSrc = R(join(REPO, 'tools/docgen/components/cardFaceIds.mjs'))
+  const idsSrc = R(join(REPO, 'tools/docgen/builders/agents/components/cardFaceIds.mjs'))
   assert.equal(idsSrc.split(OLD_CONST).length - 1, 0, 'cardFaceIds 不得再引用旧常量')
   assert.equal(idsSrc.split('tristate').length - 1, 0, 'cardFaceIds 不得再留层① 的局部变量')
   // S2-TC-F05 探针回归（同批改写）：该用例源码已只引用 VERDICT_HINT
-  const f05Src = R(join(REPO, 'tools/docgen/test/s2-card-rewrite.test.mjs'))
+  const f05Src = R(join(REPO, 'tools/docgen/builders/agents/test/s2-card-rewrite.test.mjs'))
   assert.equal(f05Src.split('CC.' + OLD_CONST).length - 1, 0, 'F05 探针不得再就地改旧常量')
-  const f05 = runTest(['--test-name-pattern', 'S2-TC-F05', 'tools/docgen/test/s2-card-rewrite.test.mjs'])
+  const f05 = runTest(['--test-name-pattern', 'S2-TC-F05', 'tools/docgen/builders/agents/test/s2-card-rewrite.test.mjs'])
   assert.equal(f05.code, 0, `S2-TC-F05 必须绿：${f05.out.slice(-400)}`)
 })
 
@@ -170,7 +170,7 @@ test('SC-TC-07 副本回填旧常量名一处 → 单源判据（定义 1 + 旧�
     "process.stdout.write('defs ' + defs + ' / hits ' + hits)",
   ].join('\n')
   withRepoCopy((copy) => {
-    writeFileSync(join(copy, 'tools/docgen/components/tristate-copy.mjs'), `export const ${OLD_CONST} = ['x']\n`, 'utf8')
+    writeFileSync(join(copy, 'tools/docgen/builders/agents/components/tristate-copy.mjs'), `export const ${OLD_CONST} = ['x']\n`, 'utf8')
     const out = probeIn(copy, 'probe-defs.mjs', probeSrc, { OLD_CONST })
     const m = /defs (\d+) \/ hits (\d+)/.exec(out)
     assert.ok(m, out)
@@ -215,7 +215,7 @@ test('SC-TC-09 副本把一行 hit 放回「一定会」段末 → 必红且点�
 
 test('SC-TC-10 check-tristate-header 绿态：首行固定 + 逐席表头逐字含声明 + 卡面恰一处「判定取值」', () => {
   const N = SEATS().length
-  const r = runNode(['tools/docgen/check-tristate-header.mjs'])
+  const r = runNode(['tools/docgen/builders/agents/check-tristate-header.mjs'])
   assert.equal(r.code, 0, `脚本必须 exit 0：${r.out.slice(-400)}`)
   const first = (r.out.split(/\r?\n/)[0] || '').trim()
   assert.match(first, new RegExp(`^check-tristate-header: seats ${N} / ok ${N} / bad 0 => ok$`))
@@ -237,12 +237,12 @@ test('SC-TC-10 check-tristate-header 绿态：首行固定 + 逐席表头逐字�
 
 test('SC-TC-11 副本删表头一个值（na）→ ok 0 / bad 15', () => {
   withRepoCopy((copy) => {
-    const p = join(copy, 'tools/docgen/components/renderCard.mjs')
+    const p = join(copy, 'tools/docgen/builders/agents/components/renderCard.mjs')
     const src = R(p)
     const INJECT = '判据（${VERDICT_HINT}）'
     assert.equal(src.split(INJECT).length - 1, 1, '注入点必须恰 1 处')
     writeFileSync(p, src.replace(INJECT, "判据（${VERDICT_HINT.split('、').slice(0, 2).join('、')}）"), 'utf8')
-    const r = runNode(['tools/docgen/check-tristate-header.mjs'], copy)
+    const r = runNode(['tools/docgen/builders/agents/check-tristate-header.mjs'], copy)
     const first = (r.out.split(/\r?\n/)[0] || '').trim()
     assert.match(first, new RegExp(`ok 0 \\/ bad ${SEATS().length} => fail`), `删值后必须全席红（实得「${first}」）`)
     assert.notEqual(r.code, 0, '脚本 exit 非 0（旁证）')
@@ -252,22 +252,22 @@ test('SC-TC-11 副本删表头一个值（na）→ ok 0 / bad 15', () => {
 test('SC-TC-12 换手写串 / 挪出段 → 全席必红（不得整卡扫描而恒绿）', () => {
   // ① 手写三值全串（三值写全、顺序正确，但不是派生值）
   withRepoCopy((copy) => {
-    const p = join(copy, 'tools/docgen/components/renderCard.mjs')
+    const p = join(copy, 'tools/docgen/builders/agents/components/renderCard.mjs')
     const src = R(p)
     const INJECT = '判据（${VERDICT_HINT}）'
     writeFileSync(p, src.replace(INJECT, `判据（${Object.keys(ENUMS.VERDICTS).join(' / ')}）`), 'utf8')
-    const r = runNode(['tools/docgen/check-tristate-header.mjs'], copy)
+    const r = runNode(['tools/docgen/builders/agents/check-tristate-header.mjs'], copy)
     const first = (r.out.split(/\r?\n/)[0] || '').trim()
     assert.match(first, new RegExp(`ok 0 \\/ bad ${SEATS().length} => fail`), `手写串必须红（实得「${first}」）`)
   })
   // ② 表头挪出「本席清单」段（仍在卡内：卡里已有「产物字段名只许：…」行含三值）
   withRepoCopy((copy) => {
-    const p = join(copy, 'tools/docgen/templates/agent-card.md.tpl')
+    const p = join(copy, 'tools/docgen/builders/agents/templates/agent-card.md.tpl')
     const src = R(p)
     const INJECT = '## 本席清单\n{{CHECK_TABLE}}'
     assert.equal(src.split(INJECT).length - 1, 1, '模板注入点必须恰 1 处')
     writeFileSync(p, src.replace(INJECT, '{{CHECK_TABLE}}\n\n## 本席清单'), 'utf8')
-    const r = runNode(['tools/docgen/check-tristate-header.mjs'], copy)
+    const r = runNode(['tools/docgen/builders/agents/check-tristate-header.mjs'], copy)
     const first = (r.out.split(/\r?\n/)[0] || '').trim()
     assert.match(first, new RegExp(`ok 0 \\/ bad ${SEATS().length} => fail`), `挪出段必须红（实得「${first}」）`)
   })
@@ -291,11 +291,11 @@ test('SC-TC-13「一定会」段末 5 行消失（一次性档比 BASE）；七�
 })
 
 test('SC-TC-14 sdet-render 表头断言与渲染实际逐字一致（且源码不写三值字面）', () => {
-  const r = runTest(['tools/docgen/test/sdet-render.test.mjs'])
+  const r = runTest(['tools/docgen/builders/agents/test/sdet-render.test.mjs'])
   assert.equal(r.code, 0, `sdet-render 必须 exit 0：${r.out.slice(-400)}`)
   assert.equal(countOf(r.out, '# fail (\\d+)'), 0)
   assert.ok(countOf(r.out, '# pass (\\d+)') >= 1)
-  const src = R(join(REPO, 'tools/docgen/test/sdet-render.test.mjs'))
+  const src = R(join(REPO, 'tools/docgen/builders/agents/test/sdet-render.test.mjs'))
   assert.equal(src.split('hit / miss').length - 1, 0, '源码不得自造三值字面串')
   for (const v of Object.values(ENUMS.VERDICTS)) assert.equal(src.split(`'${v}'`).length - 1, 0, `源码不得写字面 '${v}'`)
   assert.ok(src.includes('VERDICT_HINT'), '表头断言必须引用派生声明')
@@ -303,19 +303,19 @@ test('SC-TC-14 sdet-render 表头断言与渲染实际逐字一致（且源码�
 
 test('SC-TC-15 副本让表头多一个空格 → sdet-render 逐字断言必红', () => {
   withRepoCopy((copy) => {
-    const p = join(copy, 'tools/docgen/components/renderCard.mjs')
+    const p = join(copy, 'tools/docgen/builders/agents/components/renderCard.mjs')
     const src = R(p)
     const INJECT = '`| # | 条目 | 判据（${VERDICT_HINT}） | 类型 |`'
     assert.equal(src.split(INJECT).length - 1, 1, '注入点必须恰 1 处')
     writeFileSync(p, src.replace(INJECT, '`|  # | 条目 | 判据（${VERDICT_HINT}） | 类型 |`'), 'utf8')
-    const r = runTest(['tools/docgen/test/sdet-render.test.mjs'], copy)
+    const r = runTest(['tools/docgen/builders/agents/test/sdet-render.test.mjs'], copy)
     assert.notEqual(r.code, 0, '多一个空格后逐字断言必须红（旁证：子进程非 0）')
     assert.ok(countOf(r.out, '# fail (\\d+)') >= 1, r.out.slice(-400))
   })
 })
 
 test('SC-TC-16 删层① 后 S2-TC-C01–C09 逐条仍绿（9/9）', () => {
-  const r = runTest(['--test-name-pattern', 'S2-TC-C0', 'tools/docgen/test/s2-card-rewrite.test.mjs'])
+  const r = runTest(['--test-name-pattern', 'S2-TC-C0', 'tools/docgen/builders/agents/test/s2-card-rewrite.test.mjs'])
   assert.equal(r.code, 0, `C 组必须全绿：${r.out.slice(-400)}`)
   assert.equal(countOf(r.out, '# pass (\\d+)'), 9)
   assert.equal(countOf(r.out, '# fail (\\d+)'), 0)
@@ -371,7 +371,7 @@ test('SC-TC-22 checks.mjs 的三值仍 3 个且确为 export（不得就地改 e
 
 test('SC-TC-33 check-trigger-kind 绿态：四值全用上、计数恰 11 / 1 / 1 / 2，输出附 when 前 12 字', () => {
   const N = SEATS().length
-  const r = runNode(['tools/docgen/check-trigger-kind.mjs'])
+  const r = runNode(['tools/docgen/builders/agents/check-trigger-kind.mjs'])
   assert.equal(r.code, 0, `脚本必须 exit 0：${r.out.slice(-400)}`)
   const first = (r.out.split(/\r?\n/)[0] || '').trim()
   assert.match(first, new RegExp(`^check-trigger-kind: seats ${N} / kinds \\{dispatch:11,occasion:1,moment:1,need:2\\} / bad 0 => ok$`))
@@ -383,19 +383,19 @@ test('SC-TC-33 check-trigger-kind 绿态：四值全用上、计数恰 11 / 1 / 
   assert.equal(rows.length, N, `必须逐席附 when 前 12 字（实得 ${rows.length}）`)
   // ⑤ 不变量：reviewer-audit 的 when 一字不动（改的是它的 duty.action）
   assert.equal(TRIGGER['reviewer-audit'].when, '当议会评审需要过程标准核对、轮际对账或交付审计')
-  const pilot = runTest(['--test-name-pattern', 'triggerTable reviewer-audit', 'tools/docgen/test/pilot-data.test.mjs'])
+  const pilot = runTest(['--test-name-pattern', 'triggerTable reviewer-audit', 'tools/docgen/builders/agents/test/pilot-data.test.mjs'])
   assert.equal(pilot.code, 0, `pilot-data 键集断言（含 kind、when 逐字）必须绿：${pilot.out.slice(-400)}`)
 })
 
 test('SC-TC-34 副本某席写第五个 kind → 红态首行 => fail 且点名该席', () => {
   withRepoCopy((copy) => {
     const seat = 'reviewer-qa'
-    const p = join(copy, 'tools/docgen/data/seats', `${seat}.json`)
+    const p = join(copy, 'tools/docgen/dsl/agents/seats', `${seat}.json`)
     const src = R(p)
     const INJECT = '"kind": "dispatch"'
     assert.equal(src.split(INJECT).length - 1, 1, '注入点必须恰 1 处')
     writeFileSync(p, src.replace(INJECT, '"kind": "when"'), 'utf8')
-    const r = runNode(['tools/docgen/check-trigger-kind.mjs'], copy)
+    const r = runNode(['tools/docgen/builders/agents/check-trigger-kind.mjs'], copy)
     const first = (r.out.split(/\r?\n/)[0] || '').trim()
     assert.match(first, /=> fail/, `五值之外必须红（实得「${first}」）`)
     assert.match(r.out, new RegExp(`${seat}: when`), '必须点名该席与实际值')
@@ -405,12 +405,12 @@ test('SC-TC-34 副本某席写第五个 kind → 红态首行 => fail 且点名�
 test('SC-TC-35 副本把非议会席写成 dispatch → 红态首行 => fail 且点名该席', () => {
   withRepoCopy((copy) => {
     const seat = 'senior-sdet'
-    const p = join(copy, 'tools/docgen/data/seats', `${seat}.json`)
+    const p = join(copy, 'tools/docgen/dsl/agents/seats', `${seat}.json`)
     const src = R(p)
     const INJECT = '"kind": "need"'
     assert.equal(src.split(INJECT).length - 1, 1, '注入点必须恰 1 处')
     writeFileSync(p, src.replace(INJECT, '"kind": "dispatch"'), 'utf8')
-    const r = runNode(['tools/docgen/check-trigger-kind.mjs'], copy)
+    const r = runNode(['tools/docgen/builders/agents/check-trigger-kind.mjs'], copy)
     const first = (r.out.split(/\r?\n/)[0] || '').trim()
     assert.match(first, /=> fail/, `非议会席非 need 必须红（实得「${first}」）`)
     assert.match(r.out, new RegExp(seat), '必须点名该席')
@@ -419,15 +419,15 @@ test('SC-TC-35 副本把非议会席写成 dispatch → 红态首行 => fail 且
 
 test('SC-TC-36 名单现算：新增第 16 席（前缀非 reviewer-/detective-）写 dispatch → 红', () => {
   withRepoCopy((copy) => {
-    const base = R(join(copy, 'tools/docgen/data/seats', `${SEATS()[0]}.json`))
+    const base = R(join(copy, 'tools/docgen/dsl/agents/seats', `${SEATS()[0]}.json`))
     const added = base.replace(`"name": "${SEATS()[0]}"`, '"name": "archivist"')
     assert.ok(added.includes('"name": "archivist"'), '构造必须换掉席名')
-    writeFileSync(join(copy, 'tools/docgen/data/seats/archivist.json'), added, 'utf8')
-    const loader = join(copy, 'tools/docgen/components/seatLoader.mjs')
+    writeFileSync(join(copy, 'tools/docgen/dsl/agents/seats/archivist.json'), added, 'utf8')
+    const loader = join(copy, 'tools/docgen/builders/agents/components/seatLoader.mjs')
     const src = R(loader)
     const INJECT = 'export const SEAT_ORDER = ['
     writeFileSync(loader, src.replace(INJECT, `${INJECT}'archivist', `), 'utf8')
-    const r = runNode(['tools/docgen/check-trigger-kind.mjs'], copy)
+    const r = runNode(['tools/docgen/builders/agents/check-trigger-kind.mjs'], copy)
     const first = (r.out.split(/\r?\n/)[0] || '').trim()
     assert.match(first, new RegExp(`seats ${SEATS().length + 1}`), `席数必须现算（实得「${first}」）`)
     assert.match(first, /=> fail/, '第 16 席写 dispatch 必须红（写死两席名单会在此假绿）')
@@ -440,7 +440,7 @@ test('SC-TC-37 kind 不进 card、不进渲染（8 键不动 + 卡面 kind 命�
   for (const s of SEATS()) kindInRender += textOf(s).split('kind').length - 1
   assert.equal(kindInRender, 0)
   for (const s of SEATS()) {
-    const j = JSON.parse(R(join(REPO, 'tools/docgen/data/seats', `${s}.json`)))
+    const j = JSON.parse(R(join(REPO, 'tools/docgen/dsl/agents/seats', `${s}.json`)))
     assert.equal(Object.keys(j.card).length, EIGHT_KEYS.length, `${s} 席数据 card 必须仍 8 键`)
     assert.equal('kind' in j.card, false, `${s} card 不得含 kind`)
     assert.ok(TRIGGER[s].kind, `${s} triggerTable 上必须有 kind`)
@@ -458,9 +458,9 @@ test('SC-TC-38 非议会席现算集合 == complement(buildEnv 的 parliamentSea
 
 // ── D 组：数据文案（斜杠 / 动作返回 / 人设 / HOST_TERM）────────────────────────────────────
 
-const SEAT_JSON = (seat) => join(REPO, 'tools/docgen/data/seats', `${seat}.json`)
+const SEAT_JSON = (seat) => join(REPO, 'tools/docgen/dsl/agents/seats', `${seat}.json`)
 const seatsText = () => SEATS().map((s) => R(SEAT_JSON(s))).join('\n')
-const seatsTextInCopy = (copy) => SEATS().map((s) => R(join(copy, 'tools/docgen/data/seats', `${s}.json`))).join('\n')
+const seatsTextInCopy = (copy) => SEATS().map((s) => R(join(copy, 'tools/docgen/dsl/agents/seats', `${s}.json`))).join('\n')
 const countWord = (text, word) => text.split(word).length - 1
 
 // 四字段斜杠（项口径）：装配后逐席逐字段判 `/` 与全角 `／`（PRD V12 原话：字段路径必须钉死）
@@ -474,7 +474,7 @@ const slashItems = () => {
 }
 
 const SLASH_PROBE = [
-  "import { agentData } from './tools/docgen/components/agentData.mjs'",
+  "import { agentData } from './tools/docgen/builders/agents/components/agentData.mjs'",
   "let n = 0, wrong = 0",
   "for (const a of agentData) {",
   "  const fields = [a.card.duty.trigger, a.card.duty.action, a.card.duty.constraint, ...a.card.categories.map((c) => c.label)]",
@@ -485,7 +485,7 @@ const SLASH_PROBE = [
 ].join('\n')
 
 const ACTION_PROBE = [
-  "import { agentData } from './tools/docgen/components/agentData.mjs'",
+  "import { agentData } from './tools/docgen/builders/agents/components/agentData.mjs'",
   "const acts = agentData.map((a) => String(a.card.duty.action))",
   "const names = [...new Set(acts.map((x) => { const m = /写回(.+?)。?$/.exec(x); return m ? m[1] : '' }))]",
   "process.stdout.write(JSON.stringify({",
@@ -496,8 +496,8 @@ const ACTION_PROBE = [
 ].join('\n')
 
 const PERSONA_PROBE = [
-  "import { agentData } from './tools/docgen/components/agentData.mjs'",
-  "import { expectedDocs } from './tools/docgen/components/cardPipeline.mjs'",
+  "import { agentData } from './tools/docgen/builders/agents/components/agentData.mjs'",
+  "import { expectedDocs } from './tools/docgen/builders/agents/components/cardPipeline.mjs'",
   "const words = ['资深', '20 年']",
   "const cards = agentData.length",
   "let readmeHits = 0",
@@ -519,7 +519,7 @@ test('SC-TC-23 四字段斜杠串清零（项口径，常驻只判改后 0）', 
 
 test('SC-TC-24 副本注入一处 a/b → 计数 1（按项计，不是按出现次数）', () => {
   withRepoCopy((copy) => {
-    const p = join(copy, 'tools/docgen/data/seats', `${SEATS()[0]}.json`)
+    const p = join(copy, 'tools/docgen/dsl/agents/seats', `${SEATS()[0]}.json`)
     writeFileSync(p, R(p).replace(/"action": "([^"]*)"/, '"action": "$1（PRD/spec）"'), 'utf8')
     const out = probeIn(copy, 'probe-slash.mjs', SLASH_PROBE)
     const m = /slash (\d+)/.exec(out)
@@ -531,7 +531,7 @@ test('SC-TC-24 副本注入一处 a/b → 计数 1（按项计，不是按出现
 
 test('SC-TC-25 全角 ／ 同判（注入 PRD／spec → 计数 ≥1）', () => {
   withRepoCopy((copy) => {
-    const p = join(copy, 'tools/docgen/data/seats', `${SEATS()[0]}.json`)
+    const p = join(copy, 'tools/docgen/dsl/agents/seats', `${SEATS()[0]}.json`)
     writeFileSync(p, R(p).replace(/"action": "([^"]*)"/, '"action": "$1（PRD／spec）"'), 'utf8')
     const out = probeIn(copy, 'probe-slash.mjs', SLASH_PROBE)
     const m = /slash (\d+)/.exec(out)
@@ -566,9 +566,9 @@ test('SC-TC-27 duty.action 四件齐：含写回 / 产物名非占位 / ≥3 种
   const zh = ['命中', '未命中', '不适用']
   const bad = acts.filter((x) => en.some((v) => x.includes(v)) || zh.some((v) => x.includes(v)))
   assert.deepEqual(bad, [], '动作行不得写三态词（英文或中文都不写）')
-  const tt = runTest(['--test-name-pattern', 'S5-TC-C08', 'tools/docgen/test/tool-tiers.test.mjs'])
+  const tt = runTest(['--test-name-pattern', 'S5-TC-C08', 'tools/docgen/builders/agents/test/tool-tiers.test.mjs'])
   assert.equal(tt.code, 0, `S5-TC-C08 必须绿（构造前提已换新文案片段）：${tt.out.slice(-400)}`)
-  const ttSrc = R(join(REPO, 'tools/docgen/test/tool-tiers.test.mjs'))
+  const ttSrc = R(join(REPO, 'tools/docgen/builders/agents/test/tool-tiers.test.mjs'))
   assert.equal(ttSrc.includes('只审各项标准是否达到，不裁技术对错'), false, '旧 action 子串不得再被当构造前提')
 })
 
@@ -581,20 +581,20 @@ test('SC-TC-28 副本三坏形态必红：删写回 / 回填占位 / 全席同�
   }
   // ① 某席「写回」→「写到」：命中席数变 席数 − 1
   const one = runOne((copy) => {
-    const p = join(copy, 'tools/docgen/data/seats', `${SEATS()[0]}.json`)
+    const p = join(copy, 'tools/docgen/dsl/agents/seats', `${SEATS()[0]}.json`)
     writeFileSync(p, R(p).replace('结论写回', '结论写到'), 'utf8')
   })
   assert.equal(one.writeback, SEATS().length - 1, `删一席「写回」必须少一席（实得 ${one.writeback}）`)
   // ② 某席产物名换成占位
   const two = runOne((copy) => {
-    const p = join(copy, 'tools/docgen/data/seats', `${SEATS()[0]}.json`)
+    const p = join(copy, 'tools/docgen/dsl/agents/seats', `${SEATS()[0]}.json`)
     writeFileSync(p, R(p).replace(/结论写回([^"]*)"/, '结论写回本席产物"'), 'utf8')
   })
   assert.ok(two.placeholder >= 1, `回填占位必须命中 ≥1（实得 ${two.placeholder}）`)
   // ③ 15 席产物名统一成同一个
   const three = runOne((copy) => {
     for (const s of SEATS()) {
-      const p = join(copy, 'tools/docgen/data/seats', `${s}.json`)
+      const p = join(copy, 'tools/docgen/dsl/agents/seats', `${s}.json`)
       writeFileSync(p, R(p).replace(/结论写回([^"]*)"/, '结论写回交付物正文"'), 'utf8')
     }
   })
@@ -610,7 +610,7 @@ test('SC-TC-29 人设词三面清零（含外层 role / agents / docs/agents）+
     const docsText = SEATS().map((s) => R(join(REPO, 'docs/agents', `${s}.md`))).join('\n')
     assert.equal(countWord(docsText, w), 0, `docs/agents 面不得含「${w}」`)
   }
-  const sd = runTest(['--test-name-pattern', 'TC-007', 'tools/docgen/test/sdet-data.test.mjs'])
+  const sd = runTest(['--test-name-pattern', 'TC-007', 'tools/docgen/builders/agents/test/sdet-data.test.mjs'])
   assert.equal(sd.code, 0, `TC-007（role 已去「资深」）必须绿：${sd.out.slice(-400)}`)
   if (SHAPE) assert.equal(countWord(seatsText(), '${@hostTerm}'), 18, 'SHAPE：占位总数须仍为 18')
 })
@@ -618,7 +618,7 @@ test('SC-TC-29 人设词三面清零（含外层 role / agents / docs/agents）+
 test('SC-TC-30 回填人设必红；rationale 改写不得弄丢 ${@hostTerm} 占位（仍 18 / 漏 1 → 17）', () => {
   // ① 副本把某席 rationale 开头改成「资深审阅者……」→ 人设投影面命中 ≥1
   withRepoCopy((copy) => {
-    const p = join(copy, 'tools/docgen/data/seats', `${SEATS()[0]}.json`)
+    const p = join(copy, 'tools/docgen/dsl/agents/seats', `${SEATS()[0]}.json`)
     const src = R(p)
     writeFileSync(p, src.replace(/"rationale": "[^"]*"/, '"rationale": "资深审阅者，按本席视角拆卡。${@cardRationaleHead}七${@cardRationaleTail}"'), 'utf8')
     const out = probeIn(copy, 'probe-persona.mjs', PERSONA_PROBE)
@@ -630,14 +630,14 @@ test('SC-TC-30 回填人设必红；rationale 改写不得弄丢 ${@hostTerm} �
   assert.ok(detective.includes('${@hostTerm}失职'), '前置：detective 的引语已改占位')
   // ② 副本换掉 detective 的开头人设句但不动占位 → 仍 18
   withRepoCopy((copy) => {
-    const p = join(copy, 'tools/docgen/data/seats/detective-observer.json')
+    const p = join(copy, 'tools/docgen/dsl/agents/seats/detective-observer.json')
     writeFileSync(p, R(p).replace('以行为核实为视角：', '以行为核实为视角（改写）：'), 'utf8')
     const n = countWord(seatsTextInCopy(copy), '${@hostTerm}')
     assert.equal(n, 18, `改写 rationale 后占位总数必须仍为 18（实得 ${n}）`)
   })
   // ③ 副本弄丢一处占位（换回字面）→ 17
   withRepoCopy((copy) => {
-    const p = join(copy, 'tools/docgen/data/seats/detective-observer.json')
+    const p = join(copy, 'tools/docgen/dsl/agents/seats/detective-observer.json')
     writeFileSync(p, R(p).replace('${@hostTerm}失职', '主持人失职'), 'utf8')
     const n = countWord(seatsTextInCopy(copy), '${@hostTerm}')
     assert.equal(n, 17, `漏一处必须变 17（实得 ${n}）`)
@@ -657,7 +657,7 @@ test('SC-TC-32 动作行不写三态词：英文与中文都不许（注入即�
   assert.deepEqual(acts.filter((x) => zh.some((v) => x.includes(v))), [])
   for (const [probe, label] of [[en[0], '英文'], ['不适用', '中文']]) {
     withRepoCopy((copy) => {
-      const p = join(copy, 'tools/docgen/data/seats', `${SEATS()[0]}.json`)
+      const p = join(copy, 'tools/docgen/dsl/agents/seats', `${SEATS()[0]}.json`)
       writeFileSync(p, R(p).replace(/结论写回([^"]*)"/, `结论写回$1（${probe}）"`), 'utf8')
       const out = probeIn(copy, 'probe-action.mjs', ACTION_PROBE)
       const j = JSON.parse(out)
@@ -668,12 +668,12 @@ test('SC-TC-32 动作行不写三态词：英文与中文都不许（注入即�
 })
 
 test('SC-TC-43 shared.json.hostTerm === 主持人（唯一写死处）+ 键数 4 + sa-data 回归', () => {
-  const shared = JSON.parse(R(join(REPO, 'tools/docgen/data/shared.json')))
+  const shared = JSON.parse(R(join(REPO, 'tools/docgen/dsl/agents/shared.json')))
   assert.equal(shared.hostTerm, '主持人')
   assert.equal(Object.keys(shared).length, 4)
   assert.deepEqual(Object.keys(shared).sort(), ['cardRationaleHead', 'cardRationaleTail', 'dutyConstraintDefault', 'hostTerm'])
-  assert.equal(countWord(R(join(REPO, 'tools/docgen/data/shared.json')), '主持人'), 1, '同文件不得出现第二份字面')
-  const sa = runTest(['--test-name-pattern', 'TC-001', 'tools/docgen/test/sa-data-layer.test.mjs'])
+  assert.equal(countWord(R(join(REPO, 'tools/docgen/dsl/agents/shared.json')), '主持人'), 1, '同文件不得出现第二份字面')
+  const sa = runTest(['--test-name-pattern', 'TC-001', 'tools/docgen/builders/agents/test/sa-data-layer.test.mjs'])
   assert.equal(sa.code, 0, `TC-001（shared.json 键数已改 4）必须绿：${sa.out.slice(-400)}`)
 })
 
@@ -712,12 +712,12 @@ test('SC-TC-46 渲染面「主持人」总数 = 30（等价性证明）——整
 test('SC-TC-47 副本把 hostTerm 改「议长」→ 渲染跟随、真仓 0 命中（不落真仓）', () => {
   const PROBE = '议长'
   const probeSrc = [
-    "import { renderSeat } from './tools/docgen/components/cardPipeline.mjs'",
+    "import { renderSeat } from './tools/docgen/builders/agents/components/cardPipeline.mjs'",
     "const card = renderSeat(process.env.SEAT).card",
     "process.stdout.write('probe ' + (card.split(process.env.TERM).length - 1) + ' / host ' + (card.split('主持人').length - 1))",
   ].join('\n')
   withRepoCopy((copy) => {
-    const p = join(copy, 'tools/docgen/data/shared.json')
+    const p = join(copy, 'tools/docgen/dsl/agents/shared.json')
     writeFileSync(p, R(p).replace('"hostTerm": "主持人"', `"hostTerm": "${PROBE}"`), 'utf8')
     // 选 issue-card 席（not 指针席）：其渲染面「主持人」只来自 ${@hostTerm}，不含模板 / 共享块里的既有字面
     const out = probeIn(copy, 'probe-host.mjs', probeSrc, { SEAT: 'reviewer-product', TERM: PROBE })
@@ -731,13 +731,13 @@ test('SC-TC-47 副本把 hostTerm 改「议长」→ 渲染跟随、真仓 0 命
 
 test('SC-TC-48 副本改 hostTerm 不重生成 → gate Mismatch exit 1；真仓 gate exit 0', () => {
   withRepoCopy((copy) => {
-    const p = join(copy, 'tools/docgen/data/shared.json')
+    const p = join(copy, 'tools/docgen/dsl/agents/shared.json')
     writeFileSync(p, R(p).replace('"hostTerm": "主持人"', '"hostTerm": "议长"'), 'utf8')
-    const r = runNode(['tools/docgen/cli.mjs', 'gate'], copy)
+    const r = runNode(['tools/docgen/builders/agents/cli.mjs', 'gate'], copy)
     assert.notEqual(r.code, 0, '改了数据不重生成不得 exit 0')
     assert.match(r.out, /Mismatch/, r.out.slice(-400))
   })
-  const g = runNode(['tools/docgen/cli.mjs', 'gate'])
+  const g = runNode(['tools/docgen/builders/agents/cli.mjs', 'gate'])
   assert.equal(g.code, 0, `真仓 gate 必须 exit 0：${g.out.slice(-400)}`)
 })
 
@@ -756,13 +756,13 @@ test('SC-TC-60 大写形态兜底：seats 内 @HOST_TERM 0，且 15 卡 ${@ 残�
   assert.equal(countWord(cards, '${@'), 0, '展开后卡面不得残留 ${@')
   // 构造：副本把所有占位写成大写形态 → 渲染残留 ≥1（expandRefs 不报错，只能靠本判据抓）
   const probeSrc = [
-    "import { renderSeat } from './tools/docgen/components/cardPipeline.mjs'",
+    "import { renderSeat } from './tools/docgen/builders/agents/components/cardPipeline.mjs'",
     "const card = renderSeat(process.env.SEAT).card",
     "process.stdout.write('residual ' + (card.split('$' + '{@').length - 1))",
   ].join('\n')
   withRepoCopy((copy) => {
     for (const s of SEATS()) {
-      const p = join(copy, 'tools/docgen/data/seats', `${s}.json`)
+      const p = join(copy, 'tools/docgen/dsl/agents/seats', `${s}.json`)
       writeFileSync(p, R(p).replaceAll('${@hostTerm}', '${@HOST_TERM}'), 'utf8')
     }
     const out = probeIn(copy, 'probe-upper.mjs', probeSrc, { SEAT: 'detective-observer' })
@@ -778,7 +778,7 @@ test('SC-TC-60 大写形态兜底：seats 内 @HOST_TERM 0，且 15 卡 ${@ 残�
 const SLOT_WORDS = ['needs', 'purpose', 'method']
 const labelsOfAll = () => agentData.flatMap((a) => a.card.categories.map((c) => c.label))
 const LABEL_PROBE = [
-  "import { agentData } from './tools/docgen/components/agentData.mjs'",
+  "import { agentData } from './tools/docgen/builders/agents/components/agentData.mjs'",
   "const labels = agentData.flatMap((a) => a.card.categories.map((c) => c.label))",
   "const max = labels.reduce((k, l) => Math.max(k, l.length), 0)",
   "process.stdout.write('labels ' + labels.length + ' / max ' + max)",
@@ -793,7 +793,7 @@ test('SC-TC-39 categories[].label 每项 ≤ 20 字（97 项，现最长 13）',
 
 test('SC-TC-40 副本注入 21 字 label → 必红', () => {
   withRepoCopy((copy) => {
-    const p = join(copy, 'tools/docgen/data/seats', `${SEATS()[0]}.json`)
+    const p = join(copy, 'tools/docgen/dsl/agents/seats', `${SEATS()[0]}.json`)
     writeFileSync(p, R(p).replace(/("label": ")[^"]*"/, `$1${'核'.repeat(21)}"`), 'utf8')
     const out = probeIn(copy, 'probe-label.mjs', LABEL_PROBE)
     const m = /max (\d+)/.exec(out)
@@ -827,7 +827,7 @@ test('SC-TC-42 口径判别力：全树行口径 0 / 22 / 1，卡模型键面 0'
 
 // 判据实现必须**拼接构造**该词（直接写字面 → 本文件自身命中 = 假红）
 const BANNED_FIELD = 'ret' + 'urns'
-const SELF_PATH = join(REPO, 'tools/docgen/test/sc-card-shape.test.mjs')
+const SELF_PATH = join(REPO, 'tools/docgen/builders/agents/test/sc-card-shape.test.mjs')
 const countBanned = (files) => files.reduce((n, t) => n + countWord(t, BANNED_FIELD), 0)
 const docgenFiles = () => walkFiles(join(REPO, 'tools/docgen')).filter((p) => p.endsWith('.mjs') || p.endsWith('.json'))
 
@@ -861,7 +861,7 @@ test('SC-TC-52 副本回填该键名 → 计数 ≥1 必红', () => {
     "process.stdout.write('banned ' + n)",
   ].join('\n')
   withRepoCopy((copy) => {
-    const p = join(copy, 'tools/docgen/data/seats', `${SEATS()[0]}.json`)
+    const p = join(copy, 'tools/docgen/dsl/agents/seats', `${SEATS()[0]}.json`)
     writeFileSync(p, R(p).replace('"checkItems"', `"${BANNED_FIELD}": [],\n    "checkItems"`), 'utf8')
     const out = probeIn(copy, 'probe-banned.mjs', probeSrc, { BANNED: BANNED_FIELD })
     const m = /banned (\d+)/.exec(out)
@@ -875,7 +875,7 @@ test('SC-TC-57 一次性档清单：SB_BASE 换本批 $BASE，四个现值两侧
   const baseText = (rel) => execFileSync('git', ['show', `${BASE || 'HEAD'}:${rel}`], { cwd: REPO, encoding: 'utf8' })
   if (!SHAPE) {
     // 常驻档：S-B 三条一次性用例必须 skip（不跑即不假红），且本文件不跑任何现值断言
-    const r = runTest(['tools/docgen/test/sb-contract-layer.test.mjs'])
+    const r = runTest(['tools/docgen/builders/agents/test/sb-contract-layer.test.mjs'])
     assert.equal(countOf(r.out, '# skipped (\\d+)'), 3, `常驻档必须恰 3 条 skip（实得 ${countOf(r.out, '# skipped (\\d+)')}）`)
     return
   }
@@ -905,7 +905,7 @@ test('SC-TC-57 一次性档清单：SB_BASE 换本批 $BASE，四个现值两侧
   assert.equal(countWord(seatsText(), '${@hostTerm}'), 18)
   assert.equal(SEATS().reduce((n, s) => n + countWord(textOf(s), '主持人'), 0), 30)
   // ③ S-B 三条一次性用例按新 BASE 重跑必须绿
-  const r = runTest(['tools/docgen/test/sb-contract-layer.test.mjs'], REPO, { SB_SHAPE_ONESHOT: '1', SB_BASE: BASE })
+  const r = runTest(['tools/docgen/builders/agents/test/sb-contract-layer.test.mjs'], REPO, { SB_SHAPE_ONESHOT: '1', SB_BASE: BASE })
   assert.equal(r.code, 0, `一次性档必须绿：${r.out.slice(-600)}`)
   assert.equal(countOf(r.out, '# skipped (\\d+)'), 0)
   assert.equal(countOf(r.out, '# fail (\\d+)'), 0)
@@ -918,19 +918,19 @@ const BASELINE_TESTS = 1481
 const blockCount = (file, prefix = '') => (R(file).match(new RegExp(`^\\s*test\\('${prefix}`, 'gm')) ?? []).length
 
 test('SC-TC-53 gate exit 0 且 15 席 disk == render 逐字节', () => {
-  const g = runNode(['tools/docgen/cli.mjs', 'gate'])
+  const g = runNode(['tools/docgen/builders/agents/cli.mjs', 'gate'])
   assert.equal(g.code, 0, `gate 必须 exit 0：${g.out.slice(-400)}`)
-  const bj = JSON.parse(R(join(REPO, 'tools', 'docgen', 'baseline.json')))
+  const bj = JSON.parse(R(join(REPO, 'tools', 'docgen', 'builders', 'agents', 'baseline.json')))
   assert.match(g.out, new RegExp(`baseline ${bj.length}\\/${bj.length}`), '末行 N/N 从两清单派生（不再写死 38）')
   for (const s of SEATS()) assert.equal(R(join(AGENTS_DIR, `${s}.md`)), textOf(s), `${s} 盘上必须逐字节 == 渲染`)
 })
 
 test('SC-TC-54 副本改一席 action 不重生成 → gate Mismatch exit 1', () => {
   withRepoCopy((copy) => {
-    const p = join(copy, 'tools/docgen/data/seats', `${SEATS()[0]}.json`)
+    const p = join(copy, 'tools/docgen/dsl/agents/seats', `${SEATS()[0]}.json`)
     const src = R(p)
     writeFileSync(p, src.replace(/("action": "[^"]*)"/, '$1（改）"'), 'utf8')
-    const r = runNode(['tools/docgen/cli.mjs', 'gate'], copy)
+    const r = runNode(['tools/docgen/builders/agents/cli.mjs', 'gate'], copy)
     assert.notEqual(r.code, 0, '改数据不重生成不得 exit 0')
     assert.match(r.out, /Mismatch/, r.out.slice(-400))
   })
@@ -947,7 +947,7 @@ test('SC-TC-55 用例账对齐（60 块）+ plan 的 check-plan map 无缺口 / 
 })
 
 test('SC-TC-56 做坏判据：副本真删 sdet-render.test.mjs → 同一命令真实计数归零且 exit 非 0', () => {
-  const victim = 'tools/docgen/test/sdet-render.test.mjs'
+  const victim = 'tools/docgen/builders/agents/test/sdet-render.test.mjs'
   const victimBlocks = blockCount(join(REPO, victim), '')
   assert.ok(victimBlocks >= 1, '所选文件的用例块数必须可数')
   withRepoCopy((copy) => {
@@ -989,6 +989,7 @@ const NEW_PATHS = [
   'docs/superpowers/specs/2026-11-03-s-c-card-shape-design-testcase.md',
   AFTER_PATH,
   'docs/superpowers/plans/2026-11-03-s-c-card-shape.md',
+  // 回退面名单是 S-C 那批的历史路径（$BASE..$BASE_HEAD 闭区间），迁移后仍按当时落点比对
   'tools/docgen/check-trigger-kind.mjs',
   'tools/docgen/check-tristate-header.mjs',
   'tools/docgen/test/sc-card-shape.test.mjs',
@@ -1040,8 +1041,8 @@ test('SC-TC-62 回退面复验（$BASE..$BASE_HEAD 闭区间）：A 面 ⊆ 本�
   const addedInDocgen = rows.filter((r) => r.startsWith('A\t') && r.includes('tools/docgen/')).map((r) => r.split('\t')[1]).sort()
   assert.deepEqual(addedInDocgen, ['tools/docgen/check-trigger-kind.mjs', 'tools/docgen/check-tristate-header.mjs', 'tools/docgen/test/sc-card-shape.test.mjs'].sort())
   // ④ 步 3–4 的复验入口可跑
-  assert.equal(runTest(['tools/docgen/test/sa-data-layer.test.mjs']).code, 0)
-  assert.equal(runNode(['tools/docgen/cli.mjs', 'gate']).code, 0)
+  assert.equal(runTest(['tools/docgen/builders/agents/test/sa-data-layer.test.mjs']).code, 0)
+  assert.equal(runNode(['tools/docgen/builders/agents/cli.mjs', 'gate']).code, 0)
   // ⑤ 延期落点实名 + 触发 / 谁兜两栏在位
   const after = R(join(REPO, AFTER_PATH))
   assert.ok(after.includes('触发'), '必须含「触发」栏')
@@ -1060,7 +1061,7 @@ test('SC-TC-58 硬约束不动：列数 4 / 七段 / 36 码 / 8 键 / 12 键', (
   assert.equal(head.split('|').length - 2, 4, '列数仍 4（表头两侧竖线不计）')
   assert.equal(Object.keys(CARD_MODEL_CODES).length, CODES_EXPECTED)
   assert.equal(Object.keys(SCAN_FIELDS).length, SCAN_FIELDS_EXPECTED)
-  const ref = runNode(['tools/docgen/check-shared-refs.mjs'])
+  const ref = runNode(['tools/docgen/builders/agents/check-shared-refs.mjs'])
   assert.equal(ref.code, 0, `check-shared-refs 必须 exit 0：${ref.out.slice(-400)}`)
   assert.match(ref.out, /keySet8 .*keySet12 .*=> ok/)
 })
@@ -1069,7 +1070,7 @@ test('SC-TC-61 VERDICT_HINT 副本探针：值前插探针串 → 15 卡重渲�
   const PROBE = 'PROBE-SC61-'
   const probeSrc = [
     "import { readdirSync } from 'node:fs'",
-    "import { renderSeat } from './tools/docgen/components/cardPipeline.mjs'",
+    "import { renderSeat } from './tools/docgen/builders/agents/components/cardPipeline.mjs'",
     "const rows = []",
     "for (const f of readdirSync('agents').filter((x) => x.endsWith('.md'))) {",
     "  const seg = renderSeat(f.slice(0, -3)).card.split(/^## 本席清单\\s*$/m)[1] || ''",
@@ -1078,7 +1079,7 @@ test('SC-TC-61 VERDICT_HINT 副本探针：值前插探针串 → 15 卡重渲�
     "process.stdout.write(rows.join('\\n'))",
   ].join('\n')
   withRepoCopy((copy) => {
-    const p = join(copy, 'tools/docgen/card-model/vocab/card-contract.mjs')
+    const p = join(copy, 'tools/docgen/builders/agents/card-model/vocab/card-contract.mjs')
     const src = R(p)
     const INJECT = 'export const VERDICT_HINT = `'
     assert.equal(src.split(INJECT).length - 1, 1, '注入点必须恰 1 处')

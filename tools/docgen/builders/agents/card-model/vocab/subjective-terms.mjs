@@ -4,7 +4,7 @@
 import { readFileSync } from 'node:fs';
 
 const OBSERVABLE = JSON.parse(
-  readFileSync(new URL('../../../quality/observable-terms.json', import.meta.url), 'utf8'),
+  readFileSync(new URL('../../../../../quality/observable-terms.json', import.meta.url), 'utf8'),
 );
 
 export const subjectiveTerms = Object.freeze([...OBSERVABLE.terms]);

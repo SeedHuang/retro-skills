@@ -13,7 +13,7 @@ import { SCAN_FIELDS } from '../card-model/enums.mjs'
 import { pathGroups, DETECTION_BLIND_SPOTS } from '../policy/definitions/paths.mjs'
 import { ROOT, runCli, runEsm, withRepoCopy, Q8_REMOVED_PATHS } from './support/dev-workflow-checks.mjs'
 
-const DATA = 'tools/docgen/data'
+const DATA = 'tools/docgen/dsl/agents'
 const SEATS = `${DATA}/seats`
 const DERIVED = ['seat', 'name', 'description', 'tools']
 const EIGHT = [...CARD_KEYS].filter((k) => !DERIVED.includes(k)).sort()
@@ -47,7 +47,7 @@ test('TC-001 数据源按席拆成 data/seats/<seat>.json（一席一文件）+ 
   assert.deepEqual(Object.keys(shared).sort(),
     ['cardRationaleHead', 'cardRationaleTail', 'dutyConstraintDefault', 'hostTerm'], 'shared.json 恰 4 键（S-C 加 hostTerm）')
   // 席名与 agentData 逐字相等（旧入口仍在，故可就地比对）；席数一律派生，不写席位数字面量
-  // （`dev-workflow-counts.test.mjs` 的 `counterProbes` 会扫 `tools/docgen/test/*.test.mjs` 的 assert 行）
+  // （`dev-workflow-counts.test.mjs` 的 `counterProbes` 会扫 `tools/docgen/builders/agents/test/*.test.mjs` 的 assert 行）
   return import('../components/agentData.mjs').then(({ agentData }) => {
     const names = agentData.map((a) => a.name).sort()
     assert.equal(files.length, names.length, `席文件数与 agentData 席数不等：${files.length} vs ${names.length}`)
@@ -208,11 +208,11 @@ test('TC-035 席序与文件集不等（缺席 / 多出）→ 拒载 InvalidInpu
 })
 
 test('TC-030 坏数据在 import 期即 fail-closed（干净 exit 0；悬空引用 exit 1 + 码名）', () => {
-  const code = "import('./tools/docgen/components/agentData.mjs').then(()=>process.exit(0),e=>{console.error(e.code);process.exit(1)})"
+  const code = "import('./tools/docgen/builders/agents/components/agentData.mjs').then(()=>process.exit(0),e=>{console.error(e.code);process.exit(1)})"
   const ok = spawnSync(process.execPath, ['-e', code], { encoding: 'utf8' })
   assert.equal(ok.status, 0, `干净数据下 import 应成功，实得 ${ok.status}：${ok.stderr}`)
   withRepoCopy((dst) => {
-    rewrite(dst, join('tools', 'docgen', 'data', 'seats', 'reviewer-product.json'),
+    rewrite(dst, join('tools', 'docgen', 'dsl', 'agents', 'seats', 'reviewer-product.json'),
       (j) => { j.card.duty.constraint = '@noSuchKey' })   // 悬空引用：必须在 import 期抛，而不是等到渲染
     const bad = spawnSync(process.execPath, ['-e', code], { cwd: dst, encoding: 'utf8' })
     assert.equal(bad.status, 1, bad.stdout + bad.stderr)
@@ -221,13 +221,13 @@ test('TC-030 坏数据在 import 期即 fail-closed（干净 exit 0；悬空引�
 })
 
 test('TC-005 拆 JSON 后 15 席 disk == render、gate exit 0', () => {
-  const r = spawnSync(process.execPath, ['tools/docgen/cli.mjs', 'gate'], { encoding: 'utf8' })
+  const r = spawnSync(process.execPath, ['tools/docgen/builders/agents/cli.mjs', 'gate'], { encoding: 'utf8' })
   assert.equal(r.status, 0, r.stdout + r.stderr)
 })
 
 test('TC-017 值类型漂移（`duty.action` 句子 → 数字）→ gate exit 1 `Mismatch`', () => {
   withRepoCopy((dst) => {
-    rewrite(dst, join('tools', 'docgen', 'data', 'seats', 'reviewer-product.json'),
+    rewrite(dst, join('tools', 'docgen', 'dsl', 'agents', 'seats', 'reviewer-product.json'),
       (j) => { j.card.duty.action = 1 })                  // 句子 → 数字：渲染文本必变
     const r = runCli(dst, ['gate'])
     assert.equal(r.status, 1, r.stdout + r.stderr)
@@ -237,7 +237,7 @@ test('TC-017 值类型漂移（`duty.action` 句子 → 数字）→ gate exit 1
 
 test('TC-018 改了 seats/*.json 未重生成 agents/*.md → gate exit 1 `Mismatch`', () => {
   withRepoCopy((dst) => {
-    rewrite(dst, join('tools', 'docgen', 'data', 'seats', 'reviewer-product.json'),
+    rewrite(dst, join('tools', 'docgen', 'dsl', 'agents', 'seats', 'reviewer-product.json'),
       (j) => { j.card.duty.action = `${j.card.duty.action}。` })   // 加一个句号：值合法、渲染变
     const r = runCli(dst, ['gate'])
     assert.equal(r.status, 1, r.stdout + r.stderr)
@@ -246,17 +246,17 @@ test('TC-018 改了 seats/*.json 未重生成 agents/*.md → gate exit 1 `Misma
 })
 
 test('TC-007 装配点唯一：`tools: toolsForSeat(s.name)` 恰 1 处，`...s` 紧随其后（薄壳零装配式）', () => {
-  const src = readFileSync('tools/docgen/components/seatLoader.mjs', 'utf8')
+  const src = readFileSync('tools/docgen/builders/agents/components/seatLoader.mjs', 'utf8')
   const hits = [...src.matchAll(/tools:\s*toolsForSeat\(\s*s\.name\s*\)/g)]
   assert.equal(hits.length, 1, '装配式必须恰 1 处（正则与 S5-TC-D10 同一形态）')
   const j = src.indexOf('...s', hits[0].index)
   assert.ok(j > hits[0].index && j - hits[0].index < 400, '...s 必须紧随其后（不再允许等价写法）')
-  const shell = readFileSync('tools/docgen/components/agentData.mjs', 'utf8')
+  const shell = readFileSync('tools/docgen/builders/agents/components/agentData.mjs', 'utf8')
   assert.equal([...shell.matchAll(/toolsForSeat\(/g)].length, 0, '薄壳里不得有装配式')
 })
 
 test('TC-026 薄壳必须先 import seatLoader（本地绑定，card-render 的 INJECT_BAD 依赖）', () => {
-  const shell = readFileSync('tools/docgen/components/agentData.mjs', 'utf8')
+  const shell = readFileSync('tools/docgen/builders/agents/components/agentData.mjs', 'utf8')
   assert.ok(/^import .*seatLoader\.mjs/m.test(shell), '薄壳必须先 import（不得用纯再导出）')
 })
 
@@ -271,13 +271,13 @@ const copyS1Spec = (dst) => {
 const ESC_G09 = (dst) => {
   copyS1Spec(dst)
   return spawnSync(process.execPath,
-    ['--test', '--test-name-pattern', 'S1-TC-G09', 'tools/docgen/test/card-model.test.mjs'],
+    ['--test', '--test-name-pattern', 'S1-TC-G09', 'tools/docgen/builders/agents/test/card-model.test.mjs'],
     { cwd: dst, encoding: 'utf8', env: { ...process.env, NODE_TEST_CONTEXT: undefined } })
 }
 
 test('TC-022 新增第 9 个 `SCAN_FIELDS` 键 → `ESC` exit 非 0', () => {
   withRepoCopy((dst) => {
-    const p = join(dst, 'tools', 'docgen', 'card-model', 'enums.mjs')
+    const p = join(dst, 'tools', 'docgen', 'builders', 'agents', 'card-model', 'enums.mjs')
     const s = readFileSync(p, 'utf8')
     const anchor = 'export const SCAN_FIELDS = Object.freeze({'
     assert.equal(s.split(anchor).length - 1, 1, '注入锚必须恰 1 处')
@@ -290,7 +290,7 @@ test('TC-022 新增第 9 个 `SCAN_FIELDS` 键 → `ESC` exit 非 0', () => {
 
 test('TC-023 三条冻结断言未同批改写（还原成旧口径）→ `ESC` exit 非 0', () => {
   withRepoCopy((dst) => {
-    const p = join(dst, 'tools', 'docgen', 'test', 'card-model.test.mjs')
+    const p = join(dst, 'tools', 'docgen', 'builders', 'agents', 'test', 'card-model.test.mjs')
     const s = readFileSync(p, 'utf8')
     const NEW = "  only(run((c) => { c.description = '每轮答辩结束后开始观察（共 3 条）'; }), 'HardcodedCount', 'description');"
     const OLD = "  green(run((c) => { c.description = '每轮答辩结束后开始观察（共 3 条）'; }));"
@@ -324,8 +324,8 @@ test('TC-009 `SCAN_FIELDS` 仍 8 键，且 4 个文本码的扫描面含 descrip
 // `seats/senior-sdet.json` 的 `trigger.notWhen.text` → `descriptionOf` → 卡上 `description`。
 // 直接给 `card.description` 赋值只能证明 `surfaceTexts` 认这个 ref，证明不了「数据改了卡面就跟着改」。
 const DESC_PROBE = `
-const { buildCards, buildEnv } = await import('./tools/docgen/components/cardPipeline.mjs')
-const { validateCardModel } = await import('./tools/docgen/card-model/index.mjs')
+const { buildCards, buildEnv } = await import('./tools/docgen/builders/agents/components/cardPipeline.mjs')
+const { validateCardModel } = await import('./tools/docgen/builders/agents/card-model/index.mjs')
 const b = buildCards().find((x) => x.seat === 'senior-sdet')
 const errors = validateCardModel(b.card, buildEnv('senior-sdet', [b.card])).errors
   .filter((e) => /description/i.test(e.path))
@@ -334,7 +334,7 @@ process.stdout.write(JSON.stringify({ description: b.card.description, errors })
 
 test('TC-020/021 description 由 notWhen 派生后必须被扫（三个码 path 落在 description），半改态归 0', () => {
   withRepoCopy((dst) => {
-    const seatJson = join('tools', 'docgen', 'data', 'seats', 'senior-sdet.json')
+    const seatJson = join('tools', 'docgen', 'dsl', 'agents', 'seats', 'senior-sdet.json')
     const original = JSON.parse(readFileSync(join(dst, seatJson), 'utf8')).trigger.notWhen.text
     assert.ok(typeof original === 'string' && original.trim() !== '', '前置：senior-sdet 必须有 notWhen.text（唯一只进 description 的面）')
     const probe = () => {
@@ -357,7 +357,7 @@ test('TC-020/021 description 由 notWhen 派生后必须被扫（三个码 path 
     rewrite(dst, seatJson, (j) => { j.trigger.notWhen.text = original })
     assert.deepEqual(probe().errors, [], '复原态 description 上不得有任何码')
     // 半改态（只改 CARD_TEXT_FIELDS 不补 surfaceTexts）：表里有、实现不扫 → 命中 0（这就是判别力）
-    const p = join(dst, 'tools', 'docgen', 'card-model', 'validateCardModel.mjs')
+    const p = join(dst, 'tools', 'docgen', 'builders', 'agents', 'card-model', 'validateCardModel.mjs')
     const src = readFileSync(p, 'utf8')
     const patched = src.replace(/\r?\n\s*else if \(ref === 'description'\) push\('description', card\.description\);/, '')
     assert.notEqual(patched, src, '注入必须命中（surfaceTexts 的 description 分支仍在）')
@@ -369,7 +369,7 @@ test('TC-020/021 description 由 notWhen 派生后必须被扫（三个码 path 
 
 test('TC-029 notWhen 拼接丢失（`descriptionOf` 丢 notWhen）→ gate exit 1，点名 senior-sdet', () => {
   withRepoCopy((dst) => {
-    const p = join(dst, 'tools', 'docgen', 'components', 'cardPipeline.mjs')
+    const p = join(dst, 'tools', 'docgen', 'builders', 'agents', 'components', 'cardPipeline.mjs')
     const src = readFileSync(p, 'utf8')
     const patched = src.replace('const notWhen = t.notWhen', "const notWhen = ''")
     assert.notEqual(patched, src, '注入必须命中（notWhen 分支仍在 descriptionOf 里）')
@@ -405,7 +405,7 @@ test('TC-024 改定义层一项却不重生成 2 卡 → gate exit 1 `Mismatch`�
     for (const sym of POINTER_SYMBOLS) assert.ok(text.includes(`\`${sym}\``), `${seat}: 卡面缺指针符号 ${sym}`)
   }
   withRepoCopy((dst) => {
-    const p = join(dst, 'tools', 'docgen', 'policy', 'definitions', 'paths.mjs')
+    const p = join(dst, 'tools', 'docgen', 'builders', 'agents', 'policy', 'definitions', 'paths.mjs')
     const src = readFileSync(p, 'utf8')
     // 前置：Q8 三项已从 `pathGroups.workspace` 删掉（用「4 空格缩进的数组项」这一形态判，
     // `DETECTION_BLIND_SPOTS` 那行里的 `'lessons/'` 不算——它属「检测限度」段，spec R6 要求保留）
@@ -414,7 +414,7 @@ test('TC-024 改定义层一项却不重生成 2 卡 → gate exit 1 `Mismatch`�
     }
     // 构造：改一条**会渲染**的定义层值（席 clause 槽），不重生成卡 → 定义层 ≠ 卡面
     const anchor = "'、审计表"
-    const seatsRel = join(dst, 'tools/docgen', 'policy', 'definitions', 'seats.mjs')
+    const seatsRel = join(dst, 'tools/docgen', 'builders', 'agents', 'policy', 'definitions', 'seats.mjs')
     const seatsSrc = readFileSync(seatsRel, 'utf8')
     assert.equal(seatsSrc.split(anchor).length - 1, 1, '改造锚必须恰 1 处')
     writeFileSync(seatsRel, seatsSrc.replace(anchor, "'、审计表（改）"))
@@ -428,7 +428,7 @@ test('TC-024 改定义层一项却不重生成 2 卡 → gate exit 1 `Mismatch`�
 
 test('TC-006 卡面指针化：`逐项点名` 0 命中 + 兜底句逐字在位 + 定义层仍 20 项', () => {
   const tokens = pathTokens()
-  const baseline = JSON.parse(readFileSync('tools/docgen/fixtures/capability-baseline.json', 'utf8')).seats
+  const baseline = JSON.parse(readFileSync('tools/docgen/builders/agents/fixtures/capability-baseline.json', 'utf8')).seats
   for (const seat of ['reviewer-audit', 'detective-observer']) {
     const text = cardText(seat)
     // S-B §11.2.6：该行整句已消失（不是「20 项变别的数」）→ 判据换成「0 命中 + 指针句在位」
@@ -479,23 +479,23 @@ test('TC-028 基线两处：evidence.renderSha256 == 盘上哈希（逐席）+ 2
   const { agentData } = await import('../components/agentData.mjs')
   for (const e of agentData) {
     const sha = createHash('sha256').update(readFileSync(join('agents', `${e.name}.md`))).digest('hex').toUpperCase()
-    const ev = JSON.parse(readFileSync(join('tools', 'docgen', 'fixtures', `${e.name}.evidence.json`), 'utf8'))
+    const ev = JSON.parse(readFileSync(join('tools', 'docgen', 'builders', 'agents', 'fixtures', `${e.name}.evidence.json`), 'utf8'))
     assert.equal(ev.renderSha256, sha, `${e.name}: evidence.renderSha256 必须等于盘上哈希`)
     if (['reviewer-audit', 'detective-observer'].includes(e.name)) {
       assert.equal(ev.lastWrittenHash, sha, `${e.name}: 重生成后 lastWrittenHash 必须同步`)
     }
   }
-  const baseline = JSON.parse(readFileSync(join('tools', 'docgen', 'baseline.json'), 'utf8'))
+  const baseline = JSON.parse(readFileSync(join('tools', 'docgen', 'builders', 'agents', 'baseline.json'), 'utf8'))
   assert.ok(Array.isArray(baseline), 'baseline.json 应只装路径清单（数组）')
   assert.equal(baseline.filter((p) => /sha256|hash/i.test(String(p))).length, 0, 'baseline.json 不得含哈希字段')
 })
 
 // ④ 段补测（TC-011/012/013/016 的 `REFS` 面）：testcase 明写执行面 = `COPY` + `REFS`（`check-shared-refs.mjs`），
 // 且 TC-013 写明「不得对纯函数 `expandRefs` 单点断言」——上面那个块只做纯函数面，这里按明写执行面补测。
-const DATA_OF = (dst) => join(dst, 'tools', 'docgen', 'data')
+const DATA_OF = (dst) => join(dst, 'tools', 'docgen', 'dsl', 'agents')
 const REFS = (dst) => {
   copyS1Spec(dst)   // 与 ESC_G09 同因：`card-model` 顶层读 S1 spec，副本缺它必 ENOENT
-  return spawnSync(process.execPath, ['tools/docgen/check-shared-refs.mjs'], { cwd: dst, encoding: 'utf8' })
+  return spawnSync(process.execPath, ['tools/docgen/builders/agents/check-shared-refs.mjs'], { cwd: dst, encoding: 'utf8' })
 }
 
 test('TC-011（REFS 面）悬空整值引用 → check-shared-refs exit 1，输出含码名 / 键 / 席', () => {

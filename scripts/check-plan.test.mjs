@@ -609,7 +609,7 @@ test('P46 静态：只用 node 内置 + splitRow，无写盘 / 无 env / 无旁�
 })
 
 test('P47 静态：R8 —— commands.mjs 不补 check.local', () => {
-  const src = readFileSync(join(REPO, 'tools/docgen/policy/definitions/commands.mjs'), 'utf8')
+  const src = readFileSync(join(REPO, 'tools/docgen/builders/agents/policy/definitions/commands.mjs'), 'utf8')
   assert.strictEqual((src.match(/check-plan/g) ?? []).length, 0)
 })
 

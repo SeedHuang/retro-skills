@@ -3,7 +3,7 @@
 // （`validateCardModel` / `validateOpenItems` / `compareVerdicts` / `verdictAllowed`）
 // + `CARD_MODEL_CODES` + `SCAN_FIELDS` + `mergeActions` + `registeredIdsOf`。
 // S2 的 `cardFaceIds` **不经本 barrel**：它扫渲染文本、必须 import 渲染器，
-// 落在 `tools/docgen/components/cardFaceIds.mjs`（S2 spec §3 #5 / §6-D19；S1 §3 依赖红线：本目录只许 node: 与自身）。
+// 落在 `tools/docgen/builders/agents/components/cardFaceIds.mjs`（S2 spec §3 #5 / §6-D19；S1 §3 依赖红线：本目录只许 node: 与自身）。
 
 export {
   SHARED_SCENES,

@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs'
 import { subjectiveHit } from './vocab/subjective-terms.mjs'
 
 const OBSERVABLE = JSON.parse(
-  readFileSync(new URL('../../quality/observable-terms.json', import.meta.url), 'utf8'),
+  readFileSync(new URL('../../../../quality/observable-terms.json', import.meta.url), 'utf8'),
 )
 const MARKERS = OBSERVABLE.markers
 const isString = (v) => typeof v === 'string'

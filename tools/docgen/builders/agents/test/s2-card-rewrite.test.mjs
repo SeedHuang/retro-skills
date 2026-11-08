@@ -12,8 +12,8 @@ import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 
 import { REPO, AGENTS_DIR, DOC_AGENTS_DIR, walkFiles, runNode, runCli, runScs, coldRepo, mutCard } from './support/card-fixtures.mjs'
-import { splitRow } from '../../execution-matrix/markdown-rows.mjs'
-import { checkAgentFromText } from '../../execution-matrix/check-agent.mjs'
+import { splitRow } from '../../../../execution-matrix/markdown-rows.mjs'
+import { checkAgentFromText } from '../../../../execution-matrix/check-agent.mjs'
 import { agentData } from '../components/agentData.mjs'
 import { buildCards, buildEnv, renderSeat } from '../components/cardPipeline.mjs'
 import { renderCard, expectedBullet } from '../components/renderCard.mjs'
@@ -34,12 +34,12 @@ const TC_PATH = join(REPO, 'docs', 'superpowers', 'specs', '2026-11-01-s2-card-r
 const S4_SPEC = join(REPO, 'docs', 'superpowers', 'specs', '2026-10-29-agent-card-s4-render-design.md')
 const PRD_CARD = join(REPO, 'docs', 'prd', '20261026205821-agent-card-contract.md')
 const REPORT = join(REPO, 'docs', 'reports', '2026-11-01-s2-card-comprehension-baseline.md')
-const TPL = join(REPO, 'tools', 'docgen', 'templates', 'agent-card.md.tpl')
-const RC_SRC = join(REPO, 'tools', 'docgen', 'components', 'renderCard.mjs')
-const VAL_SRC = join(REPO, 'tools', 'docgen', 'card-model', 'validateCardModel.mjs')
+const TPL = join(REPO, 'tools', 'docgen', 'builders', 'agents', 'templates', 'agent-card.md.tpl')
+const RC_SRC = join(REPO, 'tools', 'docgen', 'builders', 'agents', 'components', 'renderCard.mjs')
+const VAL_SRC = join(REPO, 'tools', 'docgen', 'builders', 'agents', 'card-model', 'validateCardModel.mjs')
 // D19：`cardFaceIds` 的实现在 `components/` —— 许值的真实消费面看这两个文件
-const CF_SRC = join(REPO, 'tools', 'docgen', 'components', 'cardFaceIds.mjs')
-const CC_SRC = join(REPO, 'tools', 'docgen', 'card-model', 'vocab', 'card-contract.mjs')
+const CF_SRC = join(REPO, 'tools', 'docgen', 'builders', 'agents', 'components', 'cardFaceIds.mjs')
+const CC_SRC = join(REPO, 'tools', 'docgen', 'builders', 'agents', 'card-model', 'vocab', 'card-contract.mjs')
 
 const R = (p) => readFileSync(p, 'utf8')
 const sha = (buf) => createHash('sha256').update(buf).digest('hex').toUpperCase()
@@ -72,7 +72,7 @@ const TYPE_TEXT3 = () => ['脚本' + '核对', 'AI ' + '判定', '人工' + '判
 
 test('S2-TC-A01 契约四导出与形状', () => {
   assert.deepEqual(Object.keys(CC).sort(), ['ALLOWED_PRODUCT_NAMES', 'FORMAT_CHECKS', 'TYPE_LABELS', 'VERDICT_HINT'])
-  assert.ok(existsSync(CC_SRC), 'card-contract.mjs 必须落在 tools/docgen/card-model/vocab/（Q4）')
+  assert.ok(existsSync(CC_SRC), 'card-contract.mjs 必须落在 tools/docgen/builders/agents/card-model/vocab/（Q4）')
   assert.ok(Array.isArray(CC.ALLOWED_PRODUCT_NAMES) && Array.isArray(CC.FORMAT_CHECKS))
   assert.equal(typeof CC.TYPE_LABELS, 'object')
   assert.equal(typeof CC.VERDICT_HINT, 'string', '第三方导出仍是「判定取值」的字符串声明（S-C §11.3 表 A01）')
@@ -183,11 +183,11 @@ test('S2-TC-A10 判定取值声明单源：定义恰 1 处，且旧常量名在 
   assert.equal(defs, 1, 'VERDICT_HINT 只能在 card-contract.mjs 定义 1 次')
   assertVerdictHint(CC.VERDICT_HINT)
   assert.equal(Object.keys(ENUMS.VERDICTS).length, 3, 'enums.mjs 零改动（VERDICTS 仍 3 值、无 re-export）')
-  assert.equal(R(join(REPO, 'tools/docgen/card-model/vocab/card-must-fields.mjs')).includes(OLD_CONST), false)
+  assert.equal(R(join(REPO, 'tools/docgen/builders/agents/card-model/vocab/card-must-fields.mjs')).includes(OLD_CONST), false)
   // S-C §11.3 表 A10 改后：旧常量名（5 行常量的容器）在非测试面必须 0
   assert.equal(countWordIn(join(REPO, 'tools'), OLD_CONST), 0, '旧常量名必须 0 命中（非测试面）')
   // 构造：把同名常量抄进副本的另一模块 → 定义数 2 → 抛（不落盘）
-  const copyHit = coldRepo({ mutate: (cp) => writeFileSync(join(cp, 'tools/docgen/components/verdict-copy.mjs'), `export const VERDICT_HINT = 'x';\n`), args: ['generate'] })
+  const copyHit = coldRepo({ mutate: (cp) => writeFileSync(join(cp, 'tools/docgen/builders/agents/components/verdict-copy.mjs'), `export const VERDICT_HINT = 'x';\n`), args: ['generate'] })
   t.diagnostic(`A10 副本构造 exit=${copyHit.code}（判据是本仓定义数 = 1）`)
   const copied = countDefIn(join(REPO, 'tools'), 'export const VERDICT_HINT')
   assert.equal(copied, 1)
@@ -282,7 +282,7 @@ test('S2-TC-B08 判定取值声明是字符串：副本前插探针 → 重渲�
   // 副本内把值**前插**探针串（不改派生逻辑），再用只打印观测值的探针脚本取数（父测试断言，不认子进程退出码）
   const probeSrc = [
     "import { readdirSync } from 'node:fs'",
-    "import { renderSeat } from './tools/docgen/components/cardPipeline.mjs'",
+    "import { renderSeat } from './tools/docgen/builders/agents/components/cardPipeline.mjs'",
     "const probe = process.env.S2_PROBE",
     "let n = 0",
     "for (const f of readdirSync('agents').filter((x) => x.endsWith('.md'))) {",
@@ -291,7 +291,7 @@ test('S2-TC-B08 判定取值声明是字符串：副本前插探针 → 重渲�
     "process.stdout.write('followed ' + n + '\\n')",
   ].join('\n')
   coldRepo({ mutate: (cp) => {
-    const p = join(cp, 'tools/docgen/card-model/vocab/card-contract.mjs')
+    const p = join(cp, 'tools/docgen/builders/agents/card-model/vocab/card-contract.mjs')
     const src = R(p)
     const INJECT = 'export const VERDICT_HINT = `'
     assert.equal(src.split(INJECT).length - 1, 1, `注入点必须恰 1 处：${INJECT}`)
@@ -346,7 +346,7 @@ test('S2-TC-C03 类型英文键与 repeat 键名塞进卡面必红', () => {
 
 test('S2-TC-C04 许的四类不误红', () => {
   const seat = SEATS()[0]
-  const allowedSentence = '产物字段名 evidence / reason / verdict；路径 agents/reviewer-qa.md:31 与 .session/reviews/x/；命令 node --test tools/docgen/test/s2-card-rewrite.test.mjs；工具 Read、Glob、Grep；字段 职责、一定会'
+  const allowedSentence = '产物字段名 evidence / reason / verdict；路径 agents/reviewer-qa.md:31 与 .session/reviews/x/；命令 node --test tools/docgen/builders/agents/test/s2-card-rewrite.test.mjs；工具 Read、Glob、Grep；字段 职责、一定会'
   assert.equal(allowedSentence.includes('review.progress'), false, '本句刻意不含落点 id')
   const m = withAction(seat, allowedSentence)
   assert.deepEqual(cardFaceIds(m.card, envOf(seat, m.card)), [])
@@ -360,7 +360,7 @@ test('S2-TC-C05 无点分近形不算命中', () => {
 
 test('S2-TC-C06 真实路径与 id 同行只判 id', () => {
   const seat = SEATS()[0]
-  const mixed = 'tools/docgen/cli.mjs 与 shared.impartial-long-term 同句'
+  const mixed = 'tools/docgen/builders/agents/cli.mjs 与 shared.impartial-long-term 同句'
   const m = withAction(seat, mixed)
   assert.deepEqual(cardFaceIds(m.card, envOf(seat, m.card)), ['shared.impartial-long-term'])
 })
@@ -453,15 +453,15 @@ test('S2-TC-D01 本席清单类型列只许三值', () => {
 
 test('S2-TC-D02 类型未翻译时两判同红', () => {
   const seat = SEATS()[0]
-  const modPipe = 'tools/docgen/components/cardPipeline.mjs'
-  const modVal = 'tools/docgen/components/cardFaceIds.mjs'
+  const modPipe = 'tools/docgen/builders/agents/components/cardPipeline.mjs'
+  const modVal = 'tools/docgen/builders/agents/components/cardFaceIds.mjs'
   const r = coldRepo({ mutate: (cp) => {
-    const p = join(cp, 'tools/docgen/card-model/vocab/card-contract.mjs')
+    const p = join(cp, 'tools/docgen/builders/agents/card-model/vocab/card-contract.mjs')
     writeFileSync(p, R(p).replace('\'人工判定\'', '\'manual\''), 'utf8')
   }, args: ['generate'], verify: (cp) => {
     const script = `const P = await import(${JSON.stringify(pathToFileURL(join(cp, modPipe)).href)});
 const V = await import(${JSON.stringify(pathToFileURL(join(cp, modVal)).href)});
-const R2 = await import(${JSON.stringify(pathToFileURL(join(cp, 'tools/docgen/components/renderCard.mjs')).href)});
+const R2 = await import(${JSON.stringify(pathToFileURL(join(cp, 'tools/docgen/builders/agents/components/renderCard.mjs')).href)});
 const b = P.buildCards()[0]; const env = P.buildEnv(b.seat, [b.card]); const t = R2.renderCard(b.card, env);
 const sec = t.split(/^## 本席清单/m)[1].split(/^## /m)[0];
 const rows = sec.split(/\\r?\\n/).filter((l) => l.trim().startsWith('|')).slice(1).filter((l) => !/^\\|\\s*:?-{3}/.test(l.trim()));
@@ -522,8 +522,8 @@ test('S2-TC-D07 requires 非空才出现前提', () => {
 // A1 的扫描面（spec §4-A1 / testcase E01）：**卡面渲染链** + `scripts/` + `agents/`，并跳过 `*.test.mjs`。
 // 为什么收窄（见 spec D18）：全仓面上 HEAD 就有 3 处既有的三态枚举用法（`card-model.test.mjs` / `observation-check/checks.mjs`
 // / `observation-check/golden.test.mjs`），按「只加判据、不删」不能把它们算成新副本 → 面限在「会被卡面渲染的代码」。
-const copyScanRoots = (root = REPO) => [join(root, 'tools/docgen/components'), join(root, 'tools/docgen/card-model'),
-  join(root, 'tools/docgen/templates'), join(root, 'scripts'), join(root, 'agents')]
+const copyScanRoots = (root = REPO) => [join(root, 'tools/docgen/builders/agents/components'), join(root, 'tools/docgen/builders/agents/card-model'),
+  join(root, 'tools/docgen/builders/agents/templates'), join(root, 'scripts'), join(root, 'agents')]
 const arrayLiterals = (src) => [...String(src).matchAll(/\[([^[\]]*)\]/g)].map((m) => m[1])
 const valuesIn = (inner) => inner.split(',').map((x) => x.trim().replace(/^['"`]/, '').replace(/['"`]$/, '')).filter(Boolean)
 const filesWithEnumCopies = (roots) => {
@@ -543,7 +543,7 @@ test('S2-TC-E01 契约枚举只在卡面渲染链一处（D18 收窄面）', () 
 
 const assertNoCopy = (files) => assert.deepEqual(files, [])
 test('S2-TC-E02 故意别处再加一份即红', () => {
-  const rel = 'tools/docgen/components/type-labels-copy.mjs'
+  const rel = 'tools/docgen/builders/agents/components/type-labels-copy.mjs'
   const body = `export const COPY = ['${'脚本' + '核对'}', '${'AI ' + '判定'}'];\n`
   const r = coldRepo({ mutate: (cp) => writeFileSync(join(cp, rel), body, 'utf8'), args: ['generate'], verify: (cp) => {
     const found = filesWithEnumCopies(copyScanRoots(cp))
@@ -573,10 +573,10 @@ test('S2-TC-E04 许表只有一处：实现文件里没有第二份许值数组'
   // 但保留在扫描面里（防止它再长出第二份许值）
   for (const p of [VAL_SRC, CF_SRC, RC_SRC]) assert.deepEqual(extraArrays(R(p)), [], `${p} 不得写许值数组`)
   const r = coldRepo({ mutate: (cp) => {
-    const p = join(cp, 'tools/docgen/components/cardFaceIds.mjs')
+    const p = join(cp, 'tools/docgen/builders/agents/components/cardFaceIds.mjs')
     writeFileSync(p, `${R(p)}\nexport const CARD_FACE_EXTRA = ['${CC.ALLOWED_PRODUCT_NAMES[3]}', '${CC.ALLOWED_PRODUCT_NAMES[4]}'];\n`, 'utf8')
   }, args: ['generate'], verify: (cp) => {
-    const p = join(cp, 'tools/docgen/components/cardFaceIds.mjs')
+    const p = join(cp, 'tools/docgen/builders/agents/components/cardFaceIds.mjs')
     assert.ok(extraArrays(R(p)).length >= 1, '副本写入许值数组后扫描必须命中（构造有效性）')
     assert.throws(() => assert.deepEqual(extraArrays(R(p)), []))
   } })
@@ -594,15 +594,15 @@ test('S2-TC-E05 占位符不残留且新占位符在位', () => {
 
 test('S2-TC-E06 未填占位符即抛 MissingSlot', () => {
   const seat = SEATS()[0]
-  const script = `const P = await import(${JSON.stringify(pathToFileURL(join(REPO, 'tools/docgen/components/cardPipeline.mjs')).href)});
+  const script = `const P = await import(${JSON.stringify(pathToFileURL(join(REPO, 'tools/docgen/builders/agents/components/cardPipeline.mjs')).href)});
 try { P.renderSeat(${JSON.stringify(seat)}); } catch (e) { if (e && e.code === 'MissingSlot') { process.stderr.write(String(e.message)); process.exit(3); } throw e; }`
   const base = runNode(['--input-type=module', '-e', script], REPO)
   assert.equal(base.code, 0, `基线必须 exit 0（防「恒非 0」= 构造无效）：${base.out.slice(0, 200)}`)
   const r = coldRepo({ mutate: (cp) => {
-    const p = join(cp, 'tools/docgen/templates/agent-card.md.tpl')
+    const p = join(cp, 'tools/docgen/builders/agents/templates/agent-card.md.tpl')
     writeFileSync(p, `${R(p)}\n{{PROBE_UNFILLED}}\n`, 'utf8')
   }, args: ['generate'], verify: (cp) => {
-    const script2 = `const P = await import(${JSON.stringify(pathToFileURL(join(cp, 'tools/docgen/components/cardPipeline.mjs')).href)});
+    const script2 = `const P = await import(${JSON.stringify(pathToFileURL(join(cp, 'tools/docgen/builders/agents/components/cardPipeline.mjs')).href)});
 try { P.renderSeat(${JSON.stringify(seat)}); } catch (e) { if (e && e.code === 'MissingSlot') { process.stderr.write(String(e.message)); process.exit(3); } throw e; }`
     const mut = runNode(['--input-type=module', '-e', script2], cp)
     assert.equal(mut.code, 3, `副本未填槽必须 exit 3：${mut.out.slice(0, 200)}`)
@@ -617,10 +617,10 @@ test('S2-TC-E07 契约字面不得长在模板/渲染器', () => {
   assert.equal(countLiteral(R(TPL), words), 0, '模板只有占位符')
   assert.equal(countLiteral(R(RC_SRC), words), 0, '渲染器只 import 常量')
   const r = coldRepo({ mutate: (cp) => {
-    const p = join(cp, 'tools/docgen/components/renderCard.mjs')
+    const p = join(cp, 'tools/docgen/builders/agents/components/renderCard.mjs')
     writeFileSync(p, `${R(p)}\nconst COPIED = ['${CC.FORMAT_CHECKS[0]}'];\n`, 'utf8')
   }, args: ['generate'], verify: (cp) => {
-    const p = join(cp, 'tools/docgen/components/renderCard.mjs')
+    const p = join(cp, 'tools/docgen/builders/agents/components/renderCard.mjs')
     assert.ok(countLiteral(R(p), words) >= 1, '副本写入契约文案后扫描必须命中')
     assert.throws(() => assert.equal(countLiteral(R(p), words), 0))
   } })
@@ -653,7 +653,7 @@ test('S2-TC-E10 两步写盘：draft 先落、无 draft 的 replace 必拒', () 
     const drafts = readdirSync(box).filter((f) => f.startsWith(`${seat}--`))
     assert.equal(drafts.length, 1, 'draft 必须恰好落 1 份')
     assert.equal(sha(R(join(cp, `agents/${seat}.md`))), sha(R(join(AGENTS_DIR, `${seat}.md`))), 'draft 这一步不动 agents/')
-    const env = { DOCGEN_DRAFTS_DIR: box, DOCGEN_STATE_PATH: join(cp, 'tools/docgen/state.json'), DOCGEN_EVIDENCE_DIR: join(cp, 'tools/docgen/fixtures') }
+    const env = { DOCGEN_DRAFTS_DIR: box, DOCGEN_STATE_PATH: join(cp, 'tools/docgen/builders/agents/state.json'), DOCGEN_EVIDENCE_DIR: join(cp, 'tools/docgen/builders/agents/fixtures') }
     const noDraft = runCli(['replace', '--kind', 'agent', '--name', seat, '--yes'], cp, env)
     assert.notEqual(noDraft.code, 0, '不带 --draft 的 replace 必须拒')
     assert.match(noDraft.out, /DraftNotFound/)
@@ -662,7 +662,7 @@ test('S2-TC-E10 两步写盘：draft 先落、无 draft 的 replace 必拒', () 
 })
 
 test('S2-TC-E11 三态四值字面副本即红', () => {
-  const rel = 'tools/docgen/components/renderCard.mjs'
+  const rel = 'tools/docgen/builders/agents/components/renderCard.mjs'
   const vals = [...Object.keys(ENUMS.VERDICTS), 'reason']
   const body = `const TRISTATE_COPY = [${vals.map((v) => `'${v}'`).join(', ')}];\n`
   const r = coldRepo({ mutate: (cp) => writeFileSync(join(cp, rel), `${R(join(cp, rel))}\n${body}`, 'utf8'), args: ['generate'], verify: (cp) => {
@@ -721,14 +721,14 @@ test('S2-TC-F03 夹具③共享句只 1 席 + 必红构造', () => {
   const seatsAll = refSeats.filter((s) => textOf(s).includes(label)).length
   assert.equal(seatsAll, refSeats.length, '未改副本时，声明该共享句的席必须全部渲染它')
   const r = coldRepo({ mutate: (cp) => {
-    const p = join(cp, 'tools/docgen/card-model/vocab/shared-actions.mjs')
+    const p = join(cp, 'tools/docgen/builders/agents/card-model/vocab/shared-actions.mjs')
     const src = R(p)
     const trimmed = Object.keys(SH.SHARED_USE).filter((k) => k !== refSeats[0])
       .reduce((acc, k) => acc.replaceAll(`'${k}': ALL_SHARED,`, `'${k}': [],`), src)
     assert.equal(trimmed === src, false, '构造必须真的改写 SHARED_USE（否则空转）')
     writeFileSync(p, trimmed, 'utf8')
   }, args: ['generate'], verify: (cp) => {
-    const script = `const P = await import(${JSON.stringify(pathToFileURL(join(cp, 'tools/docgen/components/cardPipeline.mjs')).href)});
+    const script = `const P = await import(${JSON.stringify(pathToFileURL(join(cp, 'tools/docgen/builders/agents/components/cardPipeline.mjs')).href)});
 const out = {}; for (const b of P.buildCards()) out[b.seat] = P.renderSeat(b.seat).card;
 process.stdout.write(JSON.stringify(out));`
     const mut = runNode(['--input-type=module', '-e', script], cp)
@@ -748,10 +748,10 @@ test('S2-TC-F04 渲染器丢 landing 槽必红', () => {
   const base = hits(textOf(seat), b.card)
   assert.ok(base > 0 && base === total, `基线每条 must 行都必须含其 landing 中文名（实得 ${base}/${total}）`)
   const r = coldRepo({ mutate: (cp) => {
-    const p = join(cp, 'tools/docgen/components/renderCard.mjs')
+    const p = join(cp, 'tools/docgen/builders/agents/components/renderCard.mjs')
     writeFileSync(p, R(p).replace('const land = landingName(a.landing)', 'const land = \'\''), 'utf8')
   }, args: ['generate'], verify: (cp) => {
-    const script = `const P = await import(${JSON.stringify(pathToFileURL(join(cp, 'tools/docgen/components/cardPipeline.mjs')).href)});
+    const script = `const P = await import(${JSON.stringify(pathToFileURL(join(cp, 'tools/docgen/builders/agents/components/cardPipeline.mjs')).href)});
 process.stdout.write(P.renderSeat(${JSON.stringify(seat)}).card);`
     const mut = runNode(['--input-type=module', '-e', script], cp)
     assert.equal(mut.code, 0)
@@ -763,7 +763,7 @@ process.stdout.write(P.renderSeat(${JSON.stringify(seat)}).card);`
 })
 
 test('S2-TC-F05 夹具只读不写仓（sha 锚）', () => {
-  const files = [RC_SRC, TPL, join(REPO, 'tools/docgen/card-model/vocab/shared-actions.mjs'), CC_SRC,
+  const files = [RC_SRC, TPL, join(REPO, 'tools/docgen/builders/agents/card-model/vocab/shared-actions.mjs'), CC_SRC,
     ...SEATS().map((s) => join(AGENTS_DIR, `${s}.md`))]
   const snap = () => Object.fromEntries(files.map((p) => [p, sha(R(p))]))
   const before = snap()
@@ -792,7 +792,7 @@ test('S2-TC-G02 gate 绿且生成物与 baseline 齐', () => {
   assert.equal(r.code, 0, r.out.slice(0, 300))
   const TOTAL = BASELINE_RULES.length + agentPaths().length
   assert.match(r.out, new RegExp(`baseline ${TOTAL}/${TOTAL}`))
-  const baseline = JSON.parse(R(join(REPO, 'tools/docgen/baseline.json')))
+  const baseline = JSON.parse(R(join(REPO, 'tools/docgen/builders/agents/baseline.json')))
   assert.deepEqual([...baseline].sort(), [...BASELINE_RULES, ...agentPaths()].sort())
   assert.equal(baseline.filter((p) => p.startsWith('agents/')).length, SEATS().length)
   const docs = readdirSync(DOC_AGENTS_DIR).filter((f) => f.endsWith('.md'))
@@ -816,7 +816,7 @@ test('S2-TC-G03 两个判定函数各只定义一处', () => {
 
 test('S2-TC-G04 第二实现点即红', () => {
   const r = coldRepo({ mutate: (cp) => {
-    const p = join(cp, 'tools/docgen/components/renderCard.mjs')
+    const p = join(cp, 'tools/docgen/builders/agents/components/renderCard.mjs')
     writeFileSync(p, `${R(p)}\nexport function cardFaceIds() { return []; }\n`, 'utf8')
   }, args: ['generate'], verify: (cp) => {
     assert.equal(countDefIn(join(cp, 'tools'), 'export function cardFaceIds'), 2)
@@ -1012,7 +1012,7 @@ test('S2-TC-I02 删掉 C-7 判据块即红且仓内锚不变', () => {
 test('S2-TC-I03 PRD §3.4 日期注指向唯一源', (t) => {
   const src = R(PRD_CARD)
   assert.ok((src.match(/card-contract\.mjs/g) ?? []).length >= 1)
-  assert.ok(existsSync(join(REPO, 'tools/docgen/card-model/vocab/card-contract.mjs')))
+  assert.ok(existsSync(join(REPO, 'tools/docgen/builders/agents/card-model/vocab/card-contract.mjs')))
   const noteLine = src.split(/\r?\n/).find((l) => l.includes('card-contract.mjs'))
   assert.ok(noteLine.includes('2026-11-01'), `日期注必须带 2026-11-01：${noteLine}`)
   const ns = numstat(s2Base(t), 'docs/prd/20261026205821-agent-card-contract.md')
@@ -1021,8 +1021,8 @@ test('S2-TC-I03 PRD §3.4 日期注指向唯一源', (t) => {
 
 test('S2-TC-I04 日期注指向不存在路径即红', () => {
   const before = sha(R(PRD_CARD))
-  const bad = join(REPO, 'tools/docgen/card-model/vocab/card-contract-v2.mjs')
-  assert.equal(existsSync(join(REPO, 'tools/docgen/card-model/vocab/card-contract.mjs')), true)
+  const bad = join(REPO, 'tools/docgen/builders/agents/card-model/vocab/card-contract-v2.mjs')
+  assert.equal(existsSync(join(REPO, 'tools/docgen/builders/agents/card-model/vocab/card-contract.mjs')), true)
   assert.throws(() => assert.equal(existsSync(bad), true))
   assert.equal(sha(R(PRD_CARD)), before)
 })
@@ -1032,7 +1032,7 @@ test('S2-TC-I05 原文未改 + 注在位（语义同义交审计）', (t) => {
   assert.equal(ns.deleted, 0)
   const src = R(PRD_CARD)
   assert.ok(src.includes('card-contract.mjs'))
-  assert.ok(existsSync(join(REPO, 'tools/docgen/card-model/vocab/card-contract.mjs')))
+  assert.ok(existsSync(join(REPO, 'tools/docgen/builders/agents/card-model/vocab/card-contract.mjs')))
   t.diagnostic('语义同义性（PRD 原句 = 常量的意思）不进本用例：由审计抽核并记入 gate-record（执行型）')
 })
 

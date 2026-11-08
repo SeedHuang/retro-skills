@@ -12,15 +12,15 @@ import { fileURLToPath } from 'node:url'
 // 「什么算技能目录」判据的唯一真相源（另两处消费方：skill-inspector check.mjs / validate.test.mjs。勿在本文件另写一份）
 import { listSkillDirs } from './skill-dir.mjs'
 // docgen baseline 两清单（rule + agent）的共享常量——gate 的 baseline 断言从它派生，勿在本文件另写一份
-import { BASELINE_RULES, agentPaths } from '../tools/docgen/components/baseline.mjs'
+import { BASELINE_RULES, agentPaths } from '../tools/docgen/builders/agents/components/baseline.mjs'
 // 执行力度矩阵：归桶守卫 + A 组检查 + 共享项变更硬闸门 + 模式表守卫
 // （判据单源在 tools/execution-matrix/，本文件只调用不内联）
 import { checkBuckets } from '../tools/execution-matrix/check-buckets.mjs'
 import { checkAgentFile } from '../tools/execution-matrix/check-agent.mjs'
 // docgen 状态（哪些席已由生成器替换）——A 组检查的覆盖集从这里现算，不写死试点席
-import { readState, statePath } from '../tools/docgen/state.mjs'
+import { readState, statePath } from '../tools/docgen/builders/agents/state.mjs'
 // 名字集来源（C9 的 ⊇ 断言的另一头）：与 baseline / gate / check-agents 同一份 agentData
-import { agentData } from '../tools/docgen/components/agentData.mjs'
+import { agentData } from '../tools/docgen/builders/agents/components/agentData.mjs'
 import { checkSharedChanges } from '../tools/execution-matrix/shared-changes/check-shared-changes.mjs'
 import { checkPatternTable } from '../tools/execution-matrix/check-pattern-table.mjs'
 import { splitRow, fenceMask } from '../tools/execution-matrix/markdown-rows.mjs'
@@ -28,7 +28,7 @@ import { splitRow, fenceMask } from '../tools/execution-matrix/markdown-rows.mjs
 import { runObservationGate, formatGateLine } from '../tools/observation-check/gate-run.mjs'
 import { EXEMPT_CARDS, EXPIRY_EVENT, EXPIRY_LANDED, disposeCardFindings } from '../tools/observation-check/card-exempt.mjs'
 // 卡面 findings 实算入口（K-8/K-9 接线）：逐席过装配 + S1 入口，本文件不另写一份
-import { collectCardFindings } from '../tools/docgen/components/cardPipeline.mjs'
+import { collectCardFindings } from '../tools/docgen/builders/agents/components/cardPipeline.mjs'
 import { SKIP_ALLOWLIST } from './test-skip-allowlist.mjs'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -158,12 +158,12 @@ if (!t.error && t.stdout) {
   }
 }
 
-// ②.5 docgen gate：整文件生成物与 baseline 的只读守卫（P2：切换到 tools/docgen/cli.mjs gate；baseline 从共享常量派生）
+// ②.5 docgen gate：整文件生成物与 baseline 的只读守卫（P2：切换到 tools/docgen/builders/agents/cli.mjs gate；baseline 从共享常量派生）
 const gateEnv = process.env.DOCGEN_NESTED === '1'
   ? { ...process.env, DOCGEN_CHECK_ACTIVE: '1' }
   : { ...testEnv, DOCGEN_CHECK_ACTIVE: '1' }
 const baselineN = BASELINE_RULES.length + agentPaths().length
-const g = spawnSync(process.execPath, ['tools/docgen/cli.mjs', 'gate'], { cwd: root, encoding: 'utf8', env: gateEnv })
+const g = spawnSync(process.execPath, ['tools/docgen/builders/agents/cli.mjs', 'gate'], { cwd: root, encoding: 'utf8', env: gateEnv })
 if (g.error) {
   failed = true
   console.error('[docgen] 进程启动失败：' + g.error.message)
@@ -242,7 +242,7 @@ if (!patternRes.ok) {
 
 // ②.7 S-C 卡面形状守卫（spec §11.2 #7 #8 / §11.3 / §11.5）：三态只在「本席清单」表头声明 + trigger.kind 四型。
 // 判法 = **只看退出码**（不解析首行：首行是给人看的，退出码才是判据）；本段不接 ⑥ 的旁路开关。
-for (const rel of ['tools/docgen/check-tristate-header.mjs', 'tools/docgen/check-trigger-kind.mjs']) {
+for (const rel of ['tools/docgen/builders/agents/check-tristate-header.mjs', 'tools/docgen/builders/agents/check-trigger-kind.mjs']) {
   const r = spawnSync(process.execPath, [rel], { cwd: root, encoding: 'utf8', env: testEnv })
   if (r.stdout) console.log(r.stdout.trim().split(/\r?\n/)[0])
   if (r.error) {

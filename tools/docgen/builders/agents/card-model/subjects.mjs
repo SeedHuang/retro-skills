@@ -9,7 +9,7 @@ export const SUBJECTS = Object.freeze({
   'reviewer-detective.card': Object.freeze({ display: '侦探卡', validator: nonEmptyObject }),
   'artifact.observation': Object.freeze({ display: '观察产物', validator: nonEmptyObject }),
   // S4 扩席（spec §4 :94）：15 席逐条字面登记，形态写死 `<seat>.card`。
-  // **不从 agentData 派生**：`card-model/**` 只许 node: 与目录内相对路径（S1 `tools/docgen/test/card-model.test.mjs` 的
+  // **不从 agentData 派生**：`card-model/**` 只许 node: 与目录内相对路径（S1 `tools/docgen/builders/agents/test/card-model.test.mjs` 的
   // 「反向零 import」守卫）；席名漂移由 `S4-TC-G01`（15 席 subject 全为 `<seat>.card`）兜底。
   'detective-observer.card': Object.freeze({ display: '侦探席卡', validator: nonEmptyObject }),
   'evidence-reader.card': Object.freeze({ display: '取证席卡', validator: nonEmptyObject }),

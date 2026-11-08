@@ -23,14 +23,14 @@ import { renderCard } from '../components/renderCard.mjs'
 import { buildCards, renderSeat } from '../components/cardPipeline.mjs'
 import { BASELINE_RULES, agentPaths, renderBaseline } from '../components/baseline.mjs'
 import { agentData } from '../components/agentData.mjs'
-import { splitRow } from '../../execution-matrix/markdown-rows.mjs'
+import { splitRow } from '../../../../execution-matrix/markdown-rows.mjs'
 import {
   RULE_MARKER_ITEM, itemsFromCriteria, unknownMarkers, checkBuckets, BUCKETS,
-} from '../../execution-matrix/check-buckets.mjs'
-import { SHARED_MARKERS } from '../../execution-matrix/shared-items.mjs'
-import { parseLedger, checkSharedChanges } from '../../execution-matrix/shared-changes/check-shared-changes.mjs'
-import { scoreFile } from '../../../skills/rule-inspector/scripts/score.mjs'
-import { HISTORY_PREFIXES } from '../../../scripts/scope-sweep.mjs'
+} from '../../../../execution-matrix/check-buckets.mjs'
+import { SHARED_MARKERS } from '../../../../execution-matrix/shared-items.mjs'
+import { parseLedger, checkSharedChanges } from '../../../../execution-matrix/shared-changes/check-shared-changes.mjs'
+import { scoreFile } from '../../../../../skills/rule-inspector/scripts/score.mjs'
+import { HISTORY_PREFIXES } from '../../../../../scripts/scope-sweep.mjs'
 import { readBakRule } from './support/dev-workflow-checks.mjs'
 
 const SEATS = buildCards().map((b) => b.seat)
@@ -336,7 +336,7 @@ test('S3-TC-B01 label 零命中', (t) => {
   // ① 无 env → 默认锚；② 有 env → 取值生效；③ 模块常量确实经由该函数（防「函数改了但使用点绕过」）
   assert.equal(resolveS3Base({}), 'b5e11aa')
   assert.equal(resolveS3Base({ S3_BASE: 'abc123' }), 'abc123')
-  assert.match(read('tools/docgen/test/s3-predicates.test.mjs'), /^const S3_BASE = resolveS3Base\(\)$/m)
+  assert.match(read('tools/docgen/builders/agents/test/s3-predicates.test.mjs'), /^const S3_BASE = resolveS3Base\(\)$/m)
 })
 
 test('S3-TC-B02 旧 label 红探针', () => {
@@ -434,7 +434,7 @@ test('S3-TC-D04 语义保真与载体', () => {
 })
 
 test('S3-TC-D05 三条反例', () => {
-  const before = sha256('tools/docgen/card-model/vocab/predicates.mjs')
+  const before = sha256('tools/docgen/builders/agents/card-model/vocab/predicates.mjs')
   const copy1 = { ...PREDICATES, 'no-fake-problem': { ...PREDICATES['no-fake-problem'], label: 'findings 集合为空时该行必须存在' } }
   assert.throws(() => assertCoreLabel(copy1))
   assert.throws(() => assertLabelDash(copy1))
@@ -444,7 +444,7 @@ test('S3-TC-D05 三条反例', () => {
   assert.throws(() => assertCarriers(specCopy))
   assert.throws(() => assertNoLegacyTerms('两栏依据'))
   assert.throws(() => assertC8Mirror(PREDICATES['proxy-fill'].label.replace(/——.*$/, '——签名字段所记名称与本实例名一致')))
-  assert.equal(sha256('tools/docgen/card-model/vocab/predicates.mjs'), before)
+  assert.equal(sha256('tools/docgen/builders/agents/card-model/vocab/predicates.mjs'), before)
 })
 
 test('S3-TC-D06 label 后段可判', () => {
@@ -460,7 +460,7 @@ test('S3-TC-E01 仓内 8 条全过', () => {
 })
 
 test('S3-TC-E02 纯函数与 0 新码', () => {
-  const src = read('tools/docgen/card-model/validatePredicates.mjs')
+  const src = read('tools/docgen/builders/agents/card-model/validatePredicates.mjs')
   const fnSrc = src.slice(src.indexOf('export function validatePredicates'))
   assert.equal(/readFileSync|writeFileSync|process\.env/.test(fnSrc), false)
   const codeLiterals = new Set([...fnSrc.matchAll(/'([A-Z][A-Za-z0-9]*)'/g)].map((m) => m[1]))
@@ -535,33 +535,33 @@ test('S3-TC-E08 全列与不可变', () => {
 })
 
 // ── F 组：substring 单实现点与卡面可行性 ────────────────────────────────────
-const cardModelFiles = () => walkFiles(join(REPO, 'tools/docgen/card-model'))
+const cardModelFiles = () => walkFiles(join(REPO, 'tools/docgen/builders/agents/card-model'))
 const countExportHit = () => cardModelFiles().reduce((n, f) => n + (readFileSync(f, 'utf8').match(/(export const subjectiveHit|export function subjectiveHit)/g) ?? []).length, 0)
 const countLocalHit = () => cardModelFiles().reduce((n, f) => n + (readFileSync(f, 'utf8').match(/^const (subjectiveHit|tokensOf) =/gm) ?? []).length, 0)
 
 test('S3-TC-F01 单实现点', () => {
   assert.equal(countExportHit(), 1)
   assert.equal(countLocalHit(), 0)
-  const vcm = read('tools/docgen/card-model/validateCardModel.mjs')
+  const vcm = read('tools/docgen/builders/agents/card-model/validateCardModel.mjs')
   assert.equal(vcm.includes('subjectiveHit'), true)
   assert.equal(vcm.includes("from './vocab/subjective-terms.mjs'"), true)
 })
 
 test('S3-TC-F02 第二实现点', () => {
-  const before = sha256('tools/docgen/card-model/validateCardModel.mjs')
+  const before = sha256('tools/docgen/builders/agents/card-model/validateCardModel.mjs')
   let copyDef = -1
   coldRepo({
     mutate: (copy) => {
-      const p = join(copy, 'tools/docgen/card-model/validateCardModel.mjs')
+      const p = join(copy, 'tools/docgen/builders/agents/card-model/validateCardModel.mjs')
       writeFileSync(p, `${readFileSync(p, 'utf8')}\nconst tokensOf = (t) => [t]\nconst subjectiveHit = (t) => tokensOf(t).some((x) => x === t)\n`, 'utf8')
     },
     verify: (copy) => {
-      copyDef = walkFiles(join(copy, 'tools/docgen/card-model')).reduce((n, f) => n + (readFileSync(f, 'utf8').match(/const subjectiveHit =/g) ?? []).length, 0)
+      copyDef = walkFiles(join(copy, 'tools/docgen/builders/agents/card-model')).reduce((n, f) => n + (readFileSync(f, 'utf8').match(/const subjectiveHit =/g) ?? []).length, 0)
     },
   })
   assert.equal(copyDef, 2)
   assert.throws(() => assert.equal(copyDef, 1))
-  assert.equal(sha256('tools/docgen/card-model/validateCardModel.mjs'), before)
+  assert.equal(sha256('tools/docgen/builders/agents/card-model/validateCardModel.mjs'), before)
 })
 
 test('S3-TC-F03 口径切换实证', () => {
@@ -636,7 +636,7 @@ test('S3-TC-F06 判别力', () => {
 })
 
 test('S3-TC-F07 无第二份词面', () => {
-  const src = read('tools/docgen/card-model/vocab/subjective-terms.mjs')
+  const src = read('tools/docgen/builders/agents/card-model/vocab/subjective-terms.mjs')
   assert.equal(TERMS.filter((w) => src.includes(w)).length, 0)
   assert.equal(src.includes('observable-terms.json'), true)
   assert.equal((src.match(/readFileSync\(/g) ?? []).length, 1)
@@ -654,7 +654,7 @@ test('S3-TC-G02 判据表坏', () => {
   const bad = OLD_LABELS[0]
   coldRepo({
     mutate: (copy) => {
-      const p = join(copy, 'tools/docgen/card-model/vocab/predicates.mjs')
+      const p = join(copy, 'tools/docgen/builders/agents/card-model/vocab/predicates.mjs')
       writeFileSync(p, readFileSync(p, 'utf8').replace(PREDICATES['impartial-long-term'].label, bad), 'utf8')
     },
     verify: (copy, r) => {
@@ -670,7 +670,7 @@ test('S3-TC-G02 判据表坏', () => {
 test('S3-TC-G03 顺序', () => {
   coldRepo({
     mutate: (copy) => {
-      const p = join(copy, 'tools/docgen/card-model/vocab/predicates.mjs')
+      const p = join(copy, 'tools/docgen/builders/agents/card-model/vocab/predicates.mjs')
       writeFileSync(p, readFileSync(p, 'utf8').replace(PREDICATES['impartial-long-term'].label, OLD_LABELS[0]), 'utf8')
     },
     verify: (copy, r) => {
@@ -684,12 +684,12 @@ test('S3-TC-G03 顺序', () => {
 test('S3-TC-G04 barrel 不加导出', () => {
   assert.equal(Object.keys(CM).length, 18)
   assert.equal(Object.keys(CM).includes('validatePredicates'), false)
-  assert.equal(read('tools/docgen/cli.mjs').includes('card-model/validatePredicates.mjs'), true)
+  assert.equal(read('tools/docgen/builders/agents/cli.mjs').includes('card-model/validatePredicates.mjs'), true)
 })
 
 // ── H 组：15 卡重生成 / 必红期 / 回退面 ────────────────────────────────────
 test('S3-TC-H01 disk == render', () => {
-  const state = JSON.parse(read('tools/docgen/state.json'))
+  const state = JSON.parse(read('tools/docgen/builders/agents/state.json'))
   assert.deepEqual([...new Set(Object.values(state.agents))], ['replaced'])
   assert.deepEqual(Object.keys(state.agents).sort(), SEATS.slice().sort())
   let mismatch = 0
@@ -742,17 +742,17 @@ test('S3-TC-H03 卡面文案', () => {
 test('S3-TC-H04 边界', () => {
   const all = SEATS.map((s) => read(`agents/${s}.md`)).join('\n')
   assert.equal((all.match(/不得不得/g) ?? []).length, 0)
-  assert.equal(read('tools/docgen/baseline.json'), renderBaseline())
-  assert.equal(JSON.parse(read('tools/docgen/baseline.json')).length, TOTAL)
+  assert.equal(read('tools/docgen/builders/agents/baseline.json'), renderBaseline())
+  assert.equal(JSON.parse(read('tools/docgen/builders/agents/baseline.json')).length, TOTAL)
 })
 
 test('S3-TC-H05 前提破裂探针', () => {
-  const state = JSON.parse(read('tools/docgen/state.json'))
+  const state = JSON.parse(read('tools/docgen/builders/agents/state.json'))
   assert.deepEqual([...new Set(Object.values(state.agents))], ['replaced'])
-  const before = sha256('tools/docgen/state.json')
+  const before = sha256('tools/docgen/builders/agents/state.json')
   coldRepo({
     mutate: (copy) => {
-      const p = join(copy, 'tools/docgen/state.json')
+      const p = join(copy, 'tools/docgen/builders/agents/state.json')
       const s = JSON.parse(readFileSync(p, 'utf8'))
       // state 值域 = {replaced, suspended}（`state.mjs` 的 VALUES）；'registered' 会触发 StateFileInvalid（exit 2），
       // 故前提破裂探针用 schema 允许的唯一非 replaced 值 `suspended`
@@ -767,14 +767,14 @@ test('S3-TC-H05 前提破裂探针', () => {
   })
   const ctrl = runCli(['gate'])
   assert.equal(ctrl.code, 0)
-  assert.equal(sha256('tools/docgen/state.json'), before)
+  assert.equal(sha256('tools/docgen/builders/agents/state.json'), before)
 })
 
 test('S3-TC-H06 必红期与回退', () => {
   // ① 只改判据表 label（改成合规形态）、不重生成卡 → 必红期只报首条单行
   coldRepo({
     mutate: (copy) => {
-      const p = join(copy, 'tools/docgen/card-model/vocab/predicates.mjs')
+      const p = join(copy, 'tools/docgen/builders/agents/card-model/vocab/predicates.mjs')
       writeFileSync(p, readFileSync(p, 'utf8').replace('立场不偏', '立场中立'), 'utf8')
     },
     verify: (copy, r) => {
@@ -791,12 +791,22 @@ test('S3-TC-H06 必红期与回退', () => {
   // 旧 check 文案）与新渲染器**不再自洽**。按 spec §11.2.6 的第二种口径：该步断言改为「回退后必落 Mismatch」，
   // 不再要求 exit 0（「必红期」语义在 ① 里，不因实现改动而放宽）。
   const S3_REL = [
-    'tools/docgen/card-model/vocab/predicates.mjs',
-    'tools/docgen/card-model/validateCardModel.mjs',
-    'tools/docgen/card-model/vocab/subjective-terms.mjs',
-    'tools/docgen/cli.mjs',
+    'tools/docgen/builders/agents/card-model/vocab/predicates.mjs',
+    'tools/docgen/builders/agents/card-model/validateCardModel.mjs',
+    'tools/docgen/builders/agents/card-model/vocab/subjective-terms.mjs',
+    'tools/docgen/builders/agents/cli.mjs',
     ...SEATS.map((s) => `agents/${s}.md`),
   ]
+  // 迁移后工作区路径 ≠ S3_BASE 当时的落点：写副本用新路径，git show 取历史文件必须用旧路径
+  const atBase = (rel) => rel.replace('tools/docgen/builders/agents/', 'tools/docgen/')
+  // 旧文件写进新位置后，跨目录相对 import 的层级少一层：按新深度补齐（只补回退面涉及的三类）
+  const shiftToNewDepth = (t) => t
+    .replace(/(['"])\.\.\/execution-matrix\//g, '$1../../../execution-matrix/')
+    .replace(/(['"])\.\.\/observation-check\//g, '$1../../../observation-check/')
+    .replace(/\.\.\/\.\.\/\.\.\/quality\//g, '../../../../../quality/')
+    // 旧 cli.mjs 的 REPO_ROOT 按自身位置向上两级；写进新位置后要向上四级
+    .replace(/resolve\(dirname\(fileURLToPath\(import\.meta\.url\)\), '\.\.', '\.\.'\)/g,
+      "resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..')")
   // `2026-11-05`（S6-B）：**不回退** `policy/definitions/paths.mjs` —— S6-B 把路径项改为 `{id,text}` 且新增
   // `writeScopes.mjs`；回退到 S3_BASE（字符串数组 + 无 writeScopes）会让 `validatePolicy` 先发
   // `UnknownPolicyRef: paths:item=(missing)`，红点从「卡面失配」漂到「配置形态」。本步只要「回退后必红」，
@@ -805,17 +815,17 @@ test('S3-TC-H06 必红期与回退', () => {
     mutate: (copy) => {
       for (const rel of S3_REL) {
         const p = join(copy, rel)
-        writeFileSync(p, execFileSync('git', ['show', `${S3_BASE}:${rel}`], { cwd: REPO, encoding: 'utf8' }), 'utf8')
+        writeFileSync(p, shiftToNewDepth(execFileSync('git', ['show', `${S3_BASE}:${atBase(rel)}`], { cwd: REPO, encoding: 'utf8' })), 'utf8')
       }
       // `2026-11-05`（阶段 1）：回退后的旧 `cli.mjs` 仍会读生成规则 `rules/spec-testcase-gate.md`；
       // 该 rule 已退役，故用 bak 原文段把它「补回」到副本里（逐字等于旧文件，渲染比对不产生额外红），
       // 并在副本基线里登记这一条（否则先报 UnregisteredHandwritten，红点漂到「未登记」而非「卡面失配」）
       writeFileSync(join(copy, 'rules', 'spec-testcase-gate.md'), readBakRule('spec-testcase-gate.md'), 'utf8')
-      const bmPath = join(copy, 'tools', 'docgen', 'components', 'baseline.mjs')
+      const bmPath = join(copy, 'tools', 'docgen', 'builders', 'agents', 'components', 'baseline.mjs')
       const bmSrc = readFileSync(bmPath, 'utf8')
       writeFileSync(bmPath, bmSrc.replace('export const BASELINE_RULES = [', "export const BASELINE_RULES = [\n  'rules/spec-testcase-gate.md',"), 'utf8')
-      execFileSync(process.execPath, [join(copy, 'tools', 'docgen', 'cli.mjs'), 'baseline', '--write'], { cwd: copy, encoding: 'utf8' })
-      rmSync(join(copy, 'tools/docgen/card-model/validatePredicates.mjs'), { force: true })
+      execFileSync(process.execPath, [join(copy, 'tools', 'docgen', 'builders', 'agents', 'cli.mjs'), 'baseline', '--write'], { cwd: copy, encoding: 'utf8' })
+      rmSync(join(copy, 'tools/docgen/builders/agents/card-model/validatePredicates.mjs'), { force: true })
     },
     verify: (copy, r) => {
       // S-B 后：只回退卡面（不回退模板 / 渲染器 / check 文案）→ 盘上 ≠ 渲染 → 必报 Mismatch
@@ -826,8 +836,8 @@ test('S3-TC-H06 必红期与回退', () => {
 })
 
 test('S3-TC-H07 S1a→S1b', () => {
-  const r1 = runNodeClean(['--test', 'tools/docgen/test/pilot-render.test.mjs'])
-  const r2 = runNodeClean(['--test', 'tools/docgen/test/evidence-reader.test.mjs'])
+  const r1 = runNodeClean(['--test', 'tools/docgen/builders/agents/test/pilot-render.test.mjs'])
+  const r2 = runNodeClean(['--test', 'tools/docgen/builders/agents/test/evidence-reader.test.mjs'])
   assert.deepEqual([r1.code, r2.code], [0, 0])
   const rGate = runCli(['gate'])
   assert.equal(rGate.code, 0)
@@ -835,20 +845,21 @@ test('S3-TC-H07 S1a→S1b', () => {
 })
 
 test('S3-TC-H08 跳过 S1a', () => {
-  const before = sha256('tools/docgen/test/pilot-render.test.mjs')
+  const before = sha256('tools/docgen/builders/agents/test/pilot-render.test.mjs')
   coldRepo({
     mutate: (copy) => {
-      for (const rel of ['tools/docgen/test/pilot-render.test.mjs', 'tools/docgen/test/evidence-reader.test.mjs']) {
-        writeFileSync(join(copy, rel), execFileSync('git', ['show', `${S3_BASE}:${rel}`], { cwd: REPO, encoding: 'utf8' }), 'utf8')
+      for (const rel of ['tools/docgen/builders/agents/test/pilot-render.test.mjs', 'tools/docgen/builders/agents/test/evidence-reader.test.mjs']) {
+        const old = rel.replace('tools/docgen/builders/agents/', 'tools/docgen/')
+        writeFileSync(join(copy, rel), execFileSync('git', ['show', `${S3_BASE}:${old}`], { cwd: REPO, encoding: 'utf8' }), 'utf8')
       }
     },
     verify: (copy) => {
-      const r1 = runNodeClean(['--test', 'tools/docgen/test/pilot-render.test.mjs'], copy)
-      const r2 = runNodeClean(['--test', 'tools/docgen/test/evidence-reader.test.mjs'], copy)
+      const r1 = runNodeClean(['--test', 'tools/docgen/builders/agents/test/pilot-render.test.mjs'], copy)
+      const r2 = runNodeClean(['--test', 'tools/docgen/builders/agents/test/evidence-reader.test.mjs'], copy)
       assert.deepEqual([r1.code, r2.code].map((c) => c !== 0), [true, true], `r1=${r1.code} ${r1.out.slice(0, 200)} | r2=${r2.code} ${r2.out.slice(0, 200)}`)
     },
   })
-  assert.equal(sha256('tools/docgen/test/pilot-render.test.mjs'), before)
+  assert.equal(sha256('tools/docgen/builders/agents/test/pilot-render.test.mjs'), before)
 })
 
 // ── I 组：F-09 检查点 / 计数 / 归桶 / ⑨ 判别力 ──────────────────────────────
@@ -1249,21 +1260,21 @@ test('S3-TC-K08 清单缺口', () => {
 })
 
 test('S3-TC-K09 测试断言改形', () => {
-  const pilot = read('tools/docgen/test/pilot-render.test.mjs')
-  const evidence = read('tools/docgen/test/evidence-reader.test.mjs')
+  const pilot = read('tools/docgen/builders/agents/test/pilot-render.test.mjs')
+  const evidence = read('tools/docgen/builders/agents/test/evidence-reader.test.mjs')
   assert.deepEqual([pilot, evidence].map((s) => oldHits(s)), [0, 0])
   assert.equal([pilot, evidence].filter((s) => s.includes('PREDICATES')).length, 2)
   assert.equal(evidence.includes('无问题时显式声明'), false)
-  const r1 = runNodeClean(['--test', 'tools/docgen/test/pilot-render.test.mjs'])
-  const r2 = runNodeClean(['--test', 'tools/docgen/test/evidence-reader.test.mjs'])
+  const r1 = runNodeClean(['--test', 'tools/docgen/builders/agents/test/pilot-render.test.mjs'])
+  const r2 = runNodeClean(['--test', 'tools/docgen/builders/agents/test/evidence-reader.test.mjs'])
   assert.deepEqual([r1.code, r2.code], [0, 0])
 })
 
 // ── L 组：全量门禁面与本文件自核 ──────────────────────────────────────────
 test('S3-TC-L01 单跑', (t) => {
-  // 「单跑绿」由本文件**外部**运行见证（`node --test tools/docgen/test/s3-predicates.test.mjs`）；
+  // 「单跑绿」由本文件**外部**运行见证（`node --test tools/docgen/builders/agents/test/s3-predicates.test.mjs`）；
   // 本文件内不自递归跑自身（否则 L01 无限递归，撞常量 9 的「不跑全量」精神）
-  const self = read('tools/docgen/test/s3-predicates.test.mjs')
+  const self = read('tools/docgen/builders/agents/test/s3-predicates.test.mjs')
   const blocks = (self.match(/^test\('S3-TC-/gm) ?? []).length
   const tc = read('docs/superpowers/specs/2026-11-02-observable-s3-predicates-reuse-design-testcase.md')
   const cases = (tc.match(/^### S3-TC-/gm) ?? []).length
@@ -1349,7 +1360,7 @@ test('S3-TC-L06 计数自洽', () => {
 })
 
 test('S3-TC-L07 helper 与悬空符号', () => {
-  const src = read('tools/docgen/test/s3-predicates.test.mjs')
+  const src = read('tools/docgen/builders/agents/test/s3-predicates.test.mjs')
   assert.ok(src.includes("from './support/card-fixtures.mjs'"))
   assert.equal((src.match(/^function walkFiles/mg) ?? []).length, 0)
   assert.equal((src.match(/^function coldRepo/mg) ?? []).length, 0)

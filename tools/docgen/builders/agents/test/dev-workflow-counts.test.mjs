@@ -8,7 +8,7 @@ import { spawnSync } from 'node:child_process';
 import { BASELINE_RULES, agentPaths } from '../components/baseline.mjs';
 import { agentData, triggerTable } from '../components/agentData.mjs';
 import { validateAgentData } from '../components/validateAgentData.mjs';
-import { checkAgentFile } from '../../execution-matrix/check-agent.mjs';
+import { checkAgentFile } from '../../../../execution-matrix/check-agent.mjs';
 import {
   ROOT, readRepo, readCounterFiles, counterProbes, withRepoCopy, runCli, runEsm,
 } from './support/dev-workflow-checks.mjs';
@@ -23,7 +23,7 @@ test('TC-C01 gate 输出 baseline N/N（N = rule 数 + agent 数，从常量派�
 });
 
 test('TC-C02 baseline.json 条数与派生值一致，evidence-reader 排序位正确', () => {
-  const j = JSON.parse(readRepo('tools/docgen/baseline.json'));
+  const j = JSON.parse(readRepo('tools/docgen/builders/agents/baseline.json'));
   assert.equal(j.length, BASELINE_RULES.length + agentPaths().length);
   assert.equal(j.indexOf('agents/evidence-reader.md') - j.indexOf('agents/detective-observer.md'), 1);
   assert.ok(j[j.length - 1].startsWith('agents/'), 'rule 在前、agent 按字典序在后');
@@ -89,7 +89,7 @@ test('TC-C08 baseline 正则 / 未迁移计数写回字面量 → 必红', () =>
 
 test('TC-C09 BASELINE_RULES 加了条目但 baseline.json 未重生成 → gate 报 BaselineDrift（exit 2）', () => {
   withRepoCopy((dst) => {
-    const p = join(dst, 'tools', 'docgen', 'components', 'baseline.mjs');
+    const p = join(dst, 'tools', 'docgen', 'builders', 'agents', 'components', 'baseline.mjs');
     const t = readFileSync(p, 'utf8');
     const patched = t.replace('export const BASELINE_RULES = [', "export const BASELINE_RULES = [\n  'rules/zzz-drift-probe.md',");
     assert.notEqual(patched, t, '构造前提：能改到 BASELINE_RULES');
@@ -134,7 +134,7 @@ test('TC-D06 触发条件被改 → gate 报 Mismatch（exit 1）', () => {
   withRepoCopy((dst) => {
     // S-A 数据层（T3）：when 的唯一源 = `seats/senior-sdet.json` 的 `trigger.when`（旧 `agentData.mjs` 字面已退场）；
     // 该席 `card.duty.trigger` 恒为空串，故这处子串在数据里只出现 1 次，裸替换即命中唯一源
-    const p = join(dst, 'tools', 'docgen', 'data', 'seats', 'senior-sdet.json');
+    const p = join(dst, 'tools', 'docgen', 'dsl', 'agents', 'seats', 'senior-sdet.json');
     const t = readFileSync(p, 'utf8');
     const patched = t.replace('或专门找出被忽视的边界与失败场景', '或专门找出被忽视的边界与失败情形');
     assert.notEqual(patched, t, '构造前提：能改到 senior-sdet 的 trigger.when');
@@ -169,7 +169,7 @@ test('TC-E12 规则登记了但文件不存在 → gate 报 DanglingBaselineEntr
   withRepoCopy((dst) => {
     // 阶段 1 起 `rules/` 已清空：先「登记一条指向不存在文件的基线」+ 同步 baseline.json，
     // 再跑 gate——否则会先报 BaselineDrift，掩盖本用例要判的 DanglingBaselineEntry
-    const p = join(dst, 'tools', 'docgen', 'components', 'baseline.mjs');
+    const p = join(dst, 'tools', 'docgen', 'builders', 'agents', 'components', 'baseline.mjs');
     const t = readFileSync(p, 'utf8');
     const patched = t.replace('export const BASELINE_RULES = [', "export const BASELINE_RULES = [\n  'rules/zzz-missing-probe.md',");
     assert.notEqual(patched, t);
@@ -179,13 +179,13 @@ test('TC-E12 规则登记了但文件不存在 → gate 报 DanglingBaselineEntr
     const r = runCli(dst, ['gate']);
     assert.equal(r.status, 2, r.stdout + r.stderr);
     assert.match(r.stderr, /^DanglingBaselineEntry:/m);
-    const detail = runEsm(dst, "import {collectGate} from './tools/docgen/cli.mjs'; console.log(collectGate().map(d=>d.code+':'+d.path).join('|'))");
+    const detail = runEsm(dst, "import {collectGate} from './tools/docgen/builders/agents/cli.mjs'; console.log(collectGate().map(d=>d.code+':'+d.path).join('|'))");
     assert.ok(detail.stdout.includes('DanglingBaselineEntry:rules/zzz-missing-probe.md'), detail.stdout + detail.stderr);
   });
 });
 
 test('TC-E32 槽位字段真被 BASE_KEYS 管住：非声明席带 boundary 报 DescriptionDerivation，未知键报 TriggerFieldMisplaced', () => {
-  const src = readRepo('tools/docgen/components/validateAgentData.mjs');
+  const src = readRepo('tools/docgen/builders/agents/components/validateAgentData.mjs');
   assert.ok(src.includes("'domain', 'boundary', 'explorePolicy'"), 'BASE_KEYS 必须显式声明三键');
 
   const withBoundary = structuredClone(agentData);

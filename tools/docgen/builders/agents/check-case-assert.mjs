@@ -9,7 +9,7 @@
 // 表格切分 / 围栏掩码**不在这里重写**：`tools/execution-matrix/markdown-rows.mjs` 是唯一实现（`cli.mjs` / `s3-predicates` 同源消费）。
 // 不进 `npm run check`：与 `check-quotes.mjs` 同口径（验收在 ③/④/⑤ 门行跑命令 + 输出首行）。
 import { existsSync, readFileSync } from 'node:fs'
-import { splitRow, fenceMask } from '../execution-matrix/markdown-rows.mjs'
+import { splitRow, fenceMask } from '../../../execution-matrix/markdown-rows.mjs'
 
 const fail = (line) => { console.log(line); process.exit(1) }
 const usage = (line) => { console.log(line); process.exit(2) }

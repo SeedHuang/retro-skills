@@ -4,10 +4,10 @@ import { readFileSync, existsSync } from 'node:fs';
 import { agentData } from '../components/agentData.mjs';
 import { buildCards, collectCardFindings } from '../components/cardPipeline.mjs';
 
-test('check-all.mjs：gate 调用已切到 tools/docgen/cli.mjs gate', () => {
+test('check-all.mjs：gate 调用已切到 tools/docgen/builders/agents/cli.mjs gate', () => {
   const src = readFileSync('scripts/check-all.mjs', 'utf8');
   assert.ok(!src.includes('docgen-spike'), 'check-all 仍引用 docgen-spike');
-  assert.ok(src.includes('tools/docgen/cli.mjs') && /cli\.mjs['"]?\s*,?\s*['"]?gate/.test(src), 'check-all 未调用 docgen gate');
+  assert.ok(src.includes('tools/docgen/builders/agents/cli.mjs') && /cli\.mjs['"]?\s*,?\s*['"]?gate/.test(src), 'check-all 未调用 docgen gate');
 });
 
 test('check-all.mjs：baseline 断言参数化（不再硬编码 21/21）', () => {

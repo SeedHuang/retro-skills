@@ -8,7 +8,7 @@ import { assertAgentName } from '../cli.mjs';
 import { exitCodeFor } from '../components/validateAgentData.mjs';
 
 const name = process.argv[2];
-if (!name) { console.error('InvalidArgs: 用法：node tools/docgen/acceptance/init-evidence.mjs <name>'); process.exit(2); }
+if (!name) { console.error('InvalidArgs: 用法：node tools/docgen/builders/agents/acceptance/init-evidence.mjs <name>'); process.exit(2); }
 
 function fail(code, message) { const e = new Error(message); e.code = code; throw e; }
 
@@ -17,7 +17,7 @@ function main() {
   assertAgentName(name);
   // R6 ② 阶段判定：此步不碰 git——已迁席在无 .git 环境下也要先看到阶段码，而不是 ENOENT
   if (readState().agents[name] === 'replaced') {
-    fail('MigrationPhaseClosed', `${name} 已迁移（state=replaced），init-evidence 已关闭；正确通路 = node tools/docgen/cli.mjs diff --kind agent --name ${name} → replace --expect-change <凭证>`);
+    fail('MigrationPhaseClosed', `${name} 已迁移（state=replaced），init-evidence 已关闭；正确通路 = node tools/docgen/builders/agents/cli.mjs diff --kind agent --name ${name} → replace --expect-change <凭证>`);
   }
   // R6 ④ 才跑 git 与写盘
   const file = `agents/${name}.md`;

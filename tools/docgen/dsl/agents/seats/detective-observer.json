@@ -76,7 +76,7 @@
         "label": "侦探席卡：${@hostTerm}失职核对",
         "criterion": "对每条卡片写出收取与关闭的差额",
         "check": "script",
-        "cmd": "node tools/docgen/cli.mjs gate"
+        "cmd": "node tools/docgen/builders/agents/cli.mjs gate"
       },
       {
         "id": "detective.tool",

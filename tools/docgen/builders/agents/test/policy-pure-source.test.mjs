@@ -47,7 +47,7 @@ function dumpPolicy(dir = ROOT) {
   return { r, json: JSON.parse(r.stdout) };
 }
 const renderBoundaryIn = (dir, seat) => {
-  const r = runEsm(dir, `import {renderBoundary} from './tools/docgen/components/renderBoundary.mjs';console.log(renderBoundary(${JSON.stringify(seat)}))`);
+  const r = runEsm(dir, `import {renderBoundary} from './tools/docgen/builders/agents/components/renderBoundary.mjs';console.log(renderBoundary(${JSON.stringify(seat)}))`);
   assert.equal(r.status, 0, `渲染失败：${seat}\n${r.stderr}`);
   return r.stdout.replace(/\n$/, '');
 };
@@ -64,7 +64,7 @@ function dirHashes(dir) {
 
 // ---- 副本内构造：改配置某席三键 / 在定义层登记席级组（只动副本，真仓库一律不改）----
 function setSeatPolicy(dir, seat, { capabilities, allowGroups, artifacts }) {
-  editInDir(dir, 'tools/docgen/policy/seat-policy.mjs', (src) => {
+  editInDir(dir, 'tools/docgen/builders/agents/policy/seat-policy.mjs', (src) => {
     const key = `'${seat}'`;
     const i = src.indexOf(key);
     assert.ok(i >= 0, `配置层未见席 ${seat}`);
@@ -106,8 +106,15 @@ const Q8_MINUS = Q8_REMOVED_PATHS.map((p) => `forbiddenPaths: ${p}`);
 // 基线是**改造前旧卡**，故这条命令的 −/＋ 各一条必须登记；其余任何差仍判红。
 const ARCHIVE_MINUS = ['allowCmds: node skills/review-log/scripts/time.mjs'];
 const ARCHIVE_PLUS = ['allowCmds: scs time'];
-const baseDelta = () => ({ minus: [...Q8_MINUS, ...ARCHIVE_MINUS], plus: [...ARCHIVE_PLUS] });
-const withoutBase = (arr) => arr.filter((x) => !Q8_MINUS.includes(x) && !ARCHIVE_MINUS.includes(x) && !ARCHIVE_PLUS.includes(x));
+// 2026-11-08（目录统一）：编译器从 tools/docgen/ 根下沉到 tools/docgen/builders/agents/，
+// 允许命令的字面路径随之变化。基线是改造前旧卡，故 4 条命令的 −/＋ 各一份必须登记；其余任何差仍判红。
+const MOVE_MINUS = ['node tools/docgen/cli.mjs gate', 'node tools/docgen/cli.mjs check-agents',
+  'node tools/docgen/cli.mjs diff --kind agent --name <席>', 'node tools/docgen/cli.mjs draft ls']
+  .map((c) => `allowCmds: ${c}`);
+const MOVE_PLUS = MOVE_MINUS.map((x) => x.replace('tools/docgen/cli.mjs', 'tools/docgen/builders/agents/cli.mjs'));
+const BASE_DELTA_DESC = 'Q8 三项 + 归档一条 + 目录迁移 4 条命令';
+const baseDelta = () => ({ minus: [...Q8_MINUS, ...ARCHIVE_MINUS, ...MOVE_MINUS], plus: [...ARCHIVE_PLUS, ...MOVE_PLUS] });
+const withoutBase = (arr) => arr.filter((x) => !Q8_MINUS.includes(x) && !ARCHIVE_MINUS.includes(x) && !ARCHIVE_PLUS.includes(x) && !MOVE_MINUS.includes(x) && !MOVE_PLUS.includes(x));
 // 读配置侧唯一口径（testcase §0.3 / spec:131）：`Object.hasOwn`，否则 `constructor` / `__proto__` 会取到原型链上的值
 const policyOf = (n) => (Object.hasOwn(SEAT_POLICY, n) ? SEAT_POLICY[n] : SEAT_POLICY.__default__);
 // 卡文本（A06 ① 切的是**卡面**，不是渲染结果——两席的卡在 T5 才重出）
@@ -131,7 +138,7 @@ const cardBoundary = (text) => {
   const i = text.indexOf('## 边界');
   return i < 0 ? '' : text.slice(i + '## 边界'.length).replace(/^\r?\n+/, '').trim();
 };
-const golden = () => JSON.parse(readFileSync('tools/docgen/fixtures/boundary-golden.json', 'utf8'));
+const golden = () => JSON.parse(readFileSync('tools/docgen/builders/agents/fixtures/boundary-golden.json', 'utf8'));
 const goldenOf = (seat) => golden()[seat];
 // 黄金换代后的「**当前比对键**」（`spec:198`）：同席中 `<席>@<轮次>` 轮次**最大者**；无换代键则取基线键。
 const goldenKeyFor = (seat, g = golden()) => {
@@ -155,7 +162,7 @@ const gitShow = (rev, p) => {
   assert.equal(r.status, 0, `git show ${rev}:${p} 失败\n${r.stderr}`);
   return r.stdout;
 };
-const baseJson = () => JSON.parse(readFileSync('tools/docgen/fixtures/capability-baseline.json', 'utf8'));
+const baseJson = () => JSON.parse(readFileSync('tools/docgen/builders/agents/fixtures/capability-baseline.json', 'utf8'));
 // V-2 降级后的唯一判定函数：**只吃一个对象、且结构里没有哈希位**（red 不等于 fail、green 不等于 pass）
 const verdict = ({ minus, plus }) => (minus.length === 0 && plus.length === 0 ? 'pass' : 'fail');
 // §3.4 归码优先级：形态不合 ID → LiteralInConfig；形态合法但未登记 → UnknownPolicyRef
@@ -165,11 +172,11 @@ const expectedRefCode = (v) => (ID.test(v) ? 'UnknownPolicyRef' : 'LiteralInConf
 // `denyVerbs` **只剔除 `env.assign`**（该组由 `{{ENV_FORMS}}` 单独注入、`{{DENY_GROUPS}}` 渲染时剔除）→
 // 禁止命令集与环境变量形态两段各自可核，不重复计数；其余 4 个禁止组的 verbs 全部计入（含 `network` 的 3 项）
 function probeDict(dir = ROOT) {
-  const r = runEsm(dir, `import * as CAP from './tools/docgen/policy/definitions/capabilities.mjs';
-import { TIERS } from './tools/docgen/policy/definitions/tiers.mjs';
-import * as CMD from './tools/docgen/policy/definitions/commands.mjs';
-import * as PTH from './tools/docgen/policy/definitions/paths.mjs';
-import * as ART from './tools/docgen/policy/definitions/artifacts.mjs';
+  const r = runEsm(dir, `import * as CAP from './tools/docgen/builders/agents/policy/definitions/capabilities.mjs';
+import { TIERS } from './tools/docgen/builders/agents/policy/definitions/tiers.mjs';
+import * as CMD from './tools/docgen/builders/agents/policy/definitions/commands.mjs';
+import * as PTH from './tools/docgen/builders/agents/policy/definitions/paths.mjs';
+import * as ART from './tools/docgen/builders/agents/policy/definitions/artifacts.mjs';
 const groups = Object.values(PTH.pathGroups).flat();
 console.log(JSON.stringify({
   tools: Object.values(CAP.capabilities).flat(),
@@ -311,7 +318,7 @@ test('S6-TC-C06 15 槽齐（可观测值）+ 无残留 / 未定义 / 悬空标�
   const SLOTS = ['SEAT', 'TIER', 'CAPABILITIES', 'ARTIFACTS', 'SEAT_CLAUSE', 'ESCALATION_WRITER',
     'ALLOW_GROUPS', 'DENY_GROUPS', 'ENV_FORMS', 'FORBIDDEN_PATHS', 'DETECTION_PATHS', 'DETECTION_CMD',
     'ROLE_KIND', 'WRITE_SCOPE', 'HOST_RULE'];
-  const tpl = readFileSync('tools/docgen/templates/boundary.md.tpl', 'utf8');
+  const tpl = readFileSync('tools/docgen/builders/agents/templates/boundary.md.tpl', 'utf8');
   const slots = new Set([...tpl.matchAll(/\{\{([A-Z_]+)\}\}/g)].map((m) => m[1]));
   assert.deepEqual([...slots].sort(), [...SLOTS].sort(), '槽集 ≠ §3.4 表的 15 个');
   for (const s of SLOTS) assert.ok(countIn(tpl, `{{${s}}}`) >= 1, `槽 ${s} 未被引用`);
@@ -387,7 +394,7 @@ test("S6-TC-A08 定义层值含 {{SLOT}} / $& / $' / $$ 时不得被二次展开
   withCopy((d) => {
     // 替换值必须用**函数**形态——`String.replace` 会把替换串里的 `$&` / `$'` / `$$` 当替换模式解释，
     // 直接传 JSON.stringify(PROBE) 会先破坏注入值（判据本身失效）
-    editInDir(d, 'tools/docgen/policy/definitions/seats.mjs',
+    editInDir(d, 'tools/docgen/builders/agents/policy/definitions/seats.mjs',
       (s) => s.replace(CLAUSE_SRC,
         () => JSON.stringify(`、审计表${PROBE}；你在 round-check.md 核转录逐字一致`)));
     const out = renderBoundaryIn(d, 'reviewer-audit');
@@ -396,7 +403,7 @@ test("S6-TC-A08 定义层值含 {{SLOT}} / $& / $' / $$ 时不得被二次展开
   // ④ 单趟替换（spec:93）：槽值里出现**另一个槽名**时不得被后一个槽扫掉；expanded 的 SEAT 项仍是该字符串
   const SEAT_PROBE = '审计{{DETECTION_CMD}}席';
   withCopy((d) => {
-    editInDir(d, 'tools/docgen/policy/definitions/seats.mjs',
+    editInDir(d, 'tools/docgen/builders/agents/policy/definitions/seats.mjs',
       (s) => s.replace("display: '审计'", `display: ${JSON.stringify(SEAT_PROBE)}`));
     const out = renderBoundaryIn(d, 'reviewer-audit');
     assert.ok(out.includes(SEAT_PROBE), `display 里的槽名被二次展开（不是单趟替换）：期望原样 ${SEAT_PROBE}`);
@@ -499,7 +506,7 @@ test('S6-TC-B01 三席 + __default__ 策略数据等价；黄金 4 键齐（哈�
 });
 
 test('S6-TC-B02 真实 seat-policy.mjs closed-world：三键外零字符串、三键内逐条登记', () => {
-  const src = readFileSync('tools/docgen/policy/seat-policy.mjs', 'utf8');
+  const src = readFileSync('tools/docgen/builders/agents/policy/seat-policy.mjs', 'utf8');
   const strays = stringLiterals(src).filter((s) => !ALLOWED_LITERALS().has(s));
   assert.deepEqual(strays, [], '配置层出现非登记字符串字面量（closed-world 破坏）');
   for (const [seat, p] of Object.entries(SEAT_POLICY)) {
@@ -532,7 +539,7 @@ test('S6-TC-B03 配置层塞路径 → LiteralInConfig', () => {
     return runCli(d, ['policy', '--dump']);
   });
   assert.equal(r.status, 1);
-  assert.match(r.stderr.split('\n')[0], /^LiteralInConfig: tools\/docgen\/policy\/seat-policy\.mjs:\d+$/);
+  assert.match(r.stderr.split('\n')[0], /^LiteralInConfig: tools\/docgen\/builders\/agents\/policy\/seat-policy\.mjs:\d+$/);
 });
 
 test('S6-TC-B04 配置层塞反引号命令 → LiteralInConfig', () => {
@@ -541,7 +548,7 @@ test('S6-TC-B04 配置层塞反引号命令 → LiteralInConfig', () => {
     return runCli(d, ['policy', '--dump']);
   });
   assert.equal(r.status, 1);
-  assert.match(r.stderr.split('\n')[0], /^LiteralInConfig: tools\/docgen\/policy\/seat-policy\.mjs:\d+$/);
+  assert.match(r.stderr.split('\n')[0], /^LiteralInConfig: tools\/docgen\/builders\/agents\/policy\/seat-policy\.mjs:\d+$/);
 });
 
 test('S6-TC-B05 配置层塞 --flag → LiteralInConfig', () => {
@@ -550,7 +557,7 @@ test('S6-TC-B05 配置层塞 --flag → LiteralInConfig', () => {
     return runCli(d, ['policy', '--dump']);
   });
   assert.equal(r.status, 1);
-  assert.match(r.stderr.split('\n')[0], /^LiteralInConfig: tools\/docgen\/policy\/seat-policy\.mjs:\d+$/);
+  assert.match(r.stderr.split('\n')[0], /^LiteralInConfig: tools\/docgen\/builders\/agents\/policy\/seat-policy\.mjs:\d+$/);
 });
 
 test('S6-TC-B06 引用不存在的 capability → UnknownPolicyRef', () => {
@@ -591,7 +598,7 @@ test('S6-TC-B09 授予禁止组 docgen.write → ForbiddenGroupGranted', () => {
 
 test('S6-TC-B10 非本席引用 seat:senior-sdet.extra → ForbiddenGroupGranted', () => {
   const r = withCopy((d) => {
-    insertInObject(d, 'tools/docgen/policy/definitions/commands.mjs', 'export const seatGroups',
+    insertInObject(d, 'tools/docgen/builders/agents/policy/definitions/commands.mjs', 'export const seatGroups',
       "'seat:senior-sdet.extra': { purpose: '测试构造', verbs: ['npm run check'] },");
     grantGroup(d, 'senior-sdet', 'seat:senior-sdet.extra');          // 本席合法（B11 正例）
     grantGroup(d, 'reviewer-audit', 'seat:senior-sdet.extra');       // 越席使用
@@ -604,7 +611,7 @@ test('S6-TC-B10 非本席引用 seat:senior-sdet.extra → ForbiddenGroupGranted
 test('S6-TC-B11 本席 seat:<名>.extra 合法且只改本席；verb 越界 → :not-allowed / 撞禁止 → :verb', () => {
   const before = dumpPolicy(ROOT).json.seats;              // 真仓库：seatGroups 为空
   const after = withCopy((d) => {
-    insertInObject(d, 'tools/docgen/policy/definitions/commands.mjs', 'export const seatGroups',
+    insertInObject(d, 'tools/docgen/builders/agents/policy/definitions/commands.mjs', 'export const seatGroups',
       "'seat:senior-sdet.extra': { purpose: '测试构造', verbs: ['npm run check'] },");
     grantGroup(d, 'senior-sdet', 'seat:senior-sdet.extra');
     return dumpPolicy(d).json.seats;
@@ -613,7 +620,7 @@ test('S6-TC-B11 本席 seat:<名>.extra 合法且只改本席；verb 越界 → 
   assert.deepEqual(changed, ['senior-sdet'], '席级组只许影响本席');
   // ③ 不变量 8 负例：席级组 verbs 与禁止组 verbs 有交集 → :verb
   const bad = withCopy((d) => {
-    insertInObject(d, 'tools/docgen/policy/definitions/commands.mjs', 'export const seatGroups',
+    insertInObject(d, 'tools/docgen/builders/agents/policy/definitions/commands.mjs', 'export const seatGroups',
       "'seat:senior-sdet.extra': { purpose: '测试构造', verbs: ['npm run check', 'git commit'] },");
     grantGroup(d, 'senior-sdet', 'seat:senior-sdet.extra');
     return runCli(d, ['policy', '--dump']);
@@ -622,7 +629,7 @@ test('S6-TC-B11 本席 seat:<名>.extra 合法且只改本席；verb 越界 → 
   assert.equal(bad.stderr.split('\n')[0], 'ForbiddenGroupGranted: senior-sdet:seat:senior-sdet.extra:verb');
   // ④ 不变量 8 方向①（spec:112）：越出**允许组 verbs 并集** → :not-allowed（不是 :verb）
   const outOfAllow = withCopy((d) => {
-    insertInObject(d, 'tools/docgen/policy/definitions/commands.mjs', 'export const seatGroups',
+    insertInObject(d, 'tools/docgen/builders/agents/policy/definitions/commands.mjs', 'export const seatGroups',
       "'seat:senior-sdet.extra': { purpose: '测试构造', verbs: ['curl https://x'] },");
     grantGroup(d, 'senior-sdet', 'seat:senior-sdet.extra');
     return runCli(d, ['policy', '--dump']);
@@ -632,7 +639,7 @@ test('S6-TC-B11 本席 seat:<名>.extra 合法且只改本席；verb 越界 → 
 });
 
 test('S6-TC-B13 配置里的产物文件名是登记 ID，不得误红', () => {
-  const src = readFileSync('tools/docgen/policy/seat-policy.mjs', 'utf8');
+  const src = readFileSync('tools/docgen/builders/agents/policy/seat-policy.mjs', 'utf8');
   assert.match(src, /'round-check\.md'/);
   assert.match(src, /'detective\.md'/);
   assert.ok(ALLOWED_LITERALS().has('round-check.md'));
@@ -645,7 +652,7 @@ test('S6-TC-B14 配置层塞非 ID 裸命令（git status）→ LiteralInConfig'
     return runCli(d, ['policy', '--dump']);
   });
   assert.equal(r.status, 1);
-  assert.match(r.stderr.split('\n')[0], /^LiteralInConfig: tools\/docgen\/policy\/seat-policy\.mjs:\d+$/);
+  assert.match(r.stderr.split('\n')[0], /^LiteralInConfig: tools\/docgen\/builders\/agents\/policy\/seat-policy\.mjs:\d+$/);
 });
 
 test('S6-TC-B15 配置层 artifacts 塞路径形态非 ID → LiteralInConfig', () => {
@@ -656,39 +663,39 @@ test('S6-TC-B15 配置层 artifacts 塞路径形态非 ID → LiteralInConfig', 
     return runCli(d, ['policy', '--dump']);
   });
   assert.equal(r.status, 1);
-  assert.match(r.stderr.split('\n')[0], /^LiteralInConfig: tools\/docgen\/policy\/seat-policy\.mjs:\d+$/);
+  assert.match(r.stderr.split('\n')[0], /^LiteralInConfig: tools\/docgen\/builders\/agents\/policy\/seat-policy\.mjs:\d+$/);
 });
 
 test('S6-TC-C03 模板塞路径 → TemplateImpure', () => {
   const r = withCopy((d) => {
-    editInDir(d, 'tools/docgen/templates/boundary.md.tpl', (s) => `${s}\n\n- 另：\`docs/prd/\` 也不许写。\n`);
+    editInDir(d, 'tools/docgen/builders/agents/templates/boundary.md.tpl', (s) => `${s}\n\n- 另：\`docs/prd/\` 也不许写。\n`);
     return runCli(d, ['policy', '--dump']);
   });
   assert.equal(r.status, 1);
-  assert.match(r.stderr.split('\n')[0], /^TemplateImpure: tools\/docgen\/templates\/boundary\.md\.tpl:.+$/);
+  assert.match(r.stderr.split('\n')[0], /^TemplateImpure: tools\/docgen\/builders\/agents\/templates\/boundary\.md\.tpl:.+$/);
 });
 
 test('S6-TC-C04 模板塞反引号命令 → TemplateImpure', () => {
   const r = withCopy((d) => {
-    editInDir(d, 'tools/docgen/templates/boundary.md.tpl', (s) => `${s}\n\n- 例：\`npm run check\`。\n`);
+    editInDir(d, 'tools/docgen/builders/agents/templates/boundary.md.tpl', (s) => `${s}\n\n- 例：\`npm run check\`。\n`);
     return runCli(d, ['policy', '--dump']);
   });
   assert.equal(r.status, 1);
-  assert.match(r.stderr.split('\n')[0], /^TemplateImpure: tools\/docgen\/templates\/boundary\.md\.tpl:.+$/);
+  assert.match(r.stderr.split('\n')[0], /^TemplateImpure: tools\/docgen\/builders\/agents\/templates\/boundary\.md\.tpl:.+$/);
 });
 
 test('S6-TC-C05 模板塞清单类成员 → TemplateImpure；单点类 --write 合法', () => {
   assert.ok(CMD.forbiddenGroups['fs.write'].verbs.includes('--write'), '--write 必须是 fs.write 的登记 verb');
   // ① 清单类成员（多词 verb）→ 规则 1 判红
   const bad = withCopy((d) => {
-    editInDir(d, 'tools/docgen/templates/boundary.md.tpl', (s) => `${s}\n\n- 附注：npm run check 是常用命令。\n`);
+    editInDir(d, 'tools/docgen/builders/agents/templates/boundary.md.tpl', (s) => `${s}\n\n- 附注：npm run check 是常用命令。\n`);
     return runCli(d, ['policy', '--dump']);
   });
   assert.equal(bad.status, 1);
-  assert.match(bad.stderr.split('\n')[0], /^TemplateImpure: tools\/docgen\/templates\/boundary\.md\.tpl:.+$/);
+  assert.match(bad.stderr.split('\n')[0], /^TemplateImpure: tools\/docgen\/builders\/agents\/templates\/boundary\.md\.tpl:.+$/);
   // ② 单点类成员（单 token flag）→ 规则 2 允许（存在性校验通过）
   const ok = withCopy((d) => {
-    editInDir(d, 'tools/docgen/templates/boundary.md.tpl', (s) => `${s}\n\n- 另注：--write 属写盘形态。\n`);
+    editInDir(d, 'tools/docgen/builders/agents/templates/boundary.md.tpl', (s) => `${s}\n\n- 另注：--write 属写盘形态。\n`);
     return runCli(d, ['policy', '--dump']);
   });
   assert.equal(ok.status, 0, `单点类 --write 被误判为不纯：${ok.stderr}`);
@@ -696,7 +703,7 @@ test('S6-TC-C05 模板塞清单类成员 → TemplateImpure；单点类 --write 
 
 test('S6-TC-C07 未声明槽位不得静默保留', () => {
   const out = withCopy((d) => {
-    editInDir(d, 'tools/docgen/templates/boundary.md.tpl', (s) => s.replace('{{SEAT}}', '{{SEAT_LABEL}}'));
+    editInDir(d, 'tools/docgen/builders/agents/templates/boundary.md.tpl', (s) => s.replace('{{SEAT}}', '{{SEAT_LABEL}}'));
     return runCli(d, ['policy', '--dump']);      // 槽集校验在 validatePolicy 内（不变量 7）
   });
   assert.ok(out.status !== 0 || !out.stdout.includes('{{'), '未声明槽位被静默保留');
@@ -707,7 +714,7 @@ test('S6-TC-C09 显式 undefined 的槽值 → TemplateImpure（「缺省未声�
   assert.equal(runCli(ROOT, ['policy', '--dump']).status, 0, '缺省未声明被误判为不纯');
   // ①②③ 显式 undefined ≠ 缺省：必须 TemplateImpure，且片段 = 槽名
   const bad = withCopy((d) => {
-    editInDir(d, 'tools/docgen/policy/definitions/seats.mjs',
+    editInDir(d, 'tools/docgen/builders/agents/policy/definitions/seats.mjs',
       (s) => s.replace(/(['"]senior-sdet['"]:\s*\{[\s\S]*?)clause: '[^']*'/, '$1clause: undefined'));
     return runCli(d, ['policy', '--dump']);
   });
@@ -771,17 +778,17 @@ test('S6-TC-D01 六个错误码各 1 个负例：exit 1 + 报文首行格式', (
       /^UnknownPolicyRef: senior-sdet:capability=admin$/],
     ['LiteralInConfig',
       (d) => grantGroup(d, 'reviewer-audit', 'docs/after/'),
-      /^LiteralInConfig: tools\/docgen\/policy\/seat-policy\.mjs:\d+$/],
+      /^LiteralInConfig: tools\/docgen\/builders\/agents\/policy\/seat-policy\.mjs:\d+$/],
     ['SeatNameInDefinition',
-      (d) => editInDir(d, 'tools/docgen/policy/definitions/paths.mjs',
+      (d) => editInDir(d, 'tools/docgen/builders/agents/policy/definitions/paths.mjs',
         (s) => s.replace("'其他评审目录'", "'其他评审目录-reviewer-audit'")),
-      /^SeatNameInDefinition: tools\/docgen\/policy\/definitions\/paths\.mjs$/],
+      /^SeatNameInDefinition: tools\/docgen\/builders\/agents\/policy\/definitions\/paths\.mjs$/],
     ['ForbiddenGroupGranted:forbidden',
       (d) => grantGroup(d, 'reviewer-audit', 'docgen.write'),
       /^ForbiddenGroupGranted: reviewer-audit:docgen\.write:forbidden$/],
     ['ForbiddenGroupGranted:other-seat',
       (d) => {
-        insertInObject(d, 'tools/docgen/policy/definitions/commands.mjs', 'export const seatGroups',
+        insertInObject(d, 'tools/docgen/builders/agents/policy/definitions/commands.mjs', 'export const seatGroups',
           "'seat:senior-sdet.extra': { purpose: '测试构造', verbs: ['npm run check'] },");
         grantGroup(d, 'senior-sdet', 'seat:senior-sdet.extra');
         grantGroup(d, 'reviewer-audit', 'seat:senior-sdet.extra');
@@ -789,21 +796,21 @@ test('S6-TC-D01 六个错误码各 1 个负例：exit 1 + 报文首行格式', (
       /^ForbiddenGroupGranted: reviewer-audit:seat:senior-sdet\.extra:other-seat$/],
     ['ForbiddenGroupGranted:verb',
       (d) => {
-        insertInObject(d, 'tools/docgen/policy/definitions/commands.mjs', 'export const seatGroups',
+        insertInObject(d, 'tools/docgen/builders/agents/policy/definitions/commands.mjs', 'export const seatGroups',
           "'seat:senior-sdet.extra': { purpose: '测试构造', verbs: ['npm run check','git commit'] },");
         grantGroup(d, 'senior-sdet', 'seat:senior-sdet.extra');
       },
       /^ForbiddenGroupGranted: senior-sdet:seat:senior-sdet\.extra:verb$/],
     ['ForbiddenGroupGranted:not-allowed',
       (d) => {
-        insertInObject(d, 'tools/docgen/policy/definitions/commands.mjs', 'export const seatGroups',
+        insertInObject(d, 'tools/docgen/builders/agents/policy/definitions/commands.mjs', 'export const seatGroups',
           "'seat:senior-sdet.extra': { purpose: '测试构造', verbs: ['curl https://x'] },");
         grantGroup(d, 'senior-sdet', 'seat:senior-sdet.extra');
       },
       /^ForbiddenGroupGranted: senior-sdet:seat:senior-sdet\.extra:not-allowed$/],
     ['TemplateImpure',
-      (d) => editInDir(d, 'tools/docgen/templates/boundary.md.tpl', (s) => `${s}\n\n- 另：\`docs/prd/\` 也不许写。\n`),
-      /^TemplateImpure: tools\/docgen\/templates\/boundary\.md\.tpl:.+$/],
+      (d) => editInDir(d, 'tools/docgen/builders/agents/templates/boundary.md.tpl', (s) => `${s}\n\n- 另：\`docs/prd/\` 也不许写。\n`),
+      /^TemplateImpure: tools\/docgen\/builders\/agents\/templates\/boundary\.md\.tpl:.+$/],
   ];
   // §7 报文路径口径（spec:197）：一律仓内 POSIX 相对路径；禁绝对路径 / 盘符 / 用户目录 / file://
   const ABS = /[A-Za-z]:[\\/]|\/Users\/|\/home\/|file:\/\/|\\\\[A-Za-z0-9._-]+\\/;
@@ -826,8 +833,8 @@ test('S6-TC-D01 六个错误码各 1 个负例：exit 1 + 报文首行格式', (
   // 负例：同一片段写成绝对路径 / 盘符 / 用户目录 / file:// → 上述路径断言必红
   for (const [code, badHead] of [
     ['TemplateImpure', 'TemplateImpure: D:\\Seed\\retro-skills\\tools\\docgen\\templates\\boundary.md.tpl:{{SEAT}}'],
-    ['SeatNameInDefinition', 'SeatNameInDefinition: /home/ci/repo/tools/docgen/policy/definitions/paths.mjs'],
-    ['LiteralInConfig', 'LiteralInConfig: file:///d:/Seed/retro-skills/tools/docgen/policy/seat-policy.json:12'],
+    ['SeatNameInDefinition', 'SeatNameInDefinition: /home/ci/repo/tools/docgen/builders/agents/policy/definitions/paths.mjs'],
+    ['LiteralInConfig', 'LiteralInConfig: file:///d:/Seed/retro-skills/tools/docgen/builders/agents/policy/seat-policy.json:12'],
     ['UnknownPolicyRef', 'UnknownPolicyRef: senior-sdet:capability=C:\\Users\\ci\\admin'],
   ]) {
     assert.throws(() => assertReportPath(badHead, code), (e) => e.code === 'ERR_ASSERTION',
@@ -844,7 +851,7 @@ test('S6-TC-D01 六个错误码各 1 个负例：exit 1 + 报文首行格式', (
 test('S6-TC-D02 渲染与基准卡面不等 → Mismatch（gate 口径）', () => {
   // S-B §11.2.6：清单已指针化 → 改清单项不再改变渲染；改**会渲染**的槽值（席 clause）才是等价构造
   const r = withCopy((d) => {
-    editInDir(d, 'tools/docgen/policy/definitions/seats.mjs',
+    editInDir(d, 'tools/docgen/builders/agents/policy/definitions/seats.mjs',
       (s) => s.replace("'、审计表", "'、审计表X"));
     return runCli(d, ['gate']);
   });
@@ -857,7 +864,7 @@ test('S6-TC-D03 定义层出现席 slug → SeatNameInDefinition；显示名只�
   // ① 静态面：权限类定义文件（capabilities / commands / paths / tiers）不得出现任何席 slug
   const slugs = agentData.map((a) => a.name);
   for (const f of ['capabilities', 'commands', 'paths', 'tiers']) {
-    const src = readFileSync(`tools/docgen/policy/definitions/${f}.mjs`, 'utf8');
+    const src = readFileSync(`tools/docgen/builders/agents/policy/definitions/${f}.mjs`, 'utf8');
     assert.deepEqual(slugs.filter((s) => src.includes(s)), [], `${f}.mjs 出现席 slug`);
   }
   // ② 归属面：artifacts.owner 必须是已登记 slug；仅 progress.md 的宿主哨兵 `host`（须同时 host:true）例外
@@ -867,13 +874,13 @@ test('S6-TC-D03 定义层出现席 slug → SeatNameInDefinition；显示名只�
     else assert.ok(slugs.includes(v.owner), `${f}: owner=${v.owner}`);
   }
   // ③ 显示名只许在 seats.mjs，且 SEATS 是**对象形态**（spec:57）
-  const seatsSrc = readFileSync('tools/docgen/policy/definitions/seats.mjs', 'utf8');
+  const seatsSrc = readFileSync('tools/docgen/builders/agents/policy/definitions/seats.mjs', 'utf8');
   assert.match(seatsSrc, /'reviewer-audit'\s*:\s*\{\s*display\s*:\s*'审计'/);
   assert.match(seatsSrc, /'detective-observer'\s*:\s*\{\s*display\s*:\s*'侦探'/);
   for (const f of ['capabilities', 'commands', 'paths', 'artifacts', 'tiers']) {
-    assert.equal(/审计|侦探/.test(readFileSync(`tools/docgen/policy/definitions/${f}.mjs`, 'utf8')), false, f);
+    assert.equal(/审计|侦探/.test(readFileSync(`tools/docgen/builders/agents/policy/definitions/${f}.mjs`, 'utf8')), false, f);
   }
-  assert.equal(/审计|侦探/.test(readFileSync('tools/docgen/templates/boundary.md.tpl', 'utf8')), false, '模板不得内联显示名');
+  assert.equal(/审计|侦探/.test(readFileSync('tools/docgen/builders/agents/templates/boundary.md.tpl', 'utf8')), false, '模板不得内联显示名');
   for (const [slug, v] of Object.entries(SEATS.SEATS)) {
     assert.ok(String(v.display ?? '').trim().length > 0, `${slug}: display 必填非空`);
     if (v.escalationWriter) {
@@ -883,12 +890,12 @@ test('S6-TC-D03 定义层出现席 slug → SeatNameInDefinition；显示名只�
   }
   // ④ 副本注入后的报文
   const r = withCopy((d) => {
-    editInDir(d, 'tools/docgen/policy/definitions/paths.mjs',
+    editInDir(d, 'tools/docgen/builders/agents/policy/definitions/paths.mjs',
       (s) => s.replace("'其他评审目录'", "'其他评审目录-reviewer-audit'"));
     return runCli(d, ['policy', '--dump']);
   });
   assert.equal(r.status, 1);
-  assert.match(r.stderr.split('\n')[0], /^SeatNameInDefinition: tools\/docgen\/policy\/definitions\/paths\.mjs$/);
+  assert.match(r.stderr.split('\n')[0], /^SeatNameInDefinition: tools\/docgen\/builders\/agents\/policy\/definitions\/paths\.mjs$/);
 });
 
 test('S6-TC-D04 九条不变量各有 ≥1 个负例（机器可数）', () => {
@@ -951,7 +958,7 @@ test('S6-TC-E01 新增一条禁止路径 → 只改定义层 + 卡面零变化 �
     const before = snap();
     const SEATS2 = ['reviewer-audit', 'detective-observer', 'senior-sdet'];
     const renderBefore = SEATS2.map((s) => renderBoundaryIn(d, s));
-    editInDir(d, 'tools/docgen/policy/definitions/paths.mjs',
+    editInDir(d, 'tools/docgen/builders/agents/policy/definitions/paths.mjs',
       (s) => s.replace("{ id: 'other-reviews', text: '其他评审目录' },",
         "{ id: 'other-reviews', text: '其他评审目录' }, { id: 'vendor', text: 'vendor/' },"));
     // S-B §11.2.6：清单指针化后，新增一条禁止路径**不改渲染** → 卡面无需重生成，gate 仍绿；
@@ -966,14 +973,14 @@ test('S6-TC-E01 新增一条禁止路径 → 只改定义层 + 卡面零变化 �
     assert.ok(JSON.parse(dump.stdout).paths.groups.workspace.includes('vendor/'), '新增项必须进定义层（否则判据空转）');
     const after = snap();
     const changed = Object.keys(after).filter((k) => before[k] !== after[k]);
-    assert.deepEqual(changed, [join(d, 'tools/docgen/policy/definitions/paths.mjs').replace(/\\/g, '/')],
+    assert.deepEqual(changed, [join(d, 'tools/docgen/builders/agents/policy/definitions/paths.mjs').replace(/\\/g, '/')],
       '改一条路径只许动一个源文件');
   });
 });
 
 test('S6-TC-E02 V-8 两形态：已登记席加组 = 1 处数据；新增席 = 2 处数据、零代码', () => {
   const hashesOf = (d) => JSON.parse(runEsm(d, `import {createHash} from 'node:crypto';
-    import {renderBoundary} from './tools/docgen/components/renderBoundary.mjs';
+    import {renderBoundary} from './tools/docgen/builders/agents/components/renderBoundary.mjs';
     console.log(JSON.stringify(Object.fromEntries(['reviewer-audit','detective-observer','senior-sdet']
       .map((s) => [s, createHash('sha256').update(renderBoundary(s)).digest('hex')]))))`).stdout);
   const before = hashesOf(ROOT);
@@ -981,12 +988,12 @@ test('S6-TC-E02 V-8 两形态：已登记席加组 = 1 处数据；新增席 = 2
   //    副本内按渲染重写该卡后 gate 复绿
   withCopy((d) => {
     grantGroup(d, 'senior-sdet', 'check.local');
-    assert.deepEqual(changedFiles(ROOT, d), ['policy/seat-policy.mjs'], 'V-8①：已登记席加组只应改配置层一处');
+    assert.deepEqual(changedFiles(ROOT, d), ['builders/agents/policy/seat-policy.mjs'], 'V-8①：已登记席加组只应改配置层一处');
     const after = hashesOf(d);
     assert.deepEqual(Object.keys(after).filter((n) => after[n] !== before[n]), ['senior-sdet']);
     assert.equal(runCli(d, ['gate']).status, 1, '数据变了、卡未重出 → gate 必须报 Mismatch');
     // 副本内按渲染重写该卡（与 gate 的逐字节基准同一产出：renderByName）
-    const full = runEsm(d, "import {renderByName} from './tools/docgen/components/renderByName.mjs';process.stdout.write(renderByName('senior-sdet'))");
+    const full = runEsm(d, "import {renderByName} from './tools/docgen/builders/agents/components/renderByName.mjs';process.stdout.write(renderByName('senior-sdet'))");
     assert.equal(full.status, 0, `副本渲染失败：${full.stderr}`);
     writeFileSync(join(d, 'agents', 'senior-sdet.md'), full.stdout, 'utf8');
     const ok = runCli(d, ['gate']);
@@ -997,11 +1004,11 @@ test('S6-TC-E02 V-8 两形态：已登记席加组 = 1 处数据；新增席 = 2
   });
   // ② 新增席 → 两处数据、零代码；其余席渲染零变化（度量层 = 渲染层）
   withCopy((d) => {
-    insertInObject(d, 'tools/docgen/policy/definitions/seats.mjs', 'export const SEATS', "'probe-seat': { display: '探针席' },");
-    insertInObject(d, 'tools/docgen/policy/seat-policy.mjs', 'export const SEAT_POLICY',
+    insertInObject(d, 'tools/docgen/builders/agents/policy/definitions/seats.mjs', 'export const SEATS', "'probe-seat': { display: '探针席' },");
+    insertInObject(d, 'tools/docgen/builders/agents/policy/seat-policy.mjs', 'export const SEAT_POLICY',
       "'probe-seat': { capabilities: ['read'], allowGroups: ['check.local'], artifacts: [] },");
     assert.deepEqual(changedFiles(ROOT, d),
-      ['policy/definitions/seats.mjs', 'policy/seat-policy.mjs'], 'V-8②：新增席 = 两处数据、零代码');
+      ['builders/agents/policy/definitions/seats.mjs', 'builders/agents/policy/seat-policy.mjs'], 'V-8②：新增席 = 两处数据、零代码');
     const after = hashesOf(d);
     for (const s of ['reviewer-audit','detective-observer','senior-sdet']) assert.equal(after[s], before[s], `${s}: 其余席渲染不得变`);
   });
@@ -1018,22 +1025,22 @@ test('S6-TC-E03 23 项清单副本收敛到「定义层 1 处 + 承载该段的�
   const files = ls.stdout.trim().split('\n')
     .filter((f) => /\.(mjs|md|tpl|json)$/.test(f))
     .filter((f) => !f.startsWith('docs/') || f === S5_TC)   // S5 spec 不在扫描面（spec:210：历史记录，只判指针）
-    .filter((f) => !f.startsWith('tools/docgen/test/'))
+    .filter((f) => !f.startsWith('tools/docgen/builders/agents/test/'))
     // 与 testcase:1952 的唯一偏差：`tools/docgen/fixtures/` 的基线与黄金快照与 `git show <改造前>:agents/<席>.md`
     // 同类（都是**改造前**的取证物，spec:169 步骤 0），不是「活跃策略副本」；不排除会让副本集合恒多 2 项
-    .filter((f) => !f.startsWith('tools/docgen/fixtures/'));
+    .filter((f) => !f.startsWith('tools/docgen/builders/agents/fixtures/'));
   // S-B（§11.2.3 / R5）后：卡面 ③ 段改指针句 → 2 张卡**不再是**清单副本，唯一副本回到定义层 1 处。
   // 期望集因此缩到 1 项（不是放宽：`listCopies` 的阈值与判据不变，卡面若被写回整份清单会立刻回到集合里）。
-  assert.deepEqual(listCopies(ROOT, files).sort(), ['tools/docgen/policy/definitions/paths.mjs']);
+  assert.deepEqual(listCopies(ROOT, files).sort(), ['tools/docgen/builders/agents/policy/definitions/paths.mjs']);
   // spec:210 的「spec 0 条手抄」：本 spec 自身不得内联整份清单（定向单文件，不把 docs/ 并入扫描面）
   assert.deepEqual(listCopies(ROOT, [S6_SPEC]), [], 'S6 spec 自身内联了整份路径清单（应只引用定义层）');
 });
 
 test('S6-TC-E04 测试零手抄：路径清单从定义层 import', () => {
-  const src = readFileSync('tools/docgen/test/tool-tiers.test.mjs', 'utf8');
+  const src = readFileSync('tools/docgen/builders/agents/test/tool-tiers.test.mjs', 'utf8');
   assert.match(src, /import\s*\{[^}]*\}\s*from\s*'\.\.\/policy\/definitions\/paths\.mjs'/);
   assert.equal(/const FORBIDDEN_PATHS\s*=\s*\[/.test(src), false);
-  assert.deepEqual(listCopies(ROOT, ['tools/docgen/test/tool-tiers.test.mjs']), []);
+  assert.deepEqual(listCopies(ROOT, ['tools/docgen/builders/agents/test/tool-tiers.test.mjs']), []);
 });
 
 test('S6-TC-E05 S5 文档侧：spec 只加指针 + testcase 三条改判 → 0 手抄', () => {
@@ -1044,7 +1051,8 @@ test('S6-TC-E05 S5 文档侧：spec 只加指针 + testcase 三条改判 → 0 �
   // ① 两节各自带指针（spec:122 / spec:210）
   for (const [name, body] of [['§3.3', sec('### 3.3', '### 3.4')], ['§8', sec('## 8 验收', '## 9 测试')]]) {
     assert.ok(body.length > 0, `S5 spec 缺 ${name}`);
-    assert.match(body, /tools\/docgen\/policy\//, `${name} 缺「以 policy/ 为准」指针`);
+    // 历史 spec 冻结不改写：指针允许旧落点与迁移后落点两种写法
+    assert.match(body, /tools\/docgen\/(?:builders\/agents\/)?policy\//, `${name} 缺「以 policy/ 为准」指针`);
     assert.match(body, /policy --dump/, `${name} 缺「policy --dump 为准」指针`);
   }
   // ② 历史记录保留：§3.3 的清单原句与 V-3 结论句仍在（只加指针、不改原句）
@@ -1076,22 +1084,22 @@ test('S6-TC-E05 S5 文档侧：spec 只加指针 + testcase 三条改判 → 0 �
 });
 
 test('S6-TC-E06 允许 / 禁止两组命令白名单同样来自定义层', () => {
-  const src = readFileSync('tools/docgen/test/tool-tiers.test.mjs', 'utf8');
+  const src = readFileSync('tools/docgen/builders/agents/test/tool-tiers.test.mjs', 'utf8');
   assert.equal(/const ALLOWED = \[/.test(src), false);
   assert.equal(/const FORBIDDEN = \[/.test(src), false);
 });
 
 test('S6-TC-E07 定义层单源：policy/ 下无第二份边界/清单常量文件', () => {
   // 同 E03：不 commit 期间新文件未跟踪，故一并算入扫描面
-  const ls = spawnSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', 'tools/docgen/policy'], { encoding: 'utf8' });
+  const ls = spawnSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', 'tools/docgen/builders/agents/policy'], { encoding: 'utf8' });
   assert.equal(ls.status, 0, ls.stderr);
-  const files = ls.stdout.trim().split('\n').map((f) => f.replace('tools/docgen/policy/', ''));
+  const files = ls.stdout.trim().split('\n').map((f) => f.replace('tools/docgen/builders/agents/policy/', ''));
   assert.deepEqual(files.sort(), ['definitions/artifacts.mjs','definitions/capabilities.mjs',
     'definitions/commands.mjs','definitions/paths.mjs','definitions/seats.mjs','definitions/tiers.mjs',
     'definitions/writeScopes.mjs','seat-policy.mjs']);
   const marks = ['只允许写','逐项点名','命令默认拒绝'];
   for (const f of files) {
-    const t = readFileSync(`tools/docgen/policy/${f}`, 'utf8');
+    const t = readFileSync(`tools/docgen/builders/agents/policy/${f}`, 'utf8');
     assert.ok(marks.filter((m) => t.includes(m)).length < 2, `${f} 疑似含一份边界句`);
   }
   // ④ `tiers.mjs` 必须是真档位表（键集齐、`command` 键在、**值是工具名**），且 patternRegistry 只是 re-export
@@ -1146,7 +1154,7 @@ test('S6-TC-G02 gate → baseline N/N，N 派生不写死', () => {
   assert.equal(r.status, 0, r.stderr);
   assert.match(r.stdout.trim(), new RegExp(`^baseline ${N}/${N}$`));
   // 判据自己不得写死条数（testcase:2299）：用**派生值**拼 needle，故本文件不含任何 `N/N` 字面量
-  assert.equal(readFileSync('tools/docgen/test/policy-pure-source.test.mjs', 'utf8').includes(`${N}/${N}`), false);
+  assert.equal(readFileSync('tools/docgen/builders/agents/test/policy-pure-source.test.mjs', 'utf8').includes(`${N}/${N}`), false);
 });
 
 test('S6-TC-G03 默认边界句的 11 席、evidence-reader 与 senior-sdet 专用边界句不变', () => {
@@ -1179,7 +1187,7 @@ test('S6-TC-G04 死常量已删；tool-tiers 的 import / B08 / E05 / B14 四处
     { cwd: ROOT, encoding: 'utf8' });
   assert.ok([0, 1].includes(grep.status), `git grep 异常退出：${grep.status}\n${grep.stderr}`);
   assert.equal(grep.stdout.trim(), '', '全仓仍有已删常量');
-  const tt = readFileSync('tools/docgen/test/tool-tiers.test.mjs', 'utf8');
+  const tt = readFileSync('tools/docgen/builders/agents/test/tool-tiers.test.mjs', 'utf8');
   assert.match(tt, /boundary,\s*renderBoundary\(/);
   assert.equal(new RegExp(`${DEAD}\\s*===\\s*'string'`).test(tt), false);
   // ⑤ 文档侧：只判三个用例条目段，历史叙述段不计
@@ -1193,7 +1201,7 @@ test('S6-TC-G04 死常量已删；tool-tiers 的 import / B08 / E05 / B14 四处
 test('S6-TC-G05 改定义层一条 → gate 红 → 改回绿', () => {
   withCopy((d) => {
     // S-B §11.2.6：清单指针化后改路径项不改渲染 → 改**会渲染**的槽值（席 clause），判据语义不变
-    const edit = (from, to) => editInDir(d, 'tools/docgen/policy/definitions/seats.mjs',
+    const edit = (from, to) => editInDir(d, 'tools/docgen/builders/agents/policy/definitions/seats.mjs',
       (s) => s.replace(from, to));
     edit("'、审计表", "'、审计表X");
     assert.equal(runCli(d, ['gate']).status, 1, '改数据后 gate 必须红（渲染没接上？）');
@@ -1204,7 +1212,7 @@ test('S6-TC-G05 改定义层一条 → gate 红 → 改回绿', () => {
   });
   // 反向守卫：改**清单项**（禁写路径）不改渲染 → gate 仍绿（指针化的可判形态，防「清单被写回卡面」回归）
   withCopy((d) => {
-    editInDir(d, 'tools/docgen/policy/definitions/paths.mjs',
+    editInDir(d, 'tools/docgen/builders/agents/policy/definitions/paths.mjs',
       (s) => s.replace("'其他评审目录'", "'其他评审目录X'"));
     const g = runCli(d, ['gate']);
     assert.equal(g.status, 0, `清单项不落卡 → gate 必须仍绿：${g.stderr}`);
@@ -1316,7 +1324,7 @@ test('S6-TC-F03 dump 不写仓内文件：哈希不变 + status 逐字不变 + �
     'policy/seat-policy.mjs', 'policy/definitions/capabilities.mjs', 'policy/definitions/tiers.mjs',
     'policy/definitions/commands.mjs', 'policy/definitions/paths.mjs',
     'policy/definitions/artifacts.mjs', 'policy/definitions/seats.mjs']) {
-    const src = stripComments(readFileSync(join('tools/docgen', f), 'utf8'));
+    const src = stripComments(readFileSync(join('tools/docgen/builders/agents', f), 'utf8'));
     assert.equal(/writeFileSync|appendFileSync|createWriteStream|node:child_process/.test(src), false,
       `${f}: 引入写盘 / 子进程能力（只读承诺无法静态成立）`);
   }
@@ -1348,7 +1356,7 @@ test('S6-TC-F06 dump 与 renderBoundary 同源：定义改一处两者同变（�
   const dumpBefore = JSON.stringify(dumpPolicy(ROOT).json);
   const renderBefore = renderBoundary('reviewer-audit');
   const after = withCopy((d) => {
-    editInDir(d, 'tools/docgen/policy/definitions/commands.mjs',
+    editInDir(d, 'tools/docgen/builders/agents/policy/definitions/commands.mjs',
       (s) => s.replace("'node scripts/skill-dir.mjs',",
         "'node scripts/skill-dir.mjs','node scripts/extra-check.mjs',"));
     return { dump: dumpPolicy(d).json, render: renderBoundaryIn(d, 'reviewer-audit') };
@@ -1361,12 +1369,12 @@ test('S6-TC-F06 dump 与 renderBoundary 同源：定义改一处两者同变（�
 
   // ② 槽值：改 `SEAT_CLAUSE` 的定义 → `expanded[4]` 与 render 同变。
   // **plan 片段的目标串已过时**（它写 `clause: '、审计表'`）；T4-1 已按 plan Step 2 把该行改成
-  // 承接 ⑨⑩ 的长句，故按现文件字面量取（tools/docgen/policy/definitions/seats.mjs:8）。
+  // 承接 ⑨⑩ 的长句，故按现文件字面量取（tools/docgen/builders/agents/policy/definitions/seats.mjs:8）。
   const CLAUSE = '、审计表；你在 `round-check.md` 核转录逐字一致';
-  assert.ok(readFileSync('tools/docgen/policy/definitions/seats.mjs', 'utf8').includes(CLAUSE),
+  assert.ok(readFileSync('tools/docgen/builders/agents/policy/definitions/seats.mjs', 'utf8').includes(CLAUSE),
     'seats.mjs 里找不到该字面量（定义层又换了措辞？按现文件重取，勿回退到 plan 片段）');
   const clauseAfter = withCopy((d) => {
-    editInDir(d, 'tools/docgen/policy/definitions/seats.mjs', (s) => s.replace(CLAUSE, `${CLAUSE}（改）`));
+    editInDir(d, 'tools/docgen/builders/agents/policy/definitions/seats.mjs', (s) => s.replace(CLAUSE, `${CLAUSE}（改）`));
     return { slot: dumpPolicy(d).json.seats['reviewer-audit'].expanded[4],
       render: renderBoundaryIn(d, 'reviewer-audit') };
   });
@@ -1542,8 +1550,8 @@ test('S6-TC-J01 ⑤ 段 8 条子句 + 卡级 2 条职责句', () => {
 test('S6-TC-J02 负例：8 类子句各删一处 → 各红一次', () => {
   const AUD = 'reviewer-audit';
   const DET = 'detective-observer';
-  const TPL = 'tools/docgen/templates/boundary.md.tpl';
-  const SEATS_REL = 'tools/docgen/policy/definitions/seats.mjs';
+  const TPL = 'tools/docgen/builders/agents/templates/boundary.md.tpl';
+  const SEATS_REL = 'tools/docgen/builders/agents/policy/definitions/seats.mjs';
   const cutText = (re) => (d) => editInDir(d, TPL, (s) => s.replace(re, ''));
   const cutSentence = (re) => (d) => editInDir(d, TPL, (s) => s.split(/(?<=。)/).filter((sen) => !re.test(sen)).join(''));
   // 偏离已签 J02 的删除靶点（plan Task 4 Step 2 把 ⑨⑩ 落到 seats.mjs 的 clause），判据语义不变：
@@ -1580,12 +1588,12 @@ test('S6-TC-J02 负例：8 类子句各删一处 → 各红一次', () => {
 
 test('S6-TC-J03 边界：措辞重排但要素齐 → 仍绿（哈希不等也允许）', () => {
   withCopy((d) => {
-    editInDir(d, 'tools/docgen/templates/boundary.md.tpl', (s) => s.replace('立即停手', '立即停止操作'));
+    editInDir(d, 'tools/docgen/builders/agents/templates/boundary.md.tpl', (s) => s.replace('立即停手', '立即停止操作'));
     const out = renderBoundaryIn(d, 'reviewer-audit');
     assert.doesNotThrow(() => assertNeedClauses(out, 'reviewer-audit'), '② 要素齐即绿');
     assert.notEqual(sha(out), goldenOf('reviewer-audit'), '③ 合法改写必须让哈希不等（v5 口径下会被误判）');
     assert.deepEqual(diffFacts(baseJson().seats['reviewer-audit'], factsFromPolicy(dumpPolicy(d).json, 'reviewer-audit')), baseDelta(),
-      '④ 能力除 Q8 三项 + 归档一条外没丢（清单源按副本现算）');
+      `④ 能力除 ${BASE_DELTA_DESC} 外没丢（清单源按副本现算）`);
   });
 });
 
@@ -1594,7 +1602,7 @@ test('S6-TC-C01 审计席：哈希只作定位，判据 = 能力 diff 空 + J01 
   const hashEqual = sha(renderBoundary(seat)) === goldenCurOf(seat);   // ① 只取事实（当前比对键，spec:198）
   assert.equal(typeof hashEqual, 'boolean');
   assert.deepEqual(diffFacts(baseJson().seats[seat], factsFromPolicy(dumpPolicy(ROOT).json, seat)),
-    baseDelta(), `${seat}: 能力 diff 必须恰为 Q8 三项 + 归档一条`);              // ② 唯一通过判据
+    baseDelta(), `${seat}: 能力 diff 必须恰为 ${BASE_DELTA_DESC}`);              // ② 唯一通过判据
   assert.doesNotThrow(() => assertNeedClauses(renderBoundary(seat), seat));  // ③
   assert.match(renderBoundary(seat), /审计\s*写\s*`round-check\.md`/, '④ 槽 6：审计席应渲染「本席自写」形态');
   // ⑤ 黄金**基线键**的来源 = 改造前（旧卡边界节），不是改造后渲染自哈希
@@ -1606,7 +1614,7 @@ test('S6-TC-C01 审计席：哈希只作定位，判据 = 能力 diff 空 + J01 
     `${seat}: 当前比对键必须取轮次最大者，无换代键则回落基线键`);
   // ⑥ 负例：若黄金取「改造后渲染自哈希」→ 模板改一字仍判相等（hashEqual 恒真）→ 必红
   withCopy((d) => {
-    editInDir(d, 'tools/docgen/templates/boundary.md.tpl', (s) => s.replace('**档位事实**', '**档位 事实**'));
+    editInDir(d, 'tools/docgen/builders/agents/templates/boundary.md.tpl', (s) => s.replace('**档位事实**', '**档位 事实**'));
     const out = renderBoundaryIn(d, seat);
     assert.notEqual(out, renderBoundary(seat), '构造未生效：模板未被改动');
     assert.notEqual(sha(out), goldenCurOf(seat), '黄金取自改造后 → 文本变了仍判相等（hashEqual 恒真）→ 必红');
@@ -1625,7 +1633,7 @@ test('S6-TC-C02 侦探席：同口径（哈希只作定位）', () => {
   const hashEqual = sha(renderBoundary(seat)) === goldenCurOf(seat);   // 当前比对键（spec:198）
   assert.equal(typeof hashEqual, 'boolean');
   assert.deepEqual(diffFacts(baseJson().seats[seat], factsFromPolicy(dumpPolicy(ROOT).json, seat)),
-    baseDelta(), `${seat}: 能力 diff 必须恰为 Q8 三项 + 归档一条`);
+    baseDelta(), `${seat}: 能力 diff 必须恰为 ${BASE_DELTA_DESC}`);
   assert.doesNotThrow(() => assertNeedClauses(renderBoundary(seat), seat));
   // 与 testcase:1391 的唯一偏差：⑩ 是**卡级**子句（CLAUSES 标 `scope:'card'`，J01 已裁定它不在 ⑤ 段；
   // 现文落在槽 5「只允许写」段）→ 按整卡判，不按 seg5 切片判（照切片写会恒红，且与 J01 口径冲突）
@@ -1640,7 +1648,7 @@ test('S6-TC-C02 侦探席：同口径（哈希只作定位）', () => {
     `${seat}: 当前比对键必须取轮次最大者，无换代键则回落基线键`);
   // ⑥ 负例：自哈希口径 → 文本变了仍「相等」→ 必红
   withCopy((d) => {
-    editInDir(d, 'tools/docgen/templates/boundary.md.tpl', (s) => s.replace('**档位事实**', '**档位 事实**'));
+    editInDir(d, 'tools/docgen/builders/agents/templates/boundary.md.tpl', (s) => s.replace('**档位事实**', '**档位 事实**'));
     const out = renderBoundaryIn(d, seat);
     assert.notEqual(out, renderBoundary(seat), '构造未生效：模板未被改动');
     assert.notEqual(sha(out), goldenCurOf(seat), '黄金取自改造后 → 文本变了仍判相等（hashEqual 恒真）→ 必红');
@@ -1662,7 +1670,7 @@ test('S6-TC-C02 侦探席：同口径（哈希只作定位）', () => {
 // 改造后端的字典匹配由本文件直接 `import { factsFromText }` 后调用（H02/H03/H04/H05）。
 const runBaselineExtractor = (dir, text) => {
   const b64 = Buffer.from(text, 'utf8').toString('base64');
-  const r = runEsm(dir, `import { factsFromBaselineText } from './tools/docgen/test/support/capability-baseline.mjs';
+  const r = runEsm(dir, `import { factsFromBaselineText } from './tools/docgen/builders/agents/test/support/capability-baseline.mjs';
 const text = Buffer.from(${JSON.stringify(b64)}, 'base64').toString('utf8');
 console.log(JSON.stringify(factsFromBaselineText(text)));`);
   assert.equal(r.status, 0, `基线端抽取器执行失败（${dir}）\n${r.stderr}`);
@@ -1672,8 +1680,8 @@ console.log(JSON.stringify(factsFromBaselineText(text)));`);
 function assertBaselinePrior(base) {
   assert.match(base.sourceCommit, /^[0-9a-f]{40}$/, '基线缺 sourceCommit（40 位十六进制）');
   const has = (rev, p) => spawnSync('git', ['cat-file', '-e', `${rev}:${p}`], { cwd: ROOT, encoding: 'utf8' }).status === 0;
-  assert.equal(has(base.sourceCommit, 'tools/docgen/policy'), false, '基线 commit 必须早于 policy/ 出现');
-  assert.equal(has(base.sourceCommit, 'tools/docgen/components/renderBoundary.mjs'), false, '基线 commit 必须早于 renderBoundary 出现');
+  assert.equal(has(base.sourceCommit, 'tools/docgen/builders/agents/policy'), false, '基线 commit 必须早于 policy/ 出现');
+  assert.equal(has(base.sourceCommit, 'tools/docgen/builders/agents/components/renderBoundary.mjs'), false, '基线 commit 必须早于 renderBoundary 出现');
 }
 // 账单目录：评估期在 `.session/reviews/<…>-s6-eval/`，收口后才整目录迁 `docs/superpowers/reviews/<同名>/`
 // （与 G01 同一处置：只认后者会让「评估期」这一段恒红）
@@ -1686,7 +1694,7 @@ const evalDir = () => {
 };
 // 「改造后 HEAD」的客观标志：未提交时 HEAD 里没有 `policy/` → H07a ①② 无法成立（不是实现错）。
 // 该常量同时是 H07a 的跳过条件（见该测试的 skip 文案）；H07b ③④ 不依赖它，无条件执行。
-const HEAD_HAS_POLICY = spawnSync('git', ['cat-file', '-e', 'HEAD:tools/docgen/policy'], { cwd: ROOT, stdio: 'ignore' }).status === 0;
+const HEAD_HAS_POLICY = spawnSync('git', ['cat-file', '-e', 'HEAD:tools/docgen/builders/agents/policy'], { cwd: ROOT, stdio: 'ignore' }).status === 0;
 
 test('S6-TC-A09 卡面 CRLF / BOM → gate 必报 Mismatch（禁归一化后判绿）', () => {
   const CASES = [
@@ -1727,7 +1735,7 @@ test('S6-TC-H01 基线同源可复算（sourceCommit 早于 policy/ + 抽取器�
       `${s}: 基线不可由抽取器复算（基线手抄 或 抽取规则漂移）`);
   }
   // ⑤ 静态面（= H07 ③）：抽取器不得 import / 引用定义层，否则基线随改造后数据抖动
-  const ex = stripComments(readFileSync('tools/docgen/test/support/capability-baseline.mjs', 'utf8'));
+  const ex = stripComments(readFileSync('tools/docgen/builders/agents/test/support/capability-baseline.mjs', 'utf8'));
   assert.equal(/policy\//.test(ex), false, '基线抽取器不得依赖定义层');
   // ④ 差异可追 + 越界可抓：只许两张 producer 卡相对基线有差异（其余 12 席不接渲染层，spec:117）
   const changedCards = git(['diff', '--name-only', `${base.sourceCommit}..HEAD`, '--', 'agents/'])
@@ -1752,7 +1760,7 @@ test('S6-TC-H01 基线同源可复算（sourceCommit 早于 policy/ + 抽取器�
   assert.ok(notes.includes(`git show ${base.sourceCommit}:agents/reviewer-audit.md`), '缺 A 组取数命令原文');
   assert.match(notes, /capability-baseline/, '缺基线导出命令原文');
   // ⑦ 抽取规则 + 黄金样本：同一抽取器真执行、独立复算（不由被测代码生成）
-  const gold = JSON.parse(readFileSync('tools/docgen/fixtures/capability-baseline.golden.json', 'utf8'));
+  const gold = JSON.parse(readFileSync('tools/docgen/builders/agents/fixtures/capability-baseline.golden.json', 'utf8'));
   assert.deepEqual(Object.keys(gold).sort(), [...FACTS_KEYS].sort(), '黄金样本必须 8 字段');
   assert.deepEqual(gold, runBaselineExtractor(ROOT, gitShow(base.sourceCommit, 'agents/reviewer-audit.md')),
     '黄金样本 ≠ 抽取器（基线端切分口径）对基线审计席的输出（抽取规则漂移）');
@@ -1773,7 +1781,7 @@ test('S6-TC-H02 五段事实集合逐席 diff 空差', () => {
     const after = factsFromPolicy(json, s);
     assert.deepEqual(Object.keys(before).sort(), [...FACTS_KEYS].sort(), `${s}: 基线五段键集不全`);
     assert.deepEqual(Object.keys(after).sort(), [...FACTS_KEYS].sort(), `${s}: 改造后五段键集不全`);
-    assert.deepEqual(diffFacts(before, after), baseDelta(), `${s}: 除 Q8 三项 + 归档一条外不得有差`);
+    assert.deepEqual(diffFacts(before, after), baseDelta(), `${s}: 除 ${BASE_DELTA_DESC} 外不得有差`);
     // ⑤' ③ 段成员数 = 定义层派生（Q8 后 20）：`spec / plan` 必须能被取到
     assert.equal(after.forbiddenPaths.length, pathTokens().length, `${s}: ③ 段成员数应 = ${pathTokens().length}`);
     assert.ok(after.forbiddenPaths.includes('spec / plan'), `${s}: 事实抽取必须取到 spec / plan`);
@@ -1782,6 +1790,7 @@ test('S6-TC-H02 五段事实集合逐席 diff 空差', () => {
       for (const m of norm(before[k])) {
         if (Q8_MINUS.includes(`${k}: ${m}`)) continue;   // Q8 有意删除：基线里在、定义层已删（见 Q8_MINUS 注释）
         if (ARCHIVE_MINUS.includes(`${k}: ${m}`)) continue;   // 归档：旧 timer 路径已迁到公共 CLI（`scs time`，见 ARCHIVE_MINUS 注释）
+        if (MOVE_MINUS.includes(`${k}: ${m}`)) continue;   // 目录统一：cli 路径下沉（见 MOVE_MINUS 注释）
         assert.ok(POOL[k].includes(m),
           `${s}: 基线成员 ${k}:${m} 不在定义层字典里（基线切分口径错 或 定义层丢项 → 判据将恒真）`);
       }
@@ -1801,7 +1810,7 @@ test('S6-TC-H02 五段事实集合逐席 diff 空差', () => {
 
 test('S6-TC-H03 负例：少一项路径 → minus 出现 forbiddenPaths → 必红', () => {
   const d = withCopy((dir) => {
-    editInDir(dir, 'tools/docgen/policy/definitions/paths.mjs',
+    editInDir(dir, 'tools/docgen/builders/agents/policy/definitions/paths.mjs',
       (s) => s.replace(/\s*\{ id: 'other-reviews', text: '其他评审目录' \},\r?\n/, '\n'));
     // 清单源必须按**副本**现算，否则删掉的那项不在 dump 里、`minus` 恒空
     return diffFacts(baseJson().seats['reviewer-audit'],
@@ -1816,7 +1825,7 @@ test('S6-TC-H03 负例：少一项路径 → minus 出现 forbiddenPaths → 必
 test('S6-TC-H04 负例：删一条允许命令 → minus 出现 allowCmds → 必红', () => {
   const before = baseJson().seats['reviewer-audit'].allowCmds.length;
   const after = withCopy((dir) => {
-    editInDir(dir, 'tools/docgen/policy/definitions/commands.mjs',
+    editInDir(dir, 'tools/docgen/builders/agents/policy/definitions/commands.mjs',
       (s) => s.replace(/\s*'node scripts\/skill-dir\.mjs',/, ''));
     return factsFromPolicy(dumpPolicy(dir).json, 'reviewer-audit');
   });
@@ -1829,12 +1838,13 @@ test('S6-TC-H04 负例：删一条允许命令 → minus 出现 allowCmds → �
 
 test('S6-TC-H05 越权负例：多一项（路径 / 命令 / 已登记组，各按自己那一席取基线）→ plus 必红', () => {
   // 每项按**自己那一席**取基线（两 producer 席有基线 JSON；`senior-sdet` 用真仓库未改动的 dump 现算）
-  const beforeOf = (seat) => (baseJson().seats[seat] ?? factsFromPolicy(dumpPolicy(ROOT).json, seat));
+  const BASELINE_SEATS = new Set(Object.keys(baseJson().seats));
+  const beforeOf = (seat) => (BASELINE_SEATS.has(seat) ? baseJson().seats[seat] : factsFromPolicy(dumpPolicy(ROOT).json, seat));
   const CASES = [
-    ['paths', 'reviewer-audit', (d) => editInDir(d, 'tools/docgen/policy/definitions/paths.mjs',
+    ['paths', 'reviewer-audit', (d) => editInDir(d, 'tools/docgen/builders/agents/policy/definitions/paths.mjs',
       (s) => s.replace("{ id: 'other-reviews', text: '其他评审目录' },",
         "{ id: 'other-reviews', text: '其他评审目录' }, { id: 'vendor', text: 'vendor/' },")), 1],
-    ['cmds', 'reviewer-audit', (d) => editInDir(d, 'tools/docgen/policy/definitions/commands.mjs',
+    ['cmds', 'reviewer-audit', (d) => editInDir(d, 'tools/docgen/builders/agents/policy/definitions/commands.mjs',
       (s) => s.replace("'node scripts/skill-dir.mjs',", "'node scripts/skill-dir.mjs','node scripts/extra.mjs',")), 1],
     // 度量席必须是 `senior-sdet` 自己：`reviewer-audit` 本就持有 `docgen.read` → plus 恒 0、判据失效
     ['group', 'senior-sdet', (d) => grantGroup(d, 'senior-sdet', 'docgen.read'),
@@ -1847,7 +1857,10 @@ test('S6-TC-H05 越权负例：多一项（路径 / 命令 / 已登记组，各�
       return diffFacts(beforeOf(seat), factsFromPolicy(dumpPolicy(d).json, seat));
     });
     assert.deepEqual(withoutBase(diff.minus), [], name);
-    assert.equal(withoutBase(diff.plus).length, expectPlus, `${name}: 越权新增未被捕获`);
+    // 基线席的 plus 要扣掉目录迁移的 4 条路径变化；非基线席的 before 是当前 dump（无迁移差），不得扣。
+    // 按数据来源判断，不按用例名——用例改名或新增同类席时不会误判。
+    const plus = BASELINE_SEATS.has(seat) ? withoutBase(diff.plus) : diff.plus;
+    assert.equal(plus.length, expectPlus, `${name}: 越权新增未被捕获`);
     assert.equal(verdict(diff), 'fail');
   }
   // 负例：只挂载不登记席级组 → dump 直接红（UnknownPolicyRef），不允许静默放行
@@ -1872,18 +1885,18 @@ test('S6-TC-H06 V-2 降级判定表：结论只由 diff 决定（哈希不参与
 
 // H07 拆两个入口：①② 依赖「改造已提交」→ 条件跳过（H07a）；③④ 与 HEAD 无关 → 无条件必绿（H07b）。
 test('S6-TC-H07a 恒真守卫①②：基线不得取自改造后（HEAD 上两者都在 + sourceCommit 改 HEAD 必抛）', {
-  skip: HEAD_HAS_POLICY ? false : 'HEAD 尚无 tools/docgen/policy（改造未提交）：①② 需在用户 commit 后运行；commit 后运行 node --test tools/docgen/test/policy-pure-source.test.mjs',
+  skip: HEAD_HAS_POLICY ? false : 'HEAD 尚无 tools/docgen/policy（改造未提交）：①② 需在用户 commit 后运行；commit 后运行 node --test tools/docgen/builders/agents/test/policy-pure-source.test.mjs',
 }, () => {
   const base = baseJson();
   const has = (rev, p) => spawnSync('git', ['cat-file', '-e', `${rev}:${p}`], { cwd: ROOT, stdio: 'ignore' }).status === 0;
   // ① 基线 commit 上不存在改造后标志，而 HEAD 上两者都存在
   assert.equal(has(base.sourceCommit, 'tools/docgen/policy'), false, '基线 commit 必须早于 policy/ 出现');
   assert.equal(has(base.sourceCommit, 'tools/docgen/components/renderBoundary.mjs'), false);
-  assert.equal(has('HEAD', 'tools/docgen/policy'), true, 'HEAD 上必须已有 policy/（改造后标志）');
+  assert.equal(has('HEAD', 'tools/docgen/builders/agents/policy'), true, 'HEAD 上必须已有 policy/（改造后标志）');
   // ② 副本内把 sourceCommit 改成 HEAD → 同源检查必须抛
   const head = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: ROOT, encoding: 'utf8' }).stdout.trim();
   const patched = withCopy((d) => {
-    const rel = 'tools/docgen/fixtures/capability-baseline.json';
+    const rel = 'tools/docgen/builders/agents/fixtures/capability-baseline.json';
     const before = readFileSync(join(d, rel), 'utf8');
     editInDir(d, rel, (s) => s.replace(/"sourceCommit"\s*:\s*"[0-9a-f]{40}"/, `"sourceCommit": "${head}"`));
     const after = readFileSync(join(d, rel), 'utf8');
@@ -1897,7 +1910,7 @@ test('S6-TC-H07a 恒真守卫①②：基线不得取自改造后（HEAD 上两�
 test('S6-TC-H07b 抽取器与基线解耦：静态不读定义层 + 真执行 8 字段 / 23 路径（无条件绿）', () => {
   // ③ = 原 H01 ④ 的 `sourceCommit !== HEAD` 的活体承接（提交后由 H07a 再看一次）：
   // 抽取器一读定义层，「基线」就跟着改造后的数据漂 → diff 恒空、判据归零；故静态判它不读。
-  assert.equal(/tools\/docgen\/policy/.test(stripComments(readFileSync('tools/docgen/test/support/capability-baseline.mjs', 'utf8'))), false);
+  assert.equal(/tools\/docgen\/builders\/agents\/policy/.test(stripComments(readFileSync('tools/docgen/builders/agents/test/support/capability-baseline.mjs', 'utf8'))), false);
   // ④ 动态断言：抽取器**确实被执行过**（静态 grep 通过 ≠ 抽取规则被验证）；不传字典
   const live = runBaselineExtractor(ROOT, gitShow(baseJson().sourceCommit, 'agents/reviewer-audit.md'));
   assert.deepEqual(Object.keys(live).sort(), [...FACTS_KEYS].sort(), '抽取器未被执行或返回形状不全');

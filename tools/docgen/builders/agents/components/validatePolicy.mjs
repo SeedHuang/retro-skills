@@ -17,11 +17,11 @@ import { toolsForSeat } from './patternRegistry.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 // 报文路径一律仓内 POSIX 相对路径（spec:197）：首行会被贴进日志与账本，禁绝对路径 / 盘符 / file://
-const CFG_REL = 'tools/docgen/policy/seat-policy.mjs';
+const CFG_REL = 'tools/docgen/builders/agents/policy/seat-policy.mjs';
 const CFG_PATH = join(HERE, '..', 'policy', 'seat-policy.mjs');
-const TPL_REL = 'tools/docgen/templates/boundary.md.tpl';
+const TPL_REL = 'tools/docgen/builders/agents/templates/boundary.md.tpl';
 const TPL_PATH = join(HERE, '..', 'templates', 'boundary.md.tpl');
-const DEF_REL = 'tools/docgen/policy/definitions';
+const DEF_REL = 'tools/docgen/builders/agents/policy/definitions';
 const DEF_DIR = join(HERE, '..', 'policy', 'definitions');
 // 席 slug / 显示名允许出现的位置（spec §3.5 不变量 3）：`seats.mjs` 是显示名的唯一住处，故不扫；
 // 其余五个定义文件的例外只有两处 —— `artifacts.owner`（归属）与席级组键名 `seat:<slug>.extra`

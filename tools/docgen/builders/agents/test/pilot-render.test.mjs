@@ -12,7 +12,7 @@ import { renderIndex } from '../components/renderReadme.mjs';
 // S4 Task 7：旧模板与 legacyOutputFormats 已删除；本文件断言全部改走新卡等价面。
 // 注：旧模板文件名不得以字面量写在本文件（`tools/docgen/**/*.mjs` 属 S4-TC-F08 的扫描面，写名字即 1 处残留）。
 const entry = () => agentData.find((a) => a.name === 'reviewer-audit');
-const tpl = () => readFileSync('tools/docgen/templates/agent-card.md.tpl', 'utf8');
+const tpl = () => readFileSync('tools/docgen/builders/agents/templates/agent-card.md.tpl', 'utf8');
 
 test('渲染结果与盘上卡逐字节相等（新卡分支）', () => {
   const actual = renderByName('reviewer-audit');
