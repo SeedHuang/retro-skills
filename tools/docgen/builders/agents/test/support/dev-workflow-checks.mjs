@@ -250,7 +250,8 @@ export function readCounterFiles() {
 export function withRepoCopy(fn) {
   const dst = mkdtempSync(join(tmpdir(), 'dw-copy-'));
   // `docs/agents/**` 也是 gate 的比对面（S4 spec §7③）：副本缺它会把正常态误报 DanglingBaselineEntry
-  // `tools/quality/**` 是 S1 词表单源（`card-model/vocab/*` 在 import 时读它）：副本缺它会 ENOENT
+  // `tools/docgen/dsl/rules/vocab/**` 是 S1 词表单源（`card-model/vocab/*` 在 import 时读它）：
+  // 复制 `tools/docgen` 已覆盖；`tools/quality/**` 仍需保留 annotations。
   const copyAll = () => {
     for (const rel of ['tools/docgen', 'tools/execution-matrix', 'tools/quality', 'rules', 'agents', 'docs/agents']) {
       if (!existsSync(join(ROOT, rel))) continue;

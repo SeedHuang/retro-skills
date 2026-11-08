@@ -8,18 +8,20 @@ import { fileURLToPath } from 'node:url'
 import { interpreters } from './interpreters.mjs'
 
 const DIR = dirname(fileURLToPath(import.meta.url))
-const REPO = resolve(DIR, '..', '..', '..') // copy-aware：在副本里跑时 REPO = 副本根
+const REPO = resolve(DIR, '..', '..', '..', '..') // copy-aware：在副本里跑时 REPO = 副本根
+// 判据数据与构建器分居两地：json 在 dsl/rules（唯一数据源），引擎与投影在 builders/rules
+const DATA_REL_DIR = ['tools', 'docgen', 'dsl', 'rules']
 const strip = (t) => t.replace(/^\uFEFF/, '')
 const RULE_PROJECTION = () => interpreters.find((i) => i.id === 'rule')
 
 export function listRuleIds() {
-  const p = join(DIR, 'rules.json')
+  const p = join(REPO, ...DATA_REL_DIR, 'rules.json')
   if (!existsSync(p)) return []
   return JSON.parse(strip(readFileSync(p, 'utf8'))).rules ?? []
 }
 
 export function loadRule(id, root = REPO) {
-  return JSON.parse(strip(readFileSync(join(root, 'tools', 'quality', 'criteria-engine', `${id}.json`), 'utf8')))
+  return JSON.parse(strip(readFileSync(join(root, ...DATA_REL_DIR, `${id}.json`), 'utf8')))
 }
 
 /** 纯渲染（入参已加载的判据数据；校验器在 `--root` 临时根里必须用这一版） */

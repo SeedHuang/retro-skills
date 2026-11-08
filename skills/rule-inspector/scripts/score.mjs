@@ -10,9 +10,9 @@ const REF_MD_RE = /([A-Za-z0-9_-]+\.md)/g          // 跨规则指针
 const DOC_DIR_RE = /(?:^|[`"'(\s|])(docs|specs|plans|handoffs|session|assets|references|scripts)[/\\]/  // docs/after/xxx.md 等外部文档引用
 const LINE_OVER_LEN = 200                           // 来源行 >200 字符 = 超 2 渲染行
 
-// ⑨ 判据可观察（S3 spec §5）：判据面唯一源 = tools/quality/observable-terms.json 的 markers；
+// ⑨ 判据可观察（S3 spec §5）：判据面唯一源 = tools/docgen/dsl/rules/vocab/observable-terms.json 的 markers；
 // 本文件只读该 JSON，不写第二份词面、不读豁免清单（不建第二套豁免判定）。
-const OBSERVABLE_TERMS = JSON.parse(readFileSync(new URL('../../../tools/quality/observable-terms.json', import.meta.url), 'utf8'))
+const OBSERVABLE_TERMS = JSON.parse(readFileSync(new URL('../../../tools/docgen/dsl/rules/vocab/observable-terms.json', import.meta.url), 'utf8'))
 // annotations 仓级落点：阶段 1（2026-11-05）随 `rules/` 退役迁到 `tools/quality/`
 // （PRD `docs/prd/20261105182104-rule-refactor/prd/stage-1-rules-exit.md` §1 步骤 0）。
 const REPO_ANNOTATIONS = fileURLToPath(new URL('../../../tools/quality/.inspector-annotations.json', import.meta.url))

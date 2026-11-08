@@ -876,7 +876,9 @@ const parseJsonOut = (out) => {
   return JSON.parse(out.slice(i, j + 1))
 }
 test('S2-TC-G07 observable hits 仍 0', () => {
-  const r = runScs(['check', 'observable', '--check', '--json'])
+  const r = runScs(['check', 'observable', '--check', '--json',
+    '--terms', 'tools/docgen/dsl/rules/vocab/observable-terms.json',
+    '--exempt', 'tools/docgen/dsl/rules/vocab/observable-exempt.json'])
   const json = parseJsonOut(r.out)
   assert.equal(json.hits.length, 0)
   assert.equal(json.ok, true)
@@ -1058,7 +1060,9 @@ test('S2-TC-I06 rules/skills 零改动且 observable hits 仍 0', (t) => {
   assert.deepEqual(changed, [], `S2 本批不得改 rules/ 与 skills/ 正文（除签字载体 ${SIGNATURE_LEDGER}）：${changed.join(', ')}`)
   assert.deepEqual(missing, [], `S2 本批不得删 rules/ 与 skills/ 文件：${missing.join(', ')}`)
   t.diagnostic('D20 白名单：gate-record.md 的 blob 允许变（门行账本，非正文）；其余文件逐 blob 比对（区间 = S2 本批）')
-  const r = runScs(['check', 'observable', '--check', '--json'])
+  const r = runScs(['check', 'observable', '--check', '--json',
+    '--terms', 'tools/docgen/dsl/rules/vocab/observable-terms.json',
+    '--exempt', 'tools/docgen/dsl/rules/vocab/observable-exempt.json'])
   const json = parseJsonOut(r.out)
   assert.equal(json.hits.length, 0)
   assert.equal(json.ok, true)

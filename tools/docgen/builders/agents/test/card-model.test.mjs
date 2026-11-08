@@ -346,10 +346,10 @@ test('S1-TC-A05 词表全成员对账 + 单位 / 程序词 / 指针词逐条必�
     assert.ok(w.length > 0, `PRD :${lineNo} 的 ${label} 不得切出空集（否则下面的 deepEqual 恒真）`);
     return w;
   };
-  // ① 词表派生自唯一单源 JSON（`tools/quality/observable-terms.json`），两表交集空
+  // ① 词表派生自唯一单源 JSON（`tools/docgen/dsl/rules/vocab/observable-terms.json`），两表交集空
   //    （S1 `observable-criteria-rollout` 起词面单源迁到 JSON；本断言不再对 PRD 行逐字，改为「派生 + 子集」，
   //     PRD `:271` / `:202` 的起步词原文保留、仍必须是当前词表的子集）
-  const OD = JSON.parse(readFileSync(join(REPO, 'tools/quality/observable-terms.json'), 'utf8'));
+  const OD = JSON.parse(readFileSync(join(REPO, 'tools/docgen/dsl/rules/vocab/observable-terms.json'), 'utf8'));
   assert.deepEqual(ST.subjectiveTerms, OD.terms, `vocab/subjective-terms.mjs 必须派生自 observable-terms.json 的 terms，实得 ${ST.subjectiveTerms}`);
   assert.deepEqual(CT.criterionTerms, OD.criterionTerms, `vocab/criterion-terms.mjs 必须派生自 observable-terms.json 的 criterionTerms，实得 ${CT.criterionTerms}`);
   assert.deepEqual(ST.subjectiveTerms.filter((t) => CT.criterionTerms.includes(t)), [], 'terms 与 criterionTerms 的交集必须为空');

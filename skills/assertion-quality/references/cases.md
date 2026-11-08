@@ -35,4 +35,4 @@
 ## 用法
 
 - 抽检（`residual{who, sample}`）时，先用上面反例校准判者：看判者能不能把三处错全点出来；
-- 判者点不出第 2、3 处 → 判心场景变多 = 客观化不足的信号，回去补失败模式清单（机判：`objectivePath` 非空，校验 `scs check criteria-engine` exit 0）。
+- 判者点不出第 2、3 处 → 判心场景变多 = 客观化不足的信号，回去补失败模式清单（机判：`objectivePath` 非空，校验 `npm run check:criteria` exit 0）。

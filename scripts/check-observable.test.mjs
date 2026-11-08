@@ -19,8 +19,8 @@ const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 // 2026-11-08：校验器实现已迁公共 CLI（`scs check observable`），本文件只保留**项目侧契约**
 // （数据 JSON / 规则文档 / 门禁接线 / 词表派生）；机制级用例在 skill-common-script 的 vitest 里。
 const CLI_ARGS = ['check', 'observable']
-const TERMS_FILE = join(REPO, 'tools', 'quality', 'observable-terms.json')
-const EXEMPT_FILE = join(REPO, 'tools', 'quality', 'observable-exempt.json')
+const TERMS_FILE = join(REPO, 'tools', 'docgen', 'dsl', 'rules', 'vocab', 'observable-terms.json')
+const EXEMPT_FILE = join(REPO, 'tools', 'docgen', 'dsl', 'rules', 'vocab', 'observable-exempt.json')
 const TC_FILE = join(REPO, 'docs', 'superpowers', 'specs', '2026-10-31-observable-criteria-rollout-design-testcase.md')
 const PRD = join(REPO, 'docs', 'prd', '20261031202331-observable-criteria-rollout', 'index.md')
 const TRIAGE = join(REPO, 'docs', 'reports', '2026-10-31-observable-s1-triage.md')
@@ -176,7 +176,7 @@ function arrayLiteralHits(dir, out = []) {
 
 function assertSingleCopy(paths) {
   assert.strictEqual(paths.length, 1, `同形数组必须恰 1 处，实得 ${paths.length}：${paths.join(' / ')}`)
-  assert.ok(paths[0].endsWith(join('tools', 'quality', 'observable-terms.json')), `唯一一处必须是 observable-terms.json，实得 ${paths[0]}`)
+  assert.ok(paths[0].endsWith(join('tools', 'docgen', 'dsl', 'rules', 'vocab', 'observable-terms.json')), `唯一一处必须是 observable-terms.json，实得 ${paths[0]}`)
 }
 
 // ── A 组：清单 JSON 约束（C-1～C-6） ─────────────────────────────────────
@@ -326,7 +326,7 @@ test('OCR-S1-TC-E01 ⑦ 段源码四静态断言 + 单跑 exit 0', () => {
   const src = readText(join(REPO, 'scripts', 'check-all.mjs'))
   // 2026-11-08：⑦ 段改调公共 CLI `scs check observable`（实现迁到 skill-common-script，仓内不留副本）。
   // 四条守卫的意图不变：接线在、位置在 ⑥ 之后、失败置 failed、不得接进旁路。
-  assert.ok(/spawnSync\(\s*'scs check observable --check --json'/.test(src), '⑦ 段必须调用 scs check observable')
+  assert.ok(/spawnSync\(\s*'scs check observable --check --json --terms \S+ --exempt \S+'/.test(src), '⑦ 段必须调用 scs check observable 并带词表/豁免参数')
   assert.ok(src.indexOf('spawnSync(\'scs check observable') > src.indexOf('runObservationGate'), '⑦ 必须在 ⑥（runObservationGate）之后')
   assert.ok(/scs check observable[\s\S]{0,400}failed = true/.test(src), '⑦ 失败必须置 failed = true')
   assert.ok(!/CHECK_BYPASS[\s\S]{0,300}check observable/.test(src), '⑦ 不得接进 CHECK_BYPASS 分支')
@@ -345,13 +345,39 @@ test('OCR-S1-TC-E02 不吞 exit / 不降级 warning', () => {
 test('OCR-S1-TC-E03 package.json 入口值合规格且等价命令 exit 0', () => {
   const pkg = JSON.parse(readText(join(REPO, 'package.json')))
   // 2026-11-08：入口值改指公共 CLI（实现已迁 skill-common-script，仓内不再有该脚本）。
-  assert.ok(/^scs check observable( --check)?$/.test(pkg.scripts['check:observable'] ?? ''), `入口值不合规格：${pkg.scripts['check:observable']}`)
+  // 2026-11-08 目录统一：词表/豁免随 rules DSL 下沉，入口必须显式带 --terms / --exempt。
+  const tokenAfter = (entry, flag) => {
+    const t = String(entry).split(/\s+/)
+    const i = t.indexOf(flag)
+    return i >= 0 ? t[i + 1] : undefined
+  }
+  const assertPathsExist = (name, entry, flags) => {
+    for (const f of flags) {
+      const v = tokenAfter(entry, f)
+      assert.ok(v && existsSync(join(REPO, v)), `${name} 的 ${f} 指向不存在的路径：${v}`)
+    }
+  }
+  const obs = pkg.scripts['check:observable'] ?? ''
+  assert.match(obs, /^scs check observable( --check)? --terms \S+ --exempt \S+$/, `入口值不合规格：${obs}`)
+  assertPathsExist('check:observable', obs, ['--terms', '--exempt'])
+
+  // 2026-11-08 新增入口：判据引擎三目录 + 词表；目录必须真实存在（布局再变时当场红）
+  const crit = pkg.scripts['check:criteria'] ?? ''
+  assert.match(crit, /^scs check criteria-engine --engine \S+ --data \S+ --projection \S+ --terms \S+( --surface \S+)+$/, `入口值不合规格：${crit}`)
+  assertPathsExist('check:criteria', crit, ['--engine', '--data', '--projection', '--terms'])
+
+  // 与门禁 ⑨ 段同源：check-all 必须使用同一组相对路径，避免入口与门禁各写一套
+  const allSrc = readText(join(REPO, 'scripts', 'check-all.mjs'))
+  for (const v of ['tools/docgen/builders/rules', 'tools/docgen/dsl/rules',
+    'tools/docgen/dsl/rules/vocab/observable-terms.json']) {
+    assert.ok(crit.includes(v) && allSrc.includes(v), `门禁与入口的路径不一致：${v}`)
+  }
   assert.strictEqual(cli(['--check']).status, 0)
 })
 
 test('OCR-S1-TC-E04 删键 / 改值为 --fix → 两构造各必红', () => {
   const pkg = JSON.parse(readText(join(REPO, 'package.json')))
-  const assertPkg = (p) => assert.ok(/^scs check observable( --check)?$/.test(p.scripts['check:observable'] ?? ''))
+  const assertPkg = (p) => assert.ok(/^scs check observable( --check)? --terms \S+ --exempt \S+$/.test(p.scripts['check:observable'] ?? ''))
   const c1 = structuredClone(pkg)
   delete c1.scripts['check:observable']
   assert.throws(() => assertPkg(c1))
@@ -528,12 +554,11 @@ test('OCR-S1-TC-F06 删日期注 → 必红', () => {
 test('OCR-S1-TC-F07 tools/docgen/builders/agents/policy/** 只许登记的 4 个文件（其余零改动）', () => {
   const ALLOWED = ['definitions/paths.mjs', 'definitions/seats.mjs', 'definitions/writeScopes.mjs', 'definitions/commands.mjs']
   const DIR = 'tools/docgen/builders/agents/policy'
-  const OLD = 'tools/docgen/policy'
   // 登记文件必须仍在（否则「只许改动」会漏掉删除：`git status` 的 D 行也落在允许集内）
   for (const f of ALLOWED) {
     assert.ok(existsSync(join(REPO, DIR, f)), `登记文件不得被删除：${f}`)
   }
-  // 2026-11-08 目录统一：policy/ 整体下沉一层。判据改为「按内容与 HEAD 的旧落点比」，
+  // 2026-11-08 目录统一：policy/ 整体下沉一层。判据 = 「按内容与 HEAD 同路径比」，
   // 否则整目录搬迁会让每个文件都相对 HEAD 变成新增（`git diff NAME` 判不出「只是搬家」）。
   // 枚举必须含未跟踪件（`--others`）：只查索引会让「新增 policy 文件未 git add」逃过守卫。
   const tracked = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '--', DIR], { cwd: REPO, encoding: 'utf8' })
@@ -543,7 +568,7 @@ test('OCR-S1-TC-F07 tools/docgen/builders/agents/policy/** 只许登记的 4 个
     const relFile = f.slice(DIR.length + 1)
     let old
     try {
-      old = execFileSync('git', ['show', `HEAD:${OLD}/${relFile}`], { cwd: REPO, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
+      old = execFileSync('git', ['show', `HEAD:${f}`], { cwd: REPO, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
     } catch {
       changed.push(relFile)   // HEAD 上不存在 = 新增件
       continue

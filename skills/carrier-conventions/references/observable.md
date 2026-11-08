@@ -8,7 +8,7 @@
 
 - 管：`rules/**/*.md` 与 `skills/**/*.md` 的**正文行**；标题行（`^#+ `）与围栏代码块内的行不参与。
 - 不管：卡面与 `predicates` 面（归判据引擎）；`docs/` 等其它目录由各自规则管。
-- **词表与标记表不在本文件**：唯一源是 `tools/quality/observable-terms.json`；本文件不复述任何词面或正则（复述即第二份真相）。
+- **词表与标记表不在本文件**：唯一源是 `tools/docgen/dsl/rules/vocab/observable-terms.json`；本文件不复述任何词面或正则（复述即第二份真相）。
 
 ## 动作（三步）
 
@@ -32,7 +32,7 @@
 
 ## 豁免清单
 
-落点 `tools/quality/observable-exempt.json`，行级白名单，四字段齐：`path` / `contains` / `reason` / `reviewed`。
+落点 `tools/docgen/dsl/rules/vocab/observable-exempt.json`，行级白名单，四字段齐：`path` / `contains` / `reason` / `reviewed`。
 
 | 判据 | 怎么判 |
 |---|---|
@@ -48,7 +48,7 @@
 
 | 要查什么 | 去哪 |
 |---|---|
-| 词表 / 标记表 / 正反例 | `tools/quality/observable-terms.json` |
-| 豁免条目 | `tools/quality/observable-exempt.json` |
+| 词表 / 标记表 / 正反例 | `tools/docgen/dsl/rules/vocab/observable-terms.json` |
+| 豁免条目 | `tools/docgen/dsl/rules/vocab/observable-exempt.json` |
 | 判定实现（唯一） | 公共 CLI `scs check observable`（源码在 `skill-common-script`；本仓只留数据与规则） |
 | 门禁接入 | `scripts/check-all.mjs` 第 ⑦ 段（不可经 `CHECK_BYPASS` 旁路） |

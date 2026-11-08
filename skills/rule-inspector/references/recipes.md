@@ -145,7 +145,7 @@
 
 ### §R9 判据不可观察（⑨ 判据可观察 记 0；判据全文见 `references/criteria.md` §2.4 的 ⑨ 行）
 
-**判据**：规则的验证节内没有任何可观察标记。判定实现 = `scripts/score.mjs` 的 `⑨判据可观察`：验证节 = 标题恰为 `## 验证` 或 `### 验证`（多处取第一个），节内 ≥1 行命中 `tools/quality/observable-terms.json` 的 `markers` 正则才得 1 分；无该节 = 0 分。
+**判据**：规则的验证节内没有任何可观察标记。判定实现 = `scripts/score.mjs` 的 `⑨判据可观察`：验证节 = 标题恰为 `## 验证` 或 `### 验证`（多处取第一个），节内 ≥1 行命中 `tools/docgen/dsl/rules/vocab/observable-terms.json` 的 `markers` 正则才得 1 分；无该节 = 0 分。
 
 **改法**（三档任选一，逐行处置，不许整文件放行）：
 

@@ -36,8 +36,8 @@ import { readBakRule } from './support/dev-workflow-checks.mjs'
 const SEATS = buildCards().map((b) => b.seat)
 const TOTAL = BASELINE_RULES.length + agentPaths().length
 const TERMS = [...subjectiveTerms]
-const MARKERS = JSON.parse(readFileSync(join(REPO, 'tools/quality/observable-terms.json'), 'utf8')).markers
-const CRIT_TERMS = JSON.parse(readFileSync(join(REPO, 'tools/quality/observable-terms.json'), 'utf8')).criterionTerms
+const MARKERS = JSON.parse(readFileSync(join(REPO, 'tools/docgen/dsl/rules/vocab/observable-terms.json'), 'utf8')).markers
+const CRIT_TERMS = JSON.parse(readFileSync(join(REPO, 'tools/docgen/dsl/rules/vocab/observable-terms.json'), 'utf8')).criterionTerms
 
 // 常量 7：`<S3-BASE>` = env 优先；否则取 S3 开工前 HEAD（D22 要求 S3 起**显式换锚**，不再用「最后一次触及 JSON 的提交」滚动推断）
 // 解析抽成纯函数，使「env 覆盖」这条路径可被直接断言（B01 判：忽略 env 的硬编码必红）
@@ -803,6 +803,8 @@ test('S3-TC-H06 必红期与回退', () => {
   const shiftToNewDepth = (t) => t
     .replace(/(['"])\.\.\/execution-matrix\//g, '$1../../../execution-matrix/')
     .replace(/(['"])\.\.\/observation-check\//g, '$1../../../observation-check/')
+    // 旧 vocab 落点是 tools/quality/observable-terms.json；迁移后应在 dsl/rules/vocab（从新位置 4 层上溯）
+    .replace(/\.\.\/\.\.\/\.\.\/quality\/observable-terms\.json/g, '../../../../dsl/rules/vocab/observable-terms.json')
     .replace(/\.\.\/\.\.\/\.\.\/quality\//g, '../../../../../quality/')
     // 旧 cli.mjs 的 REPO_ROOT 按自身位置向上两级；写进新位置后要向上四级
     .replace(/resolve\(dirname\(fileURLToPath\(import\.meta\.url\)\), '\.\.', '\.\.'\)/g,
@@ -1291,7 +1293,7 @@ test('S3-TC-L02 门禁面未扩', () => {
     writeFileSync(join(tmp, 'docs', 'c.md'), '# c\n\n## 说明\n\n判断客观\n', 'utf8')
     writeFileSync(join(tmp, 'agents', 'd.md'), '# d\n\n## 说明\n\n判断客观\n', 'utf8')
     // 词表 / 豁免是仓级资产：换扫描根不换口径（与旧实现 `resolveEntry` 的仓根兜底等价）
-    const TERMS = join(REPO, 'tools', 'quality', 'observable-terms.json')
+    const TERMS = join(REPO, 'tools/docgen/dsl/rules/vocab/observable-terms.json')
     writeFileSync(join(tmp, 'exempt.json'), JSON.stringify({ entries: [] }), 'utf8')
     const obsArgs = (root) => ['check', 'observable', '--check', '--root', root, '--terms', TERMS, '--exempt', join(tmp, 'exempt.json')]
     const clean = runScs(obsArgs(tmp))
@@ -1308,7 +1310,8 @@ test('S3-TC-L02 门禁面未扩', () => {
     // 段号上限写死为当前事实值：再新增段必须显式改这条（否则「门禁面未扩」失守）。
     assert.equal(maxSectionNo, 9)
     assert.match(allSrc, /\/\/\s*⑦ /, 'observable 段 ⑦ 必须在位')
-    const repo = runScs(['check', 'observable', '--check'])
+    const repo = runScs(['check', 'observable', '--check', '--terms', TERMS,
+      '--exempt', join(REPO, 'tools/docgen/dsl/rules/vocab/observable-exempt.json')])
     assert.equal(repo.code, 0)
     assert.match(repo.out.trim().split(/\r?\n/).pop(), /check-observable ok/)
   } finally {

@@ -71,7 +71,7 @@ claim / source{type, anchor, output} / chain[]{step, next, warrant} / mapping / 
 
 ## 4.9 判例库（residual 抽检校准材料）
 
-见 `references/cases.md`。判据样本引用（不复制）：真实轴判痕原子的参考实现 = `tools/quality/criteria-engine/no-unverified-number.json`；「项目统计数字必须附取数命令」已压成触发声明的「数字站」一条，不独立成篇。
+见 `references/cases.md`。判据样本引用（不复制）：真实轴判痕原子的参考实现 = `tools/docgen/dsl/rules/no-unverified-number.json`；「项目统计数字必须附取数命令」已压成触发声明的「数字站」一条，不独立成篇。
 
 ## 4.10 角色映射（席位义务生成逻辑）
 

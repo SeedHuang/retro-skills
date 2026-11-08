@@ -8,15 +8,17 @@ import { interpreters } from './interpreters.mjs'
 import { listRuleIds, writeRule } from './rules.mjs'
 
 const DIR = path.dirname(fileURLToPath(import.meta.url))
+// 数据与投影分目录：判据 json 在 dsl/rules（唯一数据源），渲染投影留在构建器目录
+const DATA_DIR = path.join(DIR, '..', '..', 'dsl', 'rules')
 const errors = []
 // PowerShell 5.1 的 UTF8 写文件带 BOM，JSON.parse 会挂——读时剥掉
 const loadJson = (file) => JSON.parse(readFileSync(file, 'utf8').replace(/^\uFEFF/, ''))
 
 let total = 0
-const ruleFiles = readdirSync(DIR).filter((n) => n.endsWith('.json') && !n.endsWith('.testcase.json') && n !== 'rules.json')
-const tcFiles = readdirSync(DIR).filter((n) => n.endsWith('.testcase.json'))
-const rules = ruleFiles.map((name) => ({ name, rule: loadJson(path.join(DIR, name)) }))
-const tcs = tcFiles.map((name) => ({ name, tc: loadJson(path.join(DIR, name)) }))
+const ruleFiles = readdirSync(DATA_DIR).filter((n) => n.endsWith('.json') && !n.endsWith('.testcase.json') && n !== 'rules.json')
+const tcFiles = readdirSync(DATA_DIR).filter((n) => n.endsWith('.testcase.json'))
+const rules = ruleFiles.map((name) => ({ name, rule: loadJson(path.join(DATA_DIR, name)) }))
+const tcs = tcFiles.map((name) => ({ name, tc: loadJson(path.join(DATA_DIR, name)) }))
 const ruleIds = new Set(rules.map(({ rule }) => rule.id))
 const tcByRule = new Map(tcs.map(({ name, tc }) => [tc.rule, { name, tc }]))
 

@@ -1,6 +1,6 @@
 # 判据引擎 rule DSL 细则（写入侧）
 
-> 适用：在 `tools/quality/criteria-engine/` 下新建或修改 `<id>.json` + `<id>.testcase.json` 时。
+> 适用：在 `tools/docgen/dsl/rules/` 下新建或修改 `<id>.json` + `<id>.testcase.json` 时。
 > 设计源头：`docs/prd/20261105182104-rule-refactor/prd/stage-2b-spec.md`；本文只给可执行规则，不复制需求论证。
 
 ## 1 字段表
@@ -125,8 +125,8 @@ label 只许名词短语（≤12 字符、不含逻辑词/情态词/标点）；
 ## 8 验收命令
 
 ```powershell
-node tools\quality\criteria-engine\build.mjs
-scs check criteria-engine
+node tools\docgen\builders\rules\build.mjs
+npm run check:criteria
 ```
 
 - 前者末行 `rule-dsl ok`、逐条输出 `N 条样例已判`；

@@ -469,7 +469,7 @@ if (bypass) {
 // 计数单源 = 子命令的 `--json`（本段不重算、不解析文本）；本段**不走旁路开关**
 // （旁路只跳 ⑥，见上方 `:51-56`；不得把本段接进旁路分支）。
 // ─────────────────────────────────────────────────────────────────────────────
-const obsRun = spawnSync('scs check observable --check --json', { cwd: root, encoding: 'utf8', shell: true })
+const obsRun = spawnSync('scs check observable --check --json --terms tools/docgen/dsl/rules/vocab/observable-terms.json --exempt tools/docgen/dsl/rules/vocab/observable-exempt.json', { cwd: root, encoding: 'utf8', shell: true })
 if (obsRun.error || obsRun.status === null) {
   failed = true
   console.error(`[observable] 无法执行 scs（${obsRun.error?.code ?? 'status=null'}）：请先全局安装公共 CLI（npm i -g skill-common-script）`)
@@ -512,10 +512,11 @@ if (gateRun.error) {
 // ⑨ 判据引擎 + 分层预算 + 说明层（S2）：跑公共 CLI `scs check criteria-engine` 与
 // `scripts/rule-audit-lite.mjs`。首行契约 = `判据 N 条 / 绿 M / 红 K`；末行 `criteria-engine ok`。
 // 为什么不再调仓内脚本：该校验器被 2 个技能引用（assertion-quality / rule-writer），实现已迁
-// `skill-common-script`（2026-11-08）；引擎模块仍从本仓 `tools/quality/criteria-engine/` 按 root 动态加载。
+// `skill-common-script`（2026-11-08）；引擎模块从本仓 `tools/docgen/builders/rules/` 加载，
+// 判据数据与投影分别取 `dsl/rules` 与 `builders/rules`（目录由参数传入，scs 不认识具体仓库布局）。
 // 本段**不走旁路开关**（旁路只跳 ⑥）。
 // ─────────────────────────────────────────────────────────────────────────────
-const ceRun = spawnSync('scs check criteria-engine', { cwd: root, encoding: 'utf8', shell: true })
+const ceRun = spawnSync('scs check criteria-engine --engine tools/docgen/builders/rules --data tools/docgen/dsl/rules --projection tools/docgen/builders/rules --terms tools/docgen/dsl/rules/vocab/observable-terms.json --surface skills --surface tools/docgen', { cwd: root, encoding: 'utf8', shell: true })
 if (ceRun.error || ceRun.status === null) {
   failed = true
   console.error(`[criteria-engine] 无法执行 scs（${ceRun.error?.code ?? 'status=null'}）：请先全局安装公共 CLI（npm i -g skill-common-script）`)

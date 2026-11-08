@@ -8,7 +8,7 @@ import { join, resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { coldRepo, runCli } from './support/card-fixtures.mjs'
 import { RENDERED_RULES, renderedRuleAssets } from '../components/renderedAssets.mjs'
-import { renderRule } from '../../../../quality/criteria-engine/rules.mjs'
+import { renderRule } from '../../rules/rules.mjs'
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..', '..')
 const NAME = 'evidence-before-conclusion'
@@ -47,7 +47,7 @@ test('删 rendered rule → gate DanglingBaselineEntry exit 2', () => {
 test('改数据不重生成 → 红；generate --apply 重生成后绿', () => {
   coldRepo({
     mutate: (copy) => {
-      const dataPath = join(copy, 'tools', 'quality', 'criteria-engine', `${NAME}.json`)
+      const dataPath = join(copy, 'tools', 'docgen', 'dsl', 'rules', `${NAME}.json`)
       const d = JSON.parse(readFileSync(dataPath, 'utf8'))
       d.title = '改过的标题'
       writeFileSync(dataPath, JSON.stringify(d, null, 2) + '\n', 'utf8')
