@@ -1,0 +1,86 @@
+{
+  "skill": "docs-placement",
+  "criteria": [
+    {
+      "id": "docs-placement-naming",
+      "impl": "script",
+      "type": "条件触发",
+      "scope": "skill:docs-placement",
+      "title": "文档命名必须过 doc-name",
+      "when": { "field": "writingDocs", "op": "eq", "value": true, "label": "新建或移动 docs 文档时" },
+      "assert": [
+        { "label": "命名检查", "field": "docNameExitCode", "op": "eq", "value": 0, "probe": { "kind": "manual" } },
+        { "label": "落点在 docs", "field": "pathInDocs", "op": "eq", "value": true, "probe": { "kind": "manual" } }
+      ],
+      "residual": {
+        "who": "reviewer-audit",
+        "sample": 3,
+        "fields": ["docNameExitCode", "pathInDocs"],
+        "objectivePath": "doc:name 已覆盖命名；目录归属由审计抽检"
+      },
+      "landing": "docs-placement / docs 命名"
+    },
+    {
+      "id": "docs-placement-session-entry",
+      "impl": "script",
+      "type": "条件触发",
+      "scope": "skill:docs-placement",
+      "title": "新增 .session 一级条目必须在封闭清单内",
+      "when": { "field": "addingSessionEntry", "op": "eq", "value": true, "label": "新增 .session 一级条目时" },
+      "assert": [
+        {
+          "label": "封闭清单",
+          "field": "entryInClosedList",
+          "op": "eq",
+          "value": true,
+          "probe": { "kind": "manual" },
+          "unless": { "field": "isSddPrefix", "op": "eq", "value": true, "label": "sdd-* 前缀放行" }
+        }
+      ],
+      "residual": {
+        "who": "reviewer-audit",
+        "sample": 3,
+        "fields": ["entryInClosedList", "isSddPrefix"],
+        "objectivePath": "check-all ⑤ 段已机判；'为什么塞不进已有档' 由审计抽检"
+      },
+      "landing": "docs-placement / .session 结构"
+    },
+    {
+      "id": "docs-placement-after-done",
+      "impl": "script",
+      "type": "条件触发",
+      "scope": "skill:docs-placement",
+      "title": "after 条目做完即删，不留墓碑",
+      "when": { "field": "afterItemDone", "op": "eq", "value": true, "label": "after 条目做完时" },
+      "assert": [
+        { "label": "条目已删", "field": "deleted", "op": "eq", "value": true, "probe": { "kind": "manual" } },
+        { "label": "未留墓碑", "field": "tombstone", "op": "eq", "value": false, "probe": { "kind": "manual" } }
+      ],
+      "residual": {
+        "who": "reviewer-audit",
+        "sample": 5,
+        "fields": ["deleted", "tombstone"],
+        "objectivePath": "扫描 docs/after 的墓碑行与勾选档，人工抽检"
+      },
+      "landing": "docs-placement / docs/after 清账"
+    },
+    {
+      "id": "docs-placement-bak-readonly",
+      "impl": "script",
+      "type": "条件触发",
+      "scope": "skill:docs-placement",
+      "title": "docs/bak 只允许改承接表与状态头路径",
+      "when": { "field": "editingBakBody", "op": "eq", "value": true, "label": "改 docs/bak 正文时" },
+      "assert": [
+        { "label": "只改路径", "field": "onlyPathOrCrosstable", "op": "eq", "value": true, "probe": { "kind": "manual" } }
+      ],
+      "residual": {
+        "who": "reviewer-audit",
+        "sample": 3,
+        "fields": ["onlyPathOrCrosstable"],
+        "objectivePath": "diff 只允许承接对照表与状态头路径字符串；人工抽检"
+      },
+      "landing": "docs-placement / docs/bak 归档位"
+    }
+  ]
+}

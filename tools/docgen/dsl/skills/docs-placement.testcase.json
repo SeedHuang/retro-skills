@@ -1,0 +1,23 @@
+{
+  "skill": "docs-placement",
+  "cases": [
+    { "criterion": "docs-placement-naming", "input": { "writingDocs": true, "docNameExitCode": 0, "pathInDocs": true }, "expect": "pass" },
+    { "criterion": "docs-placement-naming", "input": { "writingDocs": true, "docNameExitCode": 1, "pathInDocs": true }, "expect": "fail" },
+    { "criterion": "docs-placement-naming", "input": { "writingDocs": true, "docNameExitCode": 0, "pathInDocs": false }, "expect": "fail" },
+    { "criterion": "docs-placement-naming", "input": { "writingDocs": false }, "expect": "pass" },
+
+    { "criterion": "docs-placement-session-entry", "input": { "addingSessionEntry": true, "entryInClosedList": true, "isSddPrefix": false }, "expect": "pass" },
+    { "criterion": "docs-placement-session-entry", "input": { "addingSessionEntry": true, "entryInClosedList": false, "isSddPrefix": true }, "expect": "pass" },
+    { "criterion": "docs-placement-session-entry", "input": { "addingSessionEntry": true, "entryInClosedList": false, "isSddPrefix": false }, "expect": "fail" },
+    { "criterion": "docs-placement-session-entry", "input": { "addingSessionEntry": false }, "expect": "pass" },
+
+    { "criterion": "docs-placement-after-done", "input": { "afterItemDone": true, "deleted": true, "tombstone": false }, "expect": "pass" },
+    { "criterion": "docs-placement-after-done", "input": { "afterItemDone": true, "deleted": false, "tombstone": false }, "expect": "fail" },
+    { "criterion": "docs-placement-after-done", "input": { "afterItemDone": true, "deleted": true, "tombstone": true }, "expect": "fail" },
+    { "criterion": "docs-placement-after-done", "input": { "afterItemDone": false }, "expect": "pass" },
+
+    { "criterion": "docs-placement-bak-readonly", "input": { "editingBakBody": true, "onlyPathOrCrosstable": true }, "expect": "pass" },
+    { "criterion": "docs-placement-bak-readonly", "input": { "editingBakBody": true, "onlyPathOrCrosstable": false }, "expect": "fail" },
+    { "criterion": "docs-placement-bak-readonly", "input": { "editingBakBody": false }, "expect": "pass" }
+  ]
+}

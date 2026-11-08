@@ -46,4 +46,4 @@
 | S-5 | 判心 residual 齐 | 每个语义判项有 residual{who, sample, fields, 客观化路径} | 齐备 |
 | S-6 | powershell 编码备忘 | 独立 references 文件存在且可检索 | 存在 |
 
-> **当前进度（2026-11-08）**：S-1 是阶段 3 完成后的判据，不是当前状态。§2 现状列：12 条已承接（#4 / #7 / #8 / #9 / #10 / #11 / #12 / #13 / #14 / #15 / #16 / #22），0 条部分，0 条待建；逐项 `Test-Path` 可核。S-4 / S-5 另开批次，挂账见 `docs/after/20261108164744-stage3-s4-s5-skill-criteria-open-decisions.md`。
+> **当前进度（2026-11-08）**：S-1 是阶段 3 完成后的判据，不是当前状态。§2 现状列：12 条已承接（#4 / #7 / #8 / #9 / #10 / #11 / #12 / #13 / #14 / #15 / #16 / #22），0 条部分，0 条待建；逐项 `Test-Path` 可核。S-4 / S-5 的 `docs-placement` 试点已落（4 条判据 + testcase + residual，`tools/docgen/dsl/skills/`），其余 skill 按同一形态增量。

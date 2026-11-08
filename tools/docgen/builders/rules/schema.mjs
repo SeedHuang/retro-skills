@@ -188,7 +188,7 @@ export function renderObligation(node, index) {
 
 // ---------- 校验 ----------
 
-const SCOPE_RE = /^project:[a-z0-9][a-z0-9-]*$/
+const SCOPE_RE = /^(project|skill):[a-z0-9][a-z0-9-]*$/
 const LABEL_LOGIC_WORDS = ['或', '且', '任一', '全部', '至少', '恰好', '之一']
 const LABEL_MODAL_WORDS = ['必须', '须', '应当', '需要', '不得', '不许', '请', '给出', '写出', '附上', '贴出', '执行', '跑', '确认']
 const LABEL_PUNCT = /[，。；：、！？,.;:!?/]/
@@ -307,8 +307,8 @@ export function check(rule, file, out) {
   if (rule.type === undefined) out.push({ code: 'TypeMissing', message: `缺字段 type（只许 ${CRITERION_TYPES.join(' / ')}）` })
   else if (!CRITERION_TYPES.includes(rule.type)) out.push({ code: 'TypeInvalid', message: `type 非法枚举 → ${JSON.stringify(rule.type)}（只许 ${CRITERION_TYPES.join(' / ')}）` })
 
-  if (rule.scope === undefined) out.push({ code: 'ScopeMissing', message: '缺字段 scope（只许 global / project:<name>）' })
-  else if (rule.scope !== 'global' && !SCOPE_RE.test(rule.scope)) out.push({ code: 'ScopeInvalid', message: `scope 非法 → ${JSON.stringify(rule.scope)}（只许 global / project:<name>，name 匹配 ^[a-z0-9][a-z0-9-]*$）` })
+  if (rule.scope === undefined) out.push({ code: 'ScopeMissing', message: '缺字段 scope（只许 global / project:<name> / skill:<name>）' })
+  else if (rule.scope !== 'global' && !SCOPE_RE.test(rule.scope)) out.push({ code: 'ScopeInvalid', message: `scope 非法 → ${JSON.stringify(rule.scope)}（只许 global / project:<name> / skill:<name>，name 匹配 ^[a-z0-9][a-z0-9-]*$）` })
 
   const fields = new Set()
   if (rule.when !== undefined) walkCond(rule.when, 'when', 0, out, fields)

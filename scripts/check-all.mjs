@@ -534,6 +534,19 @@ if (ceRun.status !== 0) {
   // 透传末行 `criteria-engine ok`：SDET I-04 要求全仓门禁输出能自证 ⑨ 段已通过
   console.log(ceLines[ceLines.length - 1])
 }
+const scRun = spawnSync(process.execPath, [join(root, 'scripts', 'check-skill-criteria.mjs')], { cwd: root, encoding: 'utf8' })
+const scLines = (scRun.stdout || '').trim().split(/\r?\n/).filter(Boolean)
+if (scLines[0]) console.log(scLines[0])
+if (scRun.status !== 0) {
+  failed = true
+  if (scLines.length > 1) console.error(scLines.slice(1).join('\n'))
+  if (scRun.stderr) console.error(scRun.stderr)
+} else if (!/^skill-criteria \d+ 条 \/ 绿 \d+ \/ 红 \d+$/.test(scLines[0] ?? '')) {
+  failed = true
+  console.error(`[skill-criteria] 退出 0 但首行不是「skill-criteria N 条 / 绿 M / 红 K」：${scLines[0]}`)
+} else if (scLines.length > 1) {
+  console.log(scLines[scLines.length - 1])
+}
 const auditRun = spawnSync(process.execPath, [join(root, 'scripts', 'rule-audit-lite.mjs')], { cwd: root, encoding: 'utf8' })
 const auditLines = (auditRun.stdout || '').trim().split(/\r?\n/).filter(Boolean)
 if (auditLines[0]) console.log(auditLines[0])

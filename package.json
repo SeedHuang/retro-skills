@@ -9,7 +9,8 @@
     "doc:sweep": "node scripts/scope-sweep.mjs",
     "gate:record": "node scripts/check-gate-record.mjs",
     "check:observable": "scs check observable --check --terms tools/docgen/dsl/rules/vocab/observable-terms.json --exempt tools/docgen/dsl/rules/vocab/observable-exempt.json",
-    "check:criteria": "scs check criteria-engine --engine tools/docgen/builders/rules --data tools/docgen/dsl/rules --projection tools/docgen/builders/rules --terms tools/docgen/dsl/rules/vocab/observable-terms.json --surface skills --surface tools/docgen"
+    "check:criteria": "scs check criteria-engine --engine tools/docgen/builders/rules --data tools/docgen/dsl/rules --projection tools/docgen/builders/rules --terms tools/docgen/dsl/rules/vocab/observable-terms.json --surface skills --surface tools/docgen",
+    "check:skill-criteria": "node scripts/check-skill-criteria.mjs"
   },
   "engines": {
     "node": ">=22"
