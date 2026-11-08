@@ -45,19 +45,19 @@ description: Use when 要写下或复核一条会影响别人决策的断言（�
 
 两类：**利益冲突型**（信息在场但判者 = 行为者 → 判定权分离）与**无信号语义型**（判定对象是概念 / 逻辑关系，不发射可读信号）。
 
-每条 residual 登记必须带四件：`{who, sample, fields, 客观化路径}`。缺任一件 = `node scripts/check-criteria-engine.mjs` exit 1 并点名 id。
+每条 residual 登记必须带四件：`{who, sample, fields, 客观化路径}`。缺任一件 = `scs check criteria-engine` exit 1 并点名 id。
 
 | 闸门 | 内容 |
 |---|---|
 | ① 用户终审 | 判定结果落记录，用户签字才生效 |
 | ② 永久可翻案 | 只盖「截至 X 日未发现跳步」章；翻案条件显式登记 |
-| ③ 客观化路线图 | 每条注明客观化路径（补失败模式 / 判例成熟 / 出现可形式化结构）；判心场景变多 = 设计失败信号。机判：`objectivePath` 非空，校验 `node scripts/check-criteria-engine.mjs` exit 0 |
+| ③ 客观化路线图 | 每条注明客观化路径（补失败模式 / 判例成熟 / 出现可形式化结构）；判心场景变多 = 设计失败信号。机判：`objectivePath` 非空，校验 `scs check criteria-engine` exit 0 |
 
 触发时机 = **收口**（gate 出口 / 议会 / review 门禁），且只寄生在「缺席有红灯」的收口上；高频说话不触发人工成本。
 
 ## 交付前自查（可粘贴）
 
-1. `node scripts/check-criteria-engine.mjs` → 首行 `判据 N 条 / 绿 M / 红 K`，末行 `criteria-engine ok` 且 exit 0；
+1. `scs check criteria-engine` → 首行 `判据 N 条 / 绿 M / 红 K`，末行 `criteria-engine ok` 且 exit 0；
 2. 材料里每个锚 `Test-Path` 或 `Grep` 能命中（`path:line` 写法）；
 3. 数字类结论附取数命令，复算结果一致。
 

@@ -27,7 +27,7 @@ description: Use when 写或改 rule / skill / agent / references 的正文，�
 
 ## 判据必须写成可观察形态
 
-每个评价都要能被机器用一次退出码判死；判不死就改写成可判形态，或进豁免清单并写明「为什么只能这样写」。执行 = `node scripts/check-observable.mjs --check`，末行 `check-observable ok` 且 exit 0。
+每个评价都要能被机器用一次退出码判死；判不死就改写成可判形态，或进豁免清单并写明「为什么只能这样写」。执行 = `scs check observable --check`，末行 `check-observable ok` 且 exit 0。
 
 六要素（范围 / 条件 / 动作 / 宾语 / 触发时机 / 验证）、豁免清单结构、正反例，全在 `references/observable.md`；词表与标记表唯一源 = `tools/quality/observable-terms.json`（本技能不复述任何词面）。
 
@@ -45,6 +45,6 @@ description: Use when 写或改 rule / skill / agent / references 的正文，�
 
 ## 验证（写完自查）
 
-1. `node scripts/check-observable.mjs --check` → exit 0；
+1. `scs check observable --check` → exit 0；
 2. 目标文件里引用指针所指向的文件真实存在（`Test-Path` 为 True）；
 3. `npm run check` → 末行 `check 全部通过`。

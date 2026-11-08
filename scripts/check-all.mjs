@@ -87,7 +87,32 @@ if (!failed) console.log('① 语法检查通过')
 const testEnv = { ...process.env, DOCGEN_CHECK_ACTIVE: '1' }
 for (const key of ['DOCGEN_TMP_ROOT', 'DOCGEN_RULES_DIR', 'DOCGEN_BASELINE_PATH', 'DOCGEN_TEST_MODE', 'DOCGEN_NESTED', 'NODE_TEST_CONTEXT']) delete testEnv[key]
 const t = spawnSync(process.execPath, ['--test', '--test-reporter=tap', '**/*.test.mjs'], { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, env: testEnv })
-console.log(t.stdout)
+// ② 段输出：默认只打失败块 + 汇总（全量 TAP 上千行会刷屏）；CHECK_VERBOSE=1 打全量。
+// 解析（# tests / skip / todo 守卫）仍读完整 t.stdout，与是否打印无关。
+const TAP_SUMMARY = /^\s*#\s*(tests|suites|pass|fail|cancelled|skipped|todo|duration_ms)\s+\d/
+const printTestOutput = (stdout = '') => {
+  if (process.env.CHECK_VERBOSE === '1') {
+    console.log(stdout)
+    return
+  }
+  let inFail = false
+  let hasFail = false
+  for (const line of stdout.split(/\r?\n/)) {
+    if (TAP_SUMMARY.test(line)) {
+      console.log(line.trim())
+      continue
+    }
+    if (/^\s*not ok\b/.test(line)) {
+      inFail = true
+      hasFail = true
+    } else if (/^(?:not )?ok\b/.test(line)) {
+      inFail = false
+    }
+    if (inFail) console.log(line)
+  }
+  if (hasFail) console.log('[测试] 以上仅失败用例；全量输出设 CHECK_VERBOSE=1')
+}
+printTestOutput(t.stdout)
 if (t.error) {
   failed = true
   console.error('[测试] 进程启动失败：' + t.error.message)
@@ -438,11 +463,17 @@ if (bypass) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ⑦ 可观察判据（S1）：跑 `scripts/check-observable.mjs --check --json`；失败即 check 非 0。
+// ⑦ 可观察判据（S1）：跑公共 CLI `scs check observable --check --json`；失败即 check 非 0。
+// 为什么不再调仓内脚本：该校验器被 4 个技能引用（carrier-conventions / dev-workflow /
+// rule-inspector / rule-writer），实现已迁到 `skill-common-script`（2026-11-08），仓内不留副本。
 // 计数单源 = 子命令的 `--json`（本段不重算、不解析文本）；本段**不走旁路开关**
 // （旁路只跳 ⑥，见上方 `:51-56`；不得把本段接进旁路分支）。
 // ─────────────────────────────────────────────────────────────────────────────
-const obsRun = spawnSync(process.execPath, [join(root, 'scripts', 'check-observable.mjs'), '--check', '--json'], { cwd: root, encoding: 'utf8' })
+const obsRun = spawnSync('scs check observable --check --json', { cwd: root, encoding: 'utf8', shell: true })
+if (obsRun.error || obsRun.status === null) {
+  failed = true
+  console.error(`[observable] 无法执行 scs（${obsRun.error?.code ?? 'status=null'}）：请先全局安装公共 CLI（npm i -g skill-common-script）`)
+}
 const obsLine = (obsRun.stdout || '').split(/\r?\n/)[0]
 let obsJson = null
 try { obsJson = JSON.parse(obsLine) } catch { obsJson = null }
@@ -478,11 +509,17 @@ if (gateRun.error) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ⑨ 判据引擎 + 分层预算 + 说明层（S2）：跑 `scripts/check-criteria-engine.mjs` 与
+// ⑨ 判据引擎 + 分层预算 + 说明层（S2）：跑公共 CLI `scs check criteria-engine` 与
 // `scripts/rule-audit-lite.mjs`。首行契约 = `判据 N 条 / 绿 M / 红 K`；末行 `criteria-engine ok`。
+// 为什么不再调仓内脚本：该校验器被 2 个技能引用（assertion-quality / rule-writer），实现已迁
+// `skill-common-script`（2026-11-08）；引擎模块仍从本仓 `tools/quality/criteria-engine/` 按 root 动态加载。
 // 本段**不走旁路开关**（旁路只跳 ⑥）。
 // ─────────────────────────────────────────────────────────────────────────────
-const ceRun = spawnSync(process.execPath, [join(root, 'scripts', 'check-criteria-engine.mjs')], { cwd: root, encoding: 'utf8' })
+const ceRun = spawnSync('scs check criteria-engine', { cwd: root, encoding: 'utf8', shell: true })
+if (ceRun.error || ceRun.status === null) {
+  failed = true
+  console.error(`[criteria-engine] 无法执行 scs（${ceRun.error?.code ?? 'status=null'}）：请先全局安装公共 CLI（npm i -g skill-common-script）`)
+}
 const ceLines = (ceRun.stdout || '').trim().split(/\r?\n/).filter(Boolean)
 if (ceLines[0]) console.log(ceLines[0])
 if (ceRun.status !== 0) {

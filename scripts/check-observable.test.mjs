@@ -14,10 +14,11 @@ import { join, dirname, resolve } from 'node:path'
 import { tmpdir } from 'node:os'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
-import { evaluateText } from './check-observable.mjs'
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const CLI = join(REPO, 'scripts', 'check-observable.mjs')
+// 2026-11-08：校验器实现已迁公共 CLI（`scs check observable`），本文件只保留**项目侧契约**
+// （数据 JSON / 规则文档 / 门禁接线 / 词表派生）；机制级用例在 skill-common-script 的 vitest 里。
+const CLI_ARGS = ['check', 'observable']
 const TERMS_FILE = join(REPO, 'tools', 'quality', 'observable-terms.json')
 const EXEMPT_FILE = join(REPO, 'tools', 'quality', 'observable-exempt.json')
 const TC_FILE = join(REPO, 'docs', 'superpowers', 'specs', '2026-10-31-observable-criteria-rollout-design-testcase.md')
@@ -60,11 +61,22 @@ function tmpRoot(files = {}, opts = {}) {
     writeFileSync(abs, content, 'utf8')
   }
   for (const d of opts.emptyDirs || []) mkdirSync(join(root, d), { recursive: true })
+  // 临时根自带空豁免清单：豁免条目是「相对扫描根」解析的，直接复用仓内清单会整批 stale
+  mkdirSync(join(root, 'tools', 'quality'), { recursive: true })
+  writeFileSync(join(root, 'tools', 'quality', 'observable-exempt.json'), JSON.stringify({ entries: [] }), 'utf8')
   return { root, cleanup: () => rmSync(root, { recursive: true, force: true }) }
 }
 
 function cli(args) {
-  const r = spawnSync(process.execPath, [CLI, ...args], { cwd: REPO, encoding: 'utf8' })
+  // 旧实现的词表 / 豁免清单是**仓内固定资产**（扫描根可换、数据源不变）；CLI 默认按 root 取。
+  // 词表：始终复用本仓口径；豁免：有 --root 时用临时根里的空清单，否则用本仓清单。
+  const full = [...args]
+  const rootIdx = full.indexOf('--root')
+  if (!full.includes('--terms')) full.push('--terms', TERMS_FILE)
+  if (!full.includes('--exempt')) {
+    full.push('--exempt', rootIdx >= 0 ? join(full[rootIdx + 1], 'tools', 'quality', 'observable-exempt.json') : EXEMPT_FILE)
+  }
+  const r = spawnSync('scs', [...CLI_ARGS, ...full], { cwd: REPO, encoding: 'utf8', shell: true })
   const out = r.stdout || ''
   const lines = out.trim().split(/\r?\n/).filter(Boolean)
   return { status: r.status, out, err: r.stderr || '', last: lines.length ? lines[lines.length - 1] : '' }
@@ -302,17 +314,6 @@ test('OCR-S1-TC-B01 scanned 为 string[]、与同口径遍历同值、总数 ≥
   }
 })
 
-test('OCR-S1-TC-B02 空扫描根 → exit 2 + 末行 P-1 + 无 term= 行', () => {
-  const { root, cleanup } = tmpRoot({}, { bare: true, emptyDirs: ['rules', 'skills'] })
-  try {
-    const r = cli(['--check', '--root', root])
-    assert.strictEqual(r.status, 2)
-    assert.ok(/check-observable error（P-1/.test(r.last))
-    assert.ok(!/term=/.test(r.out))
-  } finally {
-    cleanup()
-  }
-})
 
 test('OCR-S1-TC-B04 默认数据源前置过（无 P-2 错、exit ∈ {0,1}）', () => {
   const r = cli(['--check'])
@@ -320,503 +321,15 @@ test('OCR-S1-TC-B04 默认数据源前置过（无 P-2 错、exit ∈ {0,1}）',
   assert.ok([0, 1].includes(r.status))
 })
 
-test('OCR-S1-TC-B05 截断 JSON / 空 terms → 两者各 exit 2 + P-2（不抛栈）', () => {
-  const { root, cleanup } = tmpRoot({})
-  try {
-    const bad = join(root, 'trunc.json')
-    writeText(bad, readText(TERMS_FILE).replace(/\}\s*$/, ''))
-    const empty = join(root, 'empty.json')
-    writeText(empty, JSON.stringify({ ...J, terms: [] }))
-    const r1 = cli(['--check', '--terms', bad, '--root', root])
-    const r2 = cli(['--check', '--terms', empty, '--root', root])
-    assert.strictEqual(r1.status, 2)
-    assert.strictEqual(r2.status, 2)
-    assert.ok(/error（P-2/.test(r1.last) && /error（P-2/.test(r2.last))
-  } finally {
-    cleanup()
-  }
-})
-
-test('OCR-S1-TC-B06 markers 为空 → exit 2 + P-2', () => {
-  const { root, cleanup } = tmpRoot({})
-  try {
-    const f = join(root, 'no-markers.json')
-    writeText(f, JSON.stringify({ ...J, markers: [] }))
-    const r = cli(['--check', '--terms', f, '--root', root])
-    assert.strictEqual(r.status, 2)
-    assert.ok(/error（P-2/.test(r.last))
-  } finally {
-    cleanup()
-  }
-})
-
-test('OCR-S1-TC-B07 samples 缺一词 → exit 2 + P-2', () => {
-  const { root, cleanup } = tmpRoot({})
-  try {
-    const f = join(root, 'no-sample.json')
-    const c = structuredClone(J)
-    c.samples = c.samples.filter((s) => s.term !== '良好')
-    writeText(f, JSON.stringify(c))
-    const r = cli(['--check', '--terms', f, '--root', root])
-    assert.strictEqual(r.status, 2)
-    assert.ok(/error（P-2/.test(r.last))
-  } finally {
-    cleanup()
-  }
-})
-
-test('OCR-S1-TC-B08 9 条 samples 双向（verdict + matched 含该词、matched 不去重）', () => {
-  for (const s of J.samples) {
-    const pos = evaluateText(s.positive.input, J)
-    const neg = evaluateText(s.negative.input, J)
-    assert.strictEqual(pos.verdict, 'pass', `${s.term} 正例应 pass`)
-    assert.ok(pos.matched.some((m) => m.term === s.term), `${s.term} 正例 matched 必须含该词`)
-    assert.strictEqual(neg.verdict, 'fail', `${s.term} 反例应 fail`)
-    assert.ok(neg.matched.some((m) => m.term === s.term), `${s.term} 反例 matched 必须含该词`)
-  }
-  const twice = evaluateText(`${J.terms[0]} 与 ${J.terms[0]}`, J)
-  assert.strictEqual(twice.matched.filter((m) => m.term === J.terms[0]).length, 2, 'matched 不去重（两次出现两条）')
-})
-
-test('OCR-S1-TC-B09 反例改成合格句 → exit 2 + P-3', () => {
-  const { root, cleanup } = tmpRoot({})
-  try {
-    const c = structuredClone(J)
-    c.samples[0].negative.input = '每轮收尾必须写自省结论：三性验证附 path:line'
-    const f = join(root, 'bad-neg.json')
-    writeText(f, JSON.stringify(c))
-    const r = cli(['--check', '--terms', f, '--root', root])
-    assert.strictEqual(r.status, 2)
-    assert.ok(/error（P-3/.test(r.last))
-  } finally {
-    cleanup()
-  }
-})
-
-test('OCR-S1-TC-B10 反例不含该词 → exit 2 + P-3；P-3 不落盘（连跑清单不变）', () => {
-  const { root, cleanup } = tmpRoot({})
-  try {
-    const c = structuredClone(J)
-    c.samples[0].negative.input = '三性验证逐条附 path:line'
-    const f = join(root, 'bad-neg2.json')
-    writeText(f, JSON.stringify(c))
-    const r = cli(['--check', '--terms', f, '--root', root])
-    assert.strictEqual(r.status, 2)
-    assert.ok(/error（P-3/.test(r.last))
-    const before = readdirSync(root).sort()
-    cli(['--check', '--terms', f, '--root', root])
-    assert.deepStrictEqual(readdirSync(root).sort(), before, 'P-3 只在内存跑，不得落盘')
-  } finally {
-    cleanup()
-  }
-})
-
-test('OCR-S1-TC-B12 不存在根 / 删 skills → exit 2；单文件根对照 exit 0', () => {
-  const missing = cli(['--check', '--root', join(tmpdir(), 'obs-does-not-exist-xyz')])
-  assert.strictEqual(missing.status, 2)
-  const { root, cleanup } = tmpRoot({})
-  try {
-    cli(['--check', '--json', '--root', root])
-    rmSync(join(root, 'skills'), { recursive: true, force: true })
-    const r2 = cli(['--check', '--root', root])
-    assert.strictEqual(r2.status, 2)
-    assert.ok(/error（P-1/.test(r2.last))
-  } finally {
-    cleanup()
-  }
-  const r3 = (() => {
-    const { root, cleanup } = tmpRoot({ 'rules/only.md': '- 落点 `docs/a.md:12`。\n' }, { bare: true, emptyDirs: ['skills'] })
-    try {
-      return jsonOf(['--check', '--json', '--root', root])
-    } finally {
-      cleanup()
-    }
-  })()
-  assert.strictEqual(r3.status, 0)
-  assert.strictEqual(r3.json.scanned.length, 1)
-})
-
-test('OCR-S1-TC-B13 正例空转（不含该词）→ exit 2 + P-3', () => {
-  const { root, cleanup } = tmpRoot({})
-  try {
-    const c = structuredClone(J)
-    c.samples[0].positive.input = '三性验证逐条附 path:line'
-    const f = join(root, 'bad-pos.json')
-    writeText(f, JSON.stringify(c))
-    const r = cli(['--check', '--terms', f, '--root', root])
-    assert.strictEqual(r.status, 2)
-    assert.ok(/error（P-3/.test(r.last))
-  } finally {
-    cleanup()
-  }
-})
-
-// ── C 组：判定规则、语义块与标记形态 ─────────────────────────────────────
-test('OCR-S1-TC-C01 仅主观词 → exit 1 + hit 行逐字 + 末行计数', () => {
-  const r = withRoot({ 'rules/x.md': '本规则要求每轮收尾都要自省结论。\n' })
-  assert.strictEqual(r.status, 1)
-  assert.ok(r.out.includes('rules/x.md:1  term=自省  无结构化可观察标记'), r.out)
-  assert.strictEqual(r.last, 'check-observable fail（命中 1 行 / stale 0 条）')
-})
-
-test('OCR-S1-TC-C02 同块带 path:line → exit 0', () => {
-  const r = withRoot({ 'rules/x.md': '本规则要求每轮收尾都要自省结论：交付物 `docs/a.md:12` 逐条可追\n' })
-  assert.strictEqual(r.status, 0)
-  assert.strictEqual(r.last, 'check-observable ok')
-  assert.ok(!/term=/.test(r.out))
-})
-
-test('OCR-S1-TC-C03 bullet 续行带 计数 = 3 → exit 0（跨行同块）', () => {
-  const r = withRoot({ 'rules/x.md': '- 每轮收尾要写自省结论。\n  计数 = 3 条逐条附依据。\n' })
-  assert.strictEqual(r.status, 0)
-})
-
-test('OCR-S1-TC-C04 紧随连续表格属同块 → exit 0', () => {
-  const r = withRoot({ 'rules/x.md': '存在自省结论的要求如下：\n| 项 | 值 |\n|---|---|\n| 条数 | ≥ 3 条 |\n' })
-  assert.strictEqual(r.status, 0)
-})
-
-test('OCR-S1-TC-C05 跨同级标题不救活 → exit 1（命中 1 行）', () => {
-  const r = withRoot({ 'rules/x.md': '- 要写自省结论。\n\n## 另一节\n\n本节的验收 exit=1。\n' })
-  assert.strictEqual(r.status, 1)
-  assert.ok(/命中 1 行/.test(r.last))
-})
-
-test('OCR-S1-TC-C06 同缩进兄弟 bullet 另起一块 → exit 1', () => {
-  const r = withRoot({ 'rules/x.md': '- 要写自省结论。\n- 验收：exit=1。\n' })
-  assert.strictEqual(r.status, 1)
-})
-
-test('OCR-S1-TC-C07 缩进子 bullet 属同块 → exit 0', () => {
-  const r = withRoot({ 'rules/x.md': '- 要写自省结论。\n    - 验收：exit=1。\n' })
-  assert.strictEqual(r.status, 0)
-})
-
-test('OCR-S1-TC-C08 空行截断块 → exit 1', () => {
-  const r = withRoot({ 'rules/x.md': '- 要写自省结论。\n\n纯文字续段，无标记。\n' })
-  assert.strictEqual(r.status, 1)
-})
-
-test('OCR-S1-TC-C09 裸 = 不算标记 → exit 1 + term=客观', () => {
-  const r = withRoot({ 'rules/x.md': '- 检查要客观 = 全部覆盖。\n' })
-  assert.strictEqual(r.status, 1)
-  assert.ok(/term=客观/.test(r.out))
-})
-
-test('OCR-S1-TC-C10 出现 / 命令 / 词表 不算标记（三句各 exit 1）', () => {
-  const statuses = [
-    withRoot({ 'rules/a.md': '- 自省后要检查是否出现遗漏。\n' }).status,
-    withRoot({ 'rules/b.md': '- 自省结论按命令输出贴。\n' }).status,
-    withRoot({ 'rules/c.md': '- 自省与词表口径一致。\n' }).status,
-  ]
-  assert.deepStrictEqual(statuses, [1, 1, 1])
-})
-
-test('OCR-S1-TC-C11 8 类标记逐类生效（含全角 ≤ / ＝）', () => {
-  const files = {
-    'rules/m0.md': '- 自省后每条都要 ≥ 3 条。\n',
-    'rules/m1.md': '- 自省结论附 `docs/a.md:12`。\n',
-    'rules/m2.md': '- 自省后核对 exit=1。\n',
-    'rules/m3.md': '- 自省后贴 diff 命令。\n',
-    'rules/m4.md': '- 自省条目计数 = 3。\n',
-    'rules/m5.md': '- 自省后输出为空。\n',
-    'rules/m6.md': '- 自省后输出非空。\n',
-    'rules/m7.md': '- 自省后枚举：hit/miss。\n',
-    'rules/m8.md': '- 自省后每类 ≤ 1 处。\n',
-    'rules/m9.md': '- 自省后共 ＝3 类。\n',
-  }
-  for (const [rel, content] of Object.entries(files)) {
-    assert.strictEqual(withRoot({ [rel]: content }).status, 0, `${rel} 应 exit 0`)
-  }
-  const combined = withRootJson(files)
-  assert.strictEqual(combined.status, 0)
-  assert.strictEqual(combined.json.hits.length, 0)
-})
-
-test('OCR-S1-TC-C13 exit 四形态全绿', () => {
-  const s = [
-    withRoot({ 'rules/a.md': '- 自省后核对 exit 0。\n' }).status,
-    withRoot({ 'rules/b.md': '- 自省后核对 exit code 0。\n' }).status,
-    withRoot({ 'rules/c.md': '- 自省后核对退出码为 0。\n' }).status,
-    withRoot({ 'rules/d.md': '- 自省后核对退出状态是 0。\n' }).status,
-  ]
-  assert.deepStrictEqual(s, [0, 0, 0, 0])
-})
-
-test('OCR-S1-TC-C15 同行两词聚合为 1 条 hit、terms 长度 2', () => {
-  const r = withRootJson({ 'rules/x.md': '要求自省且客观达标。\n' })
-  assert.strictEqual(r.json.hits.length, 1)
-  assert.strictEqual(r.json.hits[0].line, 1)
-  assert.strictEqual(r.json.hits[0].terms.length, 2)
-  assert.deepStrictEqual(r.json.hits[0].terms.slice().sort(), ['客观', '自省'].sort())
-})
-
-test('OCR-S1-TC-C16 --json 键序 + 输出顺序（path 字典序 / 行号升序）', () => {
-  const r = withRootJson({
-    'skills/z/m.md': '- 自省结论。\n\n- 自省结论。\n\n- 自省结论。\n',
-    'rules/a.md': '- 自省结论。\n\n- 自省结论。\n',
-  })
-  assert.deepStrictEqual(Object.keys(r.json), ['scanned', 'hits', 'exemptedLines', 'stale', 'ok'])
-  assert.ok(Array.isArray(r.json.scanned))
-  assert.ok(Array.isArray(r.json.hits[0].terms))
-  const order = r.json.hits.map((h) => `${h.path}:${h.line}`)
-  const expect = ['rules/a.md:1', 'rules/a.md:3', 'skills/z/m.md:1', 'skills/z/m.md:3', 'skills/z/m.md:5']
-  assert.deepStrictEqual(order, expect)
-  assert.strictEqual(r.status, 1)
-})
-
-test('OCR-S1-TC-C17 --root 只换扫描根（docs/README/.txt/.mjs 不扫）', () => {
-  const r = withRootJson({
-    'docs/tmp/x.md': '- 自省结论。\n',
-    'README.md': '- 自省结论。\n',
-    'skills/y/a.txt': '- 自省结论。\n',
-    'skills/y/a.mjs': '- 自省结论。\n',
-    'skills/y/references/z.md': '- 自省结论。\n',
-  })
-  assert.ok(!r.json.scanned.some((p) => p.startsWith('docs/') || p === 'README.md' || p.endsWith('.txt') || p.endsWith('.mjs')))
-  assert.strictEqual(r.json.hits.length, 1)
-  assert.strictEqual(r.json.hits[0].path, 'skills/y/references/z.md')
-})
-
-test('OCR-S1-TC-C19 exit 无数字 / 裸枚举：四构造各 exit 1', () => {
-  const s = [
-    withRoot({ 'rules/a.md': '- 自省后核对 exit。\n' }).status,
-    withRoot({ 'rules/b.md': '- 自省后核对退出码：见上。\n' }).status,
-    withRoot({ 'rules/c.md': '- 自省后核对退出码是 通过。\n' }).status,
-    withRoot({ 'rules/d.md': '- 自省后按枚举：核对。\n' }).status,
-  ]
-  assert.deepStrictEqual(s, [1, 1, 1, 1])
-})
-
-test('OCR-S1-TC-C20 更深标题不截断 + 围栏内行不参与', () => {
-  const a = withRoot({ 'rules/a.md': '- 要写自省结论。\n#### 细则\n  exit=1。\n' })
-  assert.strictEqual(a.status, 0)
-  const b = withRootJson({ 'rules/b.md': '```\n本规则要求自省。\n```\n\n- 落点 `docs/a.md:12`。\n' })
-  assert.strictEqual(b.status, 0)
-  assert.strictEqual(b.json.hits.length, 0)
-})
-
-test('OCR-S1-TC-C22 裸 diff / 「不要求非空」不算标记', () => {
-  const s = [
-    withRoot({ 'rules/a.md': '- 自省后顺手 diff 了一下。\n' }).status,
-    withRoot({ 'rules/b.md': '- 自省后不要求非空。\n' }).status,
-  ]
-  assert.deepStrictEqual(s, [1, 1])
-})
-
-test('OCR-S1-TC-C23 标题行不产出 hit', () => {
-  const r = withRootJson({ 'rules/x.md': '## 自省必须给长期方案\n\n- 落点 `docs/a.md:12`。\n' })
-  assert.strictEqual(r.status, 0)
-  assert.strictEqual(r.json.hits.length, 0)
-})
-
-test('OCR-S1-TC-C24 pathline 收紧：docs/a.md:12 绿、20:23 红', () => {
-  const s = [
-    withRoot({ 'rules/a.md': '- 自省结论附 docs/a.md:12。\n' }).status,
-    withRoot({ 'rules/b.md': '- 自省结论在 20:23 前后。\n' }).status,
-  ]
-  assert.deepStrictEqual(s, [0, 1])
-})
-
-test('OCR-S1-TC-C25 正文同词必判（标题不扫 ≠ 可逃）', () => {
-  const r = withRoot({ 'rules/x.md': '## 自省必须给长期方案\n\n- 自省必须给长期方案。\n' })
-  assert.strictEqual(r.status, 1)
-  assert.ok(/term=自省/.test(r.out))
-})
-
-// ── D 组：豁免清单 ───────────────────────────────────────────────────────
-test('OCR-S1-TC-D01 正文行豁免生效（exemptedLines 1 / stale 空 / reason 非空）', () => {
-  const contains = '本节结论必须自省后落笔（术语引用）。'
-  const { root, cleanup } = tmpRoot({ 'rules/x.md': `${contains}\n` })
-  const ex = join(root, 'ex.json')
-  writeText(ex, JSON.stringify({ entries: [{ path: 'rules/x.md', contains, reason: '术语引用：这里是「自省」作为规则概念名，不是评价', reviewed: '2026-10-31' }] }))
-  try {
-    const r = jsonOf(['--check', '--json', '--root', root, '--exempt', ex])
-    assert.strictEqual(r.status, 0)
-    assert.strictEqual(r.json.hits.length, 0)
-    assert.strictEqual(r.json.exemptedLines, 1)
-    assert.deepStrictEqual(r.json.stale, [])
-  } finally {
-    cleanup()
-  }
-})
-
-test('OCR-S1-TC-D02 缺 reason → exit 2 + P-4 + 无 hit 行', () => {
-  const { root, cleanup } = tmpRoot({})
-  const ex = join(root, 'bad.json')
-  writeText(ex, JSON.stringify({ entries: [{ path: 'rules/keep.md', contains: '落点', reviewed: '2026-10-31' }] }))
-  try {
-    const r = cli(['--check', '--exempt', ex, '--root', root])
-    assert.strictEqual(r.status, 2)
-    assert.ok(/check-observable error（P-4/.test(r.last))
-    assert.ok(!/term=/.test(r.out))
-  } finally {
-    cleanup()
-  }
-})
-
-test('OCR-S1-TC-D03 不存在的 path → stale → exit 1', () => {
-  const { root, cleanup } = tmpRoot({})
-  const ex = join(root, 'stale.json')
-  writeText(ex, JSON.stringify({ entries: [{ path: 'rules/nope.md', contains: 'x', reason: 'r', reviewed: '2026-10-31' }] }))
-  try {
-    const r = jsonOf(['--check', '--json', '--root', root, '--exempt', ex])
-    assert.strictEqual(r.status, 1)
-    assert.strictEqual(r.json.stale.length, 1)
-    assert.ok(/stale 1 条/.test(r.last))
-  } finally {
-    cleanup()
-  }
-})
-
-test('OCR-S1-TC-D04 contains 0 命中 → stale → exit 1、exemptedLines 0', () => {
-  const { root, cleanup } = tmpRoot({ 'rules/x.md': '本节结论必须自省后落笔（术语引用）。\n' })
-  const ex = join(root, 'stale2.json')
-  writeText(ex, JSON.stringify({ entries: [{ path: 'rules/x.md', contains: '本节结论必须自省后落笔（术语引用）（已删）', reason: 'r', reviewed: '2026-10-31' }] }))
-  try {
-    const r = jsonOf(['--check', '--json', '--root', root, '--exempt', ex])
-    assert.strictEqual(r.status, 1)
-    assert.strictEqual(r.json.exemptedLines, 0)
-    assert.ok(/stale 1 条/.test(r.last))
-  } finally {
-    cleanup()
-  }
-})
-
-test('OCR-S1-TC-D05 contains 恰 1 处 → exit 0、exemptedLines 1', () => {
-  const contains = '本节结论必须自省后落笔（术语引用）。'
-  const { root, cleanup } = tmpRoot({ 'rules/x.md': `${contains}\n` })
-  const ex = join(root, 'ok.json')
-  writeText(ex, JSON.stringify({ entries: [{ path: 'rules/x.md', contains, reason: '术语引用', reviewed: '2026-10-31' }] }))
-  try {
-    const r = jsonOf(['--check', '--json', '--root', root, '--exempt', ex])
-    assert.strictEqual(r.status, 0)
-    assert.strictEqual(r.json.exemptedLines, 1)
-  } finally {
-    cleanup()
-  }
-})
-
-test('OCR-S1-TC-D06 contains 2 / 3 处 → exit 2；近似串不误红', () => {
-  const contains = '本节结论必须自省后落笔（术语引用）。'
-  const run = (content) => {
-    const { root, cleanup } = tmpRoot({ 'rules/x.md': content }, { bare: true, emptyDirs: ['skills'] })
-    try {
-      const ex = join(root, 'ex.json')
-      writeText(ex, JSON.stringify({ entries: [{ path: 'rules/x.md', contains, reason: 'r', reviewed: '2026-10-31' }] }))
-      return cli(['--check', '--exempt', ex, '--root', root])
-    } finally {
-      cleanup()
-    }
-  }
-  const r1 = run(`${contains}\n${contains}\n`)
-  const r2 = run(`${contains}\n${contains}\n${contains}\n`)
-  const r3 = run(`${contains}\n本节结论必须自省后落笔（术语引用）（补）见 \`docs/a.md:12\`\n`)
-  assert.strictEqual(r1.status, 2)
-  assert.strictEqual(r2.status, 2)
-  assert.ok(/error（P-4/.test(r1.last))
-  assert.strictEqual(r3.status, 0)
-})
-
-test('OCR-S1-TC-D08 同 path 两条不同 contains → exemptedLines 2', () => {
-  const a = '第一条自省术语引用。'
-  const b = '第二条自省术语引用。'
-  const { root, cleanup } = tmpRoot({ 'rules/x.md': `${a}\n${b}\n` })
-  const ex = join(root, 'two.json')
-  writeText(ex, JSON.stringify({ entries: [
-    { path: 'rules/x.md', contains: a, reason: 'r1', reviewed: '2026-10-31' },
-    { path: 'rules/x.md', contains: b, reason: 'r2', reviewed: '2026-10-31' },
-  ] }))
-  try {
-    const r = jsonOf(['--check', '--json', '--root', root, '--exempt', ex])
-    assert.strictEqual(r.status, 0)
-    assert.strictEqual(r.json.exemptedLines, 2)
-    assert.deepStrictEqual(r.json.stale, [])
-  } finally {
-    cleanup()
-  }
-})
-
-test('OCR-S1-TC-D09 同 path 同 contains 两条 → exit 2 + P-4', () => {
-  const { root, cleanup } = tmpRoot({ 'rules/x.md': '本节结论必须自省后落笔。\n' })
-  const ex = join(root, 'dup.json')
-  writeText(ex, JSON.stringify({ entries: [
-    { path: 'rules/x.md', contains: '本节结论必须自省后落笔。', reason: 'r1', reviewed: '2026-10-31' },
-    { path: 'rules/x.md', contains: '本节结论必须自省后落笔。', reason: 'r2', reviewed: '2026-11-01' },
-  ] }))
-  try {
-    const r = cli(['--check', '--exempt', ex, '--root', root])
-    assert.strictEqual(r.status, 2)
-    assert.ok(/error（P-4/.test(r.last))
-  } finally {
-    cleanup()
-  }
-})
-
-test('OCR-S1-TC-D10 reviewed 可解析 + 下界（2026-10-31 / 2026-01-01 各 exit 0）', () => {
-  const mk = (d) => {
-    const { root, cleanup } = tmpRoot({ 'rules/x.md': '本节结论必须自省后落笔。\n' })
-    const ex = join(root, `d-${d}.json`)
-    writeText(ex, JSON.stringify({ entries: [{ path: 'rules/x.md', contains: '本节结论必须自省后落笔。', reason: 'r', reviewed: d }] }))
-    const r = cli(['--check', '--exempt', ex, '--root', root])
-    cleanup()
-    return r.status
-  }
-  assert.strictEqual(mk('2026-10-31'), 0)
-  assert.strictEqual(mk('2026-01-01'), 0)
-})
-
-test('OCR-S1-TC-D11 早于下界 / 不可解析 / 非日期 → exit 2（P-4）', () => {
-  const mk = (d) => {
-    const { root, cleanup } = tmpRoot({})
-    const ex = join(root, 'd.json')
-    writeText(ex, JSON.stringify({ entries: [{ path: 'rules/keep.md', contains: '落点', reason: 'r', reviewed: d }] }))
-    const r = cli(['--check', '--exempt', ex, '--root', root])
-    cleanup()
-    return r.status
-  }
-  const s = [mk('2025-12-31'), mk('2026-13-45'), mk('昨天')]
-  assert.deepStrictEqual(s, [2, 2, 2])
-})
-
-test('OCR-S1-TC-D12 未满 365 天 exit 0；源码不含 365 天判定分支', () => {
-  const { root, cleanup } = tmpRoot({ 'rules/x.md': '本节结论必须自省后落笔。\n' })
-  const ex = join(root, 'd.json')
-  writeText(ex, JSON.stringify({ entries: [{ path: 'rules/x.md', contains: '本节结论必须自省后落笔。', reason: 'r', reviewed: '2026-01-05' }] }))
-  try {
-    const r = cli(['--check', '--exempt', ex, '--root', root])
-    assert.strictEqual(r.status, 0)
-    const src = readText(CLI)
-    assert.ok(!src.includes('365'), '源码不得含 365 天判定')
-    assert.ok(!/到期|过期/.test(src), '源码不得含到期 / 过期分支')
-  } finally {
-    cleanup()
-  }
-})
-
-test('OCR-S1-TC-D13 行级粒度：只摘命中行，不整文件放行', () => {
-  const a = '第一行自省结论。'
-  const b = '第二行自省结论。'
-  const { root, cleanup } = tmpRoot({ 'rules/x.md': `${a}\n\n${b}\n` })
-  const ex = join(root, 'one.json')
-  writeText(ex, JSON.stringify({ entries: [{ path: 'rules/x.md', contains: a, reason: 'r', reviewed: '2026-10-31' }] }))
-  try {
-    const r = jsonOf(['--check', '--json', '--root', root, '--exempt', ex])
-    assert.strictEqual(r.status, 1)
-    assert.strictEqual(r.json.hits.length, 1)
-    assert.strictEqual(r.json.exemptedLines, 1)
-  } finally {
-    cleanup()
-  }
-})
-
 // ── E 组：门禁 ⑦ 段与规则文档 ────────────────────────────────────────────
 test('OCR-S1-TC-E01 ⑦ 段源码四静态断言 + 单跑 exit 0', () => {
   const src = readText(join(REPO, 'scripts', 'check-all.mjs'))
-  assert.ok(src.includes('check-observable'), '⑦ 段必须调用 check-observable')
-  assert.ok(src.indexOf('check-observable') > src.indexOf('runObservationGate'), '⑦ 必须在 ⑥（runObservationGate）之后')
-  assert.ok(/check-observable[\s\S]{0,400}failed = true/.test(src), '⑦ 失败必须置 failed = true')
-  assert.ok(!/CHECK_BYPASS[\s\S]{0,300}check-observable/.test(src), '⑦ 不得接进 CHECK_BYPASS 分支')
+  // 2026-11-08：⑦ 段改调公共 CLI `scs check observable`（实现迁到 skill-common-script，仓内不留副本）。
+  // 四条守卫的意图不变：接线在、位置在 ⑥ 之后、失败置 failed、不得接进旁路。
+  assert.ok(/spawnSync\(\s*'scs check observable --check --json'/.test(src), '⑦ 段必须调用 scs check observable')
+  assert.ok(src.indexOf('spawnSync(\'scs check observable') > src.indexOf('runObservationGate'), '⑦ 必须在 ⑥（runObservationGate）之后')
+  assert.ok(/scs check observable[\s\S]{0,400}failed = true/.test(src), '⑦ 失败必须置 failed = true')
+  assert.ok(!/CHECK_BYPASS[\s\S]{0,300}check observable/.test(src), '⑦ 不得接进 CHECK_BYPASS 分支')
   const r = cli(['--check'])
   assert.strictEqual(r.status, 0)
 })
@@ -831,18 +344,19 @@ test('OCR-S1-TC-E02 不吞 exit / 不降级 warning', () => {
 
 test('OCR-S1-TC-E03 package.json 入口值合规格且等价命令 exit 0', () => {
   const pkg = JSON.parse(readText(join(REPO, 'package.json')))
-  assert.ok(/^node scripts\/check-observable\.mjs( --check)?$/.test(pkg.scripts['check:observable'] ?? ''), `入口值不合规格：${pkg.scripts['check:observable']}`)
+  // 2026-11-08：入口值改指公共 CLI（实现已迁 skill-common-script，仓内不再有该脚本）。
+  assert.ok(/^scs check observable( --check)?$/.test(pkg.scripts['check:observable'] ?? ''), `入口值不合规格：${pkg.scripts['check:observable']}`)
   assert.strictEqual(cli(['--check']).status, 0)
 })
 
 test('OCR-S1-TC-E04 删键 / 改值为 --fix → 两构造各必红', () => {
   const pkg = JSON.parse(readText(join(REPO, 'package.json')))
-  const assertPkg = (p) => assert.ok(/^node scripts\/check-observable\.mjs( --check)?$/.test(p.scripts['check:observable'] ?? ''))
+  const assertPkg = (p) => assert.ok(/^scs check observable( --check)?$/.test(p.scripts['check:observable'] ?? ''))
   const c1 = structuredClone(pkg)
   delete c1.scripts['check:observable']
   assert.throws(() => assertPkg(c1))
   const c2 = structuredClone(pkg)
-  c2.scripts['check:observable'] = 'node scripts/check-observable.mjs --fix'
+  c2.scripts['check:observable'] = 'scs check observable --fix'
   assert.throws(() => assertPkg(c2))
 })
 
@@ -1009,8 +523,8 @@ test('OCR-S1-TC-F06 删日期注 → 必红', () => {
 // 2026-11-05 增量（S6-B 签后登记）：`tools/docgen/policy/**` 不再断言「零改动」——S6-B 按已签 spec
 // 明确改动 `paths` / `seats` / 新增 `writeScopes` 三处。判据改为「只许这 3 个登记文件，其余 policy 文件零改动」。
 // 2026-11-07 增量（review 三技能归档）：`definitions/commands.mjs` 的 check.local 命令由
-// `node skills/review-log/scripts/time.mjs` 改为 `node scripts/review-ledger/time.mjs`——账本脚本随
-// `review-log` 迁出 `skills/`，旧路径已不存在。该文件进入登记集（4 个）。
+// `node skills/review-log/scripts/time.mjs` 改为公共 CLI `scs time`（2026-11-08）——账本脚本随
+// `review-log` 迁出 `skills/`。该文件进入登记集（4 个）。
 test('OCR-S1-TC-F07 tools/docgen/policy/** 只许登记的 4 个文件（其余零改动）', () => {
   const ALLOWED = ['definitions/paths.mjs', 'definitions/seats.mjs', 'definitions/writeScopes.mjs', 'definitions/commands.mjs']
   // 登记文件必须仍在（否则「只许改动」会漏掉删除：`git status` 的 D 行也落在允许集内）

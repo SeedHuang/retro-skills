@@ -102,10 +102,10 @@ const pathTokens = () => [...Object.values(PTH.pathGroups).flat().map((x) => x.t
 // 下列用例以**改造前旧卡**（`capability-baseline.json`，23 项）为 `before`，故 diff 必须**恰等于**这 3 条 minus；
 // 其余任何差仍判红（不放宽成「不看 minus」，也不改基线——基线必须早于 `policy/` 出现，见 H07a）。
 const Q8_MINUS = Q8_REMOVED_PATHS.map((p) => `forbiddenPaths: ${p}`);
-// 2026-11-07（review 三技能归档）：timer 脚本随 `review-log` 迁出 `skills/` → `scripts/review-ledger/time.mjs`。
-// 基线是**改造前旧卡**，故这条命令路径的 −/＋ 各一条必须登记；其余任何差仍判红。
+// 2026-11-07（review 三技能归档）：timer 脚本随 `review-log` 迁出 `skills/`，2026-11-08 起由公共 CLI `scs time` 提供。
+// 基线是**改造前旧卡**，故这条命令的 −/＋ 各一条必须登记；其余任何差仍判红。
 const ARCHIVE_MINUS = ['allowCmds: node skills/review-log/scripts/time.mjs'];
-const ARCHIVE_PLUS = ['allowCmds: node scripts/review-ledger/time.mjs'];
+const ARCHIVE_PLUS = ['allowCmds: scs time'];
 const baseDelta = () => ({ minus: [...Q8_MINUS, ...ARCHIVE_MINUS], plus: [...ARCHIVE_PLUS] });
 const withoutBase = (arr) => arr.filter((x) => !Q8_MINUS.includes(x) && !ARCHIVE_MINUS.includes(x) && !ARCHIVE_PLUS.includes(x));
 // 读配置侧唯一口径（testcase §0.3 / spec:131）：`Object.hasOwn`，否则 `constructor` / `__proto__` 会取到原型链上的值
@@ -1781,7 +1781,7 @@ test('S6-TC-H02 五段事实集合逐席 diff 空差', () => {
     for (const k of FACTS_KEYS) {
       for (const m of norm(before[k])) {
         if (Q8_MINUS.includes(`${k}: ${m}`)) continue;   // Q8 有意删除：基线里在、定义层已删（见 Q8_MINUS 注释）
-        if (ARCHIVE_MINUS.includes(`${k}: ${m}`)) continue;   // 归档：旧 timer 路径已迁到 scripts/review-ledger/（见 ARCHIVE_MINUS 注释）
+        if (ARCHIVE_MINUS.includes(`${k}: ${m}`)) continue;   // 归档：旧 timer 路径已迁到公共 CLI（`scs time`，见 ARCHIVE_MINUS 注释）
         assert.ok(POOL[k].includes(m),
           `${s}: 基线成员 ${k}:${m} 不在定义层字典里（基线切分口径错 或 定义层丢项 → 判据将恒真）`);
       }

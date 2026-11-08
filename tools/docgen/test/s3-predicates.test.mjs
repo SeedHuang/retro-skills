@@ -9,7 +9,7 @@ import { tmpdir } from 'node:os'
 import { execFileSync, spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import {
-  REPO, walkFiles, runNode, runCli, coldRepo, mutCard, appendOneByte,
+  REPO, walkFiles, runNode, runCli, runScs, coldRepo, mutCard, appendOneByte,
 } from './support/card-fixtures.mjs'
 import { PREDICATES } from '../card-model/vocab/predicates.mjs'
 import { SHARED_MUST, SHARED_NEVER } from '../card-model/vocab/shared-actions.mjs'
@@ -23,7 +23,6 @@ import { renderCard } from '../components/renderCard.mjs'
 import { buildCards, renderSeat } from '../components/cardPipeline.mjs'
 import { BASELINE_RULES, agentPaths, renderBaseline } from '../components/baseline.mjs'
 import { agentData } from '../components/agentData.mjs'
-import { evaluateText } from '../../../scripts/check-observable.mjs'
 import { splitRow } from '../../execution-matrix/markdown-rows.mjs'
 import {
   RULE_MARKER_ITEM, itemsFromCriteria, unknownMarkers, checkBuckets, BUCKETS,
@@ -382,7 +381,7 @@ test('S3-TC-C01 observable 全命中标记', () => {
 test('S3-TC-C02 空转探针', () => {
   assert.deepEqual(markerKindsOf('ok'), [])
   assert.deepEqual(markerKindsOf('写得好'), [])
-  assert.equal(evaluateText('ok', { terms: TERMS, markers: MARKERS }).verdict, 'pass')
+  // 2026-11-08：`evaluateText` 的实现已迁公共 CLI，本仓不再 import；空转口径由 CLI 侧 vitest 覆盖。
 })
 
 test('S3-TC-C03 矩阵与整串', () => {
@@ -1107,7 +1106,8 @@ test('S3-TC-J01 rule-writer 指针', () => {
   const src = read('skills/rule-writer/SKILL.md')
   const start = src.indexOf('3. **自查**')
   const step3 = src.slice(start).split(/\r?\n/).filter((l) => !/^\s*\d\./.test(l) || l.includes('3. **自查**')).slice(0, 4).join('\n')
-  assert.ok(step3.includes('scripts/check-observable.mjs'))
+  // 2026-11-08：判定实现迁公共 CLI，指针锚从脚本路径改为命令名（意图不变：自查必须指向可执行的判据）。
+  assert.ok(step3.includes('scs check observable'))
   assert.ok(step3.includes('check-observable ok'))
   assert.doesNotThrow(() => assertNoTermCopy(src))
 })
@@ -1279,11 +1279,15 @@ test('S3-TC-L02 门禁面未扩', () => {
     writeFileSync(join(tmp, 'skills', 'b.md'), '# b\n\n计数 = 1\n', 'utf8')
     writeFileSync(join(tmp, 'docs', 'c.md'), '# c\n\n## 说明\n\n判断客观\n', 'utf8')
     writeFileSync(join(tmp, 'agents', 'd.md'), '# d\n\n## 说明\n\n判断客观\n', 'utf8')
-    const clean = runNode(['scripts/check-observable.mjs', '--check', '--root', tmp])
+    // 词表 / 豁免是仓级资产：换扫描根不换口径（与旧实现 `resolveEntry` 的仓根兜底等价）
+    const TERMS = join(REPO, 'tools', 'quality', 'observable-terms.json')
+    writeFileSync(join(tmp, 'exempt.json'), JSON.stringify({ entries: [] }), 'utf8')
+    const obsArgs = (root) => ['check', 'observable', '--check', '--root', root, '--terms', TERMS, '--exempt', join(tmp, 'exempt.json')]
+    const clean = runScs(obsArgs(tmp))
     assert.equal(clean.code, 0)
     // 加分句放在**独立语义块**（`## b` 小节内，块内无可观察标记）→ 必红；同块有 marker 会被判「已合格」
     writeFileSync(join(tmp, 'rules', 'a.md'), '# a\n\n计数 = 1\n\n## b\n\n判断客观\n', 'utf8')
-    const dirty = runNode(['scripts/check-observable.mjs', '--check', '--root', tmp])
+    const dirty = runScs(obsArgs(tmp))
     assert.equal(dirty.code, 1)
     assert.match(dirty.out, /rules[\\/]a\.md/)
     const allSrc = read('scripts/check-all.mjs')
@@ -1293,7 +1297,7 @@ test('S3-TC-L02 门禁面未扩', () => {
     // 段号上限写死为当前事实值：再新增段必须显式改这条（否则「门禁面未扩」失守）。
     assert.equal(maxSectionNo, 9)
     assert.match(allSrc, /\/\/\s*⑦ /, 'observable 段 ⑦ 必须在位')
-    const repo = runNode(['scripts/check-observable.mjs', '--check'])
+    const repo = runScs(['check', 'observable', '--check'])
     assert.equal(repo.code, 0)
     assert.match(repo.out.trim().split(/\r?\n/).pop(), /check-observable ok/)
   } finally {

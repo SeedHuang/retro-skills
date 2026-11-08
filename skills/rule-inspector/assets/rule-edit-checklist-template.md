@@ -79,7 +79,7 @@
 | E2-9 | 标题一致性：极性 | 标题 ↔ 正文极性对照 | <对照句> | |
 | E2-10 | 标题一致性：对象 | 标题 ↔ 正文对象对照 | <对照句> | |
 | E2-11 | 来源行合规 | E 段头部组逐项 + 来源行原文 | <score + 原文> | |
-| E2-12 | 判据可观察（⑥ 同步项） | 验证节内 ≥1 行命中标记；跑 `node scripts/check-observable.mjs --check` → 末行 `check-observable ok` 且 exit 0 | <score ⑨ + 命令末行> | |
+| E2-12 | 判据可观察（⑥ 同步项） | 验证节内 ≥1 行命中标记；跑 `scs check observable --check` → 末行 `check-observable ok` 且 exit 0 | <score ⑨ + 命令末行> | |
 
 ## F · 硬闸门 7 同步义务（动判据/检查项时必填；单源：rule-inspector SKILL）
 

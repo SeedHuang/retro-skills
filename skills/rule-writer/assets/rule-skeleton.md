@@ -18,7 +18,7 @@
 <什么时候该套用这条（可观测信号）>
 
 ## 验证（执行力度 ⑧ + ⑨）
-<怎么确认遵守了；验证节内至少写一条可观察判据——比较式 / `path:line` 锚 / 退出码 / 计数 / 空或非空。判据可观察：跑 `node scripts/check-observable.mjs --check`，末行 `check-observable ok` 且 exit 0>
+<怎么确认遵守了；验证节内至少写一条可观察判据——比较式 / `path:line` 锚 / 退出码 / 计数 / 空或非空。判据可观察：跑 `scs check observable --check`，末行 `check-observable ok` 且 exit 0>
 
 ## 认知动作专属（含认知动作时必填；判据见 rule-inspector criteria §3.3b，不复制全文）
 <规则关键动作是脑内活动（画全貌/深度思考/自省/追根/列同族/算账/自问）时，两个必填位，缺一不可>

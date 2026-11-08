@@ -126,7 +126,7 @@ label 只许名词短语（≤12 字符、不含逻辑词/情态词/标点）；
 
 ```powershell
 node tools\quality\criteria-engine\build.mjs
-node scripts\check-criteria-engine.mjs
+scs check criteria-engine
 ```
 
 - 前者末行 `rule-dsl ok`、逐条输出 `N 条样例已判`；

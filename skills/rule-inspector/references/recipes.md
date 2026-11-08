@@ -156,4 +156,4 @@
 **例子**：
 
 - 反例（0 分）：`## 验证` 下只写「请认真确认，务必做到位」。
-- 正例（1 分）：`## 验证` 下写 `node scripts/check-observable.mjs --check` → 末行 `check-observable ok` 且 exit 0。
+- 正例（1 分）：`## 验证` 下写 `scs check observable --check` → 末行 `check-observable ok` 且 exit 0。

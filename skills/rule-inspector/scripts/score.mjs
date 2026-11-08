@@ -18,7 +18,7 @@ const OBSERVABLE_TERMS = JSON.parse(readFileSync(new URL('../../../tools/quality
 const REPO_ANNOTATIONS = fileURLToPath(new URL('../../../tools/quality/.inspector-annotations.json', import.meta.url))
 
 // 验证节 = 标题恰为 `## 验证` 或 `### 验证`（多处取第一个）；节内 ≥1 行命中 markers 正则即 pass。
-// 围栏代码块内的行不算（与 `check-observable.mjs` 的 `evaluateText` 同一跳过口径；示例代码不得代替真判据）。
+// 围栏代码块内的行不算（与 `scs check observable` 的 `evaluateText` 同一跳过口径；示例代码不得代替真判据）。
 function verifySectionHasMarker(lines) {
   const at = lines.findIndex((l) => /^#{2,3}\s*验证$/u.test(l.trim()))
   if (at < 0) return false

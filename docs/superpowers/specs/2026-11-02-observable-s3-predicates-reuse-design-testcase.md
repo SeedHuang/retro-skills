@@ -654,8 +654,8 @@
 - **覆盖**：`§6.1`、`§5` 同步 ③
 - **前置**：`skills/rule-writer/SKILL.md` 已改；`assertNoTermCopy` 可取
 - **步骤**：`test('S3-TC-J01 rule-writer 指针')`：取「写作流程」第 3 步段落
-- **预期**：段内含 `scripts/check-observable.mjs` 与 `check-observable ok` 末行判据；全文件 `terms` 字面命中 0
-- **判据**：`assert.ok(step3.includes('scripts/check-observable.mjs'))`；`assert.ok(step3.includes('check-observable ok'))`；`assert.doesNotThrow(() => assertNoTermCopy(src))`
+- **预期**：段内含 `scs check observable` 与 `check-observable ok` 末行判据；全文件 `terms` 字面命中 0（**2026-11-08 注**：判定实现迁公共 CLI，指针锚由脚本路径改为命令名，意图不变）
+- **判据**：`assert.ok(step3.includes('scs check observable'))`；`assert.ok(step3.includes('check-observable ok'))`；`assert.doesNotThrow(() => assertNoTermCopy(src))`
 
 ### S3-TC-J02 把词表复制进 skill 即红（§6.1 反例）【负】
 

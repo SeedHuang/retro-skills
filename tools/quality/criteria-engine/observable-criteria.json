@@ -9,7 +9,7 @@
     {
       "label": "可观察检查",
       "name": "check-observable 退出码",
-      "probe": { "kind": "command", "run": "node scripts/check-observable.mjs --check", "take": "exit" },
+      "probe": { "kind": "command", "run": "scs check observable --check", "take": "exit" },
       "field": "checkObservableExit",
       "op": "eq",
       "value": 0

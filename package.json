@@ -8,7 +8,7 @@
     "doc:migrate": "node scripts/doc-migrate-stamps.mjs",
     "doc:sweep": "node scripts/scope-sweep.mjs",
     "gate:record": "node scripts/check-gate-record.mjs",
-    "check:observable": "node scripts/check-observable.mjs --check"
+    "check:observable": "scs check observable --check"
   },
   "engines": {
     "node": ">=22"

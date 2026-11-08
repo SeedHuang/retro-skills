@@ -6,7 +6,7 @@
 
 S1（可观察判据）**实现了**豁免清单的四字段结构校验、锚点唯一性、`stale`（锚点 0 命中 → exit 1）与 `reviewed` 可解析 + 下界（不早于 `2026-01-01`）。
 
-**未实现**：`reviewed` 超过 **365 天**未重审的到期判定（spec 记为 `E-5b`）。因此 `scripts/check-observable.mjs` 源码里**不得出现** `365` 与「到期 / 过期」判定分支（testcase `OCR-S1-TC-D12` 以源码静态断言钉死这条）。
+**未实现**：`reviewed` 超过 **365 天**未重审的到期判定（spec 记为 `E-5b`）。因此公共 CLI `scs check observable`（实现源码在 `skill-common-script`，2026-11-08 迁出本仓）里**不得出现** `365` 与「到期 / 过期」判定分支（testcase `OCR-S1-TC-D12` 以源码静态断言钉死；该用例执行体在 CLI 侧 vitest）。
 
 ## 2 触发条件（何时该做）
 
@@ -18,7 +18,7 @@ S1（可观察判据）**实现了**豁免清单的四字段结构校验、锚�
 
 | 选项 | 做法 | 代价 |
 |---|---|---|
-| A（推荐） | 在 `check-observable.mjs` 加到期判定：超期条目 → `exit 1`（与 `stale` 同档），并在 `--json` 的 `stale` 之外新增 `expired` 字段 | 需回 spec §5 / §4 补一条判据（R4 回流 ②） |
+| A（推荐） | 在 `scs check observable`（`skill-common-script`）加到期判定：超期条目 → `exit 1`（与 `stale` 同档），并在 `--json` 的 `stale` 之外新增 `expired` 字段 | 需回 spec §5 / §4 补一条判据（R4 回流 ②） |
 | B | 到期只报警（`console.error` + 计数行），不改退出码 | 判据形同建议，会退化 |
 | C | 到期要求「重审签字」：条目必须带 `reviewed` 在近 365 天内，否则 ④ / ⑤ 段门行不通过（人工判） | 无机判，靠门行 |
 
@@ -26,4 +26,4 @@ S1（可观察判据）**实现了**豁免清单的四字段结构校验、锚�
 
 - **兜底人**：该时点的主 agent + ④ 段 sdet / 审计（按 A/B/C 裁定后回 ② 补判据）。
 - **何时搬走**：`2027-11-01` 触发后 —— 若选 A，结论并入 `spec` 与 `rules/observable-criteria.md`，本文件条目迁出；若选 B/C，则在本文件写明「不实现的原因」并保留为历史记录。
-- **禁止**：把「到期」写进 `rules/observable-criteria.md` 的正文（该文件不得写判定细节；判定只住 `scripts/check-observable.mjs`）。
+- **禁止**：把「到期」写进 `rules/observable-criteria.md` 的正文（该文件不得写判定细节；判定只住公共 CLI `scs check observable` 的实现里）。

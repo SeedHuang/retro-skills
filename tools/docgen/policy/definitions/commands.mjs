@@ -8,7 +8,7 @@ export const commandGroups = {
       'node scripts/check-all.mjs',
       'node scripts/doc-name.mjs --check',
       'node scripts/skill-dir.mjs',
-      'node scripts/review-ledger/time.mjs',
+      'scs time',
     ],
   },
   'git.read': {

@@ -12,7 +12,7 @@
 
 ## 动作（三步）
 
-1. 跑一次：`node scripts/check-observable.mjs --check`（等价 `npm run check:observable`）。
+1. 跑一次：`scs check observable --check`（等价 `npm run check:observable`）。
 2. 看红：每条红给 `path:line` 与命中的词，并注明「所在最小语义块内没有任何可观察标记」。
 3. 三选一处置（逐行，不许整文件放行）：
    - **改文案**：换成能被机器判死的表述（比较式 / 文件行号锚 / 退出码 / `diff` 结果 / 计数 / 空非空 / 带字面量的枚举）。优先这一档。
@@ -36,7 +36,7 @@
 
 | 判据 | 怎么判 |
 |---|---|
-| 无未豁免命中 | `node scripts/check-observable.mjs --check` 末行 `check-observable ok`、exit 0 |
+| 无未豁免命中 | `scs check observable --check` 末行 `check-observable ok`、exit 0 |
 | 计数单源 | `--json` 的 `scanned` / `hits` / `exemptedLines` / `stale`；门禁只搬这四个数 |
 | 豁免不空转 | `stale` 为 0（锚点在文件里 0 命中 = 该条已失效，删或改） |
 | 豁免结构 | 四字段齐；同一文件内锚点唯一；`reviewed` 不早于 `2026-01-01` |
@@ -50,5 +50,5 @@
 |---|---|
 | 词表 / 标记表 / 正反例 | `tools/quality/observable-terms.json` |
 | 豁免条目 | `tools/quality/observable-exempt.json` |
-| 判定实现（唯一） | `scripts/check-observable.mjs` |
+| 判定实现（唯一） | 公共 CLI `scs check observable`（源码在 `skill-common-script`；本仓只留数据与规则） |
 | 门禁接入 | `scripts/check-all.mjs` 第 ⑦ 段（不可经 `CHECK_BYPASS` 旁路） |

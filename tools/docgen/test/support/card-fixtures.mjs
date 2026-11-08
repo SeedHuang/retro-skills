@@ -30,6 +30,16 @@ export const runNode = (args, cwd = REPO, env = null) => {
   return { code: r.status ?? -1, out: `${r.stdout ?? ''}${r.stderr ?? ''}` }
 }
 export const runCli = (args, cwd = REPO, env = null) => runNode(['tools/docgen/cli.mjs', ...args], cwd, env)
+// 公共 CLI（`scs`）：`check observable` / `check criteria-engine` 的实现已迁出本仓，测试改走全局命令。
+export const runScs = (args, cwd = REPO, env = null) => {
+  const r = spawnSync('scs', args, {
+    cwd,
+    encoding: 'utf8',
+    shell: true,
+    env: env ? { ...process.env, ...env } : process.env,
+  })
+  return { code: r.status ?? -1, out: `${r.stdout ?? ''}${r.stderr ?? ''}` }
+}
 
 // 临时副本（同 `tools/docgen/acceptance/cold-run.mjs` 的做法）：已跟踪 + 未跟踪未忽略文件一起复制。
 // 为什么补 `--others`：`docs/agents/**` 是新增未提交文件，只复制 `ls-files` 会让副本缺生成物 → 恒红 / 恒绿。

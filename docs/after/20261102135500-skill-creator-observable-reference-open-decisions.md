@@ -8,7 +8,7 @@
 
 ## 该做
 
-在该全局 skill 的写作流程里加一行引用（**只引用、不复制判据**）：写 skill 判据句时跑 `node scripts/check-observable.mjs --check`，末行 `check-observable ok` 且 exit 0；词表与标记表唯一源 = 本仓 `tools/quality/observable-terms.json`（跨仓引用时写绝对路径或另行分发清单）。
+在该全局 skill 的写作流程里加一行引用（**只引用、不复制判据**）：写 skill 判据句时跑 `scs check observable --check`，末行 `check-observable ok` 且 exit 0；词表与标记表唯一源 = 本仓 `tools/quality/observable-terms.json`（2026-11-08 起判定实现已由全局 CLI `scs` 提供，跨仓只需装 CLI、不再需要写绝对路径或分发清单）。
 
 ## 触发
 
