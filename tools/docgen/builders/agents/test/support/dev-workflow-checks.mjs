@@ -99,10 +99,11 @@ export function transitionReport(skillText) {
   };
 }
 
-// TC-A02 / E02 / E03：references 文件名全集比对（恰 7 份，双向）
+// TC-A02 / E02 / E03：references 文件名全集比对（恰 9 份，双向）
 export const REF_FILES = [
   'stage-1-prd.md', 'stage-2-tech-design.md', 'stage-2b-plan-gate.md',
   'stage-3-implementation.md', 'stage-4-quality.md', 'stage-5-delivery.md', 'gate-record-template.md',
+  'meta-working-principles.md', 'landing-sweep.md',
 ];
 export function refsReport(names) {
   return {

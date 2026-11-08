@@ -1,6 +1,6 @@
 // S1 · A 组（规则侧）：TC-A07 / E04 / E31
-// 为什么单独成文件：A07 只依赖 rules/dev-workflow-mainline.md，T1 后即可绿；
-// 与 A 组其余用例（依赖 skills/dev-workflow/**，T3 后才有）分开放，中间态不会整片红。
+// 阶段 1（2026-11-05）后转为「档案完整性」用例：读 docs/bak/rules/dev-workflow-mainline.md。
+// 活载体（SKILL.md 的义务边界 + gate-record-template 的 R1–R9）由 dev-workflow-files.test.mjs 的 TC-A15 守护。
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readRepo, readBakRule, ruleHeadings, ruleItems, ruleExceptionReport, ruleVerifyReport, ruleCopyReport, section } from './support/dev-workflow-checks.mjs';

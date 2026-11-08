@@ -17,9 +17,11 @@
 | 原规则 | 去向 |
 |---|---|
 | `how-i-must-reason` / `data-support-triple` | 合并 → 触发声明 + `assertion-quality` |
-| `core-working-principles` / `plain-language-to-user` / `powershell-file-encoding` | 下沉 → 对应 skill / references |
+| `core-working-principles` | **已承接（2026-11-08）** → `skills/dev-workflow/references/meta-working-principles.md` |
+| `plain-language-to-user` / `powershell-file-encoding` | 下沉 → 对应 skill / references |
 | `reference-read-output-loop` / `skill-authoring-convention` / `skill-assets-convention` / `observable-criteria` / `rules-single-source` / `docs-convention`（「rule 里放什么」半） | 下沉 → `carrier-conventions` + `writing-after-docs` |
-| `spec-testcase-gate` / `dev-workflow-mainline` / `landing-sweep` | 下沉 → 载体写作 / 流程 skill（阶段 3） |
+| `spec-testcase-gate` | 下沉 → `carrier-conventions`（阶段 3，待建） |
+| `dev-workflow-mainline` / `landing-sweep` | **已承接（2026-11-08）** → `skills/dev-workflow/` |
 | `global-ask-before-acting` / `import-guard` / `import-path-choice` / `styled-component-file` / `list-empty-state` / `ts-expect-error` / `vitest-queued-alternative` / `no-git-write` / `poll-deferred-at-start` | 删除（平台机制已覆盖 / 工具链专属 / 按需触发） |
 
 逐条字符数与处置依据见 PRD `docs/prd/20261105182104-rule-refactor/prd/stage-1-rules-exit.md` §3。

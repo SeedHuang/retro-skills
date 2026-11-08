@@ -25,9 +25,9 @@ test('TC-A01 三件载体在磁盘上（规则侧改判留底：阶段 1 已退�
   }
 });
 
-test('TC-A02 references 恰七份（双向全集）+ gate-record-template.md 六列表头在位', () => {
+test('TC-A02 references 恰九份（双向全集）+ gate-record-template.md 六列表头在位', () => {
   const r = refsReport(refNames());
-  assert.equal(r.count, 7, `references 应恰 7 份，实为 ${r.count}`);
+  assert.equal(r.count, 9, `references 应恰 9 份，实为 ${r.count}`);
   assert.deepEqual(r.missing, []);
   assert.deepEqual(r.extra, []);
   assert.equal(r.exact, true);
@@ -97,9 +97,9 @@ test('TC-A09 计划门三条核对各含「判据 + 二选一证据」，且三�
 const RUNTIME = process.env.DW_RUNTIME_CHECK === '1';
 const RUNTIME_SKIP = RUNTIME ? false : '本机运行时验：设 DW_RUNTIME_CHECK=1 并先 aas sync（不进 npm run check）';
 
-test('TC-A10 运行时就位：两条 Test-Path 为 True（aas sync 后本机验）', { skip: RUNTIME_SKIP }, () => {
-  assert.equal(existsSync(join(homedir(), '.trae-cn', 'user_rules', 'dev-workflow-mainline.md')), true);
+test('TC-A10 运行时就位：技能链接为 True、退役规则链接为 False（aas sync 后本机验）', { skip: RUNTIME_SKIP }, () => {
   assert.equal(existsSync(join(homedir(), '.trae-cn', 'skills', 'dev-workflow', 'SKILL.md')), true);
+  assert.equal(existsSync(join(homedir(), '.trae-cn', 'user_rules', 'dev-workflow-mainline.md')), false, '退役规则不得仍在运行时');
 });
 
 test('TC-A11 SKILL.md 每个段行同时含 references 指针 +「已核清单」+「不得进入下一段」', () => {
@@ -129,6 +129,20 @@ test('TC-A14 SKILL.md ① 段正文含过渡口径三要素 + S2 失效条件', 
   assert.equal(r.hasS2, true, '必须写出失效条件（含 S2）');
 });
 
+test('TC-A15 活载体承接原规则义务：适用范围 / 冲突裁决 / 例外 / 触发时机 / 验证 + 模板 R1–R9', () => {
+  for (const k of ['适用范围', '冲突裁决', '存量 spec 不追溯', '技改免议会', '触发时机', '**验证**']) {
+    assert.ok(skill.includes(k), `SKILL.md 缺义务：${k}`);
+  }
+  for (const cmd of ['node scripts/check-gate-record.mjs', 'node scripts/scope-sweep.mjs --check']) {
+    assert.ok(skill.includes(cmd), `SKILL.md 缺命令：${cmd}`);
+  }
+  assert.equal(skill.includes('rules/dev-workflow-mainline.md'), false, 'SKILL.md 不得保留退役规则路径');
+  const tpl = readRepo(`${REF_DIR}/gate-record-template.md`);
+  for (const id of ['R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8', 'R9']) {
+    assert.ok(tpl.includes(`| ${id} |`), `gate-record-template.md 缺 ${id}`);
+  }
+});
+
 test('TC-E01 出口判据格不得写成形容词，且每格非空', () => {
   const r = exitWordReport(skill);
   assert.equal(r.count, 6);
@@ -136,10 +150,10 @@ test('TC-E01 出口判据格不得写成形容词，且每格非空', () => {
   assert.deepEqual(r.short, [], '出口格不得为空/过短');
 });
 
-test('TC-E02 references 只有 6 份（缺 stage-2b-plan-gate）→ 全集比对必红', () => {
+test('TC-E02 references 只有 8 份（缺 stage-2b-plan-gate）→ 全集比对必红', () => {
   const broken = refNames().filter((x) => x !== 'stage-2b-plan-gate.md');
   const r = refsReport(broken);
-  assert.notEqual(r.count, 7);
+  assert.notEqual(r.count, 9);
   assert.deepEqual(r.missing, ['stage-2b-plan-gate.md']);
   assert.equal(r.exact, false);
 });

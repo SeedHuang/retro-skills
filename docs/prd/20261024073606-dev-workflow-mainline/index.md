@@ -1,6 +1,23 @@
 # 开发工作流主干：需求产生 → 产品交付（PRD）
 
 > 状态：**定稿（有条件通过，2026-10-24；议会 #1 四轮 + 两次补充复核，P0/P1 = 0）**　**载体已迁（2026-11-05）**：本文提到的 `skills/dev-workflow/references/gate-record.md` 已迁至 `docs/devworkflows/<YYYYMMDDHHmmss>-<任务名>/gate-record.md`；旧路径删除提交由 `git log --diff-filter=D -1 --format=%H -- skills/dev-workflow/references/gate-record.md` 取回。正文与结论不改（历史签字件）。｜P2 与存量项挂 `docs/after/20261024174253-dev-workflow-mainline-open-items.md`
+>
+> **路径勘误（2026-11-08）**：`tools/docgen` 重构后下列路径已变；历史正文不逐条改写，阅读时按此表换算（`Test-Path` 逐条可核）。
+>
+> | 原文路径 | 现路径 / 状态 |
+> |---|---|
+> | `tools/docgen/components/patternRegistry.mjs` | `tools/docgen/builders/agents/components/patternRegistry.mjs` |
+> | `tools/docgen/components/renderBoundary.mjs` | `tools/docgen/builders/agents/components/renderBoundary.mjs` |
+> | `tools/docgen/components/sharedBlocks.mjs` | 源文件不在位（`Test-Path` False） |
+> | `tools/docgen/agentData.mjs` / `validateAgentData.mjs` | `tools/docgen/builders/agents/components/` 同名文件 |
+> | `tools/docgen/test/*.test.mjs` | `tools/docgen/builders/agents/test/*.test.mjs` |
+> | `tools/docgen/templates/boundary.md.tpl` | `tools/docgen/builders/agents/templates/boundary.md.tpl` |
+> | `tools/docgen/templates/agent.md.tpl` | `tools/docgen/builders/agents/templates/agent-card.md.tpl` |
+> | `tools/docgen/policy/**` | `tools/docgen/builders/agents/policy/**` |
+> | `rules/dev-workflow-mainline.md` / `rules/import-guard.md` | 已退役，留档 `docs/bak/rules/` |
+> | `skills/review-log/scripts/time.mjs` | 已归档；计时改用 `scs time` |
+> | `skills/dev-workflow/references/gate-record.md` | `docs/devworkflows/<任务>/gate-record.md`（见首段横幅） |
+>
 > 二轮状态（2026-10-24）：§11 的 23 条 D 全部有结论（5 条用户已裁 + 18 条 `[已决·代裁]`），`[待确认]` 为 0；**18 条代裁已于 2026-10-24 逐条扫过、全部认可**（出处 = 本轮议会账 `.session/reviews/2026-10-24-163717-dev-workflow-mainline-prd/`，归档对话早于本次确认），可送议会 #1（§0 已于 2026-10-24 通过）
 > 三轮状态（2026-10-24，补 §0）：市场栏已填（桌面调研 + 6 条对外对标，§0.5.1）+ 精算师已签并**生效**（有条件通过；条件 1–4 已落地、5 / 6 挂 S2，§0.5.2）+ 用户栏已签 → **§0 通过（过渡口径）**
 > 事实基线（2026-10-24 补）：已拿原始对话记录 [userconversation.md](userconversation.md)（3192 行）逐条回核。下文凡写「记录 Lxxx」为**初稿编号**，与归档文件存在 ±3 行偏移（议会 #1 抽样 14 处，均偏 1–3 行）；回核一律以**引文**为准，取行号用 `Grep -n '<引文前 6 字>' userconversation.md`；记录里找不到「认 / 可以 / 就这么定」的，一律从 `[已确认]` 降为 `[待确认]`（本轮共降 9 处，见 §0.4）
@@ -570,7 +587,7 @@ PRD §4 拟改名「业务流程与功能点（图 + 表 + 清单）」`[已决�
 
 ## 9 工具档位缺口 `[已决·代裁]`（上一轮新发现）
 
-**现状**（2026-10-24 S5 施工后）：`tools/docgen/components/patternRegistry.mjs` 现有四档——`readOnly`（Read/Glob/Grep）、`sdet`（+Write/Edit）、`command`（+RunCommand，**保留档**，当期无席挂载）、`producer`（+Write/Edit/RunCommand，**整档授予**）。15 席实际取值：12 席 `readOnly`，`senior-sdet` 挂 `sdet`，审计与侦探挂 `producer`。档位由 `tierBySeat` 单源给出，未登记席回落 `defaultTier`（`readOnly`）。
+**现状**（2026-10-24 S5 施工后）：`tools/docgen/builders/agents/components/patternRegistry.mjs` 现有四档——`readOnly`（Read/Glob/Grep）、`sdet`（+Write/Edit）、`command`（+RunCommand，**保留档**，当期无席挂载）、`producer`（+Write/Edit/RunCommand，**整档授予**）。15 席实际取值：12 席 `readOnly`，`senior-sdet` 挂 `sdet`，审计与侦探挂 `producer`。档位由 `tierBySeat` 单源给出，未登记席回落 `defaultTier`（`readOnly`）。
 
 后果清单：
 
@@ -686,11 +703,13 @@ PRD §4 拟改名「业务流程与功能点（图 + 表 + 清单）」`[已决�
 | 份 | 内容 | 涉及文件 | 状态 | 依赖 |
 |---|---|---|---|---|
 | **S1** 主干骨架 | 5 段顺序 / 每段出口判据 / 议会插点 2 次 / 三权分离总则；一页纸 rule | 新 skill `dev-workflow/SKILL.md` + references 7 份（5 段 + 计划门 + `gate-record.md`）+ 主干判据 rule + `agents/evidence-reader.md`（F-17） | **已完成**（2026-10-24，commit `f1268f1`；`npm run check` 全绿） | 无（可独立验收） |
-| **S3** 议会改造 | 独立议长（A）/ 答辩方子代理 / 两张矩阵 / `host-duties` 拆分 / 族映射表 / 级别栏位化 | `agents/speaker.md`、`respondent-*`、`assembly-matrix.md`、`submission-matrix.md`、`host-duties.md` → `speaker-duties.md` + `respondent-duties.md`、`assets/issue-card.md`（级别栏位）、`tools/docgen` 生成源 + 15 张卡重生成 + `test/*.test.mjs` 断言 | **未开工** | S1、S5（producer 档） |
+| **S3** 议会改造 | 独立议长（A）/ 答辩方子代理 / 两张矩阵 / `host-duties` 拆分 / 族映射表 / 级别栏位化 | `skills/parliament/references/{assembly-matrix,submission-matrix,host-duties}.md`、`assets/issue-card.md`、`agents/speaker.md`、`respondent-*`；卡重生成不在本 PRD（移交 `docs/prd/20261026205821-agent-card-contract.md` S4） | **部分完成**（2026-11-08 核：两张矩阵 + `host-duties.md` + 问题卡三级判据在位；`agents/speaker.md` / `respondent-*`、族映射表、F-19「缺栏自动降 P2」未落） | S1、S5（producer 档） |
 | **S2** PRD 阶段 | 市场同学 / 产品经理 / §0 硬门 / 精算师前移 | `agents/` 3 个新卡 + PRD 模板 §0 + `scripts/check-prd-graph.mjs`（F-15） | **未开工** | S1、S3 |
-| **S4** 技术设计段 | 功能块滚动拆 / spec ∥ testcase / 差异清单 / plan 交审计（真读 + 签字） | `skills/` 新段文档 + `scripts/check-plan.mjs` | **未开工** | S2 |
-| **S5** 工具档位 | `producer` / `research` 档 + `ToolsViolation` 断言改 | `patternRegistry.mjs`、`agentData.mjs`、`validateAgentData.mjs`、`agents/reviewer-audit.md`、`agents/detective-observer.md`、`test/pilot-data.test.mjs`、`test/pilot-render.test.mjs` | **`producer` 部分完成**（2026-10-24：审计 / 侦探升 `producer` —— 整档六元组 + 两份边界句 + 检测职责，档位改为 `tierBySeat` 单源；`command` 档降为保留档。`research` 未开工 → 拆 **S5-R**；检测脚本 / CLI B3 机器门 / 账本模板改造 → 拆 **S5-B**） | 无（与 S2/S3 并行） |
-| **S6** 规则单一来源化 | 权限 / 命令 / 禁写路径按作用分组：定义层持字符串、配置层只持组 ID、边界句由数据渲染（F-24） | `tools/docgen/policy/**`、`templates/boundary.md.tpl`、`components/renderBoundary.mjs`、`patternRegistry.mjs`（删 `BOUNDARY_COMMAND`）、`agentData.mjs`、`test/tool-tiers.test.mjs`、S5 spec §3.3 改引用 | **未开工**（设计见 `docs/after/20261025094353-docgen-policy-single-source-open-decisions.md`） | S5（已完成的 `producer` 档）；可与 S3 并行 |
+| **S4** 技术设计段 | 功能块滚动拆 / spec ∥ testcase / 差异清单 / plan 交审计（真读 + 签字） | `skills/dev-workflow/references/stage-2-tech-design.md`、`stage-2b-plan-gate.md`、`stage-4-quality.md` + `scripts/check-plan.mjs`、`scripts/check-plan.test.mjs` | **脚本件已落**（2026-11-08 核：两个脚本在位；段文档已含 P48–P56 的判据与三条现行命令） | S2 |
+| **S5** 工具档位 | `producer` / `research` 档 + `ToolsViolation` 断言改 | `tools/docgen/builders/agents/components/{patternRegistry,agentData,validateAgentData}.mjs`、`agents/reviewer-audit.md`、`agents/detective-observer.md`、`tools/docgen/builders/agents/test/{pilot-data,pilot-render}.test.mjs` | **`producer` 部分完成**（2026-10-24：审计 / 侦探升 `producer` —— 整档六元组 + 两份边界句 + 检测职责，档位改为 `tierBySeat` 单源；`command` 档降为保留档。`research` 未开工 → 拆 **S5-R**；检测脚本 / CLI B3 机器门 / 账本模板改造 → 拆 **S5-B**） | 无（与 S2/S3 并行） |
+| **S6** 规则单一来源化 | 权限 / 命令 / 禁写路径按作用分组：定义层持字符串、配置层只持组 ID、边界句由数据渲染（F-24） | `tools/docgen/builders/agents/policy/**`、`tools/docgen/builders/agents/templates/boundary.md.tpl`、`tools/docgen/builders/agents/components/renderBoundary.mjs`、`.../patternRegistry.mjs`（删 `BOUNDARY_COMMAND`）、`.../agentData.mjs`、`tools/docgen/builders/agents/test/tool-tiers.test.mjs`、S5 spec §3.3 改引用 | **主体已落**（2026-11-08 核：`tools/docgen/builders/agents/policy/**` 在位，提交 `641a7e7` / `13e4aaf`；A/B 盲评分期不在本期，见 `docs/after/20261029100942-s6-v13-ab-eval-rebuild-open-decisions.md`） | S5（已完成的 `producer` 档）；可与 S3 并行 |
+
+> **状态与归属修订（2026-11-08）**：S3 / S4 / S6 三行按实装改写，S1 / S2 / S5 不变；S3 的「`tools/docgen` 生成源 + 15 张卡重生成」不再由本 PRD 认领（已移交 `docs/prd/20261026205821-agent-card-contract.md` S4）。本次只改交付归属与状态，§10 功能点集合未变（仍 F-01～F-24，24 行），按 R5 不触发 §0 重签；原 `docs/after/20261026211515-mainline-prd-reoptimize-open-decisions.md` 的「§0 重签」前提不成立（交付归属变更不是功能增删），该待办同批删除（取回锚 = `git log --diff-filter=D -1 --format=%H -- docs/after/20261026211515-mainline-prd-reoptimize-open-decisions.md`）。另：S1 的 references 于同日阶段 3 承接再增 2 份（`meta-working-principles.md` / `landing-sweep.md`），现 9 份；S1 行「7 份」是当时交付快照，不改写。
 
 > **状态判据**：`已完成` = 实体文件在位 + 该份验收证据（`npm run check` 结论行或 commit）；**份级不要求 `gate-record.md` 行**（那是段级；S1 的段级出口仍待 ①② 行签字）。`进行中` = 已开工但验收证据不齐；`未开工` = 无施工产物。
 

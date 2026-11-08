@@ -1,4 +1,4 @@
-> 状态：**已归档**｜日期：2026-11-05（阶段 1 退役）｜归档原因：下沉——五段主干与出口签字｜承接位置：载体写作/流程 skill
+> 状态：**已归档**｜日期：2026-11-05（阶段 1 退役）｜归档原因：下沉——五段主干与出口签字｜承接位置：`skills/dev-workflow/`（2026-11-08 收口）
 # 开发工作流主干：五段顺序、出口签字与长文取证
 
 > 来源：PRD `docs/prd/20261024073606-dev-workflow-mainline/index.md` §4 / §6 / §3.3；S1 spec `docs/superpowers/specs/2026-10-24-dev-workflow-skeleton-design.md` §5｜落地：2026-10-24
@@ -74,9 +74,9 @@
 
 | 原节 | 去向 | 承接文件 |
 |---|---|---|
-| `## 核心判据（R1–R9）` | 下沉 | 载体写作/流程 skill |
-| `## 适用范围（不因来源豁免）` | 下沉 | 载体写作/流程 skill |
-| `## 冲突裁决` | 下沉 | 载体写作/流程 skill |
-| `## 例外` | 下沉 | 载体写作/流程 skill |
-| `## 触发时机` | 下沉 | 载体写作/流程 skill |
-| `## 验证` | 下沉 | 载体写作/流程 skill |
+| `## 核心判据（R1–R9）` | 下沉 | `skills/dev-workflow/references/gate-record-template.md`（R1–R9）+ `skills/dev-workflow/SKILL.md`（义务边界） |
+| `## 适用范围（不因来源豁免）` | 下沉 | `skills/dev-workflow/SKILL.md`「义务边界」 |
+| `## 冲突裁决` | 下沉 | `skills/dev-workflow/SKILL.md`「义务边界」 |
+| `## 例外` | 下沉 | `skills/dev-workflow/SKILL.md`「义务边界」 |
+| `## 触发时机` | 下沉 | `skills/dev-workflow/SKILL.md`「义务边界」 |
+| `## 验证` | 下沉 | `skills/dev-workflow/SKILL.md`「义务边界 · 验证」+ `scripts/check-gate-record.mjs` / `scripts/scope-sweep.mjs` |

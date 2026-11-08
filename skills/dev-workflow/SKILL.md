@@ -45,7 +45,23 @@ description: 当任务要走「需求 → 技术设计 → 计划门 → 实现 
 - **定性**：由该段「谁签」列的角色定性合格与否；申报人不得给自己定性。
 - **核对**：审计或独立核对者核证据本身；核对者与申报人不得是同一实例。
 
-作者定义（与 `rules/dev-workflow-mainline.md` R2 同源）：PRD→产品经理、spec→主 agent、testcase→sdet、代码→开发、审计结论→审计。
+作者定义（与签字账 R2 同源）：PRD→产品经理、spec→主 agent、testcase→sdet、代码→开发、审计结论→审计。
+
+## 义务边界（原规则承接）
+
+- **适用范围**：PRD、spec、plan、代码实现与交付审计五类主线产物都要过本主干；不因子代理、脚本、模板或 AI 生成而豁免。本技能只管主干顺序与签字归属，段内做法归各段文档与对应技能。
+- **冲突裁决**：与「先快速交付、回头补 spec」「先写代码再补 PRD」「签字人顺手代签」冲突时，以本技能为准；拿不准先停下说明，等用户确认再动。
+- **例外一（存量 spec 不追溯）**：本技能生效（2026-10-24）前已定稿的存量 spec 不追溯。进 ③ 时必须点名豁免的文件名，并写出升级时点（该 spec 下一次修订并进入 plan 的那一刻，或用户给出的具体日期）；禁止写「看情况」。
+- **例外二（技改免议会，2026-11-05 用户裁定）**：功能点 ID 集合 diff 为空的技术改造，经用户在 ① 入口点名「本任务按技改走」，可免议会 #1 / #2；同批允许新增交付物，只不准新增功能点。豁免只免议会、不免签字：① 行签字人仍按段表，② 行签字人 = 审计，并同批附 `senior-sdet` 与 `reviewer-audit` 两份审查结论（落 `docs/reports/<批次>/`，账内写 `path:line`）。入口未点名不得事后追认；集合 diff 非空 → 回 PRD 重签 §0（R5）。
+- **触发时机**：进入任一段之前；写改任务账任一行时；送议会或 plan 阶段想新增 spec 未写的设计时；引用对话记录 / 评审账 / 规范原文下结论时；改任一判据级口径时（R8）；交接、复盘或审计发现「未签就进下一段」时。
+
+**验证**（两条自查命令）：
+
+`node scripts/check-gate-record.mjs`
+
+`node scripts/scope-sweep.mjs --check`
+
+判据：前者 `tasks N rows R bad 0` 且末行 `gate-record ok`；后者 exit 0（`sweep ok`）。任一不满足 = 本技能未过，不得进入下一段。
 
 ## 取证调度
 
@@ -58,5 +74,7 @@ description: 当任务要走「需求 → 技术设计 → 计划门 → 实现 
 - 每段判据：`references/stage-1-prd.md`、`references/stage-2-tech-design.md`、`references/stage-2b-plan-gate.md`、`references/stage-3-implementation.md`、`references/stage-4-quality.md`、`references/stage-5-delivery.md`
 - 出口核对记录表（R1–R9 的唯一证据载体）：`docs/devworkflows/<YYYYMMDDHHmmss>-<任务名>/gate-record.md`（进 ① 时建目录，格式复制 `references/gate-record-template.md`）
 - 签字账模板（格式唯一源）：`references/gate-record-template.md`
-- 判据类文本的可观察判据：以 `observable-criteria` 规则为准，机判 = `npm run check:observable`（末行 `check-observable ok` 且 exit 0）
-- 强制约束：`rules/dev-workflow-mainline.md`（每轮自动加载）
+- 判据类文本的可观察判据：原 `observable-criteria` 规则已并入 `carrier-conventions` 技能，按该技能「判据必须写成可观察形态」节执行；机判 = `npm run check:observable`（末行 `check-observable ok` 且 exit 0）
+- 元工作方法（改 rule / skill / 脚本、落地待办、评审修复轮之前）：按 `references/meta-working-principles.md` 执行，产出「全貌确认」块；缺块不得动笔
+- 落地后回扫（建脚本 / 加规则 / 完成待办之后）：按 `references/landing-sweep.md` 执行，逐条处置四类声明处；缺处置不得宣布完成
+- 强制约束：本技能段表 + `references/gate-record-template.md` 的 R1–R9

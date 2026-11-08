@@ -1,7 +1,7 @@
 # 阶段 3：skill 全面改造 + 下沉承接
 
 > 所属项目：[rule 改造总纲](./index.md)｜前置：[阶段 2](./stage-2-new-mode-pilot.md) 完成
-> 推迟依据（2026-11-05 裁定）：现有 19 个 skill 是老模式（散文卡面、manual 判据），将向判据引擎模式大改——12 条下沉内容届时一起改造，**同一内容只改一遍，不做二次搬家**。阶段 1 至本阶段之间，下沉内容的唯一真相位 = bak（`docs/bak/rules/`）。
+> 推迟依据（2026-11-05 裁定）：现有 19 个 skill 是老模式（散文卡面、manual 判据），将向判据引擎模式大改——12 条下沉内容届时一起改造，**同一内容只改一遍，不做二次搬家**。阶段 1 至本阶段之间，未承接内容的唯一真相位 = bak（`docs/bak/rules/`）；已承接项（见 §2「现状」列）以承接文件为准——**不得再从 bak 反向复制，否则变成第二份真相**。
 
 ## 1 完成事项
 
@@ -12,20 +12,20 @@
 
 ## 2 下沉承接对照表（12 条，零遗漏判据）
 
-| # | rule（原字符） | 承接位置（具体文件） | 承接要点 |
-|---|---|---|---|
-| 4 | `core-working-principles`（2,338） | `skills/dev-workflow/references/meta-working-principles.md`（不新立 skill 容器） | 画全貌 + 写计划 + 算长远账；自省长期方案按「工程化→规则→技能」落载体 |
-| 7 | `plain-language-to-user`（570） | `skills/plain-language/SKILL.md`（**阶段 2 已建**——本阶段核对承接完整） | 四义务 + 冲突裁决 |
-| 8 | `reference-read-output-loop`（1,092） | `skills/carrier-conventions/references/reference-read-output-loop.md` | 「读 reference」必须接产出闭环——「按 X 执行，产出 Y，缺 Y 不合格」 |
-| 9 | `skill-authoring-convention`（2,384） | `skills/carrier-conventions/references/skill-authoring.md` | 禁文件路径指路；脚本守卫免疫路径（realpath 双归一） |
-| 10 | `skill-assets-convention`（1,167） | `skills/carrier-conventions/references/skill-assets.md` | 官方标准目录语义；骨架不内联 SKILL.md |
-| 11 | `observable-criteria`（2,123） | `skills/carrier-conventions/references/observable-criteria.md` | 每个评价能被机器退出码判死；执行仍在 `check-observable.mjs` + 门禁 ⑦ 段 |
-| 12 | `spec-testcase-gate`（2,142） | `skills/carrier-conventions/references/spec-testcase-gate.md` | 五条判据：同批独立 testcase、senior-sdet 独立写、五要素、外链、一起送审 |
-| 13 | `dev-workflow-mainline`（5,172） | `skills/dev-workflow/SKILL.md`（段表与签字节）+ `skills/dev-workflow/references/gate-record-template.md` | 五段主干 + 出口签字（**R1–R9**，机械判据由 `check-gate-record.mjs` 承担；**references 只给模板指针，不贴六列样例表**——撞 R9 红） |
-| 14 | `landing-sweep`（958） | `skills/dev-workflow/references/landing-sweep.md` | 落地后回头扫四类声明处 |
-| 15 | `docs-convention`（13,053，**拆两半**） | 目录/命名/`.session`/`docs/bak` 语义 → `skills/writing-after-docs/SKILL.md`；「rule 里放什么」→ `skills/carrier-conventions/references/rule-content-layers.md` | 拆分承接。**不搬两句（均已从原规则删除，2026-11-05）**：① `.session/sdd-*` 的「留档迁 `docs/superpowers/sdd/`」（该目录不存在，留档归插件自己的 `.superpowers/sdd/`）；② 「`.superpowers/sdd/` 实测当前是空壳：1 个文件」（实测 13 个任务目录，该断言已过期） |
-| 16 | `rules-single-source`（477） | `skills/carrier-conventions/references/rules-single-source.md` + `skills/use-rule-skills/SKILL.md` | 只建源仓库、运行时只读；增删后跑 `aas sync` |
-| 22 | `powershell-file-encoding`（1,125） | `skills/carrier-conventions/references/powershell-encoding.md`（references 单文件，不立容器） | 禁 `-Encoding UTF8`（写 BOM）；`WriteAllText(..., UTF8Encoding $false)` |
+| # | rule（原字符） | 承接位置（具体文件） | 承接要点 | 现状（2026-11-08 核） |
+|---|---|---|---|---|
+| 4 | `core-working-principles`（2,338） | `skills/dev-workflow/references/meta-working-principles.md`（不新立 skill 容器） | 画全貌 + 写计划 + 算长远账；自省长期方案按「工程化→规则→技能」落载体 | 已承接（2026-11-08） |
+| 7 | `plain-language-to-user`（570） | `skills/plain-language/SKILL.md`（**阶段 2 已建**——本阶段核对承接完整） | 四义务 + 冲突裁决 | 已承接 |
+| 8 | `reference-read-output-loop`（1,092） | `skills/carrier-conventions/references/reference-loop.md` | 「读 reference」必须接产出闭环——「按 X 执行，产出 Y，缺 Y 不合格」 | 已承接 |
+| 9 | `skill-authoring-convention`（2,384） | `skills/carrier-conventions/references/skill-structure.md` | 禁文件路径指路；脚本守卫免疫路径（realpath 双归一） | 已承接 |
+| 10 | `skill-assets-convention`（1,167） | `skills/carrier-conventions/references/skill-structure.md` | 官方标准目录语义；骨架不内联 SKILL.md | 已承接（与 #9 合并为一份） |
+| 11 | `observable-criteria`（2,123） | `skills/carrier-conventions/references/observable.md` | 每个评价能被机器退出码判死；执行仍在 `check-observable.mjs` + 门禁 ⑦ 段 | 已承接 |
+| 12 | `spec-testcase-gate`（2,142） | `skills/carrier-conventions/references/spec-testcase-gate.md` | 五条判据：同批独立 testcase、senior-sdet 独立写、五要素、外链、一起送审 | 待建 |
+| 13 | `dev-workflow-mainline`（5,172） | `skills/dev-workflow/SKILL.md`（段表 + 签字节 + 义务边界）+ `skills/dev-workflow/references/gate-record-template.md` | 五段主干 + 出口签字（**R1–R9**，机械判据由 `check-gate-record.mjs` 承担；**references 只给模板指针，不贴六列样例表**——撞 R9 红） | 已承接（2026-11-08：义务边界 + R1–R9 + 活载体守护 TC-A15） |
+| 14 | `landing-sweep`（958） | `skills/dev-workflow/references/landing-sweep.md` | 落地后回头扫四类声明处 | 已承接（2026-11-08） |
+| 15 | `docs-convention`（13,053，**拆两半**） | 目录/命名/`.session`/`docs/bak` 语义 → `skills/writing-after-docs/SKILL.md`；「rule 里放什么」→ `skills/carrier-conventions/references/rule-content.md` | 拆分承接。**不搬两句（均已从原规则删除，2026-11-05）**：① `.session/sdd-*` 的「留档迁 `docs/superpowers/sdd/`」（该目录不存在，留档归插件自己的 `.superpowers/sdd/`）；② 「`.superpowers/sdd/` 实测当前是空壳：1 个文件」（实测 13 个任务目录，该断言已过期） | 部分承接（「rule 里放什么」已落 `rule-content.md`；`writing-after-docs` 待建） |
+| 16 | `rules-single-source`（477） | `skills/carrier-conventions/references/single-source.md` + `skills/use-rule-skills/SKILL.md` | 只建源仓库、运行时只读；增删后跑 `aas sync` | 已承接 |
+| 22 | `powershell-file-encoding`（1,125） | `skills/carrier-conventions/references/powershell-encoding.md`（references 单文件，不立容器） | 禁 `-Encoding UTF8`（写 BOM）；`WriteAllText(..., UTF8Encoding $false)` | 待建 |
 
 ## 3 skill 改造原则（老模式 → 判据引擎模式）
 
@@ -45,3 +45,5 @@
 | S-4 | skill 判据登记 | 每个 skill 的可机判条目在判据引擎有登记且 testcase 全绿 | 全绿 |
 | S-5 | 判心 residual 齐 | 每个语义判项有 residual{who, sample, fields, 客观化路径} | 齐备 |
 | S-6 | powershell 编码备忘 | 独立 references 文件存在且可检索 | 存在 |
+
+> **当前进度（2026-11-08）**：S-1 是阶段 3 完成后的判据，不是当前状态。§2 现状列：9 条已承接（#4 / #7 / #8 / #9 / #10 / #11 / #13 / #14 / #16），1 条部分（#15），2 条待建（#12 / #22）；逐项 `Test-Path` 可核。
