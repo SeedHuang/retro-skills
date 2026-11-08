@@ -1,10 +1,10 @@
 // doc-name.mjs —— 文档命名的唯一判据实现
 //
-// 为什么要有这一份：`rules/docs-convention.md` 里只有文字表格，没有机器实现，
+// 为什么要有这一份：`skills/docs-placement/SKILL.md`（原 docs-convention）里只有文字表格，没有机器实现，
 // 于是「PRD 该不该带时间戳」这类问题每次都要靠人记。本文件把判据落成代码，
 // 供 doc-rename / doc-migrate-stamps 复用；以后接进 `npm run check` 也只用改这一处。
 //
-// 判据分三类（与 docs-convention 的目录语义对齐）：
+// 判据分三类（与 docs-placement 的目录语义对齐）：
 //   ① 创建时刻类：docs/prd、docs/after、docs/research —— `YYYYMMDDHHmmss-<主题>.md`（到秒）
 //   ② 定稿日期类：specs / plans / handoffs —— `YYYY-MM-DD-<主题>.md`
 //   ③ 其余 docs 文档：只禁中文 / 空白 / 下划线（不强制前缀，也不强求全小写——

@@ -25,7 +25,7 @@
 | **1** | [stage-1-rules-exit.md](./stage-1-rules-exit.md) | bak 全量留底 + 23 条一次性退出 `rules/`（真空期已裁） | 注入 −100%（源 + 运行时链接）、bak 23/23 逐字零改动、V-1/V-18 双绿 |
 | **2** | [stage-2-new-mode-pilot.md](./stage-2-new-mode-pilot.md) | 判据引擎转正 + 触发声明上线 + 三新 skill 首批试验 + 门禁 | `rules/` = 1 条；V-12 签收窗**四任务全绿**（逐项 `path:line` 可指） |
 | **2b** | [stage-2b-rule-dsl-expressiveness.md](./stage-2b-rule-dsl-expressiveness.md)（[施工计划](./stage-2b-plan.md)） | DSL 表达力补齐：逻辑组合 + 算子 + probe + 表述层；正文只能由 json 渲染 | 旧 18 样例不改全绿；手改正文即红；label 违规可判红 |
-| **3** | [stage-3-skill-overhaul.md](./stage-3-skill-overhaul.md) | 19 个老 skill 向判据引擎模式改造 + 12 条下沉承接 | 12 条承接零遗漏（逐条 path:line 可指） |
+| **3** | [stage-3-skill-overhaul.md](./stage-3-skill-overhaul.md) | 改造前 12 个 + 新增 `docs-placement` = 13 个 skill 全量向判据引擎模式改造 + 12 条下沉承接 | 12 条承接零遗漏（逐条 path:line 可指） |
 | **4** | [stage-4-agent-criteria.md](./stage-4-agent-criteria.md) | agent 卡面判据分流迁入判据引擎 | 义务文本零变化（diff 证）+ 分流逐条记录 |
 
 **实施节奏依据（2026-11-05 裁定）**：阶段 1 立即执行（直接降 token 成本）；阶段 2 新 skill 作为新模式首批落地试验；12 条下沉内容的承接推迟到 skill 全面改造时（同一内容只改一遍，不做二次搬家）；agent 改造在 rule 改造完成后进行。

@@ -1,4 +1,4 @@
 {
   "schemaVersion": 1,
-  "skills": ["parliament", "prd-to-specs", "dev-workflow", "dry-refactor-newadd", "rule-inspector", "rule-writer", "skill-inspector", "use-rule-skills", "review-triage", "carrier-conventions", "assertion-quality", "plain-language"]
+  "skills": ["parliament", "prd-to-specs", "dev-workflow", "dry-refactor-newadd", "rule-inspector", "rule-writer", "skill-inspector", "use-rule-skills", "review-triage", "carrier-conventions", "assertion-quality", "plain-language", "docs-placement"]
 }

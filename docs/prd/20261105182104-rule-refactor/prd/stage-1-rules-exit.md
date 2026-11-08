@@ -26,7 +26,7 @@
 
 | 项 | 规格 |
 |---|---|
-| 落点 | `docs/bak/rules/<原文件名>.md`（**不在 `rules/` 下**——`check-observable.mjs` 的 `walkCollect` 递归扫 `rules/`，bak 旧散文入 `rules/` 会整片红）。**目录语义**：历史归档位（只读、不改、不作为施工蓝本）；它是过渡期落点，正式语义在阶段 3 并入 `writing-after-docs` 的目录表（`docs-convention` 现在没有这一档） |
+| 落点 | `docs/bak/rules/<原文件名>.md`（**不在 `rules/` 下**——`check-observable.mjs` 的 `walkCollect` 递归扫 `rules/`，bak 旧散文入 `rules/` 会整片红）。**目录语义**：历史归档位（只读、不改、不作为施工蓝本）；它是过渡期落点，正式语义在阶段 3 并入 `docs-placement` 的目录表（`docs-convention` 现在没有这一档） |
 | 文件形态 | ① 状态头（已归档 + 日期 + 归档原因 + 承接位置）② **原文逐字保留，一字不改** ③ 承接对照表（原节 → 去向 → 承接文件） |
 | 不做 | 不改原文措辞、不合并多份、不重新分类、不删段落 |
 
@@ -50,7 +50,7 @@
 | 12 | `spec-testcase-gate` | 2,142 | **下沉** | 载体写作/流程 skill | ✔ |
 | 13 | `dev-workflow-mainline` | 5,172 | **下沉** | 载体写作/流程 skill | ✔ |
 | 14 | `landing-sweep` | 958 | **下沉** | 载体写作/流程 skill | ✔ |
-| 15 | `docs-convention` | 13,053 | **下沉（拆两半）** | 目录/命名/`.session` → `writing-after-docs`；「rule 里放什么」→ carrier-conventions | ✔ |
+| 15 | `docs-convention` | 13,053 | **下沉（拆两半）** | 目录/命名/`.session` → `docs-placement`；「rule 里放什么」→ carrier-conventions | ✔ |
 | 16 | `rules-single-source` | 477 | **下沉** | carrier-conventions + `use-rule-skills` | ✔ |
 | 17 | `import-path-choice` | 590 | **删** | — | ✔ |
 | 18 | `styled-component-file` | 867 | **删** | — | ✔ |

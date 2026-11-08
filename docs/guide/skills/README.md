@@ -74,3 +74,9 @@
 - **什么时候用**：向用户输出解释、结论、方案、报告；用户说「说人话」「讲明白点」；自查一段给用户看的文字是不是只有自己看得懂。
 - **做什么**：四条义务（不用行话内部编号 / 不省机理 / 落到具体例子 / 一句话一件事）+ 冲突裁决（简的是句子不是机理）+ 写完自查。
 - **不做什么**：文件内部写法（走 `carrier-conventions`）、断言真伪校验（走 `assertion-quality`）。
+
+### 13. `docs-placement` — 项目文档目录与命名
+
+- **什么时候用**：新建 / 移动 / 命名 `docs/` 下的文档，或判断内容该进 `docs/prd`、`specs`、`plans`、`handoffs`、`after`、`research`、`devworkflows`、`.session`；也用于判断待办何时该搬走 / 删除。
+- **做什么**：按生命周期状态分目录；目录表与命名规则；`.session/` 封闭清单与硬边界；待决只在 `docs/after/`；待办语义（不许 ✅ 档）；与 `dev-workflow` 的 landing-sweep 反向回扫。
+- **不做什么**：写文档内容本身（走 `plain-language` / `carrier-conventions`）；rule 正文（走 `carrier-conventions`）；技能资产目录（走 `carrier-conventions`）。

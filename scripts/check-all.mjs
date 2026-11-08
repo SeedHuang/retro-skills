@@ -399,13 +399,13 @@ else if (mdFindings.length > 0) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ⑤ .session 结构守卫（只查形状与临时件，不查内容）
-// 为什么要有它：docs-convention 定了两条硬规矩——「.session 一级只许有目的的文件夹」与
+// 为什么要有它：docs-placement（原 docs-convention）定了两条硬规矩——「.session 一级只许有目的的文件夹」与
 //   「tmp/ 收尾必须为空」——但此前只有一句要人手动敲的命令，等于没有执行机制（规则写完靠自觉 = 会漏）。
 // 为什么不并进 ④：④ 跳过 .session 是因为「内容是个人数据、坏了也不进仓库」；这里查的是**结构**，
 //   与内容无关。.session/ 在 .gitignore 里，干净环境（克隆 / CI）根本没有该目录 → 直接通过。
 // ─────────────────────────────────────────────────────────────────────────────
 const SESSION_DIR = join(root, '.session')
-// 与 rules/docs-convention.md 的 .session 封闭清单同源；sdd-<日期>-<主题>/ 按前缀放行
+// 与 skills/docs-placement/SKILL.md 的 .session 封闭清单同源；sdd-<日期>-<主题>/ 按前缀放行
 const SESSION_ALLOWED = new Set(['README.md', 'reviews', 'rule-checks', 'tmp', 'temp', 'myconversationwithai'])
 let sessionOk = true
 if (existsSync(SESSION_DIR)) {
@@ -414,7 +414,7 @@ if (existsSync(SESSION_DIR)) {
     if (entry.isDirectory()) {
       if (!SESSION_ALLOWED.has(name) && !name.startsWith('sdd-')) {
         sessionOk = false
-        console.error(`[session] .session/${name}/ 不在封闭清单里（见 rules/docs-convention.md）`)
+        console.error(`[session] .session/${name}/ 不在封闭清单里（见 skills/docs-placement/SKILL.md）`)
       }
     } else if (!SESSION_ALLOWED.has(name)) {
       sessionOk = false

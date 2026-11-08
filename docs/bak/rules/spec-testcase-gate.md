@@ -1,4 +1,4 @@
-> 状态：**已归档**｜日期：2026-11-05（阶段 1 退役）｜归档原因：下沉——spec 与 testcase 绑定的写作 / 流程义务｜承接位置：载体写作/流程 skill
+> 状态：**已归档**｜日期：2026-11-05（阶段 1 退役）｜归档原因：下沉——spec 与 testcase 绑定的写作 / 流程义务｜承接位置：`skills/carrier-conventions/references/spec-testcase-gate.md`（2026-11-08 收口）
 # 在写或修改 spec 时，必须同批产出独立编写的 testcase 文件，并随 spec 一起送议会
 
 > 来源：用户当场指令（2026-10-18）｜证据：议会评审 PRD 的 105 张卡中 F02 指出——testcase 硬门只写在 `prd-to-specs` 技能里，新 session 不加载该技能就失效；实测仓库 25 份 spec 零 testcase｜落地：2026-10-18
@@ -63,12 +63,12 @@
 
 | 原节 | 去向 | 承接文件 |
 |---|---|---|
-| `## 四要素声明` | 下沉 | 载体写作/流程 skill |
-| `## 核心判据` | 下沉 | 载体写作/流程 skill |
-| `## 正例 / 反例` | 下沉 | 载体写作/流程 skill |
-| `## 为什么` | 下沉 | 载体写作/流程 skill |
-| `## 适用范围（不因来源豁免）` | 下沉 | 载体写作/流程 skill |
-| `## 冲突裁决` | 下沉 | 载体写作/流程 skill |
-| `## 例外` | 下沉 | 载体写作/流程 skill |
-| `## 触发时机` | 下沉 | 载体写作/流程 skill |
-| `## 验证` | 下沉 | 载体写作/流程 skill |
+| `## 四要素声明` | 下沉 | `skills/carrier-conventions/references/spec-testcase-gate.md` |
+| `## 核心判据` | 下沉 | `skills/carrier-conventions/references/spec-testcase-gate.md` |
+| `## 正例 / 反例` | 下沉 | `skills/carrier-conventions/references/spec-testcase-gate.md` |
+| `## 为什么` | 下沉 | `skills/carrier-conventions/references/spec-testcase-gate.md` |
+| `## 适用范围（不因来源豁免）` | 下沉 | `skills/carrier-conventions/references/spec-testcase-gate.md` |
+| `## 冲突裁决` | 下沉 | `skills/carrier-conventions/references/spec-testcase-gate.md` |
+| `## 例外` | 下沉 | `skills/carrier-conventions/references/spec-testcase-gate.md` |
+| `## 触发时机` | 下沉 | `skills/carrier-conventions/references/spec-testcase-gate.md` |
+| `## 验证` | 下沉 | `skills/carrier-conventions/references/spec-testcase-gate.md` |

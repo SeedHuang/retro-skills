@@ -240,8 +240,9 @@ test('TC-E23 三份 README 的技能与规则数量都不写死，且新条目�
   assert.ok(readRepo('docs/guide/rules/README.md').includes('dev-workflow-mainline'));
 
   const manifest = JSON.parse(readRepo('skilldependencies/manifest.json'));
-  const sections = [...readRepo('docs/guide/skills/README.md').matchAll(/^### \d+\. /gm)].length;
-  assert.equal(manifest.skills.length, sections, 'manifest 技能数须与技能指南节数一致（两边都派生，不写死）');
+  const headings = [...readRepo('docs/guide/skills/README.md')
+    .matchAll(/^### \d+\. `([^`]+)`/gm)].map((m) => m[1]).sort();
+  assert.deepEqual(headings, [...manifest.skills].sort(), '技能指南节标题必须与 manifest.skills 同集');
 });
 
 test('TC-E24 计划门文档退化成「见 PRD §6」指针 → 判据必红', () => {

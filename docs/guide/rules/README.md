@@ -1,7 +1,7 @@
 # 全局规则清单：各自的作用与适用范围
 
 > 阶段 2（2026-11-05）起：**保留集 = 1 条触发声明**（`rules/evidence-before-conclusion.md`）。
-> 原规则已全量退役（共 23 份），原文逐字留底在 `docs/bak/rules/`（承接去向见各 bak 文件的状态头与「承接对照表」，搬运在阶段 3 收口）。
+> 原规则已全量退役（共 23 份），原文逐字留底在 `docs/bak/rules/`（承接去向见各 bak 文件的状态头与「承接对照表」，12 条承接已收口 2026-11-08；skill 判据改造与 S-4/S-5 另开批次）。
 > 规则源在 `rules/`，改源即生效（运行时是只读链接；增删后跑 `aas sync`）。
 
 ## 保留集
@@ -18,9 +18,11 @@
 |---|---|
 | `how-i-must-reason` / `data-support-triple` | 合并 → 触发声明 + `assertion-quality` |
 | `core-working-principles` | **已承接（2026-11-08）** → `skills/dev-workflow/references/meta-working-principles.md` |
-| `plain-language-to-user` / `powershell-file-encoding` | 下沉 → 对应 skill / references |
-| `reference-read-output-loop` / `skill-authoring-convention` / `skill-assets-convention` / `observable-criteria` / `rules-single-source` / `docs-convention`（「rule 里放什么」半） | 下沉 → `carrier-conventions` + `writing-after-docs` |
-| `spec-testcase-gate` | 下沉 → `carrier-conventions`（阶段 3，待建） |
+| `plain-language-to-user` | **已承接（2026-11-08）** → `skills/plain-language/SKILL.md` |
+| `powershell-file-encoding` | **已承接（2026-11-08）** → `skills/carrier-conventions/references/powershell-encoding.md` |
+| `reference-read-output-loop` / `skill-authoring-convention` / `skill-assets-convention` / `observable-criteria` / `rules-single-source` | **已承接（2026-11-08）** → `carrier-conventions` |
+| `docs-convention` | **已承接（2026-11-08）** → `docs-placement`（目录 / 命名 / `.session`）+ `carrier-conventions/references/rule-content.md`（rule 里放什么） |
+| `spec-testcase-gate` | **已承接（2026-11-08）** → `carrier-conventions/references/spec-testcase-gate.md` |
 | `dev-workflow-mainline` / `landing-sweep` | **已承接（2026-11-08）** → `skills/dev-workflow/` |
 | `global-ask-before-acting` / `import-guard` / `import-path-choice` / `styled-component-file` / `list-empty-state` / `ts-expect-error` / `vitest-queued-alternative` / `no-git-write` / `poll-deferred-at-start` | 删除（平台机制已覆盖 / 工具链专属 / 按需触发） |
 

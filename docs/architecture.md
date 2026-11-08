@@ -50,10 +50,11 @@ L3.5 验证层（怎么知道改对了）——🆕 2026-10-01
     retro-verify：已落地载体的有效性（复发率 + 机会数 → 5 档；对账事前预期；无效 / 更差 → 回退 + 回炉，回退走用户确认）
     算数：lessons.mjs 的 `verify score|trend|expect`（KB 解析唯一处）
 
-L2.5 文档层（未完成的事记在哪）——🆕 2026-10-07
-    writing-after-docs：写「未完成事项」文档（docs/after/）
-    └── 五节骨架（assets/after-template.md）+ 各节写法（references/section-guide.md）+ 迁走清单（references/migration.md）
-    目录语义（specs=已定稿 / plans=已排期 / handoffs=session 收尾 / after=未完成）以全局规则 `docs-convention` 为权威定义方
+L2.5 文档层（文档放哪、叫什么、怎么收口）——🆕 2026-11-08
+    docs-placement：项目文档按生命周期分目录（docs/prd / specs / plans / handoffs / after / research / devworkflows / reports / bak / .session）
+    └── 目录表 + 命名规则 + .session 封闭清单 + 待办语义（完成 = 删，不设 ✅ 档）
+    旧版 writing-after-docs 的五节模板 / 迁走清单已归档 `bak_skill/writing-after-docs/`（墓碑规则不再生效）
+    目录 / 命名 / .session 语义以 `docs-placement` 为权威定义方
 
 L4 仓库与安装层（东西放哪、怎么生效）——✅ 已通（见 §8.1）
     ├── 项目 rule：跟项目走（.trae\rules\）——零改动
@@ -71,7 +72,7 @@ L4 仓库与安装层（东西放哪、怎么生效）——✅ 已通（见 §8
 | **体积治理** | 各区 ledger | 热冷分层（`open` 留主账 / `landed` 归档 `ledger-archive-<年>.md`）；主账超阈值（>100 行 或 open>20）时**提醒尽早复盘收口** |
 | **巡检扩展** | `lessons.mjs deferred [--project]` | 会话开始报「推迟项 / 未结案情绪 N 条 / 画像 X 天未更新」——**只报告收集侧，绝不追问落地** |
 | **验证环（`retro-verify`，🆕 2026-10-01）** | `retro-skills\skills\retro-verify\` | 已落地载体**有没有效**：复发率 + 机会数 → 5 档；对账事前预期；无效 / 更差 → 回退 + 回炉 |
-| **未完成事项归档（`writing-after-docs`，🆕 2026-10-07）** | `retro-skills\skills\writing-after-docs\` | 让「哪些没做」有唯一入口：`docs/after/` 一主题一份，含**前因后果**因果链 + 完成判据；做完迁走（墓碑式改写，不删条目）。目录语义见全局规则 `docs-convention` |
+| **项目文档目录规范（`docs-placement`，🆕 2026-11-08）** | `retro-skills\skills\docs-placement\` | 文档按生命周期分目录：`docs/after/` 只放没做完的，做完即删；命名遵循时间戳规则；`.session/` 只放过程账。旧版 `writing-after-docs` 的五节模板已归档 `bak_skill/`，墓碑规则不再生效 |
 
 > 情绪锚点与画像的详规见 `docs/superpowers/specs/2026-10-01-retro-self-improvement-design.md`；战略全图见 `docs/superpowers/specs/2026-10-01-retro-flywheel-blueprint.md`。
 

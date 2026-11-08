@@ -39,6 +39,14 @@ description: Use when 写或改 rule / skill / agent / references 的正文，�
 
 能外移的外移，SKILL.md 只留指针；模板骨架不进 SKILL.md；差异卡放 assets。脚本 / references / assets 三档的判据：`references/skill-structure.md`。
 
+## spec 与 testcase 绑定
+
+写或修改 `docs/superpowers/specs/` 下的 spec 时，必须同批产出由独立 `senior-sdet` 编写的 testcase，并随 spec 一起送审。五条判据与例外：`references/spec-testcase-gate.md`。
+
+## PowerShell 写文本文件
+
+PowerShell 5.1 写文本文件禁用 `-Encoding UTF8`（会写 BOM）；改用 `WriteAllText(..., UTF8Encoding $false)`，写完自查 BOM。细则与已踩场景：`references/powershell-encoding.md`。
+
 ## 全局规则只建在源仓库
 
 改已有规则改源即生效；运行时目录只读。新建 / 增删后必须 `aas sync`（本仓规则源 = `rules/`，运行时 = `~/.trae-cn/user_rules`）。细则：`references/single-source.md`。

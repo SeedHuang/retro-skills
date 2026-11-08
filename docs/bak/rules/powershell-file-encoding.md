@@ -1,4 +1,4 @@
-> 状态：**已归档**｜日期：2026-11-05（阶段 1 退役）｜归档原因：下沉——条件触发；本仓 .ps1 0 个｜承接位置：独立编码备忘 references（出列 skill）
+> 状态：**已归档**｜日期：2026-11-05（阶段 1 退役）｜归档原因：下沉——条件触发；本仓 .ps1 0 个｜承接位置：`skills/carrier-conventions/references/powershell-encoding.md`（2026-11-08 收口）
 # PowerShell 写文本文件禁用 `-Encoding UTF8`
 
 > 来源：KB 教训（2026-09-27 首见，2026-09-28 复查时**再次踩中**）｜证据：`skills add` 对带 BOM 的 `SKILL.md` 直接报 `No skills found`；去掉 BOM 后同一命令立即报 `Found 1 skill`｜落地：2026-09-28
@@ -29,4 +29,4 @@
 
 | 原节 | 去向 | 承接文件 |
 |---|---|---|
-| `（全文）` | 下沉 | 独立编码备忘 references（出列 skill） |
+| `（全文）` | 下沉 | `skills/carrier-conventions/references/powershell-encoding.md` |

@@ -37,6 +37,7 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 | 已有定稿 PRD，要拆成可独立开发的 spec 与路线图 | `prd-to-specs` |
 | 审查最近一次提交引入的冗余代码，抽取合并、出审计报告 | `dry-refactor-newadd` |
 | 要把一个需求按「PRD → 技术设计 → 计划门 → 实现 → 质量 → 交付」走完，或判断现在卡在哪一段、本段出口齐没齐 | `dev-workflow` |
+| 要新建 / 移动 / 命名 `docs/` 下的文档，或判断内容该进 `after`、`specs`、`.session` 哪一档 | `docs-placement` |
 | 要写 / 改 rule、skill、agent、references 的正文，或判断内容该放哪一层 | `carrier-conventions` |
 | 要写或复核一条会影响别人决策的断言（判断 / 数据 / 方案），或验别人的话站不站得住 | `assertion-quality` |
 | 要给用户讲清楚一件事（说人话、讲机理、举例子） | `plain-language` |
@@ -94,7 +95,7 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 - `docs/architecture.md` —— 体系总图与全部裁决（含执行顺序、待验证项、隐患挂账）
 - `docs/superpowers/` —— spec / plan（**已定稿**的设计 / **已排期**的执行）
 - `docs/handoffs/` —— 跨 session 交接词（每个 session 收口的交接事实；**一次性快照，定格不改**）
-- `docs/after/` —— **未完成 / 待决 / 悬置**的事项（活的账本，做完迁走）——书写规范见 `bak_skill/writing-after-docs/`（技能已归档）；目录语义见全局规则 `docs-convention`
+- `docs/after/` —— **未完成 / 待决 / 悬置**的事项（活的账本，做完迁走）——书写规范见 `bak_skill/writing-after-docs/`（技能已归档）；目录 / 命名 / 生命周期见 `docs-placement`
 
 ## 设计文档
 
