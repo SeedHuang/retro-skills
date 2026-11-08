@@ -5,8 +5,8 @@
   "hashObject": "5702c413b063b2e5aa122acb63eb33c36d88edb8",
   "goldenAssertion": "pass",
   "compareResult": null,
-  "renderSha256": "3B1A03F6F81D40C855BBDB52B513FC35A8E268B8061678527DC408934CFF6CDB",
-  "lastWrittenHash": "3B1A03F6F81D40C855BBDB52B513FC35A8E268B8061678527DC408934CFF6CDB",
+  "renderSha256": "A4D02DB9076C896FFAA8B9DE6745CF3AB0864F82522D9F949BF5EABF44AF2E7F",
+  "lastWrittenHash": "A4D02DB9076C896FFAA8B9DE6745CF3AB0864F82522D9F949BF5EABF44AF2E7F",
   "changes": [
     {
       "from": "388D8539B9F75E79220629F2B0868D23F6CA93F91B198FEE6C6FA12228B9B961",
@@ -123,6 +123,36 @@
       ],
       "judgeMode": "subagent",
       "judgedBy": "reviewer-ai@s-c-task6-rejudge-20261104",
+      "judged": [
+        {
+          "key": "A1",
+          "verdict": "pass",
+          "basis": "tools/execution-matrix/criteria.md A1 + 渲染产物；重判写回 tools/quality/.inspector-annotations.json reviewer-actuary:A1 = pass（replace 机械转录）"
+        },
+        {
+          "key": "A2",
+          "verdict": "pass",
+          "basis": "tools/execution-matrix/criteria.md A2 + 渲染产物；重判写回 tools/quality/.inspector-annotations.json reviewer-actuary:A2 = pass（replace 机械转录）"
+        }
+      ],
+      "machineChecks": {
+        "A3": "pass",
+        "A4": "pass",
+        "A5": "pass",
+        "A6": "pass",
+        "A7": "pass"
+      }
+    },
+    {
+      "from": "3B1A03F6F81D40C855BBDB52B513FC35A8E268B8061678527DC408934CFF6CDB",
+      "to": "A4D02DB9076C896FFAA8B9DE6745CF3AB0864F82522D9F949BF5EABF44AF2E7F",
+      "at": "2026-11-08T12:36:39.418Z",
+      "rejudged": [
+        "A1",
+        "A2"
+      ],
+      "judgeMode": "subagent",
+      "judgedBy": "s3a-main-agent-a1a2-20261108",
       "judged": [
         {
           "key": "A1",

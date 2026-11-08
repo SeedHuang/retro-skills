@@ -20,6 +20,16 @@ export const SEATS = {
     writeScope: 'spec.testcase',
     clause: '不改别人的判定：spec 或实现有问题，写进「给开发的建议」，不代改、不参与议会裁决',
   },
+  'speaker': {
+    display: '议长',
+    writeScope: 'review.host',
+  },
+  'respondent-architect': {
+    display: '架构答辩',
+  },
+  'respondent-dev': {
+    display: '研发答辩',
+  },
   __default__: { display: '默认席', clause: '' },
 };
 

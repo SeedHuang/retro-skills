@@ -15,6 +15,9 @@
     "reviewer-security": "replaced",
     "reviewer-actuary": "replaced",
     "reviewer-reader": "replaced",
-    "evidence-reader": "replaced"
+    "evidence-reader": "replaced",
+    "speaker": "replaced",
+    "respondent-architect": "replaced",
+    "respondent-dev": "replaced"
   }
 }

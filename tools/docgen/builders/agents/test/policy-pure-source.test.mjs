@@ -5,7 +5,7 @@
 // 后续任务往本文件**追加**自己的 helper（符号名与 testcase 逐字一致），不另写第二份。
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { join, basename } from 'node:path';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
@@ -412,8 +412,9 @@ test("S6-TC-A08 定义层值含 {{SLOT}} / $& / $' / $$ 时不得被二次展开
   });
 });
 
-test('S6-TC-B01 三席 + __default__ 策略数据等价；黄金 4 键齐（哈希只记事实）', () => {
-  assert.deepEqual(Object.keys(SEAT_POLICY), ['reviewer-audit','detective-observer','senior-sdet','__default__']);
+test('S6-TC-B01 各席 + __default__ 策略数据等价；黄金 4 键齐（哈希只记事实）', () => {
+  assert.deepEqual(Object.keys(SEAT_POLICY),
+    ['reviewer-audit','detective-observer','senior-sdet','speaker','respondent-dev','respondent-architect','__default__']);
   assert.deepEqual(SEAT_POLICY['reviewer-audit'], { capabilities: ['read','write','exec'],
     allowGroups: ['check.local','git.read','docgen.read'], artifacts: ['round-check.md','delivery-audit.md'] });
   assert.deepEqual(SEAT_POLICY['detective-observer'], { capabilities: ['read','write','exec'],
@@ -487,10 +488,9 @@ test('S6-TC-B01 三席 + __default__ 策略数据等价；黄金 4 键齐（哈�
   assert.equal(gen[goldenKeyFor('reviewer-audit', gen)], sha(newText), '当前比对键必须命中换代后的文本');
   // 反例：换代后仍取旧基线键 → 换代后的文本与基线不等 → hashEqual 恒 false（定位线索失效）→ 必须红
   assert.notEqual(sha(newText), gen['reviewer-audit'], '换代后仍取旧基线键 → 定位线索失效 → 必红');
-  // ⑩ tierBySeat **派生**（spec:120）：键集恰三席、不含 `__default__`、派生值 == 映射值（手写第二份留给 T5 改派生）
-  assert.deepEqual(Object.keys(patternRegistry.tierBySeat).sort(),
-    ['detective-observer','reviewer-audit','senior-sdet'],
-    'tierBySeat 键集必须恰为三席（不得含 `__default__`）');
+  // ⑩ tierBySeat **派生**（spec:120）：键集 = SEAT_NAMES（不含 `__default__`）、派生值 == 映射值
+  assert.deepEqual(Object.keys(patternRegistry.tierBySeat).sort(), [...SEATS.SEAT_NAMES].sort(),
+    'tierBySeat 键集必须 = SEAT_NAMES（不得含 `__default__`）');
   assert.deepEqual(Object.keys(patternRegistry.tierBySeat).sort(), [...SEATS.SEAT_NAMES].sort(),
     'tierBySeat 键集 ≡ SEAT_NAMES（= Object.keys(SEATS) 去 `__default__`，spec:57 / :120）');
   assert.equal(Object.hasOwn(patternRegistry.tierBySeat, '__default__'), false,
@@ -501,8 +501,9 @@ test('S6-TC-B01 三席 + __default__ 策略数据等价；黄金 4 键齐（哈�
   }
   assert.deepEqual(
     Object.fromEntries(SEATS.SEAT_NAMES.map((s) => [s, patternRegistry.tierBySeat[s]])),
-    { 'reviewer-audit': 'producer', 'detective-observer': 'producer', 'senior-sdet': 'sdet' },
-    '三席档位值 = 由 SEAT_POLICY 现算的结果（reviewer-audit / detective-observer = producer，senior-sdet = sdet）');
+    { 'reviewer-audit': 'producer', 'detective-observer': 'producer', 'senior-sdet': 'sdet',
+      'speaker': 'producer', 'respondent-dev': 'command', 'respondent-architect': 'readOnly' },
+    '各席档位值 = 由 SEAT_POLICY 现算的结果（三新席：speaker=producer / respondent-dev=command / respondent-architect=readOnly）');
 });
 
 test('S6-TC-B02 真实 seat-policy.mjs closed-world：三键外零字符串、三键内逐条登记', () => {
@@ -1130,12 +1131,13 @@ test('S6-TC-G01 agents/ 差异必须可追（字节零变化是最好情况）',
       .flatMap((base) => readdirSync(base).filter((x) => /-s6-eval$/.test(x)).map((x) => join(base, x)));
     assert.ok(evalDirs.length > 0, '有卡面差异但评估账单目录不存在 → 差异无处记账');
     // S3 起允许另一条等价记账面：**当次**批次的 `impact-sheet.md`（label 改写不是 S6 能力变更）。
-    // 「当次」= 目录名（`YYYY-MM-DD-HHMM-…`，可字典序）最新的一份——不扫全部历史清单，否则任一旧账都能覆盖任意卡的差异。
+    // 「当次」= 清单文件的**修改时间最新**一份（与 `scripts/scope-sweep.mjs` 的选法同一口径——
+    // 目录名字典序在同一天多批次并列时不能稳定指认当次：如 `-tools-dedup` 会排在 `-185332-…` 之前）。
     const impactDirs = ['.session/reviews', 'docs/superpowers/reviews']
       .filter((base) => existsSync(base))
       .flatMap((base) => readdirSync(base).map((x) => ({ name: x, p: join(base, x, 'impact-sheet.md') })))
       .filter(({ p }) => existsSync(p))
-      .sort((a, b) => (a.name < b.name ? 1 : a.name > b.name ? -1 : 0));
+      .sort((a, b) => statSync(b.p).mtimeMs - statSync(a.p).mtimeMs);
     const latestImpact = impactDirs.length ? [impactDirs[0].p] : [];
     const notes = [
       ...evalDirs.map((d) => join(d, 'capability-diff.md')).filter((p) => existsSync(p)),
@@ -1158,14 +1160,16 @@ test('S6-TC-G02 gate → baseline N/N，N 派生不写死', () => {
 });
 
 test('S6-TC-G03 默认边界句的 11 席、evidence-reader 与 senior-sdet 专用边界句不变', () => {
-  const own = new Set([...Object.keys(patternRegistry.boundaryBySeat), 'evidence-reader']);
+  const own = new Set([...Object.keys(patternRegistry.boundaryBySeat), 'evidence-reader',
+    'speaker', 'respondent-architect', 'respondent-dev']);
   // 2026-10-31 迁移改判（S6-TC-G03 加注，原文不删）：senior-sdet 职责要写 testcase.md，与评审席模板「只允许写本次
   // 评审账本 / 禁写『代码、测试』」结构不同构 → 该席自带专用边界常量（非 renderBoundary）。
   // 计数口径：`own` 3 → 4（senior-sdet 从「既非 own 也非 default 的手写模板席」并入 own）；
   // `defSeats` 仍为 11（15 − 4 自带 − 0；原来的 `a.name !== 'senior-sdet'` 手工排除随之冗余）。
+  // 2026-11-08 S3-A 扩席：三新席各带专用 boundary（不进 boundaryBySeat，走席 JSON 顶层）→ own 7
   const defSeats = agentData.filter((a) => !own.has(a.name));
-  assert.equal(own.size, 4, '自带边界 = 2 producer + evidence-reader + senior-sdet');
-  assert.equal(defSeats.length, 11, '卡面渲 DEFAULT_BOUNDARY 的应为 11 席（15 − 4 自带）');
+  assert.equal(own.size, 7, '自带边界 = 2 producer + evidence-reader + senior-sdet + 三新席');
+  assert.equal(defSeats.length, 11, '卡面渲 DEFAULT_BOUNDARY 的应为 11 席（18 − 7 自带）'); // counter-probe: off（18 是席总数说明，不是断言行计数）
   for (const a of defSeats) assert.equal(a.boundary ?? DEFAULT_BOUNDARY, DEFAULT_BOUNDARY, a.name);
   // ③ 条目自带 boundary 只许 ∈ DECLARED_SLOT_SEATS（S5 既有断言口径，spec:121；不新增守卫）
   assert.equal(agentData.filter((a) => Object.hasOwn(a, 'boundary') && !own.has(a.name)).length, 0,
@@ -1265,7 +1269,8 @@ test('S6-TC-F01 dump 顶层八键齐 / tiers 档位表齐（值 = 工具名）/ 
 test('S6-TC-F02 dump 槽级展开可复算 renderBoundary；两 producer 席 == 卡面边界节', () => {
   const { json } = dumpPolicy(ROOT);
   const seats = Object.keys(SEAT_POLICY).filter((x) => x !== '__default__');
-  assert.deepEqual(seats, ['reviewer-audit','detective-observer','senior-sdet']);
+  assert.deepEqual(seats,
+    ['reviewer-audit','detective-observer','senior-sdet','speaker','respondent-dev','respondent-architect']);
   for (const s of seats) {
     const out = renderBoundary(s);
     const e = json.seats[s].expanded;

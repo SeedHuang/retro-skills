@@ -551,8 +551,9 @@ test('OCR-S1-TC-F06 删日期注 → 必红', () => {
 // 2026-11-07 增量（review 三技能归档）：`definitions/commands.mjs` 的 check.local 命令由
 // `node skills/review-log/scripts/time.mjs` 改为公共 CLI `scs time`（2026-11-08）——账本脚本随
 // `review-log` 迁出 `skills/`。该文件进入登记集（4 个）。
-test('OCR-S1-TC-F07 tools/docgen/builders/agents/policy/** 只许登记的 4 个文件（其余零改动）', () => {
-  const ALLOWED = ['definitions/paths.mjs', 'definitions/seats.mjs', 'definitions/writeScopes.mjs', 'definitions/commands.mjs']
+test('OCR-S1-TC-F07 tools/docgen/builders/agents/policy/** 只许登记的 6 个文件（其余零改动）', () => {
+  const ALLOWED = ['definitions/paths.mjs', 'definitions/seats.mjs', 'definitions/writeScopes.mjs', 'definitions/commands.mjs',
+    'definitions/artifacts.mjs', 'seat-policy.mjs']
   const DIR = 'tools/docgen/builders/agents/policy'
   // 登记文件必须仍在（否则「只许改动」会漏掉删除：`git status` 的 D 行也落在允许集内）
   for (const f of ALLOWED) {

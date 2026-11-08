@@ -5,8 +5,8 @@
   "hashObject": "2f8d8fdfa4dfc809abb8f6f07fca954065855149",
   "goldenAssertion": "pass",
   "compareResult": null,
-  "renderSha256": "8D01D16B86F8DC748635E3B4CF6538B259C9C3C10BF8F2FB693E29AC01731E61",
-  "lastWrittenHash": "8D01D16B86F8DC748635E3B4CF6538B259C9C3C10BF8F2FB693E29AC01731E61",
+  "renderSha256": "FCDA08872548C85FC27FED5B92CC00093AF2ABE848E1211696FEDBCD25010C65",
+  "lastWrittenHash": "FCDA08872548C85FC27FED5B92CC00093AF2ABE848E1211696FEDBCD25010C65",
   "changes": [
     {
       "from": "4364645A689E47B295C4FDD1D77E2444F90DA0185180BC9798811BDDC2C89668",
@@ -372,6 +372,36 @@
       "rejudged": [],
       "judgeMode": "none",
       "judged": [],
+      "machineChecks": {
+        "A3": "pass",
+        "A4": "pass",
+        "A5": "pass",
+        "A6": "pass",
+        "A7": "pass"
+      }
+    },
+    {
+      "from": "8D01D16B86F8DC748635E3B4CF6538B259C9C3C10BF8F2FB693E29AC01731E61",
+      "to": "FCDA08872548C85FC27FED5B92CC00093AF2ABE848E1211696FEDBCD25010C65",
+      "at": "2026-11-08T12:36:39.694Z",
+      "rejudged": [
+        "A1",
+        "A2"
+      ],
+      "judgeMode": "subagent",
+      "judgedBy": "s3a-main-agent-a1a2-20261108",
+      "judged": [
+        {
+          "key": "A1",
+          "verdict": "pass",
+          "basis": "tools/execution-matrix/criteria.md A1 + 渲染产物；重判写回 tools/quality/.inspector-annotations.json detective-observer:A1 = pass（replace 机械转录）"
+        },
+        {
+          "key": "A2",
+          "verdict": "pass",
+          "basis": "tools/execution-matrix/criteria.md A2 + 渲染产物；重判写回 tools/quality/.inspector-annotations.json detective-observer:A2 = pass（replace 机械转录）"
+        }
+      ],
       "machineChecks": {
         "A3": "pass",
         "A4": "pass",

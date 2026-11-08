@@ -1,0 +1,75 @@
+{
+  "commit": "1d5dd527910e7493340628615fa2c4744ed1adca",
+  "blob": "635ebc4812be4b0b3f7355bbf9c138db67358b1e",
+  "sha256": "55D75CCBCBA22B29D9CD933E8E2E989AF26758880994DCC5FE27B30F67289DB2",
+  "hashObject": "635ebc4812be4b0b3f7355bbf9c138db67358b1e",
+  "goldenAssertion": "pending",
+  "compareResult": null,
+  "renderSha256": "7B006B48321487E0F45B43EBA2E74E5793DE62AC2D22B0FFD92E388D4662F02F",
+  "lastWrittenHash": "7B006B48321487E0F45B43EBA2E74E5793DE62AC2D22B0FFD92E388D4662F02F",
+  "changes": [
+    {
+      "from": "55D75CCBCBA22B29D9CD933E8E2E989AF26758880994DCC5FE27B30F67289DB2",
+      "to": "3493048E5070233826C669D28924F60877F6E026D525DCD0BAAAFA2CC2E28DF4",
+      "at": "2026-11-08T12:40:02.578Z",
+      "rejudged": [
+        "A1"
+      ],
+      "judgeMode": "subagent",
+      "judgedBy": "s3a-main-agent-a1-20261108",
+      "judged": [
+        {
+          "key": "A1",
+          "verdict": "pass",
+          "basis": "tools/execution-matrix/criteria.md A1 + 渲染产物；重判写回 tools/quality/.inspector-annotations.json speaker:A1 = pass（replace 机械转录）"
+        }
+      ],
+      "machineChecks": {
+        "A3": "pass",
+        "A4": "pass",
+        "A5": "pass",
+        "A6": "pass",
+        "A7": "pass"
+      }
+    },
+    {
+      "from": "3493048E5070233826C669D28924F60877F6E026D525DCD0BAAAFA2CC2E28DF4",
+      "to": "1B88B673C4E414A2F3F140FB5ACAE6A0EF8B5FBF8164B629E407FC8BE4BDCA5F",
+      "at": "2026-11-08T12:41:50.365Z",
+      "rejudged": [
+        "A1"
+      ],
+      "judgeMode": "subagent",
+      "judgedBy": "s3a-main-agent-a1-20261108",
+      "judged": [
+        {
+          "key": "A1",
+          "verdict": "pass",
+          "basis": "tools/execution-matrix/criteria.md A1 + 渲染产物；重判写回 tools/quality/.inspector-annotations.json speaker:A1 = pass（replace 机械转录）"
+        }
+      ],
+      "machineChecks": {
+        "A3": "pass",
+        "A4": "pass",
+        "A5": "pass",
+        "A6": "pass",
+        "A7": "pass"
+      }
+    },
+    {
+      "from": "1B88B673C4E414A2F3F140FB5ACAE6A0EF8B5FBF8164B629E407FC8BE4BDCA5F",
+      "to": "7B006B48321487E0F45B43EBA2E74E5793DE62AC2D22B0FFD92E388D4662F02F",
+      "at": "2026-11-08T13:00:43.891Z",
+      "rejudged": [],
+      "judgeMode": "none",
+      "judged": [],
+      "machineChecks": {
+        "A3": "pass",
+        "A4": "pass",
+        "A5": "pass",
+        "A6": "pass",
+        "A7": "pass"
+      }
+    }
+  ]
+}

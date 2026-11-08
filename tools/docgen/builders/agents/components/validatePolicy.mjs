@@ -216,11 +216,12 @@ export function validatePolicy() {
     itemIds.add(id);
   }
   const scopeKeys = Object.keys(writeScopes);
-  if (scopeKeys.length !== 2 || !scopeKeys.includes('review.ledger') || !scopeKeys.includes('spec.testcase')) {
-    const extra = scopeKeys.find((k) => !['review.ledger', 'spec.testcase'].includes(k)) ?? '(missing)';
+  if (scopeKeys.length !== 3 || !scopeKeys.includes('review.ledger') || !scopeKeys.includes('spec.testcase')
+    || !scopeKeys.includes('review.host')) {
+    const extra = scopeKeys.find((k) => !['review.ledger', 'spec.testcase', 'review.host'].includes(k)) ?? '(missing)';
     fail('ForbiddenGroupGranted', `writeScope=${extra}:not-allowed`);
   }
-  const ALLOWED_EXCLUSIONS = { 'review.ledger': [], 'spec.testcase': ['code.test'] };
+  const ALLOWED_EXCLUSIONS = { 'review.ledger': [], 'spec.testcase': ['code.test'], 'review.host': [] };
   for (const [scope, def] of Object.entries(writeScopes)) {
     if (typeof def?.roleKind !== 'string' || def.roleKind.trim() === ''
       || typeof def?.label !== 'string' || def.label.trim() === ''
@@ -251,12 +252,15 @@ export function validatePolicy() {
       fail('ForbiddenGroupGranted', `${seat}:writeScope=spec.testcase:not-allowed`);
     }
   }
-  // 显示名扫描面（S6-B §3.3）：只判 `roleKind` / `label` 是否含任一席 `display`，不把 writeScopes 并入 DEF_FILES
-  const wsSrc = stripComments(readFileSync(join(DEF_DIR, 'writeScopes.mjs'), 'utf8'));
+  // 显示名扫描面（S6-B §3.3 / S3-A §5）：只判 `roleKind` / `label` 两个结构化字段，不把 `hostRule` 或全文并入——
+  // §9 的 `display: '议长'` 与 `hostRule` 里的「议长」同词，按全文 includes 判会让登记新席必红。
   for (const seat of Object.keys(SEATS.SEATS)) {
     const display = SEATS.SEATS[seat]?.display;
-    if (typeof display === 'string' && display.trim() !== '' && wsSrc.includes(display)) {
-      fail('SeatNameInDefinition', `${DEF_REL}/writeScopes.mjs`);
+    if (typeof display !== 'string' || display.trim() === '') continue;
+    for (const def of Object.values(writeScopes)) {
+      for (const field of ['roleKind', 'label']) {
+        if (String(def?.[field] ?? '').includes(display)) fail('SeatNameInDefinition', `${DEF_REL}/writeScopes.mjs`);
+      }
     }
   }
 

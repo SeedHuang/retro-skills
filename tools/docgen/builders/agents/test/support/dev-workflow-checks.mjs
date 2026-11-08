@@ -232,7 +232,7 @@ export function counterProbes(files) {
       if (/(?<![0-9])(35|36|37)(?![0-9])/.test(stripCommentsAndStrings(line))) baseline.push(`${file}:${i + 1}`);
       // 边界用「非词字符」而非「非数字」：`diff14` 这类标识符里的数字不是席位计数（假阳性）
       // 先剥引号串：负例夹具把「违规写法」当字符串写在用例里，不剥会把夹具本身判成违规
-      if (/(?<![\w])assert\.(equal|strictEqual|deepEqual|match|ok)\([^\r\n]*(?<![\w])(14|15)(?![\w])/.test(stripCommentsAndStrings(line))) seatAssert.push(`${file}:${i + 1}`);
+      if (/(?<![\w])assert\.(equal|strictEqual|deepEqual|match|ok)\([^\r\n]*(?<![\w])(14|15|17|18)(?![\w])/.test(stripCommentsAndStrings(line))) seatAssert.push(`${file}:${i + 1}`);
     });
   }
   return { baseline, seatAssert };

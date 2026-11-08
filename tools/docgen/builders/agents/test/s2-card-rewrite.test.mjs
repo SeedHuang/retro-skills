@@ -836,6 +836,8 @@ const s2Base = (t) => {
   if (t) t.diagnostic(`S2_BASE 未注入：显式锚 = S2 落地提交 ${S2_BATCH} 的父提交（D22 显式换锚）`)
   return base
 }
+// S2 卡面重构落地提交触及的卡数 = 当时事实 15；不跟 `SEATS().length` 比（S3-A 扩到 18 后该比值必红）
+const S2_BATCH_FILES = 15
 test('S2-TC-G05 一次性全改 + 一次提交', (t) => {
   const base = s2Base(t)
   const log = execFileSync('git', ['log', `${base}..${S2_BATCH}`, '--numstat', '--format=@@%H|%s', '--', 'agents/'], { cwd: REPO, encoding: 'utf8' })
@@ -851,7 +853,7 @@ test('S2-TC-G05 一次性全改 + 一次提交', (t) => {
   if (commits.length === 0) {
     // 本批尚未提交（③ 段终态在工作区）→ 用等价的终态 diff 判「一次性全改」：
     const wt = execFileSync('git', ['diff', '--numstat', base, '--', 'agents/'], { cwd: REPO, encoding: 'utf8' }).trim().split(/\r?\n/).filter(Boolean)
-    assert.equal(wt.length, SEATS().length, `工作区必须一次性触及 ${SEATS().length} 张卡（实得 ${wt.length}）；不得分批改`)
+    assert.equal(wt.length, S2_BATCH_FILES, `工作区必须一次性触及 ${S2_BATCH_FILES} 张卡（实得 ${wt.length}）；不得分批改`)
     const added = wt.reduce((n, l) => n + Number(l.split('\t')[0]), 0)
     const deleted = wt.reduce((n, l) => n + Number(l.split('\t')[1]), 0)
     assert.ok(added > 0 && deleted > 0, '必须有增有删（卡面真被改写）')
@@ -859,7 +861,7 @@ test('S2-TC-G05 一次性全改 + 一次提交', (t) => {
     return
   }
   assert.equal(commits.length, 1, `触及 agents/ 的提交必须恰 1 个（否则是分批改）`)
-  assert.equal(commits[0].files, SEATS().length, '该提交必须一次覆盖全部席')
+  assert.equal(commits[0].files, S2_BATCH_FILES, '该提交必须一次覆盖当时的全部席')
   assert.ok(commits[0].added > 0 && commits[0].deleted > 0)
   assert.match(commits[0].subject, /S2|carte|card|卡/i, '提交说明必须带 S2 标识')
 })

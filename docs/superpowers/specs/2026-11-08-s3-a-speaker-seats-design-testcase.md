@@ -1,4 +1,4 @@
-﻿# 测试用例：S3-A 议长与答辩方席位（设计）
+# 测试用例：S3-A 议长与答辩方席位（设计）
 
 > 归属 spec：`docs/superpowers/specs/2026-11-08-s3-a-speaker-seats-design.md`（唯一判据来源）
 > **编写者 = 独立 `senior-sdet` 实例（全新上下文）**
@@ -88,36 +88,36 @@
 | §12 18 卡逐字节 ｜ S3A-10 | S3A-TC-36 | 正 |
 | §12 手改即红 ｜ S3A-10 | S3A-TC-37 | 负 |
 | §10 手改后判据仍绿 ｜ S3A-10 | S3A-TC-38 | 边 |
-| §12 门禁绿 | S3A-11 | S3A-TC-39 | 正 |
-| §12 卡漂移 | S3A-11 | S3A-TC-40 | 负 |
-| §12 `baseline.json` 漂移 | S3A-11 | S3A-TC-41 | 负 |
-| §12 未登记手写卡 | S3A-11 | S3A-TC-42 | 边 |
-| §12 state 18 席 | S3A-12 | S3A-TC-43 | 正 |
-| §12 + §5 state 多一个键（gate `StateFileInvalid`） | S3A-12 | S3A-TC-44 | 边 |
-| §12 state 非 `replaced` | S3A-12 | S3A-TC-45 | 负 |
-| §12 `docs/agents` README 漂移 | S3A-13 | S3A-TC-46 | 边 |
-| §12 18 + README | S3A-13 | S3A-TC-47 | 正 |
-| §12 投影缺一份 | S3A-13 | S3A-TC-48 | 负 |
-| §12 投影多一份 | S3A-13 | S3A-TC-49 | 负 |
-| §12 `generate --readme` 只比不写 | S3A-13 | S3A-TC-50 | 边 |
-| §12 全仓绿 | S3A-14 | S3A-TC-51 | 正 |
-| §12 任一段红 | S3A-14 | S3A-TC-52 | 负 |
-| §12 守卫真跑 | S3A-14 | S3A-TC-53 | 边 |
-| §11 `outputKind` 5→7 已签断言 | S3A-14 | S3A-TC-54 | 负 |
-| §11 `policy-pure-source` + `sc-card-shape` 已签断言 | S3A-14 | S3A-TC-55 | 正 |
-| §11 `dev-workflow-counts` 探针 17/18 | S3A-14 | S3A-TC-56 | 边 |
-| §11 派生断言零改动 | S3A-14 | S3A-TC-57 | 边 |
-| §11 探针漏检 18 | S3A-14 | S3A-TC-58 | 负 |
-| §3 §4-2 新席追加到席序末尾 | S3A-02 | S3A-TC-59 | 边 |
-| §12 `主持人` 回流到某一卡 | S3A-09 | S3A-TC-60 | 负 |
-| §3 议会席四值不受限 | S3A-03 | S3A-TC-61 | 边 |
-| §12 baseline 多一条 | S3A-11 | S3A-TC-62 | 负 |
-| §3 `TK` 逐席一行 | S3A-03 | S3A-TC-63 | 边 |
-| §10 `generate --readme` 只比不写（A 段） | S3A-10 | S3A-TC-64 | 边 |
-| §5 §9 席注册表漏登记 | S3A-04 | S3A-TC-65 | 负 |
-| §6 草稿不存在 | S3A-06 | S3A-TC-66 | 负 |
-| §6 缺 `--yes` | S3A-06 | S3A-TC-67 | 边 |
-| §5 `validateAgentData.mjs:114` 未登记 boundary | S3A-01 | S3A-TC-68 | 负 |
+| §12 门禁绿 ｜ S3A-11 | S3A-TC-39 | 正 |
+| §12 卡漂移 ｜ S3A-11 | S3A-TC-40 | 负 |
+| §12 `baseline.json` 漂移 ｜ S3A-11 | S3A-TC-41 | 负 |
+| §12 未登记手写卡 ｜ S3A-11 | S3A-TC-42 | 边 |
+| §12 state 18 席 ｜ S3A-12 | S3A-TC-43 | 正 |
+| §12 + §5 state 多一个键（gate `StateFileInvalid`） ｜ S3A-12 | S3A-TC-44 | 边 |
+| §12 state 非 `replaced` ｜ S3A-12 | S3A-TC-45 | 负 |
+| §12 `docs/agents` README 漂移 ｜ S3A-13 | S3A-TC-46 | 边 |
+| §12 18 + README ｜ S3A-13 | S3A-TC-47 | 正 |
+| §12 投影缺一份 ｜ S3A-13 | S3A-TC-48 | 负 |
+| §12 投影多一份 ｜ S3A-13 | S3A-TC-49 | 负 |
+| §12 `generate --readme` 只比不写 ｜ S3A-13 | S3A-TC-50 | 边 |
+| §12 全仓绿 ｜ S3A-14 | S3A-TC-51 | 正 |
+| §12 任一段红 ｜ S3A-14 | S3A-TC-52 | 负 |
+| §12 守卫真跑 ｜ S3A-14 | S3A-TC-53 | 边 |
+| §11 `outputKind` 5→7 已签断言 ｜ S3A-14 | S3A-TC-54 | 负 |
+| §11 `policy-pure-source` + `sc-card-shape` 已签断言 ｜ S3A-14 | S3A-TC-55 | 正 |
+| §11 `dev-workflow-counts` 探针 17/18 ｜ S3A-14 | S3A-TC-56 | 边 |
+| §11 派生断言零改动 ｜ S3A-14 | S3A-TC-57 | 边 |
+| §11 探针漏检 18 ｜ S3A-14 | S3A-TC-58 | 负 |
+| §3 §4-2 新席追加到席序末尾 ｜ S3A-02 | S3A-TC-59 | 边 |
+| §12 `主持人` 回流到某一卡 ｜ S3A-09 | S3A-TC-60 | 负 |
+| §3 议会席四值不受限 ｜ S3A-03 | S3A-TC-61 | 边 |
+| §12 baseline 多一条 ｜ S3A-11 | S3A-TC-62 | 负 |
+| §3 `TK` 逐席一行 ｜ S3A-03 | S3A-TC-63 | 边 |
+| §10 `generate --readme` 只比不写（A 段） ｜ S3A-10 | S3A-TC-64 | 边 |
+| §5 §9 席注册表漏登记 ｜ S3A-04 | S3A-TC-65 | 负 |
+| §6 草稿不存在 ｜ S3A-06 | S3A-TC-66 | 负 |
+| §6 缺 `--yes` ｜ S3A-06 | S3A-TC-67 | 边 |
+| §5 `validateAgentData.mjs:114` 未登记 boundary ｜ S3A-01 | S3A-TC-68 | 负 |
 | §6 `--new` 与 `--expect-change` 互斥 ｜ S3A-06 | S3A-TC-69 | 负 |
 | §4 步骤 5–8 三席串行 + 每席投影 ｜ S3A-06 | S3A-TC-70 | 正 |
 | §5 subjects.mjs 缺登记 ｜ S3A-01 | S3A-TC-71 | 负 |

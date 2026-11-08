@@ -682,7 +682,7 @@ test('S3-TC-G03 顺序', () => {
 })
 
 test('S3-TC-G04 barrel 不加导出', () => {
-  assert.equal(Object.keys(CM).length, 18)
+  assert.equal(Object.keys(CM).length, 18) // counter-probe: off（CM 导出键数，不是席位计数）
   assert.equal(Object.keys(CM).includes('validatePredicates'), false)
   assert.equal(read('tools/docgen/builders/agents/cli.mjs').includes('card-model/validatePredicates.mjs'), true)
 })
@@ -795,7 +795,13 @@ test('S3-TC-H06 必红期与回退', () => {
     'tools/docgen/builders/agents/card-model/validateCardModel.mjs',
     'tools/docgen/builders/agents/card-model/vocab/subjective-terms.mjs',
     'tools/docgen/builders/agents/cli.mjs',
-    ...SEATS.map((s) => `agents/${s}.md`),
+    // 只回退 S3_BASE 当时存在的卡：S3-A 新增席在该提交上不存在，`git show` 取不到
+    ...SEATS.filter((s) => {
+      try {
+        execFileSync('git', ['cat-file', '-e', `${S3_BASE}:agents/${s}.md`], { cwd: REPO, stdio: 'ignore' })
+        return true
+      } catch { return false }
+    }).map((s) => `agents/${s}.md`),
   ]
   // 迁移后工作区路径 ≠ S3_BASE 当时的落点：写副本用新路径，git show 取历史文件必须用旧路径
   const atBase = (rel) => rel.replace('tools/docgen/builders/agents/', 'tools/docgen/')

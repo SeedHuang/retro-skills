@@ -501,7 +501,8 @@
 | D-05 | 试点期旧卡怎么处理 | 试点期保留旧卡作对照；铺开后删除旧槽位散文，不留双份 | `[已决·代裁]`：不留双份 |
 | D-06 | `check:'ai'` 与 `check:'script'` 的比例目标 | 不设比例，只要求每条 `ai` 有 rubric + **每轮每条 ≥1 条 audit** | `[已决·代裁]` |
 | D-07 | 15 席一次铺 vs 逐席滚动 | 逐席滚动，且**出数门槛**：试点席完成后用 `git diff --numstat agents/ tools/docgen/` 量单席改动行数 + 工时，×14 + 20% 缓冲 = 剩余工期 | `[已决·代裁]`：数字由实测产生，PRD 不填 |
-| D-08 | 与 `dev-workflow-mainline` 的边界 | **已定（2026-10-26 用户裁定）**：本 PRD 优先；`tools/docgen` 模型改造与全席重生成归本 PRD（S1/S4）；mainline S3 只留 `speaker` + `respondent-*` 新卡与两张矩阵，S6 只留权限 / 字符串单源。**2026-11-08 补充裁定**：`tools/docgen` 模型改造与全席重生成由 mainline S3-A 承接，本 PRD S1/S4 不再重复计入该批 | `[已确认]`；连带待办 `docs/after/20261026211515-mainline-prd-reoptimize-open-decisions.md` |
+| D-08 | 与 `dev-workflow-mainline` 的边界 | **已定（2026-10-26 用户裁定）**：本 PRD 优先；`tools/docgen` 模型改造与全席重生成归本 PRD（S1/S4）；mainline S3 只留 `speaker` + `respondent-*` 新卡与两张矩阵，S6 只留权限 / 字符串单源 | `[已确认]`；连带待办 `docs/after/20261026211515-mainline-prd-reoptimize-open-decisions.md` |
+| 补充裁定·2026-11-08 | D-08 的边界更新 | `tools/docgen` 模型改造与全席重生成由 mainline S3-A 承接；本 PRD S1/S4 不再重复计入该批 | `[已确认]` |
 | D-09 | `coverage` 语义 | `total` = 登记检查项数、`read` = items 条数、`skipped` = 未判项 id | `[已决·代裁 C-02]`：可对账优先；md 文案改「已判 N 条 / 共 M 条（跳过 K：…）」 |
 | D-10 | 工具故障旁路 | 允许，仅限校验器自身故障，留痕 + 补跑期限 | `[已决·代裁 C-07]` |
 | D-11 | 卡面散文去哪 | 全部落 `rationale`，只进 README；卡面零散文 | `[已决·代裁 C-06]` |

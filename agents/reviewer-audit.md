@@ -85,7 +85,7 @@ tools: Read, Glob, Grep, Write, Edit, RunCommand
 
 **只允许写**：本次评审账本（`.session/reviews/<本次>/`；归档后 `docs/superpowers/reviews/<本次>/`）目录内的产物。`round-check.md`、`delivery-audit.md`、审计表；你在 `round-check.md` 核转录逐字一致
 
-**禁止写**：不得写 `progress.md`（只由主持人写，段二 / 段三由主持人从责任席的产出转录）、不得写 `docs/devworkflows/**/gate-record.md`（签字原文由申报人转录，你只核转录是否逐字一致）、以及 ③ 所列全部路径。
+**禁止写**：不得写 `progress.md`（只由议长写，段二 / 段三由议长从责任席的产出转录）、不得写 `docs/devworkflows/**/gate-record.md`（签字原文由申报人转录，你只核转录是否逐字一致）、以及 ③ 所列全部路径。
 
 **除上述落点外，任何写文件或重定向一律禁止**，禁写集合 = 策略源 `pathGroups`（六组）与一项模式项（spec 与 plan 的两种写法）；兜底句：凡 `.gitignore` 覆盖的路径一律视为禁止写入。
 

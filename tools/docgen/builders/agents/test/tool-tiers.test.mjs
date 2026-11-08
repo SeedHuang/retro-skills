@@ -395,9 +395,10 @@ test('S5-TC-B07 changes[] 中 to === renderSha256 的最新条落账四字段（
 });
 
 test('S5-TC-B08 真实 agentData 的 producer 席 boundary 等于渲染结果', () => {
-  const producers = producerSeats();
-  assert.ok(producers.length >= 2);
-  for (const n of producers) {
+  // 只遍历 boundaryBySeat（模板渲染的三席）：speaker 是 producer 但自带席 JSON 顶层 boundary，不进该表
+  const slotSeats = Object.keys(patternRegistry.boundaryBySeat)
+  assert.ok(slotSeats.length >= 2)
+  for (const n of slotSeats) {
     const a = agentData.find((x) => x.name === n);
     assert.equal(a.boundary, patternRegistry.boundaryBySeat[n], n);
     // 判据由 S6 改判（S6 spec §3.6 ②）：边界句的唯一来源是 renderBoundary

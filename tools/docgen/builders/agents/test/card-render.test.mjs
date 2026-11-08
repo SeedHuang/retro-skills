@@ -190,12 +190,12 @@ test('S4-TC-A07 4 个 vocab/ 表的导出面恰为 spec 写死的 8 个名字', 
   assert.equal(total, 8, '四文件导出名合计必须 8 个（spec §3 :62）')
 })
 
-test('S4-TC-D01 5 个 outputKind 每份结构化 {fields[], checks[]}（无散文、无指针）', () => {
-  const KIND = ['audit', 'issue-card', 'observation', 'evidence', 'testcase']
+test('S4-TC-D01 7 个 outputKind 每份结构化 {fields[], checks[]}（无散文、无指针）', () => {
+  const KIND = ['audit', 'issue-card', 'observation', 'evidence', 'testcase', 'proceeding', 'defense']
   assert.ok(OF.outputFormats && typeof OF.outputFormats === 'object', 'outputFormats 必须导出对象（spec §6 :161-164）')
   const got = Object.keys(OF.outputFormats)
   assert.ok(got.length > 0, 'outputFormats 不得为空')
-  assert.deepEqual([...got].sort(), [...KIND].sort(), `必须恰好这 5 个 outputKind（实得 ${got.join(',')}）`)
+  assert.deepEqual([...got].sort(), [...KIND].sort(), `必须恰好这 7 个 outputKind（实得 ${got.join(',')}）`)
   for (const k of KIND) {
     const f = OF.outputFormats[k]
     assert.ok(f && typeof f === 'object' && !Array.isArray(f), `${k} 必须是结构化对象（现状是散文串）`)
@@ -326,15 +326,16 @@ test('S4-TC-J04 docs-convention 同批补一行 + scope-sweep --check exit 0', (
 
 // ── Task 5（试点席 detective-observer 迁移）────────────────────────────────────────────────
 
-test('S4-TC-C06 试点席迁移后「议长」= 0 且「主持人」在位', () => {
+test('S4-TC-C06 试点席迁移后「议长」≥ 1 且「主持人」= 0', () => {
   const s = 'detective-observer'
   assert.ok(SEATS.includes(s), `${s} 必须真实存在`)
   assert.ok(PARL.includes(s), `${s} 必须是议会席（§4 :97；非议会席口径由 C03 守）`)
   const disk = readFileSync(join(AGENTS_DIR, `${s}.md`), 'utf8')
   assert.ok(disk.length > 200, `${s} 卡面不得为空或过短（否则 0 命中是假绿）`)
-  assert.equal((disk.match(/议长/g) ?? []).length, 0, `迁移后 ${s} 卡面不得再出现「议长」（§5.2 :154 要求统一为「主持人」）`)
-  assert.ok((disk.match(/主持人/g) ?? []).length >= 1, `${s} 卡面必须保留「主持人」（过渡期议会席允许，不得两词全删）`)
-  assert.equal((CARD(s).match(/议长/g) ?? []).length, 0, `渲染投影同样不得含「议长」（§5.2 :154）`)
+  assert.ok((disk.match(/议长/g) ?? []).length >= 1, `迁移后 ${s} 卡面必须出现「议长」（S3-A §7 改名）`)
+  assert.equal((disk.match(/主持人/g) ?? []).length, 0, `${s} 卡面不得再出现「主持人」（S3-A §7 清零）`)
+  assert.ok((CARD(s).match(/议长/g) ?? []).length >= 1, `渲染投影必须含「议长」（S3-A §7）`)
+  assert.equal((CARD(s).match(/主持人/g) ?? []).length, 0, `渲染投影不得含「主持人」（S3-A §7）`)
 })
 
 test('S4-TC-H01 试点先行：归档副本在位且 7 段逐段对照', () => {

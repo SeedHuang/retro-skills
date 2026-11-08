@@ -11,7 +11,8 @@ import { exitCodeFor } from './validateAgentData.mjs'
 // 席位名单的唯一源仍是 `data/seats/*.json`：两者在 `loadSeatData` 读盘前双向比对，不等即 `InvalidInputPath`。
 export const SEAT_ORDER = ['reviewer-audit', 'reviewer-product', 'reviewer-interaction', 'reviewer-ui',
   'reviewer-frontend', 'reviewer-backend', 'reviewer-ops', 'reviewer-qa', 'reviewer-ai', 'reviewer-security',
-  'reviewer-actuary', 'reviewer-reader', 'detective-observer', 'evidence-reader', 'senior-sdet']
+  'reviewer-actuary', 'reviewer-reader', 'detective-observer', 'evidence-reader', 'senior-sdet',
+  'speaker', 'respondent-architect', 'respondent-dev']
 
 const EMPTY = /^(|\s+)$/
 const WHOLE = /^@([a-z][A-Za-z0-9]*)$/

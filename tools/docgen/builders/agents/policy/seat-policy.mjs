@@ -5,5 +5,8 @@ export const SEAT_POLICY = {
   'reviewer-audit':     { capabilities: ['read','write','exec'], allowGroups: ['check.local','git.read','docgen.read'], artifacts: ['round-check.md','delivery-audit.md'] },
   'detective-observer': { capabilities: ['read','write','exec'], allowGroups: ['check.local','git.read','docgen.read'], artifacts: ['detective.md'] },
   'senior-sdet':        { capabilities: ['read','write'],        allowGroups: [],                                  artifacts: [] },
+  'speaker':            { capabilities: ['read','write','exec'], allowGroups: ['check.local','git.read','docgen.read'], artifacts: ['progress.md'] },
+  'respondent-dev':     { capabilities: ['read','exec'],         allowGroups: ['check.local','git.read'],          artifacts: [] },
+  'respondent-architect': { capabilities: ['read'],              allowGroups: [],                                  artifacts: [] },
   __default__:          { capabilities: ['read'],                allowGroups: [],                                  artifacts: [] },
 };

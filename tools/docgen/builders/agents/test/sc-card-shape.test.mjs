@@ -13,7 +13,7 @@ import { execFileSync, spawnSync } from 'node:child_process'
 import { REPO, AGENTS_DIR, walkFiles, runNode, coldRepo } from './support/card-fixtures.mjs'
 import { withRepoCopy } from './support/dev-workflow-checks.mjs'
 import { agentData, triggerTable as TRIGGER } from '../components/agentData.mjs'
-import { buildCards, buildEnv, renderSeat } from '../components/cardPipeline.mjs'
+import { buildCards, buildEnv, renderSeat, NON_PARL_SEATS } from '../components/cardPipeline.mjs'
 import { renderCard } from '../components/renderCard.mjs'
 import { cardFaceIds } from '../components/cardFaceIds.mjs'
 import { CARD_KEYS } from '../components/cardKeys.mjs'
@@ -369,12 +369,12 @@ test('SC-TC-22 checks.mjs 的三值仍 3 个且确为 export（不得就地改 e
   assert.ok(/new Set/.test(decl[0]), '右侧仍是 new Set 形态（保持原语义）')
 })
 
-test('SC-TC-33 check-trigger-kind 绿态：四值全用上、计数恰 11 / 1 / 1 / 2，输出附 when 前 12 字', () => {
+test('SC-TC-33 check-trigger-kind 绿态：四值全用上、计数恰 12 / 1 / 1 / 4，输出附 when 前 12 字', () => {
   const N = SEATS().length
   const r = runNode(['tools/docgen/builders/agents/check-trigger-kind.mjs'])
   assert.equal(r.code, 0, `脚本必须 exit 0：${r.out.slice(-400)}`)
   const first = (r.out.split(/\r?\n/)[0] || '').trim()
-  assert.match(first, new RegExp(`^check-trigger-kind: seats ${N} / kinds \\{dispatch:11,occasion:1,moment:1,need:2\\} / bad 0 => ok$`))
+  assert.match(first, new RegExp(`^check-trigger-kind: seats ${N} / kinds \\{dispatch:12,occasion:1,moment:1,need:4\\} / bad 0 => ok$`))
   // ③ 逐席 kind ∈ 四值（判数据声明，不看 when 句式）
   const four = new Set(['dispatch', 'occasion', 'moment', 'need'])
   for (const s of SEATS()) assert.ok(four.has(TRIGGER[s].kind), `${s} kind 越界：${TRIGGER[s].kind}`)
@@ -417,11 +417,12 @@ test('SC-TC-35 副本把非议会席写成 dispatch → 红态首行 => fail 且
   })
 })
 
-test('SC-TC-36 名单现算：新增第 16 席（前缀非 reviewer-/detective-）写 dispatch → 红', () => {
+test('SC-TC-36 名单唯一源：新增第 16 席不在 NON_PARL_SEATS，写 dispatch 仍合法（绿）；加入名单后同数据必红', () => {
   withRepoCopy((copy) => {
     const base = R(join(copy, 'tools/docgen/dsl/agents/seats', `${SEATS()[0]}.json`))
-    const added = base.replace(`"name": "${SEATS()[0]}"`, '"name": "archivist"')
+    const added = base.replace(`"name": "${SEATS()[0]}"`, '"name": "archivist"').replace('"kind": "occasion"', '"kind": "dispatch"')
     assert.ok(added.includes('"name": "archivist"'), '构造必须换掉席名')
+    assert.ok(added.includes('"kind": "dispatch"'), '构造必须把该席 kind 改成 dispatch')
     writeFileSync(join(copy, 'tools/docgen/dsl/agents/seats/archivist.json'), added, 'utf8')
     const loader = join(copy, 'tools/docgen/builders/agents/components/seatLoader.mjs')
     const src = R(loader)
@@ -430,8 +431,16 @@ test('SC-TC-36 名单现算：新增第 16 席（前缀非 reviewer-/detective-�
     const r = runNode(['tools/docgen/builders/agents/check-trigger-kind.mjs'], copy)
     const first = (r.out.split(/\r?\n/)[0] || '').trim()
     assert.match(first, new RegExp(`seats ${SEATS().length + 1}`), `席数必须现算（实得「${first}」）`)
-    assert.match(first, /=> fail/, '第 16 席写 dispatch 必须红（写死两席名单会在此假绿）')
-    assert.match(r.out, /archivist/, '必须点名新增席')
+    assert.match(first, /=> ok/, '不在 NON_PARL_SEATS 的新席写 dispatch 必须绿（去前缀后无前缀 ≠ 非议会席）')
+    // 红态：把 archivist 加入唯一源 NON_PARL_SEATS → 同数据必须红
+    const pipe = join(copy, 'tools/docgen/builders/agents/components/cardPipeline.mjs')
+    const psrc = R(pipe)
+    writeFileSync(pipe, psrc.replace("export const NON_PARL_SEATS = ['evidence-reader', 'senior-sdet']",
+      "export const NON_PARL_SEATS = ['evidence-reader', 'senior-sdet', 'archivist']"), 'utf8')
+    const r2 = runNode(['tools/docgen/builders/agents/check-trigger-kind.mjs'], copy)
+    const first2 = (r2.out.split(/\r?\n/)[0] || '').trim()
+    assert.match(first2, /=> fail/, '进入 NON_PARL_SEATS 后写 dispatch 必须红')
+    assert.match(r2.out, /archivist/, '必须点名该席')
   })
 })
 
@@ -447,13 +456,13 @@ test('SC-TC-37 kind 不进 card、不进渲染（8 键不动 + 卡面 kind 命�
   }
 })
 
-test('SC-TC-38 非议会席现算集合 == complement(buildEnv 的 parliamentSeats)', () => {
-  const computed = SEATS().filter((s) => !s.startsWith('reviewer-') && !s.startsWith('detective-')).sort()
+test('SC-TC-38 非议会席集合唯一源 == complement(buildEnv 的 parliamentSeats)', () => {
+  const computed = [...NON_PARL_SEATS].sort()
   assert.equal(computed.length, 2)
   assert.deepEqual(computed, ['evidence-reader', 'senior-sdet'])
   const parl = [...buildEnv(SEATS()[0]).parliamentSeats].sort()
   const complement = SEATS().filter((s) => !parl.includes(s)).sort()
-  assert.deepEqual(computed, complement, '第二处写死名单（cardPipeline 的 NON_PARL_SEATS）与现算必须一致')
+  assert.deepEqual(computed, complement, 'NON_PARL_SEATS（cardPipeline 唯一源）与 buildEnv 的补集必须一致')
 })
 
 // ── D 组：数据文案（斜杠 / 动作返回 / 人设 / HOST_TERM）────────────────────────────────────
@@ -591,11 +600,11 @@ test('SC-TC-28 副本三坏形态必红：删写回 / 回填占位 / 全席同�
     writeFileSync(p, R(p).replace(/结论写回([^"]*)"/, '结论写回本席产物"'), 'utf8')
   })
   assert.ok(two.placeholder >= 1, `回填占位必须命中 ≥1（实得 ${two.placeholder}）`)
-  // ③ 15 席产物名统一成同一个
+  // ③ 各席产物名统一成同一个
   const three = runOne((copy) => {
     for (const s of SEATS()) {
       const p = join(copy, 'tools/docgen/dsl/agents/seats', `${s}.json`)
-      writeFileSync(p, R(p).replace(/结论写回([^"]*)"/, '结论写回交付物正文"'), 'utf8')
+      writeFileSync(p, R(p).replace(/写回([^"]*)"/, '写回交付物正文"'), 'utf8')
     }
   })
   assert.equal(three.names.length, 1, `全席同名时必须只剩 1 种（实得 ${three.names.length}）`)
@@ -612,7 +621,7 @@ test('SC-TC-29 人设词三面清零（含外层 role / agents / docs/agents）+
   }
   const sd = runTest(['--test-name-pattern', 'TC-007', 'tools/docgen/builders/agents/test/sdet-data.test.mjs'])
   assert.equal(sd.code, 0, `TC-007（role 已去「资深」）必须绿：${sd.out.slice(-400)}`)
-  if (SHAPE) assert.equal(countWord(seatsText(), '${@hostTerm}'), 18, 'SHAPE：占位总数须仍为 18')
+  if (SHAPE) assert.equal(countWord(seatsText(), '${@hostTerm}'), 18, 'SHAPE：占位总数须仍为 18') // counter-probe: off（占位引用数，不是席位计数）
 })
 
 test('SC-TC-30 回填人设必红；rationale 改写不得弄丢 ${@hostTerm} 占位（仍 18 / 漏 1 → 17）', () => {
@@ -633,14 +642,14 @@ test('SC-TC-30 回填人设必红；rationale 改写不得弄丢 ${@hostTerm} �
     const p = join(copy, 'tools/docgen/dsl/agents/seats/detective-observer.json')
     writeFileSync(p, R(p).replace('以行为核实为视角：', '以行为核实为视角（改写）：'), 'utf8')
     const n = countWord(seatsTextInCopy(copy), '${@hostTerm}')
-    assert.equal(n, 18, `改写 rationale 后占位总数必须仍为 18（实得 ${n}）`)
+    assert.equal(n, 18, `改写 rationale 后占位总数必须仍为 18（实得 ${n}）`) // counter-probe: off（占位引用数，不是席位计数）
   })
   // ③ 副本弄丢一处占位（换回字面）→ 17
   withRepoCopy((copy) => {
     const p = join(copy, 'tools/docgen/dsl/agents/seats/detective-observer.json')
     writeFileSync(p, R(p).replace('${@hostTerm}失职', '主持人失职'), 'utf8')
     const n = countWord(seatsTextInCopy(copy), '${@hostTerm}')
-    assert.equal(n, 17, `漏一处必须变 17（实得 ${n}）`)
+    assert.equal(n, 17, `漏一处必须变 17（实得 ${n}）`) // counter-probe: off（占位引用数，不是席位计数）
   })
 })
 
@@ -667,19 +676,19 @@ test('SC-TC-32 动作行不写三态词：英文与中文都不许（注入即�
   }
 })
 
-test('SC-TC-43 shared.json.hostTerm === 主持人（唯一写死处）+ 键数 4 + sa-data 回归', () => {
+test('SC-TC-43 shared.json.hostTerm === 议长（唯一写死处）+ 键数 4 + sa-data 回归', () => {
   const shared = JSON.parse(R(join(REPO, 'tools/docgen/dsl/agents/shared.json')))
-  assert.equal(shared.hostTerm, '主持人')
+  assert.equal(shared.hostTerm, '议长')
   assert.equal(Object.keys(shared).length, 4)
   assert.deepEqual(Object.keys(shared).sort(), ['cardRationaleHead', 'cardRationaleTail', 'dutyConstraintDefault', 'hostTerm'])
-  assert.equal(countWord(R(join(REPO, 'tools/docgen/dsl/agents/shared.json')), '主持人'), 1, '同文件不得出现第二份字面')
+  assert.equal(countWord(R(join(REPO, 'tools/docgen/dsl/agents/shared.json')), '议长'), 1, '同文件不得出现第二份字面')
   const sa = runTest(['--test-name-pattern', 'TC-001', 'tools/docgen/builders/agents/test/sa-data-layer.test.mjs'])
   assert.equal(sa.code, 0, `TC-001（shared.json 键数已改 4）必须绿：${sa.out.slice(-400)}`)
 })
 
 test('SC-TC-44 席位数据「主持人」字面 0 次（常驻）；${@hostTerm} 18 次（一次性档）', () => {
   assert.equal(countWord(seatsText(), '主持人'), 0, '席位数据不得再有字面')
-  if (SHAPE) assert.equal(countWord(seatsText(), '${@hostTerm}'), 18, '一次性档：占位出现次数须 = 18')
+  if (SHAPE) assert.equal(countWord(seatsText(), '${@hostTerm}'), 18, '一次性档：占位出现次数须 = 18') // counter-probe: off（占位引用数，不是席位计数）
 })
 
 test('SC-TC-45 行口径 vs 次数口径（17 行 / 18 处）——整条归一次性档', (t) => {
@@ -696,43 +705,43 @@ test('SC-TC-45 行口径 vs 次数口径（17 行 / 18 处）——整条归一�
       if (c > 0) { lines += 1; occs += c }
     }
   }
-  assert.equal(lines, 17)
-  assert.equal(occs, 18)
+  assert.equal(lines, 17) // counter-probe: off（BASE 行口径，不是席位计数）
+  assert.equal(occs, 18) // counter-probe: off（BASE 次数口径，不是席位计数）
   assert.notEqual(lines, occs, '差值 1 = detective 的 rationale 一行 2 处（按行断会漏第 2 处）')
   assert.equal(countWord(seatsText(), '主持人'), 0, '改后侧字面必须 0')
 })
 
-test('SC-TC-46 渲染面「主持人」总数 = 30（等价性证明）——整条归一次性档', (t) => {
+test('SC-TC-46 渲染面「主持人」总数 = 0（改名后等价性证明）——整条归一次性档', (t) => {
   // G6（S-D T2）：同 SC-TC-45，默认档改为如实计 skip
   if (!SHAPE) return t.skip('一次性档未开（SB_SHAPE_ONESHOT≠1）')
   const total = SEATS().reduce((n, s) => n + countWord(textOf(s), '主持人'), 0)
-  assert.equal(total, 30, `渲染面总数须 = 30（实得 ${total}）`)
+  assert.equal(total, 0, `渲染面旧称总数须 = 0（实得 ${total}）`)
 })
 
-test('SC-TC-47 副本把 hostTerm 改「议长」→ 渲染跟随、真仓 0 命中（不落真仓）', () => {
-  const PROBE = '议长'
+test('SC-TC-47 副本把 hostTerm 改「主持席」→ 渲染跟随、真仓 0 命中（不落真仓）', () => {
+  const PROBE = '主持席'
   const probeSrc = [
     "import { renderSeat } from './tools/docgen/builders/agents/components/cardPipeline.mjs'",
     "const card = renderSeat(process.env.SEAT).card",
-    "process.stdout.write('probe ' + (card.split(process.env.TERM).length - 1) + ' / host ' + (card.split('主持人').length - 1))",
+    "process.stdout.write('probe ' + (card.split(process.env.TERM).length - 1) + ' / host ' + (card.split('议长').length - 1))",
   ].join('\n')
   withRepoCopy((copy) => {
     const p = join(copy, 'tools/docgen/dsl/agents/shared.json')
-    writeFileSync(p, R(p).replace('"hostTerm": "主持人"', `"hostTerm": "${PROBE}"`), 'utf8')
-    // 选 issue-card 席（not 指针席）：其渲染面「主持人」只来自 ${@hostTerm}，不含模板 / 共享块里的既有字面
+    writeFileSync(p, R(p).replace('"hostTerm": "议长"', `"hostTerm": "${PROBE}"`), 'utf8')
+    // 选 issue-card 席（not 指针席）：其渲染面「议长」只来自 ${@hostTerm}，不含模板 / 共享块里的既有字面
     const out = probeIn(copy, 'probe-host.mjs', probeSrc, { SEAT: 'reviewer-product', TERM: PROBE })
     const m = /probe (\d+) \/ host (\d+)/.exec(out)
     assert.ok(m, out)
     assert.ok(Number(m[1]) >= 1, '渲染必须跟随新词')
     assert.equal(Number(m[2]), 0, '原词必须归零')
   })
-  assert.equal(SEATS().filter((s) => R(join(AGENTS_DIR, `${s}.md`)).includes(PROBE)).length, 0, '真仓 15 卡不得被写入探针')
+  assert.equal(SEATS().filter((s) => R(join(AGENTS_DIR, `${s}.md`)).includes(PROBE)).length, 0, '真仓 18 卡不得被写入探针')
 })
 
 test('SC-TC-48 副本改 hostTerm 不重生成 → gate Mismatch exit 1；真仓 gate exit 0', () => {
   withRepoCopy((copy) => {
     const p = join(copy, 'tools/docgen/dsl/agents/shared.json')
-    writeFileSync(p, R(p).replace('"hostTerm": "主持人"', '"hostTerm": "议长"'), 'utf8')
+    writeFileSync(p, R(p).replace('"hostTerm": "议长"', '"hostTerm": "主持席"'), 'utf8')
     const r = runNode(['tools/docgen/builders/agents/cli.mjs', 'gate'], copy)
     assert.notEqual(r.code, 0, '改了数据不重生成不得 exit 0')
     assert.match(r.out, /Mismatch/, r.out.slice(-400))
@@ -784,9 +793,9 @@ const LABEL_PROBE = [
   "process.stdout.write('labels ' + labels.length + ' / max ' + max)",
 ].join('\n')
 
-test('SC-TC-39 categories[].label 每项 ≤ 20 字（97 项，现最长 13）', () => {
+test('SC-TC-39 categories[].label 每项 ≤ 20 字（109 项，现最长 13）', () => {
   const labels = labelsOfAll()
-  assert.equal(labels.length, 97, '类别项数不变（本段不动 categories 形状）')
+  assert.equal(labels.length, 109, '类别项数不变（本段不动 categories 形状；S3-A 三新席 +12）')
   assert.ok(labels.every((l) => l.length <= 20), `每项 ≤ 20 字（最长 ${Math.max(...labels.map((l) => l.length))}）`)
   assert.equal(Math.max(...labels.map((l) => l.length)), 13, '现值最长 13（记录项）')
 })
@@ -896,14 +905,14 @@ test('SC-TC-57 一次性档清单：SB_BASE 换本批 $BASE，四个现值两侧
     beforeRender += countWord(baseText(`agents/${s}.md`), '主持人')
   }
   assert.equal(beforeSlash, 13, 'BASE 侧斜杠项现值 = 13')
-  assert.equal(beforeLines, 17, 'BASE 侧行口径 = 17')
-  assert.equal(beforeOccs, 18, 'BASE 侧次数口径 = 18')
+  assert.equal(beforeLines, 17, 'BASE 侧行口径 = 17') // counter-probe: off（BASE 行口径，不是席位计数）
+  assert.equal(beforeOccs, 18, 'BASE 侧次数口径 = 18') // counter-probe: off（BASE 次数口径，不是席位计数）
   assert.equal(beforeRender, 30, 'BASE 侧渲染总数 = 30')
-  // ② 改后侧：0 / 0 / 18 / 30
+  // ② 改后侧：0 / 0 / 18 / 0（旧称清零）
   assert.equal(slashItems(), 0)
   assert.equal(countWord(seatsText(), '主持人'), 0)
-  assert.equal(countWord(seatsText(), '${@hostTerm}'), 18)
-  assert.equal(SEATS().reduce((n, s) => n + countWord(textOf(s), '主持人'), 0), 30)
+  assert.equal(countWord(seatsText(), '${@hostTerm}'), 18) // counter-probe: off（占位引用数，不是席位计数）
+  assert.equal(SEATS().reduce((n, s) => n + countWord(textOf(s), '主持人'), 0), 0)
   // ③ S-B 三条一次性用例按新 BASE 重跑必须绿
   const r = runTest(['tools/docgen/builders/agents/test/sb-contract-layer.test.mjs'], REPO, { SB_SHAPE_ONESHOT: '1', SB_BASE: BASE })
   assert.equal(r.code, 0, `一次性档必须绿：${r.out.slice(-600)}`)
@@ -970,7 +979,7 @@ test('SC-TC-59 防回退：PRD 行数 D 17 / Q 8 / 空值 0（S-C 不得改功�
   const rows = prd.split(/\r?\n/).filter((l) => l.startsWith('|'))
   const dRows = rows.filter((r) => /^\| \*{0,2}D\d+/.test(r))
   const qRows = rows.filter((r) => /^\| Q\d+/.test(r))
-  assert.equal(dRows.length, 17, 'D 编号行数必须 17（正则须容忍粗体行号）')
+  assert.equal(dRows.length, 17, 'D 编号行数必须 17（正则须容忍粗体行号）') // counter-probe: off（PRD D 行数，不是席位计数）
   assert.equal(qRows.length, 8, 'Q 编号行数必须 8')
   const empty = [...dRows.map((r) => splitRow(r)[2]), ...qRows.map((r) => splitRow(r)[3])].filter((c) => c.trim() === '')
   assert.deepEqual(empty, [], '「依据」列与「影响面」列不得有空值')

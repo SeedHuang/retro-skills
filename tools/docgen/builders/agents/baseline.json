@@ -2,6 +2,8 @@
   "rules/evidence-before-conclusion.md",
   "agents/detective-observer.md",
   "agents/evidence-reader.md",
+  "agents/respondent-architect.md",
+  "agents/respondent-dev.md",
   "agents/reviewer-actuary.md",
   "agents/reviewer-ai.md",
   "agents/reviewer-audit.md",
@@ -14,5 +16,6 @@
   "agents/reviewer-reader.md",
   "agents/reviewer-security.md",
   "agents/reviewer-ui.md",
-  "agents/senior-sdet.md"
+  "agents/senior-sdet.md",
+  "agents/speaker.md"
 ]

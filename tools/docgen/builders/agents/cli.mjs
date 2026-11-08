@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // docgen CLI（R1）：六子命令统一入口。本任务实现 generate + gate；draft/replace/check-agents/baseline 由 Task 5/6 扩展。
 import { readFileSync, existsSync, realpathSync, mkdirSync, writeFileSync, readdirSync, rmSync, renameSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { join, resolve, dirname, relative, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -468,6 +469,36 @@ export function cmdReplace(args) {
       message: `InvalidArgs: ${name} 尚在迁移段（state=${st.agents[name] ?? '未登记'}），不接受 --expect-change / --rejudge；迁移完成后改内容才走变更段`,
     });
   }
+
+  // ── S3-A §6 D-1：新席出生分支（早于 DraftNotFound 与 collectGate）──
+  // 显式前置：卡不存在；或卡已存在但逐字节 = 渲染且 evidence 缺失（崩溃收敛）。其余「卡已存在」→ InvalidArgs。
+  // --new 不得带 --expect-change / --rejudge（出生不是变更，无旧哈希可凭、无触达键可重判）。
+  if (args.new) {
+    if (args.expectChange !== undefined || args.rejudge !== undefined) {
+      fail('InvalidArgs', { message: `InvalidArgs: --new 不得与 --expect-change / --rejudge 同用（${name}）` });
+    }
+    const birthTarget = join(AGENTS_DIR, `${name}.md`);
+    if (existsSync(birthTarget)) {
+      // 崩溃收敛只可能发生在 state 已置 replaced 之后（写盘次序：rename → setAgentState → writeEvidence）；
+      // 迁移段 / suspended 的席不满足该前置 → 不得补写 evidence 并假装收敛成功
+      if (phase !== 'change') {
+        fail('InvalidArgs', {
+          message: `InvalidArgs: --new 的崩溃收敛只用于已接管席（${name} state=${st.agents[name] ?? '未登记'}）`,
+        });
+      }
+      const renderedNow = Buffer.from(renderByName(name), 'utf8');
+      const evMissing = !existsSync(evidencePath(name));
+      if (!readFileSync(birthTarget).equals(renderedNow) || !evMissing) {
+        fail('InvalidArgs', { message: `InvalidArgs: --new 只用于卡不存在的席（agents/${name}.md 已存在，或 evidence 已在）` });
+      }
+      // 崩溃收敛：卡已 rename、草稿已被清、evidence 未写 → 以渲染字节自算哈希补写 evidence 后返回 0
+      const sha = sha256Hex(renderedNow);
+      writeEvidence(name, birthEvidence(name, sha));
+      console.log(`已替换（崩溃收敛）：${birthTarget}`);
+      return 0;
+    }
+  }
+
   if (!args.draft || !existsSync(args.draft)) fail('DraftNotFound', { draft: args.draft });
 
   // 启动清理：上次崩溃残留的 .part 临时文件（在读取目标之前）
@@ -478,9 +509,10 @@ export function cmdReplace(args) {
   const draftBytes = readFileSync(args.draft);
   const rendered = Buffer.from(renderByName(name), 'utf8'); // registered 未拆槽席在此抛 MissingComponentData
   if (!draftBytes.equals(rendered)) fail('DraftDrift', { name });
-  const evidence = readEvidence(name);
-  // 迁移段四道证明（§3.1 左列）：变更段不读这三项，改读凭证
-  if (phase === 'migration') {
+  // 出生不读旧 evidence（文件本就不存在；读了即 EvidenceInvalid）；变更 / 迁移段照旧读
+  const evidence = args.new ? null : readEvidence(name);
+  // 迁移段四道证明（§3.1 左列）：变更段不读这三项，改读凭证；出生段逐行跳过（§6）
+  if (phase === 'migration' && !args.new) {
     if (evidence.renderSha256 !== sha256Hex(rendered)) {
       fail('EvidenceInvalid', { name, reason: 'renderSha256 与草稿不等，须重跑步 4' });
     }
@@ -513,32 +545,37 @@ export function cmdReplace(args) {
   }
 
   const target = join(AGENTS_DIR, `${name}.md`);
-  // #6：target 缺失须在 collectGate 判别子放行（allowed 对 target 无条件 return true）后、硬读之前捕获，
-  // 否则 readFileSync 抛 ENOENT 被兜底成 exit 2，掩盖 DanglingBaselineEntry 的可读语义
-  if (!existsSync(target)) fail('DanglingBaselineEntry', { name, path: `agents/${name}.md` });
-  const targetBytes = readFileSync(target);
-  const oldSha = sha256Hex(targetBytes);
   const newSha = sha256Hex(rendered);
+  let targetBytes = null;
+  let oldSha = null;
+  // 出生段：目标卡本就不存在 → 跳过「硬读目标 / 幂等分支 / TargetDrift / 凭证与重判」五段（§6）
+  if (!args.new) {
+    // #6：target 缺失须在 collectGate 判别子放行（allowed 对 target 无条件 return true）后、硬读之前捕获，
+    // 否则 readFileSync 抛 ENOENT 被兜底成 exit 2，掩盖 DanglingBaselineEntry 的可读语义
+    if (!existsSync(target)) fail('DanglingBaselineEntry', { name, path: `agents/${name}.md` });
+    targetBytes = readFileSync(target);
+    oldSha = sha256Hex(targetBytes);
 
-  // 幂等判定排在 TargetDrift 之前：崩溃窗口（文件已 rename、evidence 未写）重跑时盘上哈希已不等于
-  // lastWrittenHash，先判 TargetDrift 就永远收敛不了。幂等分支不写盘、不追加留痕、不校验凭证（§3.1 末行）。
-  if (phase === 'change' && targetBytes.equals(rendered)) {
-    evidence.renderSha256 = newSha;
-    evidence.lastWrittenHash = newSha;
-    writeEvidence(name, evidence);
-    clearDrafts(name);
-    console.log(`已替换（幂等恢复）：${target}`);
-    return 0;
+    // 幂等判定排在 TargetDrift 之前：崩溃窗口（文件已 rename、evidence 未写）重跑时盘上哈希已不等于
+    // lastWrittenHash，先判 TargetDrift 就永远收敛不了。幂等分支不写盘、不追加留痕、不校验凭证（§3.1 末行）。
+    if (phase === 'change' && targetBytes.equals(rendered)) {
+      evidence.renderSha256 = newSha;
+      evidence.lastWrittenHash = newSha;
+      writeEvidence(name, evidence);
+      clearDrafts(name);
+      console.log(`已替换（幂等恢复）：${target}`);
+      return 0;
+    }
+
+    if (oldSha !== evidence.lastWrittenHash) fail('TargetDrift', { name, path: target });
   }
-
-  if (oldSha !== evidence.lastWrittenHash) fail('TargetDrift', { name, path: target });
 
   // 变更段：凭证 + 重判触达（必须排在 TargetDrift 之后，否则 S2 的 exit 1 会变成 exit 4）
   let rejudged = [];
   let judged = [];
   let judgedBy = null;
   let machineChecks = null;
-  if (phase === 'change') {
+  if (phase === 'change' && !args.new) {
     const nextStep = `下一步运行 node tools/docgen/builders/agents/cli.mjs diff --kind agent --name ${name}`;
     if (args.expectChange === undefined) {
       fail('UnapprovedChange', { message: `盘上=${oldSha} 渲染=${newSha} 缺 --expect-change；${nextStep}` });
@@ -572,6 +609,12 @@ export function cmdReplace(args) {
   }
   setAgentState(name, 'replaced');
   clearDrafts(name);
+  // 出生：写盘后新建 evidence（不读旧件、不追加 changes；goldenAssertion = pending，未跑黄金断言不得写 pass）
+  if (args.new) {
+    writeEvidence(name, birthEvidence(name, newSha));
+    console.log(`已替换：${target}`);
+    return 0;
+  }
   evidence.renderSha256 = newSha;
   evidence.lastWrittenHash = newSha;
   if (phase === 'change') {
@@ -592,12 +635,31 @@ function clearDrafts(name) {
   for (const f of readdirSync(dir).filter((x) => x.startsWith(`${name}--`))) rmSync(join(dir, f), { force: true });
 }
 
+// 出生 evidence（§6）：commit / blob / hashObject 走 git（40 位小写），sha256 / renderSha256 / lastWrittenHash
+// 取写盘字节的 sha256（64 位大写）；goldenAssertion = pending、compareResult = null、changes = []。
+function birthEvidence(name, sha) {
+  const rel = `agents/${name}.md`;
+  const commit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: REPO_ROOT, encoding: 'utf8' }).trim();
+  const hashObject = execFileSync('git', ['hash-object', '--no-filters', rel], { cwd: REPO_ROOT, encoding: 'utf8' }).trim();
+  return {
+    commit,
+    blob: hashObject,
+    sha256: sha,
+    hashObject,
+    goldenAssertion: 'pending',
+    compareResult: null,
+    renderSha256: sha,
+    lastWrittenHash: sha,
+    changes: [],
+  };
+}
+
 // ── 参数白名单（spec §3.3 末条）：指定 sub 下只接受本文列出的旗标 ──
 // 宽松的 flag()/has() 会静默丢弃未知旗标，让「迁移段出现 --expect-change → InvalidArgs」根本落不了地，
 // 拼错一个字母也会变成静默放行。故 replace / diff 走严格解析：白名单外的 `--xxx` 一律 InvalidArgs。
 const VALUE = 'value';
 const BOOL = 'bool';
-const REPLACE_FLAGS = { '--kind': VALUE, '--name': VALUE, '--draft': VALUE, '--expect-change': VALUE, '--rejudge': VALUE, '--yes': BOOL };
+const REPLACE_FLAGS = { '--kind': VALUE, '--name': VALUE, '--draft': VALUE, '--expect-change': VALUE, '--rejudge': VALUE, '--yes': BOOL, '--new': BOOL };
 const DIFF_FLAGS = { '--kind': VALUE, '--name': VALUE };
 // generate：只比不写为缺省；`--readme` 选 docs/agents 目标面、`--apply` 才授权落盘（spec §3 `:71`）
 const GENERATE_FLAGS = { '--kind': VALUE, '--name': VALUE, '--readme': BOOL, '--apply': BOOL };
@@ -684,6 +746,7 @@ export function main(argv) {
         yes: a['--yes'] === true,
         expectChange: a['--expect-change'],
         rejudge: a['--rejudge'],
+        new: a['--new'] === true,
       });
     }
     if (sub === 'diff') {

@@ -26,6 +26,10 @@ export const SUBJECTS = Object.freeze({
   'reviewer-security.card': Object.freeze({ display: '安全席卡', validator: nonEmptyObject }),
   'reviewer-ui.card': Object.freeze({ display: 'UI 席卡', validator: nonEmptyObject }),
   'senior-sdet.card': Object.freeze({ display: 'SDET 席卡', validator: nonEmptyObject }),
+  // S3-A 扩席：议长与答辩方两席
+  'speaker.card': Object.freeze({ display: '议长席卡', validator: nonEmptyObject }),
+  'respondent-architect.card': Object.freeze({ display: '架构答辩席卡', validator: nonEmptyObject }),
+  'respondent-dev.card': Object.freeze({ display: '研发答辩席卡', validator: nonEmptyObject }),
 });
 
 export const SUBJECT_VALIDATORS = Object.freeze(

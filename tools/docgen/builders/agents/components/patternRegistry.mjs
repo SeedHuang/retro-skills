@@ -53,7 +53,7 @@ export const patternRegistry = {
   tierBySeat,
   defaultTier: 'readOnly',
   boundaryBySeat,
-  outputKind: new Set(['issue-card', 'observation', 'audit', 'testcase', 'evidence']),
+  outputKind: new Set(['issue-card', 'observation', 'audit', 'testcase', 'evidence', 'proceeding', 'defense']),
 };
 
 // 按席取档位名：必须用 Object.hasOwn 判自有键——`constructor` 能过 NAME_RE，

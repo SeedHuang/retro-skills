@@ -25,8 +25,9 @@ import { CARD_KEYS } from './cardKeys.mjs'
 // 见该文件注释）；本文件只 re-export，导出面不变。
 export { CARD_KEYS }
 
-// 非议会席（spec §4 `:97` 点名两席）：`env.parliamentSeats` = 其余席
-const NON_PARL_SEATS = ['evidence-reader', 'senior-sdet']
+// 非议会席（spec §4 `:97` 点名两席）：`env.parliamentSeats` = 其余席。
+// S3-A §10：本常量是唯一源，`check-trigger-kind.mjs` 与 `sc-card-shape.test.mjs` 都读它，不再按前缀现算。
+export const NON_PARL_SEATS = ['evidence-reader', 'senior-sdet']
 
 function fail(code, fields = {}) {
   const e = new Error(fields.message ?? code)
