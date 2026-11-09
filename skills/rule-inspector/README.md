@@ -52,13 +52,13 @@ graph TD
 
 曾把「硬禁令/模式门控/事件触发/正向义务」当同一层 4 类——**错**。它们是两轴的跨乘结果（硬禁令 = 持续或条件×禁令，事件触发 = 条件×义务，正向义务 = 任意×义务）。真正新增的第三种**适用方式**只有**模式门控**。以双轴为准。
 
-### 现有 16 条实际盘点（2026-10-15）
+### 历史盘点（2026-10-15；已移除 2 条退役规则）
 
 | 适用方式 | 规则 |
 |---|---|
-| 持续适用（5） | no-git-write(禁)、how-i-must-reason(禁)、plain-language(义)、docs-convention(禁)、skill-assets(义) |
+| 持续适用（4） | no-git-write(禁)、plain-language(义)、docs-convention(禁)、skill-assets(义) |
 | 条件触发（10） | import-guard(禁)、import-path-choice(义)、list-empty-state(义)、styled-component-file(义)、powershell-encoding(禁)、rules-single-source(禁)、ts-expect-error(禁)、poll-deferred(义)、landing-sweep(义)、vitest-queued(禁) |
-| 模式门控（1） | **global-ask-before-acting(禁)** |
+| 模式门控（0） | （该口径已退役：平台已有 chat/agent 模式切换） |
 | 待拆未定（0） | （原 code-style 已拆为 import-path-choice / list-empty-state / styled-component-file） |
 
 ## 3. 类型判定流程（AI 判，脚本只接收）

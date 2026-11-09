@@ -1103,7 +1103,8 @@ test('S3-TC-I14 两模板与删除面', () => {
   const diff = execFileSync('git', ['diff', '-U0', S3_BASE, '--', 'skills/rule-inspector/references/criteria.md'], { cwd: REPO, encoding: 'utf8' })
   const beforeLines = execFileSync('git', ['show', `${S3_BASE}:skills/rule-inspector/references/criteria.md`], { cwd: REPO, encoding: 'utf8' }).split(/\r?\n/)
   if (beforeLines[0]) beforeLines[0] = beforeLines[0].replace(/^\uFEFF/, '') // 行首 BOM 会让 `^# 判据全集` 失配
-  const ALLOWED = [/^# 判据全集/, /^#### 新增维度/, /^### 3\.4 /, /^### 3\.5 /, /^### 3\.3b /, /^## 3\. 类型感知扩展/]
+  // 2026-11-09 增量：`### 2.1 来源类型` 允许删除——清理已退役规则名；同批改 testcase S3-TC-I14
+  const ALLOWED = [/^# 判据全集/, /^#### 新增维度/, /^### 2\.1 /, /^### 3\.4 /, /^### 3\.5 /, /^### 3\.3b /, /^## 3\. 类型感知扩展/]
   const outOfScope = []
   for (const h of hunksOf(diff)) {
     if (h.deleted.length === 0) continue

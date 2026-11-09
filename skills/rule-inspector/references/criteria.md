@@ -7,7 +7,7 @@
 ### 2.1 来源类型（权限标记，管「谁定的」）
 | 类型 | 现有规则 |
 |---|---|
-| `用户当场指令` | `global-ask-before-acting`、`plain-language-to-user`、`docs-convention`、`how-i-must-reason` |
+| `用户当场指令` | `core-working-principles`、`plain-language-to-user`、`docs-convention` |
 | `评审第 N 轮` | `landing-sweep` |
 | `实测/踩坑` | `powershell-file-encoding`、`import-guard`、`skill-assets-convention`、`ts-expect-error`、`vitest-queued-alternative` |
 | `项目约定` | `poll-deferred-at-start`、`no-git-write`、`import-path-choice`、`list-empty-state`、`styled-component-file`、`rules-single-source` |

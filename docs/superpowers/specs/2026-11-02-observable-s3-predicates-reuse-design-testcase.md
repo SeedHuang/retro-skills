@@ -637,12 +637,13 @@
 - **预期**：六个副本各红一项且点名；仓内一次全绿
 - **判据**：`[c1,c2,c3,c4,c5,c6].forEach((c) => assert.throws(() => assertSync(c)))`；`assert.doesNotThrow(() => assertSync(REPO))`
 
-### S3-TC-I14 `#36` / E2 行各 1、编号连续，且 `criteria.md` 只允许计分四处与两表被改写（条目级不减）【边界】
+### S3-TC-I14 `#36` / E2 行各 1、编号连续，且 `criteria.md` 只允许计分四处、两表与 2.1 来源类型表被改写（条目级不减）【边界】
 
 - **覆盖**：`§5` 同步 ④⑥、`§5` ⑤ 零删除（条目级）
 - **前置**：`review-progress-template.md` 与 `rule-edit-checklist-template.md` 已改；`<S3-BASE>` 已取；`hunksOf`（§0.1 #22）可取
-- **步骤**：`test('S3-TC-I14 两模板与删除面')`：① 取 `review-progress-template.md` 编号列，断 `1..36` 无缺号；② 取 `rule-edit-checklist-template.md` 的 E2 段，断含 1 行「判据可观察」且该段含「9 项」；③ `git diff -U0 <S3-BASE> -- skills/rule-inspector/references/criteria.md` 的每个删除 hunk，按**改后文件**定位其所属小节标题
-- **预期**：① 36 连续；② 恰 1 行；③ 删除 hunk 所属小节 ⊆ {文件标题行, `#### 新增维度`, `### 3.4 执行力度适用项表`, `### 3.5 满分口径`, §3 导语行}，其它小节删除行 `0`；④ §2.4 执行力度表行数 +1（条目不减）
+- **步骤**：`test('S3-TC-I14 两模板与删除面')`：① 取 `review-progress-template.md` 编号列，断 `1..36` 无缺号；② 取 `rule-edit-checklist-template.md` 的 E2 段，断含 1 行「判据可观察」且该段含「9 项」；③ `git diff -U0 <S3-BASE> -- skills/rule-inspector/references/criteria.md` 的每个删除 hunk，按 **S3-BASE 版本（改前文件）** 定位其所属小节标题
+- **预期**：① 36 连续；② 恰 1 行；③ 删除 hunk 所属小节 ⊆ {文件标题行, `#### 新增维度`, `### 2.1 来源类型`, `### 3.3b 执行保障维度`, `### 3.4 执行力度适用项表`, `### 3.5 满分口径`, §3 导语行}，其它小节删除行 `0`；④ §2.4 执行力度表行数 +1（条目不减）
+- **2026-11-09 增量**：③ 的允许集新增 `### 2.1 来源类型`——用于清理已退役规则名（`global-ask-before-acting` 换为现存的 `core-working-principles`）；同批改 `s3-predicates.test.mjs` 的 `ALLOWED`。定位口径由「按改后文件」更正为「按 S3-BASE 改前文件」，与实装一致。
 - **判据**：`assert.equal(maxNo, 36)`；`assert.equal(missingNos, 0)`；`assert.equal(e2Rows.length, 1)`；`assert.match(e2, /9 项/)`；`assert.deepEqual(outOfScopeDeleted, [])`；`assert.equal(rowsAfter.length, rowsBefore.length + 1)`
 
 ---

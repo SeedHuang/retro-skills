@@ -7,7 +7,7 @@ description: 体检 rules/ 里的规则——按判据全集评分、出报告�
 
 ## 触发条件
 
-用户说「体检 rules / 优化 rules」时触发。**不自动触发**——体检活规则是高影响动作，按 `global-ask-before-acting` 必须先拿到指令。
+用户说「体检 rules / 优化 rules」时触发。**不自动触发**——体检活规则是高影响动作，必须先拿到用户指令。
 
 **全库 `--dir` 体检须用户明确要求**（「体检全部规则」类指令）——agent 在修复 / 审查流程中只对**本次改动过的规则**跑 `--file` 复核，不自行扩到全库（2026-10-15 用户指令；既有欠账等用户明确要求才处理，见 `docs/superpowers/specs/2026-10-15-verification-audit-checklist-design.md` §3）。
 

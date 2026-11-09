@@ -7,7 +7,7 @@ description: 体检 skills/ 里的技能——按 skill-authoring-convention 判
 
 ## 触发条件
 
-用户说「体检 skills / 优化 skill」时触发。**不自动触发**——体检活技能是高影响动作，按 `global-ask-before-acting` 必须先拿到指令。
+用户说「体检 skills / 优化 skill」时触发。**不自动触发**——体检活技能是高影响动作，必须先拿到用户指令。
 
 ## 判据权威
 
