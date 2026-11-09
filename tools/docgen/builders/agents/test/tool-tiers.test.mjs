@@ -781,7 +781,7 @@ test('S5-TC-E08 skills/ 全树无旧档位句 + 三处流程文档含「已授 p
   for (const [f, s] of files) assert.equal(OLD.test(s), false, f);
 
   const DOCS = ['skills/parliament/references/debate-protocol.md',
-    'skills/parliament/assets/round-check.md',
+    'skills/parliament-ledger/assets/round-check.md',
     'skills/dev-workflow/references/stage-4-quality.md'];
   for (const p of DOCS) assert.match(readRepo(p), NEW, p);
 });

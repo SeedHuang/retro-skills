@@ -19,10 +19,10 @@ description: 议会式多方评审。Use when 用户说「开议会」「议会�
 1. **评审**：被点评委并行独立出卡（每席：固定清单逐条作答 + 自由探索 3-5 问）→ 主持人汇总、去重、按族分组 → 追问轮发全体评委补视角（审 rule/skill/agents 类文档时，另对照 `references/failure-modes.md` 13 病根表逐层核对）
 2. **答辩**：答辩方小组核实问题客观性 → leader 按 `references/debate-protocol.md` 逐卡作答（承认 / 反驳带依据 / 部分承认带修法）→ **每评审轮内 ≤3 轮答辩**（3 评审轮后仍有 P0/P1 → 升级用户、评审继续，见 `dev-workflow` 技能）
 3. **侦探**：每轮答辩后行为核对（刁难 / 回避 / 丢卡），机械判据与处置表在 `references/debate-protocol.md`
-4. **审计**：每轮填 `assets/round-check.md`（第 0 项轮际对账；不过 = 下一轮不得开始）；终局填 `assets/delivery-audit.md`（不过 = 不得宣布交付）
+4. **审计**：每轮填 `parliament-ledger` 技能的轮间核对单（第 0 项轮际对账；不过 = 下一轮不得开始）；终局填该技能的交付审计表（不过 = 不得宣布交付）
 5. **升级**：3 评审轮未决（或单轮内 3 轮答辩未决）按 `assets/escalation-report.md`（双方摸查记录与各自解法必填；无摸查 = 臆想争端，侦探驳回）
 6. **修复纪律**：每修复带落点 → 重跑手法 3（跨章节一致性）→ 同族扫描 → 修复引入自查
-7. **产出**：结论先行（X 矛盾 + Y 盲点 + Z 优化）→ 分级详述（`assets/issue-card.md` 格式）→ 自洽确认区 → 团队名单与轮间变更记录 → 实际执行路径标注 → **评审产物落点按本技能账本三件套模板**进 `.session/reviews/<YYYY-MM-DD-HHMMSS>-<kebab 名字>/`（`progress.md` 过程账 + `problems.md` 族级台账 + `cards.md` 原始卡；模板见本技能 `assets/`）；`docs/reports/` 只放分析数据，不放评审结论。
+7. **产出**：结论先行（X 矛盾 + Y 盲点 + Z 优化）→ 分级详述（`parliament-ledger` 技能的问题卡格式）→ 自洽确认区 → 团队名单与轮间变更记录 → 实际执行路径标注 → **评审产物落点按本技能账本三件套模板**进 `.session/reviews/<YYYY-MM-DD-HHMMSS>-<kebab 名字>/`（`progress.md` 过程账 + `problems.md` 族级台账 + `cards.md` 原始卡；模板见本技能 `assets/`）；`docs/reports/` 只放分析数据，不放评审结论。
 
 ## 关键规矩
 - 送审说明未填或缺项 = 不得开评；它是开卷清单的唯一来源（模板 `assets/submission.md`，必带件判据 `references/submission-matrix.md`）

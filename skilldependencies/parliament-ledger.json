@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "skill": "parliament-ledger",
+  "dependencies": {
+    "skills": [
+      { "name": "parliament" }
+    ]
+  }
+}

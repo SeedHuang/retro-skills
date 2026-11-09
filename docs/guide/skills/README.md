@@ -199,3 +199,9 @@ flowchart TB
 - **什么时候用**：新建 / 移动 / 命名 `docs/` 下的文档，或判断内容该进 `docs/prd`、`specs`、`plans`、`handoffs`、`after`、`research`、`devworkflows`、`.session`；也用于判断待办何时该搬走 / 删除。
 - **做什么**：按生命周期状态分目录；目录表与命名规则；`.session/` 封闭清单与硬边界；待决只在 `docs/after/`；待办语义（不许 ✅ 档）；与 `dev-workflow` 的 after 回扫判据反向对齐。
 - **不做什么**：写文档内容本身（走 `plain-language` / `carrier-conventions`）；rule 正文（走 `carrier-conventions`）；技能资产目录（走 `carrier-conventions`）。
+
+### 13. `parliament-ledger` — 议会账本与产物模板
+
+- **什么时候用**：议会评审要填问题卡、轮间核对单、交付审计表时；角色卡说「产出格式走 `parliament-ledger`」时。
+- **做什么**：提供议会三张表的模板（问题卡含观察记录节；轮间核对单；交付审计表），并写明每张表的填写口径与缺项判据。
+- **不做什么**：评审流程本身（走 `parliament`）；模板正文手改（三份都是生成物，改生成器数据后重新生成）。

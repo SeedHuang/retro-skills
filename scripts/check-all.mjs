@@ -178,6 +178,16 @@ if (g.error) {
   }
 }
 
+// ②.55 议会账本模板：生成物漂移守卫（ledger.mjs 默认比对模式；手改 md 或改源未重生成 = 红）
+const ledgerRun = spawnSync(process.execPath, ['tools/docgen/builders/agents/ledger.mjs'], { cwd: root, encoding: 'utf8', env: gateEnv })
+if (ledgerRun.error) {
+  failed = true
+  console.error('[ledger] 进程启动失败：' + ledgerRun.error.message)
+} else {
+  if (ledgerRun.stdout) console.log(ledgerRun.stdout.trim())
+  if (ledgerRun.status !== 0) failed = true
+}
+
 // ②.6 执行力度矩阵：归桶守卫 + A 组检查 + 共享项变更硬闸门（R7）+ 模式表守卫
 // （对齐既有 gate 模式：failed=true 统一出口）
 const bucketRes = checkBuckets()
