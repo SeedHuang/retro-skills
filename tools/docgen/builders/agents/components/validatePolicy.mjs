@@ -86,6 +86,8 @@ function literalHits(src) {
 }
 
 export function validatePolicy() {
+  // 组级 layer 先于一切席级判据（spec §3.1）：组数据坏了，后面的组引用校验都无意义
+  CMD.validateCommandLayers(CMD.commandGroups);
   const cfgSrc = readFileSync(CFG_PATH, 'utf8');
   const seats = Object.keys(SEAT_POLICY);
   const seatNames = SEATS.SEAT_NAMES;
@@ -287,7 +289,22 @@ export function validatePolicy() {
     }
   }
 
+  // ---- S3（spec §3.2 / §3.3）：卡面只渲染 run 组，席位若配了非 run 组 = 构建期红（不静默过滤）----
+  validateSeatLayers();
+
   // 槽值守卫（spec:57 / spec:93）：逐席取值——显式 `undefined` / `null` → TemplateImpure（片段 = 槽名）；
   // 「缺省未声明」的可选槽走缺省分支，不在此报错。渲染器与 dump 共用同一套取值，故此处一遍即够。
   for (const seat of Object.keys(SEATS.SEATS)) slotValues(seat);
+}
+
+// 席位授权面只许 `layer=run` 的组（spec §3.3）：渲染层只过滤会让错误配置「看起来生效」，
+// 故在生成卡之前抛 `NonRunGroupGranted`。`policy` 可注入，供副本 / 单测使用。
+export function validateSeatLayers(policy = SEAT_POLICY) {
+  for (const [seat, p] of Object.entries(policy)) {
+    for (const g of p?.allowGroups ?? []) {
+      // 席级组（`seat:<slug>.extra`）与未登记组不属「命令组 layer」域：前者归不变量 8，后者归 UnknownPolicyRef
+      if (!hasOwn(CMD.commandGroups, g)) continue;
+      if (CMD.commandGroups[g].layer !== 'run') fail('NonRunGroupGranted', `${seat}:${g}`)
+    }
+  }
 }

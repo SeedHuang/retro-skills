@@ -112,9 +112,15 @@ const MOVE_MINUS = ['node tools/docgen/cli.mjs gate', 'node tools/docgen/cli.mjs
   'node tools/docgen/cli.mjs diff --kind agent --name <席>', 'node tools/docgen/cli.mjs draft ls']
   .map((c) => `allowCmds: ${c}`);
 const MOVE_PLUS = MOVE_MINUS.map((x) => x.replace('tools/docgen/cli.mjs', 'tools/docgen/builders/agents/cli.mjs'));
-const BASE_DELTA_DESC = 'Q8 三项 + 归档一条 + 目录迁移 4 条命令';
-const baseDelta = () => ({ minus: [...Q8_MINUS, ...ARCHIVE_MINUS, ...MOVE_MINUS], plus: [...ARCHIVE_PLUS, ...MOVE_PLUS] });
-const withoutBase = (arr) => arr.filter((x) => !Q8_MINUS.includes(x) && !ARCHIVE_MINUS.includes(x) && !ARCHIVE_PLUS.includes(x) && !MOVE_MINUS.includes(x) && !MOVE_PLUS.includes(x));
+// 2026-11-09（S3 组级 layer）：`check.local` 拆成 `repo.check`(dev) / `tool.time`(run)，卡面只授权 run 组，
+// 故 4 条开发期命令从允许集迁出。基线是改造前旧卡，故 4 条 minus 必须登记；其余任何差仍判红。
+const SPLIT_MINUS = ['npm run check', 'node scripts/check-all.mjs', 'node scripts/doc-name.mjs --check', 'node scripts/skill-dir.mjs']
+  .map((c) => `allowCmds: ${c}`);
+const BASE_DELTA_DESC = 'Q8 三项 + S3 拆组 4 条命令 + 归档一条 + 目录迁移 4 条命令';
+// 顺序 = `diffFacts` 的实际产出顺序（按基线卡面出现的先后）：路径（Q8）→ 允许命令（拆组 / 归档 / 目录迁移）
+// S3 后 `docgen.read`（build）不再授予 → 目录迁移的 4 条新路径不再进允许集，只有旧的 4 条落入 minus。
+const baseDelta = () => ({ minus: [...Q8_MINUS, ...SPLIT_MINUS, ...ARCHIVE_MINUS, ...MOVE_MINUS], plus: [...ARCHIVE_PLUS] });
+const withoutBase = (arr) => arr.filter((x) => !Q8_MINUS.includes(x) && !ARCHIVE_MINUS.includes(x) && !ARCHIVE_PLUS.includes(x) && !MOVE_MINUS.includes(x) && !MOVE_PLUS.includes(x) && !SPLIT_MINUS.includes(x));
 // 读配置侧唯一口径（testcase §0.3 / spec:131）：`Object.hasOwn`，否则 `constructor` / `__proto__` 会取到原型链上的值
 const policyOf = (n) => (Object.hasOwn(SEAT_POLICY, n) ? SEAT_POLICY[n] : SEAT_POLICY.__default__);
 // 卡文本（A06 ① 切的是**卡面**，不是渲染结果——两席的卡在 T5 才重出）
@@ -215,10 +221,10 @@ function factsFromPolicy(json, seat) {
 // `spec / plan` 的卡面形态（③ 段成员之一）：与 `pathTokens()` 同一派生口径，不另写字面
 const SPEC_PLAN_LABEL = () => pathTokens().at(-1);
 
-test('S6-TC-A02 命令 8 组（允许 3 / 禁止 5）+ seatGroups 空集 + 每组 purpose 与 verbs 非空', () => {
+test('S6-TC-A02 命令 9 组（允许 4 / 禁止 5）+ seatGroups 空集 + 每组 purpose 与 verbs 非空', () => {
   const G = CMD.commandGroups;                       // 允许组
   const D = CMD.forbiddenGroups;                     // 禁止组
-  assert.deepEqual(Object.keys(G), ['check.local','git.read','docgen.read'], '允许组顺序 = 卡面顺序');
+  assert.deepEqual(Object.keys(G), ['repo.check','tool.time','git.read','docgen.read'], '允许组顺序 = 卡面顺序（S3 拆组）');
   assert.deepEqual(Object.keys(D), ['docgen.write','git.write','fs.write','env.assign','network']);
   for (const g of [...Object.values(G), ...Object.values(D)]) {
     assert.ok(typeof g.purpose === 'string' && g.purpose.trim().length > 0);
@@ -416,9 +422,9 @@ test('S6-TC-B01 各席 + __default__ 策略数据等价；黄金 4 键齐（哈�
   assert.deepEqual(Object.keys(SEAT_POLICY),
     ['reviewer-audit','detective-observer','senior-sdet','speaker','respondent-dev','respondent-architect','__default__']);
   assert.deepEqual(SEAT_POLICY['reviewer-audit'], { capabilities: ['read','write','exec'],
-    allowGroups: ['check.local','git.read','docgen.read'], artifacts: ['round-check.md','delivery-audit.md'] });
+    allowGroups: ['git.read','tool.time'], artifacts: ['round-check.md','delivery-audit.md'] });
   assert.deepEqual(SEAT_POLICY['detective-observer'], { capabilities: ['read','write','exec'],
-    allowGroups: ['check.local','git.read','docgen.read'], artifacts: ['detective.md'] });
+    allowGroups: ['git.read','tool.time'], artifacts: ['detective.md'] });
   assert.deepEqual(SEAT_POLICY['senior-sdet'], { capabilities: ['read','write'], allowGroups: [], artifacts: [] });
   assert.deepEqual(SEAT_POLICY.__default__, { capabilities: ['read'], allowGroups: [], artifacts: [] });
   // ④ 黄金：4 个**基线键**必须在（换代只许追加 `<席>@<轮次>`、旧键不删），且值取自**改造前**文本
@@ -988,7 +994,7 @@ test('S6-TC-E02 V-8 两形态：已登记席加组 = 1 处数据；新增席 = 2
   // ① 已登记席加组 → 只改 seat-policy.mjs 一处（数据），只该席渲染变；3 席接模板后卡面未重出 → gate 报 Mismatch，
   //    副本内按渲染重写该卡后 gate 复绿
   withCopy((d) => {
-    grantGroup(d, 'senior-sdet', 'check.local');
+    grantGroup(d, 'senior-sdet', 'git.read');
     assert.deepEqual(changedFiles(ROOT, d), ['builders/agents/policy/seat-policy.mjs'], 'V-8①：已登记席加组只应改配置层一处');
     const after = hashesOf(d);
     assert.deepEqual(Object.keys(after).filter((n) => after[n] !== before[n]), ['senior-sdet']);
@@ -1007,7 +1013,7 @@ test('S6-TC-E02 V-8 两形态：已登记席加组 = 1 处数据；新增席 = 2
   withCopy((d) => {
     insertInObject(d, 'tools/docgen/builders/agents/policy/definitions/seats.mjs', 'export const SEATS', "'probe-seat': { display: '探针席' },");
     insertInObject(d, 'tools/docgen/builders/agents/policy/seat-policy.mjs', 'export const SEAT_POLICY',
-      "'probe-seat': { capabilities: ['read'], allowGroups: ['check.local'], artifacts: [] },");
+      "'probe-seat': { capabilities: ['read'], allowGroups: ['git.read'], artifacts: [] },");
     assert.deepEqual(changedFiles(ROOT, d),
       ['builders/agents/policy/definitions/seats.mjs', 'builders/agents/policy/seat-policy.mjs'], 'V-8②：新增席 = 两处数据、零代码');
     const after = hashesOf(d);
@@ -1241,11 +1247,11 @@ test('S6-TC-F01 dump 顶层八键齐 / tiers 档位表齐（值 = 工具名）/ 
   for (const [tier, tools] of Object.entries(json.tiers)) {
     for (const t of tools) assert.ok(TOOLS.has(t), `${tier}: ${t} 不是工具名（档位值不得写成 capability ID）`);
   }
-  // commands = 允许 3 ∪ 禁止 5 ∪ seatGroups（spec:162；本轮 seatGroups 为空集 → 恰 8 组）
+  // commands = 允许 4 ∪ 禁止 5 ∪ seatGroups（spec:162；本轮 seatGroups 为空集 → 恰 9 组）
   assert.deepEqual(Object.keys(json.commands).sort(),
     [...Object.keys(CMD.commandGroups), ...Object.keys(CMD.forbiddenGroups), ...Object.keys(CMD.seatGroups ?? {})].sort(),
-    'dump 的 commands 组集 ≠ 允许 3 ∪ 禁止 5 ∪ seatGroups');
-  assert.equal(Object.keys(json.commands).length, 8, '本轮 seatGroups 为空集 → 恰 8 组');
+    'dump 的 commands 组集 ≠ 允许 4 ∪ 禁止 5 ∪ seatGroups');
+  assert.equal(Object.keys(json.commands).length, 9, '本轮 seatGroups 为空集 → 恰 9 组');
   for (const [g, v] of Object.entries(json.commands)) {
     assert.ok(typeof v.purpose === 'string' && v.purpose.trim().length > 0, `${g}: purpose 缺失 / 为空`);
     assert.ok(Array.isArray(v.verbs) && v.verbs.length > 0, `${g}: verbs 缺失 / 为空`);
@@ -1357,18 +1363,18 @@ test('S6-TC-F05 dump 幂等：连跑两次 stdout 逐字相等、无时间戳', 
 });
 
 test('S6-TC-F06 dump 与 renderBoundary 同源：定义改一处两者同变（清单项已指针化，只动 dump）', () => {
-  // ① 命令组：`check.local.verbs` 追加一条无害 verb → dump 的组长度 +1；渲染**不变**（清单不落卡）
+  // ① 命令组：`repo.check.verbs` 追加一条无害 verb → dump 的组长度 +1；渲染**不变**（清单不落卡）
   const dumpBefore = JSON.stringify(dumpPolicy(ROOT).json);
   const renderBefore = renderBoundary('reviewer-audit');
   const after = withCopy((d) => {
     editInDir(d, 'tools/docgen/builders/agents/policy/definitions/commands.mjs',
-      (s) => s.replace("'node scripts/skill-dir.mjs',",
-        "'node scripts/skill-dir.mjs','node scripts/extra-check.mjs',"));
+      (s) => s.replace("'npm run check',",
+        "'npm run check','node scripts/extra-check.mjs',"));
     return { dump: dumpPolicy(d).json, render: renderBoundaryIn(d, 'reviewer-audit') };
   });
   assert.notEqual(sha(JSON.stringify(after.dump)), sha(dumpBefore), 'dump 未跟随定义层变更');
-  assert.equal(after.dump.commands['check.local'].verbs.length,
-    JSON.parse(dumpBefore).commands['check.local'].verbs.length + 1);
+  assert.equal(after.dump.commands['repo.check'].verbs.length,
+    JSON.parse(dumpBefore).commands['repo.check'].verbs.length + 1);
   // S-B §11.2.6：命令白名单已指针化 → 加 verb 不改渲染；渲染若跟随（清单被写回卡面）即红
   assert.equal(after.render, renderBefore, 'render 不得随清单 verb 变化（清单已指针化）');
 
@@ -1405,8 +1411,10 @@ function applyLegalGrant(dir, p) {
   });
 }
 // 允许侧：允许组 verbs（逐条）+ 各席可写产物（逐项）+ 6 个工具（逐个，按 capability 选席）；条数由定义层现算
+// S3：只有 `layer=run` 的组可被授予（非 run 组由 `validatePolicy` 报 `NonRunGroupGranted`），故探针只扫 run 组。
+const runGroups = () => Object.entries(CMD.commandGroups).filter(([, g]) => g.layer === 'run');
 const allowProbes = () => [
-  ...Object.entries(CMD.commandGroups).flatMap(([group, g]) =>
+  ...runGroups().flatMap(([group, g]) =>
     g.verbs.map((v) => ({ kind: 'cmd', id: v, group, seat: PROBE_SEAT }))),
   ...Object.entries(SEAT_POLICY).filter(([s]) => s !== '__default__')
     .flatMap(([s, p]) => p.artifacts.map((a) => ({ kind: 'artifact', id: a, seat: s }))),
@@ -1422,7 +1430,7 @@ const denyProbes = () => [
 // 期望集**独立拼**（不调用 allowProbes / denyProbes）：六个来源各自从定义层直接铺开。
 // 为什么不能复用探针构造器：同源时期望集跟着构造器一起变短（`slice(0,1)` 后两边仍相等 → 本条恒绿、I03 失去判别力）。
 const expectedProbeKeys = () => [
-  ...Object.entries(CMD.commandGroups).flatMap(([, g]) => g.verbs.map((v) => `cmd:${v}@${PROBE_SEAT}`)),
+  ...runGroups().flatMap(([, g]) => g.verbs.map((v) => `cmd:${v}@${PROBE_SEAT}`)),
   ...Object.entries(SEAT_POLICY).filter(([s]) => s !== '__default__')
     .flatMap(([s, p]) => p.artifacts.map((a) => `artifact:${a}@${s}`)),
   ...Object.entries(CAP.capabilities).flatMap(([cap, list]) => list.map((t) => `tool:${t}@${probeSeatOf(cap)}`)),
@@ -1430,8 +1438,8 @@ const expectedProbeKeys = () => [
   ...pathTokens().map((p) => `path:${p}@${PROBE_SEAT}`),
   ...Object.keys(CMD.forbiddenGroups).map((g) => `deny-group:${g}@reviewer-audit`),
 ];
-// 允许命令 token（组内 verbs 拍平）：I01 用它现算「命令探针条数」，不写死条数
-const commandTokens = () => Object.values(CMD.commandGroups).flatMap((g) => g.verbs);
+// 允许命令 token（run 组内 verbs 拍平）：I01 用它现算「命令探针条数」，不写死条数
+const commandTokens = () => runGroups().flatMap(([, g]) => g.verbs);
 
 // ---- 逐项探针的记账（I 组共用；I03 断言键集与执行次数）----
 // 键带席名（`kind:id@seat`）：同一 id 挂不同席是**两项**（`exec` 探针挂 `reviewer-audit`、其余挂 `senior-sdet`）——
@@ -1796,6 +1804,7 @@ test('S6-TC-H02 五段事实集合逐席 diff 空差', () => {
         if (Q8_MINUS.includes(`${k}: ${m}`)) continue;   // Q8 有意删除：基线里在、定义层已删（见 Q8_MINUS 注释）
         if (ARCHIVE_MINUS.includes(`${k}: ${m}`)) continue;   // 归档：旧 timer 路径已迁到公共 CLI（`scs time`，见 ARCHIVE_MINUS 注释）
         if (MOVE_MINUS.includes(`${k}: ${m}`)) continue;   // 目录统一：cli 路径下沉（见 MOVE_MINUS 注释）
+        if (SPLIT_MINUS.includes(`${k}: ${m}`)) continue;  // S3 拆组：开发期命令不再进允许集（见 SPLIT_MINUS 注释）
         assert.ok(POOL[k].includes(m),
           `${s}: 基线成员 ${k}:${m} 不在定义层字典里（基线切分口径错 或 定义层丢项 → 判据将恒真）`);
       }
@@ -1828,15 +1837,16 @@ test('S6-TC-H03 负例：少一项路径 → minus 出现 forbiddenPaths → 必
 });
 
 test('S6-TC-H04 负例：删一条允许命令 → minus 出现 allowCmds → 必红', () => {
-  const before = baseJson().seats['reviewer-audit'].allowCmds.length;
+  // 「改造后允许命令数」按未改动副本现算（基线是改造前旧卡，S3 拆组后条数已不同）
+  const before = factsFromPolicy(dumpPolicy(ROOT).json, 'reviewer-audit').allowCmds.length;
   const after = withCopy((dir) => {
     editInDir(dir, 'tools/docgen/builders/agents/policy/definitions/commands.mjs',
-      (s) => s.replace(/\s*'node scripts\/skill-dir\.mjs',/, ''));
+      (s) => s.replace(/\s*'git --no-optional-locks log',/, ''));
     return factsFromPolicy(dumpPolicy(dir).json, 'reviewer-audit');
   });
   const d = diffFacts(baseJson().seats['reviewer-audit'], after);
-  assert.equal(after.allowCmds.length, before - 1, '改造后允许命令数应 = 基线 − 1');
-  assert.deepEqual(withoutBase(d.minus).map((x) => x.replace(/^allowCmds: /, '')), ['node scripts/skill-dir.mjs']);
+  assert.equal(after.allowCmds.length, before - 1, '改造后允许命令数应 = 现算值 − 1');
+  assert.deepEqual(withoutBase(d.minus).map((x) => x.replace(/^allowCmds: /, '')), ['git --no-optional-locks log']);
   assert.deepEqual(withoutBase(d.plus), []);
   assert.equal(verdict(d), 'fail');
 });
@@ -1850,10 +1860,11 @@ test('S6-TC-H05 越权负例：多一项（路径 / 命令 / 已登记组，各�
       (s) => s.replace("{ id: 'other-reviews', text: '其他评审目录' },",
         "{ id: 'other-reviews', text: '其他评审目录' }, { id: 'vendor', text: 'vendor/' },")), 1],
     ['cmds', 'reviewer-audit', (d) => editInDir(d, 'tools/docgen/builders/agents/policy/definitions/commands.mjs',
-      (s) => s.replace("'node scripts/skill-dir.mjs',", "'node scripts/skill-dir.mjs','node scripts/extra.mjs',")), 1],
-    // 度量席必须是 `senior-sdet` 自己：`reviewer-audit` 本就持有 `docgen.read` → plus 恒 0、判据失效
-    ['group', 'senior-sdet', (d) => grantGroup(d, 'senior-sdet', 'docgen.read'),
-      CMD.commandGroups['docgen.read'].verbs.length],
+      (s) => s.replace("'git --no-optional-locks reflog show',", "'git --no-optional-locks reflog show','git --no-optional-locks extra',")), 1],
+    // 度量席必须是 `senior-sdet` 自己：`reviewer-audit` 本就持有 `tool.time` → plus 恒 0、判据失效；
+    // S3 后只许授予 run 组（dev/build 组会先撞 `NonRunGroupGranted`）
+    ['group', 'senior-sdet', (d) => grantGroup(d, 'senior-sdet', 'tool.time'),
+      CMD.commandGroups['tool.time'].verbs.length],
   ];
   for (const [name, seat, edit, expectPlus] of CASES) {
     const diff = withCopy((d) => {

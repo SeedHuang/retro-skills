@@ -46,6 +46,8 @@ export function sha256Hex(buf) { return createHash('sha256').update(buf).digest(
 // S4 Task 7：旧 agent 模板已退场，只留规则模板分支
 
 export function cmdGenerate(args) {
+  // S3（spec §3.2）：所有会渲染或写盘的子命令先跑 validatePolicy，避免 draft / generate 静默过滤后写盘
+  validatePolicy();
   // `--apply` 两种授权落盘：① 与 `--readme` 同时（docs/agents 投影）② `--kind rule --name`（rule 正文渲染物）
   const ruleWrite = args.apply && args.kind === 'rule' && typeof args.name === 'string'
   if (args.apply && !args.readme && !ruleWrite) {
@@ -418,7 +420,7 @@ export function cmdDiff(args) {
 
 export function cmdDraft(args, argv) {
   const sub = args.sub;
-  const dir = DRAFTS_DIR();
+  const dir = args.drafts ? resolve(args.drafts) : DRAFTS_DIR();
   if (sub === 'ensure') { mkdirSync(dir, { recursive: true }); return 0; }
   if (sub === 'ls') {
     const files = existsSync(dir) ? readdirSync(dir).filter((f) => !args.name || f.startsWith(`${args.name}--`)) : [];
@@ -431,7 +433,8 @@ export function cmdDraft(args, argv) {
     for (const f of files) rmSync(join(dir, f), { force: true });
     return 0;
   }
-  // sub === 'draft'（生成）
+  // sub === 'draft'（生成）：渲染前先过策略校验（spec §3.2）
+  validatePolicy();
   const name = args.name;
   assertAgentName(name);
   if (args.kind !== 'agent') fail('UnsupportedKind', { kind: args.kind });
@@ -452,6 +455,8 @@ export function cmdDraft(args, argv) {
 }
 
 export function cmdReplace(args) {
+  // S3（spec §3.2）：写盘前先过策略校验，非法配置不得靠 replace 落卡
+  validatePolicy();
   if (args.kind !== 'agent') {
     fail('UnsupportedKind', { kind: args.kind, sub: 'replace', message: `UnsupportedKind: sub=replace kind=${args.kind}（replace 只支持 --kind agent）` });
   }
@@ -734,7 +739,7 @@ export function main(argv) {
       const parts = argv[0] === 'draft' && ['ls', 'rm', 'ensure'].includes(argv[1]) ? ['draft', argv[1], ...argv.slice(2)] : argv;
       // 健康 sub 归一再传：仅 ls/rm/ensure 是真正的子命令，其余（如 --name）都应视为生成 draft，避免 `draft --name x` 时 sub 携带错误值
       const healthySub = ['ls', 'rm', 'ensure'].includes(parts[1]) ? parts[1] : 'draft';
-      return cmdDraft({ sub: healthySub, kind: flag('--kind', 'agent'), name: flag('--name', undefined) }, parts);
+      return cmdDraft({ sub: healthySub, kind: flag('--kind', 'agent'), name: flag('--name', undefined), drafts: flag('--drafts', undefined) }, parts);
     }
     if (sub === 'replace') {
       const a = parseArgs(rest, REPLACE_FLAGS, 'replace');

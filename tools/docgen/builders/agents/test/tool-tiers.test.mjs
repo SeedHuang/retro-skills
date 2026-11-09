@@ -276,7 +276,8 @@ test('S5-TC-B05 以「**禁止**」为界：允许段指组 + 禁止段指组 + 
   // S-B §11.2.3：命令白名单 / 禁止命令已指针化 → 段内只认**策略符号名 + 本席组 ID**；
   // 定义层成员数不变（每组非空）仍判——「指针化」不等于「清单被删」。
   const ALLOWED = Object.values(commandGroups).flatMap((g) => g.verbs);
-  const ALLOW_GROUP_IDS = Object.keys(commandGroups);
+  // S3（spec §3.2）：卡面只渲染 run 组；dev / build 组不进允许段
+  const ALLOW_GROUP_IDS = Object.entries(commandGroups).filter(([, g]) => g.layer === 'run').map(([id]) => id);
   const DENY_GROUP_IDS = Object.keys(forbiddenGroups);
   for (const g of [...Object.values(commandGroups), ...Object.values(forbiddenGroups)]) {
     assert.ok(Array.isArray(g.verbs) && g.verbs.length > 0, '定义层命令组不得为空（指针化的前提）');

@@ -822,12 +822,12 @@ test('SC-TC-41 三词槽在卡模型键面 0 命中（needs / purpose / method�
   assert.deepEqual(hits, [], '卡模型键面不得出现三词槽')
 })
 
-test('SC-TC-42 口径判别力：全树行口径 0 / 22 / 1，卡模型键面 0', () => {
+test('SC-TC-42 口径判别力：全树行口径 0 / 23 / 1，卡模型键面 0', () => {
   const lineHits = (word) => walkFiles(join(REPO, 'tools/docgen'))
     .filter((p) => (p.endsWith('.mjs') || p.endsWith('.json')) && !p.endsWith('sc-card-shape.test.mjs'))
     .reduce((n, p) => n + R(p).split(/\r?\n/).filter((l) => l.includes(word)).length, 0)
   assert.equal(lineHits(SLOT_WORDS[0]), 0, 'needs 全树行口径 0')
-  assert.equal(lineHits(SLOT_WORDS[1]), 22, 'purpose 全树行口径 22（commands.mjs 9 + policy-pure-source.test.mjs 13）')
+  assert.equal(lineHits(SLOT_WORDS[1]), 23, 'purpose 全树行口径 23（commands.mjs 10 + policy-pure-source.test.mjs 13；S3 拆组后 +1 组）')
   assert.equal(lineHits(SLOT_WORDS[2]), 1, 'method 全树行口径 1（card-model/expression.mjs）')
   assert.equal(SLOT_WORDS.filter((w) => agentData.some((a) => Object.keys(a.card).concat(Object.keys(a.card.duty)).some((k) => k.includes(w)))).length, 0)
 })

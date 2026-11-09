@@ -1,17 +1,21 @@
-// 命令组（spec §3.2 / V-4）：允许 3 组、禁止 5 组、席级组本轮为空集。
+// 命令组（spec §3.1 / V-4）：允许 4 组、禁止 5 组、席级组本轮为空集。
 // 组内顺序 = 卡面顺序；`verbs` 只放能逐项复算的字面成员，形态描述进 `purpose`（spec:54）。
+// `layer` = 生命周期层（build 构建期 / dev 开发期 / run 运行期）：一组只装一层，卡面只渲染 run 组。
+export const LAYERS = ['build', 'dev', 'run']
+
 export const commandGroups = {
-  'check.local': {
-    purpose: '本仓自检与计数：跑 check 与只读脚本，不改盘',
-    verbs: [
-      'npm run check',
-      'node scripts/check-all.mjs',
-      'node scripts/doc-name.mjs --check',
-      'node scripts/skill-dir.mjs',
-      'scs time',
-    ],
+  'repo.check': {
+    layer: 'dev',
+    purpose: '本仓提交前自检：跑 check 与只读脚本，不改盘',
+    verbs: ['npm run check', 'node scripts/check-all.mjs', 'node scripts/doc-name.mjs --check', 'node scripts/skill-dir.mjs'],
+  },
+  'tool.time': {
+    layer: 'run',
+    purpose: '平台工具链取数：只读，跨仓可用',
+    verbs: ['scs time'],
   },
   'git.read': {
+    layer: 'run',
     purpose: '只读 git 查询（status / diff / show / log / reflog show，禁 --output）',
     verbs: [
       'git --no-optional-locks status --porcelain',
@@ -22,6 +26,7 @@ export const commandGroups = {
     ],
   },
   'docgen.read': {
+    layer: 'build',
     purpose: 'docgen 只读子命令（gate / check-agents / diff / draft ls）',
     verbs: [
       'node tools/docgen/builders/agents/cli.mjs gate',
@@ -91,3 +96,36 @@ export const forbiddenGroups = {
 
 // 席级组：键 = `seat:<slug>.extra`，本轮为空集（内容合法性由不变量 8 守，只允许副本内构造）。
 export const seatGroups = {};
+
+// 报码优先级（spec §3.1 表序，testcase §7 缺口 5 冻结）：Missing → Invalid → Mixed → Empty → Duplicated。
+const LAYER_CODE_ORDER = ['GroupLayerMissing', 'GroupLayerInvalid', 'GroupMixedLayer', 'GroupEmpty', 'VerbDuplicated'];
+
+// 一组只装一个 layer：数组只有一种取值时视同该值，出现两个以上不同值才算混装。
+function normalizeLayer(raw) {
+  if (Array.isArray(raw)) return new Set(raw).size === 1 ? raw[0] : null;
+  return raw;
+}
+
+// 纯函数、无 IO：校验命令组层标与组内 verb，命中即抛 `Error.code`（六码之一）。
+export function validateCommandLayers(groups) {
+  const found = [];
+  const seen = new Map();
+  for (const [name, g] of Object.entries(groups ?? {})) {
+    const raw = g?.layer;
+    if (raw === undefined) { found.push(['GroupLayerMissing', name]); continue; }
+    const layer = normalizeLayer(raw);
+    if (layer === null) { found.push(['GroupMixedLayer', name]); continue; }
+    if (!LAYERS.includes(layer)) { found.push(['GroupLayerInvalid', `${name}:${layer}`]); continue; }
+    if (!Array.isArray(g.verbs) || g.verbs.length === 0) { found.push(['GroupEmpty', name]); continue; }
+    for (const v of g.verbs) {
+      if (seen.has(v)) found.push(['VerbDuplicated', `${seen.get(v)}/${name}: ${v}`]);
+      else seen.set(v, name);
+    }
+  }
+  if (found.length === 0) return;
+  found.sort((a, b) => LAYER_CODE_ORDER.indexOf(a[0]) - LAYER_CODE_ORDER.indexOf(b[0]));
+  const [code, detail] = found[0];
+  const e = new Error(`${code}: ${detail}`);
+  e.code = code;
+  throw e;
+}

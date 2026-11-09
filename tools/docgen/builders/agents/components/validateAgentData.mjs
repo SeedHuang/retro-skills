@@ -28,6 +28,10 @@ const EXIT = {
     // 第六码 `RenderNotEquivalent` 由施工期断言发出、**不进本表**（CLI 不引入）
     'UnknownPolicyRef', 'LiteralInConfig', 'SeatNameInDefinition', 'ForbiddenGroupGranted',
     'TemplateImpure',
+    // S3 组级 layer 六码（2026-11-09 spec §3.1 / §3.2）：五码唯一发射点 = `commands.mjs#validateCommandLayers`，
+    // `NonRunGroupGranted` 唯一发射点 = `validatePolicy.mjs#validateSeatLayers`；未登记会被兜底成 exit 2
+    'GroupLayerMissing', 'GroupLayerInvalid', 'GroupMixedLayer', 'GroupEmpty', 'VerbDuplicated',
+    'NonRunGroupGranted',
     // S4 承接 S1（spec §10-D12）：36 个脚本码 + 3 个合并码 → exit 1
     ...S1_EXIT1],
   2: ['UnregisteredHandwritten', 'InvalidBaseline', 'InvalidBaselinePath', 'DanglingBaselineEntry',

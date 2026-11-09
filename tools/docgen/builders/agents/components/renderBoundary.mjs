@@ -68,10 +68,12 @@ function capTools(caps) {
   return out;
 }
 
-// 槽 7 = 指针句（S-B §11.2.3）：组 ID **逐组列出**（来自入参，不按席写死）；空组写明「无白名单命令」
-function allowGroups(groups) {
+// 槽 7 = 指针句（S-B §11.2.3）：组 ID **逐组列出**（来自入参，不按席写死）；空组写明「无白名单命令」。
+// S3（spec §3.2）：渲染器**只过滤、不判错**——非 run 组不落卡；非法配置由 `validatePolicy` 统一发码。
+export function allowGroups(groups) {
   if (!Array.isArray(groups) || groups.length === 0) return `${code('commandGroups')}（无白名单组 = 无白名单命令）`;
-  return `${code('commandGroups')} 的 ${groups.map(code).join(' / ')} 白名单组`;
+  const run = groups.filter((g) => CMD.commandGroups[g]?.layer === 'run');
+  return `${code('commandGroups')} 的 ${run.map(code).join(' / ')} 白名单组`;
 }
 
 // 槽 8 = 指针句：禁止命令不再逐条落卡（清单归定义层 `forbiddenGroups`）
