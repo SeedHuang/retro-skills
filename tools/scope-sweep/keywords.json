@@ -218,7 +218,6 @@
       "scope": [
         "skills/rule-inspector/references/criteria.md",
         "skills/rule-inspector/references/recipes.md",
-        "skills/rule-inspector/scripts/score.mjs",
         "skills/rule-inspector/SKILL.md"
       ]
     },

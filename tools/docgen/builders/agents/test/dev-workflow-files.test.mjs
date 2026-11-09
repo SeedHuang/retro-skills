@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readdirSync, readFileSync, mkdtempSync, cpSync, appendFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir, homedir } from 'node:os';
-import { checkSkillDir } from '../../../../../skills/skill-inspector/scripts/check.mjs';
+// 2026-11-09：技能体检实现迁公共 CLI（spec R13），checkSkillDir 的等价用例在 scs 仓（check-skills.test.ts）
 import {
   ROOT, readRepo, tableAt, diffStageCells, stageOrder, rowLoop, transitionReport, refsReport,
   missingSections, missingPowers, planGateReport, exitWordReport, section, inlineHeadings,
@@ -163,33 +163,6 @@ test('TC-E03 references 多一份（stage-6-extra）→ 同样必红（恰有是
   assert.notEqual(r.count, 7);
   assert.deepEqual(r.extra, ['stage-6-extra.md']);
   assert.equal(r.exact, false);
-});
-
-test('TC-E10 自引用带技能名前缀 → skill-inspector 必报「自引用带前缀」', () => {
-  const dst = mkdtempSync(join(tmpdir(), 'dw-skill-'));
-  try {
-    cpSync(join(ROOT, 'skills', 'dev-workflow'), join(dst, 'dev-workflow'), { recursive: true });
-    appendFileSync(join(dst, 'dev-workflow', 'SKILL.md'), '\n见 `dev-workflow/references/stage-1-prd.md`\n');
-    const { findings } = checkSkillDir(dst, { manifest: { skills: ['dev-workflow'] } });
-    assert.ok(findings.some((f) => f.skill === 'dev-workflow' && f.check === '自引用带前缀'), JSON.stringify(findings));
-    const normal = checkSkillDir(join(ROOT, 'skills'), { manifest: { skills: [] } });
-    assert.equal(normal.findings.length, 0, JSON.stringify(normal.findings.slice(0, 3)));
-  } finally {
-    rmSync(dst, { recursive: true, force: true });
-  }
-});
-
-test('TC-E11 写对方技能内部文件路径 → 必报「跨技能路径引用」', () => {
-  const dst = mkdtempSync(join(tmpdir(), 'dw-skill-'));
-  try {
-    cpSync(join(ROOT, 'skills', 'dev-workflow'), join(dst, 'dev-workflow'), { recursive: true });
-    const p = join(dst, 'dev-workflow', 'SKILL.md');
-    appendFileSync(p, '\n见 `parliament/references/submission-matrix.md`\n');
-    const { findings } = checkSkillDir(dst, { manifest: { skills: ['dev-workflow', 'parliament'] } });
-    assert.ok(findings.some((f) => f.check === '跨技能路径引用'), JSON.stringify(findings));
-  } finally {
-    rmSync(dst, { recursive: true, force: true });
-  }
 });
 
 test('TC-E16 SKILL.md 为空或缺 frontmatter → markdown 检查必红', () => {

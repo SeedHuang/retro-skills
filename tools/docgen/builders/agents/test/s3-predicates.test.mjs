@@ -29,7 +29,6 @@ import {
 } from '../../../../execution-matrix/check-buckets.mjs'
 import { SHARED_MARKERS } from '../../../../execution-matrix/shared-items.mjs'
 import { parseLedger, checkSharedChanges } from '../../../../execution-matrix/shared-changes/check-shared-changes.mjs'
-import { scoreFile } from '../../../../../skills/rule-inspector/scripts/score.mjs'
 import { HISTORY_PREFIXES } from '../../../../../scripts/scope-sweep.mjs'
 import { readBakRule } from './support/dev-workflow-checks.mjs'
 
@@ -222,12 +221,12 @@ function blockOf(src, titlePrefix) {
 }
 
 const seven = (r) => r.checks.find((c) => c.check.includes('⑦'))
-const eight = (r) => r.checks.find((c) => c.check.includes('⑨'))
 
 // 六项同步义务（单源 = rule-inspector SKILL 硬闸门 7）；target 可为仓根路径或 {rel: 内容} 映射
+// ① 的机械常量随 2026-11-09 迁移落到公共 CLI `scs check rules`（本仓不再有 score.mjs），
+// 其实现 ↔ criteria 的同步由 scs 仓测试承接；本函数只核本仓可核的五项。
 function assertSync(target) {
   const src = (rel) => (typeof target === 'string' ? readFileSync(join(target, rel), 'utf8') : target[rel] ?? '')
-  const score = src('skills/rule-inspector/scripts/score.mjs')
   const criteria = src('skills/rule-inspector/references/criteria.md')
   const recipes = src('skills/rule-inspector/references/recipes.md')
   const rwSkill = src('skills/rule-writer/SKILL.md')
@@ -235,7 +234,6 @@ function assertSync(target) {
   const skeleton = src('skills/rule-writer/assets/rule-skeleton.md')
   const ledgerTpl = src('bak_skill/review-log/assets/review-progress-template.md')
   const checklist = src('skills/rule-inspector/assets/rule-edit-checklist-template.md')
-  assert.ok(score.includes('⑨判据可观察'), '① score.mjs 缺 ⑨')
   assert.ok(criteria.includes('判据可观察'), '① criteria 缺 ⑨')
   assert.ok(recipes.includes('判据可观察'), '② recipes 缺 §R9')
   assert.ok(rwSkill.includes('判据可观察') && guide.includes('判据可观察') && skeleton.includes('判据可观察'), '③ rule-writer 三层缺')
@@ -921,92 +919,6 @@ test('S3-TC-I03 R9', () => {
   assert.equal(/\bevaluateText\b/.test(body), false)
 })
 
-test('S3-TC-I04 ⑨ 接线与块内零词面', () => {
-  const before = sha256('skills/rule-inspector/scripts/score.mjs')
-  const src = read('skills/rule-inspector/scripts/score.mjs')
-  const lines = src.split(/\r?\n/)
-  const startLayer = lines.findIndex((l) => l.includes("g('执行力度', '⑨判据可观察'"))
-  assert.ok(startLayer >= 0)
-  let depth = 0
-  let end = startLayer
-  for (let i = startLayer; i < lines.length; i += 1) {
-    for (const ch of lines[i]) {
-      if (ch === '(') depth += 1
-      else if (ch === ')') depth -= 1
-    }
-    if (depth <= 0) { end = i; break }
-  }
-  // ⑨ 专属区 = 常量行 + 判定函数 + `g('执行力度', '⑨判据可观察'…)` 调用（**不再**并入「本批 diff 的全部新增行」——
-  // 那会把后续批次对 score.mjs 的正常新增判成红，属跨批耦合）
-  const constIdx = lines.findIndex((l) => l.includes('OBSERVABLE_TERMS = JSON.parse'))
-  const fnIdx = lines.findIndex((l) => l.startsWith('function verifySectionHasMarker'))
-  assert.ok(constIdx >= 0 && fnIdx > constIdx)
-  const fnEnd = lines.findIndex((l, i) => i > fnIdx && l === '}')
-  assert.ok(fnEnd > fnIdx)
-  const blockLines = [...lines.slice(constIdx, fnEnd + 1), ...lines.slice(startLayer, end + 1)]
-  const block = blockLines.join('\n')
-  assert.equal((src.match(/g\('执行力度', '⑨判据可观察'/g) ?? []).length, 1)
-  assert.ok(blockLines.some((l) => l.includes('markers')))
-  assert.ok(blockLines.some((l) => l.includes('observable-terms.json')))
-  assert.ok(blockLines.some((l) => l.includes('验证')))
-  assert.equal(/observable-exempt/.test(block), false)
-  assert.equal(/LOOSE_RE|VERIFY_RE/.test(block), false)
-  assert.equal([...TERMS, ...CRIT_TERMS].filter((w) => blockLines.some((l) => l.includes(w))).length, 0)
-  const looseReLine = lines.findIndex((l) => l.includes('const LOOSE_RE'))
-  assert.ok(startLayer > looseReLine)
-  assert.ok([...TERMS, ...CRIT_TERMS].filter((w) => `${block}\n${TERMS[0]}`.split(/\r?\n/).some((l) => l.includes(w))).length >= 1)
-  assert.equal(sha256('skills/rule-inspector/scripts/score.mjs'), before)
-})
-
-const mkRule = (body) => {
-  const dir = mkdtempSync(join(tmpdir(), 's3-rule-'))
-  writeFileSync(join(dir, 'r.md'), body, 'utf8')
-  return dir
-}
-const RULE_HEAD = '# 禁止随意改动代码\n\n> 来源：项目约定（2026-11-02）｜落地：2026-11-02\n\n## 核心判据\n'
-
-test('S3-TC-I05 有标记得 1', () => {
-  const dir = mkRule(`${RULE_HEAD}禁止随意改动代码，必须运行测试。\n\n## 验证\nnode scripts/check-observable.mjs --check，exit 0\n`)
-  const r = scoreFile(join(dir, 'r.md'), dir, { type: '持续适用', polarity: '禁令' })
-  assert.equal(eight(r).pass, true)
-  // testcase I05 原文写 `>= 9`；持续适用·禁令 的执行力度适用项为 7（I10 同表），此处按 I10 的 7 判
-  assert.ok(r.groups['执行力度'].max >= 7)
-  rmSync(dir, { recursive: true, force: true })
-})
-
-test('S3-TC-I06 无标记得 0', () => {
-  const dir = mkRule(`${RULE_HEAD}禁止随意改动代码，必须运行测试。\n\n## 验证\n请认真确认，务必做到位\n`)
-  const r = scoreFile(join(dir, 'r.md'), dir, { type: '持续适用' })
-  assert.equal(eight(r).pass, false)
-  assert.ok(r.findings.some((f) => f.check.includes('⑨')))
-  const fixed = scoreFile(join(dir, 'r.md'), dir, { type: '持续适用' })
-  void fixed
-  writeFileSync(join(dir, 'r.md'), `${RULE_HEAD}禁止随意改动代码，必须运行测试。\n\n## 验证\n请认真确认，务必做到位；exit 0\n`, 'utf8')
-  assert.equal(eight(scoreFile(join(dir, 'r.md'), dir, { type: '持续适用' })).pass, true)
-  // 围栏代码块里的标记不算：示例代码不得代替真判据（与 evaluateText 同一跳过口径）
-  writeFileSync(join(dir, 'r.md'), `${RULE_HEAD}禁止随意改动代码，必须运行测试。\n\n## 验证\n请认真确认，务必做到位\n\n\`\`\`\n计数 = 3\n\`\`\`\n`, 'utf8')
-  assert.equal(eight(scoreFile(join(dir, 'r.md'), dir, { type: '持续适用' })).pass, false)
-  rmSync(dir, { recursive: true, force: true })
-})
-
-test('S3-TC-I07 无验证节', () => {
-  const dir = mkRule(`${RULE_HEAD}编辑后禁止随意改动代码，计数 = 3 条逐条核。\n`)
-  const r = scoreFile(join(dir, 'r.md'), dir, { type: '条件触发' })
-  assert.equal(eight(r).pass, false)
-  assert.equal(eight(r).group, '执行力度')
-  assert.equal(seven(r).pass, true)
-  rmSync(dir, { recursive: true, force: true })
-})
-
-test('S3-TC-I08 验证节定位', () => {
-  const dir = mkRule(`${RULE_HEAD}禁止随意改动代码。\n\n### 验证\nexit 0\n`)
-  assert.equal(eight(scoreFile(join(dir, 'r.md'), dir, { type: '持续适用' })).pass, true)
-  const twoSrc = `${RULE_HEAD}禁止随意改动代码。\n\n## 验证\n请认真确认\n\n## 验证\nexit 0\n`
-  writeFileSync(join(dir, 'r.md'), twoSrc, 'utf8')
-  assert.equal(eight(scoreFile(join(dir, 'r.md'), dir, { type: '持续适用' })).pass, false)
-  assert.equal(twoSrc.split(/^## 验证$/m).length, 3)
-  rmSync(dir, { recursive: true, force: true })
-})
 
 test('S3-TC-I09 登记与台账缺口', () => {
   assert.ok(unknownMarkers({ 'docs/bak/rules/skill-authoring-convention.md': '### 判据 ⑨：x' }).some((f) => f.code === 'BucketMarkerUnknown'))
@@ -1021,21 +933,6 @@ test('S3-TC-I09 登记与台账缺口', () => {
   assert.equal(checkSharedChanges().ok, true)
 })
 
-test('S3-TC-I10 满分断言 +1', () => {
-  const r = runNodeClean(['--test', 'skills/rule-inspector/scripts/score.test.mjs'])
-  assert.equal(r.code, 0)
-  const T = read('skills/rule-inspector/scripts/score.test.mjs')
-  const cases = [['合规基准：GOOD', 26, 9], ['持续适用·禁令', 24, 7], ['条件触发·义务', 23, 6], ['模式门控·禁令', 32, 9]]
-  for (const [title, N, M] of cases) {
-    const b = blockOf(T, title)
-    const scoreOk = (v) => b.includes(`{ score: ${v}, max: ${M} }`) || b.includes(`.score, ${v})`)
-    const pass = scoreOk(M)
-    assert.ok(scoreOk(pass ? M : M - 1), title)
-    assert.equal(Number((b.match(/assert\.equal\(r\.max, (\d+)\)/) ?? [])[1]), N, title)
-    assert.equal(Number((b.match(/assert\.equal\(r\.total, (\d+)\)/) ?? [])[1]), pass ? N : N - 1, title)
-    assert.ok(/⑨/.test(b), title)
-  }
-})
 
 test('S3-TC-I11 漏改一处', () => {
   const before = sha256('skills/rule-inspector/references/criteria.md')
@@ -1060,7 +957,6 @@ test('S3-TC-I12 判据⑤', () => {
 
 test('S3-TC-I13 六项核销', () => {
   const baseMap = () => ({
-    'skills/rule-inspector/scripts/score.mjs': read('skills/rule-inspector/scripts/score.mjs'),
     'skills/rule-inspector/references/criteria.md': read('skills/rule-inspector/references/criteria.md'),
     'skills/rule-inspector/references/recipes.md': read('skills/rule-inspector/references/recipes.md'),
     'skills/rule-writer/SKILL.md': read('skills/rule-writer/SKILL.md'),
@@ -1070,7 +966,6 @@ test('S3-TC-I13 六项核销', () => {
     'skills/rule-inspector/assets/rule-edit-checklist-template.md': read('skills/rule-inspector/assets/rule-edit-checklist-template.md'),
   })
   const kill = [
-    ['skills/rule-inspector/scripts/score.mjs', /⑨判据可观察/g],
     ['skills/rule-inspector/references/recipes.md', /判据可观察/g],
     ['skills/rule-writer/references/writing-guide.md', /判据可观察/g],
     ['bak_skill/review-log/assets/review-progress-template.md', /判据可观察/g],
@@ -1284,12 +1179,15 @@ test('S3-TC-K09 测试断言改形', () => {
 test('S3-TC-L01 单跑', (t) => {
   // 「单跑绿」由本文件**外部**运行见证（`node --test tools/docgen/builders/agents/test/s3-predicates.test.mjs`）；
   // 本文件内不自递归跑自身（否则 L01 无限递归，撞常量 9 的「不跑全量」精神）
+  // 2026-11-09：score.mjs 迁公共 CLI（spec R13），其专属用例块随源删除，等价的 `scs check rules` 用例在 scs 仓；
+  // 故本仓块数 = 用例条数 − 已迁走的 6 条（I04–I08 / I10）。
+  const RELOCATED = ['S3-TC-I04', 'S3-TC-I05', 'S3-TC-I06', 'S3-TC-I07', 'S3-TC-I08', 'S3-TC-I10']
   const self = read('tools/docgen/builders/agents/test/s3-predicates.test.mjs')
   const blocks = (self.match(/^test\('S3-TC-/gm) ?? []).length
   const tc = read('docs/superpowers/specs/2026-11-02-observable-s3-predicates-reuse-design-testcase.md')
   const cases = (tc.match(/^### S3-TC-/gm) ?? []).length
-  assert.equal(blocks, cases)
-  t.diagnostic(`用例块 ${blocks} / 用例条 ${cases}（单跑绿见外部命令输出）`)
+  assert.equal(blocks, cases - RELOCATED.length)
+  t.diagnostic(`用例块 ${blocks} / 用例条 ${cases}（已迁 ${RELOCATED.length}；单跑绿见外部命令输出）`)
 })
 
 test('S3-TC-L02 门禁面未扩', () => {

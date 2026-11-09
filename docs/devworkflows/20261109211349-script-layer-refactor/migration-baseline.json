@@ -1,0 +1,23 @@
+{
+  "generatedAt": "2026-11-09T22:41:00+08:00",
+  "entries": [
+    {
+      "oldCommand": "node skills/skill-inspector/scripts/check.mjs --dir ./skills --manifest skilldependencies/manifest.json",
+      "newCommand": "scs check skills --root . --manifest skilldependencies/manifest.json",
+      "sample": ".",
+      "exit": 0,
+      "stdoutFirst": "0 findings（加 --json 看明细）",
+      "stdoutLast": "0 findings（加 --json 看明细）",
+      "codes": []
+    },
+    {
+      "oldCommand": "node skills/rule-inspector/scripts/score.mjs --dir ./rules --repo-root .",
+      "newCommand": "scs check rules --root . --terms tools/docgen/dsl/rules/vocab/observable-terms.json --annotations tools/quality/.inspector-annotations.json",
+      "sample": ".",
+      "exit": 0,
+      "stdoutFirst": "共 1 文件 / 13 行 / 205 字符，平均得分率 57%（不及格）",
+      "stdoutLast": "共 1 文件 / 13 行 / 205 字符，平均得分率 57%（不及格）",
+      "codes": []
+    }
+  ]
+}

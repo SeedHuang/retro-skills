@@ -47,7 +47,8 @@ test('TC-C04 全仓检查的前三环在本仓为绿（gate / A 组 15 席 / ski
     const r = checkAgentFile(a.name);
     assert.equal(r.ok, true, `${a.name}: ${JSON.stringify(r.findings)}`);
   }
-  const s = spawnSync(process.execPath, ['skills/skill-inspector/scripts/check.mjs'], { cwd: ROOT, encoding: 'utf8' });
+  // 2026-11-09：技能守卫已迁公共 CLI（spec R13），仓内副本删除
+  const s = spawnSync('scs check skills --root . --manifest skilldependencies/manifest.json', { cwd: ROOT, encoding: 'utf8', shell: true });
   assert.equal(s.status, 0, s.stdout + s.stderr);
   assert.match(s.stdout, /^0 findings/);
 });

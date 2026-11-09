@@ -12,7 +12,11 @@ import { fileURLToPath } from 'node:url'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const REPO = resolve(__dirname, '..', '..', '..')          // skills/rule-inspector/scripts → 仓库根
 const TEMPLATE = join(__dirname, '..', 'assets', 'rule-edit-checklist-template.md')
-const SCORE_SCRIPT = join(REPO, 'skills', 'rule-inspector', 'scripts', 'score.mjs')
+// 2026-11-09：评分实现已迁公共 CLI（spec R13）；本脚本只组装命令并解析 JSON
+const TERMS = join(REPO, 'tools', 'docgen', 'dsl', 'rules', 'vocab', 'observable-terms.json')
+const ANNOTATIONS = join(REPO, 'tools', 'quality', '.inspector-annotations.json')
+const scoreArgs = (repo, ruleName) => ['check', 'rules', '--root', repo, '--terms', TERMS, '--annotations', ANNOTATIONS,
+  '--file', join(repo, ruleName), '--json']
 
 // ── 纯函数（导出供测试）──
 
@@ -108,7 +112,7 @@ export function renderESections(rules, scores) {
     const head = [
       `### E-${i + 1} · ${r.name}`,
       '',
-      `> 取证命令：\`node skills/rule-inspector/scripts/score.mjs --file ${r.name} --json\`（认知判定经 tools/quality/.inspector-annotations.json 自动发现）；总分 **${s && !s.error ? `${s.total}/${s.max}（${s.level}）` : '取证失败'}**。`,
+      `> 取证命令：\`scs check rules --root . --terms tools/docgen/dsl/rules/vocab/observable-terms.json --annotations tools/quality/.inspector-annotations.json --file ${r.name} --json\`；总分 **${s && !s.error ? `${s.total}/${s.max}（${s.level}）` : '取证失败'}**。`,
       '',
       '| # | 检查项 | 判据（score.mjs 机械判定 · criteria 对应组） | 实际输出 | 确认执行 |',
       '|---|---|---|---|---|',
@@ -151,10 +155,11 @@ function testPathRule(repo, ruleName) {
   try { realpathSync(join(repo, ruleName)); return true } catch { return false }
 }
 
-// score.mjs --file --json（不传 --cognitive：认知判定走 annotations 自动发现——强制传会给未标注规则评 X 组 → 假红）
-// runner 可注入（测试用 fixture 替换真实 spawnSync）
-export function scoreRule(repo, ruleName, runner = (args) => spawnSync(process.execPath, args, { cwd: REPO, encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 })) {
-  const r = runner([SCORE_SCRIPT, '--file', join(repo, ruleName), '--json'])
+// `scs check rules --file --json`（不传 --cognitive：认知判定走 annotations 自动发现——强制传会给未标注规则评 X 组 → 假红）
+// runner 可注入（测试用 fixture 替换真实 spawnSync）；命令拼成字符串走 shell（Windows 下 scs 是 .cmd shim）
+const quote = (a) => (/\s/.test(a) ? `"${a}"` : a)
+export function scoreRule(repo, ruleName, runner = (args) => spawnSync(['scs', ...args].map(quote).join(' '), { cwd: REPO, encoding: 'utf8', maxBuffer: 8 * 1024 * 1024, shell: true })) {
+  const r = runner(scoreArgs(repo, ruleName))
   const stdout = (r.stdout || '').trim()
   const m = stdout.indexOf('{')
   if (r.status !== 0 || m === -1) {

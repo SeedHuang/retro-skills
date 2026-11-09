@@ -264,8 +264,8 @@ for (const rel of ['tools/docgen/builders/agents/check-tristate-header.mjs', 'to
   }
 }
 
-// ③ 技能守卫
-const c = spawnSync(process.execPath, ['skills/skill-inspector/scripts/check.mjs'], { cwd: root, encoding: 'utf8' })
+// ③ 技能守卫（2026-11-09 迁公共 CLI）：`scs check skills`——仓内副本已删除（spec R13）
+const c = spawnSync('scs check skills --root . --manifest skilldependencies/manifest.json', { cwd: root, encoding: 'utf8', shell: true })
 console.log(c.stdout)
 if (c.error) {
   failed = true
