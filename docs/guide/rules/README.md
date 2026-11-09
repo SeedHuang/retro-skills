@@ -16,7 +16,7 @@
 
 | 原规则 | 去向 |
 |---|---|
-| `how-i-must-reason` / `data-support-triple` | 合并 → 触发声明 + `assertion-quality` |
+| `data-support-triple` | 合并 → 触发声明 + `assertion-quality` |
 | `core-working-principles` | **已承接（2026-11-08）** → `skills/dev-workflow/references/meta-working-principles.md` |
 | `plain-language-to-user` | **已承接（2026-11-08）** → `skills/plain-language/SKILL.md` |
 | `powershell-file-encoding` | **已承接（2026-11-08）** → `skills/carrier-conventions/references/powershell-encoding.md` |
@@ -24,6 +24,6 @@
 | `docs-convention` | **已承接（2026-11-08）** → `docs-placement`（目录 / 命名 / `.session`）+ `carrier-conventions/references/rule-content.md`（rule 里放什么） |
 | `spec-testcase-gate` | **已承接（2026-11-08）** → `carrier-conventions/references/spec-testcase-gate.md` |
 | `dev-workflow-mainline` / `landing-sweep` | **已承接（2026-11-08）** → `skills/dev-workflow/` |
-| `global-ask-before-acting` / `import-guard` / `import-path-choice` / `styled-component-file` / `list-empty-state` / `ts-expect-error` / `vitest-queued-alternative` / `no-git-write` / `poll-deferred-at-start` | 删除（平台机制已覆盖 / 工具链专属 / 按需触发） |
+| `import-guard` / `import-path-choice` / `styled-component-file` / `list-empty-state` / `ts-expect-error` / `vitest-queued-alternative` / `no-git-write` / `poll-deferred-at-start` | 删除（平台机制已覆盖 / 工具链专属 / 按需触发） |
 
 逐条字符数与处置依据见 PRD `docs/prd/20261105182104-rule-refactor/prd/stage-1-rules-exit.md` §3。

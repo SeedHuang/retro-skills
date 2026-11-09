@@ -1,6 +1,5 @@
 {
   "core-working-principles.md": { "cognitive": true, "x3Done": true },
-  "how-i-must-reason.md": { "cognitive": true, "x3Done": true, "x2Carrier": true },
   "data-support-triple.md": { "cognitive": true, "x3Done": true, "x2Carrier": true },
   "reviewer-audit:A1": "pass",
   "reviewer-audit:A2": "pass",
@@ -181,9 +180,5 @@
   "respondent-dev:C1": "pass",
   "respondent-dev:C2": "pass",
   "respondent-dev:C3": "pass",
-  "respondent-dev:C4": "pass",
-  "global-ask-before-acting.md": {
-    "type": "模式门控",
-    "modeChecks": { "M1": true, "M2": true, "M3": true, "M4": true, "M5": true, "M6": true }
-  }
+  "respondent-dev:C4": "pass"
 }

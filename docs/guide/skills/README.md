@@ -119,7 +119,7 @@ flowchart TB
 | `agents/*.md` 角色卡 | 生成物 | 议会角色、`senior-sdet` 写 testcase、`evidence-reader` 取证 | 由 `tools/docgen` 生成；见 `skills/parliament/SKILL.md:15`、`skills/prd-to-specs/SKILL.md:51` |
 | `scripts/*.mjs`（技能内） | 脚本 | `use-rule-skills` 草稿箱、`rule-inspector` 评分、`skill-inspector` 检查 | 各技能 `scripts/` 目录 |
 | `tools/docgen/**` | 工具链 | 角色卡生成、gate、baseline | 见 `skills/parliament/SKILL.md` 与 `dev-workflow` 的验证命令 |
-| `global-ask-before-acting` 等 | 仓外全局规则 | 副作用动作前的确认纪律 | 多个 SKILL.md 引用；本仓 `rules/` 不装该类全局规则 |
+| 平台沟通 / 执行模式 | 仓外全局机制 | 副作用动作前的确认纪律 | 由平台会话模式控制；本仓 `rules/` 不装该类规则 |
 | `systematic-debugging` | 外部技能/流程 | 缺陷定位 | 在 SKILL.md 中以「走 X」形式划界 |
 
 ### 维护本图
