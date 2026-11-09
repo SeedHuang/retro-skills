@@ -7,7 +7,7 @@
 
 | 面 | 原文 | 位置 |
 |---|---|---|
-| PRD 角色职责 | 为 PRD/spec 设计并**编写**测试用例（`testcase.md`） | `tools/docgen/components/agentData.mjs` 的 `senior-sdet.identity` / `fixedList`；PRD 对 SDET 席的定义 |
+| PRD 角色职责 | 为 PRD/spec 设计并**编写**测试用例（`testcase.md`） | `tools/docgen/builders/agents/components/agentData.mjs` 的 `senior-sdet.identity` / `fixedList`；PRD 对 SDET 席的定义 |
 | 工具档位 | `Read, Glob, Grep, Write, Edit`（可写） | `agents/senior-sdet.md` 的 frontmatter `tools` |
 | 权限物（边界） | 「你是**只读**评审角色：不得创建、修改、删除任何文件」 | `patternRegistry.DEFAULT_BOUNDARY`；`renderBoundary('senior-sdet')` 亦把「测试」列为禁止写路径 |
 
@@ -15,7 +15,7 @@
 
 ## 二、为什么本批不自行修
 
-- 修边界 = 改 `tools/docgen/policy/**` 或 S6 spec 的权限物（S6 已签，属 ② 段改判）；
+- 修边界 = 改 `tools/docgen/builders/agents/policy/**` 或 S6 spec 的权限物（S6 已签，属 ② 段改判）；
 - 修职责 = 改 PRD 的角色定义（属 ① 段改判）；
 - S4（③ 段）只能消费这两份上游件，不得在渲染段自定 —— 否则是本规则禁止的「3 段自定上游口径」。
 
@@ -28,10 +28,10 @@
 ## 四、裁定与落地（2026-10-31）
 
 - **用户裁定 = 方案 1**（给 SDET 席一条专用 boundary，并允许同批改两份已签字的测试口径）。
-- 落地形态：`tools/docgen/components/patternRegistry.mjs` 新增 `SDET_BOUNDARY`（与 `DEFAULT_BOUNDARY` 同住一文件、只写一份），并登记进 `boundaryBySeat['senior-sdet']`；`agentData` 的 map 与 `validateAgentData` 的 `DECLARED_SLOT_SEATS` 自动派生，`policy/**` 零改动。
+- 落地形态：`tools/docgen/builders/agents/components/patternRegistry.mjs` 新增 `SDET_BOUNDARY`（与 `DEFAULT_BOUNDARY` 同住一文件、只写一份），并登记进 `boundaryBySeat['senior-sdet']`；`agentData` 的 map 与 `validateAgentData` 的 `DECLARED_SLOT_SEATS` 自动派生，`policy/**` 零改动。
 - 权限语义**未变**：旧卡 `agents/senior-sdet.md` 本就写「可写 testcase.md、其余只读」，`tools` 也已是 `sdet` 档；本批只是把手工边界搬进登记表。
 - 同批改判：`S6-TC-G03` 的计数口径（`own` 3 → 4，默认席仍 11；`senior-sdet` 从「不注入 boundary」改为「自带专用句 + 黄金键 `senior-sdet-boundary`」），载体 = S6 testcase §G03 的日期注与「现行判据」块（**原文不删**）+ 总表行注 + `policy-pure-source.test.mjs` 断言 + `fixtures/boundary-golden.json`。
-- 迁移证据：独立实例 `reviewer-ai-2026-10-31-senior-sdet-b3` 重判 A1/A2/B3 全 pass；替换凭证见 `tools/docgen/fixtures/senior-sdet.evidence.json` 末条 `changes`。
+- 迁移证据：独立实例 `reviewer-ai-2026-10-31-senior-sdet-b3` 重判 A1/A2/B3 全 pass；替换凭证见 `tools/docgen/builders/agents/fixtures/senior-sdet.evidence.json` 末条 `changes`。
 
 ## 五、何时该搬走
 

@@ -15,7 +15,7 @@ export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 export const DEFAULT_CONFIG = 'tools/scope-sweep/keywords.json';
 export const DEFAULT_BASELINE = 'tools/scope-sweep/baseline.json';
 
-// 历史类路径：命中可保留原句（按 docs-convention「历史记录不改」）
+// 历史类路径：命中可保留原句（按 docs-placement「历史记录不改」）
 // 注：本分类只作 `--verbose` 清单里的标签（不参与 --check 判红，见 runCheck）；
 //     加目录前先确认它是「记录型」而不是「活结论」——活文档错标成历史会被当成不用改。
 export const HISTORY_PREFIXES = [
@@ -78,7 +78,7 @@ export function readBaseline(root, baselinePath = DEFAULT_BASELINE) {
 }
 
 export function findImpactSheet(root) {
-  // 两处都找：评估期在 `.session/reviews/`，收口后整目录迁 `docs/superpowers/reviews/`（规则 docs-convention）
+  // 两处都找：评估期在 `.session/reviews/`，收口后整目录迁 `docs/superpowers/reviews/`（规则 docs-placement）
   const found = [];
   for (const base of [resolve(root, '.session/reviews'), resolve(root, 'docs/superpowers/reviews')]) {
     if (!existsSync(base)) continue;
@@ -177,7 +177,7 @@ export function main(argv = process.argv.slice(2), root = ROOT) {
   }
 }
 
-// 仅直接运行时执行 CLI（realpath 归一化免疫 Junction，见 rule skill-authoring-convention 判据③）
+// 仅直接运行时执行 CLI（realpath 归一化免疫 Junction，见 carrier-conventions 技能的引用纪律）
 if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))) {
   process.exitCode = main();
 }

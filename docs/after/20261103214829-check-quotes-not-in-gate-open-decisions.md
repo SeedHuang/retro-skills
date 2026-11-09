@@ -7,7 +7,7 @@
 
 `node tools/docgen/check-quotes.mjs`（PRD V6 引句校验器）**故意不进** `npm run check` 的**门禁段**（`scripts/check-all.mjs` 与 `package.json` 的 `scripts` 都不含它，`SB-TC-14` 用计数判这两条 = 0）：它的语料是 `docs/superpowers/reviews/**/observation-*.json` 的 `items[].evidence`，而清理 / 归档 `docs/superpowers/reviews/` 是正常动作——接成门禁段会让「归档」直接等于「全仓红」。
 
-**但红仍会从测试面发生，不是「没人会发现」**：`npm run check` 的 ② 段跑全仓 `**/*.test.mjs`，其中 `tools/docgen/test/sb-contract-layer.test.mjs` 的 `SB-TC-03` 对**真仓**语料跑本脚本并断言 exit 0，`SB-TC-15` / `SB-TC-16` / `SB-TC-17` / `SB-TC-30` 也从真仓语料取基线。语料掉到 < 2 条或被移走 → 这些用例红 → ② 段红。所以发现点**不止** ③/④/⑤ 门行实跑。真正的缺口是：**没有一道专项报码**告诉你是「语料没了」，你看到的只是一条测试失败。
+**但红仍会从测试面发生，不是「没人会发现」**：`npm run check` 的 ② 段跑全仓 `**/*.test.mjs`，其中 `tools/docgen/builders/agents/test/sb-contract-layer.test.mjs` 的 `SB-TC-03` 对**真仓**语料跑本脚本并断言 exit 0，`SB-TC-15` / `SB-TC-16` / `SB-TC-17` / `SB-TC-30` 也从真仓语料取基线。语料掉到 < 2 条或被移走 → 这些用例红 → ② 段红。所以发现点**不止** ③/④/⑤ 门行实跑。真正的缺口是：**没有一道专项报码**告诉你是「语料没了」，你看到的只是一条测试失败。
 
 | 失效形态 | 现象 | 谁能发现 |
 |---|---|---|
@@ -25,6 +25,6 @@
 
 语料是**历史观察记录的产物面**，不是当次仓状态。把它做成门禁段，等于给「历史目录做归档」这一正常动作加了一条「不许动」的隐式约束——而这条约束既不写在规则里，也没有任何判据提示它存在。
 
-**「与 S-A 同口径」这个先例不成立**：S-A 的 `tools/docgen/check-shared-refs.mjs` 同样不进总门禁，但它的用例在**仓副本**里跑（`tools/docgen/test/sa-data-layer.test.mjs` 的 `REFS()`，`spawnSync(..., { cwd: dst })`），不依赖真仓可变内容；`check-quotes` 的用例直接读真仓语料。两者不可比——前者归档任何目录都不影响它的红绿，后者会。
+**「与 S-A 同口径」这个先例不成立**：S-A 的 `tools/docgen/builders/agents/check-shared-refs.mjs` 同样不进总门禁，但它的用例在**仓副本**里跑（`tools/docgen/builders/agents/test/sa-data-layer.test.mjs` 的 `REFS()`，`spawnSync(..., { cwd: dst })`），不依赖真仓可变内容；`check-quotes` 的用例直接读真仓语料。两者不可比——前者归档任何目录都不影响它的红绿，后者会。
 
 **与 spec 的张力**：spec §11.1 R3 的意图是「归档不得使全仓红」，但按 §1 的事实，语料归档到 < 2 条时 ② 段确实会红。这一耦合留给 ④/⑤ 段裁定：是否需要把语料面回流 ② 段（例如让相关用例改用自造语料 / 副本），本文不预设方案。

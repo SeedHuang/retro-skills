@@ -49,6 +49,6 @@ S6（docgen 规则单一来源化，PRD `F-24`）的验收原本 13 条（V-1～
 | `docs/prd/20261024073606-dev-workflow-mainline/index.md:724`（F-24 行） | **已加分期说明**（用户 2026-10-29 裁定「方案 2」）：「A/B 盲评分期…S6 本期不做 → 见本文件，S6 本期验收 = 前两条（V-1～V-12）」。**未删 A/B 盲评、未改功能点集合 → 不触发 R5** |
 | S6 spec §1 摘要 / `:25` / §8 `V-13` 行 + 表后注 / §9 测试节 | 已改（四载体同批） |
 | S6 testcase K01 前置状态注 + K01–K08 八处标题 | 已标「不在本期」（原文一字不删） |
-| `skills/dev-workflow/references/gate-record.md` 的 `②@S6` / `④@S6` | 已登记（含 PRD 对齐） |
+| `skills/dev-workflow/references/gate-record-template.md` 的 `②@S6` / `④@S6` | 已登记（含 PRD 对齐） |
 
 > 原「PRD `:724` 与 spec 口径张力」**已闭合**：PRD 现在自带分期说明，读者不必再翻本文件才能知道「本期不做」。

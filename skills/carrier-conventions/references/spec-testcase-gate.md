@@ -1,6 +1,6 @@
 # spec 与 testcase 绑定
 
-> 承接原 `spec-testcase-gate`（留档 `docs/bak/rules/spec-testcase-gate.md`）。范围：`docs/superpowers/specs/` 下的 spec，含 spike 类与目录形态。
+> 范围：`docs/superpowers/specs/` 下的 spec，含 spike 类与目录形态。
 
 ## 五条判据（缺一不合格）
 

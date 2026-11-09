@@ -241,5 +241,5 @@ function main() {
   console.log(`[AI 项] A×${ai.A} B×${ai.B} C2/C3 D×${ai.D} E2×${ai.E2} F×${ai.F} 待填——每行贴命令输出 + 写「确认执行」，空缺 = 未完成`)
 }
 
-// 直接运行判定：realpathSync 双侧（skill-authoring-convention 判据 ③，禁路径字符串比较）
+// 直接运行判定：realpathSync 双侧（carrier-conventions 技能的守卫约束，禁路径字符串比较）
 if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))) main()

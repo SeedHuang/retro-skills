@@ -424,13 +424,13 @@ test('OCR-S1-TC-E11 同行 ≥2 词枚举 → exit 1', () => {
   assert.ok(/check-observable fail/.test(r.last))
 })
 
-test('OCR-S1-TC-E08 分诊表 20 行（历史快照）/ 现役行（排除已清空的 rules/）对账 / exemptedLines=L / stale=0 / L≤8 / hits=0', () => {
+test('OCR-S1-TC-E08 分诊表 19 行（历史快照）/ 现役行（排除已清空的 rules/）对账 / exemptedLines=L / stale=0 / L≤8 / hits=0', () => {
   const CATS = ['改文案', '已合格', '合法保留']
   const rows = readText(TRIAGE)
     .split(/\r?\n/)
     .filter((l) => l.startsWith('| `'))
     .filter((l) => CATS.includes((l.split('|')[4] ?? '').trim()))
-  assert.strictEqual(rows.length, 20, `分诊表在册行应 20（首日 21，1 行退役），实得 ${rows.length}`)
+  assert.strictEqual(rows.length, 19, `分诊表在册行应 19（首日 21，2 行退役），实得 ${rows.length}`)
   // 现役行 = 分诊表里路径仍在 `rules/` 之外的行：阶段 1 清空 `rules/` 后，指向 rules/ 的 2 行随载体消失
   const live = rows.filter((l) => !(l.split('|')[1] ?? '').includes('`rules/'))
   const liveCats = live.map((l) => l.split('|')[4].trim())
@@ -476,7 +476,7 @@ function rawHitLines(onlyFiles = null) {
   return out
 }
 
-function assertTriage({ M, P, L, hits, raw, total = 20 }) {
+function assertTriage({ M, P, L, hits, raw, total = 19 }) {
   assert.strictEqual(M + P + L, total, `M+P+L 必须 = ${total}，实得 ${M + P + L}`)
   // 非恒真锚：当前仓里仍含主观词的正文行只可能落在「已合格」或「合法保留」两档
   assert.strictEqual(raw, P + L, `当前仍含主观词的行数应 = P + L（${P + L}），实得 ${raw}`)

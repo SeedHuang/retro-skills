@@ -85,7 +85,7 @@ git ls-tree -r --name-only b590f0d -- evals/ scripts/ | Select-String eval
 | 7 个脚本 | `run-eval.mjs` / `run-eval-core.mjs` / `check-eval-contract.mjs` / `eval-contract-core.mjs` + 三个 `.test.mjs`（从 `b590f0d` 取回） |
 | `evals/<技能>/` 四件套 | `eval.yaml`、`cases/*.yaml`、`expected.md`（本文第二节的 JSON 就是现成的）、`fixtures/{repos,oracle,RECORD.md,CONTRACT.json}` |
 | 一条 npm script | `"eval:<技能>": "node scripts/run-eval.mjs <技能>"` |
-| 一条本地路径（内含 5 个子目录） | `.session/eval/{fixture,out,state,trial,tmp}`（见 `rules/docs-convention.md` 的 `.session/` 封闭清单；若已从规则里删掉，需一并加回） |
+| 一条本地路径（内含 5 个子目录） | `.session/eval/{fixture,out,state,trial,tmp}`（见 `docs-placement` 技能的 `.session/` 封闭清单；若已从清单里删掉，需一并加回） |
 
 ## 五、停用当天顺手记下的两条遗留（重启时一起处理）
 

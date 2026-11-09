@@ -35,7 +35,7 @@ const DOC_AGENTS_DIR = join(REPO_ROOT, 'docs', 'agents');
 // baseline 清单路径可用 DOCGEN_BASELINE_PATH 重定向（与 state / evidence / drafts 同款测试隔离位）：
 // 测试写的是临时文件，不再与非同进程的 gate 抢同一个共享文件（并发 truncate 窗口会让 gate 误报 BaselineDrift）
 const baselinePath = () => process.env.DOCGEN_BASELINE_PATH || join(dirname(fileURLToPath(import.meta.url)), 'baseline.json');
-// 阶段 1（2026-11-05）：唯一生成规则 `rules/spec-testcase-gate.md` 已随退役下沉，生成/比对分支同步裁停
+// 阶段 1（2026-11-05）：唯一生成规则（已退役，留档 `docs/bak/rules/spec-testcase-gate.md`）已下沉，生成/比对分支同步裁停
 // （PRD `docs/prd/20261105182104-rule-refactor/prd/stage-1-rules-exit.md` §1 步骤 0）
 
 // fields.message：可选人读信息（stderr 契约要写出哈希 / 下一步命令，spec §3.3）

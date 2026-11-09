@@ -1,6 +1,6 @@
 # 元工作方法：事前三步、自省与沟通姿态
 
-> 承接原 `core-working-principles`（留档 `docs/bak/rules/core-working-principles.md`）。适用：改 rule / skill / 脚本、落地 `docs/after/` 待办、评审修复轮动手之前。
+> 适用：改 rule / skill / 脚本、落地 `docs/after/` 待办、评审修复轮动手之前。
 
 ## 事前三步（动笔前必做）
 

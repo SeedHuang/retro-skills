@@ -642,8 +642,8 @@
 - **覆盖**：`§5` 同步 ④⑥、`§5` ⑤ 零删除（条目级）
 - **前置**：`review-progress-template.md` 与 `rule-edit-checklist-template.md` 已改；`<S3-BASE>` 已取；`hunksOf`（§0.1 #22）可取
 - **步骤**：`test('S3-TC-I14 两模板与删除面')`：① 取 `review-progress-template.md` 编号列，断 `1..36` 无缺号；② 取 `rule-edit-checklist-template.md` 的 E2 段，断含 1 行「判据可观察」且该段含「9 项」；③ `git diff -U0 <S3-BASE> -- skills/rule-inspector/references/criteria.md` 的每个删除 hunk，按 **S3-BASE 版本（改前文件）** 定位其所属小节标题
-- **预期**：① 36 连续；② 恰 1 行；③ 删除 hunk 所属小节 ⊆ {文件标题行, `#### 新增维度`, `### 2.1 来源类型`, `### 3.3b 执行保障维度`, `### 3.4 执行力度适用项表`, `### 3.5 满分口径`, §3 导语行}，其它小节删除行 `0`；④ §2.4 执行力度表行数 +1（条目不减）
-- **2026-11-09 增量**：③ 的允许集新增 `### 2.1 来源类型`——用于清理已退役规则名（`global-ask-before-acting` 换为现存的 `core-working-principles`）；同批改 `s3-predicates.test.mjs` 的 `ALLOWED`。定位口径由「按改后文件」更正为「按 S3-BASE 改前文件」，与实装一致。
+- **预期**：① 36 连续；② 恰 1 行；③ 删除 hunk 所属小节 ⊆ {文件标题行, `#### 新增维度`, `### 2.1 来源类型`, `### 3.3 通用 17 项`, `### 3.3b 执行保障维度`, `### 3.4 执行力度适用项表`, `### 3.5 满分口径`, §3 导语行}，其它小节删除行 `0`；④ §2.4 执行力度表行数 +1（条目不减）
+- **2026-11-09 增量**：③ 的允许集新增 `### 2.1 来源类型` 与 `### 3.3 通用 17 项`——用于清理已退役规则名；同批改 `s3-predicates.test.mjs` 的 `ALLOWED`。定位口径由「按改后文件」更正为「按 S3-BASE 改前文件」，与实装一致。
 - **判据**：`assert.equal(maxNo, 36)`；`assert.equal(missingNos, 0)`；`assert.equal(e2Rows.length, 1)`；`assert.match(e2, /9 项/)`；`assert.deepEqual(outOfScopeDeleted, [])`；`assert.equal(rowsAfter.length, rowsBefore.length + 1)`
 
 ---
@@ -670,8 +670,9 @@
 
 - **覆盖**：`§6.1`
 - **前置**：`skills/dev-workflow/SKILL.md` 已改；`<S3-BASE>` 已取
-- **步骤**：`test('S3-TC-J03 dev-workflow 指针')`：① 取「## 指针」节内行找含 `observable-criteria` 的行；② `git diff --numstat <S3-BASE> -- skills/dev-workflow/SKILL.md`；③ 取该文件「段表」区域行集与 `<S3-BASE>` 版本逐行比
+- **步骤**：`test('S3-TC-J03 dev-workflow 指针')`：① 取「## 指针」节内行找含 `carrier-conventions` 的行；② `git diff --numstat <S3-BASE> -- skills/dev-workflow/SKILL.md`；③ 取该文件「段表」区域行集与 `<S3-BASE>` 版本逐行比
 - **预期**：① 恰 1 行且含 `npm run check:observable`；② 新增行 ≥1、删除行 = 0；③ 段表逐行不变
+- **2026-11-09 增量**：① 的锚由退役规则名 `observable-criteria` 改为承接技能 `carrier-conventions`（退役名清理）；② 的「零删除」自 2026-11-05 载体迁移后已不成立，实装只保留段表六段断言。
 - **判据**：`assert.equal(pointerLines.length, 1)`；`assert.ok(pointerLines[0].includes('npm run check:observable'))`；`assert.equal(deletedCol, 0)`；`assert.deepEqual(segTableAfter, segTableBefore)`
 
 ### S3-TC-J04 指针行写死词表即红（§6.1 反例）【负】

@@ -7,21 +7,21 @@
 
 ### S4-L1 `S4-TC-A06` 只钉「整段 + 首/尾 12 字窗」，rationale 的**中段**可漏
 
-- **限制原文**：`tools/docgen/test/card-render.test.mjs` 的 `S4-TC-A06` 只断「卡面不含 rationale 整段 / 首 12 字窗 / 尾 12 字窗」；`docs/superpowers/specs/2026-10-29-agent-card-s4-render-design-testcase.md` 的 A06 日期注已写明「原首窗判定在多席上会假阳性」。
+- **限制原文**：`tools/docgen/builders/agents/test/card-render.test.mjs` 的 `S4-TC-A06` 只断「卡面不含 rationale 整段 / 首 12 字窗 / 尾 12 字窗」；`docs/superpowers/specs/2026-10-29-agent-card-s4-render-design-testcase.md` 的 A06 日期注已写明「原首窗判定在多席上会假阳性」。
 - **漏检样例**：渲染器若只把 rationale 的**中段**（既不含首 12 字、也不含尾 12 字、更不含整段）漏进卡面，三条断言全绿 → 「散文只进 rationale」被放过。
 - **谁人工兜**：⑤ 段交付审计与议会走查「职责」段与 rationale 的差异；④ 段 sdet 的 §6 `G-5` 已登记为残余。
 - **触发信号**：下次改 `renderCard.mjs` 的「职责」段渲染、或改 `rationale` 的来源字段时，同批补「中段窗口」断言（或改为逐句比对）。
 
 ### S4-L2 删本席 `must` / `never` 的**源条目**会静默重建，逐席条目数无基线
 
-- **限制原文**：`tools/docgen/components/cardPipeline.mjs` 的 `mergeList` 以共享层为底重建，删本席条目后 `buildCards().errors` 仍为 0；`S4-TC-A02` 只判「整键删除」，不判条目条数。
+- **限制原文**：`tools/docgen/builders/agents/components/cardPipeline.mjs` 的 `mergeList` 以共享层为底重建，删本席条目后 `buildCards().errors` 仍为 0；`S4-TC-A02` 只判「整键删除」，不判条目条数。
 - **漏检样例**：某席漏迁 1 条本席独有条目（如 `must` 5 → 4），任何机械判据都不红，卡面少一行。
 - **谁人工兜**：⑤ 段交付审计逐席核「本席清单」条数与 PRD A-5 / A-6 的对应；议会测试评委走查卡面。
 - **触发信号**：下次改 `agentData.mjs` 任一席的 `card.must` / `card.never`，或新增席时，同批为每席登记条目数基线并加断言。
 
 ### S4-L3 `gate` 一次只点名**第一个** drift（多漂移时其余不可见）
 
-- **限制原文**：`tools/docgen/cli.mjs` 的 `gateChecks()` 取 `[...drifts].sort((a, b) => PRIORITY(a) - PRIORITY(b))[0]` 后即 `fail()`；`S4-TC-F03` / `F04` 各只构造单处手改。
+- **限制原文**：`tools/docgen/builders/agents/cli.mjs` 的 `gateChecks()` 取 `[...drifts].sort((a, b) => PRIORITY(a) - PRIORITY(b))[0]` 后即 `fail()`；`S4-TC-F03` / `F04` 各只构造单处手改。
 - **漏检样例**：同时手改卡面与 README → 只报第一处；修完重跑才发现第二处，容易被读成「只有一处坏」。
 - **谁人工兜**：⑤ 段交付审计按「修一处 → 重跑 gate」多轮直至绿；④ 段 sdet 的 §6 `G-2` / `G-4` 已登记。
 - **触发信号**：下次改 `gateChecks` 的失败汇总逻辑时，同批改为逐个打印全部 drift（或加 `--all` 旗标）。

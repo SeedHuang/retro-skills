@@ -74,7 +74,7 @@ description: 当任务要走「需求 → 技术设计 → 计划门 → 实现 
 - 每段判据：`references/stage-1-prd.md`、`references/stage-2-tech-design.md`、`references/stage-2b-plan-gate.md`、`references/stage-3-implementation.md`、`references/stage-4-quality.md`、`references/stage-5-delivery.md`
 - 出口核对记录表（R1–R9 的唯一证据载体）：`docs/devworkflows/<YYYYMMDDHHmmss>-<任务名>/gate-record.md`（进 ① 时建目录，格式复制 `references/gate-record-template.md`）
 - 签字账模板（格式唯一源）：`references/gate-record-template.md`
-- 判据类文本的可观察判据：原 `observable-criteria` 规则已并入 `carrier-conventions` 技能，按该技能「判据必须写成可观察形态」节执行；机判 = `npm run check:observable`（末行 `check-observable ok` 且 exit 0）
+- 判据类文本的可观察判据：已并入 `carrier-conventions` 技能，按该技能「判据必须写成可观察形态」节执行；机判 = `npm run check:observable`（末行 `check-observable ok` 且 exit 0）
 - 元工作方法（改 rule / skill / 脚本、落地待办、评审修复轮之前）：按 `references/meta-working-principles.md` 执行，产出「全貌确认」块；缺块不得动笔
 - 落地后回扫（建脚本 / 加规则 / 完成待办之后）：按 `references/landing-sweep.md` 执行，逐条处置四类声明处；缺处置不得宣布完成
 - 强制约束：本技能段表 + `references/gate-record-template.md` 的 R1–R9

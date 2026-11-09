@@ -30,7 +30,7 @@ const NAME_SPLIT = /[、+＋，,／/（）()\s]+/
 const NAME_IGNORE = new Set(['主', 'agent', '代拟', '主持', '转录', '转述'])
 const MIN_EVIDENCE = 4 // 「核了什么」字数下限（兜底；主判据是下面的可复算锚点）
 
-// 段表「谁签」列（rules/dev-workflow-mainline.md R2；旁路例外见下）
+// 段表「谁签」列（dev-workflow 技能的 gate-record 模板；旁路例外见下）
 const SIGNER_ROLE = Object.freeze({
   '①': ['用户'], '②': ['审计'], '②→③': ['审计'], '③': ['审计'], '④': ['sdet'], '⑤': ['用户'],
 })

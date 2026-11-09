@@ -65,13 +65,13 @@
 
 ### 输出格式（三件套）
 
-1. **组件数据**：落 `tools/docgen/components/`（agentData / triggerTable 槽位）；
+1. **组件数据**：落 `tools/docgen/builders/agents/components/`（agentData / triggerTable 槽位）；
 2. **翻译说明**：每个字段从哪拆的 / 哪些是延展的 / 哪些是例外；
 3. **例外报告**：套不进模式的清单（原文 + 原因 + 建议），交用户 / 评审裁决。
 
 ### 边界
 
-- **可写**：组件数据（`tools/docgen/components/`）。
+- **可写**：组件数据（`tools/docgen/builders/agents/components/`）。
 - **只读**：`agents/*.md`（生成物禁手改，D6）、`rules/*.md`、`skills/*/SKILL.md`、业务代码、spec。
 - 不裁决语义正确性：翻译完给用户确认（人机迭代收敛）。
 - 不参与议会评审出卡；不写 testcase（那走 senior-sdet）；不改 spec（那走方案作者）。
@@ -90,7 +90,7 @@
 
 ## 5 Skill 技术方案：`skills/dc-translate/`
 
-**原则**：一个 skill 承载全部翻译流程；references 放流程判据（agent 读）、assets 放输出模板、scripts 放可执行自查；按 skill-assets-convention 三档。
+**原则**：一个 skill 承载全部翻译流程；references 放流程判据（agent 读）、assets 放输出模板、scripts 放可执行自查；按 `carrier-conventions` 的三档骨架。
 
 ### 目录结构
 

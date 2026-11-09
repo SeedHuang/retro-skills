@@ -49,4 +49,4 @@ if (process.argv[1]) {
 
 **症状**：SKILL.md 内联大段模板代码块，或文件放错档（模板进 references、指引进 assets）。
 
-**修法**：按 `skill-assets-convention` 规则：模板 → `assets/`；流程/口径/差异卡 → `references/`；可执行 → `scripts/`。SKILL.md 只留指针。
+**修法**：按 `carrier-conventions` 技能：模板 → `assets/`；流程/口径/差异卡 → `references/`；可执行 → `scripts/`。SKILL.md 只留指针。

@@ -38,20 +38,20 @@
 | 事项 | 触发 | 谁兜 |
 |---|---|---|
 | G2（P3）spec §11.14 步 1 的 `git checkout` 清单未点名 ③ 交接词（该件已在 `SC-TC-62` 白名单） | spec 下一次修订 | 主 agent（spec 修订者） |
-| G3（P3）用例计数命令缺行首锚点会自命中：`test('SC-TC-` 得 61（多出 `tools/docgen/test/sc-card-shape.test.mjs:3` 注释示例），带锚点得 60 | ④ / ⑤ / 后续复算 | 复跑者用带锚点命令或 `blockCount(SELF_PATH,'SC-TC-')`（`tools/docgen/test/sc-card-shape.test.mjs:931`） |
+| G3（P3）用例计数命令缺行首锚点会自命中：`test('SC-TC-` 得 61（多出 `tools/docgen/builders/agents/test/sc-card-shape.test.mjs:3` 注释示例），带锚点得 60 | ④ / ⑤ / 后续复算 | 复跑者用带锚点命令或 `blockCount(SELF_PATH,'SC-TC-')`（`tools/docgen/builders/agents/test/sc-card-shape.test.mjs:931`） |
 | G7（P3）testcase 签字件未回填执行结论：8 个用例（7 处全宽标注 + `SC-TC-55` 1 处变体）仍带未施行标注，48 行证据写「施工后核」 | 直接读 testcase 时 | ④ / ⑤ 引用 `quality-4.md` §2 的逐条执行面（签字件不回填） |
 | G8（P3）跨条子判据：`SC-TC-26` 的「改前 = 13 项」由 `SC-TC-57` 承担、`SC-TC-58` 的「七段」由 `SC-TC-13` 承担 | 用 `--test-name-pattern` 单跑这两条时 | 复跑者一律跑整文件 |
 | G9（P3）`SC-TC-62` 白名单比签字件宽 2 项（A 面 +③ 交接词、M 面 +门行；B 面改 `git ls-tree $BASE` 现算） | spec §11.14 / §11.15 修订时回填这两处实名 | 主 agent（spec 修订） |
-| G10（P3）path:line 引用可差 1（`references/gate-record.md` 的 LF / CRLF 混用为根因；本批门行行号曾记成 `:99/:100/:101`，实为 `:100/:101/:102`） | 任何「门行在哪一行」的引用 | 引用者当场打印核对，或引 `check-gate-record` 的 `rows` 数 |
+| G10（P3）path:line 引用可差 1（`skills/dev-workflow/references/gate-record-template.md` 的 LF / CRLF 混用为根因；本批门行行号曾记成 `:99/:100/:101`，实为 `:100/:101/:102`） | 任何「门行在哪一行」的引用 | 引用者当场打印核对，或引 `check-gate-record` 的 `rows` 数 |
 | G11（P3）投影面 0 diff 无机械判据：`docs/agents/**` 16 份中 2 份 0 diff，判「非漏生成」目前靠文字 | docgen 侧加正向断言时 | S-D |
-| G12（P3）④ / ⑤ 落行后的 `impact-sheet.md` mtime（R8）：diff 含 `references/gate-record.md` 时须同批 touch 当次 `impact-sheet.md` 再跑 `sweep --check` | 每次落门行 | 落门行者（主 agent） |
+| G12（P3）④ / ⑤ 落行后的 `impact-sheet.md` mtime（R8）：diff 含 `skills/dev-workflow/references/gate-record-template.md` 时须同批 touch 当次 `impact-sheet.md` 再跑 `sweep --check` | 每次落门行 | 落门行者（主 agent） |
 
 ### 5.1 已闭合（不再计入未闭合缺口）
 
 | 事项 | 闭合依据 |
 |---|---|
-| G4（首轮 P1）`SC-TC-55` 恒真算术 | `tools/docgen/test/sc-card-shape.test.mjs:934` 左值改为现场 `blockCount(SELF_PATH,'SC-TC-')`；注入 A（删一块 → `expected 60 / actual 59`）、A2（`expected 1541 / actual 1540`）、C（`actual 1542`）全红 |
-| G5（首轮 P1）`SC-TC-56` 本地算术代替真删 | `tools/docgen/test/sc-card-shape.test.mjs:940-957` 改为 `withRepoCopy` 副本真跑 → `rmSync` 真删 → 同命令 exit 非 0 且计数掉落；注入 D（`rmSync` 换 `void 0`）必红 |
+| G4（首轮 P1）`SC-TC-55` 恒真算术 | `tools/docgen/builders/agents/test/sc-card-shape.test.mjs:934` 左值改为现场 `blockCount(SELF_PATH,'SC-TC-')`；注入 A（删一块 → `expected 60 / actual 59`）、A2（`expected 1541 / actual 1540`）、C（`actual 1542`）全红 |
+| G5（首轮 P1）`SC-TC-56` 本地算术代替真删 | `tools/docgen/builders/agents/test/sc-card-shape.test.mjs:940-957` 改为 `withRepoCopy` 副本真跑 → `rmSync` 真删 → 同命令 exit 非 0 且计数掉落；注入 D（`rmSync` 换 `void 0`）必红 |
 | G6（P2）默认档空跑仍计 pass | **S-D T2 闭合（2026-11-04，`93c78cd`）**：`SC-TC-45` / `SC-TC-46` 由 `if (!SHAPE) return` 改 `return t.skip('一次性档未开（SB_SHAPE_ONESHOT≠1）')`；连带同批改 `SKIP_ALLOWLIST`（5 → 7 条）与 S3 spec 两处计数（`:51` / `:132`）。绿档 = 单文件 `# tests 60 / # pass 58 / # skipped 2`、全仓 `# skipped 5 → 7`；红档 = 抽掉名单一项 → `[测试] 名单外 skip：SC-TC-45 …` + `check 未通过` + exit 1 |
 | **时限炸弹**（`SC-TC-62` 比对区间为开区间） | **S-D T1 闭合（2026-11-04，`e153d33`）**：判据由 `git diff --name-status $BASE`（到工作树末尾）改为 `$BASE..$BASE_HEAD` 闭区间，`BASE_HEAD` 冻结在 S-C 收口提交 `cda896f`（`SB_BASE_HEAD` 可显式覆盖）。绿档 = `SC-TC-62` 单跑 `name-status: rows 85 / A 5 / A-outside 0 / nonA-outside 0`；**炸弹已拆** = 在 `docs/reports/` 下新建探针文件后复跑仍绿（rows 仍 85 / A 5）；**判据未架空** = 临时删 `NEW_PATHS` 一项 → `A 面出现白名单外路径：docs/handoffs/2026-11-04-s-c-card-shape-impl.md` exit 1 |
-| **G1（P3）** 人设身份句的同义资历表述漏检 | **S-E T2 闭合（2026-11-04）**：`tools/docgen/data/seats/senior-sdet.json` 的 `rationale` 首句「有十年以上经验的测试开发工程师。」→「测试开发工程师。」；V9 词面由两词面加严为 `资深` + `20 年` + `十年`（`tools/docgen/test/sc-card-shape.test.mjs:605` / `:649`，spec §11.4 `:108` / §11.8 `:151`，testcase §0.2 口径 2 / SC-TC-29 / SC-TC-31）；`--freeze` 后 `counts.I34 = 0`。绿档 = 三面 `资深 0 / 20 年 0 / 十年 0` + `SC-TC-29/31` 单跑绿；红档 = 副本回填该句 → 三面 `十年` ≥ 1 → 必红 |
+| **G1（P3）** 人设身份句的同义资历表述漏检 | **S-E T2 闭合（2026-11-04）**：`tools/docgen/dsl/agents/seats/senior-sdet.json` 的 `rationale` 首句「有十年以上经验的测试开发工程师。」→「测试开发工程师。」；V9 词面由两词面加严为 `资深` + `20 年` + `十年`（`tools/docgen/builders/agents/test/sc-card-shape.test.mjs:605` / `:649`，spec §11.4 `:108` / §11.8 `:151`，testcase §0.2 口径 2 / SC-TC-29 / SC-TC-31）；`--freeze` 后 `counts.I34 = 0`。绿档 = 三面 `资深 0 / 20 年 0 / 十年 0` + `SC-TC-29/31` 单跑绿；红档 = 副本回填该句 → 三面 `十年` ≥ 1 → 必红 |

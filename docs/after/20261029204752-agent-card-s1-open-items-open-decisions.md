@@ -9,7 +9,7 @@
 
 | # | 项 | 现状 | 触发时机 |
 |---|---|---|---|
-| O-1 | `E03` 第三条 `green`（局部场景零引用断绿） | 与 `testcase:1013`（E02 ②）及 spec §7 `:170` 判 `UnusedScene` 红冲突；用户 2026-10-29 裁定取 E03 ①②，回归测试未收录该子面（留痕 `tools/docgen/test/card-model.test.mjs:757-761`） | 下次修订本 testcase 时**删该句** |
+| O-1 | `E03` 第三条 `green`（局部场景零引用断绿） | 与 `testcase:1013`（E02 ②）及 spec §7 `:170` 判 `UnusedScene` 红冲突；用户 2026-10-29 裁定取 E03 ①②，回归测试未收录该子面（留痕 `tools/docgen/builders/agents/test/card-model.test.mjs:757-761`） | 下次修订本 testcase 时**删该句** |
 | O-2 | `testcase:680` 的 B02 前置「10 行都必须有 `mutate` 或 `fn`」 | 与该 testcase §0.4 自身的 `ScenePromotionRequired` 行（`kind:'env'`、无 `mutate`，实测 9/10）自相矛盾；本段把断言改为 `mutate｜fn｜env`（行数据一字未改） | 同批改 `testcase:680` 或给该行补 `mutate` |
 | O-3 | `S1-G-11` `requires` 元素形状违规无码 | `requires: [{id}]` 静默通过（缺 `kind` / `must` 非布尔无判据） | 下次修订 spec §4 `:71` / §7 表时同批（新增码 = 判据级变更） |
 | O-4 | `S1-G-12` 余项（PRD `:293` 的 `'…'` 省略号） | `SUBJECTS` 已成「登记表非封闭枚举」（spec §5 `:131`），但 PRD 侧仍留省略号 | **S4 扩 15 席**时同批收敛 PRD |

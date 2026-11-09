@@ -25,5 +25,5 @@ S1（可观察判据）**实现了**豁免清单的四字段结构校验、锚�
 ## 4 谁兜、何时搬走
 
 - **兜底人**：该时点的主 agent + ④ 段 sdet / 审计（按 A/B/C 裁定后回 ② 补判据）。
-- **何时搬走**：`2027-11-01` 触发后 —— 若选 A，结论并入 `spec` 与 `rules/observable-criteria.md`，本文件条目迁出；若选 B/C，则在本文件写明「不实现的原因」并保留为历史记录。
-- **禁止**：把「到期」写进 `rules/observable-criteria.md` 的正文（该文件不得写判定细节；判定只住公共 CLI `scs check observable` 的实现里）。
+- **何时搬走**：`2027-11-01` 触发后 —— 若选 A，结论并入 `spec` 与 `carrier-conventions` 技能的观察判据节，本文件条目迁出；若选 B/C，则在本文件写明「不实现的原因」并保留为历史记录。
+- **禁止**：把「到期」写进 `carrier-conventions` 的 observable 判据正文（该节不得写判定细节；判定只住公共 CLI `scs check observable` 的实现里）。

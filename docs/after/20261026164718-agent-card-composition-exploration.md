@@ -11,7 +11,7 @@
 
 ### 1.1 卡面由模板 + 数据生成，但"句子"仍是散文
 
-- `tools/docgen/templates/agent.md.tpl` 里 `## 共享特质` 是**写死的一段话**（第 12–13 行），没有槽、没有 id。
+- `tools/docgen/builders/agents/templates/agent-card.md.tpl` 里 `## 共享特质` 是**写死的一段话**（第 12–13 行），没有槽、没有 id。
 - `## 固定必问清单` 的表头与"缺答 = 不合格"也写死在模板（第 15 行）。
 - 4 条必问在 `agentData.mjs:211-216` 是**匿名字符串数组**：有数据位置，但无 id、无类型、无判据关联。
 - 第 4 条里手抄了 `git --no-optional-locks status --porcelain` 与 `commit|push|…`，与 `commands.mjs` 形成副本关系。

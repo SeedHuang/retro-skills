@@ -17,12 +17,6 @@
       "contains": "规则含认知动作（画全貌/深度思考/自省/追根/列同族/算账等脑内动作）时",
       "reason": "术语引用，不是评价：「自省」是认知动作清单项（与 rule-inspector 同一术语），触发条件由该清单判定。出处 skills/rule-writer/references/writing-guide.md:39",
       "reviewed": "2026-11-01"
-    },
-    {
-      "path": "skills/rule-writer/references/writing-guide.md",
-      "contains": "不给宽松词留口子",
-      "reason": "术语引用，不是评价：「宽松词」是 `rule-inspector` 的术语（指「一般 / 通常 / 可能允许」这类词，判据见 criteria.md 的「例外从严」行），不是对文案的形容。出处 skills/rule-writer/references/writing-guide.md:104",
-      "reviewed": "2026-11-01"
     }
   ]
 }

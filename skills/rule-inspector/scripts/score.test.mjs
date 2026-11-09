@@ -520,7 +520,7 @@ test('模式门控 ③ 有判别力：无「只适用于…的时刻/当…时�
 > 来源：用户当场指令（2026-10-02）｜落地：2026-10-09
 
 ## 模式
-评审模式：不得直接改代码，只回应不写。执行模式：按 no-git-write 管。回到评审模式时先回应。
+评审模式：不得直接改代码，只回应不写。执行模式：按本禁令管。回到评审模式时先回应。
 
 ## 防掠过
 不因指令来源豁免。
@@ -1084,13 +1084,13 @@ test('CLI --file --annotations 指向不存在的文件 → exit 1（与 --dir �
 })
 
 test('CLI --repo-root：仓内相对路径按 repo 根断言（不依赖调用 cwd，OCR R14 :59）', () => {
-  // 临时 repo：rules/cog.md 声明 `skills/review-log/assets/target.md`（repo 根相对），--repo-root 指向临时根
+  // 临时 repo：rules/cog.md 声明 `skills/parliament/assets/target.md`（repo 根相对），--repo-root 指向临时根
   const repo = mkdtempSync(join(tmpdir(), 'ro-root-'))
   try {
     mkdirSync(join(repo, 'rules'), { recursive: true })
-    mkdirSync(join(repo, 'skills/review-log/assets'), { recursive: true })
-    writeFileSync(join(repo, 'skills/review-log/assets/target.md'), '# 目标\n\n### 全貌确认\n')
-    const cog = COG_NO_DECL + '\n\n## 产物（前置必经）\n先输出「深度思考」块，写进 `skills/review-log/assets/target.md`。'
+    mkdirSync(join(repo, 'skills/parliament/assets'), { recursive: true })
+    writeFileSync(join(repo, 'skills/parliament/assets/target.md'), '# 目标\n\n### 全貌确认\n')
+    const cog = COG_NO_DECL + '\n\n## 产物（前置必经）\n先输出「深度思考」块，写进 `skills/parliament/assets/target.md`。'
     writeFileSync(join(repo, 'rules/cog.md'), cog)
     const script = join(__dirname, 'score.mjs')
     const out = spawnSync(process.execPath, [script, '--file', join(repo, 'rules/cog.md'), '--repo-root', repo, '--json'], { encoding: 'utf8' })

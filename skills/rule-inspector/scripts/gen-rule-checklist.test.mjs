@@ -26,8 +26,8 @@ test('hasBom：无 BOM → false；带 EF BB BF → true', () => {
 
 test('parsePorcelain：只收 rules/ 下 .md，?? → A，M/D 保留类型，忽略其余路径', () => {
   const out = [
-    ' M rules/core-working-principles.md',
-    ' M skills/review-log/SKILL.md',          // 非目标：.md 但不在 rules/ 下 → 不收
+    ' M rules/sample-rule.md',
+    ' M skills/parliament/SKILL.md',          // 非目标：.md 但不在 rules/ 下 → 不收
     '?? rules/new-rule.md',
     ' D rules/gone-rule.md',
     ' M rules/notes.txt',                       // 非 .md → 不收
@@ -35,7 +35,7 @@ test('parsePorcelain：只收 rules/ 下 .md，?? → A，M/D 保留类型，忽
   ].join('\n')
   const rows = parsePorcelain(out, 'rules/')
   assert.deepEqual(rows, [
-    { name: 'rules/core-working-principles.md', type: 'M' },
+    { name: 'rules/sample-rule.md', type: 'M' },
     { name: 'rules/new-rule.md', type: 'A' },
     { name: 'rules/gone-rule.md', type: 'D' },
   ])

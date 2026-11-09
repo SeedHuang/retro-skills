@@ -25,7 +25,7 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 
 `-g` 为全局（跨项目）。安装默认使用 symlink 模式（单一事实源、便于更新）。
 
-> ⚠️ **装好后不要再对同一批技能跑 `npx skills add` / `skills update`**：它会把活链**静默换成副本**（副本不跟源更新，等于第二份真相）。误装后用 `aas sync --replace` 换回活链即可修复（详见 `docs/architecture-history.md` §9 V3 / `docs/architecture.md` §8.1）。
+> ⚠️ **装好后不要再对同一批技能跑 `npx skills add` / `skills update`**：它会把活链**静默换成副本**（副本不跟源更新，等于第二份真相）。误装后用 `aas sync --replace` 换回活链即可修复（详见 `docs/architecture-history.md` §9 V3 / §12.5）。
 
 ## 怎么用：场景速查
 
@@ -81,25 +81,21 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 | 全局规则源（`rules/`） | `~/.trae-cn/user_rules/` | symlink |
 | 本仓库 `skills/` | `~/.trae-cn/skills/` | junction |
 
-同步 / 体检 / 安装由独立 CLI `aas`（agent-assets-sync）承担。**安全默认：`aas sync` 只建缺失的链接，删类动作要显式 flag**。命令全集、退出码（`0` 一致 / `1` 有差异 / `2` 出错）与配置细节见 `docs/architecture.md` §8.1（或 `agent-assets-sync` 的 README）。
-
-## 会话开始的固定动作
-
-每次会话开始先跑推迟项轮询（`lessons.mjs deferred`），报告**必须带计数**（如"推迟项 9 条，命中 2"）——有命中先向用户提出，无命中一句话带计数报告。防的是：挂账的事项没人记得、悄悄蒸发。
+同步 / 体检 / 安装由独立 CLI `aas`（agent-assets-sync）承担。**安全默认：`aas sync` 只建缺失的链接，删类动作要显式 flag**。命令全集、退出码（`0` 一致 / `1` 有差异 / `2` 出错）与配置细节见 `docs/architecture-history.md` §12.5（或 `agent-assets-sync` 的 README）。
 
 ## 仓库结构
 
 - `skills/<技能名>/` —— 技能源（`SKILL.md` + `references/` + `assets/`；**改源即生效**，运行时是只读链接）
 - `rules/` —— 全局规则源（纯 markdown；**改源即生效**，运行时是只读链接）
 - `docs/guide/` —— 技能与规则的分部指南（README 只留速查，详情在这）
-- `docs/architecture.md` —— 体系总图与全部裁决（含执行顺序、待验证项、隐患挂账）
+- `docs/architecture.md` —— 体系总图（现役架构现状；历史架构与执行顺序见 `docs/architecture-history.md`）
 - `docs/superpowers/` —— spec / plan（**已定稿**的设计 / **已排期**的执行）
 - `docs/handoffs/` —— 跨 session 交接词（每个 session 收口的交接事实；**一次性快照，定格不改**）
-- `docs/after/` —— **未完成 / 待决 / 悬置**的事项（活的账本，做完迁走）——书写规范见 `bak_skill/writing-after-docs/`（技能已归档）；目录 / 命名 / 生命周期见 `docs-placement`
+- `docs/after/` —— **未完成 / 待决 / 悬置**的事项（活的账本，做完迁走）——书写规范、目录 / 命名 / 生命周期见 `docs-placement`
 
 ## 设计文档
 
-- 体系总图与全部裁决：`docs/architecture.md`
+- 体系总图（现役）：`docs/architecture.md`；历史架构与执行顺序：`docs/architecture-history.md`
 - 套件设计：`docs/superpowers/specs/2026-09-27-retro-suite-design.md`
 
 ## License

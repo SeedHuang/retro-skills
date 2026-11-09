@@ -57,7 +57,7 @@ description: Use when 新建 / 移动 / 命名 docs 下的文档，或判断内�
 
 **归档去向**：`reviews/<那一次>/` 处置完 → 整目录迁 `docs/superpowers/reviews/<同名>/`（进 git），再删 `.session/` 副本；`retro-*.md` 必须在本次 session 结束前先迁 `docs/superpowers/retro/`（`.session/` 不进 git，不迁就永久丢失）。
 
-**硬边界**：`.session/` 里不放成果（代码 / 测试 / 定稿结论都要进 git 或 `docs/`）；一个用途只能有一个地方（过程与进度 → `.session/`，结论与待决 → `docs/after/`）；过程账操作规程不在本技能——原 `review-log` 技能已归档（`bak_skill/review-log/`）；`.session/` 已在 `.gitignore`；`.superpowers/sdd/` 是 SDD 工作区，不合并、不互相替代。
+**硬边界**：`.session/` 里不放成果（代码 / 测试 / 定稿结论都要进 git 或 `docs/`）；一个用途只能有一个地方（过程与进度 → `.session/`，结论与待决 → `docs/after/`）；过程账操作规程不在本技能；`.session/` 已在 `.gitignore`；`.superpowers/sdd/` 是 SDD 工作区，不合并、不互相替代。
 
 ## 待决与待办
 
@@ -67,11 +67,9 @@ description: Use when 新建 / 移动 / 命名 docs 下的文档，或判断内�
 
 **不许出现 ✅ 档**：勾选会让做完的条目有合法容身之处，文件只涨不消。清账判据：超过一半是 ✅ 时，未完成的迁新文件，已完成的整段删；历史由 git 承担。
 
-> 旧版 `writing-after-docs` 的「墓碑不删」规则随该技能归档失效；当前口径 = 完成 = 删（不设 ✅ 档）。
-
 ## 与落地回扫的衔接
 
-`docs/after/` 是「哪些没做」的权威入口。按 `dev-workflow` 技能的 landing-sweep 判据回扫时，反向也要扫这里：待决清单里已做完的项要从 `after/` 迁走，否则下次会被当成欠账。
+`docs/after/` 是「哪些没做」的权威入口。按 `dev-workflow` 技能的回扫判据回扫时，反向也要扫这里：待决清单里已做完的项要从 `after/` 迁走，否则下次会被当成欠账。
 
 ## 适用范围
 

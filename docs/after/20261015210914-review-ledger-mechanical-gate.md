@@ -1,66 +1,17 @@
-# 审查过程账的机械闸门（轮次账 / 轮次小节断档）
+# 议会「自洽确认区」的 ✅ 必须带取数命令（未决）
 
-> **状态：探索中，未定稿。** 本文记的是「已实测的缺口 + 待决的修法」，**不能当结论引用**。
-> **何时该搬走**：等「闸门做在哪、判据长什么样」拍板并落地后 → 结论并入 `skills/review-loop/` 的相应 reference，条目从本文迁出（`docs-convention`：`after/` 只放还没做完的，做完即迁走）。
+> 状态：**未决**｜创建 2026-10-15｜来源：review-all-to-death R9 实测（段二确认区写「`collectScanFiles` 确实用它拼路径 → 已修对，无残留」，实测该常量引用数 = 0；同轮 OCR 独立报出同一条）
+> 何时搬走：`parliament` 的角色面板判据补上「确认区 ✅ 行必须含反引号命令」后，本文件删（结论进 `skills/parliament/`）。
 
-## 已实测的缺口（2026-10-15，R9 查出）
+## 现状
 
-> ⚠️ **本节记的是「当时发现的缺口」，不是待决项**——待决项只在下面的「待办」一节。
-> 缺口 1-4 在写进仓库的**同一个 commit（`c5e4f31`）里**已经做过补录 / 补跑，「现状」列写的是**处理动作**，不是数字。
-> ⚠️ **现状列刻意不写「命中 N 个 / N 行」这类数字**：上一次写的时候实测是 1-9 / 9 行，同一轮 R10 自己又加了第 10 轮，数字当场过期，还和同文件下一行「已跑到 R10」打架。**要数字请自己跑那两条命令**——写进文档的数字只要和账本在同一轮里动过就会漂。
+`skills/parliament/assets/progress.md` 第 21 项只要求「产出自洽（自洽确认区 / 团队名单与轮间变更记录 / 实际执行路径标注）」**存在**，未要求确认区每条 ✅ 能填出「取数命令 + 关键输出」两格——无命令的「已修对」仍可通过。
 
-对象：`.session/reviews/2026-10-14-2248-review-all-to-death/`（本次 review，进行中）。
+## 该做
 
-| # | 缺口（当时的） | 怎么查的 | 现状（只写动作，数字自己跑） |
-|---|---|---|---|
-| 1 | 轮次小节只到 R6，R7 以后三节不存在 | `Select-String -Pattern '^## 第 (\d+) 轮' progress.md` | ✅ **已补录**：R7 起逐轮补齐小节（R7/R8 为补录，节内已标注当轮是否自记）。查法同上——命中数应等于最高轮号 |
-| 2 | 轮次账表只有第 1 轮一行数据 | `Get-Content progress.md \| Where-Object { $_ -match '^\| \d+ \|' }` | ✅ **已补录**：逐轮补齐；耗时列按「不编数字」原则一律标「未取数」，自 R10 起才有真实取数 |
-| 3 | R7 段一未跑，且当轮无人自记 | `ocr session list \| Select-String -Pattern 'd4b0e6f'` | ✅ **已补记**：轮次账与 R7 小节都写明「段一未跑（当轮未自记，R9 查出）」。**但「当时无人自记」是历史事实，补记改不掉它** |
-| 4 | R8 的修复从未被 OCR 审，而下一轮据此判「空转」 | `ocr session list \| Select-String -Pattern 'a50118e'` | ✅ **已补跑**：session `daa31e06`（RANGE `a50118e^..HEAD`，1 文件 / **6 条**），全部处置完毕 |
+- 在 `parliament` 的角色面板判据里加一条：确认区每条 ✅ 必须含「反引号命令 + 关键输出」；填不出降级为 🔶「未核」。
+- **完成判据**：对 `skills/parliament/references/` 跑一次「确认区 ✅ 行必须含反引号命令」的检查，人工抽查 3 条确认命令能跑。
 
-**为什么这四条要合起来看**：单独看是「记账没记全」；合起来看是**账本能显示「已核销」，实际那一格从没跑过** —— 比不记更坏（R6 那条复盘的原话：「过程账缺失导致 P1 无人核销」）。
+## 谁兜
 
-## 根因（已定位，不是推测）
-
-1. **两个载体职责相近，被当一个用**：`progress.md` 管「这一轮核销了没有」，`problems.md` 管「这一轮发现了什么」。从 R7 起我把「改了什么」写进 commit body、「发现了什么」写进 `problems.md`，**恰好把 `progress.md` 独有的三块（轮次起止 / 三段核销状态 / 本轮结论）全省了**。
-2. **上一轮的沉淀只进了散文，没进闸门**：R6 的复盘已经写明「复查轮的逐条核销表必须落进账本」，但那条话**没有任何检查在执行**——所以 R7 又犯了一次，R8 又犯了一次。
-3. **模板给了格子，没给「填不完会被谁拦住」**：轮次账表有 ⬜ 方框，长期停在第 1 轮。**有格子没填，比没格子更像「在填」**——读者（和我自己）扫过去不会停。
-
-## 待办
-
-- [ ] **给 review-loop 加一条机械核对**：每轮收尾断言「轮次账表的最高轮号 == 轮次小节数」且「上一轮基线 commit 在 `ocr session list` 里有对应 RANGE 的 session（或显式标注未跑 + 理由）」。
-  - **落点：放 ③ `skills/review-log/scripts/`**（R10 已定，见下方判据与结论；原「未决三选一」已删——留着一句「未决」紧跟着一个结论，读的人不知道哪个算数）
-  - **判据（已实测，给的是结论不是选项）**：
-    - 三个候选目录**都真实存在**：`Test-Path scripts\check-all.mjs` → True；`Get-ChildItem skills\review-loop\scripts` → `review-init.mjs` / `review-init.test.mjs` / `update-review-project-type.mjs`；`Get-ChildItem skills\review-log\scripts` → `time.mjs`
-    - **目录由谁创建**：`skills/review-loop/scripts/review-init.mjs`（分支前置第 5 步在跑它）
-    - **目录内容语义归谁**：`.session/reviews/<那一次>/` 的骨架与必填表在 `skills/review-log/assets/review-progress-template.md`，「每轮必填」判据在 review-log 的 SKILL.md
-    - **① 明确排除**：`scripts/check-all.mjs` 的 **④** 段有 `MD_SKIP_DIRS`（`:101` 定义含 `.session`、`:106` 据此跳过），且它扫的是**仓库内**文件，`.session/` 又在 `.gitignore` 里 → 把检查塞进 `npm run check` 等于让闸门管 gitignore 的目录
-  - **完成判据**：新脚本对**本次**账本跑出 0 断言失败，且对一份构造坏的样本（抽掉 R7 小节）跑出非零退出
-- [ ] **模板补一句「填不出就写未取数，不许留空 / 不许只留 ⬜」**：留空与「没跑」在文件里长得一样（都读成「在填」）。
-  - **完成判据**：`Select-String -Path skills/review-log/assets/review-progress-template.md -Pattern '未取数'` 命中 ≥ 1 行，且该行含「不许留空」或等价禁止句
-- [ ] **段一「未跑」的自记要成为硬要求**：R4 自记了、R7 没自记——同一个模板、同一个 agent，两轮行为不一致，说明它靠自觉。
-  - **完成判据**：`Select-String -Path skills/review-log/assets/review-progress-template.md -Pattern '未跑'` 命中 ≥ 1 行**且该行以 `|` 开头**（在必填表里，不在正文散文里）
-
-## R9-R10 追加：其他「落盘纪律」待办
-
-> 这两条与上文主题相邻但不同（一条管审查产物、一条管 `after/` 写法），同属「落盘的东西会不会骗读者」，故并入本文，不另开文件。
-
-- [ ] **段二的「自洽确认区」每条 ✅ 必须能填出「取数命令 + 关键输出」两格，填不出降级成 🔶「未核」**
-  - **来源**：R9。子代理在段二确认区写「`collectScanFiles` 确实用它拼路径 → 已修对，无残留」，实测该常量引用数 = 0；同轮 OCR 独立报出同一条。
-  - **要改的载体**：`parliament` 技能的角色面板判据（不在 review 范围内，需另起一轮）。
-  - **完成判据**：对 `parliament` 的 `references/` 跑一次「确认区 ✅ 行必须含反引号命令」的检查，人工抽查 3 条确认命令能跑。
-- [ ] **`docs-convention` 给 `after/` 加一条：「写现状必须同时写时间戳或现状列」**
-  - **来源**：R10。`20261015210914-review-ledger-mechanical-gate.md` 的「已实测的缺口」表列的 4 条，在写进仓库的同一个 commit 里就被补完了，文档仍写成「缺口」——地基在落盘那一刻就过期了。
-  - **要改的载体**：`docs/bak/rules/docs-convention.md`（改判据文件，需另起一轮）。
-  - **完成判据**：`Select-String -Path docs/bak/rules/docs-convention.md -Pattern '现状列|时间戳'` 命中 ≥ 1 行，且该行含「不许只写现状」这类禁止句。
-- [ ] **口径二选一：`after/` 做完的条目「墓碑保留」还是「直接删」**
-  - **来源**：2026-10-24 TRAE-code-review。`bak_skill/writing-after-docs/references/migration.md` 要求墓碑式改写（`~~事项~~` + 终点状态 + spec 路径，**不删条目**），`docs/bak/rules/docs-convention.md` 要求「等不到任何东西了 = 完成 = **删**」且「不许出现 ✅ 档」。
-  - **落点**：两处都是判据正文，改哪边都要走「改前 vs 改后 + 用户确认」（`rule-inspector` 硬闸门）。
-  - **完成判据**：两处对「做完的条目怎么处理」只存在一种说法——`Select-String -Path docs/bak/rules/docs-convention.md,bak_skill/writing-after-docs/references/migration.md -Pattern '墓碑|不删条目|完成 = \*\*删\*\*'` 的结果能指向同一条判据，无相反表述。
-  - **2026-11-08 现状**：旧 `migration.md` 已随技能归档；当前口径 = `skills/docs-placement/SKILL.md` 的「完成 = 删」，本条可按此收口。
-
-## parking（已认可但押后）
-
-> ⚠️ **本文所有 `- [ ]` 待办一条都没押后**（R10 写「3 条」时漏了追加的那 2 条——声明想防的误解，被声明自己的数字缺陷制造出来了；故改成不数条数的写法）。parking 只针对「补耗时取数」这一项。
-
-- **parking**：把本次 R7-R9 的耗时补取数。**理由**：当时没跑 `time.mjs`，数据已不可取，编数字比留空更坏。等下次 review 按新纪律跑满两轮后，再评估「耗时列是否值得保留在模板里」——若机械核对落地后耗时仍无人取，说明这一列本身就是无效字段。
+议会主持人 + 下一次改 `parliament` 角色面板的 agent；改动属判据正文，需走「改前 vs 改后 + 用户确认」。

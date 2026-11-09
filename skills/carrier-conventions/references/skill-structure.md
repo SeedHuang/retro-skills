@@ -1,4 +1,4 @@
-# 技能目录骨架（承接原 `skill-authoring-convention` / `skill-assets-convention`）
+# 技能目录骨架
 
 ## 三档判据
 
@@ -11,7 +11,7 @@
 
 ## 写 skill 的三条硬约束
 
-1. **跨技能引用只写技能名**（如「走 review-loop」）；禁止写对方内部文件路径（`skills/<名>/references/...` 这类写法会被技能自查段判红，判定见 `npm run check` 的 skill-inspector 段）。
+1. **跨技能引用只写技能名**（如「走 dev-workflow」）；禁止写对方内部文件路径（`skills/<名>/references/...` 这类写法会被技能自查段判红，判定见 `npm run check` 的 skill-inspector 段）。
 2. **自引用写相对路径全称**（`references/foo.md`），不带技能名前缀。
 3. **同一文件只有一种叫法**；路径字符串比较不能用来判「直接运行 vs 被 import」，要 `realpath` 双归一。
 

@@ -1,7 +1,7 @@
 # 技能清单：各自的作用与使用时机
 
 > 这是 README「技能与规则」的展开指南，README 只保留速查表以控制篇幅。**下文路径相对仓库根 `d:\Seed\retro-skills`**（除非另注）。
-> 已退役的技能（`review-loop` / `review-log` / `writing-after-docs` / `review-triage` 等）连同其依赖清单一起归档在 `bak_skill/`，不在 `skills/` 注册。
+> 已退役的技能连同其依赖清单一起归档在 `bak_skill/`，不在 `skills/` 注册。
 
 ## 技能结构图：套系、依赖与共同底座
 
@@ -51,7 +51,7 @@ flowchart TB
     RW -->|判据权威| RI
     RI -->|按处方改正文| RW
 
-    SI -.->|判据来自全局规则| G1[("skill-authoring-convention<br/>含 skill-assets 目录语义")]
+    SI -.->|判据实现| G1[("scripts/check.mjs（①–⑦）<br/>+ carrier-conventions 目录语义")]
     RI -.->|词表与评分口径| G2[("observable-terms.json<br/>tools/docgen/dsl/rules/vocab")]
 
     style DW fill:#bbdefb,color:#0d47a1
@@ -94,23 +94,23 @@ flowchart TB
 | `prd-to-specs` | `parliament` | spec 定稿后送审 | `skills/prd-to-specs/SKILL.md:57` |
 | `dev-workflow` | `prd-to-specs` | 划界：拆 PRD 归 prd-to-specs | `skills/dev-workflow/SKILL.md:3` |
 | `dev-workflow` | `carrier-conventions` | 引用：判据写成可观察形态 | `skills/dev-workflow/SKILL.md:77` |
-| `docs-placement` | `carrier-conventions` | 引用：技能资产目录的骨架判据 | `skills/docs-placement/SKILL.md:78` |
+| `docs-placement` | `carrier-conventions` | 引用：技能资产目录的骨架判据 | `skills/docs-placement/SKILL.md:76` |
 | `docs-placement` | `plain-language`、`carrier-conventions` | 划界：正文写法不归本技能 | `skills/docs-placement/SKILL.md:3` |
-| `docs-placement` | `dev-workflow` | 引用：landing-sweep 的 after 回扫 | `skills/docs-placement/SKILL.md:74` |
+| `docs-placement` | `dev-workflow` | 引用：after 回扫判据 | `skills/docs-placement/SKILL.md:72` |
 | `carrier-conventions` | `assertion-quality`、`plain-language` | 边界互斥表 | `skills/carrier-conventions/SKILL.md:8`、`:14-16` |
 | `assertion-quality` | `carrier-conventions`、`plain-language` | 划界：格式/表达不归本技能 | `skills/assertion-quality/SKILL.md:3` |
 | `plain-language` | `carrier-conventions`、`assertion-quality` | 划界：文件写法/断言真伪不归本技能 | `skills/plain-language/SKILL.md:3` |
-| `skill-inspector` | 全局规则 `skill-authoring-convention` / `skill-assets-convention` | 判据与目录语义权威在仓外规则 | `skills/skill-inspector/SKILL.md:14`、`:20` |
+| `skill-inspector` | 本技能 `scripts/check.mjs`（①–⑦）、`carrier-conventions` | 判据实现与目录语义 | `skills/skill-inspector/SKILL.md:14`、`:20` |
 
 ### 被共同调用的底座
 
 | 底座 | 被谁引用 | 具体用法 | 证据 |
 |---|---|---|---|
-| `carrier-conventions` | `dev-workflow`、`docs-placement`、`assertion-quality`、`plain-language` | 判据可观察形态、技能目录骨架、文件写法边界 | `skills/dev-workflow/SKILL.md:77`、`skills/docs-placement/SKILL.md:78` |
+| `carrier-conventions` | `dev-workflow`、`docs-placement`、`assertion-quality`、`plain-language` | 判据可观察形态、技能目录骨架、文件写法边界 | `skills/dev-workflow/SKILL.md:77`、`skills/docs-placement/SKILL.md:76` |
 | `assertion-quality` | `carrier-conventions`、`plain-language` | 断言真伪与可复核性 | `skills/carrier-conventions/SKILL.md:14` |
 | `plain-language` | `carrier-conventions`、`docs-placement` | 给用户看的解释怎么讲 | `skills/carrier-conventions/SKILL.md:16`、`skills/docs-placement/SKILL.md:3` |
 | `rule-inspector` 判据 | `use-rule-skills`、`rule-writer`、`parliament` | 规则评分、写作归一口径、rule 类送审的评分证据 | `skills/use-rule-skills/SKILL.md:56`、`skills/rule-writer/SKILL.md:35`、`skills/parliament/references/submission-matrix.md:14` |
-| `dev-workflow` | `parliament`、`docs-placement` | 评审轮/升级口径、after 回扫 | `skills/parliament/SKILL.md:9`、`skills/docs-placement/SKILL.md:74` |
+| `dev-workflow` | `parliament`、`docs-placement` | 评审轮/升级口径、after 回扫 | `skills/parliament/SKILL.md:9`、`skills/docs-placement/SKILL.md:72` |
 
 ### 非技能依赖（读图时别误当技能）
 
@@ -143,7 +143,7 @@ flowchart TB
 ### 3. `dry-refactor-newadd` — 最近一次提交的冗余代码清理
 
 - **什么时候用**：刚提交完一批改动，想清理掉**这次提交**新引入的"复制粘贴"重复，并看到一份改前改后对比的审计报告。**前提：工作区必须干净**（未提交的改动要先由你提交——提交既是对比基准的前提，也是出问题的回退点）。
-- **做什么**：按提交数选模式——≥2 个提交时用 jscpd v5（本机已装 5.3.x）的 `--baseline-from-ref HEAD~1`，只报**本次提交新增**的重复（旧债不碰）；只有 1 个提交则全量扫描（无"改动前"可比）。然后按五种策略（抽函数 / 参数化 / 抽模块或常量 / 基类 / 模板）抽取合并 → 复测 + 跑项目自身测试 → 输出三块审计报告（改了什么 / 跳过了什么及原因 / 重复行数 X→Y 及占比，数字附取数命令）。执行中踩的坑按 `retro-*` 体系回流错题集 KB（自进化走既有复盘套件，技能本身不带自改逻辑；该套件已归档到 `bak_skill/`）。
+- **做什么**：按提交数选模式——≥2 个提交时用 jscpd v5（本机已装 5.3.x）的 `--baseline-from-ref HEAD~1`，只报**本次提交新增**的重复（旧债不碰）；只有 1 个提交则全量扫描（无"改动前"可比）。然后按五种策略（抽函数 / 参数化 / 抽模块或常量 / 基类 / 模板）抽取合并 → 复测 + 跑项目自身测试 → 输出三块审计报告（改了什么 / 跳过了什么及原因 / 重复行数 X→Y 及占比，数字附取数命令）。
 - **不做什么**：不做死代码检测（jscpd 的 `--dead-code` 是另一条线，本技能范围不含）；不清理基准里已有的历史重复；技能自身不做 git 写操作。
 
 ### 4. `rule-inspector` — 判据驱动的规则检察员
@@ -155,13 +155,13 @@ flowchart TB
 ### 5. `rule-writer` — 写新规则 / 按处方优化已有规则
 
 - **什么时候用**：用户说「写一条规则 / 优化这条规则」。
-- **做什么**：按判据四要素 + 执行力度 8 项 + 来源行 + 分层级 + 判定词归一，写新规则或按 inspector 处方优化已有规则（写规则的，自然也改规则）。
+- **做什么**：按判据四要素 + 执行力度 9 项 + 来源行 + 分层级 + 判定词归一，写新规则或按 inspector 处方优化已有规则（写规则的，自然也改规则）。
 - **不做什么**：体检/评分/处方（走 rule-inspector）、审查（走专门的审查流程）。
 
 ### 6. `skill-inspector` — 判据驱动的技能检察员
 
 - **什么时候用**：用户说「体检 skills / 优化 skill / 检查技能」。
-- **做什么**：按 skill-authoring-convention 判据给 `skills/` 里的技能评分、出报告、给处方、修复优化。
+- **做什么**：按本技能 `scripts/check.mjs`（①–⑦）判据给 `skills/` 里的技能评分、出报告、给处方、修复优化。
 - **不做什么**：新建规则（走 use-rule-skills）。
 
 ### 7. `use-rule-skills` — 新建/优化规则的统一入口
@@ -173,7 +173,7 @@ flowchart TB
 ### 8. `dev-workflow` — 开发工作流主干（五段 + 两插点）
 
 - **什么时候用**：任务要走「需求 → 技术设计 → 计划门 → 实现 → 质量 → 交付」这条主干，或需要判断现在该进哪一段、本段出口齐没齐；也用于需要长文取证（只交原文 + 行号）的场合。
-- **做什么**：给出段表（每段的出口判据 / 谁签 / 是否有议会）、两个议会插点、三权总则与取证调度；每段开工前产出「已核清单」写进任务目录 `docs/devworkflows/<YYYYMMDDHHmmss>-<任务名>/gate-record.md`，缺清单不得进入下一段。强制约束见本技能 SKILL.md 的「义务边界」与 `references/gate-record-template.md` 的 R1–R9（原 `dev-workflow-mainline` 规则已退役，留档 `docs/bak/rules/`）。
+- **做什么**：给出段表（每段的出口判据 / 谁签 / 是否有议会）、两个议会插点、三权总则与取证调度；每段开工前产出「已核清单」写进任务目录 `docs/devworkflows/<YYYYMMDDHHmmss>-<任务名>/gate-record.md`，缺清单不得进入下一段。强制约束见本技能 SKILL.md 的「义务边界」与 `references/gate-record-template.md` 的 R1–R9。
 - **不做什么**：不做单点代码修改与缺陷定位（走 `systematic-debugging` 等专用技能）；不做议会内部流程（走 `parliament`）；不拆 PRD（走 `prd-to-specs`）。
 
 ### 9. `carrier-conventions` — 载体写作规范
@@ -197,5 +197,5 @@ flowchart TB
 ### 12. `docs-placement` — 项目文档目录与命名
 
 - **什么时候用**：新建 / 移动 / 命名 `docs/` 下的文档，或判断内容该进 `docs/prd`、`specs`、`plans`、`handoffs`、`after`、`research`、`devworkflows`、`.session`；也用于判断待办何时该搬走 / 删除。
-- **做什么**：按生命周期状态分目录；目录表与命名规则；`.session/` 封闭清单与硬边界；待决只在 `docs/after/`；待办语义（不许 ✅ 档）；与 `dev-workflow` 的 landing-sweep 反向回扫。
+- **做什么**：按生命周期状态分目录；目录表与命名规则；`.session/` 封闭清单与硬边界；待决只在 `docs/after/`；待办语义（不许 ✅ 档）；与 `dev-workflow` 的 after 回扫判据反向对齐。
 - **不做什么**：写文档内容本身（走 `plain-language` / `carrier-conventions`）；rule 正文（走 `carrier-conventions`）；技能资产目录（走 `carrier-conventions`）。

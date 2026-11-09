@@ -1,13 +1,13 @@
 # agent 专属可执行性判据正文（A/B/C 三组 15 项）
 
 > **载体身份**：本文件是 A/B/C 三组 15 项 agent 判据的**唯一正文载体**（spec §7 交付物 2，依据 `docs/superpowers/specs/2026-10-20-execution-assurance-matrix-design.md` R5 逐字转写，名称/判定对象/判定方式不得另行改写）。
-> **单源约束**：判据正文只在本文件定义一次；`skills/rule-inspector/references/criteria.md` 与 `rules/skill-authoring-convention.md` 只加归桶索引指针，不复制判据。模式表正反例（spec R6）属 `tools/execution-matrix/pattern-table.md`，**不写进本文件**。
+> **单源约束**：判据正文只在本文件定义一次；`skills/rule-inspector/references/criteria.md` 与 `carrier-conventions` 技能只加归桶索引指针，不复制判据。模式表正反例（spec R6）属 `tools/execution-matrix/pattern-table.md`，**不写进本文件**。
 
 ## 0 适用范围与总则
 
 ### 0.1 检查范围（spec R2）
 
-A/B/C 组判据**只查卡文本**（渲染后的 `agents/*.md`），**不查运行时产出**。运行时验证归属：议会评审产出 → parliament（侦探行为核对 + 审计证据核对）；改动验证 → review-loop（复查轮独立重审）。判据越界查运行时 = 与既有体系重复 = 不合格（对应 TC-028）。
+A/B/C 组判据**只查卡文本**（渲染后的 `agents/*.md`），**不查运行时产出**。运行时验证归属：议会评审产出 → parliament（侦探行为核对 + 审计证据核对）；改动验证 → `dev-workflow` 技能的 ④ 段质量保证（复查轮独立重审）。判据越界查运行时 = 与既有体系重复 = 不合格（对应 TC-028）。
 
 ### 0.2 模板形态适配（spec R5）
 
@@ -88,7 +88,7 @@ A 组结构项（A3-A7）中**凡有「目标节」的按字样查的项（A4/A5
 |---|---|
 | 名称 | A7 输出格式指定 |
 | 判定对象 | 卡「输出格式」节 |
-| 判定方式 | **机器查（可 grep）**：判定 = 含 `## 输出格式` 块（outputKind 对应；产出形态可被下游稳定消费——议会评审、review-loop） |
+| 判定方式 | **机器查（可 grep）**：判定 = 含 `## 输出格式` 块（outputKind 对应；产出形态可被下游稳定消费——议会评审、阶段复查） |
 | 落位 | `check-agent.mjs`（A 结构项机器检查） |
 
 ## 2 A 组：语义项（AI 判 + annotations 三态）——落位 `tools/quality/.inspector-annotations.json`

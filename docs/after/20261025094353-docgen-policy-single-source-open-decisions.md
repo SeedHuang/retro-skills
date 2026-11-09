@@ -67,7 +67,7 @@ fenk哎# docgen 规则单一来源化（B 方案）：开放决策
   ```
 - **渲染层**：`renderBoundary({ seat, policy })` 按五段拼句（①档位事实 ②写入范围 ③明确禁止 ④命令默认拒绝 ⑤越权后果与限度）。散文模板放 `templates/boundary.md.tpl`，与 `agent.md.tpl` 同构。
 - **纯度守卫**（关键）：「模板内不得含路径 / 命令字面量」——与既有「模板纯度」用例同思路（`pilot-render.test.mjs` 的 `模板纯度` 那一条）。这条守卫是「防第二份真相」的结构性闸门，比补断言有效。
-- **spec 只引用、不列内容**：§3.3③/④ 改成「以 `tools/docgen/policy/` 为准，可用 `node tools/docgen/cli.mjs policy --dump` 复算」。方向必须单向（见待决 1）。
+- **spec 只引用、不列内容**：§3.3③/④ 改成「以 `tools/docgen/builders/agents/policy/` 为准，可用 `node tools/docgen/builders/agents/cli.mjs policy --dump` 复算」。方向必须单向（见待决 1）。
 - **判据层**：B02/B03/B05 从「手抄 23/14 项」改为「import policy 后断言卡面 = render(policy)」，并保留 2–3 条**字面锚点**防渲染器被人改坏（锚点数固定，不随规则条数增长）。
 
 ## 4 迁移步骤（8 步，按主线走）

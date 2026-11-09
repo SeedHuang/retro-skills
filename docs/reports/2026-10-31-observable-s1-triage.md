@@ -8,11 +8,11 @@
 ((Get-ChildItem rules,skills -Recurse -Filter *.md | Select-String -Pattern '自省|客观|诚实|宽松|严格|清晰|准确|显著|良好') | Where-Object { $_.Line -notmatch '^\s*#' } | Select-Object -Unique Path,LineNumber | Measure-Object).Count
 ```
 
-实跑 = **21**（2026-11-05：其中 1 行随载体 `skills/dev-workflow/references/gate-record.md` 删除而退役，在册 20 行）。
+实跑 = **21**（2026-11-05：其中 1 行随载体 `skills/dev-workflow/references/gate-record.md` 删除而退役；2026-11-09：再 1 行随 `writing-guide` 第五节样板删除而退役；在册 19 行）。
 
 > 分类口径（三档互斥）：**改文案** = 能把评价换成可判表述（`M`）；**已合格** = 命中行所在最小语义块内本来就有可观察标记（`P`，**不为它补豁免**）；**合法保留** = 只许「术语引用 / 词表自身」（`L`，入豁免且 `reason` 写术语出处）。
 
-## 逐行结论（首日 21 行；在册 20 行）
+## 逐行结论（首日 21 行；在册 19 行）
 
 | path:line | 命中词 | 块内 marker（有/无） | 分类（改文案 / 已合格 / 合法保留） | 处置 | 豁免 reason |
 |---|---|---|---|---|---|
@@ -34,7 +34,7 @@
 | `skills/rule-inspector/references/recipes.md:41` | 诚实 | 无 | 合法保留 | 不改（术语引用） | 术语引用，不是评价：「诚实」是 `criteria.md` 章节名「诚实边界」的一部分（指向性引用）。出处 `skills/rule-inspector/references/recipes.md:41` |
 | `skills/rule-writer/assets/rule-skeleton.md:24` | 自省 | 有 | 已合格 | 不改不豁免 | — |
 | `skills/rule-writer/references/writing-guide.md:39` | 自省 | 无 | 合法保留 | 不改（术语引用） | 术语引用，不是评价：「自省」是认知动作清单项（与 `rule-inspector` 同一术语）。出处 `skills/rule-writer/references/writing-guide.md:39` |
-| `skills/rule-writer/references/writing-guide.md:104` | 宽松 | 无 | 合法保留 | 不改（术语引用） | 术语引用，不是评价：「宽松词」是 `rule-inspector` 的术语（指「一般 / 通常 / 可能允许」这类词）。出处 `skills/rule-writer/references/writing-guide.md:104` |
+| `skills/rule-writer/references/writing-guide.md:104` | 宽松 | 无 | 已退役 | 行已删除（2026-11-09，writing-guide 第五节样板删除） | — |
 | `skills/use-rule-skills/references/flows.md:66` | 自省 | 无 | 已合格 | 围栏代码块内行**不参与判定**（spec §2 `:26`），不产出 hit，不豁免 | — |
 | `skills/writing-after-docs/assets/after-template.md:44` | 客观 | 无 | 改文案 | 改：`**客观事实 + 取数命令**` → `**事实 + 取数命令**` | — |
 

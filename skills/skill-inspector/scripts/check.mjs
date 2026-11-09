@@ -112,7 +112,7 @@ function lineOf(text, index) {
   return text.slice(0, index).split(/\r?\n/).length
 }
 
-// 仅直接运行时执行 CLI（realpath 归一化免疫 Junction，见 rule skill-authoring-convention 判据③）
+// 仅直接运行时执行 CLI（realpath 归一化免疫 Junction，见 carrier-conventions 技能的守卫约束）
 let isDirectRun = false
 if (process.argv[1]) {
   try {

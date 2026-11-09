@@ -1103,8 +1103,8 @@ test('S3-TC-I14 两模板与删除面', () => {
   const diff = execFileSync('git', ['diff', '-U0', S3_BASE, '--', 'skills/rule-inspector/references/criteria.md'], { cwd: REPO, encoding: 'utf8' })
   const beforeLines = execFileSync('git', ['show', `${S3_BASE}:skills/rule-inspector/references/criteria.md`], { cwd: REPO, encoding: 'utf8' }).split(/\r?\n/)
   if (beforeLines[0]) beforeLines[0] = beforeLines[0].replace(/^\uFEFF/, '') // 行首 BOM 会让 `^# 判据全集` 失配
-  // 2026-11-09 增量：`### 2.1 来源类型` 允许删除——清理已退役规则名；同批改 testcase S3-TC-I14
-  const ALLOWED = [/^# 判据全集/, /^#### 新增维度/, /^### 2\.1 /, /^### 3\.4 /, /^### 3\.5 /, /^### 3\.3b /, /^## 3\. 类型感知扩展/]
+  // 2026-11-09 增量：`### 2.1 来源类型` / `### 3.3 通用 17 项` 允许删除——清理已退役规则名；同批改 testcase S3-TC-I14
+  const ALLOWED = [/^# 判据全集/, /^#### 新增维度/, /^### 2\.1 /, /^### 3\.3 /, /^### 3\.4 /, /^### 3\.5 /, /^### 3\.3b /, /^## 3\. 类型感知扩展/]
   const outOfScope = []
   for (const h of hunksOf(diff)) {
     if (h.deleted.length === 0) continue
@@ -1145,7 +1145,8 @@ test('S3-TC-J03 dev-workflow 指针', () => {
   const lines = src.split(/\r?\n/)
   const pointerStart = lines.findIndex((l) => l.trim() === '## 指针')
   const section = lines.slice(pointerStart + 1).filter((l) => l.trim() !== '')
-  const pointerLines = section.filter((l) => l.includes('observable-criteria'))
+  // 2026-11-09：退役规则名清理，指针锚由 `observable-criteria` 改为承接技能 `carrier-conventions`
+  const pointerLines = section.filter((l) => l.includes('carrier-conventions'))
   assert.equal(pointerLines.length, 1)
   assert.ok(pointerLines[0].includes('npm run check:observable'))
   // 2026-11-05 载体迁移（签字账迁 docs/devworkflows）有意改了段表里的路径单元格，

@@ -16,7 +16,7 @@
 |---|---|---|
 {{RULE_TABLE}}
 
-## A · 行为前提（动手前；出处：core-working-principles）
+## A · 行为前提（动手前；出处：dev-workflow 元工作方法）
 
 | # | 检查项 | 判据（取数命令 · 产物必含词） | 实际输出（必填） | 确认执行 |
 |---|---|---|---|---|
@@ -40,7 +40,7 @@
 | B4 | 三性 · 合理 | 「数据 → 结论」每步讲得清 | <推导链一行> | |
 | B5 | 三性 · 有效 | 数据对当前最终问题有用 | <解决哪一环> | |
 
-## C · 文件与版本操作（出处：rules-single-source、no-git-write、powershell-file-encoding）
+## C · 文件与版本操作（出处：carrier-conventions、「不主动执行 git 写操作」纪律）
 
 | # | 检查项 | 判据（取数命令 · 产物必含词） | 实际输出（必填） | 确认执行 |
 |---|---|---|---|---|
@@ -49,7 +49,7 @@
 | C3 | 不主动 git 写操作（review 例外段内除外） | `git status --porcelain` 变更逐条可解释 | <变更清单> | |
 | C4 | 写文件无 UTF-8 BOM | 前 3 字节 ≠ EF BB BF（逐文件，脚本填） | {{C4_OUTPUT}} | 确认执行 |
 
-## D · 编辑内容（出处：reference-read-output-loop、skill-authoring-convention、landing-sweep）
+## D · 编辑内容（出处：carrier-conventions、dev-workflow 技能）
 
 | # | 检查项 | 判据（取数命令 · 产物必含词） | 实际输出（必填） | 确认执行 |
 |---|---|---|---|---|

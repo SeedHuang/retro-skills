@@ -48,7 +48,7 @@ export function main(argv) {
   return 0;
 }
 
-// 仅直接运行时执行 CLI（realpath 归一化免疫 Junction，见 rule skill-authoring-convention 判据③）
+// 仅直接运行时执行 CLI（realpath 归一化免疫 Junction，见 carrier-conventions 技能的引用纪律）
 if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))) {
   process.exitCode = main(process.argv.slice(2));
 }
