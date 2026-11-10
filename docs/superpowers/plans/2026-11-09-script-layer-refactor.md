@@ -1,6 +1,6 @@
 # 脚本分层与运行期收口 — 实施计划
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** 把卡面命令白名单从「3 组 14 条混装」改成「组级单层 + 卡面只取 run」，并把账本计数、落点检查、两个 inspector 收口到 `scs`，迁移前后契约不破。
 
@@ -66,7 +66,7 @@
 - Consumes: 无
 - Produces: `LAYERS: string[]`、`validateCommandLayers(groups): void`（抛 `Error.code ∈ {GroupLayerMissing, GroupLayerInvalid, GroupMixedLayer, GroupEmpty, VerbDuplicated}`）
 
-- [ ] **Step 1: 写失败的测试**
+- [x] **Step 1: 写失败的测试**
 
 ```js
 import test from 'node:test'
@@ -106,12 +106,12 @@ test('R12 verbs 仍是字符串', () => {
 })
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `node --test tools/docgen/builders/agents/test/policy-layer.test.mjs`
 Expected: FAIL —— `validateCommandLayers is not a function`。
 
-- [ ] **Step 3: 写实现**
+- [x] **Step 3: 写实现**
 
 `commands.mjs` 顶部加：
 
@@ -143,12 +143,12 @@ export function validateCommandLayers(groups) {
 
 `commandGroups` 换成四组（`repo.check` / `tool.time` / `git.read` / `docgen.read`），逐字采用 spec §3.1。`validatePolicy()` 开头调用 `validateCommandLayers(CMD.commandGroups)`。同时在 `validateAgentData.mjs` 的 `EXIT` 表登记六个新码（`GroupLayerMissing` / `GroupLayerInvalid` / `GroupMixedLayer` / `GroupEmpty` / `VerbDuplicated` / `NonRunGroupGranted`）——不登记会被 `exitCodeFor` 兜底成 exit 2。
 
-- [ ] **Step 4: 跑测试确认通过**
+- [x] **Step 4: 跑测试确认通过**
 
 Run: `node --test tools/docgen/builders/agents/test/policy-layer.test.mjs`
 Expected: PASS，7 个用例全绿。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add tools/docgen/builders/agents/policy/definitions/commands.mjs tools/docgen/builders/agents/components/validatePolicy.mjs tools/docgen/builders/agents/test/policy-layer.test.mjs
@@ -170,7 +170,7 @@ git commit -m "feat(policy): 命令组加 layer 并校验一组单层"
 - Consumes: Task 1
 - Produces: `allowGroups(groups, seat?)`；`scanCards(cardTexts, groups)`（新门禁的纯函数）
 
-- [ ] **Step 1: 写失败的测试**
+- [x] **Step 1: 写失败的测试**
 
 ```js
 import test from 'node:test'
@@ -198,12 +198,12 @@ test('新门禁：卡面出现非 run 组即命中', () => {
 })
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `node --test tools/docgen/builders/agents/test/policy-layer-render.test.mjs`
 Expected: FAIL —— `allowGroups` 仍接受 `docgen.read`，且 `scanCards` 不存在。
 
-- [ ] **Step 3: 写实现**
+- [x] **Step 3: 写实现**
 
 `renderBoundary.mjs` 的 `allowGroups` 改为「只过滤、不判错」：
 
@@ -256,13 +256,13 @@ process.exit(bad.length ? 1 : 0)
 
 重生成：`node tools/docgen/builders/agents/cli.mjs gate` → `draft` → 人工对照 → `replace --yes`。
 
-- [ ] **Step 4: 跑测试与门禁**
+- [x] **Step 4: 跑测试与门禁**
 
 Run: `node --test tools/docgen/builders/agents/test/policy-layer-render.test.mjs`
 Run: `node scripts/check-command-layer.mjs`
 Expected: PASS + `command-layer ok`（exit 0）。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add tools/docgen/builders/agents/components/renderBoundary.mjs tools/docgen/builders/agents/policy/seat-policy.mjs scripts/check-command-layer.mjs tools/docgen/builders/agents/test/policy-layer-render.test.mjs agents
@@ -283,7 +283,7 @@ git commit -m "feat(agent): 卡面命令白名单只取 run 组"
 - Consumes: 无
 - Produces: `checkTerminalReconcile(dir): { fail?: string; warn?: string }`（导出供测试）
 
-- [ ] **Step 1: 写失败的测试**
+- [x] **Step 1: 写失败的测试**
 
 ```ts
 import { describe, it, expect } from 'vitest'
@@ -328,12 +328,12 @@ describe('C5 终态对账', () => {
 })
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `cd D:\Seed\skill-common-script && npx vitest run src/commands/ledger-numbers.test.ts`
 Expected: FAIL —— `checkTerminalReconcile is not a function`。
 
-- [ ] **Step 3: 写实现**
+- [x] **Step 3: 写实现**
 
 `ledger-numbers.ts` 加：
 
@@ -372,13 +372,13 @@ const RE_CARD_COUNT = /卡片数\s*(\d+)\s*[（(]\s*P0\s*(\d+)\s*\/\s*P1\s*(\d+)
 
 `outputFormats.mjs` 的 `round-check` 第 3 项证据说明追加一句：`证据栏写 已修=N 关闭=N 候选=N 升级=N 带往下轮=N`；再跑 `node tools/docgen/builders/agents/ledger.mjs --apply`。
 
-- [ ] **Step 4: 跑测试与模板比对**
+- [x] **Step 4: 跑测试与模板比对**
 
 Run: `cd D:\Seed\skill-common-script && npx vitest run src/commands/ledger-numbers.test.ts`
 Run: `node tools/docgen/builders/agents/ledger.mjs`
 Expected: 测试全绿；模板比对 exit 0。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git -C D:\Seed\skill-common-script add src/commands/ledger-numbers.ts src/commands/ledger-numbers.test.ts
@@ -400,7 +400,7 @@ git commit -m "docs(ledger): 轮间核对单第 3 项写机读计数"
 - Consumes: Task 3（同仓命令注册与测试风格）
 - Produces: `checkLandings({ root, ledger }): { code: 0 | 1 | 2; out: string[]; err: string[] }`
 
-- [ ] **Step 1: 写失败的测试**
+- [x] **Step 1: 写失败的测试**
 
 ```ts
 import { describe, it, expect } from 'vitest'
@@ -457,12 +457,12 @@ describe('check landings', () => {
 })
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `cd D:\Seed\skill-common-script && npx vitest run src/commands/check-landings.test.ts`
 Expected: FAIL —— 模块不存在。
 
-- [ ] **Step 3: 写实现**
+- [x] **Step 3: 写实现**
 
 ```ts
 import { existsSync, readFileSync } from 'node:fs'
@@ -524,12 +524,12 @@ program
   })
 ```
 
-- [ ] **Step 4: 跑测试确认通过**
+- [x] **Step 4: 跑测试确认通过**
 
 Run: `cd D:\Seed\skill-common-script && npx vitest run src/commands/check-landings.test.ts`
 Expected: PASS，5 个用例全绿。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git -C D:\Seed\skill-common-script add src/commands/check-landings.ts src/commands/check-landings.test.ts src/commands/check.ts
@@ -548,7 +548,7 @@ git -C D:\Seed\skill-common-script commit -m "feat(check): 新增 landings 落�
 - Consumes: Task 4
 - Produces: `scanSkillDirSources({ repoRoot }): string[]`（违规清单，空 = 通过）
 
-- [ ] **Step 1: 写失败的测试**
+- [x] **Step 1: 写失败的测试**
 
 ```js
 import test from 'node:test'
@@ -592,12 +592,12 @@ test('第二个 listSkillDirs 实现 → 命中', () => {
 })
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `node --test scripts/check-skill-dir-single-source.test.mjs`
 Expected: FAIL —— `scanSkillDirSources is not a function`。
 
-- [ ] **Step 3: 写实现**
+- [x] **Step 3: 写实现**
 
 ```js
 import { readFileSync, readdirSync, statSync } from 'node:fs'
@@ -635,13 +635,13 @@ console.log(bad.length ? `skill-dir: bad ${bad.length}` : 'skill-dir ok')
 process.exit(bad.length ? 1 : 0)
 ```
 
-- [ ] **Step 4: 跑测试与门禁**
+- [x] **Step 4: 跑测试与门禁**
 
 Run: `node --test scripts/check-skill-dir-single-source.test.mjs`
 Run: `node scripts/check-skill-dir-single-source.mjs`
 Expected: PASS + `skill-dir ok`。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add scripts/check-skill-dir-single-source.mjs scripts/check-skill-dir-single-source.test.mjs
@@ -666,7 +666,7 @@ git commit -m "test(skill-dir): 锁死单源，禁止第二份实现"
 - Consumes: Task 5
 - Produces: `scs check skills` / `scs check rules`；`migration-baseline.json` 与 `migration-map.md`
 
-- [ ] **Step 1: 写失败的契约测试**
+- [x] **Step 1: 写失败的契约测试**
 
 ```js
 import test from 'node:test'
@@ -692,12 +692,12 @@ test('F-04 映射表三行齐全且含契约列', () => {
 })
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `node --test scripts/check-migration-contract.test.mjs`
 Expected: FAIL —— 两个文件都不存在。
 
-- [ ] **Step 3: 落基线、映射表、迁移**
+- [x] **Step 3: 落基线、映射表、迁移**
 
 1. 按 spec §3.7 的 JSON 形状，对**两个 CLI 入口**（`check.mjs` / `score.mjs`）跑固定样本，写 `migration-baseline.json`；`sample` 一律记项目根，旧命令 `--dir <sample>/skills`，新命令 `--root <sample>`；`skill-dir.mjs` 是库、不占条目。
 2. 写 `migration-map.md`：三行（两个 inspector + skill-dir 不迁），每行含「旧路径 / 新命令 / 冻结契约 / 契约变化」；`check.mjs` 的 exit 集按实测写 0/1，`--dir` → `--root` 的换算写死。
@@ -705,13 +705,13 @@ Expected: FAIL —— 两个文件都不存在。
 4. 两个 `SKILL.md` 的调用命令改为 `scs check skills` / `scs check rules`；删除旧脚本文件、`check.test.mjs` 与 `check.mjs` 内的 `listSkillDirsFallback` 副本。
 5. 重跑基线样本，逐项 diff；差异必须写进映射表「契约变化」列。
 
-- [ ] **Step 4: 跑测试与契约 diff**
+- [x] **Step 4: 跑测试与契约 diff**
 
 Run: `node --test scripts/check-migration-contract.test.mjs`
 Run: `cd D:\Seed\skill-common-script && npm test`
 Expected: PASS；契约 diff 0 项（或差异已登记）。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add docs/devworkflows/20261109211349-script-layer-refactor skills/skill-inspector skills/rule-inspector scripts/check-migration-contract.test.mjs
@@ -730,12 +730,12 @@ git -C D:\Seed\skill-common-script commit -m "feat(check): 承接 skill / rule i
 - Consumes: Task 1、Task 2、Task 3、Task 4、Task 5、Task 6
 - Produces: 验收输出（贴命令首行）
 
-- [ ] **Step 1: 本仓门禁**
+- [x] **Step 1: 本仓门禁**
 
 Run: `npm run check`
 Expected: 末行 `check 全部通过`，exit 0。
 
-- [ ] **Step 2: 卡面与模板**
+- [x] **Step 2: 卡面与模板**
 
 Run: `node tools/docgen/builders/agents/cli.mjs gate`
 Run: `node scripts/check-command-layer.mjs`
@@ -743,19 +743,19 @@ Run: `node scripts/check-skill-dir-single-source.mjs`
 Run: `node tools/docgen/builders/agents/ledger.mjs`
 Expected: 全部 exit 0。
 
-- [ ] **Step 3: scs 测试**
+- [x] **Step 3: scs 测试**
 
 Run: `cd D:\Seed\skill-common-script && npm test`
 Expected: 全绿，exit 0。
 
-- [ ] **Step 4: 计划门三查**
+- [x] **Step 4: 计划门三查**
 
 Run: `node scripts/check-plan.mjs map --plan docs/superpowers/plans/2026-11-09-script-layer-refactor.md`
 Run: `node scripts/check-plan.mjs deps --plan docs/superpowers/plans/2026-11-09-script-layer-refactor.md`
 Run: `node scripts/check-plan.mjs coverage --plan docs/superpowers/plans/2026-11-09-script-layer-refactor.md --prd docs/prd/20261109211349-script-layer-refactor/index.md --stage S2`
 Expected: `missing 0 dangling 0` / `cycle 0 dangling 0` / `gap 0`（S1、S3、S4 各再跑一次）。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add docs/superpowers/plans/2026-11-09-script-layer-refactor.md
