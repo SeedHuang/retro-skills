@@ -1454,8 +1454,8 @@ test('SB-TC-27（补测）白名单登记清单类成员时抛出的 code 必须
 test('SB-TC-40（补测）空组态仍列命令 → 该判据能红（金态 0 命中 / 残缺实现 ≥1 命中 / 复原 0）', () => {
   const CMD_WORDS = /npm run|node /
   // 空组分支的原句与残缺句各一份常量：复原后要能逐字验回原句（不能只靠「组非空 → 分支不再进入」蒙过）
-  const EMPTY_BRANCH = "if (!Array.isArray(groups) || groups.length === 0) return `${code('commandGroups')}（无白名单组 = 无白名单命令）`;"
-  const BROKEN_BRANCH = "if (!Array.isArray(groups) || groups.length === 0) return `${code('commandGroups')}（无白名单组） npm run check`;"
+  const EMPTY_BRANCH = "if (run.length === 0) return `${code('commandGroups')}（无白名单组 = 无白名单命令）`;"
+  const BROKEN_BRANCH = "if (run.length === 0) return `${code('commandGroups')}（无白名单组） npm run check`;"
   withRepoCopy((copy) => {
     // ① 金态：本席 allowGroups 非空、命令白名单句只写组 ID，不含任何具体命令
     const clean = runProbeIn(copy, COMMAND_LINE_PROBE('reviewer-audit'))

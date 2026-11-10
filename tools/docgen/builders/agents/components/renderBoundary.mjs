@@ -70,9 +70,12 @@ function capTools(caps) {
 
 // 槽 7 = 指针句（S-B §11.2.3）：组 ID **逐组列出**（来自入参，不按席写死）；空组写明「无白名单命令」。
 // S3（spec §3.2）：渲染器**只过滤、不判错**——非 run 组不落卡；非法配置由 `validatePolicy` 统一发码。
+// 席级组（`seat:<slug>.extra`）不属命令组 layer 域（`validateSeatLayers` 同样跳过），是授予本席的额外权限，故照常落卡。
 export function allowGroups(groups) {
-  if (!Array.isArray(groups) || groups.length === 0) return `${code('commandGroups')}（无白名单组 = 无白名单命令）`;
-  const run = groups.filter((g) => CMD.commandGroups[g]?.layer === 'run');
+  const run = Array.isArray(groups)
+    ? groups.filter((g) => CMD.commandGroups[g]?.layer === 'run' || hasOwn(CMD.seatGroups ?? {}, g))
+    : [];
+  if (run.length === 0) return `${code('commandGroups')}（无白名单组 = 无白名单命令）`;
   return `${code('commandGroups')} 的 ${run.map(code).join(' / ')} 白名单组`;
 }
 

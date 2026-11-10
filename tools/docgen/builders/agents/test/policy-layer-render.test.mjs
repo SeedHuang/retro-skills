@@ -18,6 +18,11 @@ test('F-01 混入非 run 组时渲染器只过滤、不判错', () => {
   assert.doesNotMatch(out, /docgen\.read|repo\.check/)
 })
 
+test('F-01 全是非 run 组时落到「无白名单命令」句，不拼空列表', () => {
+  const out = allowGroups(['docgen.read', 'repo.check'])
+  assert.equal(out, '`commandGroups`（无白名单组 = 无白名单命令）')
+})
+
 test('配非 run 组 → validateSeatLayers 报 NonRunGroupGranted', () => {
   assert.throws(() => validateSeatLayers({ x: { allowGroups: ['git.read', 'docgen.read'] } }), (e) =>
     e.code === 'NonRunGroupGranted' && /x:docgen\.read/.test(e.message))

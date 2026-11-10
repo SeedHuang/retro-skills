@@ -1,11 +1,8 @@
 // check-skill-dir-single-source.mjs —— 新门禁（spec R13 / §3.7）：`skill-dir.mjs` 单源，禁止第二份实现。
-// 唯一例外 = 副本安装态的兜底（skills/skill-inspector/scripts/check.mjs）：其同名函数带 Fallback 后缀，
-// 不匹配探测用的「function + 空格 + listSkillDirs + 词边界」形态。测试文件不扫（夹具里的同名字符串不是实现）。
+// 无例外：副本安装态的兜底实现已随旧脚本删除（2026-11-09）；测试文件不扫（夹具里的同名字符串不是实现）。
 import { readFileSync, readdirSync, statSync, realpathSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
-
-const ALLOWED_FALLBACK = 'skills/skill-inspector/scripts/check.mjs'
 
 const SKIP = new Set(['node_modules', '.git', '.session', 'dist'])
 
@@ -26,7 +23,7 @@ export function scanSkillDirSources({ repoRoot }) {
     const rel = relative(repoRoot, abs).split('\\').join('/')
     const text = readFileSync(abs, 'utf8')
     if (rel.endsWith('skill-dir.mjs') && rel !== 'scripts/skill-dir.mjs') bad.push(`${rel}: 第二份 skill-dir.mjs`)
-    else if (rel !== 'scripts/skill-dir.mjs' && rel !== ALLOWED_FALLBACK && /function\s+listSkillDirs\b/.test(text)) {
+    else if (rel !== 'scripts/skill-dir.mjs' && /function\s+listSkillDirs\b/.test(text)) {
       bad.push(`${rel}: 第二个 listSkillDirs 实现`)
     }
   }

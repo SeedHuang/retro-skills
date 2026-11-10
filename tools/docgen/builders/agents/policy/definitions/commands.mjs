@@ -101,9 +101,16 @@ export const seatGroups = {};
 const LAYER_CODE_ORDER = ['GroupLayerMissing', 'GroupLayerInvalid', 'GroupMixedLayer', 'GroupEmpty', 'VerbDuplicated'];
 
 // 一组只装一个 layer：数组只有一种取值时视同该值，出现两个以上不同值才算混装。
+// 空数组 / null / 非字符串都是非法值（不当「混装」报，否则码面误导排查）。
 function normalizeLayer(raw) {
-  if (Array.isArray(raw)) return new Set(raw).size === 1 ? raw[0] : null;
-  return raw;
+  if (Array.isArray(raw)) {
+    const distinct = new Set(raw);
+    if (distinct.size === 1) return { layer: raw[0] };
+    if (distinct.size > 1) return { mixed: true };
+    return { layer: '[]' };
+  }
+  if (typeof raw !== 'string') return { layer: String(raw) };
+  return { layer: raw };
 }
 
 // 纯函数、无 IO：校验命令组层标与组内 verb，命中即抛 `Error.code`（六码之一）。
@@ -113,9 +120,9 @@ export function validateCommandLayers(groups) {
   for (const [name, g] of Object.entries(groups ?? {})) {
     const raw = g?.layer;
     if (raw === undefined) { found.push(['GroupLayerMissing', name]); continue; }
-    const layer = normalizeLayer(raw);
-    if (layer === null) { found.push(['GroupMixedLayer', name]); continue; }
-    if (!LAYERS.includes(layer)) { found.push(['GroupLayerInvalid', `${name}:${layer}`]); continue; }
+    const norm = normalizeLayer(raw);
+    if (norm.mixed) { found.push(['GroupMixedLayer', name]); continue; }
+    if (!LAYERS.includes(norm.layer)) { found.push(['GroupLayerInvalid', `${name}:${norm.layer}`]); continue; }
     if (!Array.isArray(g.verbs) || g.verbs.length === 0) { found.push(['GroupEmpty', name]); continue; }
     for (const v of g.verbs) {
       if (seen.has(v)) found.push(['VerbDuplicated', `${seen.get(v)}/${name}: ${v}`]);

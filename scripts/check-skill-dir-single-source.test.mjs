@@ -15,12 +15,12 @@ const mk = (files) => {
   return root
 }
 
-test('只有单源 + 允许的兜底 → 0', () => {
+test('单源之外的同名实现一律命中（副本兜底无豁免）', () => {
   const root = mk({
     'scripts/skill-dir.mjs': 'export function listSkillDirs() {}',
-    'skills/skill-inspector/scripts/check.mjs': 'export function listSkillDirsFallback() {}',
+    'skills/skill-inspector/scripts/check.mjs': 'export function listSkillDirs() {}',
   })
-  assert.deepEqual(scanSkillDirSources({ repoRoot: root }), [])
+  assert.equal(scanSkillDirSources({ repoRoot: root }).length, 1)
 })
 
 test('第二份 skill-dir.mjs → 命中', () => {

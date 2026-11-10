@@ -1179,7 +1179,8 @@ test('S3-TC-K09 测试断言改形', () => {
 test('S3-TC-L01 单跑', (t) => {
   // 「单跑绿」由本文件**外部**运行见证（`node --test tools/docgen/builders/agents/test/s3-predicates.test.mjs`）；
   // 本文件内不自递归跑自身（否则 L01 无限递归，撞常量 9 的「不跑全量」精神）
-  // 2026-11-09：score.mjs 迁公共 CLI（spec R13），其专属用例块随源删除，等价的 `scs check rules` 用例在 scs 仓；
+  // 2026-11-09：score.mjs 迁公共 CLI（spec R13），其专属用例块随源删除；等价断言在
+  // scs 仓 `check-rules.test.ts`（⑨ 正/负、围栏不计、首个验证节、四类满分基数 24/32/21/23）。
   // 故本仓块数 = 用例条数 − 已迁走的 6 条（I04–I08 / I10）。
   const RELOCATED = ['S3-TC-I04', 'S3-TC-I05', 'S3-TC-I06', 'S3-TC-I07', 'S3-TC-I08', 'S3-TC-I10']
   const self = read('tools/docgen/builders/agents/test/s3-predicates.test.mjs')

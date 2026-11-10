@@ -1,12 +1,12 @@
 # 改法处方（rule-inspector recipes）
 
-> 本文件是 rule-inspector 技能的改法处方：每类违规 → 可复制的改法（spec B5）。由 `scripts/score.mjs` 的 findings 或人工体检命中违规类目后，跳到对应 `§R#` 节取改法。判据全集见 `references/criteria.md`，头部规范见 `assets/rule-template.md`。
+> 本文件是 rule-inspector 技能的改法处方：每类违规 → 可复制的改法（spec B5）。由 `scs check rules` 的 findings 或人工体检命中违规类目后，跳到对应 `§R#` 节取改法。判据全集见 `references/criteria.md`，头部规范见 `assets/rule-template.md`。
 
 ## 使用方式
 
 1. 体检（脚本或人工）给出违规类目（§R1–§R7），定位到对应小节。
 2. 每节按「判据 → 改法 → 例子」执行：先确认命中，再照改法动手，最后对照例子自查。
-3. 改完跑一次 `scripts/score.mjs` 确认对应维度分数上升；分数没涨 → 回退（`git restore` 该文件）再重看判据。
+3. 改完跑一次 `scs check rules` 确认对应维度分数上升；分数没涨 → 回退（`git restore` 该文件）再重看判据。
 
 ### §R1 来源行超长
 
@@ -139,7 +139,7 @@
 
 ### §R9 判据不可观察（⑨ 判据可观察 记 0；判据全文见 `references/criteria.md` §2.4 的 ⑨ 行）
 
-**判据**：规则的验证节内没有任何可观察标记。判定实现 = `scripts/score.mjs` 的 `⑨判据可观察`：验证节 = 标题恰为 `## 验证` 或 `### 验证`（多处取第一个），节内 ≥1 行命中 `tools/docgen/dsl/rules/vocab/observable-terms.json` 的 `markers` 正则才得 1 分；无该节 = 0 分。
+**判据**：规则的验证节内没有任何可观察标记。判定实现 = `scs check rules` 的 `⑨判据可观察`：验证节 = 标题恰为 `## 验证` 或 `### 验证`（多处取第一个），节内 ≥1 行命中 `tools/docgen/dsl/rules/vocab/observable-terms.json` 的 `markers` 正则才得 1 分；无该节 = 0 分。
 
 **改法**（三档任选一，逐行处置，不许整文件放行）：
 

@@ -46,6 +46,14 @@ test('R12 verbs 仍是字符串', () => {
   for (const g of Object.values(commandGroups)) for (const v of g.verbs) assert.equal(typeof v, 'string')
 })
 
+test('layer 为 null / 空数组 → Invalid（不误报 Mixed）', () => {
+  for (const bad of [null, []]) {
+    assert.throws(() => validateCommandLayers({ a: { layer: bad, verbs: ['x'] } }),
+      (e) => e.code === 'GroupLayerInvalid', `${JSON.stringify(bad)} 应报 Invalid`)
+  }
+  assert.doesNotThrow(() => validateCommandLayers({ a: { layer: ['dev', 'dev'], verbs: ['x'] } }))
+})
+
 test('报码优先级冻结：Missing > Invalid > Mixed > Empty > Duplicated', () => {
   // 组序反着放：先把 Invalid / Empty / 重复排在前面，仍应先报 Missing
   assert.throws(() => validateCommandLayers({

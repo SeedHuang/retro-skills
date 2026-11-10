@@ -1,6 +1,6 @@
 // gen-rule-checklist.mjs —— 生成「rule 编辑查账 checklist」快照（rule-inspector 技能）
 // 职责：① git diff 判定本次编辑了哪些 rules/*.md（机器判触发，不归 AI 判）
-//       ② 机械项自动取证填表：diff 证据 / C1 Test-Path / C2 增删触发判定 / C4 BOM / E 段逐检查点（score.mjs checks[] 原样展开，一行一个检查点）
+//       ② 机械项自动取证填表：diff 证据 / C1 Test-Path / C2 增删触发判定 / C4 BOM / E 段逐检查点（scs check rules checks[] 原样展开，一行一个检查点）
 //       ③ 从 assets/rule-edit-checklist-template.md 展开 → 写 <out-dir>/checklist-<YYYYMMDD-HHmmss>.md（默认 out-dir = .session/rule-checks）
 // 列结构（模板硬约束，全表统一五列）：# / 检查项 / 判据 / 实际输出 / 确认执行——AI 只填 AI 项（A/B/C3/D/E2/F + C2/C4 确认列），机械段（E）不得手抄。
 // 用法：node skills/rule-inspector/scripts/gen-rule-checklist.mjs [--out-dir .session/rule-checks] [--base HEAD]
@@ -105,7 +105,7 @@ export function ruleAddDeleteVerdict(porcelainRows) {
     : { triggered: true, text: `检测到 A/D 型规则文件：${ad.map(r => `${r.type} ${r.name}`).join('、')} → AI 必须跑 aas 贴「需建链接 = 0」` }
 }
 
-// E 段：score.mjs checks[] 逐检查点展开成五行表（AI 不得手抄——本函数是唯一渲染口）
+// E 段：scs check rules checks[] 逐检查点展开成五行表（AI 不得手抄——本函数是唯一渲染口）
 export function renderESections(rules, scores) {
   return rules.map((r, i) => {
     const s = scores[i]
@@ -114,23 +114,23 @@ export function renderESections(rules, scores) {
       '',
       `> 取证命令：\`scs check rules --root . --terms tools/docgen/dsl/rules/vocab/observable-terms.json --annotations tools/quality/.inspector-annotations.json --file ${r.name} --json\`；总分 **${s && !s.error ? `${s.total}/${s.max}（${s.level}）` : '取证失败'}**。`,
       '',
-      '| # | 检查项 | 判据（score.mjs 机械判定 · criteria 对应组） | 实际输出 | 确认执行 |',
+      '| # | 检查项 | 判据（scs check rules 机械判定 · criteria 对应组） | 实际输出 | 确认执行 |',
       '|---|---|---|---|---|',
     ]
     if (s && s.error) {
-      head.push(`| 1 | 取证失败 | score.mjs --file | **exit ${s.error}**：${(s.stderr || s.stdout || '').slice(0, 200)} | |`)
+      head.push(`| 1 | 取证失败 | scs check rules --file | **exit ${s.error}**：${(s.stderr || s.stdout || '').slice(0, 200)} | |`)
     } else if (Array.isArray(s && s.checks) && s.checks.length) {
       s.checks.forEach((c, j) => {
         const out = c.pass ? '通过' : `**未过**：${c.msg}`
-        head.push(`| ${j + 1} | ${c.check} | criteria「${c.group}」组 · score.mjs | ${out} | 确认执行 |`)
+        head.push(`| ${j + 1} | ${c.check} | criteria「${c.group}」组 · scs check rules | ${out} | 确认执行 |`)
       })
       // 逐项数与组 max 对账（防 checks 与 groups 漂移）
       const groupMaxSum = Object.values(s.groups || {}).reduce((a, v) => a + v.max, 0)
       if (groupMaxSum !== s.checks.length) {
-        head.push(`| ⚠ | 逐项对账 | checks 条数 ${s.checks.length} ≠ 组 max 之和 ${groupMaxSum} | **数据不一致，视为取证失败，重跑 score.mjs** | |`)
+        head.push(`| ⚠ | 逐项对账 | checks 条数 ${s.checks.length} ≠ 组 max 之和 ${groupMaxSum} | **数据不一致，视为取证失败，重跑 scs check rules** | |`)
       }
     } else {
-      head.push('| 1 | 取证失败 | score.mjs --file | 输出缺 checks[]（旧版 score.mjs？）——重跑/升级后再生 | |')
+      head.push('| 1 | 取证失败 | scs check rules --file | 输出缺 checks[]（旧版接口？）——重跑/升级后再生 | |')
     }
     return head.join('\n')
   }).join('\n\n')
@@ -231,7 +231,7 @@ function main() {
     eSections: renderESections(rules, scores),
     mechSummary: [
       `- 触发判定（机器）：${diffEvidence}`,
-      `- 机械项已填：diff 证据 ×${rules.length}、C1 ×${rules.length}、C2 触发判定、C4 ×${rules.length}、E 段逐检查点 ${checksTotal} 行（score.mjs checks[] 原样展开）`,
+      `- 机械项已填：diff 证据 ×${rules.length}、C1 ×${rules.length}、C2 触发判定、C4 ×${rules.length}、E 段逐检查点 ${checksTotal} 行（scs check rules checks[] 原样展开）`,
       `- AI 项待填：A×${ai.A}、B×${ai.B}、C2/C3 确认列、D×${ai.D}、E2×${ai.E2}、F×${ai.F} —— **每行贴命令输出 + 写「确认执行」；缺任一 = 本次编辑未完成**`,
     ].join('\n'),
   }

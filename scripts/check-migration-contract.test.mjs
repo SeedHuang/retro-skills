@@ -5,10 +5,14 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { existsSync, readFileSync } from 'node:fs'
+import { dirname, join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { scanSkillDirSources } from './check-skill-dir-single-source.mjs'
 
-const BASE = 'docs/devworkflows/20261109211349-script-layer-refactor/migration-baseline.json'
-const MAP = 'docs/devworkflows/20261109211349-script-layer-refactor/migration-map.md'
+// 锚定仓库根（与同目录其他测试一致：不依赖运行时的 cwd）
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+const BASE = join(ROOT, 'docs/devworkflows/20261109211349-script-layer-refactor/migration-baseline.json')
+const MAP = join(ROOT, 'docs/devworkflows/20261109211349-script-layer-refactor/migration-map.md')
 
 test('F-04 迁移前基线存在且两个 CLI 入口齐全', () => {
   assert.ok(existsSync(BASE), '缺 migration-baseline.json')
@@ -33,13 +37,13 @@ test('F-04 旧脚本与随源测试已删除，用户面改指新命令', () => 
     'skills/skill-inspector/scripts/check.test.mjs',
     'skills/rule-inspector/scripts/score.mjs',
     'skills/rule-inspector/scripts/score.test.mjs',
-  ]) assert.equal(existsSync(p), false, `${p} 应已删除（spec §3.7）`)
+  ]) assert.equal(existsSync(join(ROOT, p)), false, `${p} 应已删除（spec §3.7）`)
   for (const p of ['skills/skill-inspector/SKILL.md', 'skills/rule-inspector/SKILL.md']) {
-    const t = readFileSync(p, 'utf8')
+    const t = readFileSync(join(ROOT, p), 'utf8')
     assert.match(t, /scs check (skills|rules)/, `${p} 未改指新命令`)
   }
 })
 
 test('F-04 skill-dir 单源门禁通过（兜底副本随旧脚本删除）', () => {
-  assert.deepEqual(scanSkillDirSources({ repoRoot: process.cwd() }), [])
+  assert.deepEqual(scanSkillDirSources({ repoRoot: ROOT }), [])
 })
