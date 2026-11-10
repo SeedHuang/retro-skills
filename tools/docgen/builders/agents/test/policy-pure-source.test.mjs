@@ -116,11 +116,17 @@ const MOVE_PLUS = MOVE_MINUS.map((x) => x.replace('tools/docgen/cli.mjs', 'tools
 // 故 4 条开发期命令从允许集迁出。基线是改造前旧卡，故 4 条 minus 必须登记；其余任何差仍判红。
 const SPLIT_MINUS = ['npm run check', 'node scripts/check-all.mjs', 'node scripts/doc-name.mjs --check', 'node scripts/skill-dir.mjs']
   .map((c) => `allowCmds: ${c}`);
-const BASE_DELTA_DESC = 'Q8 三项 + S3 拆组 4 条命令 + 归档一条 + 目录迁移 4 条命令';
+// 2026-11-10（审计取数）：审计 / 侦探 / 议长三席补 `audit.lookup`（run 组）——轮间核对单要求审计员自跑取数命令，
+// 而改造前旧卡里没有这一组。基线是改造前旧卡，故这 3 条命令只在这三席上登记为 plus；其余席不得有差。
+const AUDIT_PLUS = ['scs ledger gate <评审目录>/progress.md', 'scs ledger numbers <评审目录>',
+  'scs check landings --ledger <评审目录> --root <项目根>'].map((c) => `allowCmds: ${c}`);
+const AUDIT_SEATS = new Set(['reviewer-audit', 'detective-observer', 'speaker']);
+const BASE_DELTA_DESC = 'Q8 三项 + S3 拆组 4 条命令 + 归档一条 + 目录迁移 4 条命令 + 审计取数 3 条命令（仅审计 / 侦探 / 议长）';
 // 顺序 = `diffFacts` 的实际产出顺序（按基线卡面出现的先后）：路径（Q8）→ 允许命令（拆组 / 归档 / 目录迁移）
 // S3 后 `docgen.read`（build）不再授予 → 目录迁移的 4 条新路径不再进允许集，只有旧的 4 条落入 minus。
-const baseDelta = () => ({ minus: [...Q8_MINUS, ...SPLIT_MINUS, ...ARCHIVE_MINUS, ...MOVE_MINUS], plus: [...ARCHIVE_PLUS] });
-const withoutBase = (arr) => arr.filter((x) => !Q8_MINUS.includes(x) && !ARCHIVE_MINUS.includes(x) && !ARCHIVE_PLUS.includes(x) && !MOVE_MINUS.includes(x) && !MOVE_PLUS.includes(x) && !SPLIT_MINUS.includes(x));
+const baseDelta = (seat) => ({ minus: [...Q8_MINUS, ...SPLIT_MINUS, ...ARCHIVE_MINUS, ...MOVE_MINUS],
+  plus: [...ARCHIVE_PLUS, ...(AUDIT_SEATS.has(seat) ? AUDIT_PLUS : [])] });
+const withoutBase = (arr) => arr.filter((x) => !Q8_MINUS.includes(x) && !ARCHIVE_MINUS.includes(x) && !ARCHIVE_PLUS.includes(x) && !MOVE_MINUS.includes(x) && !MOVE_PLUS.includes(x) && !SPLIT_MINUS.includes(x) && !AUDIT_PLUS.includes(x));
 // 读配置侧唯一口径（testcase §0.3 / spec:131）：`Object.hasOwn`，否则 `constructor` / `__proto__` 会取到原型链上的值
 const policyOf = (n) => (Object.hasOwn(SEAT_POLICY, n) ? SEAT_POLICY[n] : SEAT_POLICY.__default__);
 // 卡文本（A06 ① 切的是**卡面**，不是渲染结果——两席的卡在 T5 才重出）
@@ -221,10 +227,10 @@ function factsFromPolicy(json, seat) {
 // `spec / plan` 的卡面形态（③ 段成员之一）：与 `pathTokens()` 同一派生口径，不另写字面
 const SPEC_PLAN_LABEL = () => pathTokens().at(-1);
 
-test('S6-TC-A02 命令 9 组（允许 4 / 禁止 5）+ seatGroups 空集 + 每组 purpose 与 verbs 非空', () => {
+test('S6-TC-A02 命令 10 组（允许 5 / 禁止 5）+ seatGroups 空集 + 每组 purpose 与 verbs 非空', () => {
   const G = CMD.commandGroups;                       // 允许组
   const D = CMD.forbiddenGroups;                     // 禁止组
-  assert.deepEqual(Object.keys(G), ['repo.check','tool.time','git.read','docgen.read'], '允许组顺序 = 卡面顺序（S3 拆组）');
+  assert.deepEqual(Object.keys(G), ['repo.check','tool.time','audit.lookup','git.read','docgen.read'], '允许组顺序 = 卡面顺序（S3 拆组）');
   assert.deepEqual(Object.keys(D), ['docgen.write','git.write','fs.write','env.assign','network']);
   for (const g of [...Object.values(G), ...Object.values(D)]) {
     assert.ok(typeof g.purpose === 'string' && g.purpose.trim().length > 0);
@@ -422,9 +428,9 @@ test('S6-TC-B01 各席 + __default__ 策略数据等价；黄金 4 键齐（哈�
   assert.deepEqual(Object.keys(SEAT_POLICY),
     ['reviewer-audit','detective-observer','senior-sdet','speaker','respondent-dev','respondent-architect','__default__']);
   assert.deepEqual(SEAT_POLICY['reviewer-audit'], { capabilities: ['read','write','exec'],
-    allowGroups: ['git.read','tool.time'], artifacts: ['round-check.md','delivery-audit.md'] });
+    allowGroups: ['git.read','tool.time','audit.lookup'], artifacts: ['round-check.md','delivery-audit.md'] });
   assert.deepEqual(SEAT_POLICY['detective-observer'], { capabilities: ['read','write','exec'],
-    allowGroups: ['git.read','tool.time'], artifacts: ['detective.md'] });
+    allowGroups: ['git.read','tool.time','audit.lookup'], artifacts: ['detective.md'] });
   assert.deepEqual(SEAT_POLICY['senior-sdet'], { capabilities: ['read','write'], allowGroups: [], artifacts: [] });
   assert.deepEqual(SEAT_POLICY.__default__, { capabilities: ['read'], allowGroups: [], artifacts: [] });
   // ④ 黄金：4 个**基线键**必须在（换代只许追加 `<席>@<轮次>`、旧键不删），且值取自**改造前**文本
@@ -1247,11 +1253,11 @@ test('S6-TC-F01 dump 顶层八键齐 / tiers 档位表齐（值 = 工具名）/ 
   for (const [tier, tools] of Object.entries(json.tiers)) {
     for (const t of tools) assert.ok(TOOLS.has(t), `${tier}: ${t} 不是工具名（档位值不得写成 capability ID）`);
   }
-  // commands = 允许 4 ∪ 禁止 5 ∪ seatGroups（spec:162；本轮 seatGroups 为空集 → 恰 9 组）
+  // commands = 允许 5 ∪ 禁止 5 ∪ seatGroups（spec:162；本轮 seatGroups 为空集 → 恰 10 组）
   assert.deepEqual(Object.keys(json.commands).sort(),
     [...Object.keys(CMD.commandGroups), ...Object.keys(CMD.forbiddenGroups), ...Object.keys(CMD.seatGroups ?? {})].sort(),
-    'dump 的 commands 组集 ≠ 允许 4 ∪ 禁止 5 ∪ seatGroups');
-  assert.equal(Object.keys(json.commands).length, 9, '本轮 seatGroups 为空集 → 恰 9 组');
+    'dump 的 commands 组集 ≠ 允许 5 ∪ 禁止 5 ∪ seatGroups');
+  assert.equal(Object.keys(json.commands).length, 10, '本轮 seatGroups 为空集 → 恰 10 组');
   for (const [g, v] of Object.entries(json.commands)) {
     assert.ok(typeof v.purpose === 'string' && v.purpose.trim().length > 0, `${g}: purpose 缺失 / 为空`);
     assert.ok(Array.isArray(v.verbs) && v.verbs.length > 0, `${g}: verbs 缺失 / 为空`);
@@ -1605,7 +1611,7 @@ test('S6-TC-J03 边界：措辞重排但要素齐 → 仍绿（哈希不等也�
     const out = renderBoundaryIn(d, 'reviewer-audit');
     assert.doesNotThrow(() => assertNeedClauses(out, 'reviewer-audit'), '② 要素齐即绿');
     assert.notEqual(sha(out), goldenOf('reviewer-audit'), '③ 合法改写必须让哈希不等（v5 口径下会被误判）');
-    assert.deepEqual(diffFacts(baseJson().seats['reviewer-audit'], factsFromPolicy(dumpPolicy(d).json, 'reviewer-audit')), baseDelta(),
+    assert.deepEqual(diffFacts(baseJson().seats['reviewer-audit'], factsFromPolicy(dumpPolicy(d).json, 'reviewer-audit')), baseDelta('reviewer-audit'),
       `④ 能力除 ${BASE_DELTA_DESC} 外没丢（清单源按副本现算）`);
   });
 });
@@ -1615,7 +1621,7 @@ test('S6-TC-C01 审计席：哈希只作定位，判据 = 能力 diff 空 + J01 
   const hashEqual = sha(renderBoundary(seat)) === goldenCurOf(seat);   // ① 只取事实（当前比对键，spec:198）
   assert.equal(typeof hashEqual, 'boolean');
   assert.deepEqual(diffFacts(baseJson().seats[seat], factsFromPolicy(dumpPolicy(ROOT).json, seat)),
-    baseDelta(), `${seat}: 能力 diff 必须恰为 ${BASE_DELTA_DESC}`);              // ② 唯一通过判据
+    baseDelta(seat), `${seat}: 能力 diff 必须恰为 ${BASE_DELTA_DESC}`);              // ② 唯一通过判据
   assert.doesNotThrow(() => assertNeedClauses(renderBoundary(seat), seat));  // ③
   assert.match(renderBoundary(seat), /审计\s*写\s*`round-check\.md`/, '④ 槽 6：审计席应渲染「本席自写」形态');
   // ⑤ 黄金**基线键**的来源 = 改造前（旧卡边界节），不是改造后渲染自哈希
@@ -1646,7 +1652,7 @@ test('S6-TC-C02 侦探席：同口径（哈希只作定位）', () => {
   const hashEqual = sha(renderBoundary(seat)) === goldenCurOf(seat);   // 当前比对键（spec:198）
   assert.equal(typeof hashEqual, 'boolean');
   assert.deepEqual(diffFacts(baseJson().seats[seat], factsFromPolicy(dumpPolicy(ROOT).json, seat)),
-    baseDelta(), `${seat}: 能力 diff 必须恰为 ${BASE_DELTA_DESC}`);
+    baseDelta(seat), `${seat}: 能力 diff 必须恰为 ${BASE_DELTA_DESC}`);
   assert.doesNotThrow(() => assertNeedClauses(renderBoundary(seat), seat));
   // 与 testcase:1391 的唯一偏差：⑩ 是**卡级**子句（CLAUSES 标 `scope:'card'`，J01 已裁定它不在 ⑤ 段；
   // 现文落在槽 5「只允许写」段）→ 按整卡判，不按 seg5 切片判（照切片写会恒红，且与 J01 口径冲突）
@@ -1794,7 +1800,7 @@ test('S6-TC-H02 五段事实集合逐席 diff 空差', () => {
     const after = factsFromPolicy(json, s);
     assert.deepEqual(Object.keys(before).sort(), [...FACTS_KEYS].sort(), `${s}: 基线五段键集不全`);
     assert.deepEqual(Object.keys(after).sort(), [...FACTS_KEYS].sort(), `${s}: 改造后五段键集不全`);
-    assert.deepEqual(diffFacts(before, after), baseDelta(), `${s}: 除 ${BASE_DELTA_DESC} 外不得有差`);
+    assert.deepEqual(diffFacts(before, after), baseDelta(s), `${s}: 除 ${BASE_DELTA_DESC} 外不得有差`);
     // ⑤' ③ 段成员数 = 定义层派生（Q8 后 20）：`spec / plan` 必须能被取到
     assert.equal(after.forbiddenPaths.length, pathTokens().length, `${s}: ③ 段成员数应 = ${pathTokens().length}`);
     assert.ok(after.forbiddenPaths.includes('spec / plan'), `${s}: 事实抽取必须取到 spec / plan`);

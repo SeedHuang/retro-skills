@@ -5,17 +5,17 @@ import assert from 'node:assert/strict'
 import { LAYERS, commandGroups, validateCommandLayers } from '../policy/definitions/commands.mjs'
 import { exitCodeFor } from '../components/validateAgentData.mjs'
 
-test('F-01 四组 layer 合法且一组一层', () => {
-  assert.deepEqual(Object.keys(commandGroups).sort(), ['docgen.read', 'git.read', 'repo.check', 'tool.time'])
+test('F-01 五组 layer 合法且一组一层', () => {
+  assert.deepEqual(Object.keys(commandGroups).sort(), ['audit.lookup', 'docgen.read', 'git.read', 'repo.check', 'tool.time'])
   for (const [g, v] of Object.entries(commandGroups)) assert.ok(LAYERS.includes(v.layer), `${g}: ${v.layer}`)
 })
 
-test('F-01 四组 verb 条数 4 / 1 / 5 / 4，总数 14，无 check.local', () => {
+test('F-01 五组 verb 条数 4 / 1 / 3 / 5 / 4，总数 17，无 check.local', () => {
   assert.deepEqual(
-    ['repo.check', 'tool.time', 'git.read', 'docgen.read'].map((g) => commandGroups[g].verbs.length),
-    [4, 1, 5, 4],
+    ['repo.check', 'tool.time', 'audit.lookup', 'git.read', 'docgen.read'].map((g) => commandGroups[g].verbs.length),
+    [4, 1, 3, 5, 4],
   )
-  assert.equal(Object.values(commandGroups).reduce((n, g) => n + g.verbs.length, 0), 14) // counter-probe: off 本字面量是允许命令总数（14 条），不是席位数
+  assert.equal(Object.values(commandGroups).reduce((n, g) => n + g.verbs.length, 0), 17) // counter-probe: off 本字面量是允许命令总数（17 条），不是席位数
   assert.equal(commandGroups['check.local'], undefined)
 })
 

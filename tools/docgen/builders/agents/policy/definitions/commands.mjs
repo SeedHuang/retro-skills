@@ -14,6 +14,15 @@ export const commandGroups = {
     purpose: '平台工具链取数：只读，跨仓可用',
     verbs: ['scs time'],
   },
+  'audit.lookup': {
+    layer: 'run',
+    purpose: '账本核对取数：只读，跨仓可用（计数 / 落点 / 轮次账）',
+    verbs: [
+      'scs ledger gate <评审目录>/progress.md',
+      'scs ledger numbers <评审目录>',
+      'scs check landings --ledger <评审目录> --root <项目根>',
+    ],
+  },
   'git.read': {
     layer: 'run',
     purpose: '只读 git 查询（status / diff / show / log / reflog show，禁 --output）',

@@ -89,7 +89,7 @@ tools: Read, Glob, Grep, Write, Edit, RunCommand
 
 **除上述落点外，任何写文件或重定向一律禁止**，禁写集合 = 策略源 `pathGroups`（六组）与一项模式项（spec 与 plan 的两种写法）；兜底句：凡 `.gitignore` 覆盖的路径一律视为禁止写入。
 
-**命令默认拒绝**：只跑本席策略 `commandGroups` 的 `git.read` / `tool.time` 白名单组，其余一律不跑（逐条命令不在本卡重复）。
+**命令默认拒绝**：只跑本席策略 `commandGroups` 的 `git.read` / `tool.time` / `audit.lookup` 白名单组，其余一律不跑（逐条命令不在本卡重复）。
 
 **禁止**：策略源 `forbiddenGroups` 的全部命令组；**任何形式的环境变量赋值**（该组内的 env 形态项；`DOCGEN_*` 只是举例）。其中 `draft`（生成）只指生成动作；白名单里 `draft` 带子命令的那条只读形态不在此列。
 

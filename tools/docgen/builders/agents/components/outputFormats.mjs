@@ -57,6 +57,13 @@ export const outputFormats = {
               '转录行口径：主持人转录的每个时刻 / 计数，必须写「**谁取数 + 具体时刻**」（例：「审计 12:48:46 自跑 `time.mjs`」「主持人 12:54:13 取数」），**禁止只写轮次数或裸时刻**（「三轮」「12:54:13」均不合格）；审计核转录时逐条比对本行，缺「谁」或缺时刻 = 该行转录不通过。',
             ],
           },
+          { h2: '取数命令' },
+          { bullets: [
+            '数字（第 3、5 项）：`scs ledger numbers <评审目录>`',
+            '落点：`scs check landings --ledger <评审目录> --root <项目根>`',
+            '轮次账：`scs ledger gate <评审目录>/progress.md`',
+            '时刻：`scs time`',
+          ] },
           { h2: '核对项' },
           {
             table: {
