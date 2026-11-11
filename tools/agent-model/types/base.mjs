@@ -8,7 +8,10 @@ export const VALUE_CHECKS = {
   },
   Timing: (o, p) => req(o, ['scene', 'moment', 'repeat'], p),
   Description: (o, p) => req(o, ['template', 'joiner', 'lastJoiner'], p),
-  Duty: (o, p) => req(o, ['trigger', 'action'], p),
+  Duty: (o, p) => req(o, ['trigger', 'action'], p).concat(
+    o.action && 'landingMode' in o.action && o.action.landingMode !== 'file' ? [`LANDINGMODE_UNKNOWN:${p}.action`] : [],
+    o.action && o.action.landingMode === 'file' && !o.action.landingLabel ? [`MISSING:${p}.action.landingLabel`] : [],
+  ),
   Checklist: (o, p) =>
     req(o, ['items'], p).concat((o.items || []).flatMap((x, i) => req(x, ['no', 'seatPrefix', 'category', 'criterion'], `${p}.items[${i}]`))),
   Criterion: (o, p) => req(o, ['action', 'mode', 'observable', 'negative', 'residual'], p),

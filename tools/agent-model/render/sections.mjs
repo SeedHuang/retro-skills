@@ -4,6 +4,14 @@ import { DEFAULT_BOUNDARY } from '../../docgen/builders/agents/components/patter
 
 const cn = (a, b) => (/[A-Za-z0-9)]$/.test(a) ? a + ' ' + b : a + b)
 
+// 落点单源：artifact（有 defaultLanding）/ file（真写盘但无 artifact id）/ ledger（只记入账本）
+function landingOf(M, h, subject = '判定') {
+  if (M.defaultLanding) return { kind: 'artifact', text: h.F[M.defaultLanding].text }
+  const a = M.duty.action
+  const label = a.landingLabel || subject
+  return { kind: a.landingMode === 'file' ? 'file' : 'ledger', text: label }
+}
+
 export function makeHelpers(M, shared) {
   const R = M.records
   const F = M.forms
@@ -102,10 +110,11 @@ export const sections = {
   duty(M, shared, h) {
     const a = M.duty.action
     const subject = typeof a.landingSubject === 'string' ? a.landingSubject : a.emit[a.landingSubject.index]
-    // 无 outputs 时：默认「只记入账本」；landingMode:'file' 表示真写盘（写席，落点无 artifact id）
+    // 有 outputs 时按 artifact 列表；无 outputs 时走 landingOf（file = 真写盘，ledger = 只记入账本）
+    const land = landingOf(M, h, subject)
     const landingText = M.outputs.items.length
-      ? M.outputs.items.map((i) => `${h.F[i.artifact].text}（${i.phase}）`).join(M.duty.action.landingJoiner || '与 ')
-      : `${a.landingLabel || subject}${a.landingMode === 'file' ? '' : '（只记入评审账本，不写文件）'}`
+      ? M.outputs.items.map((i) => `${h.F[i.artifact].text}（${i.phase}）`).join(a.landingJoiner || '与 ')
+      : land.kind === 'ledger' ? `${land.text}（只记入评审账本，不写文件）` : land.text
     const pm = M.permissions
     const allow = pm.action.allow.map((x) => shared.actions[x]).join('、')
     const forbids = pm.action.forbid.map((x) => '不' + (M.permissionGroups[x]?.label || shared.actions[x] || x)).join('，')
@@ -122,12 +131,10 @@ export const sections = {
     if (!M.must?.length) return []
     const out = ['## 一定会', `> 时机：${h.timingText}。`]
     for (const g of M.globalRules) out.push(`> ${g.text}`)
-    const ledger = !M.defaultLanding && M.duty.action.landingMode !== 'file'
-    out.push(M.defaultLanding
-      ? `> 判定写回 ${h.F[M.defaultLanding].text}。`
-      : ledger
-        ? '> 判定只记入本轮评审账本，不写盘。'
-        : `> 判定写回 ${M.duty.action.landingLabel || '本席产物'}。`, '')
+    const land = landingOf(M, h)
+    out.push(land.kind === 'ledger'
+      ? '> 判定只记入本轮评审账本，不写盘。'
+      : `> 判定写回 ${land.text}。`, '')
     let n = 0
     for (const rule of M.must) {
       for (const target of rule.targets) {

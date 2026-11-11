@@ -22,7 +22,10 @@ export function typeOf(m) {
 export function renderModel(ownPath, shared) {
   const M = { ...shared, ...expand(ownPath) }
   const h = makeHelpers(M, shared)
-  const type = typeOf(M) || 'RespondentModel'
+  const t = typeOf(M)
+  // 显式写了非法类型时不得静默兜底：与 verify 的 TYPE_UNKNOWN 保持一致
+  if (!t && M.modelType) throw new Error('MODELTYPE_UNKNOWN:' + M.modelType)
+  const type = t || 'RespondentModel'
   const lines = []
   for (const k of TYPE_SECTIONS[type]) lines.push(...sections[k](M, shared, h))
   return { type, text: lines.join('\n'), lines: lines.length }

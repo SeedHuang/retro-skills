@@ -213,18 +213,28 @@ export function verify(name, opts = {}) {
 
   const hitClasses = MODEL_CLASSES.filter((C) => C.matches(exp))
   const explicitType = exp.modelType || null
-  const modelType = explicitType || (hitClasses.length === 1 ? hitClasses[0].typeName : null)
-  const typeErr = explicitType
-    ? (MODEL_CLASSES.some((C) => C.typeName === explicitType) ? '' : 'TYPE_UNKNOWN:' + explicitType)
-    : (hitClasses.length === 0 ? 'TYPE_UNKNOWN' : hitClasses.length > 1 ? 'TYPE_CONFLICT:' + hitClasses.map((c) => c.typeName).join(',') : '')
+  const inferred = hitClasses.length === 1 ? hitClasses[0].typeName : null
+  const conflict = hitClasses.length > 1 ? hitClasses.map((c) => c.typeName).join(',') : (inferred && explicitType && inferred !== explicitType ? `${explicitType},${inferred}` : '')
+  const modelType = explicitType || inferred
+  const typeErr = conflict ? 'TYPE_CONFLICT:' + conflict
+    : explicitType && !MODEL_CLASSES.some((C) => C.typeName === explicitType) ? 'TYPE_UNKNOWN:' + explicitType
+    : !explicitType && hitClasses.length === 0 ? 'TYPE_UNKNOWN'
+    : ''
 
-  // 规则的目标是问题卡某栏时，本席必须真出问题卡；零写评审席仍产问题卡内容（只是不落盘），故按类型认
-  const issuesCard = seatArts.includes('artifact.issueCard') || modelType === 'ReviewerModel'
+  // 「出问题卡」按产物/输出格式判，不看借用类型：sdet/speaker 借 ReviewerModel 不得因此获得豁免
+  const issuesCard = seatArts.includes('artifact.issueCard') ||
+    (exp.outputFormat?.requiredFields || []).some((f) => f.id === 'suggestion')
   const cardTargetRules = [...(sh.rules.must || []), ...(sh.rules.never || [])]
     .filter((r) => (r.targets || []).some((t) => String(t.object || '').startsWith('issue.card.')))
   const cardRuleLeak = issuesCard ? [] : cardTargetRules.filter((r) => pick(r, exp.seat.id)).map((r) => r.id)
 
-  return { name, tier, tierBad, boundaryBad, modelType, typeErr, must: exp.must.length, never: exp.never.length, pred: Object.keys(exp.predicates).length, rec: Object.keys(exp.records).length, errs, ownFail, policyDiff, modelFiles, policyFiles, pathUndefined, actionConflict, unknownAction, permOrphan, permUnobservable, titleDrifts, pathBad, skillBad, triggerBad, actionBad, outputTextHandwritten, writeScopeBad, outputUnwritable, cardRuleLeak }
+  // 落点模式是 display 语义，但仍要 fail-closed：未知值 / file 缺 label 都会渲染出错误文案
+  const lm = exp.duty?.action?.landingMode
+  const landingBad = lm !== undefined && lm !== 'file' ? `LANDINGMODE_UNKNOWN:${lm}`
+    : lm === 'file' && !exp.duty.action.landingLabel ? 'LANDING_LABEL_MISSING'
+    : ''
+
+  return { name, tier, tierBad, boundaryBad, modelType, typeErr, landingBad, must: exp.must.length, never: exp.never.length, pred: Object.keys(exp.predicates).length, rec: Object.keys(exp.records).length, errs, ownFail, policyDiff, modelFiles, policyFiles, pathUndefined, actionConflict, unknownAction, permOrphan, permUnobservable, titleDrifts, pathBad, skillBad, triggerBad, actionBad, outputTextHandwritten, writeScopeBad, outputUnwritable, cardRuleLeak }
 }
 
 const isMain = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]
@@ -232,7 +242,7 @@ export const anyError = (r) => r.errs.length || r.ownFail.length || r.policyDiff
   r.actionConflict.length || r.unknownAction.length || r.permOrphan.length || r.permUnobservable.length ||
   r.titleDrifts.length || r.pathBad.length || r.skillBad.length || r.triggerBad.length || r.actionBad.length ||
   r.outputTextHandwritten.length || r.typeErr || r.writeScopeBad || r.outputUnwritable.length || r.cardRuleLeak.length ||
-  r.tierBad || r.boundaryBad
+  r.tierBad || r.boundaryBad || r.landingBad
 let failed = false
 if (isMain) {
   const names = process.argv.slice(2).length
@@ -261,7 +271,8 @@ if (isMain) {
     const cl = r.cardRuleLeak.length ? '  ISSUE_RULE_ON_NON_ISSUER ' + r.cardRuleLeak.join(';') : ''
     const tj = r.tierBad ? '  ' + r.tierBad : ''
     const bj = r.boundaryBad ? '  ' + r.boundaryBad : ''
-    console.log(`${r.name}  [${r.modelType}]  must=${r.must} never=${r.never} pred=${r.pred} rec=${r.rec}  ${ok}${own}${pol}${undef}${act}${unk}${por}${pun}${td}${pb}${sb}${tb}${ab}${ot}${ty}${ws}${ou}${cl}${tj}${bj}`)
+    const lb = r.landingBad ? '  ' + r.landingBad : ''
+    console.log(`${r.name}  [${r.modelType}]  must=${r.must} never=${r.never} pred=${r.pred} rec=${r.rec}  ${ok}${own}${pol}${undef}${act}${unk}${por}${pun}${td}${pb}${sb}${tb}${ab}${ot}${ty}${ws}${ou}${cl}${tj}${bj}${lb}`)
     failed ||= Boolean(anyError(r))
   }
   if (failed) process.exitCode = 1

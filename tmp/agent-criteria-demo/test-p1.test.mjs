@@ -253,7 +253,7 @@ test('TC-041 非空带首尾空白只发 WHITESPACE', () => {
   assert.equal(out.status, 1)
 })
 
-test('TC-024/025 render-all 落 sandbox、8 文件、两次字节同、无 sandbox 字样', () => {
+test('TC-024/025 render-all 落 sandbox、卡数 = 模型数、两次字节同、无 sandbox 字样', () => {
   assert.equal(run(['render-all.mjs']).status, 0)
   const files = readdirSync(join(HERE, 'sandbox')).filter((f) => f.endsWith('.md') && f !== 'diff-report.md').sort()
   assert.equal(files.length, MODEL_COUNT())

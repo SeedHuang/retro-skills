@@ -1259,15 +1259,6 @@
   ],
   "never": [
     {
-      "id": "shared.no-issue-without-fix",
-      "criterion": "issue-without-solution",
-      "targets": [
-        {
-          "object": "issue.card.suggestion"
-        }
-      ]
-    },
-    {
       "id": "shared.no-self-disposal",
       "criterion": "out-of-scope-self-disposal",
       "targets": [
