@@ -25,6 +25,8 @@ import * as SEATS from '../policy/definitions/seats.mjs';
 import { SEAT_POLICY } from '../policy/seat-policy.mjs';   // 配置层（spec §3.3）：对象键 = 席 slug，三键只持登记 ID
 import { TIERS, tierOfCapabilities } from '../policy/definitions/tiers.mjs';
 import { renderBoundary, SLOTS } from '../components/renderBoundary.mjs';
+// S1 权限断言词表：单一来源在 vocab（测试与 CLI 共用），不在本文件另抄一份
+import { WRITE_DENIAL_PHRASES, HISTORY_QUOTE_MARK } from '../card-model/vocab/permission-claims.mjs';
 
 const ROOT = process.cwd();            // `node --test` 以仓库根为 cwd；不得写成测试文件相对路径
 const ID = /^[a-z][a-z0-9.:-]*$/;      // = spec §3.4 归码谓词（与实现同一口径，不另造）
@@ -1178,7 +1180,7 @@ test('S6-TC-G03 边界句单源：有写落点的席全部 = renderBoundary，�
   const expected = agentData.filter((a) => toolsForSeat(a.name).includes('Write')).map((a) => a.name);
   assert.deepEqual([...writers].sort(), expected.sort(), 'boundaryBySeat 必须恰 = 档位含 Write 的席');
   const defSeats = agentData.filter((a) => !writers.has(a.name));
-  assert.equal(defSeats.length, agentData.length - writers.size, '其余席（零写）渲 DEFAULT_BOUNDARY');
+  assert.ok(defSeats.length > 0, '必须仍有零写席走 DEFAULT_BOUNDARY（否则本条判据失去对照）');
   for (const a of defSeats) assert.equal(a.boundary ?? DEFAULT_BOUNDARY, DEFAULT_BOUNDARY, a.name);
   for (const a of agentData.filter((x) => writers.has(x.name))) {
     assert.equal(a.boundary, renderBoundary(a.name), `${a.name}: 边界必须 = renderBoundary 的渲染结果`);
@@ -1194,16 +1196,19 @@ test('S6-TC-G03 边界句单源：有写落点的席全部 = renderBoundary，�
   // S1（2026-11-11）：权限断言不得越出 `## 边界` 段——边界之外的散文段（description / 职责 / 一定会 /
   // 禁止 / 本席清单 / 职责缘由）同样可写「不改任何文件」，而卡面 gate 只比字节、不判语义。
   // 扫描面三处，覆盖所有会被人读到的文字来源：席数据源 → docs 投影 → 模型数据。
-  const WRITE_DENIAL = ['不得创建、修改、删除任何文件', '不改任何文件', '不得写任何文件', '只读评审角色', '只读席位'];
+  const WRITE_DENIAL = WRITE_DENIAL_PHRASES;
   for (const seat of [...writers].sort()) {
     const surfaces = [`tools/docgen/dsl/agents/seats/${seat}.json`, `docs/agents/${seat}.md`,
       `tools/agent-model/models/${seat}-model.json`].filter((p) => existsSync(p));
     assert.ok(surfaces.length >= 2, `${seat}: 扫描面缺失（席 JSON / docs 投影至少两处）`);
     for (const rel of surfaces) {
-      const text = readFileSync(rel, 'utf8');
-      for (const w of WRITE_DENIAL) {
-        assert.equal(text.includes(w), false, `${rel} 断言「${w}」，但 ${seat} 档位含 Write（权限句只许出现在边界段）`);
-      }
+      const lines = readFileSync(rel, 'utf8').split(/\r?\n/);
+      lines.forEach((line, i) => {
+        if (HISTORY_QUOTE_MARK.test(line)) return; // 引用旧句 ≠ 当前断言（记录型写法）
+        for (const w of WRITE_DENIAL) {
+          assert.equal(line.includes(w), false, `${rel}:${i + 1} 断言「${w}」，但 ${seat} 档位含 Write（权限句只许出现在边界段）`);
+        }
+      });
     }
   }
   const sd = agentData.find((a) => a.name === 'senior-sdet');

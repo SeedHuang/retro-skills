@@ -5,7 +5,7 @@
 | 席 | 类型 | 沙箱行数 | 现役行数 | 沙箱字符 | 现役字符 | 段数（沙箱/现役） | 边界形态 | 边界一致 | 输出格式 |
 |---|---|---|---|---|---|---|---|---|---|
 | detective-observer | RespondentModel | 89 | 81 | 2861 | 2806 | 10/7 | policy | 是 | 有 |
-| evidence-reader | RespondentModel | 82 | 81 | 2559 | 2802 | 9/7 | policy | 是 | 有 |
+| evidence-reader | RespondentModel | 82 | 81 | 2581 | 2824 | 9/7 | policy | 是 | 有 |
 | respondent-architect | RespondentModel | 78 | 77 | 2324 | 2299 | 8/7 | policy | 是 | 有 |
 | respondent-dev | RespondentModel | 78 | 77 | 2441 | 2317 | 8/7 | policy | 是 | 有 |
 | reviewer-actuary | ReviewerModel | 94 | 89 | 2854 | 2968 | 9/7 | policy | 是 | 有 |
@@ -16,7 +16,7 @@
 | reviewer-ui | ReviewerModel | 74 | 75 | 1487 | 1914 | 8/7 | default | 是 | 有 |
 | reviewer-frontend | ReviewerModel | 76 | 77 | 1596 | 2030 | 8/7 | default | 是 | 有 |
 | senior-sdet | ReviewerModel | 85 | 86 | 2663 | 3142 | 8/7 | policy | 是 | 有 |
-| speaker | ReviewerModel | 80 | 79 | 2294 | 2274 | 8/7 | policy | 是 | 有 |
+| speaker | ReviewerModel | 80 | 79 | 2302 | 2282 | 8/7 | policy | 是 | 有 |
 
 ## 段级差异
 
@@ -142,7 +142,7 @@
 | 席 | 形态 | 沙箱长度 | 现役长度 | 逐字节相等 |
 |---|---|---|---|---|
 | detective-observer | policy | 1200 | 1200 | 是 |
-| evidence-reader | policy | 1082 | 1082 | 是 |
+| evidence-reader | policy | 1104 | 1104 | 是 |
 | respondent-architect | policy | 1092 | 1092 | 是 |
 | respondent-dev | policy | 1111 | 1111 | 是 |
 | reviewer-actuary | policy | 1096 | 1096 | 是 |
@@ -153,7 +153,7 @@
 | reviewer-ui | default | 41 | 41 | 是 |
 | reviewer-frontend | default | 41 | 41 | 是 |
 | senior-sdet | policy | 1080 | 1080 | 是 |
-| speaker | policy | 1079 | 1079 | 是 |
+| speaker | policy | 1087 | 1087 | 是 |
 
 ## 缺失项
 

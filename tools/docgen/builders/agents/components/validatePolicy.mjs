@@ -254,12 +254,25 @@ export function validatePolicy() {
       fail('ForbiddenGroupGranted', `${seat}:writeScope=spec.testcase:not-allowed`);
     }
   }
-  // 席级文本槽（`ROLE_KIND` / `HOST_RULE` 的席级覆盖）：空串 / 非字符串会渲出空句，必须判红（形态 → 存在性 → 禁止）
+  // 席级文本槽（`ROLE_KIND` / 主持席称谓的席级覆盖）：空串 / 非字符串会渲出空句，必须判红（形态 → 存在性 → 禁止）
   for (const [seat, s] of Object.entries(SEATS.SEATS)) {
-    for (const k of ['roleKind', 'hostRule']) {
+    for (const k of ['roleKind', 'hostNoun']) {
       if (!hasOwn(s, k)) continue;
       if (typeof s[k] !== 'string' || s[k].trim() === '') {
         fail('UnknownPolicyRef', `${seat}:${k}=(invalid)`);
+      }
+    }
+  }
+  // 席级 `roleKind` 会渲成卡面首句「你是<roleKind>（<display>）」：若写成**其他席**的显示名，
+  // 会出现「你是审计（精算）」这种撞名；本席自己的 display 允许（如「阅读取证员」含「取证」）。
+  const seatDisplays = Object.entries(SEATS.SEATS)
+    .filter(([k, v]) => k !== '__default__' && typeof v?.display === 'string' && v.display.trim() !== '')
+    .map(([k, v]) => [k, v.display]);
+  for (const [seat, s] of Object.entries(SEATS.SEATS)) {
+    if (!hasOwn(s, 'roleKind')) continue;
+    for (const [other, display] of seatDisplays) {
+      if (other !== seat && s.roleKind.includes(display)) {
+        fail('SeatNameInDefinition', `${seat}:roleKind=${s.roleKind}`);
       }
     }
   }

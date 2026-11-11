@@ -154,6 +154,12 @@ export function slotValues(seat) {
   // 配置侧形态非法（非数组 / 凑不出档）不在渲染层判红：TIER 退成空串，由 `validatePolicy` 发 `LiteralInConfig`
   // / `UnknownPolicyRef`；否则 `patternRegistry` 在导入期就会抛 `TemplateImpure`，把配置错误指到模板上
   const caps = Array.isArray(rawCaps) ? rawCaps : [];
+  // 主持席称谓：默认取写作用域的同名默认值，席级 `hostNoun` 可覆盖（非议会席不得点名「议长」：S4-TC-C03）。
+  // 只替换 `{host}` 占位、不复制整句，同一规则因此只有一份文本。
+  const hostNoun = slotSource(s, 'hostNoun', 'HOST_RULE', scopeOfSeat(seat)?.hostNoun ?? '');
+  const hostRule = (scopeOfSeat(seat)?.hostRule ?? '').replaceAll('{host}', hostNoun);
+  // 作用域写了 `{host}` 却没登记 hostNoun → 卡面会渲出字面占位，按模板不纯判红
+  if (hostRule.includes('{host}')) impure('HOST_RULE:hostNoun-missing');
   const values = {
     SEAT: s.display,
     TIER: tierOfCapabilities(caps) ?? '',
@@ -170,8 +176,8 @@ export function slotValues(seat) {
     // 角色名词默认随写作用域（「评审席」「程序主持」）；答辩方 / 取证席不是评审席，由席级 `roleKind` 覆盖
     ROLE_KIND: slotSource(s, 'roleKind', 'ROLE_KIND', scopeOfSeat(seat)?.roleKind ?? ''),
     WRITE_SCOPE: scopeOfSeat(seat)?.label ?? '',
-    // 禁止写句的席级覆盖（非议会席不得点名主持席：S4-TC-C03）；未声明时随写作用域
-    HOST_RULE: slotSource(s, 'hostRule', 'HOST_RULE', scopeOfSeat(seat)?.hostRule ?? ''),
+    // 禁止写句 = 写作用域的 hostRule（`{host}` 已替换成主持席称谓），席级不再整句覆盖
+    HOST_RULE: hostRule,
   };
   for (const k of SLOTS) if (values[k] === undefined || values[k] === null) impure(k);
   return values;

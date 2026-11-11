@@ -26,12 +26,16 @@ export function resolveDomain(agent) {
 }
 
 // 席名 → 边界句（只登记**有写落点**的席；零写席不登记 → `renderCard` 回落 DEFAULT_BOUNDARY）。
-// 判据 = 档位含 Write（与「有写落点 ⇒ 边界由策略派生」同一条）：由 `SEAT_POLICY` 现算，不手写第二份名单——
-// 新增 writer 席自动跟随，漏登记会让卡面边界与权限脱钩（S5-TC-B08 判红）。
+// 判据 = `capabilities` 含 `write`：不变量 9 保证「caps 展开后的工具集 ≡ 档位」，故与「档位含 Write」等价，
+// 而 capabilities 是配置层的唯一事实（档位是它算出来的，不是另一份输入）。
+// 非数组一律按「无写」处理——值域错由 validatePolicy 判红，这里不静默兜底成 writer。
 // 席文件不得再自带 `boundary`（S6-G03）：手抄句既不可测，也会盖掉这里的派生值。
 export const boundaryBySeat = Object.fromEntries(
   SEAT_NAMES
-    .filter((s) => (SEAT_POLICY[s].capabilities ?? []).includes('write'))
+    .filter((s) => {
+      const caps = SEAT_POLICY[s]?.capabilities;
+      return Array.isArray(caps) && caps.includes('write');
+    })
     .map((s) => [s, renderBoundary(s)]),
 );
 

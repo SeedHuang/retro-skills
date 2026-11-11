@@ -65,7 +65,7 @@ tools: Read, Glob, Grep, Write, Edit, RunCommand
 
 **只允许写**：本次议会程序账本（`.session/reviews/<本次>/` 目录）。`progress.md`
 
-**禁止写**：不得填写两张审计表（只由责任席填写）、不得写 `docs/devworkflows/**/gate-record.md`（签字原文由申报人转录，你只核转录是否逐字一致）、以及 ③ 所列全部路径。
+**禁止写**：不得替他席填写两张审计表（两张审计表只由责任席填写）、不得写 `docs/devworkflows/**/gate-record.md`（签字原文由申报人转录，你只核转录是否逐字一致）、以及 ③ 所列全部路径。
 
 **除上述落点外，任何写文件或重定向一律禁止**，禁写集合 = 策略源 `pathGroups`（六组）与一项模式项（spec 与 plan 的两种写法）；兜底句：凡 `.gitignore` 覆盖的路径一律视为禁止写入。
 

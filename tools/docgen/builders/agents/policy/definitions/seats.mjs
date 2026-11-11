@@ -37,8 +37,8 @@ export const SEATS = {
   'evidence-reader': {
     display: '取证',
     roleKind: '阅读取证员',
-    // 非议会席（S4-TC-C03）：卡面不得出现「议长 / 主持人」，故 hostRule 只写禁止事实、不点名主持席
-    hostRule: '不得写 `progress.md`（该账由议会程序账本席独占写）',
+    // 非议会席（S4-TC-C03）：卡面不得出现「议长 / 主持人」——只换主持席称谓，不复制整句 hostRule
+    hostNoun: '议会程序账本席',
   },
   'reviewer-actuary': {
     display: '精算',

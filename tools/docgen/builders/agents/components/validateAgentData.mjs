@@ -113,9 +113,10 @@ export function validateAgentData(data, table) {
   // S4 Task 7 收口：旧模板键（identity / fixedList / sharedBlock / heading / sourceLine）已全席删除，
   // 白名单只留外层派生键 + 三个可选槽位键（domain / boundary / explorePolicy）+ 新卡 `card` 键。
   const BASE_KEYS = ['name', 'role', 'dimension', 'tools', 'outputKind', 'domain', 'boundary', 'explorePolicy', 'card'];
-  // 两个槽位字段只允许出现在显式声明它们的席（C5 ④）：其他席一旦带上，渲染会静默换句而不报错。
-  // 边界白名单由 boundaryBySeat 派生（有写落点的席全在其中）；`explorePolicy` 目前只 evidence-reader 用。
-  const DECLARED_SLOT_SEATS = new Set(Object.keys(patternRegistry.boundaryBySeat));
+  // 两个槽位字段各走各的白名单：`boundary` 跟「有写落点」走（boundaryBySeat 派生）；
+  // `explorePolicy` 与写权限无关（只交事实的只读席也要能声明 none），故显式登记、不共用同一集合。
+  const BOUNDARY_SEATS = new Set(Object.keys(patternRegistry.boundaryBySeat));
+  const EXPLORE_SEATS = new Set(['evidence-reader']);
   for (const a of data) {
     for (const k of ['when', 'notWhen', 'route', 'fallback']) {
       if (k in a) fail('TriggerFieldMisplaced', { name: a.name, key: k });
@@ -123,8 +124,11 @@ export function validateAgentData(data, table) {
     const allowed = BASE_KEYS;
     const extra = Object.keys(a).filter((k) => !allowed.includes(k));
     if (extra.length) fail('TriggerFieldMisplaced', { name: a.name, extra });
-    if (('boundary' in a || 'explorePolicy' in a) && !DECLARED_SLOT_SEATS.has(a.name)) {
-      fail('DescriptionDerivation', { name: a.name, reason: '未声明槽位的席不得带 boundary / explorePolicy' });
+    if ('boundary' in a && !BOUNDARY_SEATS.has(a.name)) {
+      fail('DescriptionDerivation', { name: a.name, reason: '未声明槽位的席不得带 boundary' });
+    }
+    if ('explorePolicy' in a && !EXPLORE_SEATS.has(a.name)) {
+      fail('DescriptionDerivation', { name: a.name, reason: '未声明槽位的席不得带 explorePolicy' });
     }
     // 两个槽位字段的值域（与 domain 的处理对齐）：写错会静默改卡面，而机器检查只判节名存在
     if ('domain' in a && (typeof a.domain !== 'string' || a.domain.trim() === '')) {
