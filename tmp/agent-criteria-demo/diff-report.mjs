@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync, writeFileSync, readdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { expand } from '../../tools/agent-model/verify-models.mjs'
@@ -76,5 +76,11 @@ const md = [
   '| K5 | `seat.tier` 与策略档位并存 | spec S4；`TIER_MISMATCH` 守卫 |',
   '',
 ].join('\n')
+// 报告行数必须等于模型数：SEATS 是手写名单，漏登记新席时在这里 fail-closed
+const modelCount = readdirSync(MODELS).filter((f) => f.endsWith('-model.json') && !f.startsWith('_')).length
+if (rows.length !== modelCount) {
+  console.error(`[diff-report] 席数不一致：报告 ${rows.length} / 模型 ${modelCount}（请同步 SEATS）`)
+  process.exit(1)
+}
 writeFileSync(join(HERE, 'sandbox', 'diff-report.md'), md)
 console.log('sandbox/diff-report.md')

@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { readFileSync, readdirSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { renderModel } from '../render/index.mjs'
@@ -17,7 +17,11 @@ const bodyOf = (text) => {
   const i = text.indexOf('\n## 边界\n')
   return i < 0 ? '' : text.slice(i + '\n## 边界\n'.length).trim()
 }
-const cardBoundary = (seat) => bodyOf(readFileSync(join(ROOT, 'agents', `${seat}.md`), 'utf8'))
+const cardBoundary = (seat) => {
+  const p = join(ROOT, 'agents', `${seat}.md`)
+  assert.ok(existsSync(p), `缺卡：agents/${seat}.md（先落卡再建模）`)
+  return bodyOf(readFileSync(p, 'utf8'))
+}
 
 test('边界三形态：渲染正文必须等于声明来源（policy→renderBoundary / literal→text / default→DEFAULT_BOUNDARY）', () => {
   for (const f of seats) {
@@ -46,5 +50,14 @@ test('default 只用于卡面边界恰为 DEFAULT_BOUNDARY 的席', () => {
     const m = JSON.parse(readFileSync(join(MODELS, f), 'utf8'))
     if (m.boundary.kind !== 'default') continue
     assert.equal(cardBoundary(m.seat.id), DEFAULT_BOUNDARY, m.seat.id)
+  }
+})
+
+test('卡面边界恰为 DEFAULT_BOUNDARY 的席必须用 default（反向）', () => {
+  for (const f of seats) {
+    const m = JSON.parse(readFileSync(join(MODELS, f), 'utf8'))
+    const seat = m.seat.id
+    if (cardBoundary(seat) !== DEFAULT_BOUNDARY) continue
+    assert.equal(m.boundary.kind, 'default', `${seat} 卡面=默认句，不得用 ${m.boundary.kind} 绕过`)
   }
 })
