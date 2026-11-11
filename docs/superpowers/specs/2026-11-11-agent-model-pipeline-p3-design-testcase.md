@@ -17,9 +17,9 @@
 | 术语 | 中文解释 |
 |---|---|
 | spec | 技术设计文档（`2026-11-11-agent-model-pipeline-p3-design.md`） |
-| 引擎 | 迁到 `tools/docgen/builders/agent-model/` 的 `verify-models.mjs` + `types/` + `render/` + `models/` |
+| 引擎 | 迁到 `tools/agent-model/` 的 `verify-models.mjs` + `types/` + `render/` + `models/` |
 | 旧树 | `tmp/agent-criteria-demo/` 下迁移前的 `models/` / `types/` / `render/` / `verify-models.mjs` |
-| 新树 | `tools/docgen/builders/agent-model/` |
+| 新树 | `tools/agent-model/` |
 | 模型 | `models/<seat>-model.json`，卡面唯一真相 |
 | 草稿 | `skills/agent-modeling/drafts/<seat>-model.json`，运行期产物，不进 git |
 | 薄封装 | skill 脚本只 import 引擎、不复制渲染/校验逻辑（spec D2） |
@@ -31,7 +31,7 @@
 ## 0 测试设计结论（依据与判断）
 
 - 结论 1：**`verify` 与 `anyError` 当前都不是导出**。`verify-models.mjs:84` 是 `function verify(name)`（无 `export`），`verify-models.mjs:211` 是 `const anyError = (r) => …`（无 `export`），二者只在尾部 CLI 块（`:216-248`）内使用；唯一导出是 `:69` 的 `expand`。故 TC-006 是当前即红的交付项，不能只判「文件搬过去了」。
-- 结论 2：**迁移会连带打断 `skills/` 定位**。`verify-models.mjs:172` 用 `join(here, '..', '..', 'skills', t.skill)` 判断模板引用的技能是否存在；`here` 从 `tmp/agent-criteria-demo` 移到 `tools/docgen/builders/agent-model` 后，该式指向 `tools/docgen/skills/`（不存在）。实跑统计 7 席共 9 处 `templates.*.skill = parliament-ledger`（`detective-observer` / `evidence-reader` / `respondent-architect` / `respondent-dev` / `reviewer-actuary` / `reviewer-ai` 各 1，`reviewer-audit` 2）。spec §3 只写「搬后改 1 处 import 深度」，未提这处路径，故 TC-007 直接判 `SKILL_MISSING` 出现 0 次。
+- 结论 2：**迁移会连带打断 `skills/` 定位**。`verify-models.mjs:172` 用 `join(here, '..', '..', 'skills', t.skill)` 判断模板引用的技能是否存在；`here` 从 `tmp/agent-criteria-demo` 移到 `tools/agent-model` 后，该式指向 `tools/docgen/skills/`（不存在）。实跑统计 7 席共 9 处 `templates.*.skill = parliament-ledger`（`detective-observer` / `evidence-reader` / `respondent-architect` / `respondent-dev` / `reviewer-actuary` / `reviewer-ai` 各 1，`reviewer-audit` 2）。spec §3 只写「搬后改 1 处 import 深度」，未提这处路径，故 TC-007 直接判 `SKILL_MISSING` 出现 0 次。
 - 结论 3：**新增 skill 会撞依赖清单门禁，spec 未登记**。`skilldependencies/validate.test.mjs:36` 断言「`skills/` 目录与 `manifest.json` 的 `skills` 列表一一对应（防新增技能漏登记）」，`:12` 要求 `skills` 列表与 `skilldependencies/*.json` 文件名一一对应。`manifest.json` 现有 13 个技能名、无 `agent-modeling`。即：光建 `skills/agent-modeling/` 会让 `npm run check` 变红（该测试在 check-all 的 `node --test **/*.test.mjs` 里）。TC-023 单独立条。
 - 结论 4：**spec §3 的「4 个文件」低估了旧树依赖方**。除保留名单里的 `render-all.mjs`、`diff-report.mjs`、`test-p1.test.mjs` 外，还有三个被跟踪脚本引用旧引擎/旧模型：`render-card.mjs:4,7-8`、`update-baseline.mjs:4`、`eval/raw/perf/render-bench.mjs:4,8`。迁移后三者必 `ERR_MODULE_NOT_FOUND`，而 `npm run check` 的 `node --check` 只扫 `skills/**/*.mjs`、`node --test` 不含这些脚本，**无门禁覆盖**。实跑 `git ls-files tmp/agent-criteria-demo` 可见三者均为跟踪文件。TC-004 用「旧树中指向引擎的相对 import 全部可解析」兜住。
 - 结论 5：**P1 单测的常量不是一个，而是两个根**。`test-p1.test.mjs:13-14` 的 `HERE` / `ROOT`、`:37-39` 的 `copyCase`（落点 `join(HERE,'..','p1-case-')`）同时被两类路径使用：`models`/`render`/`verify-models.mjs` 迁走，而 `sandbox/`、`render-all.mjs` 留在旧树（`:245-281` 大量 `join(HERE,'sandbox')`）。spec §8 写「改 3 个常量」，实测至少要拆「引擎根 / demo 根」两个根，否则 `copyCase` 会把副本目录建到 `tools/docgen/builders/` 下。TC-026 只判结果 `29/29`，不预设改法。
@@ -85,9 +85,9 @@
 - **覆盖**：spec §3 迁移映射（`models/` + `_baseline/`、`types/`、`render/`、`verify-models.mjs`）
 - **目的**：确认迁移不是「搬了一半」：新位置能落到 21 个文件，且 `git ls-files` 能查到（`tmp/` 被忽略，靠跟踪状态才能保证他人克隆后存在）。
 - **前置**：已执行迁移（`git mv` 或等价操作）；CWD=`d:\Seed\retro-skills`。
-- **步骤**：① 复制并执行下条 `node -e`，逐项核对期望路径是否 `existsSync`；② 同一条命令内用 `git ls-files tools/docgen/builders/agent-model` 数跟踪文件数。
-- **判据（机器）**：`node -e "const {execSync}=require('child_process'),fs=require('fs');const seats=['detective-observer','evidence-reader','respondent-architect','respondent-dev','reviewer-actuary','reviewer-ai','reviewer-audit'];const exp=[...seats.map(s=>'models/'+s+'-model.json'),'models/_shared-model.json',...seats.map(s=>'models/_baseline/'+s+'.json'),'types/base.mjs','types/derived.mjs','types/index.mjs','render/index.mjs','render/sections.mjs','verify-models.mjs'];const base='tools/docgen/builders/agent-model/';const miss=exp.filter(p=>!fs.existsSync(base+p));const tr=execSync('git ls-files '+base,{encoding:'utf8'}).trim().split(/\r?\n/).filter(Boolean);console.log('exists='+(exp.length-miss.length)+'/'+exp.length,'tracked='+tr.length,'missing='+JSON.stringify(miss))"` → 首行 `exists=21/21 tracked=21 missing=[]`。
-- **对应测试/交付物**：`tools/docgen/builders/agent-model/**` ×21；验收人 = 主 agent 在 plan 收尾按本条核（plan 未规划独立 `test()`）。
+- **步骤**：① 复制并执行下条 `node -e`，逐项核对期望路径是否 `existsSync`；② 同一条命令内用 `git ls-files tools/agent-model` 数跟踪文件数。
+- **判据（机器）**：`node -e "const {execSync}=require('child_process'),fs=require('fs');const seats=['detective-observer','evidence-reader','respondent-architect','respondent-dev','reviewer-actuary','reviewer-ai','reviewer-audit'];const exp=[...seats.map(s=>'models/'+s+'-model.json'),'models/_shared-model.json',...seats.map(s=>'models/_baseline/'+s+'.json'),'types/base.mjs','types/derived.mjs','types/index.mjs','render/index.mjs','render/sections.mjs','verify-models.mjs'];const base='tools/agent-model/';const miss=exp.filter(p=>!fs.existsSync(base+p));const tr=execSync('git ls-files '+base,{encoding:'utf8'}).trim().split(/\r?\n/).filter(Boolean);console.log('exists='+(exp.length-miss.length)+'/'+exp.length,'tracked='+tr.length,'missing='+JSON.stringify(miss))"` → 首行 `exists=21/21 tracked=21 missing=[]`。
+- **对应测试/交付物**：`tools/agent-model/**` ×21；验收人 = 主 agent 在 plan 收尾按本条核（plan 未规划独立 `test()`）。
 
 ### TC-002 旧树四个路径在 git 索引中清零，且代码里无旧路径字符串
 
@@ -104,8 +104,8 @@
 - **目的**：防迁移时顺手改模型（例如重排 JSON 键、改文案），把「零改动」变成不可核的口头承诺。
 - **前置**：迁移已提交或已暂存；旧路径的 blob 仍在 `HEAD` 中（迁移前最后一个提交）。
 - **步骤**：① 用 `git ls-tree -r --name-only HEAD -- tmp/agent-criteria-demo/models tmp/agent-criteria-demo/types` 取旧清单；② 逐文件把 `HEAD:<旧路径>` 的 blob 与 `git hash-object <新路径>` 比对；③ 输出差异文件。
-- **判据（机器）**：`node -e "const {execSync}=require('child_process');const files=execSync('git ls-tree -r --name-only HEAD -- tmp/agent-criteria-demo/models tmp/agent-criteria-demo/types',{encoding:'utf8'}).trim().split(/\r?\n/).filter(Boolean);const bad=[];for(const f of files){const rel=f.replace('tmp/agent-criteria-demo/','');const h=execSync('git rev-parse HEAD:'+f,{encoding:'utf8'}).trim();const n=execSync('git hash-object tools/docgen/builders/agent-model/'+rel,{encoding:'utf8'}).trim();if(h!==n)bad.push(rel)}console.log('total='+files.length,'diff='+bad.length,bad.join(','))"` → 首行 `total=18 diff=0`（本机实测旧清单 18 项、`reviewer-actuary-model.json` 两侧同为 `e377f0111185d828d43b6e6ed2cfadcaf5ecb35f`）。
-- **对应测试/交付物**：`tools/docgen/builders/agent-model/models/**`、`…/types/**`；`git mv` 的 `R100` 记录；验收人 = 主 agent。
+- **判据（机器）**：`node -e "const {execSync}=require('child_process');const files=execSync('git ls-tree -r --name-only HEAD -- tmp/agent-criteria-demo/models tmp/agent-criteria-demo/types',{encoding:'utf8'}).trim().split(/\r?\n/).filter(Boolean);const bad=[];for(const f of files){const rel=f.replace('tmp/agent-criteria-demo/','');const h=execSync('git rev-parse HEAD:'+f,{encoding:'utf8'}).trim();const n=execSync('git hash-object tools/agent-model/'+rel,{encoding:'utf8'}).trim();if(h!==n)bad.push(rel)}console.log('total='+files.length,'diff='+bad.length,bad.join(','))"` → 首行 `total=18 diff=0`（本机实测旧清单 18 项、`reviewer-actuary-model.json` 两侧同为 `e377f0111185d828d43b6e6ed2cfadcaf5ecb35f`）。
+- **对应测试/交付物**：`tools/agent-model/models/**`、`…/types/**`；`git mv` 的 `R100` 记录；验收人 = 主 agent。
 - **说明**：`render/` 与 `verify-models.mjs` 不在此条，它们按设计要改 import 深度（TC-004）与新增导出（TC-006）。
 
 ### TC-004 新旧两树里指向引擎的相对 import 全部可解析
@@ -114,8 +114,8 @@
 - **目的**：import 深度写错不会让 `node --check` 变红（语法合法），只在运行期炸；本条用静态解析把新树全部相对 import、旧树中指向引擎的相对 import 一次核完。旧树里 `render-card.mjs:4,7-8`、`update-baseline.mjs:4`、`eval/raw/perf/render-bench.mjs:4,8` 三处是 spec §3「4 个文件」清单外的依赖方，必须一起被这条兜住。
 - **前置**：迁移完成，新树存在。
 - **步骤**：① 扫新树全部 `.mjs` 的 `from '…'` / `import('…')` 中相对说明符，逐个 `existsSync(resolve(dirname, spec))`；② 扫旧树同形说明符，但只收落在 `models/`、`types/`、`render/`、`verify-models.mjs` 上的（旧树另有 3 处 `verifyLedger*.mjs` 的既存未解析 import，与本迁移无关，见 §5）。
-- **判据（机器）**：① `node -e "const fs=require('fs'),p=require('path');const bad=[];const walk=d=>fs.readdirSync(d,{withFileTypes:true}).forEach(e=>{const f=p.join(d,e.name);if(e.isDirectory())walk(f);else if(e.name.endsWith('.mjs')){const t=fs.readFileSync(f,'utf8');for(const m of t.matchAll(/(?:from|import)\s*\(?\s*['\x22](\.[^'\x22]+)['\x22]/g)){if(!fs.existsSync(p.resolve(p.dirname(f),m[1])))bad.push(f+' -> '+m[1])}}});walk('tools/docgen/builders/agent-model');console.log('newUnresolved='+bad.length,JSON.stringify(bad))"` → 首行 `newUnresolved=0 []`；② `node -e "const fs=require('fs'),p=require('path');const bad=[];const walk=d=>fs.readdirSync(d,{withFileTypes:true}).forEach(e=>{const f=p.join(d,e.name);if(e.isDirectory()){if(e.name!=='node_modules')walk(f)}else if(e.name.endsWith('.mjs')){const t=fs.readFileSync(f,'utf8');for(const m of t.matchAll(/(?:from|import)\s*\(?\s*['\x22](\.[^'\x22]+)['\x22]/g)){if(!/(^|\/)(models|types|render)\/|verify-models\.mjs/.test(m[1]))continue;if(!fs.existsSync(p.resolve(p.dirname(f),m[1])))bad.push(f+' -> '+m[1])}}});walk('tmp/agent-criteria-demo');console.log('engineImportsUnresolved='+bad.length,JSON.stringify(bad))"` → 首行 `engineImportsUnresolved=0 []`（本机迁移前实测 `0 []`，迁移后仍须为 0）。
-- **对应测试/交付物**：`tools/docgen/builders/agent-model/**/*.mjs`、`tmp/agent-criteria-demo/{render-all.mjs,diff-report.mjs,test-p1.test.mjs,render-card.mjs,update-baseline.mjs,eval/raw/perf/render-bench.mjs}`；验收人 = 主 agent。
+- **判据（机器）**：① `node -e "const fs=require('fs'),p=require('path');const bad=[];const walk=d=>fs.readdirSync(d,{withFileTypes:true}).forEach(e=>{const f=p.join(d,e.name);if(e.isDirectory())walk(f);else if(e.name.endsWith('.mjs')){const t=fs.readFileSync(f,'utf8');for(const m of t.matchAll(/(?:from|import)\s*\(?\s*['\x22](\.[^'\x22]+)['\x22]/g)){if(!fs.existsSync(p.resolve(p.dirname(f),m[1])))bad.push(f+' -> '+m[1])}}});walk('tools/agent-model');console.log('newUnresolved='+bad.length,JSON.stringify(bad))"` → 首行 `newUnresolved=0 []`；② `node -e "const fs=require('fs'),p=require('path');const bad=[];const walk=d=>fs.readdirSync(d,{withFileTypes:true}).forEach(e=>{const f=p.join(d,e.name);if(e.isDirectory()){if(e.name!=='node_modules')walk(f)}else if(e.name.endsWith('.mjs')){const t=fs.readFileSync(f,'utf8');for(const m of t.matchAll(/(?:from|import)\s*\(?\s*['\x22](\.[^'\x22]+)['\x22]/g)){if(!/(^|\/)(models|types|render)\/|verify-models\.mjs/.test(m[1]))continue;if(!fs.existsSync(p.resolve(p.dirname(f),m[1])))bad.push(f+' -> '+m[1])}}});walk('tmp/agent-criteria-demo');console.log('engineImportsUnresolved='+bad.length,JSON.stringify(bad))"` → 首行 `engineImportsUnresolved=0 []`（本机迁移前实测 `0 []`，迁移后仍须为 0）。
+- **对应测试/交付物**：`tools/agent-model/**/*.mjs`、`tmp/agent-criteria-demo/{render-all.mjs,diff-report.mjs,test-p1.test.mjs,render-card.mjs,update-baseline.mjs,eval/raw/perf/render-bench.mjs}`；验收人 = 主 agent。
 
 ### TC-005 新树与旧树的 `.mjs` 全部过 `node --check`
 
@@ -123,7 +123,7 @@
 - **目的**：`npm run check` 的语法段只扫 `skills/**/*.mjs`，新树在 `tools/` 下不被扫；本条补齐。
 - **前置**：迁移完成。
 - **步骤**：① 递归收集两树的 `.mjs`；② 逐个 `node --check`；③ 收集非 0 退出者。
-- **判据（机器）**：`node -e "const fs=require('fs'),p=require('path'),{spawnSync}=require('node:child_process');const bad=[];const walk=d=>fs.readdirSync(d,{withFileTypes:true}).forEach(e=>{const f=p.join(d,e.name);if(e.isDirectory()){if(e.name!=='node_modules')walk(f)}else if(e.name.endsWith('.mjs')){if(spawnSync(process.execPath,['--check',f],{encoding:'utf8'}).status!==0)bad.push(f)}});walk('tools/docgen/builders/agent-model');walk('tmp/agent-criteria-demo');console.log('syntaxFail='+bad.length,JSON.stringify(bad))"` → 首行 `syntaxFail=0 []`。
+- **判据（机器）**：`node -e "const fs=require('fs'),p=require('path'),{spawnSync}=require('node:child_process');const bad=[];const walk=d=>fs.readdirSync(d,{withFileTypes:true}).forEach(e=>{const f=p.join(d,e.name);if(e.isDirectory()){if(e.name!=='node_modules')walk(f)}else if(e.name.endsWith('.mjs')){if(spawnSync(process.execPath,['--check',f],{encoding:'utf8'}).status!==0)bad.push(f)}});walk('tools/agent-model');walk('tmp/agent-criteria-demo');console.log('syntaxFail='+bad.length,JSON.stringify(bad))"` → 首行 `syntaxFail=0 []`。
 - **对应测试/交付物**：同 TC-004 的文件集；验收人 = 主 agent。
 
 ### TC-006 引擎导出 `verify(name, opts)` 与 `anyError(r)`
@@ -132,8 +132,8 @@
 - **目的**：skill 的两个脚本只能从引擎拿判定，故两个符号必须可 import；当前 `verify-models.mjs:84`（`function verify`）与 `:211`（`const anyError`）都没有 `export`，本条现在即红。
 - **前置**：迁移 + 加导出。
 - **步骤**：① 用 ESM 动态 import 新树 `verify-models.mjs`；② 打印三个符号的 `typeof`。
-- **判据（机器）**：`node --input-type=module -e "import{expand,verify,anyError}from'./tools/docgen/builders/agent-model/verify-models.mjs';console.log('expand='+typeof expand,'verify='+typeof verify,'anyError='+typeof anyError)"` → 首行 `expand=function verify=function anyError=function`（若未导出，Node 直接抛 `SyntaxError: The requested module … does not provide an export named 'verify'`，命令非 0 退出）。
-- **对应测试/交付物**：`tools/docgen/builders/agent-model/verify-models.mjs` 的导出面；验收人 = 主 agent。
+- **判据（机器）**：`node --input-type=module -e "import{expand,verify,anyError}from'./tools/agent-model/verify-models.mjs';console.log('expand='+typeof expand,'verify='+typeof verify,'anyError='+typeof anyError)"` → 首行 `expand=function verify=function anyError=function`（若未导出，Node 直接抛 `SyntaxError: The requested module … does not provide an export named 'verify'`，命令非 0 退出）。
+- **对应测试/交付物**：`tools/agent-model/verify-models.mjs` 的导出面；验收人 = 主 agent。
 
 ### TC-007 迁后 CLI 行为不变：7 行 `EQUIVALENT`、exit 0、无 `SKILL_MISSING`
 
@@ -141,7 +141,7 @@
 - **目的**：一次判三件事——① 7 席仍全绿；② 退出码仍 0；③ `verify-models.mjs:172` 的 `join(here,'..','..','skills',t.skill)` 在新深度下仍能找到 `skills/parliament-ledger`（迁移后该式默认指向 `tools/docgen/skills/`，不改就会给 9 处模板引用全报 `SKILL_MISSING`）。
 - **前置**：迁移完成并改好深度。
 - **步骤**：① 直接跑新树 CLI（不带参数走 7 席默认列表）；② 数行数、`EQUIVALENT` 数、`SKILL_MISSING` 数、记退出码。
-- **判据（机器）**：`$o = node tools/docgen/builders/agent-model/verify-models.mjs; "lines=$($o.Count) eq=$(($o|Select-String 'EQUIVALENT').Count) skillMissing=$(($o|Select-String 'SKILL_MISSING').Count) exit=$LASTEXITCODE"` → 首行 `lines=7 eq=7 skillMissing=0 exit=0`。
+- **判据（机器）**：`$o = node tools/agent-model/verify-models.mjs; "lines=$($o.Count) eq=$(($o|Select-String 'EQUIVALENT').Count) skillMissing=$(($o|Select-String 'SKILL_MISSING').Count) exit=$LASTEXITCODE"` → 首行 `lines=7 eq=7 skillMissing=0 exit=0`。
 - **对应测试/交付物**：`verify-models.mjs` CLI 段（`:216-248` 保持原样）；P1 回归锚 TC-026。注：spec §7 G2 仍写 `cd tmp/agent-criteria-demo && node verify-models.mjs`，与 §3 迁移表冲突，本条按迁移后路径执行（见 §0 结论 11）。
 
 ### TC-008 `opts.modelPath` 覆盖：同一 seat 名可校验任意路径的模型
@@ -150,7 +150,7 @@
 - **目的**：skill 要校验草稿（不在 `models/` 下），必须能换路径；且换路径不能污染缺省行为。
 - **前置**：TC-006 通过；`$env:TEMP` 可写。
 - **步骤**：① 造副本：读 `models/reviewer-actuary-model.json`，把 `seat.tier` 改成 `admin`，写到 `$env:TEMP\p3-tc008-model.json`；② 同一进程内分别调 `verify('reviewer-actuary')`（缺省路径）与 `verify('reviewer-actuary',{modelPath:<副本>})`；③ 打印两者 `tierBad`。
-- **判据（机器）**：先建副本 `$M = Join-Path $env:TEMP 'p3-tc008-model.json'; node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('tools/docgen/builders/agent-model/models/reviewer-actuary-model.json','utf8'));m.seat.tier='admin';fs.writeFileSync(process.argv[1],JSON.stringify(m,null,2))" $M`（退出 0，无输出）；再 `node --input-type=module -e "import{verify}from'./tools/docgen/builders/agent-model/verify-models.mjs';const a=verify('reviewer-actuary');const b=verify('reviewer-actuary',{modelPath:process.argv[1]});console.log('own='+(a.tierBad||'ok'),'over='+(b.tierBad||'ok'))" $M` → 首行 `own=ok over=TIER_MISMATCH model=admin policy=readOnly`。
+- **判据（机器）**：先建副本 `$M = Join-Path $env:TEMP 'p3-tc008-model.json'; node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('tools/agent-model/models/reviewer-actuary-model.json','utf8'));m.seat.tier='admin';fs.writeFileSync(process.argv[1],JSON.stringify(m,null,2))" $M`（退出 0，无输出）；再 `node --input-type=module -e "import{verify}from'./tools/agent-model/verify-models.mjs';const a=verify('reviewer-actuary');const b=verify('reviewer-actuary',{modelPath:process.argv[1]});console.log('own='+(a.tierBad||'ok'),'over='+(b.tierBad||'ok'))" $M` → 首行 `own=ok over=TIER_MISMATCH model=admin policy=readOnly`。
 - **对应测试/交付物**：`verify(name, opts)` 的 `modelPath` 分支；验收人 = 主 agent。
 
 ### TC-009 `opts.baseline:false` 跳过 `_baseline` 比对（草稿没有基线）
@@ -159,7 +159,7 @@
 - **目的**：草稿是新写的模型，没有 `_baseline/<name>.json`；若引擎仍无条件读基线，skill 校验一跑就 `ENOENT`。本条用「同一份模型、开/关基线得到不同 `errs`」证明开关真的生效，而不是靠「跑通不报错」蒙过。
 - **前置**：TC-006 通过；`reviewer-actuary` 自身 `must` 为空（实跑 `ownMust=0`，全部来自 `_shared-model.json`），故给副本加一条自有 `must` 即可让展开结果偏离基线。
 - **步骤**：① 造副本：读模型，追加 `must: [{id:'p3.probe', text:'探针规则。'}]`，写 `$env:TEMP\p3-tc009-model.json`；② 各跑一次 `baseline:false` 与 `baseline:true`，打印 `errs`。
-- **判据（机器）**：`$M = Join-Path $env:TEMP 'p3-tc009-model.json'; node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('tools/docgen/builders/agent-model/models/reviewer-actuary-model.json','utf8'));m.must=[{id:'p3.probe',text:'探针规则。'}];fs.writeFileSync(process.argv[1],JSON.stringify(m,null,2))" $M; node --input-type=module -e "import{verify}from'./tools/docgen/builders/agent-model/verify-models.mjs';const a=verify('reviewer-actuary',{modelPath:process.argv[1],baseline:false});const b=verify('reviewer-actuary',{modelPath:process.argv[1],baseline:true});console.log('skipBase='+JSON.stringify(a.errs),'withBase='+JSON.stringify(b.errs))" $M` → 首行 `skipBase=[] withBase=["must"]`。
+- **判据（机器）**：`$M = Join-Path $env:TEMP 'p3-tc009-model.json'; node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('tools/agent-model/models/reviewer-actuary-model.json','utf8'));m.must=[{id:'p3.probe',text:'探针规则。'}];fs.writeFileSync(process.argv[1],JSON.stringify(m,null,2))" $M; node --input-type=module -e "import{verify}from'./tools/agent-model/verify-models.mjs';const a=verify('reviewer-actuary',{modelPath:process.argv[1],baseline:false});const b=verify('reviewer-actuary',{modelPath:process.argv[1],baseline:true});console.log('skipBase='+JSON.stringify(a.errs),'withBase='+JSON.stringify(b.errs))" $M` → 首行 `skipBase=[] withBase=["must"]`。
 - **对应测试/交付物**：`verify` 的基线分支；验收人 = 主 agent。
 
 ### TC-010 `anyError(r)` 对好模型返回假、对坏模型返回真
@@ -168,7 +168,7 @@
 - **目的**：skill 的退出码只能来自引擎的这一个判定，若 `anyError` 漏掉某个错误面（如 `tierBad`），脚本就会假绿。
 - **前置**：TC-008 的 `$env:TEMP\p3-tc008-model.json`（`seat.tier=admin`）已生成。
 - **步骤**：① `verify('reviewer-actuary')` 取干净结果；② `verify('reviewer-actuary',{modelPath:<坏副本>})` 取坏结果；③ 分别过 `anyError` 取布尔。
-- **判据（机器）**：`$M = Join-Path $env:TEMP 'p3-tc008-model.json'; node --input-type=module -e "import{verify,anyError}from'./tools/docgen/builders/agent-model/verify-models.mjs';const ok=verify('reviewer-actuary');const bad=verify('reviewer-actuary',{modelPath:process.argv[1]});console.log('okErr='+Boolean(anyError(ok)),'badErr='+Boolean(anyError(bad)))" $M` → 首行 `okErr=false badErr=true`。
+- **判据（机器）**：`$M = Join-Path $env:TEMP 'p3-tc008-model.json'; node --input-type=module -e "import{verify,anyError}from'./tools/agent-model/verify-models.mjs';const ok=verify('reviewer-actuary');const bad=verify('reviewer-actuary',{modelPath:process.argv[1]});console.log('okErr='+Boolean(anyError(ok)),'badErr='+Boolean(anyError(bad)))" $M` → 首行 `okErr=false badErr=true`。
 - **对应测试/交付物**：`anyError` 的错误面包（现 `verify-models.mjs:211-215` 的 21 个字段）；验收人 = 主 agent。
 
 ### TC-011 skill 两个脚本是薄封装：只 import 引擎，不内联渲染/校验逻辑
@@ -186,7 +186,7 @@
 - **目的**：契约的正面锚。注意 skill 侧输出格式由 spec 冻结为单空格 `<seat> [<type>] …`，与引擎 CLI 的现状（双空格 + `must=…` 统计）不同，故不拿引擎输出当期望。
 - **前置**：TC-006/TC-007 通过。
 - **步骤**：① 对正式模型跑 verify 脚本；② 看首行与退出码。
-- **判据（机器）**：`node skills/agent-modeling/scripts/verify.mjs tools/docgen/builders/agent-model/models/reviewer-actuary-model.json; "exit=$LASTEXITCODE"` → 首行 `reviewer-actuary [ReviewerModel] EQUIVALENT`，次行 `exit=0`（`ReviewerModel` 为实跑 `renderModel().type`）。
+- **判据（机器）**：`node skills/agent-modeling/scripts/verify.mjs tools/agent-model/models/reviewer-actuary-model.json; "exit=$LASTEXITCODE"` → 首行 `reviewer-actuary [ReviewerModel] EQUIVALENT`，次行 `exit=0`（`ReviewerModel` 为实跑 `renderModel().type`）。
 - **对应测试/交付物**：`skills/agent-modeling/scripts/verify.mjs`；验收人 = 主 agent。
 - **不覆盖**：不判行尾是否还有统计字段（spec 未禁止，但首行必须以上述串开头）。
 
@@ -205,7 +205,7 @@
 - **目的**：回放验收的主判据：草稿展开后与正式模型等价。
 - **前置**：草稿已从正式模型复制（`skills/agent-modeling/drafts/reviewer-actuary-model.json`），内容相同。
 - **步骤**：① 跑 verify 并带 `--ref` 指向正式模型；② 看首行两个串与退出码。
-- **判据（机器）**：`$o = node skills/agent-modeling/scripts/verify.mjs skills/agent-modeling/drafts/reviewer-actuary-model.json --ref tools/docgen/builders/agent-model/models/reviewer-actuary-model.json; "exit=$LASTEXITCODE"; "ownEq=$([bool]($o[0] -match 'EQUIVALENT')) refEq=$([bool]($o[0] -match 'REF_EQUIVALENT'))"` → 第二行 `exit=0`、第三行 `ownEq=True refEq=True`（首行形如 `reviewer-actuary [ReviewerModel] EQUIVALENT REF_EQUIVALENT`）。
+- **判据（机器）**：`$o = node skills/agent-modeling/scripts/verify.mjs skills/agent-modeling/drafts/reviewer-actuary-model.json --ref tools/agent-model/models/reviewer-actuary-model.json; "exit=$LASTEXITCODE"; "ownEq=$([bool]($o[0] -match 'EQUIVALENT')) refEq=$([bool]($o[0] -match 'REF_EQUIVALENT'))"` → 第二行 `exit=0`、第三行 `ownEq=True refEq=True`（首行形如 `reviewer-actuary [ReviewerModel] EQUIVALENT REF_EQUIVALENT`）。
 - **对应测试/交付物**：`scripts/verify.mjs` 的 `--ref` 分支；`skills/agent-modeling/drafts/reviewer-actuary-model.json`。
 
 ### TC-015 负例：`--ref` 指向另一个席的模型 → `REF_DIFF:<path>`，exit 1
@@ -214,7 +214,7 @@
 - **目的**：判 `--ref` 真的在比对，而不是只把 ref 路径原样回声；差异时必须给路径且改退出码。
 - **前置**：同 TC-014。
 - **步骤**：① 用 `reviewer-actuary` 草稿对 `reviewer-ai-model.json` 做 `--ref`；② 看首行与退出码。
-- **判据（机器）**：`$o = node skills/agent-modeling/scripts/verify.mjs skills/agent-modeling/drafts/reviewer-actuary-model.json --ref tools/docgen/builders/agent-model/models/reviewer-ai-model.json; "exit=$LASTEXITCODE"; "hasDiff=$([bool]($o[0] -match 'REF_DIFF:')) hasRefEq=$([bool]($o[0] -match 'REF_EQUIVALENT'))"` → 第二行 `exit=1`、第三行 `hasDiff=True hasRefEq=False`。
+- **判据（机器）**：`$o = node skills/agent-modeling/scripts/verify.mjs skills/agent-modeling/drafts/reviewer-actuary-model.json --ref tools/agent-model/models/reviewer-ai-model.json; "exit=$LASTEXITCODE"; "hasDiff=$([bool]($o[0] -match 'REF_DIFF:')) hasRefEq=$([bool]($o[0] -match 'REF_EQUIVALENT'))"` → 第二行 `exit=1`、第三行 `hasDiff=True hasRefEq=False`。
 - **对应测试/交付物**：`scripts/verify.mjs` 的 `--ref` 差异分支；验收人 = 主 agent。
 
 ### TC-016 `scripts/render.mjs` 缺省落 `drafts/<seat>.md`，且与 `sandbox/reviewer-actuary.md` 同哈希
@@ -242,7 +242,7 @@
 - **目的**：参数存在但要证明它被读取。做法：给共享模型的 `rules.must` 追加一条 `appliesWhen:'*'` 的探针规则，展开结果必然偏离 `_baseline`，于是默认基线比对必红。
 - **前置**：TC-012 通过（不带 `--shared` 时 exit 0）。
 - **步骤**：① 造共享副本并追加探针规则；② 带 `--shared` 跑 verify；③ 记退出码并确认首行不含 `EQUIVALENT`；④ 对照组（不带 `--shared`）仍 exit 0。
-- **判据（机器）**：`$S = Join-Path $env:TEMP 'p3-shared.json'; node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('tools/docgen/builders/agent-model/models/_shared-model.json','utf8'));m.rules.must.push({id:'p3.probe',appliesWhen:'*',text:'探针规则。'});fs.writeFileSync(process.argv[1],JSON.stringify(m))" $S; $a = node skills/agent-modeling/scripts/verify.mjs tools/docgen/builders/agent-model/models/reviewer-actuary-model.json; "ctlExit=$LASTEXITCODE"; $b = node skills/agent-modeling/scripts/verify.mjs tools/docgen/builders/agent-model/models/reviewer-actuary-model.json --shared $S; "sharedExit=$LASTEXITCODE"; "sharedEq=$([bool]($b[0] -match 'EQUIVALENT'))"` → `ctlExit=0`、`sharedExit=1`、`sharedEq=False`。
+- **判据（机器）**：`$S = Join-Path $env:TEMP 'p3-shared.json'; node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('tools/agent-model/models/_shared-model.json','utf8'));m.rules.must.push({id:'p3.probe',appliesWhen:'*',text:'探针规则。'});fs.writeFileSync(process.argv[1],JSON.stringify(m))" $S; $a = node skills/agent-modeling/scripts/verify.mjs tools/agent-model/models/reviewer-actuary-model.json; "ctlExit=$LASTEXITCODE"; $b = node skills/agent-modeling/scripts/verify.mjs tools/agent-model/models/reviewer-actuary-model.json --shared $S; "sharedExit=$LASTEXITCODE"; "sharedEq=$([bool]($b[0] -match 'EQUIVALENT'))"` → `ctlExit=0`、`sharedExit=1`、`sharedEq=False`。
 - **对应测试/交付物**：`scripts/verify.mjs` 与 `render.mjs` 的 `--shared` 解析；验收人 = 主 agent。
 
 ### TC-019 skill 目录骨架：7 个文件齐（SKILL.md + 4 references + 2 scripts）
@@ -371,7 +371,7 @@
 
 | 如果改了 | 必须重跑 | 为什么 |
 |---|---|---|
-| `tools/docgen/builders/agent-model/**`（任何文件） | TC-001、TC-003、TC-004、TC-005、TC-006、TC-007、TC-026、TC-028 | 新树是全部判据的取数面；一处深度错会同时打红 import 与门禁 |
+| `tools/agent-model/**`（任何文件） | TC-001、TC-003、TC-004、TC-005、TC-006、TC-007、TC-026、TC-028 | 新树是全部判据的取数面；一处深度错会同时打红 import 与门禁 |
 | `verify-models.mjs` 的导出或 `opts` | TC-006、TC-008、TC-009、TC-010、TC-012、TC-013、TC-015 | `verify` / `anyError` 是 skill 退出码的唯一来源 |
 | `verify-models.mjs:172` 的 `skills/` 路径 | TC-007、TC-022 | 技能存在性判定与技能守卫同源（`parliament-ledger` 9 处模板引用） |
 | `render/index.mjs`、`render/sections.mjs` | TC-016、TC-026、TC-027 | 单卡哈希锚与 7 卡产物都由段函数决定 |
