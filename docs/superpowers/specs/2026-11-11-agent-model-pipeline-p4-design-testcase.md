@@ -53,7 +53,7 @@
 | M-8 | 零写席的 `typeErr` / `cardRuleLeak` | TEMP 探针：`verify('reviewer-product',{modelPath:{TEMP},shared:{内存扩展副本},baseline:false})` | `modelType=null`、`typeErr="TYPE_UNKNOWN"`、`policyDiff=false`、`cardRuleLeak=["shared.no-issue-without-fix"]`、`tierBad=""` | 结论 1/2 / TC-09 |
 | M-9 | 谓词未同步即崩 | TEMP 探针：规则命中、`predicates` 为空 | `THREW=Cannot read properties of undefined (reading 'ok')`（`sections.mjs:57`） | 结论 3 / TC-12 |
 | M-10 | 运行时 | `node -v` | `v24.22.2` | 全部判据的机器口径 |
-| M-11 | 现役 actuary 的非空分支锚 | `node --input-type=module -e "…sections.must/sections.outputs…"` | `mustLine=> 判定写回 \`issue-card.md\`。`、`outputsLines=4` | TC-04 / TC-05 |
+| M-11 | 现役 actuary 的非空分支锚 | 内存渲染 sections.must / sections.outputs | mustLine 为「判定写回 issue-card.md。」、outputsLines=4 | TC-04 / TC-05 |
 | M-12 | 原始类型不被校验 | `node --input-type=module -e "…BaseModel.validate…defaultLanding=5/true…"`（对现役 actuary） | `missing=["MISSING:defaultLanding"] number=[] bool=[] str=[]` | 结论 9 / TC-02 |
 
 **7 卡哈希锚（M-2，`tmp/agent-criteria-demo/sandbox/<seat>.md` 的 sha256，大写）**
