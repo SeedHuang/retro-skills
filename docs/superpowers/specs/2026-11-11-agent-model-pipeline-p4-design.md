@@ -6,9 +6,9 @@
 
 ## 1 目标与非目标
 
-**目标**：让模型/渲染器支持「只读、不写任何文件」的席（11 席中 9 张 `reviewer-*` 都是这一形态），并据此完成 P4 第一席 `reviewer-product` 的建模、校验、渲染与段级对照。
+**目标**：让模型/渲染器支持「只读、不写任何文件」的席（11 席中 9 张 `reviewer-*` 都是这一形态），并据此完成 P4 前两席 `reviewer-product` 与 `reviewer-interaction` 的建模、校验、渲染与段级对照。
 
-**非目标**：本轮不做其余 10 席；不改 `agents/**`；不改 policy 层（`SEAT_POLICY` / `SEAT_NAMES`）；不给零写席虚拟落点。
+**非目标**：不改 `agents/**`；不改 policy 层（`SEAT_POLICY` / `SEAT_NAMES`）；不给零写席虚拟落点；其余 9 席按同形态逐席继续，不在本轮一次做完。
 
 ## 2 决策
 
@@ -59,9 +59,9 @@
 
 | # | 命令 | 通过判据 |
 |---|---|---|
-| G1 | `node --test tmp/agent-criteria-demo/test-p1.test.mjs` | `pass 29` / `fail 0`（7 席渲染字节不变） |
-| G2 | `node tools/agent-model/verify-models.mjs` | 8 行 `EQUIVALENT`（含 reviewer-product），exit 0 |
-| G3 | `node tmp/agent-criteria-demo/render-all.mjs && node tmp/agent-criteria-demo/diff-report.mjs` | `sandbox/*.md` = 9（8 卡 + 1 报告） |
+| G1 | `node --test tmp/agent-criteria-demo/test-p1.test.mjs` | `pass 29` / `fail 0`（P1 原有 7 席渲染字节不变；卡片/报告计数改为按模型数派生） |
+| G2 | `node tools/agent-model/verify-models.mjs` | N 行 `EQUIVALENT`（N = `models/*-model.json` 数，本轮 9），exit 0 |
+| G3 | `node tmp/agent-criteria-demo/render-all.mjs && node tmp/agent-criteria-demo/diff-report.mjs` | `sandbox/*.md` = N + 1（本轮 10） |
 | G4 | 渲染产物 `sandbox/reviewer-product.md` | 无 `产出` 段（零写）、有 `权限` 段；无 `写回 。` / 无空标题；duty 行含 `问题卡（只记入评审账本，不写文件）` |
 | G5 | 段级 diff vs `agents/reviewer-product.md` | 段数 8/7（沙箱多 `权限`，无 `产出`）；边界段逐字相等；其余段差异仅限 K1（多权限段）与 K2（判据/措辞由 observable 派生）；无 `写回 。`、无空标题 |
 | G6 | `npm run check` | 末行 `check 全部通过` |

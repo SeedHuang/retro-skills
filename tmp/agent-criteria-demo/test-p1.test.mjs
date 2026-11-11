@@ -20,6 +20,7 @@ const POLICY = ['detective-observer', 'reviewer-audit']
 const NONPOLICY = ['evidence-reader', 'respondent-architect', 'respondent-dev', 'reviewer-actuary', 'reviewer-ai']
 const ALLOC = { 'detective-observer': ['producer', 'policy'], 'reviewer-audit': ['producer', 'policy'], 'evidence-reader': ['readOnly', 'literal'], 'respondent-architect': ['readOnly', 'literal'], 'respondent-dev': ['command', 'literal'], 'reviewer-actuary': ['readOnly', 'default'], 'reviewer-ai': ['readOnly', 'default'] }
 
+const MODEL_COUNT = () => readdirSync(MODELS).filter((f) => f.endsWith('-model.json') && !f.startsWith('_')).length
 const model = (s) => JSON.parse(readFileSync(join(MODELS, `${s}-model.json`), 'utf8'))
 const render = (s) => renderModel(join(MODELS, `${s}-model.json`), SHARED).text
 const section = (text, name) => text.split(/\n## /).find((x) => x.startsWith(name + '\n')) || ''
@@ -71,7 +72,7 @@ test('TC-001/002 7 席 tier 与 boundary 分配', () => {
 test('TC-044 verify 全绿且 exit 0', () => {
   const r = run([join(ENGINE, 'verify-models.mjs')], ENGINE)
   assert.equal(r.status, 0, r.stdout + r.stderr)
-  assert.equal(r.stdout.trim().split('\n').filter((l) => /EQUIVALENT$/.test(l)).length, 8)
+  assert.equal(r.stdout.trim().split('\n').filter((l) => /EQUIVALENT$/.test(l)).length, MODEL_COUNT())
 })
 
 test('TC-016 tools = TIERS[seat.tier]', () => {
@@ -255,7 +256,7 @@ test('TC-041 非空带首尾空白只发 WHITESPACE', () => {
 test('TC-024/025 render-all 落 sandbox、8 文件、两次字节同、无 sandbox 字样', () => {
   assert.equal(run(['render-all.mjs']).status, 0)
   const files = readdirSync(join(HERE, 'sandbox')).filter((f) => f.endsWith('.md') && f !== 'diff-report.md').sort()
-  assert.equal(files.length, 8)
+  assert.equal(files.length, MODEL_COUNT())
   const before = Object.fromEntries(files.map((f) => [f, sha(join(HERE, 'sandbox', f))]))
   assert.equal(run(['render-all.mjs']).status, 0)
   for (const f of files) {
@@ -268,10 +269,10 @@ test('TC-026 --out 相对脚本目录解析（cwd 故意设为仓库根）', () 
   const script = join(HERE, 'render-all.mjs')
   const abs = join(HERE, 'abs-out')
   assert.equal(run([script, '--out', 'rel-out'], ROOT).status, 0)
-  assert.equal(readdirSync(join(HERE, 'rel-out')).filter((f) => f.endsWith('.md')).length, 8)
+  assert.equal(readdirSync(join(HERE, 'rel-out')).filter((f) => f.endsWith('.md')).length, MODEL_COUNT())
   assert.ok(!existsSync(join(ROOT, 'rel-out')), '不得按 process.cwd() 解析')
   assert.equal(run([script, '--out', abs], ROOT).status, 0)
-  assert.equal(readdirSync(abs).filter((f) => f.endsWith('.md')).length, 8)
+  assert.equal(readdirSync(abs).filter((f) => f.endsWith('.md')).length, MODEL_COUNT())
   rmSync(join(HERE, 'rel-out'), { recursive: true, force: true })
   rmSync(abs, { recursive: true, force: true })
 })
@@ -288,7 +289,7 @@ test('TC-042/028 报告五节列名冻结且两次字节相同', () => {
   assert.match(t, /^\| 席 \| 缺失项 \| 原因 \|$/m)
   assert.match(t, /^\| # \| 差异 \| 依据 \|$/m)
   assert.match(t, /reviewer-audit \| 输出格式 \|/)
-  assert.equal(readdirSync(join(HERE, 'sandbox')).filter((f) => f.endsWith('.md')).length, 9, '8 张卡 + 1 份报告')
+  assert.equal(readdirSync(join(HERE, 'sandbox')).filter((f) => f.endsWith('.md')).length, MODEL_COUNT() + 1, 'N 张卡 + 1 份报告')
   assert.ok(!/\d{4}-\d{2}-\d{2}T/.test(t))
   const first = sha(p)
   assert.equal(run(['diff-report.mjs']).status, 0)

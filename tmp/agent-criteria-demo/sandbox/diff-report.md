@@ -12,6 +12,7 @@
 | reviewer-ai | ReviewerModel | 83 | 78 | 2006 | 2130 | 9/7 | default | 是 | 有 |
 | reviewer-audit | AuditorModel | 109 | 99 | 3667 | 3344 | 10/7 | policy | 是 | 有 |
 | reviewer-product | ReviewerModel | 76 | 77 | 1583 | 2007 | 8/7 | default | 是 | 有 |
+| reviewer-interaction | ReviewerModel | 76 | 77 | 1592 | 2018 | 8/7 | default | 是 | 有 |
 
 ## 段级差异
 
@@ -90,6 +91,14 @@
 | reviewer-product | 输出格式 | 文本不同 | -194 |
 | reviewer-product | 权限 | 仅沙箱 | - |
 | reviewer-product | 边界 | 一致 | 0 |
+| reviewer-interaction | 职责 | 文本不同 | 0 |
+| reviewer-interaction | 一定会 | 文本不同 | -180 |
+| reviewer-interaction | 禁止 | 文本不同 | -35 |
+| reviewer-interaction | 冲突裁决 | 文本不同 | -25 |
+| reviewer-interaction | 本席清单 | 文本不同 | -15 |
+| reviewer-interaction | 输出格式 | 文本不同 | -194 |
+| reviewer-interaction | 权限 | 仅沙箱 | - |
+| reviewer-interaction | 边界 | 一致 | 0 |
 
 ## 边界核对
 
@@ -103,6 +112,7 @@
 | reviewer-ai | default | 41 | 41 | 是 |
 | reviewer-audit | policy | 1240 | 1240 | 是 |
 | reviewer-product | default | 41 | 41 | 是 |
+| reviewer-interaction | default | 41 | 41 | 是 |
 
 ## 缺失项
 
