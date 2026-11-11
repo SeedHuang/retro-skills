@@ -16,10 +16,11 @@
 |---|---|---|
 | D1 | 零写席 = `seat.artifacts: []` + `outputs.items: []` + `defaultLanding: null` + `permissions.write.allow: []`；duty 用 `duty.action.landingLabel`（display 文本，只作展示）说明「写回哪里」 | 现役卡 `agents/reviewer-product.md:75-76`「不得创建、修改、删除任何文件」；policy 未登记该席，走 `__default__`（artifacts=[]），与本形态一致 |
 | D1a | 零写席无法靠 `outputs.items` 推断类型 → 新增**可选显式类型** `modelType`（仅接受三个已知类型名）；有它时优先于特征推断 | `types/derived.mjs:8-15` 的 `ReviewerModel.matches` 依赖 `outputs.items` 含 `artifact.issueCard`，零写席恒不匹配 → `TYPE_UNKNOWN` |
-| D1b | 零写评审席仍算「出问题卡的席」：`cardRuleLeak` 的 `issuesCard` 判据由「写 artifact」扩为「写 artifact 或 `modelType === ReviewerModel`」 | `verify-models.mjs:215-218` 会把 `no-issue-without-fix` 判成 `ISSUE_RULE_ON_NON_ISSUER`，而卡面确实有该禁令 |
+| D1b | 「出问题卡」按**数据**判：`seat.artifacts` 含 `issueCard` 或 `outputFormat.requiredFields` 含 `suggestion`；不看借用类型 | 按类型放行会让 sdet/speaker 永久绕过 `ISSUE_RULE_ON_NON_ISSUER`；sdet 因此移出 `no-issue-without-fix`（该禁令是评审席模板样板） |
 | D2 | 5 条「一定会」与 4 条「禁止」直接复用共享层规则，只把 `reviewer-product` 追加进对应 `appliesWhen` | 共享 `rules.must` 的 4 条与 `rules.never` 的 4 条与卡面逐条对应（`no-perfunctory-fix` 不在卡面，不追加） |
 | D3 | 7 条清单项共用同一判据形状（原文摘句非空），逐项差异只在「条目」列 | 卡面 7 项判据文字统一为「核对 X 并写出原文引句」；不为此发明第二套字段 |
 | D4 | 其余 10 席按同一形态逐席串行，每席一闭环（建模 → verify → 渲染 → 段级 diff → 人工确认） | PRD:224-228 |
+| D5 | 边界形态按固定顺序判定：卡面=默认句 → `default`；有写权限且 policy 能表达 → **必须 `policy`**；否则 `literal`（`text` 与卡面逐字相等）。禁止为「diff 一致」把 policy 席的边界抄成 literal | P1 spec S2；speaker 首次误用 literal，暴露出「不可测散文换字节一致」，已回退并加守卫 |
 
 ## 3 schema 与渲染器改动（唯一代码面）
 
@@ -60,12 +61,13 @@
 | # | 命令 | 通过判据 |
 |---|---|---|
 | G1 | `node --test tmp/agent-criteria-demo/test-p1.test.mjs` | `pass 29` / `fail 0`（P1 原有 7 席渲染字节不变；卡片/报告计数改为按模型数派生） |
-| G2 | `node tools/agent-model/verify-models.mjs` | N 行 `EQUIVALENT`（N = `models/*-model.json` 数，本轮 9），exit 0 |
-| G3 | `node tmp/agent-criteria-demo/render-all.mjs && node tmp/agent-criteria-demo/diff-report.mjs` | `sandbox/*.md` = N + 1（本轮 10） |
+| G2 | `node tools/agent-model/verify-models.mjs` | N 行 `EQUIVALENT`（N = `models/*-model.json` 数，本轮 11），exit 0 |
+| G3 | `node tmp/agent-criteria-demo/render-all.mjs && node tmp/agent-criteria-demo/diff-report.mjs` | `sandbox/*.md` = N + 1（本轮 12） |
 | G4 | 渲染产物 `sandbox/reviewer-product.md` | 无 `产出` 段（零写）、有 `权限` 段；无 `写回 。` / 无空标题；duty 行含 `问题卡（只记入评审账本，不写文件）` |
 | G5 | 段级 diff vs `agents/reviewer-product.md` | 段数 8/7（沙箱多 `权限`，无 `产出`）；边界段逐字相等；其余段差异仅限 K1（多权限段）与 K2（判据/措辞由 observable 派生）；无 `写回 。`、无空标题 |
 | G6 | `npm run check` | 末行 `check 全部通过` |
 | G7 | `scs check skills ... --json` | `findings` 为空（schema 改动不引入技能违规） |
+| G8 | `node --test tools/agent-model/test/boundary-source.test.mjs` | 3 条全过：渲染正文 = 声明来源；有写权限席必须 `policy`；`default` 仅当卡面 = 默认句 |
 
 ## 6 风险与留观
 

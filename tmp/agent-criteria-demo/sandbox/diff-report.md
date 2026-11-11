@@ -14,7 +14,7 @@
 | reviewer-product | ReviewerModel | 76 | 77 | 1583 | 2007 | 8/7 | default | 是 | 有 |
 | reviewer-interaction | ReviewerModel | 76 | 77 | 1592 | 2018 | 8/7 | default | 是 | 有 |
 | senior-sdet | ReviewerModel | 85 | 86 | 2663 | 3142 | 8/7 | policy | 是 | 有 |
-| speaker | ReviewerModel | 66 | 65 | 1299 | 1279 | 8/7 | literal | 是 | 有 |
+| speaker | ReviewerModel | 80 | 65 | 2296 | 1279 | 8/7 | policy | 否 | 有 |
 
 ## 段级差异
 
@@ -116,7 +116,7 @@
 | speaker | 输出格式 | 文本不同 | -101 |
 | speaker | 产出 | 仅沙箱 | - |
 | speaker | 权限 | 仅沙箱 | - |
-| speaker | 边界 | 一致 | 0 |
+| speaker | 边界 | 文本不同 | 997 |
 | speaker | 禁止 | 仅现役 | - |
 
 ## 边界核对
@@ -133,7 +133,7 @@
 | reviewer-product | default | 41 | 41 | 是 |
 | reviewer-interaction | default | 41 | 41 | 是 |
 | senior-sdet | policy | 1080 | 1080 | 是 |
-| speaker | literal | 84 | 84 | 是 |
+| speaker | policy | 1081 | 84 | 否 |
 
 ## 缺失项
 

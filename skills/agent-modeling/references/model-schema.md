@@ -22,7 +22,7 @@
 | `records` | 记录契约（`label` / `unit` / `source` / `shape[]`） | 是 |
 | `escalation` | 越界处置：`steps[]`（halt / report / voidRound）+ 上报字段 | 否 |
 | `permissions` | action / write / command 三维，见 `permissions.md` | 是 |
-| `boundary` | `kind` 三选一：`policy` / `literal` / `default` | 是 |
+| `boundary` | `kind` 三选一：`policy` / `literal` / `default`；选择规则见下节，写错不报错但语义不可核 | 是 |
 
 ## 共享层键（20）
 
@@ -43,6 +43,17 @@
 7. 其余键（`seat` / `checklist` / `checkCriteria` / `outputs` / `permissions` / `boundary` …）**不继承**，单席必须写全。
 
 `appliesWhen` 取值：`'*'`（全席）或席名数组。
+
+## 边界形态选择规则
+
+`boundary.kind` 不是「任选一个能抄得像的」，按下列顺序唯一确定：
+
+1. 卡面边界正文等于 `DEFAULT_BOUNDARY` → `default`。
+2. 该席在 `SEAT_POLICY` 有登记、`capabilities` 含 `write`、且卡面边界不是默认句 → **必须 `policy`**（由 `renderBoundary(seat)` 派生）。禁止把卡面散文抄成 `literal`：那样等于用「不可测的散文」换「字节一致」。
+3. 其余（无写权限 / policy 无法表达该席边界）→ `literal`，且 `text` 必须与现役卡该段逐字相等。
+4. `policy` 档但 `TIERS[tier]` 不含 `Write` → `BOUNDARY_POLICY_NONWRITER`，回到 3。
+
+判据不是靠自觉：`tools/agent-model/test/boundary-source.test.mjs` 逐席核「渲染正文 = 声明来源」，并对有写权限的席强制 `policy`。写新模型前先跑它，红即改。
 
 ## 渲染顺序（段表）
 
