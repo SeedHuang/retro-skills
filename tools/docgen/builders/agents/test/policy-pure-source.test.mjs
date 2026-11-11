@@ -1191,6 +1191,21 @@ test('S6-TC-G03 边界句单源：有写落点的席全部 = renderBoundary，�
     assert.equal(Object.hasOwn(JSON.parse(readFileSync(join('tools/docgen/dsl/agents/seats', f), 'utf8')), 'boundary'),
       false, `${f}: 席文件不得自带 boundary（D6b）`);
   }
+  // S1（2026-11-11）：权限断言不得越出 `## 边界` 段——边界之外的散文段（description / 职责 / 一定会 /
+  // 禁止 / 本席清单 / 职责缘由）同样可写「不改任何文件」，而卡面 gate 只比字节、不判语义。
+  // 扫描面三处，覆盖所有会被人读到的文字来源：席数据源 → docs 投影 → 模型数据。
+  const WRITE_DENIAL = ['不得创建、修改、删除任何文件', '不改任何文件', '不得写任何文件', '只读评审角色', '只读席位'];
+  for (const seat of [...writers].sort()) {
+    const surfaces = [`tools/docgen/dsl/agents/seats/${seat}.json`, `docs/agents/${seat}.md`,
+      `tools/agent-model/models/${seat}-model.json`].filter((p) => existsSync(p));
+    assert.ok(surfaces.length >= 2, `${seat}: 扫描面缺失（席 JSON / docs 投影至少两处）`);
+    for (const rel of surfaces) {
+      const text = readFileSync(rel, 'utf8');
+      for (const w of WRITE_DENIAL) {
+        assert.equal(text.includes(w), false, `${rel} 断言「${w}」，但 ${seat} 档位含 Write（权限句只许出现在边界段）`);
+      }
+    }
+  }
   const sd = agentData.find((a) => a.name === 'senior-sdet');
   assert.equal(sd.boundary, patternRegistry.boundaryBySeat['senior-sdet']);
   assert.ok(sd.boundary.includes('只允许写'), '专用边界必须写「只允许写」清单（S4 §5.1 :132）');
