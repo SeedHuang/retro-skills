@@ -42,6 +42,7 @@ function checkShape(type, v, p) {
 }
 
 function checkValue(type, v, p) {
+  if (type === 'string|null') return v === null || typeof v === 'string' ? null : `TYPE:${p}!=string|null`
   if (type === 'Escalation|null') return v === null ? null : checkShape('Escalation', v, p)
   if (type.startsWith('Map<')) {
     const inner = type.slice(4, -1)
@@ -69,10 +70,11 @@ export class BaseModel {
     version: ['number', true],
     id: ['string', true],
     extends: ['string', true],
+    modelType: ['string', false],
     seat: ['Seat', true],
     duty: ['Duty', true],
     timing: ['Timing', true],
-    defaultLanding: ['string', true],
+    defaultLanding: ['string|null', true],
     checklist: ['Checklist', true],
     checkCriteria: ['Map<Criterion>', true],
     templates: ['Map<Template>', true],
@@ -105,6 +107,10 @@ export class BaseModel {
       }
       const e = checkValue(type, obj[k], k)
       if (e) errs.push(e)
+    }
+    // 显式类型只接受三个已知类型名；不写则不校验（退回特征推断）
+    if ('modelType' in obj && !['ReviewerModel', 'AuditorModel', 'RespondentModel'].includes(obj.modelType)) {
+      errs.push(`MODELTYPE_UNKNOWN:${obj.modelType}`)
     }
     return errs.concat(this.extra(obj))
   }

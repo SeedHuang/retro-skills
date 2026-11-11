@@ -101,8 +101,11 @@ export const sections = {
 
   duty(M, shared, h) {
     const a = M.duty.action
-    const landingText = M.outputs.items.map((i) => `${h.F[i.artifact].text}（${i.phase}）`).join(M.duty.action.landingJoiner || '与 ')
     const subject = typeof a.landingSubject === 'string' ? a.landingSubject : a.emit[a.landingSubject.index]
+    // 零写席（outputs.items 为空）用 landingLabel 说明「写回哪里」，不出现空落点
+    const landingText = M.outputs.items.length
+      ? M.outputs.items.map((i) => `${h.F[i.artifact].text}（${i.phase}）`).join(M.duty.action.landingJoiner || '与 ')
+      : `${a.landingLabel || subject}（只记入评审账本，不写文件）`
     const pm = M.permissions
     const allow = pm.action.allow.map((x) => shared.actions[x]).join('、')
     const forbids = pm.action.forbid.map((x) => '不' + (M.permissionGroups[x]?.label || shared.actions[x] || x)).join('，')
@@ -119,7 +122,7 @@ export const sections = {
     if (!M.must?.length) return []
     const out = ['## 一定会', `> 时机：${h.timingText}。`]
     for (const g of M.globalRules) out.push(`> ${g.text}`)
-    out.push(`> 判定写回 ${h.F[M.defaultLanding].text}。`, '')
+    out.push(M.defaultLanding ? `> 判定写回 ${h.F[M.defaultLanding].text}。` : '> 判定只记入本轮评审账本，不写盘。', '')
     let n = 0
     for (const rule of M.must) {
       for (const target of rule.targets) {
@@ -182,6 +185,7 @@ export const sections = {
     return out
   },
   outputs(M, shared, h) {
+    if (!M.outputs.items.length) return []
     const out = ['## 产出']
     for (const o of M.outputs.items) {
       const tpl = M.templates[o.template]

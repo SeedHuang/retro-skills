@@ -211,15 +211,18 @@ export function verify(name, opts = {}) {
   const writeScopeBad = JSON.stringify(writeAllow) === JSON.stringify(seatArts) ? '' : `WRITE_SCOPE_MISMATCH model=[${writeAllow.join(',')}] seat=[${seatArts.join(',')}]`
   const outputUnwritable = (exp.outputs?.items || []).filter((i) => !writeAllow.includes(i.artifact)).map((i) => i.artifact)
 
-  // 规则的目标是问题卡某栏时，本席必须真出问题卡；否则「不得出问题卡」与「不得留空建议解法栏」同卡互斥
-  const issuesCard = seatArts.includes('artifact.issueCard')
+  const hitClasses = MODEL_CLASSES.filter((C) => C.matches(exp))
+  const explicitType = exp.modelType || null
+  const modelType = explicitType || (hitClasses.length === 1 ? hitClasses[0].typeName : null)
+  const typeErr = explicitType
+    ? (MODEL_CLASSES.some((C) => C.typeName === explicitType) ? '' : 'TYPE_UNKNOWN:' + explicitType)
+    : (hitClasses.length === 0 ? 'TYPE_UNKNOWN' : hitClasses.length > 1 ? 'TYPE_CONFLICT:' + hitClasses.map((c) => c.typeName).join(',') : '')
+
+  // 规则的目标是问题卡某栏时，本席必须真出问题卡；零写评审席仍产问题卡内容（只是不落盘），故按类型认
+  const issuesCard = seatArts.includes('artifact.issueCard') || modelType === 'ReviewerModel'
   const cardTargetRules = [...(sh.rules.must || []), ...(sh.rules.never || [])]
     .filter((r) => (r.targets || []).some((t) => String(t.object || '').startsWith('issue.card.')))
   const cardRuleLeak = issuesCard ? [] : cardTargetRules.filter((r) => pick(r, exp.seat.id)).map((r) => r.id)
-
-  const hitClasses = MODEL_CLASSES.filter((C) => C.matches(exp))
-  const modelType = hitClasses.length === 1 ? hitClasses[0].typeName : null
-  const typeErr = hitClasses.length === 0 ? 'TYPE_UNKNOWN' : hitClasses.length > 1 ? 'TYPE_CONFLICT:' + hitClasses.map((c) => c.typeName).join(',') : ''
 
   return { name, tier, tierBad, boundaryBad, modelType, typeErr, must: exp.must.length, never: exp.never.length, pred: Object.keys(exp.predicates).length, rec: Object.keys(exp.records).length, errs, ownFail, policyDiff, modelFiles, policyFiles, pathUndefined, actionConflict, unknownAction, permOrphan, permUnobservable, titleDrifts, pathBad, skillBad, triggerBad, actionBad, outputTextHandwritten, writeScopeBad, outputUnwritable, cardRuleLeak }
 }
@@ -234,7 +237,7 @@ let failed = false
 if (isMain) {
   const names = process.argv.slice(2).length
     ? process.argv.slice(2)
-    : ['evidence-reader', 'respondent-architect', 'respondent-dev', 'reviewer-actuary', 'reviewer-ai', 'detective-observer', 'reviewer-audit']
+    : ['evidence-reader', 'respondent-architect', 'respondent-dev', 'reviewer-actuary', 'reviewer-ai', 'detective-observer', 'reviewer-audit', 'reviewer-product']
 
   for (const n of names) {
     const r = verify(n)

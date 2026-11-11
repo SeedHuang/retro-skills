@@ -282,7 +282,8 @@
         "reviewer-actuary",
         "reviewer-ai",
         "evidence-reader",
-        "detective-observer"
+        "detective-observer",
+        "reviewer-product"
       ],
       "slots": [
         {
@@ -307,7 +308,8 @@
         "reviewer-actuary",
         "reviewer-ai",
         "evidence-reader",
-        "detective-observer"
+        "detective-observer",
+        "reviewer-product"
       ],
       "slots": [
         {
@@ -326,7 +328,8 @@
         "reviewer-actuary",
         "reviewer-ai",
         "evidence-reader",
-        "detective-observer"
+        "detective-observer",
+        "reviewer-product"
       ],
       "slots": [
         {
@@ -398,7 +401,8 @@
         "reviewer-actuary",
         "reviewer-ai",
         "evidence-reader",
-        "detective-observer"
+        "detective-observer",
+        "reviewer-product"
       ],
       "slots": [
         {
@@ -422,7 +426,8 @@
         "reviewer-actuary",
         "reviewer-ai",
         "evidence-reader",
-        "detective-observer"
+        "detective-observer",
+        "reviewer-product"
       ],
       "slots": [
         {
@@ -444,7 +449,8 @@
         "reviewer-actuary",
         "reviewer-ai",
         "evidence-reader",
-        "detective-observer"
+        "detective-observer",
+        "reviewer-product"
       ],
       "slots": [
         {
@@ -471,7 +477,8 @@
           "reviewer-actuary",
           "reviewer-ai",
           "evidence-reader",
-          "detective-observer"
+          "detective-observer",
+          "reviewer-product"
         ]
       },
       {
@@ -487,7 +494,8 @@
           "reviewer-actuary",
           "reviewer-ai",
           "evidence-reader",
-          "detective-observer"
+          "detective-observer",
+          "reviewer-product"
         ]
       },
       {
@@ -503,7 +511,8 @@
           "reviewer-actuary",
           "reviewer-ai",
           "evidence-reader",
-          "detective-observer"
+          "detective-observer",
+          "reviewer-product"
         ]
       },
       {
@@ -520,7 +529,8 @@
         "appliesWhen": [
           "reviewer-audit",
           "reviewer-actuary",
-          "reviewer-ai"
+          "reviewer-ai",
+          "reviewer-product"
         ]
       }
     ],
@@ -535,7 +545,8 @@
         ],
         "appliesWhen": [
           "reviewer-actuary",
-          "reviewer-ai"
+          "reviewer-ai",
+          "reviewer-product"
         ]
       },
       {
@@ -564,7 +575,8 @@
           "reviewer-actuary",
           "reviewer-ai",
           "evidence-reader",
-          "detective-observer"
+          "detective-observer",
+          "reviewer-product"
         ]
       },
       {
@@ -580,7 +592,8 @@
           "reviewer-actuary",
           "reviewer-ai",
           "evidence-reader",
-          "detective-observer"
+          "detective-observer",
+          "reviewer-product"
         ]
       },
       {
@@ -596,7 +609,8 @@
           "reviewer-actuary",
           "reviewer-ai",
           "evidence-reader",
-          "detective-observer"
+          "detective-observer",
+          "reviewer-product"
         ]
       }
     ]
@@ -1330,7 +1344,8 @@
   },
   "perspectives": {
     "ai-engineering": "AI 工程视角",
-    "cost-benefit": "成本与收益视角"
+    "cost-benefit": "成本与收益视角",
+    "product": "产品视角"
   },
   "schedules": {
     "speaker": "议长"

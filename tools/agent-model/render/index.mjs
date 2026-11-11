@@ -11,7 +11,10 @@ const TYPE_SECTIONS = {
   RespondentModel: ['frontmatter', 'duty', 'must', 'never', 'conflict', 'checklist', 'outputFormat', 'outputs', 'permissions', 'escalation', 'boundary'],
 }
 
+const TYPE_NAMES = new Set(CLASSES.map((C) => C.typeName))
+
 export function typeOf(m) {
+  if (m.modelType) return TYPE_NAMES.has(m.modelType) ? m.modelType : null
   const hit = CLASSES.filter((C) => C.matches(m))
   return hit.length === 1 ? hit[0].typeName : null
 }
