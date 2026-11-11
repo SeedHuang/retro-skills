@@ -1172,27 +1172,29 @@ test('S6-TC-G02 gate → baseline N/N，N 派生不写死', () => {
   assert.equal(readFileSync('tools/docgen/builders/agents/test/policy-pure-source.test.mjs', 'utf8').includes(`${N}/${N}`), false);
 });
 
-test('S6-TC-G03 默认边界句的 11 席、evidence-reader 与 senior-sdet 专用边界句不变', () => {
-  const own = new Set([...Object.keys(patternRegistry.boundaryBySeat), 'evidence-reader',
-    'speaker', 'respondent-architect', 'respondent-dev']);
-  // 2026-10-31 迁移改判（S6-TC-G03 加注，原文不删）：senior-sdet 职责要写 testcase.md，与评审席模板「只允许写本次
-  // 评审账本 / 禁写『代码、测试』」结构不同构 → 该席自带专用边界常量（非 renderBoundary）。
-  // 计数口径：`own` 3 → 4（senior-sdet 从「既非 own 也非 default 的手写模板席」并入 own）；
-  // `defSeats` 仍为 11（15 − 4 自带 − 0；原来的 `a.name !== 'senior-sdet'` 手工排除随之冗余）。
-  // 2026-11-08 S3-A 扩席：三新席各带专用 boundary（不进 boundaryBySeat，走席 JSON 顶层）→ own 7
-  const defSeats = agentData.filter((a) => !own.has(a.name));
-  assert.equal(own.size, 7, '自带边界 = 2 producer + evidence-reader + senior-sdet + 三新席');
-  assert.equal(defSeats.length, 11, '卡面渲 DEFAULT_BOUNDARY 的应为 11 席（18 − 7 自带）'); // counter-probe: off（18 是席总数说明，不是断言行计数）
+test('S6-TC-G03 边界句单源：有写落点的席全部 = renderBoundary，其余席渲 DEFAULT_BOUNDARY', () => {
+  // 2026-11-11 D6b：边界不再「手抄 / 自带」，判据改成与档位同一条（含 Write ⇒ 走策略派生），并禁止席 JSON 自带 boundary
+  const writers = new Set(Object.keys(patternRegistry.boundaryBySeat));
+  const expected = agentData.filter((a) => toolsForSeat(a.name).includes('Write')).map((a) => a.name);
+  assert.deepEqual([...writers].sort(), expected.sort(), 'boundaryBySeat 必须恰 = 档位含 Write 的席');
+  const defSeats = agentData.filter((a) => !writers.has(a.name));
+  assert.equal(defSeats.length, agentData.length - writers.size, '其余席（零写）渲 DEFAULT_BOUNDARY');
   for (const a of defSeats) assert.equal(a.boundary ?? DEFAULT_BOUNDARY, DEFAULT_BOUNDARY, a.name);
+  for (const a of agentData.filter((x) => writers.has(x.name))) {
+    assert.equal(a.boundary, renderBoundary(a.name), `${a.name}: 边界必须 = renderBoundary 的渲染结果`);
+  }
   // ③ 条目自带 boundary 只许 ∈ DECLARED_SLOT_SEATS（S5 既有断言口径，spec:121；不新增守卫）
-  assert.equal(agentData.filter((a) => Object.hasOwn(a, 'boundary') && !own.has(a.name)).length, 0,
+  assert.equal(agentData.filter((a) => Object.hasOwn(a, 'boundary') && !writers.has(a.name)).length, 0,
     '条目自带 boundary 越出 DECLARED_SLOT_SEATS');
+  // 席 JSON 不得再自带手抄边界句：写了会盖掉派生值，且卡面与策略脱钩后无法机械测
+  for (const f of readdirSync('tools/docgen/dsl/agents/seats')) {
+    assert.equal(Object.hasOwn(JSON.parse(readFileSync(join('tools/docgen/dsl/agents/seats', f), 'utf8')), 'boundary'),
+      false, `${f}: 席文件不得自带 boundary（D6b）`);
+  }
   const sd = agentData.find((a) => a.name === 'senior-sdet');
-  assert.equal(typeof sd.boundary, 'string', 'senior-sdet 迁移后必须注入专用 boundary（B3 裁定 2026-10-31）');
   assert.equal(sd.boundary, patternRegistry.boundaryBySeat['senior-sdet']);
   assert.ok(sd.boundary.includes('只允许写'), '专用边界必须写「只允许写」清单（S4 §5.1 :132）');
   assert.equal(sha(DEFAULT_BOUNDARY), goldenOf('default-boundary'));
-  assert.equal(sha(agentData.find((a) => a.name === 'evidence-reader').boundary), goldenOf('evidence-reader-boundary'));
   assert.equal(sha(sd.boundary), goldenCurOf('senior-sdet'), 'senior-sdet 专用边界句黄金必须对位');
 });
 

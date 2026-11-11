@@ -23,6 +23,7 @@
 | D5 | 边界形态按固定顺序判定：卡面=默认句 → `default`；有写权限且 policy 能表达 → **必须 `policy`**；否则 `literal`（`text` 与卡面逐字相等）。禁止为「diff 一致」把 policy 席的边界抄成 literal | P1 spec S2；speaker 首次误用 literal，暴露出「不可测散文换字节一致」，已回退并加守卫 |
 | D6 | **D5 的口径改按「模型写落点」判**：`seat.artifacts` / `write.allow` / `defaultLanding` / `landingMode:file` 任一非空 ⇒ 必须 `policy` 且档位含 `Write`；全空 ⇒ 必须 `default`；**模型不得再用 `literal`**（渲染器保留，供副本测试） | `literal` 只能手抄卡面散文，散文与模型数据可各改各的而不报警；5 席（取证/架构答辩/研发答辩/精算/AI）声明写产物却是 `readOnly`/`command` 档，边界文字无法由任何数据复算 |
 | D6a | 补 `WRITE_TIER_MISMATCH` 校验码 + 给 5 席补 `write` capability（→ `sdet` / `producer`） | 「有落点却没有 Write 工具」是空头承诺；补档位后边界才能由 `renderBoundary` 派生 |
+| D6b | 卡面边界收成与模型同一条判据：`boundaryBySeat` 由「档位含 `Write`」现算（9 席），4 个席 JSON 的 `boundary` 全删（`speaker` 一并改派生）；席级 `roleKind` 覆盖角色名词（答辩方 / 阅读取证员）；`S6-TC-G03` 加「席 JSON 不得自带 `boundary`」守卫 | 手抄句会与新档位自相矛盾（例：「不得创建、修改、删除任何文件」+ `Write`），且这类矛盾没有任何断言能抓到 |
 
 ## 3 schema 与渲染器改动（唯一代码面）
 

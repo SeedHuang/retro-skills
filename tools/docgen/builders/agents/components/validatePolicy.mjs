@@ -254,6 +254,15 @@ export function validatePolicy() {
       fail('ForbiddenGroupGranted', `${seat}:writeScope=spec.testcase:not-allowed`);
     }
   }
+  // 席级文本槽（`ROLE_KIND` / `HOST_RULE` 的席级覆盖）：空串 / 非字符串会渲出空句，必须判红（形态 → 存在性 → 禁止）
+  for (const [seat, s] of Object.entries(SEATS.SEATS)) {
+    for (const k of ['roleKind', 'hostRule']) {
+      if (!hasOwn(s, k)) continue;
+      if (typeof s[k] !== 'string' || s[k].trim() === '') {
+        fail('UnknownPolicyRef', `${seat}:${k}=(invalid)`);
+      }
+    }
+  }
   // 显示名扫描面（S6-B §3.3 / S3-A §5）：只判 `roleKind` / `label` 两个结构化字段，不把 `hostRule` 或全文并入——
   // §9 的 `display: '议长'` 与 `hostRule` 里的「议长」同词，按全文 includes 判会让登记新席必红。
   for (const seat of Object.keys(SEATS.SEATS)) {

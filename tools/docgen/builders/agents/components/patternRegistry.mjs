@@ -25,15 +25,15 @@ export function resolveDomain(agent) {
   return d || DOMAIN;
 }
 
-// 席名 → 边界句（只登记显式声明槽位的席；其余席走 DEFAULT_BOUNDARY）。
-// 三席的值 = `renderBoundary(席)` 的渲染结果（spec §3.6 / S6-B §3.6：`senior-sdet` 由写作用域数据渲染，
-// 该席专用边界常量已删，句子回归「数据 → 渲染」单源）。
-// 单独导出是为了让 agentData 的 map 直接按席取句（spec §5），registry 内引用同一对象（不是第二份表）
-export const boundaryBySeat = {
-  'reviewer-audit': renderBoundary('reviewer-audit'),
-  'detective-observer': renderBoundary('detective-observer'),
-  'senior-sdet': renderBoundary('senior-sdet'),
-};
+// 席名 → 边界句（只登记**有写落点**的席；零写席不登记 → `renderCard` 回落 DEFAULT_BOUNDARY）。
+// 判据 = 档位含 Write（与「有写落点 ⇒ 边界由策略派生」同一条）：由 `SEAT_POLICY` 现算，不手写第二份名单——
+// 新增 writer 席自动跟随，漏登记会让卡面边界与权限脱钩（S5-TC-B08 判红）。
+// 席文件不得再自带 `boundary`（S6-G03）：手抄句既不可测，也会盖掉这里的派生值。
+export const boundaryBySeat = Object.fromEntries(
+  SEAT_NAMES
+    .filter((s) => (SEAT_POLICY[s].capabilities ?? []).includes('write'))
+    .map((s) => [s, renderBoundary(s)]),
+);
 
 // 席名 → 档位名（唯一来源 = `SEAT_POLICY` 的 capabilities，spec §3.6）：由 `SEAT_NAMES` 逐席派生，
 // **不含 `__default__`**（未登记的席仍走 defaultTier）。不再手写第二份映射。

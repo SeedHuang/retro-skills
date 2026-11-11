@@ -5,18 +5,18 @@
 | 席 | 类型 | 沙箱行数 | 现役行数 | 沙箱字符 | 现役字符 | 段数（沙箱/现役） | 边界形态 | 边界一致 | 输出格式 |
 |---|---|---|---|---|---|---|---|---|---|
 | detective-observer | RespondentModel | 89 | 81 | 2861 | 2806 | 10/7 | policy | 是 | 有 |
-| evidence-reader | RespondentModel | 82 | 67 | 2569 | 1780 | 9/7 | policy | 否 | 有 |
-| respondent-architect | RespondentModel | 78 | 63 | 2324 | 1253 | 8/7 | policy | 否 | 有 |
-| respondent-dev | RespondentModel | 78 | 63 | 2441 | 1256 | 8/7 | policy | 否 | 有 |
-| reviewer-actuary | ReviewerModel | 94 | 75 | 2854 | 1913 | 9/7 | policy | 否 | 有 |
-| reviewer-ai | ReviewerModel | 97 | 78 | 3074 | 2143 | 9/7 | policy | 否 | 有 |
+| evidence-reader | RespondentModel | 82 | 81 | 2559 | 2802 | 9/7 | policy | 是 | 有 |
+| respondent-architect | RespondentModel | 78 | 77 | 2324 | 2299 | 8/7 | policy | 是 | 有 |
+| respondent-dev | RespondentModel | 78 | 77 | 2441 | 2317 | 8/7 | policy | 是 | 有 |
+| reviewer-actuary | ReviewerModel | 94 | 89 | 2854 | 2968 | 9/7 | policy | 是 | 有 |
+| reviewer-ai | ReviewerModel | 97 | 92 | 3074 | 3198 | 9/7 | policy | 是 | 有 |
 | reviewer-audit | AuditorModel | 109 | 99 | 3667 | 3344 | 10/7 | policy | 是 | 有 |
 | reviewer-product | ReviewerModel | 76 | 77 | 1583 | 2007 | 8/7 | default | 是 | 有 |
 | reviewer-interaction | ReviewerModel | 76 | 77 | 1592 | 2018 | 8/7 | default | 是 | 有 |
 | reviewer-ui | ReviewerModel | 74 | 75 | 1487 | 1914 | 8/7 | default | 是 | 有 |
 | reviewer-frontend | ReviewerModel | 76 | 77 | 1596 | 2030 | 8/7 | default | 是 | 有 |
 | senior-sdet | ReviewerModel | 85 | 86 | 2663 | 3142 | 8/7 | policy | 是 | 有 |
-| speaker | ReviewerModel | 80 | 65 | 2296 | 1279 | 8/7 | policy | 否 | 有 |
+| speaker | ReviewerModel | 80 | 79 | 2294 | 2274 | 8/7 | policy | 是 | 有 |
 
 ## 段级差异
 
@@ -40,7 +40,7 @@
 | evidence-reader | 输出格式 | 文本不同 | -101 |
 | evidence-reader | 产出 | 仅沙箱 | - |
 | evidence-reader | 权限 | 仅沙箱 | - |
-| evidence-reader | 边界 | 文本不同 | 1032 |
+| evidence-reader | 边界 | 一致 | 0 |
 | respondent-architect | 职责 | 文本不同 | 13 |
 | respondent-architect | 一定会 | 文本不同 | -25 |
 | respondent-architect | 冲突裁决 | 文本不同 | -25 |
@@ -48,7 +48,7 @@
 | respondent-architect | 输出格式 | 文本不同 | -134 |
 | respondent-architect | 产出 | 仅沙箱 | - |
 | respondent-architect | 权限 | 仅沙箱 | - |
-| respondent-architect | 边界 | 文本不同 | 1046 |
+| respondent-architect | 边界 | 一致 | 0 |
 | respondent-architect | 禁止 | 仅现役 | - |
 | respondent-dev | 职责 | 文本不同 | -1 |
 | respondent-dev | 一定会 | 文本不同 | -25 |
@@ -57,7 +57,7 @@
 | respondent-dev | 输出格式 | 文本不同 | -134 |
 | respondent-dev | 产出 | 仅沙箱 | - |
 | respondent-dev | 权限 | 仅沙箱 | - |
-| respondent-dev | 边界 | 文本不同 | 1061 |
+| respondent-dev | 边界 | 一致 | 0 |
 | respondent-dev | 禁止 | 仅现役 | - |
 | reviewer-actuary | 职责 | 文本不同 | 22 |
 | reviewer-actuary | 一定会 | 文本不同 | -175 |
@@ -67,7 +67,7 @@
 | reviewer-actuary | 输出格式 | 文本不同 | -194 |
 | reviewer-actuary | 产出 | 仅沙箱 | - |
 | reviewer-actuary | 权限 | 仅沙箱 | - |
-| reviewer-actuary | 边界 | 文本不同 | 1055 |
+| reviewer-actuary | 边界 | 一致 | 0 |
 | reviewer-ai | 职责 | 文本不同 | 20 |
 | reviewer-ai | 一定会 | 文本不同 | -175 |
 | reviewer-ai | 禁止 | 文本不同 | 18 |
@@ -76,7 +76,7 @@
 | reviewer-ai | 输出格式 | 文本不同 | -194 |
 | reviewer-ai | 产出 | 仅沙箱 | - |
 | reviewer-ai | 权限 | 仅沙箱 | - |
-| reviewer-ai | 边界 | 文本不同 | 1055 |
+| reviewer-ai | 边界 | 一致 | 0 |
 | reviewer-audit | 职责 | 文本不同 | 44 |
 | reviewer-audit | 一定会 | 文本不同 | -174 |
 | reviewer-audit | 禁止 | 文本不同 | -78 |
@@ -134,7 +134,7 @@
 | speaker | 输出格式 | 文本不同 | -101 |
 | speaker | 产出 | 仅沙箱 | - |
 | speaker | 权限 | 仅沙箱 | - |
-| speaker | 边界 | 文本不同 | 997 |
+| speaker | 边界 | 一致 | 0 |
 | speaker | 禁止 | 仅现役 | - |
 
 ## 边界核对
@@ -142,18 +142,18 @@
 | 席 | 形态 | 沙箱长度 | 现役长度 | 逐字节相等 |
 |---|---|---|---|---|
 | detective-observer | policy | 1200 | 1200 | 是 |
-| evidence-reader | policy | 1092 | 60 | 否 |
-| respondent-architect | policy | 1092 | 46 | 否 |
-| respondent-dev | policy | 1111 | 50 | 否 |
-| reviewer-actuary | policy | 1096 | 41 | 否 |
-| reviewer-ai | policy | 1096 | 41 | 否 |
+| evidence-reader | policy | 1082 | 1082 | 是 |
+| respondent-architect | policy | 1092 | 1092 | 是 |
+| respondent-dev | policy | 1111 | 1111 | 是 |
+| reviewer-actuary | policy | 1096 | 1096 | 是 |
+| reviewer-ai | policy | 1096 | 1096 | 是 |
 | reviewer-audit | policy | 1240 | 1240 | 是 |
 | reviewer-product | default | 41 | 41 | 是 |
 | reviewer-interaction | default | 41 | 41 | 是 |
 | reviewer-ui | default | 41 | 41 | 是 |
 | reviewer-frontend | default | 41 | 41 | 是 |
 | senior-sdet | policy | 1080 | 1080 | 是 |
-| speaker | policy | 1081 | 84 | 否 |
+| speaker | policy | 1079 | 1079 | 是 |
 
 ## 缺失项
 

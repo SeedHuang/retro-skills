@@ -112,7 +112,6 @@
     "kind": "need",
     "route": "evidence-reader"
   },
-  "boundary": "你是只读取证角色：不得创建、修改、删除任何文件；不出观点、不出问题卡、不参与评审、不判技术对错；只交可核对的原文与行号。",
   "explorePolicy": "none",
   "domain": "开发工作流"
 }

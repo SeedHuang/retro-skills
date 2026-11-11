@@ -73,12 +73,15 @@ test('TC-B09 tools 顺序不同但集合相等必须判绿（假阳性样例）'
   assert.doesNotThrow(() => validateAgentData(d, triggerTable), '集合相等被判成 ToolsViolation = 假阳性');
 });
 
-test('TC-B10 reader 卡「边界」节为取证角色句、不含「只读评审角色」；模板只留槽位', () => {
+test('TC-B10 reader 卡「边界」节由策略派生（取证角色 + 唯一落点 evidence.md），旧只读手抄句已废', () => {
   const i = card.lastIndexOf('## 边界');
   assert.ok(i > -1, '卡缺边界节');
   const s = card.slice(i);
   assert.equal(s.includes('只读评审角色'), false, '边界节退回了评审角色句');
-  for (const w of ['不得创建、修改、删除任何文件', '不出观点', '不参与评审']) assert.ok(s.includes(w), `边界节缺「${w}」`);
+  // D6b（2026-11-11）：旧句「不得创建、修改、删除任何文件」与 sdet 档 + evidence.md 落点矛盾，已废
+  assert.equal(s.includes('不得创建、修改、删除任何文件'), false, '边界节不得再断言「不得写任何文件」（与 Write 档冲突）');
+  assert.equal(s.includes('你是阅读取证员（取证）'), true, '角色名词取席级 roleKind');
+  assert.ok(s.includes('只允许写') && s.includes('`evidence.md`'), '边界必须写死唯一落点 evidence.md');
 
   assert.equal(tpl.includes('{{BOUNDARY}}'), true, '模板必须是槽位');
   assert.equal(/你是只读评审角色：[^\r\n]*不裁决他人分歧/.test(tpl), false, '模板不得硬编码默认句');

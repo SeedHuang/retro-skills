@@ -60,7 +60,7 @@ tools: Read, Glob, Grep, Write, Edit, RunCommand
 - 跑命令：只许跑 `scs time`、`git --no-optional-locks status --porcelain`、`git --no-optional-locks diff`、`git --no-optional-locks log`
 
 ## 边界
-你是评审席（研发答辩）。**档位事实**：本卡实际权限 = `producer` 档：Read / Glob / Grep / Write / Edit / RunCommand **整档授予**；**平台无参数级授权，不假装白名单**；写入范围是**封闭清单**（只限 ②）；不裁决他人分歧；无中断评审的权力。
+你是答辩方（研发答辩）。**档位事实**：本卡实际权限 = `producer` 档：Read / Glob / Grep / Write / Edit / RunCommand **整档授予**；**平台无参数级授权，不假装白名单**；写入范围是**封闭清单**（只限 ②）；不裁决他人分歧；无中断评审的权力。
 
 **只允许写**：本次评审账本（`.session/reviews/<本次>/`；归档后 `docs/superpowers/reviews/<本次>/`）目录内的产物。`defense.md`
 

@@ -114,9 +114,8 @@ export function validateAgentData(data, table) {
   // 白名单只留外层派生键 + 三个可选槽位键（domain / boundary / explorePolicy）+ 新卡 `card` 键。
   const BASE_KEYS = ['name', 'role', 'dimension', 'tools', 'outputKind', 'domain', 'boundary', 'explorePolicy', 'card'];
   // 两个槽位字段只允许出现在显式声明它们的席（C5 ④）：其他席一旦带上，渲染会静默换句而不报错。
-  // 白名单由 boundaryBySeat 派生（+ evidence-reader 自带的边界句），新增 producer 席时自动跟随。
-  const DECLARED_SLOT_SEATS = new Set(['evidence-reader', 'speaker', 'respondent-architect', 'respondent-dev',
-    ...Object.keys(patternRegistry.boundaryBySeat)]);
+  // 边界白名单由 boundaryBySeat 派生（有写落点的席全在其中）；`explorePolicy` 目前只 evidence-reader 用。
+  const DECLARED_SLOT_SEATS = new Set(Object.keys(patternRegistry.boundaryBySeat));
   for (const a of data) {
     for (const k of ['when', 'notWhen', 'route', 'fallback']) {
       if (k in a) fail('TriggerFieldMisplaced', { name: a.name, key: k });

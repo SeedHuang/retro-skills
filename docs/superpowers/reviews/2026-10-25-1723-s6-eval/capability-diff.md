@@ -49,3 +49,9 @@
 |---|---|---|
 | agents/ 下 5 卡 | 仅第 4 行 tools | 取证 / 架构答辩 / 研发答辩 / 精算 / AI 声明写产物却无 Write 工具（假写权限）→ SEAT_POLICY 补 write，档位 readOnly/command → sdet/producer，本批 5 卡 tools 行同步重出；边界正文与其余段零变化。凭证见各席 evidence.json 末条 changes。 |
 
+## 二‴、P4 D6b 边界单源化（2026-11-11；G01 记账位）
+
+| 卡 | 差异 | 说明 |
+|---|---|---|
+| agents/ 下 6 卡 | 边界节整段换成 `renderBoundary` 派生正文 | 取证 / 架构答辩 / 研发答辩 / 精算 / AI / 议长 六席原为手抄边界句（或默认只读句），与新 `Write` 档位自相矛盾（例：「不得创建、修改、删除任何文件」+ `Write`）。现 `boundaryBySeat` 由「档位含 `Write`」现算（9 席），4 个席 JSON 的 `boundary` 字段删除，`speaker` 一并改派生；角色名词由席级 `roleKind` 覆盖（答辩方 / 阅读取证员）。凭证见各席 evidence.json 末条 changes；`S6-TC-G03` 加「席 JSON 不得自带 `boundary`」守卫。 |
+

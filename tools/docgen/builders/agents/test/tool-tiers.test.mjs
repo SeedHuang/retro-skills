@@ -96,7 +96,7 @@ test('S5-TC-A02 tierBySeat 必需映射 + 每值合法 + 键须为真实席 + de
   for (const n of Object.keys(patternRegistry.tierBySeat)) assert.ok(names.has(n), n);
 });
 
-test('S5-TC-A03 boundaryBySeat 两席 + 值非空 + 键真实 + 白名单由它派生', () => {
+test('S5-TC-A03 boundaryBySeat 覆盖有写落点席 + 值非空 + 键真实 + 白名单由它派生', () => {
   for (const n of ['reviewer-audit', 'detective-observer']) {
     assert.equal(Object.hasOwn(patternRegistry.boundaryBySeat, n), true, n);
     const v = patternRegistry.boundaryBySeat[n];
@@ -395,16 +395,19 @@ test('S5-TC-B07 changes[] 中 to === renderSha256 的最新条落账四字段（
   }
 });
 
-test('S5-TC-B08 真实 agentData 的 producer 席 boundary 等于渲染结果', () => {
-  // 只遍历 boundaryBySeat（模板渲染的三席）：speaker 是 producer 但自带席 JSON 顶层 boundary，不进该表
-  const slotSeats = Object.keys(patternRegistry.boundaryBySeat)
-  assert.ok(slotSeats.length >= 2)
-  for (const n of slotSeats) {
-    const a = agentData.find((x) => x.name === n);
-    assert.equal(a.boundary, patternRegistry.boundaryBySeat[n], n);
-    // 判据由 S6 改判（S6 spec §3.6 ②）：边界句的唯一来源是 renderBoundary
-    assert.equal(a.boundary, renderBoundary(n), n);
-    assert.equal(/你是只读评审角色：不得创建、修改、删除任何文件/.test(a.boundary ?? ''), false, n);
+test('S5-TC-B08 有写落点的席 boundary 一律 = renderBoundary；零写席一律 = DEFAULT_BOUNDARY', () => {
+  // D6b（2026-11-11）：判据从「boundaryBySeat 里登记了谁」改成「档位含 Write 的席」，与策略同源——
+  // 手工表漏一席（此前 speaker / 两答辩席 / 取证席 / 精算 / AI 均为手抄句）就判红。
+  const writers = agentData.filter((a) => toolsForSeat(a.name).includes('Write'));
+  assert.deepEqual(writers.map((a) => a.name).sort(), Object.keys(patternRegistry.boundaryBySeat).sort(),
+    'boundaryBySeat 必须恰 = 有写落点的席');
+  for (const a of writers) {
+    assert.equal(a.boundary, patternRegistry.boundaryBySeat[a.name], a.name);
+    assert.equal(a.boundary, renderBoundary(a.name), a.name);
+    assert.equal(/你是只读评审角色：不得创建、修改、删除任何文件/.test(a.boundary ?? ''), false, a.name);
+  }
+  for (const a of agentData.filter((x) => !toolsForSeat(x.name).includes('Write'))) {
+    assert.equal(a.boundary ?? DEFAULT_BOUNDARY, DEFAULT_BOUNDARY, `${a.name}: 零写席不得声明写权限边界`);
   }
 });
 

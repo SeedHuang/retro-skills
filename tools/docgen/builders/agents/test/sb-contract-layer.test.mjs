@@ -13,6 +13,7 @@ import { ARTIFACT_RE } from '../../../../observation-check/gate-scan.mjs'
 import { outputFormats } from '../components/outputFormats.mjs'
 import { FORMAT_CHECKS } from '../card-model/vocab/card-contract.mjs'
 import { renderBoundary, assertTemplatePure, TEMPLATE_ALLOWED_LITERALS } from '../components/renderBoundary.mjs'
+import { boundaryBySeat } from '../components/patternRegistry.mjs'
 import { SEAT_POLICY } from '../policy/seat-policy.mjs'
 import * as CAP from '../policy/definitions/capabilities.mjs'
 import * as CMD from '../policy/definitions/commands.mjs'
@@ -632,8 +633,10 @@ test('SB-TC-33 注入而非删除：loader 产物 duty.categories 仍在且仍 8
 // ── Task 5：卡面「档位 + 指针」（模板 3 行文案 + 5 个槽值；槽集仍 12）────────────────
 // **卡面取数点 = `renderBoundary(席)` 的渲染结果**：Task 5 施工时 15 卡尚未重生成（归 Task 6），
 // 读盘会把「未重生成」误判成「指针化没做」；「盘上 == 渲染」由 Task 6 的 SB-TC-06（`gate`）绑住。
-// S6-B：3 席走模板（`reviewer-audit` / `detective-observer` / `senior-sdet`）；「有组席」= 其中 allowGroups 非空者（仍 2 席）
-const POINTER_SEATS = ['reviewer-audit', 'detective-observer', 'senior-sdet']
+// S6-B：边界走模板的席 = **有写落点（capabilities 含 write）的席**，由配置层现算、不手写名单
+// （2026-11-11 扩到 9 席：5 席补 Write 档位 + speaker 从手抄句改为派生）；「有组席」= 其中 allowGroups 非空者
+const POINTER_SEATS = Object.keys(SEAT_POLICY)
+  .filter((s) => s !== '__default__' && (SEAT_POLICY[s].capabilities ?? []).includes('write'))
 const GROUP_SEATS = POINTER_SEATS.filter((s) => SEAT_POLICY[s].allowGroups.length > 0)
 const POINTER_SYMBOLS = ['pathGroups', 'commandGroups', 'forbiddenGroups', 'DETECTION_BLIND_SPOTS']
 const rendered = (seat) => renderBoundary(seat)
@@ -689,7 +692,7 @@ const pathFormHits = (text) => (text.match(IN_REPO_DIR_RE) ?? []).length + (text
 test('SB-TC-05 卡面形态：逐项点名 0 命中 + 4 符号名各 ≥1（均带反引号）+ 本席组 ID 在位', () => {
   // ① `逐项点名` 计数（V8）：2 卡渲染结果合起来必须 = 0
   const scanq = POINTER_SEATS.reduce((n, s) => n + linesWith(rendered(s), '逐项点名').length, 0)
-  assert.equal(scanq, 0, `2 卡不得再出现「逐项点名」（命中 ${scanq} 行）`)
+  assert.equal(scanq, 0, `指针席不得再出现「逐项点名」（命中 ${scanq} 行）`)
 
   // ② 4 符号名各 ≥1，且每次出现都被一对反引号包住
   const missingSym = []
@@ -857,8 +860,10 @@ test('SB-TC-40 命令白名单句含本席组 ID（有组 2 卡）；空组必�
     const groups = SEAT_POLICY[s].allowGroups
     return groups.length === 0 || !groups.every((g) => commandLine(rendered(s)).includes(g))
   })
-  assert.equal(POINTER_SEATS.length, 3, '指针席必须恰 3 席（走 renderBoundary 的席）')
-  assert.equal(GROUP_SEATS.length, 2, '有组席必须恰 2 席（senior-sdet 空组）')
+  assert.deepEqual([...POINTER_SEATS].sort(), [...Object.keys(boundaryBySeat)].sort(),
+    '指针席必须 = 卡面登记了派生边界句的席（boundaryBySeat 键集）');
+  assert.deepEqual([...GROUP_SEATS].sort(),
+    ['detective-observer', 'respondent-dev', 'reviewer-audit', 'speaker'], '有组席 = allowGroups 非空者；空组席走「无白名单命令」分支');
   assert.equal(badSeats.length, 0, `缺组 ID 的席：${badSeats.join('、')}`)
 
   // ② 负例 A：删掉组 ID → 缺组数 ≥ 1
@@ -1142,8 +1147,8 @@ test('SB-TC-25 只改模板 4 行不重生成 → `Mismatch` exit 1；重生成�
 
     const changed = [...bytesBefore].filter(([f, buf]) => !readFileSync(join(copy, 'agents', f)).equals(buf)).map(([f]) => f)
     console.log(`template-only: red ${red.status} / named ${named.join(',')} / green ${green.status} / changed ${changed.length}`)
-    // 只有走模板的 3 席变；其余席走 DEFAULT_BOUNDARY / evidence-reader 自有句，模板不喂养它们
-    assert.deepEqual(changed.sort(), POINTER_SEATS.map((s) => `${s}.md`).sort(), `模板改动只应波及这 3 席：${changed.join('、')}`)
+    // 模板只喂养登记了派生边界句的席（boundaryBySeat）；零写席走 DEFAULT_BOUNDARY，不受模板影响
+    assert.deepEqual(changed.sort(), POINTER_SEATS.map((s) => `${s}.md`).sort(), `模板改动只应波及这些席：${changed.join('、')}`)
   })
 })
 

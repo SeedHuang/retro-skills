@@ -1,6 +1,7 @@
-// 席数据（spec §3.2）：slug → { display, clause?, escalationWriter?: { slug, artifact } }。
+// 席数据（spec §3.2）：slug → { display, roleKind?, clause?, escalationWriter? }。
 // 显示名只许出现在本文件；`__default__` 是保留键、不可授予，不进 SEAT_NAMES。
-// 可选槽缺省（`clause` / `escalationWriter` 未声明）≠ 显式传 `undefined`（后者判 TemplateImpure）。
+// `roleKind` = 卡面首句的角色名词（覆盖写作用域的同名默认值）：答辩方 / 取证席不是评审席，逐席声明。
+// 可选槽缺省（`roleKind` / `clause` / `escalationWriter` 未声明）≠ 显式传 `undefined`（后者判 TemplateImpure）。
 export const SEATS = {
   'reviewer-audit': {
     display: '审计',
@@ -26,13 +27,18 @@ export const SEATS = {
   },
   'respondent-architect': {
     display: '架构答辩',
+    roleKind: '答辩方',
   },
   'respondent-dev': {
     display: '研发答辩',
+    roleKind: '答辩方',
   },
   // 下列三席此前走 `__default__`；卡面已声明产物（取证 / 问题卡），故按「只登记与默认不同的席」补登记。
   'evidence-reader': {
     display: '取证',
+    roleKind: '阅读取证员',
+    // 非议会席（S4-TC-C03）：卡面不得出现「议长 / 主持人」，故 hostRule 只写禁止事实、不点名主持席
+    hostRule: '不得写 `progress.md`（该账由议会程序账本席独占写）',
   },
   'reviewer-actuary': {
     display: '精算',

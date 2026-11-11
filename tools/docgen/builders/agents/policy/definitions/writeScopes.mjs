@@ -20,7 +20,7 @@ export const writeScopes = {
   'review.host': {
     roleKind: '程序主持',
     label: '本次议会程序账本（`.session/reviews/<本次>/` 目录）',
-    hostRule: '不得代填两张审计表（审计表由责任席填写）',
+    hostRule: '不得填写两张审计表（只由责任席填写）',
     excludePathItems: [],
   },
 };

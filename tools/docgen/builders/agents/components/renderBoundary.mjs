@@ -167,9 +167,11 @@ export function slotValues(seat) {
     FORBIDDEN_PATHS: forbiddenPaths(seat),
     DETECTION_PATHS: detectionPaths(),
     DETECTION_CMD: detectionCmd(),
-    ROLE_KIND: scopeOfSeat(seat)?.roleKind ?? '',
+    // 角色名词默认随写作用域（「评审席」「程序主持」）；答辩方 / 取证席不是评审席，由席级 `roleKind` 覆盖
+    ROLE_KIND: slotSource(s, 'roleKind', 'ROLE_KIND', scopeOfSeat(seat)?.roleKind ?? ''),
     WRITE_SCOPE: scopeOfSeat(seat)?.label ?? '',
-    HOST_RULE: scopeOfSeat(seat)?.hostRule ?? '',
+    // 禁止写句的席级覆盖（非议会席不得点名主持席：S4-TC-C03）；未声明时随写作用域
+    HOST_RULE: slotSource(s, 'hostRule', 'HOST_RULE', scopeOfSeat(seat)?.hostRule ?? ''),
   };
   for (const k of SLOTS) if (values[k] === undefined || values[k] === null) impure(k);
   return values;
