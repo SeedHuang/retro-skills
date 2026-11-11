@@ -75,6 +75,7 @@
 | TC-027 | §7 G3 `sandbox/*.md` = 8 | 集成 | 机器 | P0 |
 | TC-028 | §7 G5 `npm run check` 末行 | 集成 | 机器 | P0 |
 | TC-029 | §5 必含 3/6 的语义面（引用闭环、触发与边界） | 集成 | 人工 | P1 |
+| TC-030 | §4 `skillsRoot()` 找不到仓根 → 抛错，不伪装成 `SKILL_MISSING` | 负例 | 机器 | P1 |
 
 **覆盖核对**：spec §3 五行映射 → TC-001（新树）/TC-002（旧树）/TC-003（内容零改动）/TC-004（import 深度）；§4 六个改动点（导出 `verify`、`opts.modelPath`、`opts.baseline`、导出 `anyError`、CLI 行为不变、`isMain` 不动）→ TC-005/006/007/008/009/010，其中 `isMain` 不动由 TC-007 的正常 CLI 与 TC-026 的 `node --test` 共同承接；§5 目录树 7 项 → TC-019；§5 脚本接口表两行 → TC-012/013/014/015（verify）与 TC-016/017/018（render）；§5 必含 6 条 → TC-020（1–5）+ TC-021（6）+ TC-029（3、6 的语义面）；§6 回放验收 4 步 → TC-012（等价）/TC-014（`--ref`）/TC-016（同哈希）/TC-013（负例）；§7 G1–G6 → TC-026/TC-027/TC-028/ TC-014/TC-028/TC-022；§2 D1–D4 → TC-002（D1）/TC-011（D2）/TC-024（D3）/TC-014+TC-016（D4）。未覆盖条目 **0** 条。
 
@@ -346,6 +347,16 @@
 - **为什么必须人工**：判据是自然语言句式与语义互斥性，spec 未冻结逐字文案；可机器化的部分（路径存在、被引用次数、七阶行数、`不用于` 关键字）已在 TC-020/TC-021 判完，本条只判剩下的语义面。
 - **对应测试/交付物**：`skills/agent-modeling/SKILL.md`；评审人 = 非作者席（senior-sdet / reviewer-audit 任一）。
 
+### TC-030 负例：仓外副本 → `SKILLS_ROOT_UNRESOLVED`，不伪装成 `SKILL_MISSING`
+
+- **覆盖**：spec §4「`skillsRoot()` 向上找含 `package.json` + `skills/` 的仓根，找不到即抛错」
+- **目的**：证明「找不到仓根」是一个**可区分的错误**，而不是让 7 席所有技能模板逐个报 `SKILL_MISSING`（那是「技能名配错」的语义，会把定位引到模型内容上）。
+- **前置**：`tools/agent-model/**` 与 `tools/docgen/builders/agents/{policy,components}` 可复制；环境未设 `MODEL_SKILLS_ROOT`。
+- **步骤**：① 在系统临时目录建 `tools/agent-model` 与 `tools/docgen/builders/agents/{policy,components}` 的副本（复制面 = 引擎 + 它真正 import 的兄弟模块）；② 清掉 `MODEL_SKILLS_ROOT`；③ 跑 `node <副本>/tools/agent-model/verify-models.mjs reviewer-actuary`；④ 同时检查 stdout 不含 `SKILL_MISSING`。
+- **判据（机器）**：`node --test tools/agent-model/test/skill-root.test.mjs` → `pass 1` / `fail 0`；用例内部断言：`status=1`、stderr 含 `SKILLS_ROOT_UNRESOLVED`、stdout 不含 `SKILL_MISSING`。手工等价命令：`$t=Join-Path $env:TEMP 'am-outside'; <复制上述两处>; Remove-Item Env:MODEL_SKILLS_ROOT; node "$t\tools\agent-model\verify-models.mjs" reviewer-actuary` → 首行 `Error: SKILLS_ROOT_UNRESOLVED from <副本路径>（可用 MODEL_SKILLS_ROOT 指定）`，exit 1。
+- **对应测试/交付物**：`tools/agent-model/test/skill-root.test.mjs`；别名承接：`npm run check` 的测试段（TC-028）也会跑到本用例。
+- **为什么仓内入口触发不了**：真实引擎上跳 4 层、`test-p1` 副本上跳 3 层都落在仓内命中仓根，且 `test-p1.test.mjs` 的 `run()` 还注入了 `MODEL_SKILLS_ROOT`；只有「引擎被复制到仓外且未设 env」才进入抛错分支，故必须显式造副本。
+
 ## 3 反例与边界
 
 | 用例 ID | 反例/边界是什么 | 为什么容易漏 | 期望 |
@@ -364,8 +375,9 @@
 | TC-023 | 漏登记依赖清单 | spec 未写；只有 `npm run check` 里的一条 test 抓 | `inManifest=true depsFile=true` 且 5/5 |
 | TC-024 | `drafts/` 被误提交 | `check-ignore` 默认跳过已跟踪文件 | `tracked=0 status=0` |
 | TC-025 | 回放时写回 `agents/` | 两个脚本各写一处就绕过硬约束 | `agentsDirty=0` |
+| TC-030 | 仓根缺失被当成「技能名配错」 | 静默回退到一个不存在的 `skills/`，7 席 × 多模板一起报 `SKILL_MISSING`，定位被引到模型内容 | stderr 含 `SKILLS_ROOT_UNRESOLVED` 且 stdout 无 `SKILL_MISSING` |
 
-**计数**：集成 **14** 条（001 / 003 / 007 / 012 / 014 / 016 / 017 / 019 / 020 / 022 / 026 / 027 / 028 / 029）、单元 **6** 条（004 / 005 / 006 / 008 / 009 / 010）、负例 **9** 条（002 / 011 / 013 / 015 / 018 / 021 / 023 / 024 / 025）；合计 **29**。其中 **机器判 28** 条、**人工判 1** 条（TC-029）。
+**计数**：集成 **14** 条（001 / 003 / 007 / 012 / 014 / 016 / 017 / 019 / 020 / 022 / 026 / 027 / 028 / 029）、单元 **6** 条（004 / 005 / 006 / 008 / 009 / 010）、负例 **10** 条（002 / 011 / 013 / 015 / 018 / 021 / 023 / 024 / 025 / 030）；合计 **30**。其中 **机器判 29** 条、**人工判 1** 条（TC-029）。
 
 ## 4 回归清单
 

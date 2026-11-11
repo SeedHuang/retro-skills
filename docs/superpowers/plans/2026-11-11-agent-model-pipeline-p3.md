@@ -1,7 +1,7 @@
 # P3 实施计划：建模 skill 化（agent-modeling）
 
 > spec：`docs/superpowers/specs/2026-11-11-agent-model-pipeline-p3-design.md`
-> testcase：`docs/superpowers/specs/2026-11-11-agent-model-pipeline-p3-design-testcase.md`（29 条，28 机器判）
+> testcase：`docs/superpowers/specs/2026-11-11-agent-model-pipeline-p3-design-testcase.md`（30 条，29 机器判）
 > 施工顺序：T1 → T2 → T3 → T4 → T5 → T6；每步跑该步门禁，红则停在本步。
 
 ## T1 迁移引擎与模型（`git mv`，内容零改动）

@@ -22,7 +22,7 @@ PRD §6 P3（行 190–218）：把「markdown 卡面 → 模型」拆解能力�
 - 引用改齐 6 个文件：`render-all.mjs`、`diff-report.mjs`、`render-card.mjs`、`update-baseline.mjs`、`eval/raw/perf/render-bench.mjs`、`test-p1.test.mjs`（`--models` 参数 + 副本按仓内深度布置）。
 - 顺带修复 P1 遗留：`rules/title-not-stronger-than-criterion.md` 未登记进 `BASELINE_RULES` 导致 gate 恒红（`tools/docgen/builders/agents/components/baseline.mjs:9` + `baseline.json`）。
 - 登记与忽略：`skilldependencies/manifest.json` 增 `agent-modeling`、新增 `skilldependencies/agent-modeling.json`；`.gitignore` 增 `skills/agent-modeling/drafts/`。
-- 文档：`docs/superpowers/specs/2026-11-11-agent-model-pipeline-p3-design.md`、`…-p3-design-testcase.md`（29 条，28 机器判）、`docs/superpowers/plans/2026-11-11-agent-model-pipeline-p3.md`；`docs/guide/skills/README.md` 增第 14 节。
+- 文档：`docs/superpowers/specs/2026-11-11-agent-model-pipeline-p3-design.md`、`…-p3-design-testcase.md`（30 条，29 机器判）、`docs/superpowers/plans/2026-11-11-agent-model-pipeline-p3.md`；`docs/guide/skills/README.md` 增第 14 节。
 
 ## 验收证据（命令 + 首行）
 
