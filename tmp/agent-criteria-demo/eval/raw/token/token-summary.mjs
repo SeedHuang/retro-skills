@@ -12,7 +12,7 @@ for (const row of map) {
 }
 const explain = { A: '现役', B: '沙箱' }
 const cardChars = {}
-const cardsDir = join(root, process.argv[3] || (process.argv[2] === 'execution-fix' ? 'cards-fix' : 'cards'))
+const cardsDir = join(root, process.argv[3] || (String(process.argv[2] || '').match(/fix|v2/) ? 'cards-fix' : 'cards'))
 for (const blind of Object.keys(byBlind)) {
   cardChars[blind] = readFileSync(join(cardsDir, `${blind}.md`), 'utf8').length
 }

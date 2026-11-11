@@ -13,7 +13,7 @@ for (const row of map) {
 }
 
 const explain = { '0': '现役', '1': '沙箱', A: '现役', B: '沙箱' }
-const dir = join(here, 'understanding')
+const dir = join(here, process.argv[2] || 'understanding')
 const rows = []
 for (const f of readdirSync(dir).filter(x => x.endsWith('.json')).sort()) {
   const m = f.match(/^r(\d+)-(card-[AB]\d)\.json$/)

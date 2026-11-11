@@ -1,0 +1,57 @@
+﻿1	card-A1	detective-observer	现役	E1=1(f5/5)	E2=1	E3=1	E4=1	total=4/4
+1	card-A2	evidence-reader	沙箱	E1=1(f4/4)	E2=1	E3=1	E4=1	total=4/4
+1	card-A3	respondent-architect	现役	E1=1(f6/6)	E2=1	E3=1	E4=1	total=4/4
+1	card-A4	respondent-dev	沙箱	E1=1(f6/6)	E2=1	E3=1	E4=1	total=4/4
+1	card-A5	reviewer-actuary	现役	E1=1(f10/10)	E2=0	E3=1	E4=1	total=3/4
+1	card-A6	reviewer-ai	沙箱	E1=0(f5/10)	E2=1	E3=1	E4=1	total=3/4
+1	card-A7	reviewer-audit	现役	E1=1(f13/14)	E2=1	E3=1	E4=1	total=4/4
+1	card-B1	detective-observer	沙箱	E1=1(f5/5)	E2=1	E3=1	E4=1	total=4/4
+1	card-B2	evidence-reader	现役	E1=1(f3/4)	E2=1	E3=1	E4=1	total=4/4
+1	card-B3	respondent-architect	沙箱	E1=1(f6/6)	E2=1	E3=1	E4=1	total=4/4
+1	card-B4	respondent-dev	现役	E1=1(f6/6)	E2=1	E3=1	E4=1	total=4/4
+1	card-B5	reviewer-actuary	沙箱	E1=1(f10/10)	E2=1	E3=1	E4=1	total=4/4
+1	card-B6	reviewer-ai	现役	E1=1(f10/10)	E2=1	E3=1	E4=1	total=4/4
+1	card-B7	reviewer-audit	沙箱	E1=0(f2/14)	E2=1	E3=1	E4=1	total=3/4
+2	card-A1	detective-observer	现役	E1=1(f5/5)	E2=1	E3=1	E4=1	total=4/4
+2	card-A2	evidence-reader	沙箱	E1=0(f2/4)	E2=1	E3=1	E4=1	total=3/4
+2	card-A3	respondent-architect	现役	E1=1(f6/6)	E2=1	E3=1	E4=1	total=4/4
+2	card-A4	respondent-dev	沙箱	E1=1(f6/6)	E2=1	E3=1	E4=1	total=4/4
+2	card-A5	reviewer-actuary	现役	E1=1(f10/10)	E2=0	E3=1	E4=1	total=3/4
+2	card-A6	reviewer-ai	沙箱	E1=1(f10/10)	E2=1	E3=1	E4=1	total=4/4
+2	card-A7	reviewer-audit	现役	E1=1(f11/14)	E2=1	E3=1	E4=1	total=4/4
+2	card-B1	detective-observer	沙箱	E1=1(f5/5)	E2=1	E3=1	E4=1	total=4/4
+2	card-B2	evidence-reader	现役	E1=1(f4/4)	E2=1	E3=1	E4=1	total=4/4
+2	card-B3	respondent-architect	沙箱	E1=1(f6/6)	E2=1	E3=1	E4=1	total=4/4
+2	card-B4	respondent-dev	现役	E1=1(f6/6)	E2=1	E3=1	E4=1	total=4/4
+2	card-B5	reviewer-actuary	沙箱	E1=1(f10/10)	E2=1	E3=1	E4=1	total=4/4
+2	card-B6	reviewer-ai	现役	E1=0(f3/10)	E2=1	E3=1	E4=1	total=3/4
+2	card-B7	reviewer-audit	沙箱	E1=0(f2/14)	E2=1	E3=1	E4=1	total=3/4
+3	card-A1	detective-observer	现役	E1=1(f5/5)	E2=1	E3=1	E4=1	total=4/4
+3	card-A2	evidence-reader	沙箱	E1=1(f4/4)	E2=1	E3=1	E4=1	total=4/4
+3	card-A3	respondent-architect	现役	E1=1(f6/6)	E2=1	E3=1	E4=1	total=4/4
+3	card-A4	respondent-dev	沙箱	E1=1(f6/6)	E2=1	E3=1	E4=1	total=4/4
+3	card-A5	reviewer-actuary	现役	E1=0(f2/10)	E2=0	E3=1	E4=1	total=2/4
+3	card-A6	reviewer-ai	沙箱	E1=1(f10/10)	E2=0	E3=1	E4=1	total=3/4
+3	card-A7	reviewer-audit	现役	E1=1(f12/14)	E2=1	E3=1	E4=1	total=4/4
+3	card-B1	detective-observer	沙箱	E1=1(f5/5)	E2=1	E3=1	E4=1	total=4/4
+3	card-B2	evidence-reader	现役	E1=1(f4/4)	E2=1	E3=1	E4=1	total=4/4
+3	card-B3	respondent-architect	沙箱	E1=1(f5/6)	E2=1	E3=1	E4=1	total=4/4
+3	card-B4	respondent-dev	现役	E1=1(f6/6)	E2=1	E3=1	E4=1	total=4/4
+3	card-B5	reviewer-actuary	沙箱	E1=1(f10/10)	E2=1	E3=1	E4=1	total=4/4
+3	card-B6	reviewer-ai	现役	E1=1(f10/10)	E2=1	E3=0	E4=1	total=3/4
+3	card-B7	reviewer-audit	沙箱	E1=0(f3/14)	E2=1	E3=1	E4=1	total=3/4
+---
+detective-observer|沙箱	n=3	medTotal=4	medE1=1	medE2=1	medE3=1	medE4=1	vals=4,4,4
+detective-observer|现役	n=3	medTotal=4	medE1=1	medE2=1	medE3=1	medE4=1	vals=4,4,4
+evidence-reader|沙箱	n=3	medTotal=4	medE1=1	medE2=1	medE3=1	medE4=1	vals=4,3,4
+evidence-reader|现役	n=3	medTotal=4	medE1=1	medE2=1	medE3=1	medE4=1	vals=4,4,4
+respondent-architect|沙箱	n=3	medTotal=4	medE1=1	medE2=1	medE3=1	medE4=1	vals=4,4,4
+respondent-architect|现役	n=3	medTotal=4	medE1=1	medE2=1	medE3=1	medE4=1	vals=4,4,4
+respondent-dev|沙箱	n=3	medTotal=4	medE1=1	medE2=1	medE3=1	medE4=1	vals=4,4,4
+respondent-dev|现役	n=3	medTotal=4	medE1=1	medE2=1	medE3=1	medE4=1	vals=4,4,4
+reviewer-actuary|沙箱	n=3	medTotal=4	medE1=1	medE2=1	medE3=1	medE4=1	vals=4,4,4
+reviewer-actuary|现役	n=3	medTotal=3	medE1=1	medE2=0	medE3=1	medE4=1	vals=3,3,2
+reviewer-ai|沙箱	n=3	medTotal=3	medE1=1	medE2=1	medE3=1	medE4=1	vals=3,4,3
+reviewer-ai|现役	n=3	medTotal=3	medE1=1	medE2=1	medE3=1	medE4=1	vals=4,3,3
+reviewer-audit|沙箱	n=3	medTotal=3	medE1=0	medE2=1	medE3=1	medE4=1	vals=3,3,3
+reviewer-audit|现役	n=3	medTotal=4	medE1=1	medE2=1	medE3=1	medE4=1	vals=4,4,4
