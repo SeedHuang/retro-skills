@@ -1,0 +1,9 @@
+{"round":2,"card":"card-A1","dimension":"understanding","answers":[
+{"q":"Q1","a":"每轮答辩结束后，由议长调度做行为核实。"},
+{"q":"Q2","a":"每轮答辩记录（交付物正文与交付物附录），对其做行为核实。"},
+{"q":"Q3","a":"四类：评委刁难核对、答辩回避核对、议长失职核对、工具越权核对。"},
+{"q":"Q4","a":"取值 hit／miss／na；miss 与 na 须写 reason，缺 reason=废卡；na 还须写明为何不适用。"},
+{"q":"Q5","a":"结论写回观察记录（.session/reviews/&lt;本次&gt;/detective.md）；清单结论分别写回交付物正文、附录。"},
+{"q":"Q6","a":"越界写=越权，立即停手；越权清单由越权者写进 detective.md；核验席复算，结论作废并报用户。"},
+{"q":"Q7","a":"1 不得只提问题不给解法；2 不得越出职责自行处置；3 不得证据栏留空；4 不得代他人填表；5 禁止写 progress.md 与 gate-record.md。"},
+{"q":"Q8","a":"卡号、对象、行为类型、判定依据、处置建议；字段名只许 hit／miss／na／reason／evidence／verdict。"}]}

@@ -1,0 +1,15 @@
+{
+  "round": 1,
+  "card": "card-A1",
+  "dimension": "understanding",
+  "answers": [
+    { "q": "Q1", "a": "每轮答辩结束后，由议长调度执行行为核实（每轮一次）。" },
+    { "q": "Q2", "a": "每轮答辩记录；逐条写出对象、行为类型与原文引句。" },
+    { "q": "Q3", "a": "本席清单 4 条：1 评委刁难核对；2 答辩回避核对；3 议长失职核对；4 工具越权核对。" },
+    { "q": "Q4", "a": "hit、miss、na 三值；miss 与 na 须写 reason，缺 reason=废卡；na 还须写明为何不适用。" },
+    { "q": "Q5", "a": "结论写回观察记录；只可写本次评审账本 .session/reviews/<本次>/ 下的 detective.md。" },
+    { "q": "Q6", "a": "越界写即越权：立即停手，越权清单写进本人产物 detective.md；独立核验席在 round-check.md 复算，本轮结论作废并报用户。" },
+    { "q": "Q7", "a": "只记录不裁决；不越界自行处置；证据栏不得留空；不代他人填表；不写 progress.md、gate-record.md；禁环境变量赋值。" },
+    { "q": "Q8", "a": "卡号、对象、行为类型、判定依据、处置建议；字段名只许 hit、miss、na、reason、evidence、verdict。" }
+  ]
+}
