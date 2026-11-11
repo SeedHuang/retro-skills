@@ -36,14 +36,17 @@ const sha = (p) => createHash('sha256').update(readFileSync(p)).digest('hex')
 
 // 副本根 = tmp/p1-case-<pid>：既放 demo 脚本（render-all / diff-report / sandbox），也按仓内相对深度放一份引擎
 // （render-all 的默认 models 路径按 here/../../tools 计算，副本根与仓根同深度，故能命中副本自己的引擎）
-const M = (d) => join(d, 'tools', 'agent-model')
+const ENGINE_REL = ['tools', 'agent-model']
+const M = (d) => join(d, ...ENGINE_REL)
 function copyCase(mutate, seat = 'evidence-reader') {
   const dir = join(HERE, '..', 'p1-case-' + process.pid)
   rmSync(dir, { recursive: true, force: true })
   cpSync(HERE, dir, { recursive: true, filter: (src) => !src.includes('sandbox') && !src.includes('p1-case-') })
-  // 引擎的兄弟依赖（docgen/builders/agents 下的 policy 与 components）一并按原相对深度复制，避免副本内 import 断链
-  cpSync(join(ROOT, 'tools', 'agent-model'), join(dir, 'tools', 'agent-model'), { recursive: true })
-  cpSync(join(ROOT, 'tools', 'docgen', 'builders', 'agents'), join(dir, 'tools', 'docgen', 'builders', 'agents'), { recursive: true })
+  // 引擎 + 它真正 import 的兄弟模块（docgen/builders/agents 下的 policy 与 components）按原深度复制；test/fixtures 不复制
+  cpSync(ENGINE, M(dir), { recursive: true })
+  for (const sub of ['policy', 'components']) {
+    cpSync(join(ROOT, 'tools', 'docgen', 'builders', 'agents', sub), join(dir, 'tools', 'docgen', 'builders', 'agents', sub), { recursive: true })
+  }
   if (mutate) {
     const p = join(M(dir), 'models', `${seat}-model.json`)
     const m = JSON.parse(readFileSync(p, 'utf8'))

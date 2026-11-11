@@ -43,6 +43,8 @@ node skills/agent-modeling/scripts/verify.mjs <model.json> [--ref <model.json>] 
 node skills/agent-modeling/scripts/render.mjs <model.json> [--out <dir>] [--shared <shared.json>]
 ```
 
+状态词：`EQUIVALENT` = 该席有 `_baseline` 且展开后与基线相等；`CHECKS_PASS` = 无基线可比的草稿只过了全部校验码；`FAIL` = 有码。`--shared` 会真正替换共享层参与展开与比对（可用于验证共享层改动的影响）。
+
 退出码：`verify` 无码且（若给 `--ref`）等价 → 0，否则 1；`render` 成功 → 0，抛错 → 1。逐码含义与复现手法见 `references/checks.md`。
 
 ## 硬约束

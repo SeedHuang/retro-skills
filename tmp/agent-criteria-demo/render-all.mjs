@@ -4,14 +4,14 @@ import { fileURLToPath } from 'node:url'
 import { renderModel } from '../../tools/agent-model/render/index.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
-const mi = process.argv.indexOf('--models')
-const MODELS = mi > -1 ? resolve(process.argv[mi + 1]) : join(here, '..', '..', 'tools', 'agent-model', 'models')
-const shared = JSON.parse(readFileSync(join(MODELS, '_shared-model.json'), 'utf8'))
 const i = process.argv.indexOf('--out')
-if (i > -1 && !process.argv[i + 1]) {
-  console.error('用法：node render-all.mjs [--out <dir>]')
+const mi = process.argv.indexOf('--models')
+if ((i > -1 && !process.argv[i + 1]) || (mi > -1 && !process.argv[mi + 1])) {
+  console.error('用法：node render-all.mjs [--models <models-dir>] [--out <dir>]')
   process.exit(1)
 }
+const MODELS = mi > -1 ? resolve(process.argv[mi + 1]) : join(here, '..', '..', 'tools', 'agent-model', 'models')
+const shared = JSON.parse(readFileSync(join(MODELS, '_shared-model.json'), 'utf8'))
 const outDir = resolve(here, i > -1 ? process.argv[i + 1] : 'sandbox')
 mkdirSync(outDir, { recursive: true })
 // 先清掉上一轮产物：模型改名/删席后旧 <seat>.md 不得残留（否则「N 个 md」的计数断言会假红）

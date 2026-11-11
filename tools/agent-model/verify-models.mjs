@@ -19,11 +19,10 @@ function skillsRoot() {
     d = join(d, '..')
     if (existsSync(join(d, 'package.json')) && existsSync(join(d, 'skills'))) return join(d, 'skills')
   }
-  return join(here, '..', '..', 'skills')
+  throw new Error(`SKILLS_ROOT_UNRESOLVED from ${here}（可用 MODEL_SKILLS_ROOT 指定）`)
 }
 
 const shared = load(join(models, '_shared-model.json'))
-const PG = shared.permissionGroups || {}
 const PH = shared.placeholders || {}
 const PH_RE = /\{([a-zA-Z][\w-]*)\}/g
 
@@ -38,9 +37,9 @@ function collectOps(node) {
   return ops
 }
 
-function checkTemplate(tpl) {
+function checkTemplate(tpl, ph = PH) {
   const found = [...String(tpl).matchAll(PH_RE)].map((m) => m[1])
-  if (found.some((p) => !PH[p])) return 'PlaceholderUndeclared'
+  if (found.some((p) => !ph[p])) return 'PlaceholderUndeclared'
   if (String(tpl).startsWith('/')) return 'PathAbsolute'
   if (String(tpl).includes('..')) return 'PathEscape'
   return null
@@ -78,23 +77,26 @@ const strip = (x) => { const c = { ...x }; delete c.appliesWhen; return c }
 const policyOf = (id) => (Object.hasOwn(SEAT_POLICY, id) ? SEAT_POLICY[id] : SEAT_POLICY.__default__)
 const baseName = (p) => String(p || '').split('/').pop()
 
-export function expand(seatFile) {
+export function expand(seatFile, sh = shared) {
   const own = load(seatFile)
   const id = own.seat.id
-  const must = [...shared.rules.must.filter((r) => pick(r, id)), ...(own.must || [])].map(strip)
-  const never = [...shared.rules.never.filter((r) => pick(r, id)), ...(own.never || [])].map(strip)
+  const must = [...sh.rules.must.filter((r) => pick(r, id)), ...(own.must || [])].map(strip)
+  const never = [...sh.rules.never.filter((r) => pick(r, id)), ...(own.never || [])].map(strip)
   const predicates = {}
-  for (const [k, p] of Object.entries(shared.predicates)) if (pick(p, id)) predicates[k] = strip(p)
+  for (const [k, p] of Object.entries(sh.predicates)) if (pick(p, id)) predicates[k] = strip(p)
   for (const [k, p] of Object.entries(own.predicates || {})) predicates[k] = p
-  const records = { ...shared.records }
-  for (const [k, r] of Object.entries(own.records || {})) records[k] = { ...(shared.records[k] || {}), ...r }
-  const forms = { ...shared.forms, ...(own.forms || {}) }
-  const timing = { ...shared.timing.default, ...(own.timing || {}) }
+  const records = { ...sh.records }
+  for (const [k, r] of Object.entries(own.records || {})) records[k] = { ...(sh.records[k] || {}), ...r }
+  const forms = { ...sh.forms, ...(own.forms || {}) }
+  const timing = { ...sh.timing.default, ...(own.timing || {}) }
   return { ...own, must, never, predicates, records, forms, timing }
 }
 
 export function verify(name, opts = {}) {
-  const exp = expand(opts.modelPath || join(models, `${name}-model.json`))
+  const sh = opts.shared || shared
+  const PGx = sh.permissionGroups || {}
+  const PHx = sh.placeholders || {}
+  const exp = expand(opts.modelPath || join(models, `${name}-model.json`), sh)
   // baseline:false = 草稿模型没有基线，跳过比对（比对对象退化为自身，恒等）
   const base = opts.baseline === false
     ? { must: exp.must, never: exp.never, predicates: exp.predicates, records: exp.records }
@@ -112,9 +114,9 @@ export function verify(name, opts = {}) {
   const perm = exp.permissions || {}
   const pAction = perm.action || {}
   const actionConflict = (pAction.allow || []).filter((a) => (pAction.forbid || []).includes(a))
-  const unknownAction = [...(pAction.allow || []), ...(pAction.forbid || [])].filter((a) => !shared.actions || !shared.actions[a])
-  const permOrphan = (pAction.forbid || []).filter((a) => !PG[a] && !shared.actions?.[a])
-  const permUnobservable = (pAction.forbid || []).filter((a) => PG[a] && !PG[a].signal && !PG[a].residual)
+  const unknownAction = [...(pAction.allow || []), ...(pAction.forbid || [])].filter((a) => !sh.actions || !sh.actions[a])
+  const permOrphan = (pAction.forbid || []).filter((a) => !PGx[a] && !sh.actions?.[a])
+  const permUnobservable = (pAction.forbid || []).filter((a) => PGx[a] && !PGx[a].signal && !PGx[a].residual)
 
   const own = new Set(exp.seat.artifacts || [])
   const ownFail = []
@@ -150,7 +152,7 @@ export function verify(name, opts = {}) {
       if (bad.length) titleDrifts.push(`${k}.${f}:${bad.join('/')}`)
     }
   }
-  for (const [k, g] of Object.entries(shared.permissionGroups || {})) {
+  for (const [k, g] of Object.entries(sh.permissionGroups || {})) {
     const bad = titleDrift(g.label || '', collectOps(g.signal))
     if (bad.length) titleDrifts.push(`perm.${k}:${bad.join('/')}`)
   }
@@ -168,14 +170,14 @@ export function verify(name, opts = {}) {
   const pathBad = []
   for (const [id, f] of Object.entries(exp.forms)) {
     if (!f.path) continue
-    const err = checkTemplate(f.path)
+    const err = checkTemplate(f.path, PHx)
     if (err) pathBad.push(`${id}:${err}`)
   }
   for (const [id, r] of Object.entries(exp.records)) {
     const s = r.source
     if (!s || typeof s !== 'object' || !s.kind) { pathBad.push(`${id}:SourceUnstructured`); continue }
     if (s.kind === 'path') {
-      const err = checkTemplate(s.template)
+      const err = checkTemplate(s.template, PHx)
       if (err) pathBad.push(`${id}:${err}`)
     } else if (s.kind === 'description' && !s.text) {
       pathBad.push(`${id}:SourceTextMissing`)
@@ -190,10 +192,10 @@ export function verify(name, opts = {}) {
   const triggerBad = []
   for (const t of exp.seat.triggers || []) {
     const isElement = t.objects || t.perspective || t.action || t.timing || t.schedule
-    for (const o of t.objects || []) if (!shared.objectKinds?.[o]) triggerBad.push(`${t.id}:${o}`)
-    if (t.perspective && !shared.perspectives?.[t.perspective]) triggerBad.push(`${t.id}:${t.perspective}`)
-    if (t.schedule && !shared.schedules?.[t.schedule]) triggerBad.push(`${t.id}:${t.schedule}`)
-    if (!isElement && !t.text && !shared.triggerPhrases?.[t.id]) triggerBad.push(`${t.id}:unregistered`)
+    for (const o of t.objects || []) if (!sh.objectKinds?.[o]) triggerBad.push(`${t.id}:${o}`)
+    if (t.perspective && !sh.perspectives?.[t.perspective]) triggerBad.push(`${t.id}:${t.perspective}`)
+    if (t.schedule && !sh.schedules?.[t.schedule]) triggerBad.push(`${t.id}:${t.schedule}`)
+    if (!isElement && !t.text && !sh.triggerPhrases?.[t.id]) triggerBad.push(`${t.id}:unregistered`)
   }
 
   const actionBad = []
@@ -211,7 +213,7 @@ export function verify(name, opts = {}) {
 
   // 规则的目标是问题卡某栏时，本席必须真出问题卡；否则「不得出问题卡」与「不得留空建议解法栏」同卡互斥
   const issuesCard = seatArts.includes('artifact.issueCard')
-  const cardTargetRules = [...(shared.rules.must || []), ...(shared.rules.never || [])]
+  const cardTargetRules = [...(sh.rules.must || []), ...(sh.rules.never || [])]
     .filter((r) => (r.targets || []).some((t) => String(t.object || '').startsWith('issue.card.')))
   const cardRuleLeak = issuesCard ? [] : cardTargetRules.filter((r) => pick(r, exp.seat.id)).map((r) => r.id)
 

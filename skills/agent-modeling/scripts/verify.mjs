@@ -1,26 +1,33 @@
+import { readFileSync, existsSync } from 'node:fs'
 import { basename, dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { parseArgs } from './args.mjs'
 import { expand, verify, anyError } from '../../../tools/agent-model/verify-models.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
+const ENGINE = resolve(here, '..', '..', '..', 'tools', 'agent-model')
 
-// 位置参数 = 模型文件；--ref <file> 追加等价比对；--shared 仅为兼容预留（引擎恒用自身共享层）
-const argv = process.argv.slice(2)
-let modelPath = ''
-let refPath = ''
-for (let i = 0; i < argv.length; i++) {
-  if (argv[i] === '--ref') { refPath = argv[++i] || ''; continue }
-  if (argv[i] === '--shared') { i++; continue }
-  if (argv[i].startsWith('--')) continue
-  if (!modelPath) modelPath = argv[i]
-}
+// 位置参数 = 模型文件；--ref <file> 追加等价比对；--shared <file> 覆盖共享层
+const { positional, flags } = parseArgs(process.argv.slice(2), ['ref', 'shared'])
+const modelPath = positional[0]
 if (!modelPath) {
-  console.error('用法：node scripts/verify.mjs <model.json> [--ref <model.json>]')
+  console.error('用法：node scripts/verify.mjs <model.json> [--ref <model.json>] [--shared <shared.json>]')
   process.exit(1)
 }
 
 const id = basename(modelPath).replace(/-model\.json$/, '')
-const r = verify(id, { modelPath: resolve(modelPath), baseline: false })
+const sharedPath = resolve(flags.shared || join(ENGINE, 'models', '_shared-model.json'))
+let shared
+try {
+  shared = JSON.parse(readFileSync(sharedPath, 'utf8'))
+} catch (e) {
+  console.error(`共享层不可用：${sharedPath}（${e.message}）`)
+  process.exit(1)
+}
+
+// 有基线才做「与基线等价」判定；草稿新席无基线时只判 19 类码，状态词用 CHECKS_PASS，避免把「无码」读成「等价」
+const hasBaseline = existsSync(join(ENGINE, 'models', '_baseline', `${id}.json`))
+const r = verify(id, { modelPath: resolve(modelPath), baseline: hasBaseline, shared })
 const ok = !anyError(r)
 
 // 错误字段的通用投影：只列非空的错误位，不在此另写一份码表（码义见 references/checks.md）
@@ -31,11 +38,12 @@ const codes = Object.fromEntries(
 
 let refOk = true
 let refNote = ''
-if (refPath) {
-  refOk = JSON.stringify(expand(resolve(modelPath))) === JSON.stringify(expand(resolve(refPath)))
-  refNote = refOk ? '  REF_EQUIVALENT' : `  REF_DIFF:${refPath}`
+if (flags.ref) {
+  refOk = JSON.stringify(expand(resolve(modelPath), shared)) === JSON.stringify(expand(resolve(flags.ref), shared))
+  refNote = refOk ? '  REF_EQUIVALENT' : `  REF_DIFF:${flags.ref}`
 }
 
-console.log(`${id}  [${r.modelType || '-'}]  ${ok ? 'EQUIVALENT' : 'FAIL'}${refNote}`)
+const status = ok ? (hasBaseline ? 'EQUIVALENT' : 'CHECKS_PASS') : 'FAIL'
+console.log(`${id}  [${r.modelType || '-'}]  ${status}${refNote}`)
 if (!ok) console.log(`codes: ${JSON.stringify(codes)}`)
 process.exitCode = ok && refOk ? 0 : 1
