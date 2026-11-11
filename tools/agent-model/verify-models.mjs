@@ -210,6 +210,12 @@ export function verify(name, opts = {}) {
   const seatArts = exp.seat?.artifacts || []
   const writeScopeBad = JSON.stringify(writeAllow) === JSON.stringify(seatArts) ? '' : `WRITE_SCOPE_MISMATCH model=[${writeAllow.join(',')}] seat=[${seatArts.join(',')}]`
   const outputUnwritable = (exp.outputs?.items || []).filter((i) => !writeAllow.includes(i.artifact)).map((i) => i.artifact)
+  // 有写落点就必须真有 Write 工具：否则「结论写回 X」是空头承诺，边界也无法由 policy 派生
+  const writes = seatArts.length > 0 || writeAllow.length > 0 || Boolean(exp.defaultLanding) ||
+    exp.duty?.action?.landingMode === 'file'
+  const writeTierBad = writes && !(TIERS[tier] || []).includes('Write')
+    ? `WRITE_TIER_MISMATCH tier=${tier} footprint=${[seatArts.length ? `art=${seatArts.length}` : '', writeAllow.length ? `write=${writeAllow.length}` : '', exp.defaultLanding ? 'landing' : '', exp.duty?.action?.landingMode === 'file' ? 'file' : ''].filter(Boolean).join('+')}`
+    : ''
 
   const hitClasses = MODEL_CLASSES.filter((C) => C.matches(exp))
   const explicitType = exp.modelType || null
@@ -234,7 +240,7 @@ export function verify(name, opts = {}) {
     : lm === 'file' && !exp.duty.action.landingLabel ? 'LANDING_LABEL_MISSING'
     : ''
 
-  return { name, tier, tierBad, boundaryBad, modelType, typeErr, landingBad, must: exp.must.length, never: exp.never.length, pred: Object.keys(exp.predicates).length, rec: Object.keys(exp.records).length, errs, ownFail, policyDiff, modelFiles, policyFiles, pathUndefined, actionConflict, unknownAction, permOrphan, permUnobservable, titleDrifts, pathBad, skillBad, triggerBad, actionBad, outputTextHandwritten, writeScopeBad, outputUnwritable, cardRuleLeak }
+  return { name, tier, tierBad, boundaryBad, modelType, typeErr, landingBad, writeTierBad, must: exp.must.length, never: exp.never.length, pred: Object.keys(exp.predicates).length, rec: Object.keys(exp.records).length, errs, ownFail, policyDiff, modelFiles, policyFiles, pathUndefined, actionConflict, unknownAction, permOrphan, permUnobservable, titleDrifts, pathBad, skillBad, triggerBad, actionBad, outputTextHandwritten, writeScopeBad, outputUnwritable, cardRuleLeak }
 }
 
 const isMain = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]
@@ -242,7 +248,7 @@ export const anyError = (r) => r.errs.length || r.ownFail.length || r.policyDiff
   r.actionConflict.length || r.unknownAction.length || r.permOrphan.length || r.permUnobservable.length ||
   r.titleDrifts.length || r.pathBad.length || r.skillBad.length || r.triggerBad.length || r.actionBad.length ||
   r.outputTextHandwritten.length || r.typeErr || r.writeScopeBad || r.outputUnwritable.length || r.cardRuleLeak.length ||
-  r.tierBad || r.boundaryBad || r.landingBad
+  r.tierBad || r.boundaryBad || r.landingBad || r.writeTierBad
 let failed = false
 if (isMain) {
   const names = process.argv.slice(2).length
@@ -272,7 +278,8 @@ if (isMain) {
     const tj = r.tierBad ? '  ' + r.tierBad : ''
     const bj = r.boundaryBad ? '  ' + r.boundaryBad : ''
     const lb = r.landingBad ? '  ' + r.landingBad : ''
-    console.log(`${r.name}  [${r.modelType}]  must=${r.must} never=${r.never} pred=${r.pred} rec=${r.rec}  ${ok}${own}${pol}${undef}${act}${unk}${por}${pun}${td}${pb}${sb}${tb}${ab}${ot}${ty}${ws}${ou}${cl}${tj}${bj}${lb}`)
+    const wt = r.writeTierBad ? '  ' + r.writeTierBad : ''
+    console.log(`${r.name}  [${r.modelType}]  must=${r.must} never=${r.never} pred=${r.pred} rec=${r.rec}  ${ok}${own}${pol}${undef}${act}${unk}${por}${pun}${td}${pb}${sb}${tb}${ab}${ot}${ty}${ws}${ou}${cl}${tj}${bj}${lb}${wt}`)
     failed ||= Boolean(anyError(r))
   }
   if (failed) process.exitCode = 1

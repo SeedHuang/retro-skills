@@ -21,6 +21,8 @@
 | D3 | 7 条清单项共用同一判据形状（原文摘句非空），逐项差异只在「条目」列 | 卡面 7 项判据文字统一为「核对 X 并写出原文引句」；不为此发明第二套字段 |
 | D4 | 其余 10 席按同一形态逐席串行，每席一闭环（建模 → verify → 渲染 → 段级 diff → 人工确认） | PRD:224-228 |
 | D5 | 边界形态按固定顺序判定：卡面=默认句 → `default`；有写权限且 policy 能表达 → **必须 `policy`**；否则 `literal`（`text` 与卡面逐字相等）。禁止为「diff 一致」把 policy 席的边界抄成 literal | P1 spec S2；speaker 首次误用 literal，暴露出「不可测散文换字节一致」，已回退并加守卫 |
+| D6 | **D5 的口径改按「模型写落点」判**：`seat.artifacts` / `write.allow` / `defaultLanding` / `landingMode:file` 任一非空 ⇒ 必须 `policy` 且档位含 `Write`；全空 ⇒ 必须 `default`；**模型不得再用 `literal`**（渲染器保留，供副本测试） | `literal` 只能手抄卡面散文，散文与模型数据可各改各的而不报警；5 席（取证/架构答辩/研发答辩/精算/AI）声明写产物却是 `readOnly`/`command` 档，边界文字无法由任何数据复算 |
+| D6a | 补 `WRITE_TIER_MISMATCH` 校验码 + 给 5 席补 `write` capability（→ `sdet` / `producer`） | 「有落点却没有 Write 工具」是空头承诺；补档位后边界才能由 `renderBoundary` 派生 |
 
 ## 3 schema 与渲染器改动（唯一代码面）
 

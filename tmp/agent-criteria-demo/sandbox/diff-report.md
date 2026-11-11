@@ -5,11 +5,11 @@
 | 席 | 类型 | 沙箱行数 | 现役行数 | 沙箱字符 | 现役字符 | 段数（沙箱/现役） | 边界形态 | 边界一致 | 输出格式 |
 |---|---|---|---|---|---|---|---|---|---|
 | detective-observer | RespondentModel | 89 | 81 | 2861 | 2806 | 10/7 | policy | 是 | 有 |
-| evidence-reader | RespondentModel | 68 | 67 | 1524 | 1767 | 9/7 | literal | 是 | 有 |
-| respondent-architect | RespondentModel | 64 | 63 | 1265 | 1240 | 8/7 | literal | 是 | 有 |
-| respondent-dev | RespondentModel | 64 | 63 | 1367 | 1243 | 8/7 | literal | 是 | 有 |
-| reviewer-actuary | ReviewerModel | 80 | 75 | 1786 | 1900 | 9/7 | default | 是 | 有 |
-| reviewer-ai | ReviewerModel | 83 | 78 | 2006 | 2130 | 9/7 | default | 是 | 有 |
+| evidence-reader | RespondentModel | 82 | 67 | 2569 | 1767 | 9/7 | policy | 否 | 有 |
+| respondent-architect | RespondentModel | 78 | 63 | 2324 | 1240 | 8/7 | policy | 否 | 有 |
+| respondent-dev | RespondentModel | 78 | 63 | 2441 | 1243 | 8/7 | policy | 否 | 有 |
+| reviewer-actuary | ReviewerModel | 94 | 75 | 2854 | 1900 | 9/7 | policy | 否 | 有 |
+| reviewer-ai | ReviewerModel | 97 | 78 | 3074 | 2130 | 9/7 | policy | 否 | 有 |
 | reviewer-audit | AuditorModel | 109 | 99 | 3667 | 3344 | 10/7 | policy | 是 | 有 |
 | reviewer-product | ReviewerModel | 76 | 77 | 1583 | 2007 | 8/7 | default | 是 | 有 |
 | reviewer-interaction | ReviewerModel | 76 | 77 | 1592 | 2018 | 8/7 | default | 是 | 有 |
@@ -40,7 +40,7 @@
 | evidence-reader | 输出格式 | 文本不同 | -101 |
 | evidence-reader | 产出 | 仅沙箱 | - |
 | evidence-reader | 权限 | 仅沙箱 | - |
-| evidence-reader | 边界 | 一致 | 0 |
+| evidence-reader | 边界 | 文本不同 | 1032 |
 | respondent-architect | 职责 | 文本不同 | 13 |
 | respondent-architect | 一定会 | 文本不同 | -25 |
 | respondent-architect | 冲突裁决 | 文本不同 | -25 |
@@ -48,7 +48,7 @@
 | respondent-architect | 输出格式 | 文本不同 | -134 |
 | respondent-architect | 产出 | 仅沙箱 | - |
 | respondent-architect | 权限 | 仅沙箱 | - |
-| respondent-architect | 边界 | 一致 | 0 |
+| respondent-architect | 边界 | 文本不同 | 1046 |
 | respondent-architect | 禁止 | 仅现役 | - |
 | respondent-dev | 职责 | 文本不同 | -1 |
 | respondent-dev | 一定会 | 文本不同 | -25 |
@@ -57,7 +57,7 @@
 | respondent-dev | 输出格式 | 文本不同 | -134 |
 | respondent-dev | 产出 | 仅沙箱 | - |
 | respondent-dev | 权限 | 仅沙箱 | - |
-| respondent-dev | 边界 | 一致 | 0 |
+| respondent-dev | 边界 | 文本不同 | 1061 |
 | respondent-dev | 禁止 | 仅现役 | - |
 | reviewer-actuary | 职责 | 文本不同 | 22 |
 | reviewer-actuary | 一定会 | 文本不同 | -175 |
@@ -67,7 +67,7 @@
 | reviewer-actuary | 输出格式 | 文本不同 | -194 |
 | reviewer-actuary | 产出 | 仅沙箱 | - |
 | reviewer-actuary | 权限 | 仅沙箱 | - |
-| reviewer-actuary | 边界 | 一致 | 0 |
+| reviewer-actuary | 边界 | 文本不同 | 1055 |
 | reviewer-ai | 职责 | 文本不同 | 20 |
 | reviewer-ai | 一定会 | 文本不同 | -175 |
 | reviewer-ai | 禁止 | 文本不同 | 18 |
@@ -76,7 +76,7 @@
 | reviewer-ai | 输出格式 | 文本不同 | -194 |
 | reviewer-ai | 产出 | 仅沙箱 | - |
 | reviewer-ai | 权限 | 仅沙箱 | - |
-| reviewer-ai | 边界 | 一致 | 0 |
+| reviewer-ai | 边界 | 文本不同 | 1055 |
 | reviewer-audit | 职责 | 文本不同 | 44 |
 | reviewer-audit | 一定会 | 文本不同 | -174 |
 | reviewer-audit | 禁止 | 文本不同 | -78 |
@@ -142,11 +142,11 @@
 | 席 | 形态 | 沙箱长度 | 现役长度 | 逐字节相等 |
 |---|---|---|---|---|
 | detective-observer | policy | 1200 | 1200 | 是 |
-| evidence-reader | literal | 60 | 60 | 是 |
-| respondent-architect | literal | 46 | 46 | 是 |
-| respondent-dev | literal | 50 | 50 | 是 |
-| reviewer-actuary | default | 41 | 41 | 是 |
-| reviewer-ai | default | 41 | 41 | 是 |
+| evidence-reader | policy | 1092 | 60 | 否 |
+| respondent-architect | policy | 1092 | 46 | 否 |
+| respondent-dev | policy | 1111 | 50 | 否 |
+| reviewer-actuary | policy | 1096 | 41 | 否 |
+| reviewer-ai | policy | 1096 | 41 | 否 |
 | reviewer-audit | policy | 1240 | 1240 | 是 |
 | reviewer-product | default | 41 | 41 | 是 |
 | reviewer-interaction | default | 41 | 41 | 是 |
@@ -170,3 +170,4 @@
 | K3 | `reviewer-audit` 缺 `## 输出格式`——已补（P2 v3 补 `outputFormat`，本表已无缺失行） | spec S6；`reviewer-audit-model.json` 已建模 |
 | K4 | 边界形态三套并存 | spec S1/S2；现役事实 |
 | K5 | `seat.tier` 与策略档位并存 | spec S4；`TIER_MISMATCH` 守卫 |
+| K6 | 5 席（取证 / 架构答辩 / 研发答辩 / 精算 / AI）边界改由 `policy` 派生，卡面仍是旧短句、工具行仍是旧档位——待 S4 首次重生成 | P4 决策 A；`boundary-source.test.mjs` 强制「有写落点 ⇒ policy + 档位含 Write」 |

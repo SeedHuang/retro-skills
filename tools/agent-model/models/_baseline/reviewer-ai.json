@@ -24,7 +24,8 @@
     },
     "artifacts": [
       "artifact.issueCard"
-    ]
+    ],
+    "tier": "sdet"
   },
   "duty": {
     "trigger": {
@@ -100,6 +101,12 @@
         "seatPrefix": "AI 席卡",
         "category": "AI 判定语义核对",
         "criterion": "ai.semantics"
+      },
+      {
+        "no": 9,
+        "seatPrefix": "AI 席卡",
+        "category": "触发序列核对",
+        "criterion": "common.p1-trigger"
       }
     ]
   },
@@ -351,6 +358,18 @@
           "reason": "REQUIRES_HUMAN_JUDGMENT"
         }
       }
+    },
+    "common.p1-trigger": {
+      "action": "verify",
+      "mode": "all",
+      "observable": [
+        {
+          "op": "eachHas",
+          "ofRef": "issueCardFull",
+          "field": "suggestion",
+          "hint": "触发序列（path:line）"
+        }
+      ]
     }
   },
   "outputFormat": {
@@ -442,6 +461,21 @@
             "op": "countGte",
             "ofRef": "conflictEvidence",
             "value": 2
+          }
+        }
+      },
+      {
+        "id": "p1-trigger",
+        "observable": {
+          "op": "whenEq",
+          "ofRef": "issueCardFull",
+          "field": "severity",
+          "value": "P1",
+          "then": {
+            "op": "eachHas",
+            "ofRef": "issueCardFull",
+            "field": "suggestion",
+            "hint": "触发序列（path:line）"
           }
         }
       }
@@ -1343,6 +1377,9 @@
       "allow": [],
       "forbidForms": []
     }
+  },
+  "boundary": {
+    "kind": "policy"
   },
   "must": [
     {

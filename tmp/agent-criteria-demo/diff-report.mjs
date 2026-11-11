@@ -74,6 +74,7 @@ const md = [
   '| K3 | `reviewer-audit` 缺 `## 输出格式`——已补（P2 v3 补 `outputFormat`，本表已无缺失行） | spec S6；`reviewer-audit-model.json` 已建模 |',
   '| K4 | 边界形态三套并存 | spec S1/S2；现役事实 |',
   '| K5 | `seat.tier` 与策略档位并存 | spec S4；`TIER_MISMATCH` 守卫 |',
+  '| K6 | 5 席（取证 / 架构答辩 / 研发答辩 / 精算 / AI）边界改由 `policy` 派生，卡面仍是旧短句、工具行仍是旧档位——待 S4 首次重生成 | P4 决策 A；`boundary-source.test.mjs` 强制「有写落点 ⇒ policy + 档位含 Write」 |',
   '',
 ].join('\n')
 // 报告行数必须等于模型数：SEATS 是手写名单，漏登记新席时在这里 fail-closed

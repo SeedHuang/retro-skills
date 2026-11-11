@@ -22,7 +22,8 @@
     },
     "artifacts": [
       "artifact.defenseRecord"
-    ]
+    ],
+    "tier": "sdet"
   },
   "duty": {
     "trigger": {
@@ -1123,6 +1124,9 @@
       "allow": [],
       "forbidForms": []
     }
+  },
+  "boundary": {
+    "kind": "policy"
   },
   "never": [],
   "predicates": {

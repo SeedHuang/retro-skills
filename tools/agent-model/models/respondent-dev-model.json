@@ -23,7 +23,7 @@
     "artifacts": [
       "artifact.defenseRecord"
     ],
-    "tier": "command"
+    "tier": "producer"
   },
   "duty": {
     "trigger": {
@@ -643,7 +643,6 @@
     }
   },
   "boundary": {
-    "kind": "literal",
-    "text": "你是答辩方研发：只读席位，可跑命令复现问题，不改代码；核实结论须带原文摘句与命令输出首行，逐条署名。"
+    "kind": "policy"
   }
 }

@@ -22,7 +22,7 @@
     "artifacts": [
       "artifact.issueCard"
     ],
-    "tier": "readOnly"
+    "tier": "sdet"
   },
   "duty": {
     "trigger": {
@@ -606,6 +606,6 @@
     }
   },
   "boundary": {
-    "kind": "default"
+    "kind": "policy"
   }
 }

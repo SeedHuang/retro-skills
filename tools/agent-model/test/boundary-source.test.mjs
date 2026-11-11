@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { renderModel } from '../render/index.mjs'
 import { renderBoundary } from '../../docgen/builders/agents/components/renderBoundary.mjs'
 import { DEFAULT_BOUNDARY } from '../../docgen/builders/agents/components/patternRegistry.mjs'
-import { SEAT_POLICY } from '../../docgen/builders/agents/policy/seat-policy.mjs'
+import { TIERS } from '../../docgen/builders/agents/policy/definitions/tiers.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..', '..', '..')
@@ -22,10 +22,16 @@ const cardBoundary = (seat) => {
   assert.ok(existsSync(p), `缺卡：agents/${seat}.md（先落卡再建模）`)
   return bodyOf(readFileSync(p, 'utf8'))
 }
+// 写落点 = 模型自己声明要写盘（artifact / 写白名单 / 默认落点 / 真写盘模式），与 SEAT_POLICY 的 capability 无关
+const writes = (m) =>
+  (m.seat.artifacts || []).length > 0 ||
+  (m.permissions?.write?.allow || []).length > 0 ||
+  Boolean(m.defaultLanding) ||
+  m.duty?.action?.landingMode === 'file'
+const models = seats.map((f) => ({ f, m: JSON.parse(readFileSync(join(MODELS, f), 'utf8')) }))
 
 test('边界三形态：渲染正文必须等于声明来源（policy→renderBoundary / literal→text / default→DEFAULT_BOUNDARY）', () => {
-  for (const f of seats) {
-    const m = JSON.parse(readFileSync(join(MODELS, f), 'utf8'))
+  for (const { f, m } of models) {
     const seat = m.seat.id
     const rendered = bodyOf(renderModel(join(MODELS, f), shared).text)
     const expected = m.boundary.kind === 'policy'
@@ -35,29 +41,24 @@ test('边界三形态：渲染正文必须等于声明来源（policy→renderBo
   }
 })
 
-test('有写权限且卡面边界非默认句的席，必须用 policy 派生，不得手抄卡面', () => {
-  for (const f of seats) {
-    const m = JSON.parse(readFileSync(join(MODELS, f), 'utf8'))
-    const seat = m.seat.id
-    const p = Object.hasOwn(SEAT_POLICY, seat) ? SEAT_POLICY[seat] : null
-    const mustPolicy = p && p.capabilities.includes('write') && cardBoundary(seat) !== DEFAULT_BOUNDARY
-    if (mustPolicy) assert.equal(m.boundary.kind, 'policy', `${seat} 必须 policy，不得 literal/default`)
+test('有写落点的席必须 policy 派生，且档位必须含 Write', () => {
+  for (const { m } of models) {
+    if (!writes(m)) continue
+    assert.equal(m.boundary.kind, 'policy', `${m.seat.id} 声明写落点，边界必须 policy，不得 literal/default`)
+    assert.ok((TIERS[m.seat.tier] || []).includes('Write'), `${m.seat.id} 声明写落点但档位 ${m.seat.tier} 不含 Write`)
   }
 })
 
-test('default 只用于卡面边界恰为 DEFAULT_BOUNDARY 的席', () => {
-  for (const f of seats) {
-    const m = JSON.parse(readFileSync(join(MODELS, f), 'utf8'))
-    if (m.boundary.kind !== 'default') continue
+test('无写落点的席必须 default，且卡面边界恰为 DEFAULT_BOUNDARY', () => {
+  for (const { m } of models) {
+    if (writes(m)) continue
+    assert.equal(m.boundary.kind, 'default', `${m.seat.id} 无写落点，边界必须 default（只能由常量派生）`)
     assert.equal(cardBoundary(m.seat.id), DEFAULT_BOUNDARY, m.seat.id)
   }
 })
 
-test('卡面边界恰为 DEFAULT_BOUNDARY 的席必须用 default（反向）', () => {
-  for (const f of seats) {
-    const m = JSON.parse(readFileSync(join(MODELS, f), 'utf8'))
-    const seat = m.seat.id
-    if (cardBoundary(seat) !== DEFAULT_BOUNDARY) continue
-    assert.equal(m.boundary.kind, 'default', `${seat} 卡面=默认句，不得用 ${m.boundary.kind} 绕过`)
+test('模型不得声明 literal：手抄卡面散文不可核，等于用「不可测的散文」换「字节一致」', () => {
+  for (const { m } of models) {
+    assert.notEqual(m.boundary.kind, 'literal', `${m.seat.id} 用 literal 手抄卡面：请改为 policy（有写落点）或 default`)
   }
 })

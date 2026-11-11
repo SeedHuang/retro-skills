@@ -20,7 +20,8 @@
     },
     "artifacts": [
       "artifact.factSummary"
-    ]
+    ],
+    "tier": "sdet"
   },
   "duty": {
     "trigger": {
@@ -1055,6 +1056,9 @@
       "allow": [],
       "forbidForms": []
     }
+  },
+  "boundary": {
+    "kind": "policy"
   },
   "must": [
     {

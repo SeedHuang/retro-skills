@@ -16,9 +16,10 @@ const ENGINE = join(ROOT, 'tools', 'agent-model')
 const MODELS = join(ENGINE, 'models')
 const SHARED = JSON.parse(readFileSync(join(MODELS, '_shared-model.json'), 'utf8'))
 const SEATS = ['detective-observer', 'evidence-reader', 'respondent-architect', 'respondent-dev', 'reviewer-actuary', 'reviewer-ai', 'reviewer-audit']
-const POLICY = ['detective-observer', 'reviewer-audit']
-const NONPOLICY = ['evidence-reader', 'respondent-architect', 'respondent-dev', 'reviewer-actuary', 'reviewer-ai']
-const ALLOC = { 'detective-observer': ['producer', 'policy'], 'reviewer-audit': ['producer', 'policy'], 'evidence-reader': ['readOnly', 'literal'], 'respondent-architect': ['readOnly', 'literal'], 'respondent-dev': ['command', 'literal'], 'reviewer-actuary': ['readOnly', 'default'], 'reviewer-ai': ['readOnly', 'default'] }
+const POLICY = SEATS // 7 席都有写落点，边界统一由 policy 派生
+const NO_ESCALATION = ['evidence-reader', 'respondent-architect', 'respondent-dev', 'reviewer-actuary', 'reviewer-ai']
+const ZERO_WRITE = ['reviewer-product', 'reviewer-interaction', 'reviewer-ui', 'reviewer-frontend']
+const ALLOC = { 'detective-observer': ['producer', 'policy'], 'reviewer-audit': ['producer', 'policy'], 'evidence-reader': ['sdet', 'policy'], 'respondent-architect': ['sdet', 'policy'], 'respondent-dev': ['producer', 'policy'], 'reviewer-actuary': ['sdet', 'policy'], 'reviewer-ai': ['sdet', 'policy'] }
 
 const MODEL_COUNT = () => readdirSync(MODELS).filter((f) => f.endsWith('-model.json') && !f.startsWith('_')).length
 const model = (s) => JSON.parse(readFileSync(join(MODELS, `${s}-model.json`), 'utf8'))
@@ -154,8 +155,8 @@ test('TC-006 policy 边界与 renderBoundary 逐字节相等', () => {
   for (const s of POLICY) assert.equal(trimEnd(bodyOf(section(render(s), '边界'))), trimEnd(renderBoundary(s)), s)
 })
 
-test('TC-007 非 policy 边界与现役卡逐字节相等', () => {
-  for (const s of NONPOLICY) assert.equal(trimEnd(bodyOf(section(render(s), '边界'))), trimEnd(bodyOf(cardSection(s, '边界'))), s)
+test('TC-007 零写席边界 = 卡面（均为 DEFAULT_BOUNDARY）', () => {
+  for (const s of ZERO_WRITE) assert.equal(trimEnd(bodyOf(section(render(s), '边界'))), trimEnd(bodyOf(cardSection(s, '边界'))), s)
 })
 
 test('TC-008 段顺序', () => {
@@ -167,7 +168,7 @@ test('TC-008 段顺序', () => {
 })
 
 test('TC-040 policy 非写席 → BOUNDARY_POLICY_NONWRITER，exit 1', () => {
-  const { dir, out } = caseCopy((m) => { m.boundary = { kind: 'policy' } })
+  const { dir, out } = caseCopy((m) => { m.boundary = { kind: 'policy' } }, 'reviewer-ui')
   rmSync(dir, { recursive: true, force: true })
   assert.match(out.stdout, /BOUNDARY_POLICY_NONWRITER/)
   assert.equal(out.status, 1)
@@ -202,8 +203,8 @@ test('TC-032 空白 text 只发 BOUNDARY_TEXT_MISSING', () => {
   assert.equal(out.status, 1)
 })
 
-test('TC-004 default 两席只有 kind，模型不复制常量', () => {
-  for (const s of ['reviewer-actuary', 'reviewer-ai']) assert.deepEqual(Object.keys(model(s).boundary), ['kind'])
+test('TC-004 零写席 default 只有 kind，模型不复制常量', () => {
+  for (const s of ZERO_WRITE) assert.deepEqual(Object.keys(model(s).boundary), ['kind'])
   for (const f of readdirSync(MODELS).filter((f) => f.endsWith('.json'))) {
     assert.ok(!readFileSync(join(MODELS, f), 'utf8').includes('你是只读评审角色'), f)
   }
@@ -226,7 +227,7 @@ test('TC-022 调换步序后编号跟序号', () => {
 })
 
 test('TC-023 5 席无越界处置段', () => {
-  for (const s of NONPOLICY) assert.ok(!render(s).includes('\n## 越界处置\n'), s)
+  for (const s of NO_ESCALATION) assert.ok(!render(s).includes('\n## 越界处置\n'), s)
 })
 
 test('TC-034/035 空 must/never 返回 []', () => {
@@ -235,8 +236,8 @@ test('TC-034/035 空 must/never 返回 []', () => {
 })
 
 test('TC-036 literal 首尾空白原样渲染', () => {
-  const padded = ' ' + model('evidence-reader').boundary.text + '\n'
-  const dir = copyCase((m) => { m.boundary.text = padded })
+  const padded = ' 你是只读取证角色：不得创建、修改、删除任何文件。\n'
+  const dir = copyCase((m) => { m.boundary = { kind: 'literal', text: padded } })
   const t = renderModel(join(M(dir), 'models/evidence-reader-model.json'), JSON.parse(readFileSync(join(M(dir), 'models/_shared-model.json'), 'utf8'))).text
   const sec = t.split(/\n## /).find((x) => x.startsWith('边界\n'))
   rmSync(dir, { recursive: true, force: true })
@@ -246,7 +247,7 @@ test('TC-036 literal 首尾空白原样渲染', () => {
 })
 
 test('TC-041 非空带首尾空白只发 WHITESPACE', () => {
-  const { dir, out } = caseCopy((m) => { m.boundary.text = m.boundary.text + ' ' })
+  const { dir, out } = caseCopy((m) => { m.boundary = { kind: 'literal', text: '你是只读取证角色。 ' } })
   rmSync(dir, { recursive: true, force: true })
   assert.match(out.stdout, /BOUNDARY_TEXT_WHITESPACE/)
   assert.doesNotMatch(out.stdout, /BOUNDARY_TEXT_MISSING/)

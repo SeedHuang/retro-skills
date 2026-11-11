@@ -23,7 +23,7 @@
     "artifacts": [
       "artifact.defenseRecord"
     ],
-    "tier": "readOnly"
+    "tier": "sdet"
   },
   "duty": {
     "trigger": {
@@ -606,7 +606,6 @@
     }
   },
   "boundary": {
-    "kind": "literal",
-    "text": "你是答辩方架构师：只核实问题卡并汇总答辩方核实结论，不改代码、不写评审结论；核实表逐条署名。"
+    "kind": "policy"
   }
 }

@@ -22,7 +22,8 @@
     },
     "artifacts": [
       "artifact.defenseRecord"
-    ]
+    ],
+    "tier": "producer"
   },
   "duty": {
     "trigger": {
@@ -1160,6 +1161,9 @@
       ],
       "forbidForms": []
     }
+  },
+  "boundary": {
+    "kind": "policy"
   },
   "never": [],
   "predicates": {

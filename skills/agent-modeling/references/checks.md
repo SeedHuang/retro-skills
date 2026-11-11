@@ -42,7 +42,8 @@
 | `BOUNDARY_KIND_UNKNOWN <k>` | `boundary.kind` 不是 `policy` / `literal` / `default` | 三选一 |
 | `BOUNDARY_TEXT_MISSING` | `literal` 缺 `text` 或全空白 | 补原文 |
 | `BOUNDARY_TEXT_WHITESPACE` | `literal.text` 首尾带空白 | 去掉首尾空白（正文内部空白不动） |
-| `BOUNDARY_POLICY_NONWRITER` | `policy` 档位但该档工具集不含 `Write` | 改用 `literal`/`default`，或修正档位 |
+| `BOUNDARY_POLICY_NONWRITER` | `policy` 档位但该档工具集不含 `Write` | 给该席补 `write` capability（有写落点时），或改 `default` |
+| `WRITE_TIER_MISMATCH tier=… footprint=…` | 模型声明写落点（artifacts / write.allow / defaultLanding / landingMode:file），但档位工具集不含 `Write` | 给 `SEAT_POLICY[席].capabilities` 补 `write`，并同步模型 `seat.tier` |
 
 ## 用法
 

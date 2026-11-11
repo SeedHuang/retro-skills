@@ -46,14 +46,14 @@
 
 ## 边界形态选择规则
 
-`boundary.kind` 不是「任选一个能抄得像的」，按下列顺序唯一确定：
+`boundary.kind` 由「模型自己声明要不要写盘」唯一确定，不看 `SEAT_POLICY` 的 capability：
 
-1. 卡面边界正文等于 `DEFAULT_BOUNDARY` → `default`。
-2. 该席在 `SEAT_POLICY` 有登记、`capabilities` 含 `write`、且卡面边界不是默认句 → **必须 `policy`**（由 `renderBoundary(seat)` 派生）。禁止把卡面散文抄成 `literal`：那样等于用「不可测的散文」换「字节一致」。
-3. 其余（无写权限 / policy 无法表达该席边界）→ `literal`，且 `text` 必须与现役卡该段逐字相等。
-4. `policy` 档但 `TIERS[tier]` 不含 `Write` → `BOUNDARY_POLICY_NONWRITER`，回到 3。
+1. **有写落点**（`seat.artifacts` 非空、`permissions.write.allow` 非空、`defaultLanding` 非空，或 `duty.action.landingMode === 'file'`）→ **必须 `policy`**（由 `renderBoundary(seat)` 派生），且该席档位必须含 `Write`，否则 `WRITE_TIER_MISMATCH`。
+2. **无写落点** → **必须 `default`**（`DEFAULT_BOUNDARY` 常量），且卡面边界正文也等于该常量。
+3. **禁止 `literal`**：手抄卡面散文不可核——散文与模型数据可以各改各的、都不报警，等于用「不可测的散文」换「字节一致」。渲染器保留 `literal` 供历史与副本测试，但模型清单里出现即红。
+4. `policy` 但档位不含 `Write` → `BOUNDARY_POLICY_NONWRITER`；根因通常是 1 的档位没补齐。
 
-判据不是靠自觉：`tools/agent-model/test/boundary-source.test.mjs` 逐席核「渲染正文 = 声明来源」，并对有写权限的席强制 `policy`。写新模型前先跑它，红即改。
+判据不靠自觉：`tools/agent-model/test/boundary-source.test.mjs` 四条守卫逐席核「渲染正文 = 声明来源」「有写落点 ⇒ policy 且档位含 Write」「无写落点 ⇒ default 且卡面 = 默认句」「模型不得出现 literal」。写新模型前先跑它，红即改。
 
 ## 渲染顺序（段表）
 
