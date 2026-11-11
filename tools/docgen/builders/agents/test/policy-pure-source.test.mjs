@@ -1174,6 +1174,20 @@ test('S6-TC-G02 gate → baseline N/N，N 派生不写死', () => {
   assert.equal(readFileSync('tools/docgen/builders/agents/test/policy-pure-source.test.mjs', 'utf8').includes(`${N}/${N}`), false);
 });
 
+test('S6-TC-B16 席级 roleKind 撞其他席 display 判 SeatNameInDefinition', () => {
+  // 席级 roleKind 渲成卡面首句「你是<roleKind>（<display>）」：写别的席显示名会出「你是审计（精算）」
+  withCopy((d) => {
+    editInDir(d, 'tools/docgen/builders/agents/policy/definitions/seats.mjs', (src) => {
+      const from = "  'reviewer-actuary': {\n    display: '精算',";
+      assert.ok(src.includes(from), '构造前提：未找到 reviewer-actuary 登记块');
+      return src.replace(from, `${from}\n    roleKind: '审计',`);
+    });
+    const r = runCli(d, ['policy', '--dump']);
+    assert.notEqual(r.status, 0, '撞名必须判红');
+    assert.match(`${r.stderr}${r.stdout}`, /SeatNameInDefinition: reviewer-actuary:roleKind=审计/);
+  });
+});
+
 test('S6-TC-G03 边界句单源：有写落点的席全部 = renderBoundary，其余席渲 DEFAULT_BOUNDARY', () => {
   // 2026-11-11 D6b：边界不再「手抄 / 自带」，判据改成与档位同一条（含 Write ⇒ 走策略派生），并禁止席 JSON 自带 boundary
   const writers = new Set(Object.keys(patternRegistry.boundaryBySeat));
