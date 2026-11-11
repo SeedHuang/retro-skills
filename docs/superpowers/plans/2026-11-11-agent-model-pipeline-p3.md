@@ -6,12 +6,12 @@
 
 ## T1 迁移引擎与模型（`git mv`，内容零改动）
 
-- `tmp/agent-criteria-demo/{models,types,render,verify-models.mjs}` → `tools/docgen/builders/agent-model/`
+- `tmp/agent-criteria-demo/{models,types,render,verify-models.mjs}` → `tools/agent-model/`
 - 改 import 深度：
-  - `agent-model/render/sections.mjs`：`../../../tools/docgen/builders/agents/components/*` → `../../agents/components/*`
+  - `agent-model/render/sections.mjs`：`../../../tools/docgen/builders/agents/components/*` → `../../docgen/builders/agents/components/*`
   - `agent-model/verify-models.mjs`：`../../tools/docgen/builders/agents/policy/*` → `../agents/policy/*`
 - 改 `verify-models.mjs:172` 的 skills 查找：由固定 2 级上跳改为「向上找含 `package.json` + `skills/` 的仓根」（临时副本也能解析），保留 `MODEL_SKILLS_ROOT` 环境变量覆盖。
-- 门禁：`node --check` 全部迁移文件；`cd tools/docgen/builders/agent-model && node verify-models.mjs` → 7 行 EQUIVALENT。
+- 门禁：`node --check` 全部迁移文件；`cd tools/agent-model && node verify-models.mjs` → 7 行 EQUIVALENT。
 
 ## T2 更新依赖方（5 个脚本 + 1 个测试）
 

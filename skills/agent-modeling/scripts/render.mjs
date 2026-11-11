@@ -1,10 +1,10 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { basename, dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { renderModel } from '../../../tools/docgen/builders/agent-model/render/index.mjs'
+import { renderModel } from '../../../tools/agent-model/render/index.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
-const ENGINE = resolve(here, '..', '..', '..', 'tools', 'docgen', 'builders', 'agent-model')
+const ENGINE = resolve(here, '..', '..', '..', 'tools', 'agent-model')
 
 const argv = process.argv.slice(2)
 const argOf = (flag) => {

@@ -1,6 +1,6 @@
 # 校验码与修法
 
-引擎：`tools/docgen/builders/agent-model/verify-models.mjs`（本文件只解释码，不复述实现）。判红 = 码出现即失败，`verify.mjs` 退出码 1。
+引擎：`tools/agent-model/verify-models.mjs`（本文件只解释码，不复述实现）。判红 = 码出现即失败，`verify.mjs` 退出码 1。
 
 ## 结构类
 

@@ -18,7 +18,7 @@
 
 | # | 决策 | 依据 |
 |---|---|---|
-| D1 | 引擎与模型迁到 `tools/docgen/builders/agent-model/`，`tmp/` 只留评测脚本与样本 | 用户 2026-11-11 裁定「彻底解决」；`tmp/` 是被 `.gitignore` 忽略、靠 force-add 维持的实验区，不宜做运行期依赖 |
+| D1 | 引擎与模型迁到 `tools/agent-model/`，`tmp/` 只留评测脚本与样本 | 用户 2026-11-11 裁定「彻底解决」；`tmp/` 是被 `.gitignore` 忽略、靠 force-add 维持的实验区，不宜做运行期依赖 |
 | D2 | skill 脚本是**薄封装**：只 import 引擎，不复制任何渲染/校验逻辑 | carrier-conventions「判定实现唯一」；避免第二份真相 |
 | D3 | 草稿与预览落 `skills/agent-modeling/drafts/`，且该目录不进 git | 用户 2026-11-11 选择；草稿是运行期产物，可随时重建 |
 | D4 | 回放样本用 `reviewer-actuary`，判据是「展开后 JSON 与现模型逐字节相等」 | PRD:218 指定该席；等价性用展开结果比，不用渲染文本比（文本由 P1 已覆盖） |
@@ -27,10 +27,10 @@
 
 | 现在 | 迁移后 | 说明 |
 |---|---|---|
-| `tmp/agent-criteria-demo/models/`（7 张 + `_shared-model.json` + `_baseline/`） | `tools/docgen/builders/agent-model/models/` | 原样搬，内容零改动 |
-| `tmp/agent-criteria-demo/types/`（`base.mjs` / `derived.mjs` / `index.mjs`） | `tools/docgen/builders/agent-model/types/` | 原样搬 |
-| `tmp/agent-criteria-demo/render/`（`index.mjs` / `sections.mjs`） | `tools/docgen/builders/agent-model/render/` | 搬后改 2 处 import 深度 |
-| `tmp/agent-criteria-demo/verify-models.mjs` | `tools/docgen/builders/agent-model/verify-models.mjs` | 搬后改 1 处 import 深度；另加 2 个导出与 1 个可选参数（见 §4） |
+| `tmp/agent-criteria-demo/models/`（7 张 + `_shared-model.json` + `_baseline/`） | `tools/agent-model/models/` | 原样搬，内容零改动 |
+| `tmp/agent-criteria-demo/types/`（`base.mjs` / `derived.mjs` / `index.mjs`） | `tools/agent-model/types/` | 原样搬 |
+| `tmp/agent-criteria-demo/render/`（`index.mjs` / `sections.mjs`） | `tools/agent-model/render/` | 搬后改 2 处 import 深度 |
+| `tmp/agent-criteria-demo/verify-models.mjs` | `tools/agent-model/verify-models.mjs` | 搬后改 1 处 import 深度；另加 2 个导出与 1 个可选参数（见 §4） |
 | — | `skills/agent-modeling/**` | 新建，见 §5 |
 
 `tmp/agent-criteria-demo/` 保留：`render-all.mjs`、`diff-report.mjs`、`test-p1.test.mjs`、`sandbox/`、`eval/`。这 4 个文件的 import 与模型路径改为指向新位置，行为不变。
@@ -80,8 +80,8 @@ skills/agent-modeling/
 
 ## 6 回放验收
 
-1. 把 `tools/docgen/builders/agent-model/models/reviewer-actuary-model.json` 复制成 `skills/agent-modeling/drafts/reviewer-actuary-model.json`。
-2. `node skills/agent-modeling/scripts/verify.mjs skills/agent-modeling/drafts/reviewer-actuary-model.json --ref tools/docgen/builders/agent-model/models/reviewer-actuary-model.json` → 首行含 `EQUIVALENT` 与 `REF_EQUIVALENT`，exit 0。
+1. 把 `tools/agent-model/models/reviewer-actuary-model.json` 复制成 `skills/agent-modeling/drafts/reviewer-actuary-model.json`。
+2. `node skills/agent-modeling/scripts/verify.mjs skills/agent-modeling/drafts/reviewer-actuary-model.json --ref tools/agent-model/models/reviewer-actuary-model.json` → 首行含 `EQUIVALENT` 与 `REF_EQUIVALENT`，exit 0。
 3. `node skills/agent-modeling/scripts/render.mjs skills/agent-modeling/drafts/reviewer-actuary-model.json` → 产出 `drafts/reviewer-actuary.md`；与 `tmp/agent-criteria-demo/sandbox/reviewer-actuary.md` 逐字节相等（`Get-FileHash` 同值）。
 4. 负例：把草稿的 `seat.tier` 改成非法值 → verify exit 1 且首行含 `TIER_MISMATCH`。
 

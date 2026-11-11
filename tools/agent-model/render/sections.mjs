@@ -1,6 +1,6 @@
-import { TIERS } from '../../agents/policy/definitions/tiers.mjs'
-import { renderBoundary } from '../../agents/components/renderBoundary.mjs'
-import { DEFAULT_BOUNDARY } from '../../agents/components/patternRegistry.mjs'
+import { TIERS } from '../../docgen/builders/agents/policy/definitions/tiers.mjs'
+import { renderBoundary } from '../../docgen/builders/agents/components/renderBoundary.mjs'
+import { DEFAULT_BOUNDARY } from '../../docgen/builders/agents/components/patternRegistry.mjs'
 
 const cn = (a, b) => (/[A-Za-z0-9)]$/.test(a) ? a + ' ' + b : a + b)
 

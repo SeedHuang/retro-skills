@@ -1,6 +1,6 @@
 import { basename, dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { expand, verify, anyError } from '../../../tools/docgen/builders/agent-model/verify-models.mjs'
+import { expand, verify, anyError } from '../../../tools/agent-model/verify-models.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 

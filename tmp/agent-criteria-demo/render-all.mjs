@@ -1,11 +1,11 @@
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, rmSync } from 'node:fs'
 import { join, dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { renderModel } from '../../tools/docgen/builders/agent-model/render/index.mjs'
+import { renderModel } from '../../tools/agent-model/render/index.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const mi = process.argv.indexOf('--models')
-const MODELS = mi > -1 ? resolve(process.argv[mi + 1]) : join(here, '..', '..', 'tools', 'docgen', 'builders', 'agent-model', 'models')
+const MODELS = mi > -1 ? resolve(process.argv[mi + 1]) : join(here, '..', '..', 'tools', 'agent-model', 'models')
 const shared = JSON.parse(readFileSync(join(MODELS, '_shared-model.json'), 'utf8'))
 const i = process.argv.indexOf('--out')
 if (i > -1 && !process.argv[i + 1]) {

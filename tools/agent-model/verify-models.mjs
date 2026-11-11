@@ -1,8 +1,8 @@
 import { readFileSync, existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { tierOfCapabilities, TIERS } from '../agents/policy/definitions/tiers.mjs'
-import { SEAT_POLICY } from '../agents/policy/seat-policy.mjs'
+import { tierOfCapabilities, TIERS } from '../docgen/builders/agents/policy/definitions/tiers.mjs'
+import { SEAT_POLICY } from '../docgen/builders/agents/policy/seat-policy.mjs'
 import { ReviewerModel, AuditorModel, RespondentModel } from './types/derived.mjs'
 
 const MODEL_CLASSES = [ReviewerModel, AuditorModel, RespondentModel]

@@ -4,15 +4,15 @@ import { readFileSync, readdirSync, writeFileSync, cpSync, rmSync, existsSync } 
 import { createHash } from 'node:crypto'
 import { join, resolve } from 'node:path'
 import { spawnSync } from 'node:child_process'
-import { renderModel } from '../../tools/docgen/builders/agent-model/render/index.mjs'
-import { sections, makeHelpers } from '../../tools/docgen/builders/agent-model/render/sections.mjs'
-import { expand } from '../../tools/docgen/builders/agent-model/verify-models.mjs'
+import { renderModel } from '../../tools/agent-model/render/index.mjs'
+import { sections, makeHelpers } from '../../tools/agent-model/render/sections.mjs'
+import { expand } from '../../tools/agent-model/verify-models.mjs'
 import { TIERS } from '../../tools/docgen/builders/agents/policy/definitions/tiers.mjs'
 import { renderBoundary } from '../../tools/docgen/builders/agents/components/renderBoundary.mjs'
 
 const HERE = import.meta.dirname
 const ROOT = resolve(HERE, '../..')
-const ENGINE = join(ROOT, 'tools', 'docgen', 'builders', 'agent-model')
+const ENGINE = join(ROOT, 'tools', 'agent-model')
 const MODELS = join(ENGINE, 'models')
 const SHARED = JSON.parse(readFileSync(join(MODELS, '_shared-model.json'), 'utf8'))
 const SEATS = ['detective-observer', 'evidence-reader', 'respondent-architect', 'respondent-dev', 'reviewer-actuary', 'reviewer-ai', 'reviewer-audit']
@@ -36,13 +36,14 @@ const sha = (p) => createHash('sha256').update(readFileSync(p)).digest('hex')
 
 // 副本根 = tmp/p1-case-<pid>：既放 demo 脚本（render-all / diff-report / sandbox），也按仓内相对深度放一份引擎
 // （render-all 的默认 models 路径按 here/../../tools 计算，副本根与仓根同深度，故能命中副本自己的引擎）
-const M = (d) => join(d, 'tools', 'docgen', 'builders', 'agent-model')
+const M = (d) => join(d, 'tools', 'agent-model')
 function copyCase(mutate, seat = 'evidence-reader') {
   const dir = join(HERE, '..', 'p1-case-' + process.pid)
   rmSync(dir, { recursive: true, force: true })
   cpSync(HERE, dir, { recursive: true, filter: (src) => !src.includes('sandbox') && !src.includes('p1-case-') })
-  // 引擎的兄弟依赖（../agents/policy、../../agents/components）一并按原相对深度复制，避免副本内 import 断链
-  cpSync(join(ROOT, 'tools', 'docgen', 'builders'), join(dir, 'tools', 'docgen', 'builders'), { recursive: true })
+  // 引擎的兄弟依赖（docgen/builders/agents 下的 policy 与 components）一并按原相对深度复制，避免副本内 import 断链
+  cpSync(join(ROOT, 'tools', 'agent-model'), join(dir, 'tools', 'agent-model'), { recursive: true })
+  cpSync(join(ROOT, 'tools', 'docgen', 'builders', 'agents'), join(dir, 'tools', 'docgen', 'builders', 'agents'), { recursive: true })
   if (mutate) {
     const p = join(M(dir), 'models', `${seat}-model.json`)
     const m = JSON.parse(readFileSync(p, 'utf8'))

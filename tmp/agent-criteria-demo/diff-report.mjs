@@ -1,12 +1,12 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { expand } from '../../tools/docgen/builders/agent-model/verify-models.mjs'
-import { typeOf } from '../../tools/docgen/builders/agent-model/render/index.mjs'
+import { expand } from '../../tools/agent-model/verify-models.mjs'
+import { typeOf } from '../../tools/agent-model/render/index.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(HERE, '..', '..')
-const MODELS = join(ROOT, 'tools', 'docgen', 'builders', 'agent-model', 'models')
+const MODELS = join(ROOT, 'tools', 'agent-model', 'models')
 const SEATS = ['detective-observer', 'evidence-reader', 'respondent-architect', 'respondent-dev', 'reviewer-actuary', 'reviewer-ai', 'reviewer-audit']
 const SHARED = JSON.parse(readFileSync(join(MODELS, '_shared-model.json'), 'utf8'))
 const split = (text) => text.split(/\n## /).slice(1).map((x) => {

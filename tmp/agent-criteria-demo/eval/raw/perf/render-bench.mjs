@@ -1,10 +1,10 @@
 import { readFileSync, readdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { renderModel } from '../../../../../tools/docgen/builders/agent-model/render/index.mjs'
+import { renderModel } from '../../../../../tools/agent-model/render/index.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
-const demo = join(here, '..', '..', '..', '..', '..', 'tools', 'docgen', 'builders', 'agent-model')
+const demo = join(here, '..', '..', '..', '..', '..', 'tools', 'agent-model')
 const shared = JSON.parse(readFileSync(join(demo, 'models/_shared-model.json'), 'utf8'))
 const models = readdirSync(join(demo, 'models')).filter(f => f.endsWith('-model.json') && !f.startsWith('_')).sort()
 const med = a => { const b = [...a].sort((x, y) => x - y); const n = b.length; return n % 2 ? b[(n - 1) / 2] : (b[n / 2 - 1] + b[n / 2]) / 2 }
