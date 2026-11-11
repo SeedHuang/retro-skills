@@ -48,19 +48,15 @@ tools: Read, Glob, Grep
 
 - 核实结论非空
 - 证据三元组全在
-- 立场 = 带依据反驳 时
+- 立场 = 带依据反驳 时，反驳依据非空
 - 署名席取值
 
 ## 产出
 - 每轮：按 `parliament-ledger` 技能的答辩记录填写，写回 `.session/reviews/{session}/defense.md`
-- 产物字段名只许 hit / miss / na / reason / evidence / verdict；自造键 = 不合规
+- 字段名只用 hit / miss / na / reason / evidence / verdict；自造键不合规
 
 ## 权限
-- 职责动作：只核实、汇总、记录
-- 禁止修改代码
-- 禁止写评审结论
-- 禁止自行处置越界后果
-- 写文件：只许写 `defense.md`
+- 写文件：只许 `defense.md`
 - 跑命令：不跑任何命令
 
 ## 边界

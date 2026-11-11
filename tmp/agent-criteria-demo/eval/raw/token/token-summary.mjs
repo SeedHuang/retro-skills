@@ -16,7 +16,7 @@ for (const blind of Object.keys(byBlind)) {
   cardChars[blind] = readFileSync(join(root, 'cards', `${blind}.md`), 'utf8').length
 }
 const outChars = {}
-const dir = join(root, 'execution')
+const dir = join(root, process.argv[2] || 'execution')
 for (const f of readdirSync(dir).filter(x => x.endsWith('.json'))) {
   const m = f.match(/^r(\d+)-(card-[AB]\d)\.json$/)
   if (!m) continue

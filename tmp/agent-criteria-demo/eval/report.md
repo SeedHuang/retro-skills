@@ -104,6 +104,8 @@
 | token | 未达线 | 卡面 1 席超 1.1×（`respondent-dev` +12.9%）；单任务 2 席超（architect +11.4%、dev +12.5%） |
 | 性能 | 渲染达线，任务时延未采集 | 渲染 ≤0.22 ms/卡；工具调用 4=4；wall-clock 无记录 |
 
+> 注：token 与执行力两行的旧值已被 §7 调优复测覆盖；`reviewer-audit` 的输出格式缺口仍未修。
+
 按 PRD §7.4「任一维退化 >10% → 回 P1 调优」，本轮判 **修改**，不判整席回退：
 - 理解维度没有 >10% 的整维退化（`reviewer-audit` 单席 −12.5%，但其余 6 席 +1~+2）；
 - 执行维度 E3 全 1，越界识别无回退；
@@ -143,3 +145,67 @@
 - token：`eval/raw/token/token-summary.mjs`；性能：`eval/raw/perf/render-bench.mjs`
 - 聚合表：`eval/raw/aggregate.csv`
 - fixture：`eval/raw/fixtures/`（3 个 md）
+
+## 7 P2 调优复测（2026-11-11，按 §4 处方）
+
+### 7.1 改动
+
+| # | 文件 | 改动 | 目的 |
+|---|---|---|---|
+| 1 | `render/sections.mjs:30` | `whenEq` 渲染 `then` 子句 | P0「冲突证据 ≥ 2」不再被截断为半句 |
+| 2 | `render/sections.mjs:194-204` | 权限段去掉与 `duty` 重复的职责动作/禁止项，只留写文件与跑命令 | 压 token，信息不丢 |
+| 3 | `render/sections.mjs:190` | 产出行字段名措辞压缩 | 压 token |
+| 4 | `models/reviewer-actuary-model.json` / `reviewer-ai-model.json` | `outputFormat` 增 `p1-trigger` 校验；`checklist` 增「触发序列核对」行（`common.p1-trigger`） | 把 P1 触发序列写进卡面主清单，稳定执行命中 |
+
+未改 `agents/**` 与 `tools/docgen/**`；`git diff --stat -- agents` 仍为空。
+
+### 7.2 结构验证
+
+- `node --test test-p1.test.mjs` → `# pass 28 / # fail 0`
+- `node verify-models.mjs` → 7 席 EQUIVALENT
+- 连跑两次 `render-all.mjs` → `detective-observer.md` 哈希 `same=True`
+- `sandbox/*.md` = 8
+
+### 7.3 token 复测（卡面，字符/4）
+
+| 席 | A | B | B/A | ≤1.1A |
+|---|---|---|---|---|
+| detective-observer | 702 | 715 | 1.0196 | 达线 |
+| evidence-reader | 442 | 381 | 0.8625 | 达线 |
+| respondent-architect | 310 | 316 | 1.0202 | 达线 |
+| respondent-dev | 311 | 342 | 1.0998 | 达线 |
+| reviewer-actuary | 475 | 447 | 0.9400 | 达线 |
+| reviewer-ai | 533 | 502 | 0.9418 | 达线 |
+| reviewer-audit | 836 | 820 | 0.9812 | 达线 |
+
+原超线的 `respondent-dev` 从 351→342（+12.9%→+10.0% 边界内），`architect` 从 328→316。
+
+单任务 token（4 席复测，口径同 §2.3）：
+
+| 席 | A | B | B/A | ≤1.1A |
+|---|---|---|---|---|
+| respondent-architect | 802 | 793 | 0.989 | 达线 |
+| respondent-dev | 803 | 807 | 1.005 | 达线 |
+| reviewer-actuary | 1034 | 1036 | 1.002 | 达线 |
+| reviewer-ai | 1051 | 1096 | 1.043 | 达线 |
+
+### 7.4 执行稳定性复测（4 席 × 3 轮，独立 subagent）
+
+| 席 | A 中位数 | A 三轮 | B 中位数 | B 三轮 | E3 |
+|---|---|---|---|---|---|
+| respondent-architect | 4 | 4/3/4 | 4 | 4/4/4 | 1 / 1 |
+| respondent-dev | 4 | 4/4/4 | 4 | 4/4/4 | 1 / 1 |
+| reviewer-actuary | 3 | 3/2/3 | 4 | 4/4/4 | 1 / 1 |
+| reviewer-ai | 3 | 2/3/4 | 4 | 4/4/4 | 1 / 1 |
+
+- `reviewer-actuary`：B 三轮全 4，E2 由 0/0/1 稳定为 1/1/1；A 仍 3/2/3。
+- `reviewer-ai`：B 三轮全 4；A 2/3/4。
+- 越界识别 E3 4 席 A/B 全 1，无回退。
+
+### 7.5 结论与残留
+
+- token 超线：**已修复**。7/7 席卡面 ≤1.1A；4/4 复测席单任务 ≤1.1A。
+- 执行稳定性：**已修复**（`reviewer-actuary`/`reviewer-ai` B 由 3→4，三轮稳定；E3 无回退）。
+- 未修：`reviewer-audit` 的 `outputFormat`（P4 建模缺口，不属本次「token + 执行稳定性」两项），其理解 Q8/执行 E1 仍低。
+- 未重跑：理解维度 42 个 subagent 未重跑；`aggregate-fix.csv` 的 U 列沿用旧值；完整 P2 未重跑，§2/§3 旧值保留作对照。
+- 复测原始数据：`eval/raw/execution-fix/`（24 个 json）、`eval/raw/aggregate-fix.csv`。

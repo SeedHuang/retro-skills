@@ -27,7 +27,7 @@ export function makeHelpers(M, shared) {
     quoteInLine: (o) => cn(recLabel(o.ofRef), '摘句行号'),
     countGte: (o) => cn(recLabel(o.ofRef), ` 计数 ≥ ${o.value}`),
     distinctGte: (o) => cn(recLabel(o.ofRef), ` 来自 ≥ ${o.value} 个不同${o.byLabel || o.by}`),
-    whenEq: (o) => `${fieldLabel(o.ofRef, o.field)} = ${o.value} 时`,
+    whenEq: (o) => `${fieldLabel(o.ofRef, o.field)} = ${o.value} 时${o.then ? `，${renderObs(o.then)}` : ''}`,
     whenEmpty: (o) => cn(recLabel(o.ofRef), `为空时，${o.then ? renderObs(o.then) : ''}`),
     eachHas: (o) => `${fieldLabel(o.ofRef, o.field)}每项含 ${o.hint || o.pattern}`,
     fieldMissing: (o) => `${fieldLabel(o.ofRef, o.field)}缺项`,
@@ -187,16 +187,16 @@ export const sections = {
       const tpl = M.templates[o.template]
       out.push(`- ${o.phase}：按 \`${tpl.skill}\` 技能的${tpl.label}${M.enums.action.labels[o.action]}，写回 \`${h.F[o.artifact].path}\``)
     }
-    out.push(`- 产物字段名只许 ${M.outputKeys.join(' / ')}；自造键 = 不合规`, '')
+    out.push(`- 字段名只用 ${M.outputKeys.join(' / ')}；自造键不合规`, '')
     return out
   },
 
   permissions(M, shared, h) {
     const pm = M.permissions
-    const out = [`- 职责动作：只${pm.action.allow.map((x) => shared.actions[x]).join('、')}`]
-    for (const f of pm.action.forbid) out.push(`- 禁止${M.permissionGroups[f]?.label || shared.actions[f] || f}`)
+    // 职责动作与禁止项已由 duty 段完整渲染，此处只保留落点与命令，避免重复占 token
+    const out = []
     if (!pm.write.allow.length) out.push('- 写文件：不得写任何文件')
-    else out.push(`- 写文件：只许写 ${pm.write.allow.map((id) => h.F[id].text).join('、')}`)
+    else out.push(`- 写文件：只许 ${pm.write.allow.map((id) => h.F[id].text).join('、')}`)
     if (!pm.command.allow.length) out.push('- 跑命令：不跑任何命令')
     else out.push(`- 跑命令：只许跑 ${pm.command.allow.map((id) => h.F[id].text).join('、')}`)
     out.push('')

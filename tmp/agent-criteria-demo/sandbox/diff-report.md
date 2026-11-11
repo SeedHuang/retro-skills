@@ -4,13 +4,13 @@
 
 | 席 | 类型 | 沙箱行数 | 现役行数 | 沙箱字符 | 现役字符 | 段数（沙箱/现役） | 边界形态 | 边界一致 | 输出格式 |
 |---|---|---|---|---|---|---|---|---|---|
-| detective-observer | RespondentModel | 93 | 81 | 2907 | 2806 | 10/7 | policy | 是 | 有 |
-| evidence-reader | RespondentModel | 73 | 67 | 1582 | 1767 | 9/7 | literal | 是 | 有 |
-| respondent-architect | RespondentModel | 68 | 63 | 1313 | 1240 | 8/7 | literal | 是 | 有 |
-| respondent-dev | RespondentModel | 67 | 63 | 1405 | 1243 | 8/7 | literal | 是 | 有 |
-| reviewer-actuary | ReviewerModel | 82 | 75 | 1723 | 1900 | 9/7 | default | 是 | 有 |
-| reviewer-ai | ReviewerModel | 85 | 78 | 1942 | 2130 | 9/7 | default | 是 | 有 |
-| reviewer-audit | AuditorModel | 82 | 99 | 3331 | 3344 | 9/7 | policy | 是 | 无 |
+| detective-observer | RespondentModel | 89 | 81 | 2861 | 2806 | 10/7 | policy | 是 | 有 |
+| evidence-reader | RespondentModel | 68 | 67 | 1524 | 1767 | 9/7 | literal | 是 | 有 |
+| respondent-architect | RespondentModel | 64 | 63 | 1265 | 1240 | 8/7 | literal | 是 | 有 |
+| respondent-dev | RespondentModel | 64 | 63 | 1367 | 1243 | 8/7 | literal | 是 | 有 |
+| reviewer-actuary | ReviewerModel | 80 | 75 | 1786 | 1900 | 9/7 | default | 是 | 有 |
+| reviewer-ai | ReviewerModel | 83 | 78 | 2006 | 2130 | 9/7 | default | 是 | 有 |
+| reviewer-audit | AuditorModel | 78 | 99 | 3281 | 3344 | 9/7 | policy | 是 | 无 |
 
 ## 段级差异
 
@@ -39,7 +39,7 @@
 | respondent-architect | 一定会 | 文本不同 | -25 |
 | respondent-architect | 冲突裁决 | 文本不同 | -25 |
 | respondent-architect | 本席清单 | 文本不同 | 14 |
-| respondent-architect | 输出格式 | 文本不同 | -141 |
+| respondent-architect | 输出格式 | 文本不同 | -134 |
 | respondent-architect | 产出 | 仅沙箱 | - |
 | respondent-architect | 权限 | 仅沙箱 | - |
 | respondent-architect | 边界 | 一致 | 0 |
@@ -48,7 +48,7 @@
 | respondent-dev | 一定会 | 文本不同 | -25 |
 | respondent-dev | 冲突裁决 | 文本不同 | -25 |
 | respondent-dev | 本席清单 | 文本不同 | 13 |
-| respondent-dev | 输出格式 | 文本不同 | -141 |
+| respondent-dev | 输出格式 | 文本不同 | -134 |
 | respondent-dev | 产出 | 仅沙箱 | - |
 | respondent-dev | 权限 | 仅沙箱 | - |
 | respondent-dev | 边界 | 一致 | 0 |
@@ -57,8 +57,8 @@
 | reviewer-actuary | 一定会 | 文本不同 | -175 |
 | reviewer-actuary | 禁止 | 文本不同 | 18 |
 | reviewer-actuary | 冲突裁决 | 文本不同 | -25 |
-| reviewer-actuary | 本席清单 | 文本不同 | -21 |
-| reviewer-actuary | 输出格式 | 文本不同 | -244 |
+| reviewer-actuary | 本席清单 | 文本不同 | 45 |
+| reviewer-actuary | 输出格式 | 文本不同 | -194 |
 | reviewer-actuary | 产出 | 仅沙箱 | - |
 | reviewer-actuary | 权限 | 仅沙箱 | - |
 | reviewer-actuary | 边界 | 一致 | 0 |
@@ -66,8 +66,8 @@
 | reviewer-ai | 一定会 | 文本不同 | -175 |
 | reviewer-ai | 禁止 | 文本不同 | 18 |
 | reviewer-ai | 冲突裁决 | 文本不同 | -25 |
-| reviewer-ai | 本席清单 | 文本不同 | -30 |
-| reviewer-ai | 输出格式 | 文本不同 | -244 |
+| reviewer-ai | 本席清单 | 文本不同 | 37 |
+| reviewer-ai | 输出格式 | 文本不同 | -194 |
 | reviewer-ai | 产出 | 仅沙箱 | - |
 | reviewer-ai | 权限 | 仅沙箱 | - |
 | reviewer-ai | 边界 | 一致 | 0 |

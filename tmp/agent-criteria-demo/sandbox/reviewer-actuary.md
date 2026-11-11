@@ -43,6 +43,7 @@ tools: Read, Glob, Grep
 | 3 | 精算席卡：改造成本量化核对 | 核对：改造成本非空（全部成立 = hit） | 本席 |
 | 4 | 精算席卡：治本对账核对 | 核对：治本对账非空（全部成立 = hit） | 本席 |
 | 5 | 精算席卡：收益量化核对 | 核对：收益量化非空（全部成立 = hit） | 本席 |
+| 6 | 精算席卡：触发序列核对 | 核对：建议解法每项含 触发序列（path:line）（全部成立 = hit） | 本席 |
 
 ## 输出格式
 必填字段：
@@ -63,18 +64,15 @@ tools: Read, Glob, Grep
 
 - 证据三元组全在
 - 建议解法非空
-- 严重级别 = P0 时
+- 严重级别 = P0 时，冲突证据 计数 ≥ 2
+- 严重级别 = P1 时，建议解法每项含 触发序列（path:line）
 
 ## 产出
 - 每轮：按 `parliament-ledger` 技能的问题卡填写，写回 `.session/reviews/{session}/issue-card.md`
-- 产物字段名只许 hit / miss / na / reason / evidence / verdict；自造键 = 不合规
+- 字段名只用 hit / miss / na / reason / evidence / verdict；自造键不合规
 
 ## 权限
-- 职责动作：只评审、记录
-- 禁止裁决他人分歧
-- 禁止中断评审
-- 禁止自行处置越界后果
-- 写文件：只许写 `issue-card.md`
+- 写文件：只许 `issue-card.md`
 - 跑命令：不跑任何命令
 
 ## 边界

@@ -1,0 +1,9 @@
+seat,group,U_med,E_med,E_vals,card_tok,task_tok_est,card_ratio,task_ratio
+respondent-architect,现役,7,4,4/3/4,310,802,1,1
+respondent-architect,沙箱,8,4,4/4/4,316,793,1.0202,0.989
+respondent-dev,现役,6,4,4/4/4,311,803,1,1
+respondent-dev,沙箱,7,4,4/4/4,342,807,1.0998,1.005
+reviewer-actuary,现役,7,3,3/2/3,475,1034,1,1
+reviewer-actuary,沙箱,8,4,4/4/4,447,1036,0.94,1.002
+reviewer-ai,现役,7,3,2/3/4,533,1051,1,1
+reviewer-ai,沙箱,8,4,4/4/4,502,1096,0.9418,1.043

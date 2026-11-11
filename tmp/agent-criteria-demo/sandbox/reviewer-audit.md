@@ -48,14 +48,10 @@ tools: Read, Glob, Grep, Write, Edit, RunCommand
 ## 产出
 - 每轮：按 `parliament-ledger` 技能的轮间核对单填写，写回 `.session/reviews/{session}/round-check.md`
 - 终局：按 `parliament-ledger` 技能的交付审计表填写，写回 `.session/reviews/{session}/delivery-audit.md`
-- 产物字段名只许 hit / miss / na / reason / evidence / verdict；自造键 = 不合规
+- 字段名只用 hit / miss / na / reason / evidence / verdict；自造键不合规
 
 ## 权限
-- 职责动作：只记录
-- 禁止自行处置越界后果
-- 禁止裁决他人分歧
-- 禁止中断评审
-- 写文件：只许写 `round-check.md`、`delivery-audit.md`
+- 写文件：只许 `round-check.md`、`delivery-audit.md`
 - 跑命令：只许跑 `scs time`、`scs ledger gate`、`scs ledger numbers`、`scs check landings --ledger`、`git --no-optional-locks status --porcelain`、`git --no-optional-locks diff`、`git --no-optional-locks show`、`git --no-optional-locks log`、`git --no-optional-locks reflog show`
 
 ## 越界处置

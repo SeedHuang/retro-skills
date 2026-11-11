@@ -57,15 +57,10 @@ tools: Read, Glob, Grep
 
 ## 产出
 - 每轮：按 `parliament-ledger` 技能的事实摘要填写，写回 `.session/reviews/{session}/evidence.md`
-- 产物字段名只许 hit / miss / na / reason / evidence / verdict；自造键 = 不合规
+- 字段名只用 hit / miss / na / reason / evidence / verdict；自造键不合规
 
 ## 权限
-- 职责动作：只取证通读、记录
-- 禁止出观点
-- 禁止出问题卡
-- 禁止参与评审
-- 禁止判技术对错
-- 写文件：只许写 `evidence.md`
+- 写文件：只许 `evidence.md`
 - 跑命令：不跑任何命令
 
 ## 边界
