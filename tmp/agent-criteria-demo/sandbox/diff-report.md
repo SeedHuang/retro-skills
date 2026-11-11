@@ -13,6 +13,7 @@
 | reviewer-audit | AuditorModel | 109 | 99 | 3667 | 3344 | 10/7 | policy | 是 | 有 |
 | reviewer-product | ReviewerModel | 76 | 77 | 1583 | 2007 | 8/7 | default | 是 | 有 |
 | reviewer-interaction | ReviewerModel | 76 | 77 | 1592 | 2018 | 8/7 | default | 是 | 有 |
+| reviewer-ui | ReviewerModel | 74 | 75 | 1487 | 1914 | 8/7 | default | 是 | 有 |
 | senior-sdet | ReviewerModel | 85 | 86 | 2663 | 3142 | 8/7 | policy | 是 | 有 |
 | speaker | ReviewerModel | 80 | 65 | 2296 | 1279 | 8/7 | policy | 否 | 有 |
 
@@ -101,6 +102,14 @@
 | reviewer-interaction | 输出格式 | 文本不同 | -194 |
 | reviewer-interaction | 权限 | 仅沙箱 | - |
 | reviewer-interaction | 边界 | 一致 | 0 |
+| reviewer-ui | 职责 | 文本不同 | -1 |
+| reviewer-ui | 一定会 | 文本不同 | -180 |
+| reviewer-ui | 禁止 | 文本不同 | -35 |
+| reviewer-ui | 冲突裁决 | 文本不同 | -25 |
+| reviewer-ui | 本席清单 | 文本不同 | -15 |
+| reviewer-ui | 输出格式 | 文本不同 | -194 |
+| reviewer-ui | 权限 | 仅沙箱 | - |
+| reviewer-ui | 边界 | 一致 | 0 |
 | senior-sdet | 职责 | 文本不同 | -54 |
 | senior-sdet | 一定会 | 文本不同 | -179 |
 | senior-sdet | 禁止 | 文本不同 | -78 |
@@ -132,6 +141,7 @@
 | reviewer-audit | policy | 1240 | 1240 | 是 |
 | reviewer-product | default | 41 | 41 | 是 |
 | reviewer-interaction | default | 41 | 41 | 是 |
+| reviewer-ui | default | 41 | 41 | 是 |
 | senior-sdet | policy | 1080 | 1080 | 是 |
 | speaker | policy | 1081 | 84 | 否 |
 
