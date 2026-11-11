@@ -1,0 +1,612 @@
+{
+  "version": 2,
+  "id": "respondent-architect",
+  "extends": "_shared-model.json",
+  "seat": {
+    "id": "respondent-architect",
+    "display": "架构答辩",
+    "triggers": [
+      {
+        "id": "verify-cards",
+        "objects": [
+          "issue-card"
+        ],
+        "scope": "按项目技术栈",
+        "action": "verify"
+      }
+    ],
+    "description": {
+      "template": "当答辩需要{scope}{action}{objects}并汇总统一口径",
+      "joiner": "、",
+      "lastJoiner": "、"
+    },
+    "artifacts": [
+      "artifact.defenseRecord"
+    ],
+    "tier": "readOnly"
+  },
+  "duty": {
+    "trigger": {
+      "from": "seat.description"
+    },
+    "action": {
+      "verb": "核实",
+      "scope": "按项目技术栈分方向",
+      "objects": [
+        "问题卡的证据与结论"
+      ],
+      "emit": [
+        "统一口径",
+        "答辩记录"
+      ],
+      "landingSubject": "答辩记录",
+      "landing": "outputs.items",
+      "landingJoiner": "与 "
+    }
+  },
+  "timing": {
+    "scene": "defense",
+    "moment": "end",
+    "repeat": "per-round"
+  },
+  "defaultLanding": "artifact.defenseRecord",
+  "must": [
+    {
+      "id": "shared.no-fake-problem",
+      "criterion": "no-fake-problem",
+      "targets": [
+        {
+          "object": "deliverable.appendix"
+        }
+      ]
+    }
+  ],
+  "checklist": {
+    "items": [
+      {
+        "no": 1,
+        "seatPrefix": "架构答辩席卡",
+        "category": "证据核实核对",
+        "criterion": "respondent.evidence"
+      },
+      {
+        "no": 2,
+        "seatPrefix": "架构答辩席卡",
+        "category": "立场记录核对",
+        "criterion": "respondent.stance"
+      },
+      {
+        "no": 3,
+        "seatPrefix": "架构答辩席卡",
+        "category": "修法落点核对",
+        "criterion": "respondent.fixLanding"
+      },
+      {
+        "no": 4,
+        "seatPrefix": "架构答辩席卡",
+        "category": "署名归属核对",
+        "criterion": "respondent.signature"
+      }
+    ]
+  },
+  "checkCriteria": {
+    "respondent.evidence": {
+      "action": "verify",
+      "mode": "all",
+      "observable": [
+        {
+          "op": "fieldEnumIn",
+          "ofRef": "issueCardFull",
+          "field": "verdict",
+          "values": [
+            "确认存在",
+            "确认不存在"
+          ]
+        },
+        {
+          "op": "fieldNonEmpty",
+          "ofRef": "evidenceTriple",
+          "field": "quote"
+        }
+      ],
+      "negative": {
+        "input": {
+          "issueCardFull": {
+            "verdict": ""
+          },
+          "evidenceTriple": {
+            "quote": "摘句"
+          }
+        },
+        "expect": "fail",
+        "failsOn": "issueCardFull.verdict"
+      },
+      "residual": {
+        "who": "respondent-architect",
+        "sample": 3,
+        "fields": [
+          "roundCheck.verdict"
+        ],
+        "objective": {
+          "target": "machine",
+          "reason": "RECORD_NOT_STRUCTURED"
+        }
+      }
+    },
+    "respondent.stance": {
+      "action": "verify",
+      "mode": "all",
+      "observable": [
+        {
+          "op": "fieldEnumIn",
+          "ofRef": "stance",
+          "field": "value",
+          "values": [
+            "承认",
+            "带依据反驳",
+            "部分承认"
+          ]
+        },
+        {
+          "op": "fieldNonEmpty",
+          "ofRef": "stance",
+          "field": "concede"
+        }
+      ],
+      "negative": {
+        "input": {
+          "stance": {
+            "value": "承认",
+            "concede": ""
+          }
+        },
+        "expect": "fail",
+        "failsOn": "stance.concede"
+      },
+      "residual": {
+        "who": "respondent-architect",
+        "sample": 3,
+        "fields": [
+          "roundCheck.verdict"
+        ],
+        "objective": {
+          "target": "machine",
+          "reason": "REQUIRES_HUMAN_JUDGMENT"
+        }
+      }
+    },
+    "respondent.fixLanding": {
+      "action": "verify",
+      "mode": "all",
+      "observable": [
+        {
+          "op": "fieldNonEmpty",
+          "ofRef": "fix",
+          "field": "landing"
+        },
+        {
+          "op": "fieldNonEmpty",
+          "ofRef": "fix",
+          "field": "owner"
+        }
+      ],
+      "negative": {
+        "input": {
+          "fix": {
+            "landing": "src/a.mjs",
+            "owner": ""
+          }
+        },
+        "expect": "fail",
+        "failsOn": "fix.owner"
+      },
+      "residual": {
+        "who": "respondent-architect",
+        "sample": 3,
+        "fields": [
+          "roundCheck.verdict"
+        ],
+        "objective": {
+          "target": "machine",
+          "reason": "REQUIRES_HUMAN_JUDGMENT"
+        }
+      }
+    },
+    "respondent.signature": {
+      "action": "verify",
+      "mode": "all",
+      "observable": [
+        {
+          "op": "allExist",
+          "ofRef": "signature",
+          "field": "recordRef"
+        },
+        {
+          "op": "eachCarries",
+          "ofRef": "signature",
+          "carries": "signer",
+          "count": 1
+        },
+        {
+          "op": "fieldEnumIn",
+          "ofRef": "signature",
+          "field": "signer",
+          "valuesRef": "respondentSeats"
+        }
+      ],
+      "negative": {
+        "input": {
+          "signature": [
+            {
+              "recordRef": "Q-1-1",
+              "signer": "unknown-seat"
+            }
+          ]
+        },
+        "expect": "fail",
+        "failsOn": "signature.signer"
+      },
+      "residual": {
+        "who": "respondent-architect",
+        "sample": 3,
+        "fields": [
+          "roundCheck.verdict"
+        ],
+        "objective": {
+          "target": "machine",
+          "reason": "RECORD_NOT_STRUCTURED"
+        }
+      }
+    }
+  },
+  "outputFormat": {
+    "title": "输出格式",
+    "requiredFields": [
+      {
+        "id": "cardNo",
+        "label": "卡号",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "verdict",
+        "label": "核实结论",
+        "type": "enum",
+        "values": [
+          "确认存在",
+          "确认不存在"
+        ],
+        "required": true
+      },
+      {
+        "id": "evidence",
+        "label": "证据（原文摘句 + 文件 + 行号）",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "stance",
+        "label": "立场",
+        "type": "enum",
+        "values": [
+          "承认",
+          "带依据反驳",
+          "部分承认"
+        ],
+        "required": true
+      },
+      {
+        "id": "fixLanding",
+        "label": "修法落点",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "signer",
+        "label": "署名席",
+        "type": "nonEmpty",
+        "required": true
+      }
+    ],
+    "checks": [
+      {
+        "id": "verdict-filled",
+        "observable": {
+          "op": "fieldNonEmpty",
+          "ofRef": "issueCardFull",
+          "field": "verdict"
+        }
+      },
+      {
+        "id": "evidence-triple",
+        "observable": {
+          "op": "allExist",
+          "ofRef": "evidenceTriple"
+        }
+      },
+      {
+        "id": "rebuttal-evidence",
+        "observable": {
+          "op": "whenEq",
+          "ofRef": "stance",
+          "field": "value",
+          "value": "带依据反驳",
+          "then": {
+            "op": "fieldNonEmpty",
+            "ofRef": "stance",
+            "field": "evidence"
+          }
+        }
+      },
+      {
+        "id": "traceable-signer",
+        "observable": {
+          "op": "fieldEnumIn",
+          "ofRef": "signature",
+          "field": "signer",
+          "valuesRef": "respondentSeats"
+        }
+      }
+    ]
+  },
+  "templates": {
+    "pl.defense-record": {
+      "skill": "parliament-ledger",
+      "label": "答辩记录",
+      "columns": [
+        "cardNo",
+        "verdict",
+        "evidence",
+        "stance",
+        "fixLanding",
+        "signer"
+      ]
+    }
+  },
+  "outputs": {
+    "items": [
+      {
+        "phase": "每轮",
+        "artifact": "artifact.defenseRecord",
+        "template": "pl.defense-record",
+        "action": "fill",
+        "mode": "each",
+        "section": "架构答辩"
+      }
+    ]
+  },
+  "forms": {
+    "artifact.defenseRecord": {
+      "text": "`defense.md`",
+      "kind": "artifact",
+      "path": ".session/reviews/{session}/defense.md"
+    }
+  },
+  "records": {
+    "allPass": {
+      "source": {
+        "kind": "description",
+        "text": "交付物附录"
+      }
+    },
+    "signature": {
+      "label": "署名",
+      "unit": "一处署名",
+      "source": {
+        "kind": "description",
+        "text": "答辩记录"
+      },
+      "shape": [
+        {
+          "id": "recordRef",
+          "label": "核实记录",
+          "type": "ref",
+          "ref": "issueCardFull",
+          "required": true
+        },
+        {
+          "id": "signer",
+          "label": "署名席",
+          "type": "seatId",
+          "valuesRef": "respondentSeats",
+          "required": true
+        }
+      ]
+    },
+    "adoptedRef": {
+      "label": "采纳依据",
+      "unit": "一条依据",
+      "source": {
+        "kind": "description",
+        "text": "round-check.md 冲突裁决段"
+      },
+      "shape": [
+        {
+          "id": "ref",
+          "label": "依据锚",
+          "type": "pathLine",
+          "required": true
+        }
+      ]
+    },
+    "codeChange": {
+      "label": "代码改动",
+      "unit": "一次改动",
+      "source": {
+        "kind": "description",
+        "text": "工具调用记录"
+      },
+      "shape": [
+        {
+          "id": "path",
+          "label": "被改文件",
+          "type": "path",
+          "required": true
+        }
+      ]
+    },
+    "issueCardFull": {
+      "label": "问题卡",
+      "unit": "一张问题卡",
+      "source": {
+        "kind": "description",
+        "text": "问题卡目录"
+      },
+      "shape": [
+        {
+          "id": "cardNo",
+          "label": "卡号",
+          "type": "nonEmpty",
+          "required": true
+        },
+        {
+          "id": "verdict",
+          "label": "核实结论",
+          "type": "enum",
+          "values": [
+            "确认存在",
+            "确认不存在"
+          ],
+          "required": true
+        },
+        {
+          "id": "evidence",
+          "label": "证据",
+          "type": "nonEmpty",
+          "required": true
+        }
+      ]
+    },
+    "evidenceTriple": {
+      "label": "证据三元组",
+      "unit": "一条证据",
+      "source": {
+        "kind": "description",
+        "text": "答辩记录"
+      },
+      "shape": [
+        {
+          "id": "quote",
+          "label": "原文摘句",
+          "type": "nonEmpty",
+          "required": true
+        },
+        {
+          "id": "path",
+          "label": "文件",
+          "type": "path",
+          "required": true
+        },
+        {
+          "id": "line",
+          "label": "行号",
+          "type": "int",
+          "min": 1,
+          "required": true
+        },
+        {
+          "id": "purpose",
+          "label": "用途",
+          "type": "nonEmpty",
+          "required": true
+        }
+      ],
+      "verify": {
+        "op": "quoteInLine",
+        "path": "path",
+        "line": "line",
+        "quote": "quote"
+      }
+    },
+    "stance": {
+      "label": "立场",
+      "unit": "一条立场",
+      "source": {
+        "kind": "description",
+        "text": "答辩记录"
+      },
+      "shape": [
+        {
+          "id": "value",
+          "label": "立场",
+          "type": "enum",
+          "values": [
+            "承认",
+            "带依据反驳",
+            "部分承认"
+          ],
+          "required": true
+        },
+        {
+          "id": "concede",
+          "label": "改判条件",
+          "type": "nonEmpty",
+          "required": true
+        },
+        {
+          "id": "evidence",
+          "label": "反驳依据",
+          "type": "nonEmpty",
+          "required": false,
+          "when": {
+            "field": "value",
+            "op": "eq",
+            "value": "带依据反驳"
+          }
+        }
+      ]
+    },
+    "fix": {
+      "label": "修法落点",
+      "unit": "一条修法",
+      "source": {
+        "kind": "description",
+        "text": "答辩记录"
+      },
+      "shape": [
+        {
+          "id": "landing",
+          "label": "修法落点",
+          "type": "path",
+          "required": true
+        },
+        {
+          "id": "owner",
+          "label": "所属席名",
+          "type": "nonEmpty",
+          "required": true
+        }
+      ]
+    }
+  },
+  "escalation": null,
+  "permissions": {
+    "policy": "denyByDefault",
+    "action": {
+      "allow": [
+        "verify",
+        "summarize",
+        "record"
+      ],
+      "forbid": [
+        "code-change",
+        "review-verdict",
+        "self-disposal"
+      ]
+    },
+    "write": {
+      "allow": [
+        "artifact.defenseRecord"
+      ],
+      "forbidForms": []
+    },
+    "command": {
+      "allow": [],
+      "forbidForms": []
+    }
+  },
+  "boundary": {
+    "kind": "literal",
+    "text": "你是答辩方架构师：只核实问题卡并汇总答辩方核实结论，不改代码、不写评审结论；核实表逐条署名。"
+  }
+}

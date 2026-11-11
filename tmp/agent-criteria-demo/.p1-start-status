@@ -1,0 +1,10 @@
+﻿ M tools/docgen/builders/agents/policy/definitions/artifacts.mjs
+ M tools/docgen/builders/agents/policy/definitions/seats.mjs
+ M tools/docgen/builders/agents/policy/seat-policy.mjs
+ M tools/docgen/builders/agents/test/policy-pure-source.test.mjs
+?? docs/handoffs/2026-11-11-agent-model-pipeline-p1.md
+?? docs/prd/20261111145723-agent-model-pipeline.md
+?? docs/superpowers/plans/2026-11-11-agent-model-pipeline-p1.md
+?? docs/superpowers/specs/2026-11-11-agent-model-pipeline-p1-design-testcase.md
+?? docs/superpowers/specs/2026-11-11-agent-model-pipeline-p1-design.md
+?? rules/title-not-stronger-than-criterion.md

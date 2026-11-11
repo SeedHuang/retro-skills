@@ -1,0 +1,1345 @@
+{
+  "timing": {
+    "default": {
+      "scene": "deliverable",
+      "moment": "end",
+      "repeat": "per-round"
+    },
+    "scenes": {
+      "deliverable": "交付物",
+      "defense": "答辩",
+      "parliament": "议会轮"
+    }
+  },
+  "verdicts": {
+    "enum": [
+      {
+        "id": "hit",
+        "label": "命中"
+      },
+      {
+        "id": "miss",
+        "label": "未命中",
+        "requireReason": true
+      },
+      {
+        "id": "na",
+        "label": "不适用",
+        "requireApplicability": true
+      }
+    ],
+    "reasonField": "reason",
+    "applicabilityField": "applicability",
+    "applicabilityPrompt": "为何不适用",
+    "noteTemplate": "判定取值：{enum}；{requireReason} 须写 {reasonField}，缺 {reasonField} = {onMissingReasonLabel}；{requireApplicability} 还须写明{applicabilityPrompt}",
+    "onMissingReason": {
+      "label": "废卡",
+      "action": "requireFill",
+      "scope": "row",
+      "fallback": {
+        "becomes": "miss",
+        "writeBack": "reason"
+      }
+    },
+    "onMiss": {
+      "blocksRound": false,
+      "recheck": "next-round",
+      "writeBack": "round-check.md"
+    }
+  },
+  "conflict": {
+    "title": "冲突裁决",
+    "rankLabels": {
+      "user": "用户",
+      "rule": "规则",
+      "seat": "本席"
+    },
+    "order": [
+      "user",
+      "rule",
+      "seat"
+    ],
+    "domains": {
+      "selfRank": "rankLabels",
+      "otherRank": "rankLabels"
+    },
+    "phrases": {
+      "adopt": {
+        "label": "采纳",
+        "direction": "高优先级",
+        "verb": "采纳",
+        "mustCarry": {
+          "record": "adoptedRef",
+          "field": "ref"
+        }
+      },
+      "reject": {
+        "label": "不采纳",
+        "direction": "低优先级",
+        "verb": "不采纳",
+        "mustCarry": {
+          "record": "concedeCriterion",
+          "field": "criterion"
+        }
+      }
+    },
+    "decision": {
+      "inputs": [
+        "selfRank",
+        "otherRank"
+      ],
+      "cases": [
+        {
+          "when": {
+            "lhs": "otherRank",
+            "op": "lt",
+            "rhs": "selfRank"
+          },
+          "result": "adopt",
+          "mustCarry": "adoptedRef"
+        },
+        {
+          "when": {
+            "lhs": "otherRank",
+            "op": "gt",
+            "rhs": "selfRank"
+          },
+          "result": "reject",
+          "mustCarry": "concedeCriterion"
+        },
+        {
+          "when": {
+            "lhs": "otherRank",
+            "op": "eq",
+            "rhs": "selfRank"
+          },
+          "result": null,
+          "status": "undefined"
+        }
+      ]
+    }
+  },
+  "globalRules": [
+    {
+      "id": "must.all-rows",
+      "text": "每行必答，缺答 = 不合格；答过也要写明结论。",
+      "checks": [
+        {
+          "op": "eachCarries",
+          "ofRef": "roundCheck",
+          "carries": "verdict",
+          "count": 1
+        }
+      ],
+      "residual": {
+        "sample": 3,
+        "fields": [
+          "roundCheck.verdict"
+        ],
+        "objective": {
+          "target": "manual",
+          "reason": "REQUIRES_HUMAN_JUDGMENT"
+        }
+      }
+    },
+    {
+      "id": "must.recomputable-evidence",
+      "text": "每行证据栏须含文件:行号。",
+      "checks": [
+        {
+          "op": "eachCarries",
+          "ofRef": "roundCheck",
+          "carries": "evidence",
+          "count": 1
+        },
+        {
+          "op": "eachHas",
+          "ofRef": "roundCheck",
+          "field": "evidence",
+          "pattern": "\\S+:\\d+",
+          "hint": "path:line"
+        }
+      ],
+      "residual": {
+        "sample": 3,
+        "fields": [
+          "roundCheck.evidence"
+        ],
+        "objective": {
+          "target": "manual",
+          "reason": "CMD_NOT_WHITELISTED"
+        }
+      }
+    }
+  ],
+  "reasonCodes": {
+    "SCHEMA_UNFROZEN": "结构未冻结",
+    "RULE_NOT_ENUMERATED": "规则未枚举",
+    "NO_MACHINE_OUTPUT": "无机器可读产物",
+    "CMD_NOT_WHITELISTED": "校验命令不在白名单",
+    "RECORD_NOT_STRUCTURED": "记录未结构化",
+    "SIGNAL_NOT_RECORDED": "事件无落账信号",
+    "REQUIRES_HUMAN_JUDGMENT": "语义需人判"
+  },
+  "enums": {
+    "action": {
+      "values": [
+        "fill"
+      ],
+      "labels": {
+        "fill": "填写"
+      }
+    },
+    "mode": {
+      "values": [
+        "each",
+        "whole"
+      ],
+      "labels": {
+        "each": "逐项",
+        "whole": ""
+      }
+    },
+    "coverage": {
+      "values": [
+        "full",
+        "partial",
+        "manual"
+      ],
+      "labels": {
+        "full": "可机判",
+        "partial": "半机判",
+        "manual": "人工判定"
+      }
+    },
+    "severity": {
+      "values": [
+        "P0",
+        "P1"
+      ],
+      "labels": {
+        "P0": "P0",
+        "P1": "P1"
+      }
+    },
+    "stance": {
+      "values": [
+        "承认",
+        "带依据反驳",
+        "部分承认"
+      ],
+      "labels": {
+        "承认": "承认",
+        "带依据反驳": "带依据反驳",
+        "部分承认": "部分承认"
+      }
+    },
+    "respondentSeats": {
+      "values": [
+        "respondent-architect",
+        "respondent-dev"
+      ],
+      "labels": {
+        "respondent-architect": "架构答辩",
+        "respondent-dev": "研发答辩"
+      }
+    }
+  },
+  "vocab": {
+    "moment": {
+      "end": "结束"
+    },
+    "repeat": {
+      "per-round": "每轮"
+    },
+    "object": {
+      "deliverable.body": "交付物正文",
+      "deliverable.evidence": "交付物证据",
+      "deliverable.appendix": "交付物附录",
+      "issue.card.suggestion": "问题卡「建议解法」栏"
+    }
+  },
+  "checklistColumns": [
+    "#",
+    "条目",
+    "判据",
+    "类型"
+  ],
+  "outputKeys": [
+    "hit",
+    "miss",
+    "na",
+    "reason",
+    "evidence",
+    "verdict"
+  ],
+  "predicates": {
+    "impartial-long-term": {
+      "ok": "依据充分、来源多源",
+      "bad": "依据不足或来源单一",
+      "appliesWhen": [
+        "reviewer-audit",
+        "reviewer-actuary",
+        "reviewer-ai",
+        "evidence-reader",
+        "detective-observer"
+      ],
+      "slots": [
+        {
+          "op": "countGte",
+          "ofRef": "anchor",
+          "value": 2
+        },
+        {
+          "op": "distinctGte",
+          "ofRef": "anchor",
+          "by": "path",
+          "byLabel": "文件",
+          "value": 2
+        }
+      ]
+    },
+    "evidence-recomputable": {
+      "ok": "结论行各带依据锚",
+      "bad": "结论行缺依据锚",
+      "appliesWhen": [
+        "reviewer-audit",
+        "reviewer-actuary",
+        "reviewer-ai",
+        "evidence-reader",
+        "detective-observer"
+      ],
+      "slots": [
+        {
+          "op": "eachCarries",
+          "ofRef": "conclusionLine",
+          "carries": "anchor",
+          "count": 1
+        }
+      ]
+    },
+    "plain-expression": {
+      "ok": "术语有中文解释",
+      "bad": "术语缺中文解释",
+      "appliesWhen": [
+        "reviewer-audit",
+        "reviewer-actuary",
+        "reviewer-ai",
+        "evidence-reader",
+        "detective-observer"
+      ],
+      "slots": [
+        {
+          "op": "fieldNonEmpty",
+          "ofRef": "term",
+          "field": "explanation"
+        }
+      ]
+    },
+    "no-fake-problem": {
+      "ok": "无问题时显式写「全过、无问题」",
+      "bad": "无问题时不显式写「全过、无问题」",
+      "appliesWhen": "*",
+      "slots": [
+        {
+          "op": "whenEmpty",
+          "ofRef": "finding",
+          "then": {
+            "op": "lineExists",
+            "ofRef": "allPass",
+            "field": "text"
+          }
+        }
+      ]
+    },
+    "issue-without-solution": {
+      "ok": "建议解法栏非空",
+      "bad": "留空建议解法栏",
+      "appliesWhen": [
+        "reviewer-audit",
+        "reviewer-actuary",
+        "reviewer-ai",
+        "evidence-reader",
+        "detective-observer"
+      ],
+      "slots": [
+        {
+          "op": "fieldEmpty",
+          "ofRef": "issueCard",
+          "field": "suggestion"
+        }
+      ]
+    },
+    "perfunctory-fix": {
+      "ok": "建议附调查依据",
+      "bad": "给无依据建议",
+      "appliesWhen": [
+        "reviewer-audit",
+        "reviewer-actuary",
+        "reviewer-ai",
+        "evidence-reader",
+        "detective-observer"
+      ],
+      "slots": [
+        {
+          "op": "eachHas",
+          "ofRef": "issueCard",
+          "field": "suggestion",
+          "pattern": "\\S+:\\d+",
+          "hint": "path:line"
+        }
+      ]
+    },
+    "out-of-scope-self-disposal": {
+      "ok": "越界后留声明",
+      "bad": "越界后不留声明",
+      "appliesWhen": [
+        "reviewer-audit",
+        "reviewer-actuary",
+        "reviewer-ai",
+        "evidence-reader",
+        "detective-observer"
+      ],
+      "slots": [
+        {
+          "op": "countGte",
+          "ofRef": "exceedAction",
+          "value": 1
+        }
+      ],
+      "guard": {
+        "op": "lineAbsent",
+        "ofRef": "deliverableText",
+        "field": "text",
+        "pattern": "^\\s*声明[:：]"
+      }
+    },
+    "blank-evidence": {
+      "ok": "证据栏完整",
+      "bad": "证据栏缺项",
+      "appliesWhen": [
+        "reviewer-audit",
+        "reviewer-actuary",
+        "reviewer-ai",
+        "evidence-reader",
+        "detective-observer"
+      ],
+      "slots": [
+        {
+          "op": "fieldMissing",
+          "ofRef": "conclusionLine",
+          "field": "evidence",
+          "values": [
+            "pathLine",
+            "commandFirstLine"
+          ]
+        }
+      ]
+    },
+    "proxy-fill": {
+      "ok": "签名与实例一致",
+      "bad": "代填他人签名",
+      "appliesWhen": [
+        "reviewer-audit",
+        "reviewer-actuary",
+        "reviewer-ai",
+        "evidence-reader",
+        "detective-observer"
+      ],
+      "slots": [
+        {
+          "op": "fieldNeq",
+          "ofRef": "signature",
+          "left": "name",
+          "right": "instance"
+        }
+      ]
+    }
+  },
+  "rules": {
+    "must": [
+      {
+        "id": "shared.impartial-long-term",
+        "criterion": "impartial-long-term",
+        "targets": [
+          {
+            "object": "deliverable.body"
+          }
+        ],
+        "appliesWhen": [
+          "reviewer-audit",
+          "reviewer-actuary",
+          "reviewer-ai",
+          "evidence-reader",
+          "detective-observer"
+        ]
+      },
+      {
+        "id": "shared.evidence",
+        "criterion": "evidence-recomputable",
+        "targets": [
+          {
+            "object": "deliverable.evidence"
+          }
+        ],
+        "appliesWhen": [
+          "reviewer-audit",
+          "reviewer-actuary",
+          "reviewer-ai",
+          "evidence-reader",
+          "detective-observer"
+        ]
+      },
+      {
+        "id": "shared.plain-expression",
+        "criterion": "plain-expression",
+        "targets": [
+          {
+            "object": "deliverable.body"
+          }
+        ],
+        "appliesWhen": [
+          "reviewer-audit",
+          "reviewer-actuary",
+          "reviewer-ai",
+          "evidence-reader",
+          "detective-observer"
+        ]
+      },
+      {
+        "id": "shared.no-fake-problem",
+        "criterion": "no-fake-problem",
+        "targets": [
+          {
+            "object": "deliverable.body"
+          },
+          {
+            "object": "deliverable.appendix"
+          }
+        ],
+        "appliesWhen": [
+          "reviewer-audit",
+          "reviewer-actuary",
+          "reviewer-ai"
+        ]
+      }
+    ],
+    "never": [
+      {
+        "id": "shared.no-issue-without-fix",
+        "criterion": "issue-without-solution",
+        "targets": [
+          {
+            "object": "issue.card.suggestion"
+          }
+        ],
+        "appliesWhen": [
+          "reviewer-actuary",
+          "reviewer-ai"
+        ]
+      },
+      {
+        "id": "shared.no-perfunctory-fix",
+        "criterion": "perfunctory-fix",
+        "targets": [
+          {
+            "object": "issue.card.suggestion"
+          }
+        ],
+        "appliesWhen": [
+          "reviewer-actuary",
+          "reviewer-ai"
+        ]
+      },
+      {
+        "id": "shared.no-self-disposal",
+        "criterion": "out-of-scope-self-disposal",
+        "targets": [
+          {
+            "object": "deliverable.body"
+          }
+        ],
+        "appliesWhen": [
+          "reviewer-audit",
+          "reviewer-actuary",
+          "reviewer-ai",
+          "evidence-reader",
+          "detective-observer"
+        ]
+      },
+      {
+        "id": "shared.no-blank-evidence",
+        "criterion": "blank-evidence",
+        "targets": [
+          {
+            "object": "deliverable.evidence"
+          }
+        ],
+        "appliesWhen": [
+          "reviewer-audit",
+          "reviewer-actuary",
+          "reviewer-ai",
+          "evidence-reader",
+          "detective-observer"
+        ]
+      },
+      {
+        "id": "shared.no-proxy-fill",
+        "criterion": "proxy-fill",
+        "targets": [
+          {
+            "object": "deliverable.body"
+          }
+        ],
+        "appliesWhen": [
+          "reviewer-audit",
+          "reviewer-actuary",
+          "reviewer-ai",
+          "evidence-reader",
+          "detective-observer"
+        ]
+      }
+    ]
+  },
+  "records": {
+    "anchor": {
+      "label": "依据锚",
+      "unit": "一个锚点",
+      "source": {
+        "kind": "description",
+        "text": "交付物正文的结论段"
+      },
+      "shape": [
+        {
+          "id": "path",
+          "label": "文件",
+          "type": "path",
+          "required": true
+        },
+        {
+          "id": "line",
+          "label": "行号",
+          "type": "int",
+          "min": 1,
+          "required": true
+        },
+        {
+          "id": "quote",
+          "label": "摘句",
+          "type": "nonEmpty",
+          "required": true
+        }
+      ],
+      "verify": {
+        "op": "quoteInLine",
+        "path": "path",
+        "line": "line",
+        "quote": "quote"
+      }
+    },
+    "conclusionLine": {
+      "label": "结论行",
+      "unit": "一行结论",
+      "source": {
+        "kind": "description",
+        "text": "交付物正文"
+      },
+      "shape": [
+        {
+          "id": "text",
+          "label": "结论",
+          "type": "nonEmpty",
+          "required": true
+        },
+        {
+          "id": "anchor",
+          "label": "依据锚",
+          "type": "ref",
+          "ref": "anchor",
+          "required": true
+        },
+        {
+          "id": "evidence",
+          "label": "证据",
+          "type": "nonEmpty",
+          "required": true
+        }
+      ]
+    },
+    "finding": {
+      "label": "问题项",
+      "unit": "一条问题",
+      "source": {
+        "kind": "description",
+        "text": "交付物 findings 列表"
+      },
+      "shape": [
+        {
+          "id": "id",
+          "label": "编号",
+          "type": "nonEmpty",
+          "required": true
+        },
+        {
+          "id": "text",
+          "label": "问题",
+          "type": "nonEmpty",
+          "required": true
+        }
+      ]
+    },
+    "allPass": {
+      "label": "全过行",
+      "unit": "一行声明",
+      "source": {
+        "kind": "description",
+        "text": "交付物正文或附录"
+      },
+      "shape": [
+        {
+          "id": "text",
+          "label": "声明",
+          "type": "nonEmpty",
+          "required": true,
+          "values": [
+            "全过、无问题"
+          ]
+        }
+      ]
+    },
+    "term": {
+      "label": "英文术语",
+      "unit": "一个术语",
+      "source": {
+        "kind": "description",
+        "text": "交付物正文"
+      },
+      "shape": [
+        {
+          "id": "name",
+          "label": "术语",
+          "type": "nonEmpty",
+          "required": true
+        },
+        {
+          "id": "explanation",
+          "label": "中文解释",
+          "type": "nonEmpty",
+          "required": true
+        }
+      ]
+    },
+    "issueCard": {
+      "label": "问题卡",
+      "unit": "一张问题卡",
+      "source": {
+        "kind": "description",
+        "text": "问题卡目录"
+      },
+      "shape": [
+        {
+          "id": "suggestion",
+          "label": "建议解法",
+          "type": "nonEmpty",
+          "required": true
+        },
+        {
+          "id": "quote",
+          "label": "原文引句",
+          "type": "nonEmpty",
+          "required": true
+        },
+        {
+          "id": "evidence",
+          "label": "证据",
+          "type": "nonEmpty",
+          "required": true
+        }
+      ]
+    },
+    "exceedAction": {
+      "label": "越界处置动作",
+      "unit": "一次越界处置",
+      "source": {
+        "kind": "description",
+        "text": "process.md 段二"
+      },
+      "shape": [
+        {
+          "id": "file",
+          "label": "文件",
+          "type": "path",
+          "required": true
+        },
+        {
+          "id": "command",
+          "label": "命令原文",
+          "type": "nonEmpty",
+          "required": true
+        }
+      ]
+    },
+    "signature": {
+      "label": "签名字段",
+      "unit": "一处签名",
+      "source": {
+        "kind": "description",
+        "text": "签字表"
+      },
+      "shape": [
+        {
+          "id": "name",
+          "label": "所记名称",
+          "type": "nonEmpty",
+          "required": true
+        },
+        {
+          "id": "instance",
+          "label": "该实例名",
+          "type": "nonEmpty",
+          "required": true
+        }
+      ]
+    },
+    "roundCheck": {
+      "label": "轮间核对单",
+      "unit": "一行判定",
+      "source": {
+        "kind": "path",
+        "template": "round-check.md"
+      },
+      "shape": [
+        {
+          "id": "no",
+          "label": "#",
+          "type": "int",
+          "required": true
+        },
+        {
+          "id": "item",
+          "label": "条目",
+          "type": "nonEmpty",
+          "required": true
+        },
+        {
+          "id": "criterion",
+          "label": "判据",
+          "type": "nonEmpty",
+          "required": true
+        },
+        {
+          "id": "kind",
+          "label": "类型",
+          "type": "enum",
+          "values": [
+            "full",
+            "partial",
+            "manual"
+          ],
+          "required": true
+        },
+        {
+          "id": "verdict",
+          "label": "判定",
+          "type": "enum",
+          "values": [
+            "hit",
+            "miss",
+            "na"
+          ],
+          "required": true
+        },
+        {
+          "id": "reason",
+          "label": "reason",
+          "type": "nonEmpty",
+          "required": false,
+          "when": {
+            "field": "verdict",
+            "op": "eq",
+            "value": "miss"
+          }
+        },
+        {
+          "id": "applicability",
+          "label": "为何不适用",
+          "type": "nonEmpty",
+          "required": false,
+          "when": {
+            "field": "verdict",
+            "op": "eq",
+            "value": "na"
+          }
+        },
+        {
+          "id": "evidence",
+          "label": "evidence",
+          "type": "nonEmpty",
+          "required": true
+        }
+      ]
+    },
+    "transcript": {
+      "label": "发言记录",
+      "unit": "一条发言",
+      "source": {
+        "kind": "description",
+        "text": "progress.md 段二"
+      },
+      "shape": [
+        {
+          "id": "speaker",
+          "label": "发言者",
+          "type": "nonEmpty",
+          "required": true
+        },
+        {
+          "id": "at",
+          "label": "时刻",
+          "type": "time",
+          "pattern": "^\\d{2}:\\d{2}:\\d{2}$",
+          "required": true
+        },
+        {
+          "id": "kind",
+          "label": "类型",
+          "type": "enum",
+          "values": [
+            "statement",
+            "verdict",
+            "interrupt"
+          ],
+          "required": true
+        },
+        {
+          "id": "target",
+          "label": "对象",
+          "type": "seatId",
+          "required": false,
+          "when": {
+            "field": "kind",
+            "op": "eq",
+            "value": "verdict"
+          }
+        }
+      ]
+    },
+    "writeAction": {
+      "label": "写文件动作",
+      "unit": "一次写操作",
+      "source": {
+        "kind": "description",
+        "text": "工具调用记录"
+      },
+      "shape": [
+        {
+          "id": "path",
+          "label": "被写路径",
+          "type": "path",
+          "required": true
+        }
+      ]
+    },
+    "adoptedRef": {
+      "label": "采纳依据",
+      "unit": "一条依据",
+      "source": {
+        "kind": "description",
+        "text": "round-check.md 冲突裁决段"
+      },
+      "shape": [
+        {
+          "id": "ref",
+          "label": "依据锚",
+          "type": "ref",
+          "ref": "anchor",
+          "required": true
+        }
+      ]
+    },
+    "concedeCriterion": {
+      "label": "认输判据",
+      "unit": "一条可核证据",
+      "source": {
+        "kind": "description",
+        "text": "round-check.md 冲突裁决段"
+      },
+      "shape": [
+        {
+          "id": "criterion",
+          "label": "认输判据",
+          "type": "nonEmpty",
+          "required": true
+        }
+      ]
+    },
+    "deliverableText": {
+      "label": "交付物正文",
+      "unit": "一段全文",
+      "source": {
+        "kind": "description",
+        "text": "交付物正文"
+      },
+      "shape": [
+        {
+          "id": "text",
+          "label": "全文",
+          "type": "longText",
+          "required": true
+        }
+      ]
+    },
+    "defenseRow": {
+      "label": "答辩记录行",
+      "unit": "一行",
+      "source": {
+        "kind": "path",
+        "template": "defense.md"
+      },
+      "shape": [
+        {
+          "id": "cardNo",
+          "label": "卡号",
+          "type": "nonEmpty",
+          "required": true
+        },
+        {
+          "id": "verdict",
+          "label": "核实结论",
+          "type": "enum",
+          "values": [
+            "确认存在",
+            "确认不存在"
+          ],
+          "required": true
+        },
+        {
+          "id": "evidence",
+          "label": "证据",
+          "type": "nonEmpty",
+          "required": true
+        },
+        {
+          "id": "stance",
+          "label": "立场",
+          "type": "enum",
+          "values": [
+            "承认",
+            "带依据反驳",
+            "部分承认"
+          ],
+          "required": true
+        },
+        {
+          "id": "fixLanding",
+          "label": "修法落点",
+          "type": "nonEmpty",
+          "required": true
+        },
+        {
+          "id": "signer",
+          "label": "署名席",
+          "type": "seatId",
+          "required": true
+        }
+      ]
+    },
+    "defenseText": {
+      "label": "答辩记录全文",
+      "unit": "一段全文",
+      "source": {
+        "kind": "path",
+        "template": "defense.md"
+      },
+      "shape": [
+        {
+          "id": "text",
+          "label": "全文",
+          "type": "longText",
+          "required": true
+        }
+      ]
+    }
+  },
+  "forms": {
+    "artifact.round-check": {
+      "text": "`round-check.md`",
+      "kind": "artifact",
+      "path": ".session/reviews/{session}/round-check.md",
+      "requires": "write"
+    },
+    "cmd.scs.time": {
+      "text": "`scs time`",
+      "kind": "command",
+      "prefix": "scs time",
+      "requires": "exec"
+    },
+    "cmd.git.status": {
+      "text": "`git --no-optional-locks status --porcelain`",
+      "kind": "command",
+      "prefix": "git --no-optional-locks status --porcelain",
+      "requires": "exec"
+    },
+    "cmd.git.diff": {
+      "text": "`git --no-optional-locks diff`",
+      "kind": "command",
+      "prefix": "git --no-optional-locks diff",
+      "requires": "exec"
+    },
+    "cmd.git.log": {
+      "text": "`git --no-optional-locks log`",
+      "kind": "command",
+      "prefix": "git --no-optional-locks log",
+      "requires": "exec"
+    },
+    "path.parentEscape": {
+      "text": "`..`",
+      "kind": "pattern",
+      "match": "\\.\\."
+    },
+    "form.fs.output": {
+      "text": "`--output`",
+      "kind": "forbiddenForm",
+      "match": "--output",
+      "requires": "exec"
+    },
+    "form.fs.apply": {
+      "text": "`--apply`",
+      "kind": "forbiddenForm",
+      "match": "--apply",
+      "requires": "exec"
+    },
+    "form.fs.write": {
+      "text": "`--write`",
+      "kind": "forbiddenForm",
+      "match": "--write",
+      "requires": "exec"
+    },
+    "form.fs.redirect": {
+      "text": "`>`",
+      "kind": "forbiddenForm",
+      "match": "(^|\\s)\\d*>>?\\s*\\S",
+      "requires": "exec"
+    },
+    "form.fs.append": {
+      "text": "`>>`",
+      "kind": "forbiddenForm",
+      "match": ">>",
+      "requires": "exec"
+    },
+    "form.env.export": {
+      "text": "`export VAR=…`",
+      "kind": "forbiddenForm",
+      "match": "(^|\\s)export\\s+\\w+\\s*=",
+      "requires": "exec"
+    },
+    "form.env.set": {
+      "text": "`set VAR=…`",
+      "kind": "forbiddenForm",
+      "match": "(^|\\s)set\\s+\\w+\\s*=",
+      "requires": "exec"
+    },
+    "form.env.setx": {
+      "text": "`setx VAR …`",
+      "kind": "forbiddenForm",
+      "match": "(^|\\s)setx\\s+\\w+",
+      "requires": "exec"
+    },
+    "form.env.envcmd": {
+      "text": "`env VAR=… <命令>`",
+      "kind": "forbiddenForm",
+      "match": "(^|\\s)env\\s+\\w+=",
+      "requires": "exec"
+    },
+    "form.env.psenv": {
+      "text": "`$env:VAR=…`",
+      "kind": "forbiddenForm",
+      "match": "\\$env:\\w+\\s*=",
+      "requires": "exec"
+    },
+    "form.env.prefix": {
+      "text": "`VAR=… <命令>` 前缀",
+      "kind": "forbiddenForm",
+      "match": "^\\s*(\\w+=\\S*\\s+)+(\\S)",
+      "requires": "exec"
+    },
+    "form.env.line": {
+      "text": "整行 `VAR=…`",
+      "kind": "forbiddenForm",
+      "match": "^\\s*\\w+=\\S*\\s*$",
+      "requires": "exec"
+    }
+  },
+  "actions": {
+    "verify": "核实",
+    "summarize": "汇总",
+    "record": "记录",
+    "reproduce": "复现",
+    "review": "评审",
+    "evidence-read": "取证通读",
+    "code-change": "改代码",
+    "review-verdict": "写评审结论",
+    "self-disposal": "自行处置",
+    "opinion": "出观点",
+    "issue-card": "出问题卡",
+    "participate-review": "参与评审",
+    "tech-verdict": "判技术对错",
+    "adjudicate": "裁决分歧",
+    "interrupt": "中断评审",
+    "tamper-original": "删改原文",
+    "behavior-check": "行为核实"
+  },
+  "permissionGroups": {
+    "adjudicate": {
+      "label": "裁决他人分歧",
+      "signal": {
+        "allOf": [
+          {
+            "op": "eq",
+            "ofRef": "transcript",
+            "field": "kind",
+            "value": "verdict"
+          },
+          {
+            "op": "nonEmpty",
+            "ofRef": "transcript",
+            "field": "target"
+          }
+        ]
+      }
+    },
+    "interrupt": {
+      "label": "中断评审",
+      "signal": {
+        "op": "eq",
+        "ofRef": "transcript",
+        "field": "kind",
+        "value": "interrupt"
+      }
+    },
+    "self-disposal": {
+      "label": "自行处置越界后果",
+      "signal": {
+        "op": "countGte",
+        "ofRef": "exceedAction",
+        "value": 1
+      }
+    },
+    "tamper-original": {
+      "label": "删改原文",
+      "signal": {
+        "op": "nonEmpty",
+        "ofRef": "writeAction",
+        "field": "path"
+      }
+    },
+    "code-change": {
+      "label": "修改代码",
+      "signal": {
+        "op": "nonEmpty",
+        "ofRef": "writeAction",
+        "field": "path"
+      }
+    },
+    "review-verdict": {
+      "label": "写评审结论",
+      "signal": {
+        "anyOf": [
+          {
+            "op": "fieldNotIn",
+            "ofRef": "defenseRow",
+            "field": "verdict",
+            "values": [
+              "确认存在",
+              "确认不存在"
+            ]
+          },
+          {
+            "op": "textMatches",
+            "ofRef": "defenseText",
+            "field": "text",
+            "pattern": "(^|\\|)\\s*(通过|不通过|采纳|驳回|合格|不合格)\\s*(\\||$)"
+          }
+        ]
+      }
+    },
+    "opinion": {
+      "label": "出观点",
+      "signal": null,
+      "residual": {
+        "sample": 3,
+        "fields": [
+          "deliverableText.text"
+        ],
+        "objective": {
+          "target": "manual",
+          "reason": "REQUIRES_HUMAN_JUDGMENT"
+        }
+      }
+    },
+    "participate-review": {
+      "label": "参与评审",
+      "signal": null,
+      "residual": {
+        "sample": 3,
+        "fields": [
+          "transcript.speaker",
+          "transcript.kind"
+        ],
+        "objective": {
+          "target": "manual",
+          "reason": "REQUIRES_HUMAN_JUDGMENT"
+        }
+      }
+    },
+    "tech-verdict": {
+      "label": "判技术对错",
+      "signal": null,
+      "residual": {
+        "sample": 3,
+        "fields": [
+          "deliverableText.text"
+        ],
+        "objective": {
+          "target": "manual",
+          "reason": "REQUIRES_HUMAN_JUDGMENT"
+        }
+      }
+    }
+  },
+  "placeholders": {
+    "session": {
+      "label": "本次评审",
+      "from": "round.id",
+      "pattern": "^[A-Za-z0-9._-]+$"
+    },
+    "task": {
+      "label": "任务",
+      "from": "round.task",
+      "pattern": "^[A-Za-z0-9._-]+$"
+    }
+  },
+  "objectKinds": {
+    "rule": "rule",
+    "skill": "skill",
+    "agents": "agents",
+    "ai-doc": "含 AI 指令的文档",
+    "issue-card": "问题卡",
+    "issue-card-behavior": "问题卡所述行为",
+    "any-document": "任意文档"
+  },
+  "perspectives": {
+    "ai-engineering": "AI 工程视角",
+    "cost-benefit": "成本与收益视角"
+  },
+  "schedules": {
+    "speaker": "议长"
+  },
+  "triggerPhrases": {
+    "handoff": "交接取证",
+    "fact-baseline": "事实基线回核",
+    "process-check": "过程标准核对",
+    "round-reconcile": "轮际对账",
+    "delivery-check": "交付审计"
+  }
+}
