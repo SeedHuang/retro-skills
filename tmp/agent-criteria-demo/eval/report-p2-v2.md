@@ -3,7 +3,7 @@
 > 归属：`docs/prd/20261111145723-agent-model-pipeline.md` §6 P2、§7.1–§7.4
 > 上一版：`tmp/agent-criteria-demo/eval/report.md`（保留不覆盖）
 > 执行手册：`tmp/agent-criteria-demo/eval/raw/p2-v2-runbook.md`
-> 结论：**修改（仅 reviewer-audit 一席未达线）**；6 席保留；无整席回退；不进入 P3。
+> 结论：**7 席四维全部达线**——v2 主测时 `reviewer-audit` 是唯一未达线席，按 §4 补 `outputFormat` 后已按 §7 单席复测通过；无整席回退；是否进入 P3 待用户裁决。
 
 ## 0 元信息与取证锚
 
@@ -117,7 +117,7 @@ E3：42 次中 41 次命中。唯一 miss 是 `card-B6`（现役 reviewer-ai）�
 | respondent-dev | 保留 | 理解 +1；执行 4=4；token 卡面 1.0997（临界） | 若 P4 再动该模型，顺手压 1–2 行；本轮不改 |
 | reviewer-actuary | 保留 | 理解 +1；执行 3→4（B 稳定、A 波动）；token −5.9%/+4.6% | 无需动作；A 侧执行不稳定留作测量噪声记录 |
 | reviewer-ai | 保留 | 理解 +1；执行 3=3；token −5.8%/−3.1% | 无需动作；A 侧 E1 缺 9 字段标签、B 侧 r3 E2 缺 1 命中，各缺一头，属平手 |
-| reviewer-audit | **修改** | 理解 7 < 8；执行 3 < 4；E1 沙箱 2/14、2/14、3/14 | 回 P1/P4：给 `reviewer-audit` 模型补 `outputFormat`（A 节 A1–A6、B 节四列、结论、打回清单），渲染出「## 输出格式」段；改后重跑该席 3 轮理解 + 3 轮执行即可复核 |
+| reviewer-audit | **修改（已复测通过）** | v2：理解 7 < 8；执行 3 < 4；E1 沙箱 2/14、2/14、3/14 | 已按处方补 `outputFormat` 并单席复测：理解 8/8 ×3、执行 4/4 ×3、token 1.097/1.098（临界达线），见 §7 |
 
 回退：无。
 
@@ -144,7 +144,32 @@ E3：42 次中 41 次命中。唯一 miss 是 `card-B6`（现役 reviewer-ai）�
 | 聚合 CSV | `eval/raw/aggregate-v2.csv`（133 行，由 `raw/build-aggregate-v2.mjs` 生成） |
 | 旧版数据 | `eval/report.md`、`eval/raw/aggregate.csv`、`eval/raw/understanding/`、`eval/raw/execution/` |
 | 本轮手册 | `eval/raw/p2-v2-runbook.md` |
+| 单席复测样本（3+3） | `eval/raw/understanding-audit-v3/r{1,2,3}-card-B7.json`、`eval/raw/execution-audit-v3/r{1,2,3}-card-B7.json` |
+| 单席复测取数 | `eval/raw/understanding-audit-v3-score.txt`、`execution-audit-v3-score.txt`、`token-audit-v3-summary.txt`、`perf-audit-v3-bench.txt` |
+
+## 7 单席复测：reviewer-audit 补 outputFormat
+
+**改动**（只动模型，不动代码）：
+- `models/reviewer-audit-model.json:458-608` 新增 `outputFormat`：18 项必填字段（核对项 / 核对内容 / 结果 / 证据 / A 节 过程闭环 / A1–A6 / B 节 逐交付物 / B 列 交付物 / 完成判据核对 / 结果 / 证据 / 结论 / 打回清单）+ 4 条由 `observable` 派生的校验，无手写 `text`。
+- 渲染器无需改：`render/sections.mjs:174-183` 已按 `requiredFields.length + checks.length + 5` 生成该段。
+- 产物：`sandbox/reviewer-audit.md:48-77`；复测卡面 `eval/raw/cards-fix/card-B7.md` 已同步为 3667 字符（v2 为 3281）。
+
+**验证**：`node verify-models.mjs` → 7 席 `EQUIVALENT`、无新增违规码；`node --test test-p1.test.mjs` → 29/29；`render-all.mjs` + `diff-report.mjs` → `sandbox/*.md` = 8；两次渲染同 sha（`41BAC14B...A856`）。
+
+**复测**（每维每卡 3 轮，独立 subagent，卡面与 v2 同、仅模型变化）：
+
+| 维度 | v2（修复前） | v3（修复后） | 现役 A | 判定 |
+|---|---|---|---|---|
+| 理解（8 问） | 7 [0] | 8 [0]（8/8 ×3） | 8 [0] | 达线 |
+| 执行（0–4） | 3 [0] | 4 [0]（4/4 ×3） | 4 [0] | 达线；E1 字段命中 10/14、14/14、14/14 |
+| token 卡面 | 820 | 917 | 836 | 1.097×，达线（临界） |
+| token 单任务 | 1357 | 1520 | 1384 | 1.098×，达线（临界） |
+| 渲染 | 0.19 ms | 0.19 ms | — | ≤200 ms |
+
+取数命令：`node raw/score-understanding.mjs understanding-audit-v3`、`node raw/score-execution.mjs execution-audit-v3`、`node raw/token/token-summary.mjs execution-audit-v3 cards-fix`、`node raw/perf/render-bench.mjs`。
+
+**结论**：`reviewer-audit` 理解 Q8 与执行 E1 双缺口已闭合；7 席四维全部达线。token 两项余量仅 0.2–0.3 个百分点（1.097 / 1.098 对 1.1 线），与 `respondent-dev` 同属临界。
 
 ---
 
-**停止点**：本报告落盘并提交后停下，等待用户裁决是否按 §4 对 `reviewer-audit` 回 P1 补 `outputFormat`，或接受该缺口进入 P3。未获确认不进入 P3。
+**停止点**：§7 复测已完成并落盘。是否进入 P3 待用户裁决；未获确认不进入 P3。

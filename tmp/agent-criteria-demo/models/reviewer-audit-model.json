@@ -455,6 +455,157 @@
       ]
     }
   },
+  "outputFormat": {
+    "title": "输出格式",
+    "requiredFields": [
+      {
+        "id": "item",
+        "label": "核对项",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "content",
+        "label": "核对内容",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "result",
+        "label": "结果",
+        "type": "enum",
+        "values": [
+          "hit",
+          "miss",
+          "na"
+        ],
+        "required": true
+      },
+      {
+        "id": "evidence",
+        "label": "证据",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "sectionA",
+        "label": "A 节 过程闭环",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "a1",
+        "label": "A1 终态对账",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "a2",
+        "label": "A2 P0P1 清零",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "a3",
+        "label": "A3 落点抽查 ≥3",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "a4",
+        "label": "A4 P2 三态齐",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "a5",
+        "label": "A5 数字一致",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "a6",
+        "label": "A6 升级项终裁",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "sectionB",
+        "label": "B 节 按完成判据逐交付物核对",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "bDeliverable",
+        "label": "B 列 交付物",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "bCriterion",
+        "label": "B 列 完成判据核对",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "bResult",
+        "label": "B 列 结果",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "bEvidence",
+        "label": "B 列 证据",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "conclusion",
+        "label": "结论",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "rejectList",
+        "label": "打回清单",
+        "type": "nonEmpty",
+        "required": true
+      }
+    ],
+    "checks": [
+      {
+        "id": "fields-complete",
+        "observable": {
+          "op": "allExist",
+          "ofRef": "cardField"
+        }
+      },
+      {
+        "id": "count-match",
+        "observable": {
+          "op": "fieldsEq",
+          "ofRef": "directionCount",
+          "left": "sum",
+          "right": "cards"
+        }
+      },
+      {
+        "id": "spot-min",
+        "observable": {
+          "op": "countGte",
+          "ofRef": "spotCheck",
+          "value": 3
+        }
+      },
+      {
+        "id": "transcript-line",
+        "observable": {
+          "op": "lineExists",
+          "ofRef": "gateRecord"
+        }
+      }
+    ]
+  },
   "outputs": {
     "items": [
       {

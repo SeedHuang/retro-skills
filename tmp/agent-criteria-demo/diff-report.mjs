@@ -70,7 +70,7 @@ const md = [
   '|---|---|---|',
   '| K1 | 沙箱多出 `## 产出` / `## 权限` 两段；2 张 policy 席另多 `## 越界处置` | spec S8；现役卡无这三段 |',
   '| K2 | `outputFormat` 校验由 observable 派生，措辞弱于现役散文 | spec S5 |',
-  '| K3 | `reviewer-audit` 缺 `## 输出格式` | spec S6；P4 补建模 |',
+  '| K3 | `reviewer-audit` 缺 `## 输出格式`——已补（P2 v3 补 `outputFormat`，本表已无缺失行） | spec S6；`reviewer-audit-model.json` 已建模 |',
   '| K4 | 边界形态三套并存 | spec S1/S2；现役事实 |',
   '| K5 | `seat.tier` 与策略档位并存 | spec S4；`TIER_MISMATCH` 守卫 |',
   '',

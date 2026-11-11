@@ -1,0 +1,7 @@
+﻿detective-observer	med_ms=0.26	min=0.17	max=1.15
+evidence-reader	med_ms=0.10	min=0.08	max=0.31
+respondent-architect	med_ms=0.13	min=0.11	max=0.30
+respondent-dev	med_ms=0.11	min=0.08	max=0.26
+reviewer-actuary	med_ms=0.13	min=0.11	max=0.25
+reviewer-ai	med_ms=0.15	min=0.10	max=0.26
+reviewer-audit	med_ms=0.19	min=0.18	max=0.36

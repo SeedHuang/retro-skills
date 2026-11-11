@@ -1,0 +1,14 @@
+﻿card-A1	detective-observer	现役	card_chars=2806	card_tok=702	out_chars_med=0	out_tok_med=0	task_tok_est=0
+card-A2	evidence-reader	沙箱	card_chars=1524	card_tok=381	out_chars_med=0	out_tok_med=0	task_tok_est=0
+card-A3	respondent-architect	现役	card_chars=1240	card_tok=310	out_chars_med=0	out_tok_med=0	task_tok_est=0
+card-A4	respondent-dev	沙箱	card_chars=1367	card_tok=342	out_chars_med=0	out_tok_med=0	task_tok_est=0
+card-A5	reviewer-actuary	现役	card_chars=1900	card_tok=475	out_chars_med=0	out_tok_med=0	task_tok_est=0
+card-A6	reviewer-ai	沙箱	card_chars=2006	card_tok=502	out_chars_med=0	out_tok_med=0	task_tok_est=0
+card-A7	reviewer-audit	现役	card_chars=3344	card_tok=836	out_chars_med=0	out_tok_med=0	task_tok_est=0
+card-B1	detective-observer	沙箱	card_chars=2861	card_tok=715	out_chars_med=0	out_tok_med=0	task_tok_est=0
+card-B2	evidence-reader	现役	card_chars=1767	card_tok=442	out_chars_med=0	out_tok_med=0	task_tok_est=0
+card-B3	respondent-architect	沙箱	card_chars=1265	card_tok=316	out_chars_med=0	out_tok_med=0	task_tok_est=0
+card-B4	respondent-dev	现役	card_chars=1243	card_tok=311	out_chars_med=0	out_tok_med=0	task_tok_est=0
+card-B5	reviewer-actuary	沙箱	card_chars=1786	card_tok=447	out_chars_med=0	out_tok_med=0	task_tok_est=0
+card-B6	reviewer-ai	现役	card_chars=2130	card_tok=533	out_chars_med=0	out_tok_med=0	task_tok_est=0
+card-B7	reviewer-audit	沙箱	card_chars=3667	card_tok=917	out_chars_med=1612	out_tok_med=403	task_tok_est=1520

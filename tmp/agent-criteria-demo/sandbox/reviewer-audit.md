@@ -45,6 +45,37 @@ tools: Read, Glob, Grep, Write, Edit, RunCommand
 | 7 | 审计席卡：证据复算核对 | 重放：记录输出首行 = 实际输出首行（全部成立 = hit） | 本席 |
 | 8 | 审计席卡：转录核对 | 比对：gate-record 摘句行号（全部成立 = hit） | 本席 |
 
+## 输出格式
+必填字段：
+
+| # | 字段 |
+|---|---|
+| 1 | 核对项 |
+| 2 | 核对内容 |
+| 3 | 结果 |
+| 4 | 证据 |
+| 5 | A 节 过程闭环 |
+| 6 | A1 终态对账 |
+| 7 | A2 P0P1 清零 |
+| 8 | A3 落点抽查 ≥3 |
+| 9 | A4 P2 三态齐 |
+| 10 | A5 数字一致 |
+| 11 | A6 升级项终裁 |
+| 12 | B 节 按完成判据逐交付物核对 |
+| 13 | B 列 交付物 |
+| 14 | B 列 完成判据核对 |
+| 15 | B 列 结果 |
+| 16 | B 列 证据 |
+| 17 | 结论 |
+| 18 | 打回清单 |
+
+校验：
+
+- 卡片必填字段全在
+- 求和 = 卡片数
+- 锚点 计数 ≥ 3
+- gate-record 行存在
+
 ## 产出
 - 每轮：按 `parliament-ledger` 技能的轮间核对单填写，写回 `.session/reviews/{session}/round-check.md`
 - 终局：按 `parliament-ledger` 技能的交付审计表填写，写回 `.session/reviews/{session}/delivery-audit.md`

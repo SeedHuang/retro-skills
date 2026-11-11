@@ -10,7 +10,7 @@
 | respondent-dev | RespondentModel | 64 | 63 | 1367 | 1243 | 8/7 | literal | 是 | 有 |
 | reviewer-actuary | ReviewerModel | 80 | 75 | 1786 | 1900 | 9/7 | default | 是 | 有 |
 | reviewer-ai | ReviewerModel | 83 | 78 | 2006 | 2130 | 9/7 | default | 是 | 有 |
-| reviewer-audit | AuditorModel | 78 | 99 | 3281 | 3344 | 9/7 | policy | 是 | 无 |
+| reviewer-audit | AuditorModel | 109 | 99 | 3667 | 3344 | 10/7 | policy | 是 | 有 |
 
 ## 段级差异
 
@@ -76,11 +76,11 @@
 | reviewer-audit | 禁止 | 文本不同 | -78 |
 | reviewer-audit | 冲突裁决 | 文本不同 | -25 |
 | reviewer-audit | 本席清单 | 文本不同 | 87 |
+| reviewer-audit | 输出格式 | 文本不同 | -159 |
 | reviewer-audit | 产出 | 仅沙箱 | - |
 | reviewer-audit | 权限 | 仅沙箱 | - |
 | reviewer-audit | 越界处置 | 仅沙箱 | - |
 | reviewer-audit | 边界 | 一致 | 0 |
-| reviewer-audit | 输出格式 | 仅现役 | - |
 
 ## 边界核对
 
@@ -98,7 +98,7 @@
 
 | 席 | 缺失项 | 原因 |
 |---|---|---|
-| reviewer-audit | 输出格式 | 模型无 outputFormat 配置（P4 建模） |
+| - | - | 无 |
 
 ## 已知差异归类
 
@@ -106,6 +106,6 @@
 |---|---|---|
 | K1 | 沙箱多出 `## 产出` / `## 权限` 两段；2 张 policy 席另多 `## 越界处置` | spec S8；现役卡无这三段 |
 | K2 | `outputFormat` 校验由 observable 派生，措辞弱于现役散文 | spec S5 |
-| K3 | `reviewer-audit` 缺 `## 输出格式` | spec S6；P4 补建模 |
+| K3 | `reviewer-audit` 缺 `## 输出格式`——已补（P2 v3 补 `outputFormat`，本表已无缺失行） | spec S6；`reviewer-audit-model.json` 已建模 |
 | K4 | 边界形态三套并存 | spec S1/S2；现役事实 |
 | K5 | `seat.tier` 与策略档位并存 | spec S4；`TIER_MISMATCH` 守卫 |
