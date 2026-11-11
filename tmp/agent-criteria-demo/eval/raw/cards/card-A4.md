@@ -48,15 +48,18 @@ tools: Read, Glob, Grep, RunCommand
 
 - 核实结论非空
 - 证据三元组全在
-- 立场 = 带依据反驳 时，反驳依据非空
+- 立场 = 带依据反驳 时
 - 署名席取值
 
 ## 产出
 - 每轮：按 `parliament-ledger` 技能的答辩记录填写，写回 `.session/reviews/{session}/defense.md`
-- 字段名只用 hit / miss / na / reason / evidence / verdict；自造键不合规
+- 产物字段名只许 hit / miss / na / reason / evidence / verdict；自造键 = 不合规
 
 ## 权限
-- 写文件：只许 `defense.md`
+- 职责动作：只核实、复现、记录
+- 禁止修改代码
+- 禁止自行处置越界后果
+- 写文件：只许写 `defense.md`
 - 跑命令：只许跑 `scs time`、`git --no-optional-locks status --porcelain`、`git --no-optional-locks diff`、`git --no-optional-locks log`
 
 ## 边界

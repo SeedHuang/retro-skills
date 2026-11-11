@@ -59,10 +59,14 @@ tools: Read, Glob, Grep, Write, Edit, RunCommand
 
 ## 产出
 - 每轮：按 `parliament-ledger` 技能的观察记录填写，写回 `.session/reviews/{session}/detective.md`
-- 字段名只用 hit / miss / na / reason / evidence / verdict；自造键不合规
+- 产物字段名只许 hit / miss / na / reason / evidence / verdict；自造键 = 不合规
 
 ## 权限
-- 写文件：只许 `detective.md`
+- 职责动作：只记录
+- 禁止裁决他人分歧
+- 禁止中断评审
+- 禁止删改原文
+- 写文件：只许写 `detective.md`
 - 跑命令：只许跑 `scs time`、`git --no-optional-locks status --porcelain`、`git --no-optional-locks diff`、`git --no-optional-locks log`
 
 ## 越界处置

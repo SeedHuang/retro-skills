@@ -120,6 +120,18 @@ test('TC-013 outputFormat.checks 无 text 键', () => {
   }
 })
 
+test('TC-047 whenEq 渲染嵌套 then（P0 证据规则不截断）', () => {
+  const OP = makeHelpers({ ...SHARED, ...model('reviewer-actuary') }, SHARED).OP
+  const text = OP.whenEq({
+    op: 'whenEq',
+    ofRef: 'issueCardFull',
+    field: 'severity',
+    value: 'P0',
+    then: { op: 'countGte', ofRef: 'conflictEvidence', value: 2 },
+  })
+  assert.equal(text, '严重级别 = P0 时，冲突证据 计数 ≥ 2')
+})
+
 test('TC-012 无 outputFormat 时不留空标题', () => {
   const dir = copyCase((m) => { delete m.outputFormat }, 'reviewer-ai')
   const t = renderModel(join(dir, 'models/reviewer-ai-model.json'), JSON.parse(readFileSync(join(dir, 'models/_shared-model.json'), 'utf8'))).text

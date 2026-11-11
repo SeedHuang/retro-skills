@@ -46,7 +46,6 @@ tools: Read, Glob, Grep
 | 6 | AI 席卡：数字取数核对 | 核对：取数命令非空（全部成立 = hit） | 本席 |
 | 7 | AI 席卡：同措辞守卫核对 | 核对：用途非空（全部成立 = hit） | 本席 |
 | 8 | AI 席卡：AI 判定语义核对 | 核对：判定语义非空（全部成立 = hit） | 本席 |
-| 9 | AI 席卡：触发序列核对 | 核对：建议解法每项含 触发序列（path:line）（全部成立 = hit） | 本席 |
 
 ## 输出格式
 必填字段：
@@ -67,15 +66,18 @@ tools: Read, Glob, Grep
 
 - 证据三元组全在
 - 建议解法非空
-- 严重级别 = P0 时，冲突证据 计数 ≥ 2
-- 严重级别 = P1 时，建议解法每项含 触发序列（path:line）
+- 严重级别 = P0 时
 
 ## 产出
 - 每轮：按 `parliament-ledger` 技能的问题卡填写，写回 `.session/reviews/{session}/issue-card.md`
-- 字段名只用 hit / miss / na / reason / evidence / verdict；自造键不合规
+- 产物字段名只许 hit / miss / na / reason / evidence / verdict；自造键 = 不合规
 
 ## 权限
-- 写文件：只许 `issue-card.md`
+- 职责动作：只评审、记录
+- 禁止裁决他人分歧
+- 禁止中断评审
+- 禁止自行处置越界后果
+- 写文件：只许写 `issue-card.md`
 - 跑命令：不跑任何命令
 
 ## 边界

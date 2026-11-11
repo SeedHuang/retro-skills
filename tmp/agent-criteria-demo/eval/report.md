@@ -136,7 +136,8 @@
 
 ## 6 原始数据索引
 
-- 盲测卡：`eval/raw/cards/`（14 个 md）
+- 盲测卡：`eval/raw/cards/`（14 个 md，原 P2 卡面）
+- 复测卡：`eval/raw/cards-fix/`（14 个 md，调优后卡面）
 - 分组映射：`eval/blind-map.json`（仅主 agent；报告发布后可公开）
 - 理解原始答案：`eval/raw/understanding/r{1,2,3}-card-*.json`（42 个）
 - 执行原始产物：`eval/raw/execution/r{1,2,3}-card-*.json`（42 个）
@@ -161,7 +162,7 @@
 
 ### 7.2 结构验证
 
-- `node --test test-p1.test.mjs` → `# pass 28 / # fail 0`
+- `node --test test-p1.test.mjs` → `# pass 29 / # fail 0`（新增 TC-047 断言 `whenEq` 嵌套 `then` 文本）
 - `node verify-models.mjs` → 7 席 EQUIVALENT
 - 连跑两次 `render-all.mjs` → `detective-observer.md` 哈希 `same=True`
 - `sandbox/*.md` = 8
@@ -178,7 +179,7 @@
 | reviewer-ai | 533 | 502 | 0.9418 | 达线 |
 | reviewer-audit | 836 | 820 | 0.9812 | 达线 |
 
-原超线的 `respondent-dev` 从 351→342（+12.9%→+10.0% 边界内），`architect` 从 328→316。
+原超线的 `respondent-dev` 从 351→342（+12.9%→+9.98%），`architect` 从 328→316。复测使用 `eval/raw/cards-fix/`（调优后卡面）；`eval/raw/cards/` 已恢复为原 P2 卡面，旧结果仍可按原卡复现。
 
 单任务 token（4 席复测，口径同 §2.3）：
 
@@ -208,4 +209,19 @@
 - 执行稳定性：**已修复**（`reviewer-actuary`/`reviewer-ai` B 由 3→4，三轮稳定；E3 无回退）。
 - 未修：`reviewer-audit` 的 `outputFormat`（P4 建模缺口，不属本次「token + 执行稳定性」两项），其理解 Q8/执行 E1 仍低。
 - 未重跑：理解维度 42 个 subagent 未重跑；`aggregate-fix.csv` 的 U 列沿用旧值；完整 P2 未重跑，§2/§3 旧值保留作对照。
+- 覆盖补证：Q7 禁令类做静态关键词复核，7/7 席 B ≥ min 且 B ≥ A（见 §7.6）；盲测卡已分离为 `cards/`（原 P2）与 `cards-fix/`（调优复测）。
 - 复测原始数据：`eval/raw/execution-fix/`（24 个 json）、`eval/raw/aggregate-fix.csv`。
+
+### 7.6 Q7 静态覆盖复核（7 席）
+
+| 席 | A 命中词 | B 命中词 | 阈值 | 结果 |
+|---|---|---|---|---|
+| detective-observer | 7 | 8 | 3 | 通过 |
+| evidence-reader | 7 | 8 | 3 | 通过 |
+| respondent-architect | 5 | 5 | 3 | 通过 |
+| respondent-dev | 4 | 4 | 3 | 通过 |
+| reviewer-actuary | 6 | 7 | 3 | 通过 |
+| reviewer-ai | 6 | 7 | 3 | 通过 |
+| reviewer-audit | 7 | 8 | 3 | 通过 |
+
+口径：`answer-key.json` 的 Q7 关键词组，统计卡面文本命中数；只证明禁令信息未因权限段去重而丢失，不替代独立 subagent 的理解复测。
