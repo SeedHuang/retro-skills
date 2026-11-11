@@ -30,6 +30,16 @@ export const SEATS = {
   'respondent-dev': {
     display: '研发答辩',
   },
+  // 下列三席此前走 `__default__`；卡面已声明产物（取证 / 问题卡），故按「只登记与默认不同的席」补登记。
+  'evidence-reader': {
+    display: '取证',
+  },
+  'reviewer-actuary': {
+    display: '精算',
+  },
+  'reviewer-ai': {
+    display: 'AI',
+  },
   __default__: { display: '默认席', clause: '' },
 };
 

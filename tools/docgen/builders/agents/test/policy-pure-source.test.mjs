@@ -268,11 +268,11 @@ test('S6-TC-A04 路径 6 组：19 项对象 / 20 定义层点名 / 20 卡面成�
   for (const g of Object.values(P)) assert.equal(g.includes('.session/'), false, '检测盲区不得混进禁写清单');
 });
 
-test('S6-TC-A05 artifacts 4 项在位、progress.md 标 host', () => {
+test('S6-TC-A05 artifacts 7 项在位、progress.md 标 host', () => {
   const A = ART.artifacts;
-  assert.deepEqual(Object.keys(A).sort(), ['delivery-audit.md','detective.md','progress.md','round-check.md']);
+  assert.deepEqual(Object.keys(A).sort(), ['defense.md','delivery-audit.md','detective.md','evidence.md','issue-card.md','progress.md','round-check.md']);
   assert.equal(A['progress.md'].host, true);
-  for (const k of ['round-check.md','delivery-audit.md','detective.md']) assert.notEqual(A[k].host, true, k);
+  for (const k of ['round-check.md','delivery-audit.md','detective.md','evidence.md','defense.md','issue-card.md']) assert.notEqual(A[k].host, true, k);
   for (const [f, v] of Object.entries(A)) {
     assert.deepEqual(Object.keys(v).filter((x) => !['owner','host','note'].includes(x)), [], f);
     assert.ok(/\.md$/.test(f), '产物名必须是文件名，不是路径');
@@ -426,7 +426,7 @@ test("S6-TC-A08 定义层值含 {{SLOT}} / $& / $' / $$ 时不得被二次展开
 
 test('S6-TC-B01 各席 + __default__ 策略数据等价；黄金 4 键齐（哈希只记事实）', () => {
   assert.deepEqual(Object.keys(SEAT_POLICY),
-    ['reviewer-audit','detective-observer','senior-sdet','speaker','respondent-dev','respondent-architect','__default__']);
+    ['reviewer-audit','detective-observer','senior-sdet','speaker','respondent-dev','respondent-architect','evidence-reader','reviewer-actuary','reviewer-ai','__default__']);
   assert.deepEqual(SEAT_POLICY['reviewer-audit'], { capabilities: ['read','write','exec'],
     allowGroups: ['git.read','tool.time','audit.lookup'], artifacts: ['round-check.md','delivery-audit.md'] });
   assert.deepEqual(SEAT_POLICY['detective-observer'], { capabilities: ['read','write','exec'],
@@ -514,7 +514,8 @@ test('S6-TC-B01 各席 + __default__ 策略数据等价；黄金 4 键齐（哈�
   assert.deepEqual(
     Object.fromEntries(SEATS.SEAT_NAMES.map((s) => [s, patternRegistry.tierBySeat[s]])),
     { 'reviewer-audit': 'producer', 'detective-observer': 'producer', 'senior-sdet': 'sdet',
-      'speaker': 'producer', 'respondent-dev': 'command', 'respondent-architect': 'readOnly' },
+      'speaker': 'producer', 'respondent-dev': 'command', 'respondent-architect': 'readOnly',
+      'evidence-reader': 'readOnly', 'reviewer-actuary': 'readOnly', 'reviewer-ai': 'readOnly' },
     '各席档位值 = 由 SEAT_POLICY 现算的结果（三新席：speaker=producer / respondent-dev=command / respondent-architect=readOnly）');
 });
 
@@ -1282,7 +1283,7 @@ test('S6-TC-F02 dump 槽级展开可复算 renderBoundary；两 producer 席 == 
   const { json } = dumpPolicy(ROOT);
   const seats = Object.keys(SEAT_POLICY).filter((x) => x !== '__default__');
   assert.deepEqual(seats,
-    ['reviewer-audit','detective-observer','senior-sdet','speaker','respondent-dev','respondent-architect']);
+    ['reviewer-audit','detective-observer','senior-sdet','speaker','respondent-dev','respondent-architect','evidence-reader','reviewer-actuary','reviewer-ai']);
   for (const s of seats) {
     const out = renderBoundary(s);
     const e = json.seats[s].expanded;
