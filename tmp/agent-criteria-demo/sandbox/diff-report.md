@@ -13,6 +13,7 @@
 | reviewer-audit | AuditorModel | 109 | 99 | 3667 | 3344 | 10/7 | policy | 是 | 有 |
 | reviewer-product | ReviewerModel | 76 | 77 | 1583 | 2007 | 8/7 | default | 是 | 有 |
 | reviewer-interaction | ReviewerModel | 76 | 77 | 1592 | 2018 | 8/7 | default | 是 | 有 |
+| senior-sdet | ReviewerModel | 86 | 86 | 2712 | 3142 | 8/7 | policy | 是 | 有 |
 
 ## 段级差异
 
@@ -99,6 +100,14 @@
 | reviewer-interaction | 输出格式 | 文本不同 | -194 |
 | reviewer-interaction | 权限 | 仅沙箱 | - |
 | reviewer-interaction | 边界 | 一致 | 0 |
+| senior-sdet | 职责 | 文本不同 | -54 |
+| senior-sdet | 一定会 | 文本不同 | -179 |
+| senior-sdet | 禁止 | 文本不同 | -29 |
+| senior-sdet | 冲突裁决 | 文本不同 | -25 |
+| senior-sdet | 本席清单 | 文本不同 | -11 |
+| senior-sdet | 输出格式 | 文本不同 | -148 |
+| senior-sdet | 权限 | 仅沙箱 | - |
+| senior-sdet | 边界 | 一致 | 0 |
 
 ## 边界核对
 
@@ -113,6 +122,7 @@
 | reviewer-audit | policy | 1240 | 1240 | 是 |
 | reviewer-product | default | 41 | 41 | 是 |
 | reviewer-interaction | default | 41 | 41 | 是 |
+| senior-sdet | policy | 1080 | 1080 | 是 |
 
 ## 缺失项
 

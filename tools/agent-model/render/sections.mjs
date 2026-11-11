@@ -102,10 +102,10 @@ export const sections = {
   duty(M, shared, h) {
     const a = M.duty.action
     const subject = typeof a.landingSubject === 'string' ? a.landingSubject : a.emit[a.landingSubject.index]
-    // 零写席（outputs.items 为空）用 landingLabel 说明「写回哪里」，不出现空落点
+    // 无 outputs 时：默认「只记入账本」；landingMode:'file' 表示真写盘（写席，落点无 artifact id）
     const landingText = M.outputs.items.length
       ? M.outputs.items.map((i) => `${h.F[i.artifact].text}（${i.phase}）`).join(M.duty.action.landingJoiner || '与 ')
-      : `${a.landingLabel || subject}（只记入评审账本，不写文件）`
+      : `${a.landingLabel || subject}${a.landingMode === 'file' ? '' : '（只记入评审账本，不写文件）'}`
     const pm = M.permissions
     const allow = pm.action.allow.map((x) => shared.actions[x]).join('、')
     const forbids = pm.action.forbid.map((x) => '不' + (M.permissionGroups[x]?.label || shared.actions[x] || x)).join('，')
@@ -122,7 +122,12 @@ export const sections = {
     if (!M.must?.length) return []
     const out = ['## 一定会', `> 时机：${h.timingText}。`]
     for (const g of M.globalRules) out.push(`> ${g.text}`)
-    out.push(M.defaultLanding ? `> 判定写回 ${h.F[M.defaultLanding].text}。` : '> 判定只记入本轮评审账本，不写盘。', '')
+    const ledger = !M.defaultLanding && M.duty.action.landingMode !== 'file'
+    out.push(M.defaultLanding
+      ? `> 判定写回 ${h.F[M.defaultLanding].text}。`
+      : ledger
+        ? '> 判定只记入本轮评审账本，不写盘。'
+        : `> 判定写回 ${M.duty.action.landingLabel || '本席产物'}。`, '')
     let n = 0
     for (const rule of M.must) {
       for (const target of rule.targets) {
@@ -199,8 +204,11 @@ export const sections = {
     const pm = M.permissions
     // 职责动作与禁止项已由 duty 段完整渲染，此处只保留落点与命令，避免重复占 token
     const out = []
-    if (!pm.write.allow.length) out.push('- 写文件：不得写任何文件')
-    else out.push(`- 写文件：只许 ${pm.write.allow.map((id) => h.F[id].text).join('、')}`)
+    if (!pm.write.allow.length) {
+      // 档位含 Write 但无 artifact 级白名单 = 写作用域由边界段（封闭清单）约束，≠ 不能写
+      const canWrite = (TIERS[M.seat.tier] || []).includes('Write')
+      out.push(canWrite ? '- 写文件：只限「边界」所列封闭清单（本席无 artifact 级写白名单）' : '- 写文件：不得写任何文件')
+    } else out.push(`- 写文件：只许 ${pm.write.allow.map((id) => h.F[id].text).join('、')}`)
     if (!pm.command.allow.length) out.push('- 跑命令：不跑任何命令')
     else out.push(`- 跑命令：只许跑 ${pm.command.allow.map((id) => h.F[id].text).join('、')}`)
     out.push('')

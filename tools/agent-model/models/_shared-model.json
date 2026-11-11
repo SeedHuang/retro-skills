@@ -284,7 +284,8 @@
         "evidence-reader",
         "detective-observer",
         "reviewer-product",
-        "reviewer-interaction"
+        "reviewer-interaction",
+        "senior-sdet"
       ],
       "slots": [
         {
@@ -311,7 +312,8 @@
         "evidence-reader",
         "detective-observer",
         "reviewer-product",
-        "reviewer-interaction"
+        "reviewer-interaction",
+        "senior-sdet"
       ],
       "slots": [
         {
@@ -332,7 +334,8 @@
         "evidence-reader",
         "detective-observer",
         "reviewer-product",
-        "reviewer-interaction"
+        "reviewer-interaction",
+        "senior-sdet"
       ],
       "slots": [
         {
@@ -406,7 +409,8 @@
         "evidence-reader",
         "detective-observer",
         "reviewer-product",
-        "reviewer-interaction"
+        "reviewer-interaction",
+        "senior-sdet"
       ],
       "slots": [
         {
@@ -432,7 +436,8 @@
         "evidence-reader",
         "detective-observer",
         "reviewer-product",
-        "reviewer-interaction"
+        "reviewer-interaction",
+        "senior-sdet"
       ],
       "slots": [
         {
@@ -456,7 +461,8 @@
         "evidence-reader",
         "detective-observer",
         "reviewer-product",
-        "reviewer-interaction"
+        "reviewer-interaction",
+        "senior-sdet"
       ],
       "slots": [
         {
@@ -485,7 +491,8 @@
           "evidence-reader",
           "detective-observer",
           "reviewer-product",
-          "reviewer-interaction"
+          "reviewer-interaction",
+          "senior-sdet"
         ]
       },
       {
@@ -503,7 +510,8 @@
           "evidence-reader",
           "detective-observer",
           "reviewer-product",
-          "reviewer-interaction"
+          "reviewer-interaction",
+          "senior-sdet"
         ]
       },
       {
@@ -521,7 +529,8 @@
           "evidence-reader",
           "detective-observer",
           "reviewer-product",
-          "reviewer-interaction"
+          "reviewer-interaction",
+          "senior-sdet"
         ]
       },
       {
@@ -540,7 +549,8 @@
           "reviewer-actuary",
           "reviewer-ai",
           "reviewer-product",
-          "reviewer-interaction"
+          "reviewer-interaction",
+          "senior-sdet"
         ]
       }
     ],
@@ -557,7 +567,8 @@
           "reviewer-actuary",
           "reviewer-ai",
           "reviewer-product",
-          "reviewer-interaction"
+          "reviewer-interaction",
+          "senior-sdet"
         ]
       },
       {
@@ -588,7 +599,8 @@
           "evidence-reader",
           "detective-observer",
           "reviewer-product",
-          "reviewer-interaction"
+          "reviewer-interaction",
+          "senior-sdet"
         ]
       },
       {
@@ -606,7 +618,8 @@
           "evidence-reader",
           "detective-observer",
           "reviewer-product",
-          "reviewer-interaction"
+          "reviewer-interaction",
+          "senior-sdet"
         ]
       },
       {
@@ -624,7 +637,8 @@
           "evidence-reader",
           "detective-observer",
           "reviewer-product",
-          "reviewer-interaction"
+          "reviewer-interaction",
+          "senior-sdet"
         ]
       }
     ]
@@ -1370,6 +1384,7 @@
     "fact-baseline": "事实基线回核",
     "process-check": "过程标准核对",
     "round-reconcile": "轮际对账",
-    "delivery-check": "交付审计"
+    "delivery-check": "交付审计",
+    "testcase-design": "需要为 PRD、spec 设计并编写测试用例（testcase.md），或专门找出被忽视的边界与失败场景"
   }
 }
