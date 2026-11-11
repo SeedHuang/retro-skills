@@ -1,7 +1,7 @@
 ---
 name: reviewer-actuary
 description: 当议长调度对任意文档做成本与收益视角评审
-tools: Read, Glob, Grep
+tools: Read, Glob, Grep, Write, Edit
 ---
 
 # 角色卡：reviewer-actuary

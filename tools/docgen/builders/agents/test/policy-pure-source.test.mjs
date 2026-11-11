@@ -514,9 +514,9 @@ test('S6-TC-B01 各席 + __default__ 策略数据等价；黄金 4 键齐（哈�
   assert.deepEqual(
     Object.fromEntries(SEATS.SEAT_NAMES.map((s) => [s, patternRegistry.tierBySeat[s]])),
     { 'reviewer-audit': 'producer', 'detective-observer': 'producer', 'senior-sdet': 'sdet',
-      'speaker': 'producer', 'respondent-dev': 'command', 'respondent-architect': 'readOnly',
-      'evidence-reader': 'readOnly', 'reviewer-actuary': 'readOnly', 'reviewer-ai': 'readOnly' },
-    '各席档位值 = 由 SEAT_POLICY 现算的结果（三新席：speaker=producer / respondent-dev=command / respondent-architect=readOnly）');
+      'speaker': 'producer', 'respondent-dev': 'producer', 'respondent-architect': 'sdet',
+      'evidence-reader': 'sdet', 'reviewer-actuary': 'sdet', 'reviewer-ai': 'sdet' },
+    '各席档位值 = 由 SEAT_POLICY 现算的结果（P4 D6a：有写落点的 5 席补 write → sdet/producer）');
 });
 
 test('S6-TC-B02 真实 seat-policy.mjs closed-world：三键外零字符串、三键内逐条登记', () => {

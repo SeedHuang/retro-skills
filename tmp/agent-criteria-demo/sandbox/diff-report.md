@@ -5,11 +5,11 @@
 | 席 | 类型 | 沙箱行数 | 现役行数 | 沙箱字符 | 现役字符 | 段数（沙箱/现役） | 边界形态 | 边界一致 | 输出格式 |
 |---|---|---|---|---|---|---|---|---|---|
 | detective-observer | RespondentModel | 89 | 81 | 2861 | 2806 | 10/7 | policy | 是 | 有 |
-| evidence-reader | RespondentModel | 82 | 67 | 2569 | 1767 | 9/7 | policy | 否 | 有 |
-| respondent-architect | RespondentModel | 78 | 63 | 2324 | 1240 | 8/7 | policy | 否 | 有 |
-| respondent-dev | RespondentModel | 78 | 63 | 2441 | 1243 | 8/7 | policy | 否 | 有 |
-| reviewer-actuary | ReviewerModel | 94 | 75 | 2854 | 1900 | 9/7 | policy | 否 | 有 |
-| reviewer-ai | ReviewerModel | 97 | 78 | 3074 | 2130 | 9/7 | policy | 否 | 有 |
+| evidence-reader | RespondentModel | 82 | 67 | 2569 | 1780 | 9/7 | policy | 否 | 有 |
+| respondent-architect | RespondentModel | 78 | 63 | 2324 | 1253 | 8/7 | policy | 否 | 有 |
+| respondent-dev | RespondentModel | 78 | 63 | 2441 | 1256 | 8/7 | policy | 否 | 有 |
+| reviewer-actuary | ReviewerModel | 94 | 75 | 2854 | 1913 | 9/7 | policy | 否 | 有 |
+| reviewer-ai | ReviewerModel | 97 | 78 | 3074 | 2143 | 9/7 | policy | 否 | 有 |
 | reviewer-audit | AuditorModel | 109 | 99 | 3667 | 3344 | 10/7 | policy | 是 | 有 |
 | reviewer-product | ReviewerModel | 76 | 77 | 1583 | 2007 | 8/7 | default | 是 | 有 |
 | reviewer-interaction | ReviewerModel | 76 | 77 | 1592 | 2018 | 8/7 | default | 是 | 有 |

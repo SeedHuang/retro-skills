@@ -26,11 +26,11 @@ test('TC-B01 evidence-reader 卡与渲染逐字节一致（diff 报零差异）'
   assert.ok(r.stdout.includes('差异 - 0 / + 0（盘上 == 渲染，幂等，无需凭证）'), r.stdout);
 });
 
-test('TC-B02 tools 恰等于只读三元组', () => {
+test('TC-B02 tools 恰等于 sdet 档（取证席声明写 evidence.md，故含 Write/Edit）', () => {
   const m = /^tools:\s*(.+)$/m.exec(card);
   assert.ok(m, '卡缺 tools 行');
-  assert.equal(m[1].trim().replace(/\s+/g, ''), 'Read,Glob,Grep');
-  assert.deepEqual(base.tools, patternRegistry.tools.readOnly);
+  assert.equal(m[1].trim().replace(/\s+/g, ''), 'Read,Glob,Grep,Write,Edit');
+  assert.deepEqual(base.tools, patternRegistry.tools.sdet);
 });
 
 test('TC-B03 description 只写触发条件（S4 迁移后 = trigger.when 直出）且不含「议会评审」', () => {
@@ -69,7 +69,7 @@ test('TC-B08 与 reviewer-reader / detective-observer 的产出物不重叠', ()
 
 test('TC-B09 tools 顺序不同但集合相等必须判绿（假阳性样例）', () => {
   const d = structuredClone(agentData);
-  d.find((a) => a.name === 'evidence-reader').tools = ['Grep', 'Read', 'Glob'];
+  d.find((a) => a.name === 'evidence-reader').tools = ['Grep', 'Write', 'Read', 'Edit', 'Glob'];
   assert.doesNotThrow(() => validateAgentData(d, triggerTable), '集合相等被判成 ToolsViolation = 假阳性');
 });
 
@@ -242,9 +242,9 @@ test('TC-E08 evidence 格式退化成问题卡（级别 / 解法 / P0）必被�
   assert.equal(s.includes('没找到'), true);
 });
 
-test('TC-E13 tools 多加 Write → ToolsViolation（恰等，不是包含）', () => {
+test('TC-E13 tools 多加一档外工具（RunCommand）→ ToolsViolation（恰等，不是包含）', () => {
   const d = structuredClone(agentData);
-  d.find((a) => a.name === 'evidence-reader').tools.push('Write');
+  d.find((a) => a.name === 'evidence-reader').tools.push('RunCommand');
   assert.throws(() => validateAgentData(d, triggerTable), (e) => e.code === 'ToolsViolation');
 });
 

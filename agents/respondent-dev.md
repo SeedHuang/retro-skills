@@ -1,7 +1,7 @@
 ---
 name: respondent-dev
 description: 当答辩需要用命令复现问题卡所述行为并给出核实结论
-tools: Read, Glob, Grep, RunCommand
+tools: Read, Glob, Grep, Write, Edit, RunCommand
 ---
 
 # 角色卡：respondent-dev

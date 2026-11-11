@@ -1,7 +1,7 @@
 ---
 name: respondent-architect
 description: 当答辩需要按项目技术栈核实问题卡并汇总统一口径
-tools: Read, Glob, Grep
+tools: Read, Glob, Grep, Write, Edit
 ---
 
 # 角色卡：respondent-architect

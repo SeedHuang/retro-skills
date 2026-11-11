@@ -1,7 +1,7 @@
 ---
 name: evidence-reader
 description: 当需要通读长文并交出可核对的原文与行号（交接取证、事实基线回核）
-tools: Read, Glob, Grep
+tools: Read, Glob, Grep, Write, Edit
 ---
 
 # 角色卡：evidence-reader

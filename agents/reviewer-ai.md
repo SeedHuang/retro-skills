@@ -1,7 +1,7 @@
 ---
 name: reviewer-ai
 description: 当议长调度对 rule、skill、agents、含 AI 指令的文档做 AI 工程视角评审
-tools: Read, Glob, Grep
+tools: Read, Glob, Grep, Write, Edit
 ---
 
 # 角色卡：reviewer-ai

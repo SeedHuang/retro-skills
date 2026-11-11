@@ -42,3 +42,10 @@
 - 差异全文：`node tools/docgen/cli.mjs diff --kind agent --name <席>`（重出后应无差异）；重出前的逐行差异见 `.superpowers/sdd/2026-10-25-s6-policy-single-source/task-5a-report.md` §3 与 `task-10-v13-round2.md`。
 - 判者：B3「职责边界一致」两次均由独立实例重判 pass/pass（第 2 次对象 = 模板回改后的渲染文本）。
 - golden：`fixtures/boundary-golden.json` 已换代（追加 `<席>@2`，旧键保留），见 `checklist.md`「交付说明」。
+
+## 二″、P4 D6a 档位补齐（2026-11-11；G01 记账位）
+
+| 卡 | 差异 | 说明 |
+|---|---|---|
+| agents/ 下 5 卡 | 仅第 4 行 tools | 取证 / 架构答辩 / 研发答辩 / 精算 / AI 声明写产物却无 Write 工具（假写权限）→ SEAT_POLICY 补 write，档位 readOnly/command → sdet/producer，本批 5 卡 tools 行同步重出；边界正文与其余段零变化。凭证见各席 evidence.json 末条 changes。 |
+

@@ -5,8 +5,8 @@
   "hashObject": "f0548c2e3ea68b76fc38e8780342d79671c219b5",
   "goldenAssertion": "pending",
   "compareResult": null,
-  "renderSha256": "30F9C37000B4A1C0898EACE7DFA44BBCA57306513AD7FA9AD6E5E1D8BC554179",
-  "lastWrittenHash": "30F9C37000B4A1C0898EACE7DFA44BBCA57306513AD7FA9AD6E5E1D8BC554179",
+  "renderSha256": "8E61126DF8A1F9EC28146AE72B502B21B967F78C3768CDFFB3BC53BE400E5014",
+  "lastWrittenHash": "8E61126DF8A1F9EC28146AE72B502B21B967F78C3768CDFFB3BC53BE400E5014",
   "changes": [
     {
       "from": "DD0103D684AF2586A296D23C6B0ABDB2459203AD82BEE42109AC3FBC9AA928BF",
@@ -24,6 +24,21 @@
           "basis": "tools/execution-matrix/criteria.md A1 + 渲染产物；重判写回 tools/quality/.inspector-annotations.json respondent-dev:A1 = pass（replace 机械转录）"
         }
       ],
+      "machineChecks": {
+        "A3": "pass",
+        "A4": "pass",
+        "A5": "pass",
+        "A6": "pass",
+        "A7": "pass"
+      }
+    },
+    {
+      "from": "30F9C37000B4A1C0898EACE7DFA44BBCA57306513AD7FA9AD6E5E1D8BC554179",
+      "to": "8E61126DF8A1F9EC28146AE72B502B21B967F78C3768CDFFB3BC53BE400E5014",
+      "at": "2026-11-11T14:01:15.573Z",
+      "rejudged": [],
+      "judgeMode": "none",
+      "judged": [],
       "machineChecks": {
         "A3": "pass",
         "A4": "pass",

@@ -640,7 +640,7 @@ test('S5-TC-C08 只生成一席草稿 → 旁席 Mismatch 挡住 replace', () =>
 
 test('S5-TC-D01 readOnly 席加 Write → ToolsViolation', () => {
   const d = clone();
-  d.find((a) => a.name === 'evidence-reader').tools.push('Write');
+  d.find((a) => a.name === 'reviewer-qa').tools.push('Write');
   assert.throws(() => validateAgentData(d, triggerTable), (e) => e.code === 'ToolsViolation');
 });
 
