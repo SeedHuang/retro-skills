@@ -7,7 +7,7 @@ import { typeOf } from '../../tools/agent-model/render/index.mjs'
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(HERE, '..', '..')
 const MODELS = join(ROOT, 'tools', 'agent-model', 'models')
-const SEATS = ['detective-observer', 'evidence-reader', 'respondent-architect', 'respondent-dev', 'reviewer-actuary', 'reviewer-ai', 'reviewer-audit', 'reviewer-product', 'reviewer-interaction', 'reviewer-ui', 'senior-sdet', 'speaker']
+const SEATS = ['detective-observer', 'evidence-reader', 'respondent-architect', 'respondent-dev', 'reviewer-actuary', 'reviewer-ai', 'reviewer-audit', 'reviewer-product', 'reviewer-interaction', 'reviewer-ui', 'reviewer-frontend', 'senior-sdet', 'speaker']
 const SHARED = JSON.parse(readFileSync(join(MODELS, '_shared-model.json'), 'utf8'))
 const split = (text) => text.split(/\n## /).slice(1).map((x) => {
   const i = x.indexOf('\n')
