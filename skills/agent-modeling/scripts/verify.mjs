@@ -40,10 +40,10 @@ let refOk = true
 let refNote = ''
 if (flags.ref) {
   refOk = JSON.stringify(expand(resolve(modelPath), shared)) === JSON.stringify(expand(resolve(flags.ref), shared))
-  refNote = refOk ? '  REF_EQUIVALENT' : `  REF_DIFF:${flags.ref}`
+  refNote = refOk ? ' REF_EQUIVALENT' : ` REF_DIFF:${flags.ref}`
 }
 
 const status = ok ? (hasBaseline ? 'EQUIVALENT' : 'CHECKS_PASS') : 'FAIL'
-console.log(`${id}  [${r.modelType || '-'}]  ${status}${refNote}`)
-if (!ok) console.log(`codes: ${JSON.stringify(codes)}`)
+const codesText = ok ? '' : ` codes:${JSON.stringify(codes)}`
+console.log(`${id} [${r.modelType || '-'}] ${status}${refNote}${codesText}`)
 process.exitCode = ok && refOk ? 0 : 1

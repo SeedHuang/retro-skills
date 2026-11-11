@@ -46,7 +46,7 @@
 
 ## 用法
 
-1. 跑 `node skills/agent-modeling/scripts/verify.mjs <model>`。
+1. 跑 `node scripts/verify.mjs <model>`（在技能目录下执行）。
 2. 每出现一个码，在上表找到行，按「最小修法」改一处。
 3. 重跑直到首行 `EQUIVALENT`；改过 `must`/`never`/`predicates`/`records` 的，另跑一次等价比对（`--ref`）。
 4. 产出「码 → 改动点 → 复验结果」三列对照，缺一不合格。

@@ -43,4 +43,4 @@
 
 ## 做完核对
 
-动权限前后各跑一次 `node skills/agent-modeling/scripts/verify.mjs <model>`，产出：① 三维清单（action / write / command）；② 与 `seat.artifacts` 的集合对照（应完全相等）；③ 无 `TIER_MISMATCH` / `WRITE_SCOPE_MISMATCH` / `PERM_UNOBSERVABLE`。
+动权限前后各跑一次 `node scripts/verify.mjs <model>`（在技能目录下执行），产出：① 三维清单（action / write / command）；② 与 `seat.artifacts` 的集合对照（应完全相等）；③ 无 `TIER_MISMATCH` / `WRITE_SCOPE_MISMATCH` / `PERM_UNOBSERVABLE`。

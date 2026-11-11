@@ -24,7 +24,8 @@ try {
   mkdirSync(outDir, { recursive: true })
   const outFile = join(outDir, `${id}.md`)
   writeFileSync(outFile, text)
-  console.log(`${id}  [${type}]  ${lines} lines  -> ${outFile}`)
+  console.log(`${id} [${type}] ${lines} lines`)
+  console.log(`  -> ${outFile}`)
 } catch (e) {
   console.error(e.message)
   process.exitCode = 1
