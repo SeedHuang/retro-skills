@@ -1,13 +1,14 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { expand } from './verify-models.mjs'
-import { typeOf } from './render/index.mjs'
+import { expand } from '../../tools/docgen/builders/agent-model/verify-models.mjs'
+import { typeOf } from '../../tools/docgen/builders/agent-model/render/index.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(HERE, '..', '..')
+const MODELS = join(ROOT, 'tools', 'docgen', 'builders', 'agent-model', 'models')
 const SEATS = ['detective-observer', 'evidence-reader', 'respondent-architect', 'respondent-dev', 'reviewer-actuary', 'reviewer-ai', 'reviewer-audit']
-const SHARED = JSON.parse(readFileSync(join(HERE, 'models/_shared-model.json'), 'utf8'))
+const SHARED = JSON.parse(readFileSync(join(MODELS, '_shared-model.json'), 'utf8'))
 const split = (text) => text.split(/\n## /).slice(1).map((x) => {
   const i = x.indexOf('\n')
   return { name: x.slice(0, i), body: x.slice(i + 1).replace(/\s+$/, '') }
@@ -21,8 +22,8 @@ for (const s of SEATS) {
   const sand = readFileSync(join(HERE, 'sandbox', `${s}.md`), 'utf8')
   const card = readFileSync(join(ROOT, 'agents', `${s}.md`), 'utf8')
   const a = split(sand), b = split(card)
-  const kind = JSON.parse(readFileSync(join(HERE, 'models', `${s}-model.json`), 'utf8')).boundary.kind
-  const type = typeOf({ ...SHARED, ...expand(join(HERE, 'models', `${s}-model.json`)) }) || '-'
+  const kind = JSON.parse(readFileSync(join(MODELS, `${s}-model.json`), 'utf8')).boundary.kind
+  const type = typeOf({ ...SHARED, ...expand(join(MODELS, `${s}-model.json`)) }) || '-'
   const bsec = bodyOf(a, '边界'), csec = bodyOf(b, '边界')
   const ok = bsec === csec
   rows.push(`| ${s} | ${type} | ${lines(sand)} | ${lines(card)} | ${sand.length} | ${card.length} | ${a.length}/${b.length} | ${kind} | ${ok ? '是' : '否'} | ${secOf(a, '输出格式') ? '有' : '无'} |`)

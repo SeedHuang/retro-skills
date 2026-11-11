@@ -1,8 +1,8 @@
 import { readFileSync, existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { tierOfCapabilities, TIERS } from '../../tools/docgen/builders/agents/policy/definitions/tiers.mjs'
-import { SEAT_POLICY } from '../../tools/docgen/builders/agents/policy/seat-policy.mjs'
+import { tierOfCapabilities, TIERS } from '../agents/policy/definitions/tiers.mjs'
+import { SEAT_POLICY } from '../agents/policy/seat-policy.mjs'
 import { ReviewerModel, AuditorModel, RespondentModel } from './types/derived.mjs'
 
 const MODEL_CLASSES = [ReviewerModel, AuditorModel, RespondentModel]
@@ -10,6 +10,18 @@ const MODEL_CLASSES = [ReviewerModel, AuditorModel, RespondentModel]
 const here = dirname(fileURLToPath(import.meta.url))
 const models = join(here, 'models')
 const load = (p) => JSON.parse(readFileSync(p, 'utf8'))
+
+// 仓根定位：技能目录被复制到临时目录时也要能找到 <repo>/skills（P3 迁移后本文件不在 tmp/，固定上跳级数会失效）
+function skillsRoot() {
+  if (process.env.MODEL_SKILLS_ROOT) return process.env.MODEL_SKILLS_ROOT
+  let d = here
+  for (let i = 0; i < 8; i++) {
+    d = join(d, '..')
+    if (existsSync(join(d, 'package.json')) && existsSync(join(d, 'skills'))) return join(d, 'skills')
+  }
+  return join(here, '..', '..', 'skills')
+}
+
 const shared = load(join(models, '_shared-model.json'))
 const PG = shared.permissionGroups || {}
 const PH = shared.placeholders || {}
@@ -81,9 +93,12 @@ export function expand(seatFile) {
   return { ...own, must, never, predicates, records, forms, timing }
 }
 
-function verify(name) {
-  const exp = expand(join(models, `${name}-model.json`))
-  const base = load(join(models, '_baseline', `${name}.json`))
+export function verify(name, opts = {}) {
+  const exp = expand(opts.modelPath || join(models, `${name}-model.json`))
+  // baseline:false = 草稿模型没有基线，跳过比对（比对对象退化为自身，恒等）
+  const base = opts.baseline === false
+    ? { must: exp.must, never: exp.never, predicates: exp.predicates, records: exp.records }
+    : load(join(models, '_baseline', `${name}.json`))
   const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b)
   const errs = []
   if (!eq(exp.must, base.must)) errs.push('must')
@@ -169,7 +184,7 @@ function verify(name) {
 
   const skillBad = []
   for (const [id, t] of Object.entries(exp.templates || {})) {
-    if (t.skill && !existsSync(join(here, '..', '..', 'skills', t.skill))) skillBad.push(id + ':' + t.skill)
+    if (t.skill && !existsSync(join(skillsRoot(), t.skill))) skillBad.push(id + ':' + t.skill)
   }
 
   const triggerBad = []
@@ -208,7 +223,7 @@ function verify(name) {
 }
 
 const isMain = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]
-const anyError = (r) => r.errs.length || r.ownFail.length || r.policyDiff || r.pathUndefined.length ||
+export const anyError = (r) => r.errs.length || r.ownFail.length || r.policyDiff || r.pathUndefined.length ||
   r.actionConflict.length || r.unknownAction.length || r.permOrphan.length || r.permUnobservable.length ||
   r.titleDrifts.length || r.pathBad.length || r.skillBad.length || r.triggerBad.length || r.actionBad.length ||
   r.outputTextHandwritten.length || r.typeErr || r.writeScopeBad || r.outputUnwritable.length || r.cardRuleLeak.length ||

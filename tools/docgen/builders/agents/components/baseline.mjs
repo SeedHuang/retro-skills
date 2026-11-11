@@ -6,7 +6,7 @@
 // （PRD `docs/prd/20261105182104-rule-refactor/prd/stage-2-new-mode-pilot.md` §1 步骤 1–2）
 import { agentData } from './agentData.mjs';
 
-export const BASELINE_RULES = ['rules/evidence-before-conclusion.md'];
+export const BASELINE_RULES = ['rules/evidence-before-conclusion.md', 'rules/title-not-stronger-than-criterion.md'];
 
 // 单席角色卡路径的唯一派生式（`agentPaths()` 与 `collectCardFindings` 的 `finding.file` 共用；
 // 形态与 `observation-check/card-exempt.mjs` 的 `EXEMPT_CARDS` 同域——改路径方案只改这一处）。

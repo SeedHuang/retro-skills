@@ -1,10 +1,10 @@
 import { writeFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { expand } from './verify-models.mjs'
+import { expand } from '../../tools/docgen/builders/agent-model/verify-models.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
-const models = join(here, 'models')
+const models = join(here, '..', '..', 'tools', 'docgen', 'builders', 'agent-model', 'models')
 const names = ['evidence-reader', 'respondent-architect', 'respondent-dev', 'reviewer-actuary', 'reviewer-ai', 'detective-observer', 'reviewer-audit']
 
 for (const n of names) {

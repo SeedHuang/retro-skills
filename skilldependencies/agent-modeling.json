@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "skill": "agent-modeling",
+  "dependencies": {
+    "skills": []
+  }
+}

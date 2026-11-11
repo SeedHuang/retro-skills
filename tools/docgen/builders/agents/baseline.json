@@ -1,5 +1,6 @@
 [
   "rules/evidence-before-conclusion.md",
+  "rules/title-not-stronger-than-criterion.md",
   "agents/detective-observer.md",
   "agents/evidence-reader.md",
   "agents/respondent-architect.md",

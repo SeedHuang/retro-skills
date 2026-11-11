@@ -4,22 +4,24 @@ import { readFileSync, readdirSync, writeFileSync, cpSync, rmSync, existsSync } 
 import { createHash } from 'node:crypto'
 import { join, resolve } from 'node:path'
 import { spawnSync } from 'node:child_process'
-import { renderModel } from './render/index.mjs'
-import { sections, makeHelpers } from './render/sections.mjs'
-import { expand } from './verify-models.mjs'
+import { renderModel } from '../../tools/docgen/builders/agent-model/render/index.mjs'
+import { sections, makeHelpers } from '../../tools/docgen/builders/agent-model/render/sections.mjs'
+import { expand } from '../../tools/docgen/builders/agent-model/verify-models.mjs'
 import { TIERS } from '../../tools/docgen/builders/agents/policy/definitions/tiers.mjs'
 import { renderBoundary } from '../../tools/docgen/builders/agents/components/renderBoundary.mjs'
 
 const HERE = import.meta.dirname
 const ROOT = resolve(HERE, '../..')
-const SHARED = JSON.parse(readFileSync(join(HERE, 'models/_shared-model.json'), 'utf8'))
+const ENGINE = join(ROOT, 'tools', 'docgen', 'builders', 'agent-model')
+const MODELS = join(ENGINE, 'models')
+const SHARED = JSON.parse(readFileSync(join(MODELS, '_shared-model.json'), 'utf8'))
 const SEATS = ['detective-observer', 'evidence-reader', 'respondent-architect', 'respondent-dev', 'reviewer-actuary', 'reviewer-ai', 'reviewer-audit']
 const POLICY = ['detective-observer', 'reviewer-audit']
 const NONPOLICY = ['evidence-reader', 'respondent-architect', 'respondent-dev', 'reviewer-actuary', 'reviewer-ai']
 const ALLOC = { 'detective-observer': ['producer', 'policy'], 'reviewer-audit': ['producer', 'policy'], 'evidence-reader': ['readOnly', 'literal'], 'respondent-architect': ['readOnly', 'literal'], 'respondent-dev': ['command', 'literal'], 'reviewer-actuary': ['readOnly', 'default'], 'reviewer-ai': ['readOnly', 'default'] }
 
-const model = (s) => JSON.parse(readFileSync(join(HERE, 'models', `${s}-model.json`), 'utf8'))
-const render = (s) => renderModel(join(HERE, 'models', `${s}-model.json`), SHARED).text
+const model = (s) => JSON.parse(readFileSync(join(MODELS, `${s}-model.json`), 'utf8'))
+const render = (s) => renderModel(join(MODELS, `${s}-model.json`), SHARED).text
 const section = (text, name) => text.split(/\n## /).find((x) => x.startsWith(name + '\n')) || ''
 const bodyOf = (sec) => sec.slice(sec.indexOf('\n') + 1)
 // 段拼接用 join('\n')，末段自带一个尾换行；逐字节比对前只归一化「尾部空白」，正文内容不动
@@ -29,16 +31,20 @@ const cardSection = (s, name) => {
   const i = t.indexOf('\n## ' + name + '\n')
   return i < 0 ? '' : t.slice(i + 1).replace(/\s+$/, '')
 }
-const run = (args, cwd = HERE) => spawnSync(process.execPath, args, { cwd, encoding: 'utf8' })
+const run = (args, cwd = HERE) => spawnSync(process.execPath, args, { cwd, encoding: 'utf8', env: { ...process.env, MODEL_SKILLS_ROOT: join(ROOT, 'skills') } })
 const sha = (p) => createHash('sha256').update(readFileSync(p)).digest('hex')
 
-// 复制整个 demo 目录并按需改一张模型；verify/render 两种用例共用这一层
+// 副本根 = tmp/p1-case-<pid>：既放 demo 脚本（render-all / diff-report / sandbox），也按仓内相对深度放一份引擎
+// （render-all 的默认 models 路径按 here/../../tools 计算，副本根与仓根同深度，故能命中副本自己的引擎）
+const M = (d) => join(d, 'tools', 'docgen', 'builders', 'agent-model')
 function copyCase(mutate, seat = 'evidence-reader') {
   const dir = join(HERE, '..', 'p1-case-' + process.pid)
   rmSync(dir, { recursive: true, force: true })
   cpSync(HERE, dir, { recursive: true, filter: (src) => !src.includes('sandbox') && !src.includes('p1-case-') })
+  // 引擎的兄弟依赖（../agents/policy、../../agents/components）一并按原相对深度复制，避免副本内 import 断链
+  cpSync(join(ROOT, 'tools', 'docgen', 'builders'), join(dir, 'tools', 'docgen', 'builders'), { recursive: true })
   if (mutate) {
-    const p = join(dir, 'models', `${seat}-model.json`)
+    const p = join(M(dir), 'models', `${seat}-model.json`)
     const m = JSON.parse(readFileSync(p, 'utf8'))
     mutate(m)
     writeFileSync(p, JSON.stringify(m, null, 2))
@@ -48,7 +54,7 @@ function copyCase(mutate, seat = 'evidence-reader') {
 
 function caseCopy(mutate, seat) {
   const dir = copyCase(mutate, seat)
-  return { dir, out: run(['verify-models.mjs'], dir) }
+  return { dir, out: run([join(M(dir), 'verify-models.mjs')], M(dir)) }
 }
 
 test('TC-001/002 7 席 tier 与 boundary 分配', () => {
@@ -59,7 +65,7 @@ test('TC-001/002 7 席 tier 与 boundary 分配', () => {
 })
 
 test('TC-044 verify 全绿且 exit 0', () => {
-  const r = run(['verify-models.mjs'])
+  const r = run([join(ENGINE, 'verify-models.mjs')], ENGINE)
   assert.equal(r.status, 0, r.stdout + r.stderr)
   assert.equal(r.stdout.trim().split('\n').filter((l) => /EQUIVALENT$/.test(l)).length, 7)
 })
@@ -69,7 +75,7 @@ test('TC-016 tools = TIERS[seat.tier]', () => {
     assert.match(render(s), new RegExp('^tools: ' + TIERS[model(s).seat.tier].join(', ') + '$', 'm'), s)
   }
   // §4.5-2：渲染层只能是 import 现役档位表（Task 4 后为 TIERS），不得复制数组字面量
-  const src = readFileSync(join(HERE, 'render/sections.mjs'), 'utf8')
+  const src = readFileSync(join(ENGINE, 'render/sections.mjs'), 'utf8')
   assert.match(src, /import\s*\{[^}]*\bTIERS\b[^}]*\}\s*from\s*'[^']*tiers\.mjs'/)
   assert.doesNotMatch(src, /\['Read',\s*'Glob'/)
 })
@@ -79,7 +85,7 @@ test('TC-020 越界处置按 steps 序号', () => {
   assert.match(sec, /^1\. 立即停手。/m)
   assert.match(sec, /^2\. /m)
   assert.match(sec, /^3\. /m)
-  const m = expand(join(HERE, 'models/detective-observer-model.json'))
+  const m = expand(join(MODELS, 'detective-observer-model.json'))
   const four = { ...m, escalation: { ...m.escalation, steps: [...m.escalation.steps, { kind: 'halt', text: '第四步。' }] } }
   const h = makeHelpers({ ...SHARED, ...four }, SHARED)
   assert.ok(sections.escalation(four, SHARED, h).includes('4. 第四步。'))
@@ -134,7 +140,7 @@ test('TC-047 whenEq 渲染嵌套 then（P0 证据规则不截断）', () => {
 
 test('TC-012 无 outputFormat 时不留空标题', () => {
   const dir = copyCase((m) => { delete m.outputFormat }, 'reviewer-ai')
-  const t = renderModel(join(dir, 'models/reviewer-ai-model.json'), JSON.parse(readFileSync(join(dir, 'models/_shared-model.json'), 'utf8'))).text
+  const t = renderModel(join(M(dir), 'models/reviewer-ai-model.json'), JSON.parse(readFileSync(join(M(dir), 'models/_shared-model.json'), 'utf8'))).text
   rmSync(dir, { recursive: true, force: true })
   assert.ok(!t.includes('\n## 输出格式\n'), '空段不得留标题')
 })
@@ -193,8 +199,8 @@ test('TC-032 空白 text 只发 BOUNDARY_TEXT_MISSING', () => {
 
 test('TC-004 default 两席只有 kind，模型不复制常量', () => {
   for (const s of ['reviewer-actuary', 'reviewer-ai']) assert.deepEqual(Object.keys(model(s).boundary), ['kind'])
-  for (const f of readdirSync(join(HERE, 'models')).filter((f) => f.endsWith('.json'))) {
-    assert.ok(!readFileSync(join(HERE, 'models', f), 'utf8').includes('你是只读评审角色'), f)
+  for (const f of readdirSync(MODELS).filter((f) => f.endsWith('.json'))) {
+    assert.ok(!readFileSync(join(MODELS, f), 'utf8').includes('你是只读评审角色'), f)
   }
 })
 
@@ -205,7 +211,7 @@ test('TC-015 输出格式表头只有两列', () => {
 })
 
 test('TC-022 调换步序后编号跟序号', () => {
-  const m = expand(join(HERE, 'models/detective-observer-model.json'))
+  const m = expand(join(MODELS, 'detective-observer-model.json'))
   const [halt, report, ...rest] = m.escalation.steps
   const swapped = { ...m, escalation: { ...m.escalation, steps: [report, halt, ...rest] } }
   const h = makeHelpers({ ...SHARED, ...swapped }, SHARED)
@@ -226,7 +232,7 @@ test('TC-034/035 空 must/never 返回 []', () => {
 test('TC-036 literal 首尾空白原样渲染', () => {
   const padded = ' ' + model('evidence-reader').boundary.text + '\n'
   const dir = copyCase((m) => { m.boundary.text = padded })
-  const t = renderModel(join(dir, 'models/evidence-reader-model.json'), JSON.parse(readFileSync(join(dir, 'models/_shared-model.json'), 'utf8'))).text
+  const t = renderModel(join(M(dir), 'models/evidence-reader-model.json'), JSON.parse(readFileSync(join(M(dir), 'models/_shared-model.json'), 'utf8'))).text
   const sec = t.split(/\n## /).find((x) => x.startsWith('边界\n'))
   rmSync(dir, { recursive: true, force: true })
   const body = sec.slice('边界\n'.length)
@@ -289,9 +295,9 @@ test('TC-046 render-all 首个抛错即停、已写文件保留', () => {
   const { dir } = caseCopy((m) => { m.boundary = { kind: 'boom' } }, 'reviewer-ai')
   rmSync(join(dir, 'sandbox'), { recursive: true, force: true })
   // 用副本自己的 models 目录取顺序（render-all 读的也是这一份，避免依赖两个目录的 readdir 顺序一致）
-  const order = readdirSync(join(dir, 'models')).filter((f) => f.endsWith('-model.json') && !f.startsWith('_')).map((f) => f.replace('-model.json', ''))
+  const order = readdirSync(join(M(dir), 'models')).filter((f) => f.endsWith('-model.json') && !f.startsWith('_')).map((f) => f.replace('-model.json', ''))
   const bad = order.indexOf('reviewer-ai')
-  const r = run(['render-all.mjs'], dir)
+  const r = run(['render-all.mjs', '--models', join(M(dir), 'models')], dir)
   const files = existsSync(join(dir, 'sandbox')) ? readdirSync(join(dir, 'sandbox')).filter((f) => f.endsWith('.md')) : []
   rmSync(dir, { recursive: true, force: true })
   assert.equal(r.status, 1)
