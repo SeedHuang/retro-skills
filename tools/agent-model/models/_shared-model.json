@@ -1385,6 +1385,7 @@
     "process-check": "过程标准核对",
     "round-reconcile": "轮际对账",
     "delivery-check": "交付审计",
-    "testcase-design": "需要为 PRD、spec 设计并编写测试用例（testcase.md），或专门找出被忽视的边界与失败场景"
+    "testcase-design": "需要为 PRD、spec 设计并编写测试用例（testcase.md），或专门找出被忽视的边界与失败场景",
+    "speaker-round": "议会评审轮需要按程序点名、收卡与判定本轮结束"
   }
 }

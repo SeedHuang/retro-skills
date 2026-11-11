@@ -1,0 +1,437 @@
+{
+  "version": 2,
+  "id": "speaker",
+  "extends": "_shared-model.json",
+  "modelType": "ReviewerModel",
+  "seat": {
+    "id": "speaker",
+    "display": "议长",
+    "triggers": [
+      {
+        "id": "speaker-round"
+      }
+    ],
+    "description": {
+      "template": "{triggers}",
+      "joiner": "、",
+      "lastJoiner": "、"
+    },
+    "artifacts": [
+      "artifact.progress"
+    ],
+    "tier": "producer"
+  },
+  "duty": {
+    "trigger": {
+      "from": "seat.description"
+    },
+    "action": {
+      "verb": "主持",
+      "scope": "",
+      "objects": [
+        "议会评审轮"
+      ],
+      "emit": [
+        "程序动作",
+        "计数"
+      ],
+      "landingSubject": "程序动作",
+      "landing": "outputs.items",
+      "landingJoiner": "与 "
+    }
+  },
+  "timing": {
+    "scene": "parliament",
+    "moment": "end",
+    "repeat": "per-round"
+  },
+  "defaultLanding": "artifact.progress",
+  "checklist": {
+    "items": [
+      {
+        "no": 1,
+        "seatPrefix": "议长席卡",
+        "category": "点将名单核对",
+        "criterion": "speaker.lineup"
+      },
+      {
+        "no": 2,
+        "seatPrefix": "议长席卡",
+        "category": "收卡计数核对",
+        "criterion": "speaker.count"
+      },
+      {
+        "no": 3,
+        "seatPrefix": "议长席卡",
+        "category": "丢卡压卡理由核对",
+        "criterion": "speaker.drop-reason"
+      },
+      {
+        "no": 4,
+        "seatPrefix": "议长席卡",
+        "category": "判结束凭据核对",
+        "criterion": "speaker.end-basis"
+      }
+    ]
+  },
+  "checkCriteria": {
+    "speaker.lineup": {
+      "action": "verify",
+      "mode": "all",
+      "observable": [
+        {
+          "op": "fieldNonEmpty",
+          "ofRef": "progressRow",
+          "field": "lineup"
+        }
+      ],
+      "negative": {
+        "input": {
+          "progressRow": {
+            "lineup": ""
+          }
+        },
+        "expect": "fail",
+        "failsOn": "progressRow.lineup"
+      },
+      "residual": {
+        "who": "speaker",
+        "sample": 3,
+        "fields": [
+          "roundCheck.verdict"
+        ],
+        "objective": {
+          "target": "machine",
+          "reason": "REQUIRES_HUMAN_JUDGMENT"
+        }
+      }
+    },
+    "speaker.count": {
+      "action": "compare",
+      "mode": "all",
+      "observable": [
+        {
+          "op": "fieldsEq",
+          "ofRef": "progressRow",
+          "left": "count",
+          "right": "cards"
+        }
+      ],
+      "negative": {
+        "input": {
+          "progressRow": {
+            "count": 3,
+            "cards": 4
+          }
+        },
+        "expect": "fail",
+        "failsOn": "progressRow.count"
+      },
+      "residual": {
+        "who": "speaker",
+        "sample": 3,
+        "fields": [
+          "roundCheck.verdict"
+        ],
+        "objective": {
+          "target": "machine",
+          "reason": "REQUIRES_HUMAN_JUDGMENT"
+        }
+      }
+    },
+    "speaker.drop-reason": {
+      "action": "verify",
+      "mode": "all",
+      "observable": [
+        {
+          "op": "fieldNonEmpty",
+          "ofRef": "progressRow",
+          "field": "dropReason"
+        }
+      ],
+      "negative": {
+        "input": {
+          "progressRow": {
+            "dropReason": ""
+          }
+        },
+        "expect": "fail",
+        "failsOn": "progressRow.dropReason"
+      },
+      "residual": {
+        "who": "speaker",
+        "sample": 3,
+        "fields": [
+          "roundCheck.verdict"
+        ],
+        "objective": {
+          "target": "machine",
+          "reason": "REQUIRES_HUMAN_JUDGMENT"
+        }
+      }
+    },
+    "speaker.end-basis": {
+      "action": "verify",
+      "mode": "all",
+      "observable": [
+        {
+          "op": "fieldNonEmpty",
+          "ofRef": "progressRow",
+          "field": "endBasis"
+        }
+      ],
+      "negative": {
+        "input": {
+          "progressRow": {
+            "endBasis": ""
+          }
+        },
+        "expect": "fail",
+        "failsOn": "progressRow.endBasis"
+      },
+      "residual": {
+        "who": "speaker",
+        "sample": 3,
+        "fields": [
+          "roundCheck.verdict"
+        ],
+        "objective": {
+          "target": "machine",
+          "reason": "REQUIRES_HUMAN_JUDGMENT"
+        }
+      }
+    }
+  },
+  "outputFormat": {
+    "title": "输出格式",
+    "requiredFields": [
+      {
+        "id": "round",
+        "label": "轮次号",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "span",
+        "label": "起止（HH:MM:SS）",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "seats",
+        "label": "席位",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "count",
+        "label": "收卡数",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "dropReason",
+        "label": "丢卡与压卡及理由",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "lineup",
+        "label": "点名",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "endBasis",
+        "label": "判结束依据",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "path",
+        "label": "落盘路径",
+        "type": "nonEmpty",
+        "required": true
+      }
+    ],
+    "checks": [
+      {
+        "id": "row-complete",
+        "observable": {
+          "op": "allExist",
+          "ofRef": "progressRow"
+        }
+      },
+      {
+        "id": "drop-reason-filled",
+        "observable": {
+          "op": "fieldNonEmpty",
+          "ofRef": "progressRow",
+          "field": "dropReason"
+        }
+      },
+      {
+        "id": "count-match",
+        "observable": {
+          "op": "fieldsEq",
+          "ofRef": "progressRow",
+          "left": "count",
+          "right": "cards"
+        }
+      },
+      {
+        "id": "time-filled",
+        "observable": {
+          "op": "fieldNonEmpty",
+          "ofRef": "progressRow",
+          "field": "span"
+        }
+      }
+    ]
+  },
+  "templates": {
+    "pl.progress": {
+      "skill": "parliament-ledger",
+      "label": "进度记录",
+      "columns": [
+        "round",
+        "span",
+        "seats",
+        "count",
+        "dropReason",
+        "lineup",
+        "endBasis",
+        "path"
+      ]
+    }
+  },
+  "outputs": {
+    "items": [
+      {
+        "phase": "每轮",
+        "artifact": "artifact.progress",
+        "template": "pl.progress",
+        "action": "fill",
+        "mode": "whole"
+      }
+    ]
+  },
+  "forms": {
+    "artifact.progress": {
+      "text": "`progress.md`",
+      "kind": "artifact",
+      "path": ".session/reviews/{session}/progress.md"
+    }
+  },
+  "predicates": {},
+  "records": {
+    "progressRow": {
+      "label": "程序账行",
+      "unit": "一轮一行",
+      "source": {
+        "kind": "path",
+        "template": ".session/reviews/{session}/progress.md"
+      },
+      "shape": [
+        {
+          "id": "round",
+          "label": "轮次号",
+          "type": "nonEmpty",
+          "required": true
+        },
+        {
+          "id": "span",
+          "label": "起止（HH:MM:SS）",
+          "type": "nonEmpty",
+          "required": true
+        },
+        {
+          "id": "seats",
+          "label": "席位",
+          "type": "nonEmpty",
+          "required": true
+        },
+        {
+          "id": "count",
+          "label": "收卡数",
+          "type": "nonEmpty",
+          "required": true
+        },
+        {
+          "id": "cards",
+          "label": "卡片目录实数",
+          "type": "nonEmpty",
+          "required": true
+        },
+        {
+          "id": "dropReason",
+          "label": "丢卡与压卡及理由",
+          "type": "nonEmpty",
+          "required": true
+        },
+        {
+          "id": "lineup",
+          "label": "点名",
+          "type": "nonEmpty",
+          "required": true
+        },
+        {
+          "id": "endBasis",
+          "label": "判结束依据",
+          "type": "nonEmpty",
+          "required": true
+        },
+        {
+          "id": "path",
+          "label": "落盘路径",
+          "type": "nonEmpty",
+          "required": true
+        }
+      ]
+    }
+  },
+  "escalation": null,
+  "permissions": {
+    "policy": "denyByDefault",
+    "action": {
+      "allow": [
+        "participate-review",
+        "record"
+      ],
+      "forbid": [
+        "opinion",
+        "issue-card",
+        "code-change",
+        "adjudicate"
+      ]
+    },
+    "write": {
+      "allow": [
+        "artifact.progress"
+      ],
+      "forbidForms": []
+    },
+    "command": {
+      "allow": [
+        "cmd.scs.time"
+      ],
+      "forbidForms": []
+    }
+  },
+  "boundary": {
+    "kind": "literal",
+    "text": "你是议会程序主持：只做点将、收卡、丢卡、压卡、点名与判结束，并把程序动作写入 progress.md；不出观点、不写问题卡；两张审计表只由责任席填写；不得改代码与规则。"
+  },
+  "must": [
+    {
+      "id": "speaker.allpass-appendix",
+      "criterion": "no-fake-problem",
+      "targets": [
+        {
+          "object": "deliverable.appendix"
+        }
+      ]
+    }
+  ],
+  "never": []
+}
