@@ -10,7 +10,13 @@
     "gate:record": "node scripts/check-gate-record.mjs",
     "check:observable": "scs check observable --check --terms tools/docgen/models/rules/vocab/observable-terms.json --exempt tools/docgen/models/rules/vocab/observable-exempt.json",
     "check:criteria": "scs check criteria-engine --engine tools/docgen/builders/rules --data tools/docgen/models/rules --projection tools/docgen/builders/rules --terms tools/docgen/models/rules/vocab/observable-terms.json --surface skills --surface tools/docgen",
-    "check:skill-criteria": "node scripts/check-skill-criteria.mjs"
+    "check:skill-criteria": "node scripts/check-skill-criteria.mjs",
+    "agents:verify": "node tools/docgen/builders/agents/cli.mjs gate",
+    "agents:check": "node tools/docgen/builders/agents/cli.mjs generate --kind agent --check",
+    "agents:preview": "node tools/docgen/builders/agents/cli.mjs generate --kind agent --preview",
+    "agents:generate": "node tools/docgen/builders/agents/cli.mjs generate --kind agent",
+    "baseline:check": "node tools/docgen/models/agents/scripts/update-baseline.mjs --check --all",
+    "baseline:update": "node tools/docgen/models/agents/scripts/update-baseline.mjs --all"
   },
   "engines": {
     "node": ">=22"

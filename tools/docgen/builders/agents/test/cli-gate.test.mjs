@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, cpSync, appendFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, cpSync, appendFileSync, rmSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
@@ -11,24 +11,24 @@ const CLI = 'tools/docgen/builders/agents/cli.mjs';
 const N = BASELINE_RULES.length + agentPaths().length;
 const run = (args, env = {}) => spawnSync(process.execPath, [CLI, ...args], { encoding: 'utf8', env: { ...process.env, DOCGEN_DRAFTS_DIR: mkdtempSync(join(tmpdir(), 'dg-draft-')), ...env } });
 
-test('generate 缺省 = rule + agent 两清单全遍历（NF-2）：全部席已拆槽且渲染 == 现卡 → exit 0 + baseline N/N', () => {
-  const r = run(['generate']);
+test('generate --check 缺省 = rule + agent 两清单全遍历（NF-2）：全部席已拆槽且渲染 == 现卡 → exit 0 + baseline N/N', () => {
+  const r = run(['generate', '--check']);
   assert.equal(r.status, 0, r.stdout + r.stderr);
   assert.match(r.stdout, new RegExp(`baseline ${N}\\/${N}`));
 });
 
-test('generate --kind agent --name reviewer-product：渲染 == 现卡 → exit 0', () => {
-  const r = run(['generate', '--kind', 'agent', '--name', 'reviewer-product']);
+test('generate --kind agent --name reviewer-product --check：渲染 == 现卡 → exit 0', () => {
+  const r = run(['generate', '--kind', 'agent', '--name', 'reviewer-product', '--check']);
   assert.equal(r.status, 0, r.stdout + r.stderr);
 });
 
-test('generate --name ghost → MissingComponentData（exit 2）', () => {
-  const r = run(['generate', '--kind', 'agent', '--name', 'ghost']);
+test('generate --name ghost --check → MissingComponentData（exit 2）', () => {
+  const r = run(['generate', '--kind', 'agent', '--name', 'ghost', '--check']);
   assert.equal(r.status, 2);
   assert.match(r.stdout + r.stderr, /MissingComponentData/);
 });
 
-test('generate --kind agent --apply → InvalidArgs（agent 卡只比不写，写盘走 draft→replace）', () => {
+test('generate --kind agent --apply → InvalidArgs（--apply 只授权 rule）', () => {
   const r = run(['generate', '--kind', 'agent', '--apply']);
   assert.equal(r.status, 2, r.stdout + r.stderr);
   assert.match(r.stderr, /^InvalidArgs: /m);
@@ -51,13 +51,13 @@ test('gate：两清单基线 + 全量重建比对 + W4 派生断言 + baseline N
   assert.ok(!/FAIL/.test(r.stdout));
 });
 
-test('generate --name reviewer-audit：渲染与黄金快照一致 → exit 0', () => {
-  const r = run(['generate', '--kind', 'agent', '--name', 'reviewer-audit']);
+test('generate --name reviewer-audit --check：渲染与黄金快照一致 → exit 0', () => {
+  const r = run(['generate', '--kind', 'agent', '--name', 'reviewer-audit', '--check']);
   assert.equal(r.status, 0, r.stdout + r.stderr);
 });
 
-test('generate --name reviewer-qa：拆槽后渲染 == 现卡 → exit 0', () => {
-  const r = run(['generate', '--kind', 'agent', '--name', 'reviewer-qa']);
+test('generate --name reviewer-qa --check：拆槽后渲染 == 现卡 → exit 0', () => {
+  const r = run(['generate', '--kind', 'agent', '--name', 'reviewer-qa', '--check']);
   assert.equal(r.status, 0, r.stdout + r.stderr);
 });
 
@@ -73,11 +73,34 @@ test('字节反例：副本仓注入一字节 → generate 判漂移 exit 1（�
     cpSync('agents', join(dst, 'agents'), { recursive: true });
     const target = join(dst, 'agents', 'reviewer-qa.md');
     appendFileSync(target, ' ');
-    const r = spawnSync(process.execPath, ['tools/docgen/builders/agents/cli.mjs', 'generate', '--kind', 'agent', '--name', 'reviewer-qa'], {
+    const r = spawnSync(process.execPath, ['tools/docgen/builders/agents/cli.mjs', 'generate', '--kind', 'agent', '--name', 'reviewer-qa', '--check'], {
       cwd: dst, encoding: 'utf8', env: { ...process.env, DOCGEN_DRAFTS_DIR: join(dst, '.drafts') },
     });
     assert.equal(r.status, 1, r.stdout + r.stderr);
     assert.match(r.stdout, new RegExp(`baseline ${N}\\/${N}`));
+  } finally {
+    rmSync(dst, { recursive: true, force: true });
+  }
+});
+
+test('generate --preview 写 tmp/preview/agents；正式写后清预览（副本仓）', () => {
+  const dst = mkdtempSync(join(tmpdir(), 'dg-preview-'));
+  const env = { ...process.env, DOCGEN_DRAFTS_DIR: join(dst, '.drafts') };
+  const runIn = (args) => spawnSync(process.execPath, [CLI, ...args], { cwd: dst, encoding: 'utf8', env });
+  try {
+    cpSync('tools/docgen', join(dst, 'tools/docgen'), { recursive: true });
+    cpSync('tools/execution-matrix', join(dst, 'tools/execution-matrix'), { recursive: true });
+    cpSync('tools/quality', join(dst, 'tools/quality'), { recursive: true });
+    cpSync('agents', join(dst, 'agents'), { recursive: true });
+
+    const p = runIn(['generate', '--kind', 'agent', '--name', 'reviewer-audit', '--preview']);
+    assert.equal(p.status, 0, p.stdout + p.stderr);
+    assert.ok(existsSync(join(dst, 'tmp', 'preview', 'agents', 'reviewer-audit.md')));
+
+    const w = runIn(['generate', '--kind', 'agent', '--name', 'reviewer-audit', '--force']);
+    assert.equal(w.status, 0, w.stdout + w.stderr);
+    assert.ok(!existsSync(join(dst, 'tmp', 'preview', 'agents', 'reviewer-audit.md')));
+    assert.ok(!existsSync(join(dst, 'tmp', 'preview', 'agents')));
   } finally {
     rmSync(dst, { recursive: true, force: true });
   }

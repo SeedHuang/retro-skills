@@ -26,6 +26,20 @@ export { renderByName };
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..');
 const AGENTS_DIR = join(REPO_ROOT, 'agents');
+const PREVIEW_DIR = join(REPO_ROOT, 'tmp', 'preview');
+// 正式写盘前的安全门：除模型与卡之外有未提交改动 → 拒绝（--force 越过；非 git 环境放行）
+function assertCleanForFormalWrite(force) {
+  if (force) return;
+  let out;
+  try { out = execFileSync('git', ['--no-optional-locks', 'status', '--porcelain'], { cwd: REPO_ROOT, encoding: 'utf8' }); }
+  catch { return; }
+  const allowed = ['agents/', 'tools/docgen/models/agents/jsons/', 'tmp/'];
+  const bad = out.split(/\r?\n/).filter(Boolean).filter((line) => {
+    const p = line.slice(3).replace(/^"|"$/g, '');
+    return !allowed.some((a) => p.startsWith(a));
+  });
+  if (bad.length > 0) fail('DirtyWorkTree', { message: `DirtyWorkTree: 工作树有与生成无关的改动（${bad.slice(0, 3).join(' | ')}）；先提交/清理，或用 --force` });
+}
 // baseline 清单路径可用 DOCGEN_BASELINE_PATH 重定向（与 state / evidence / drafts 同款测试隔离位）：
 // 测试写的是临时文件，不再与非同进程的 gate 抢同一个共享文件（并发 truncate 窗口会让 gate 误报 BaselineDrift）
 const baselinePath = () => process.env.DOCGEN_BASELINE_PATH || join(dirname(fileURLToPath(import.meta.url)), 'baseline.json');
@@ -40,15 +54,19 @@ export function sha256Hex(buf) { return createHash('sha256').update(buf).digest(
 // S4 Task 7：旧 agent 模板已退场，只留规则模板分支
 
 export function cmdGenerate(args) {
-  // S3（spec §3.2）：所有会渲染或写盘的子命令先跑 validatePolicy，避免 draft / generate 静默过滤后写盘
+  // S3（spec §3.2）：所有会渲染或写盘的子命令先跑 validatePolicy，避免静默过滤后写盘
   validatePolicy();
-  // `--apply` 只授权 rendered rule 落盘；agent 卡写盘保持「草稿 → 确认 → 替换」纪律（draft/replace）
-  const ruleWrite = args.apply && args.kind === 'rule' && typeof args.name === 'string'
-  if (args.apply && !ruleWrite) {
-    fail('InvalidArgs', { message: 'InvalidArgs: --apply 只授权 --kind rule --name（rendered rule）落盘；agent 卡请走 draft → replace' });
-  }
   const kind = args.kind ?? 'all';
   const name = args.name;
+  const preview = args.preview === true;
+  const check = args.check === true;
+  const force = args.force === true;
+  // `--apply` 仍只授权 rendered rule 落盘；agent 卡正式写盘走 generate（无 --preview）
+  const ruleWrite = args.apply && kind === 'rule' && typeof args.name === 'string';
+  if (args.apply && !ruleWrite) {
+    fail('InvalidArgs', { message: 'InvalidArgs: --apply 只授权 --kind rule --name（rendered rule）落盘' });
+  }
+  if (args.apply && (preview || check)) fail('InvalidArgs', { message: 'InvalidArgs: --apply 不能与 --preview / --check 同用' });
   if (name !== undefined && !/^[a-z][a-z0-9-]{0,49}$/.test(name)) fail('InvalidName', { name });
   const objs = name
     ? [{ kind: kind === 'all' ? 'agent' : kind, name, path: `${kind === 'rule' ? 'rules' : 'agents'}/${name}.md` }]
@@ -57,30 +75,59 @@ export function cmdGenerate(args) {
       : kind === 'rule'
         ? BASELINE_RULES.map((p) => ({ kind: 'rule', path: p, name: p.slice(7, -3) }))
         : agentPaths().map((p) => ({ kind: 'agent', path: p, name: p.slice(7, -3) }));
+
+  const renderText = (o) => {
+    if (o.kind === 'rule') {
+      if (!RENDERED_RULES.includes(o.name)) fail('MissingComponentData', { name: o.name });
+      return renderRenderedRule(o.name);
+    }
+    if (!isSeat(o.name)) fail('MissingComponentData', { name: o.name });
+    return renderSeatText(o.name);
+  };
+
+  // 预览：只写 tmp/preview/<agents|rules>/，不碰正式目录
+  if (preview) {
+    for (const o of objs) {
+      const sub = o.kind === 'agent' ? 'agents' : 'rules';
+      const dir = join(PREVIEW_DIR, sub);
+      const file = join(dir, `${o.name}.md`);
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(file, renderText(o));
+      console.log(`preview: ${o.path} -> ${file}`);
+    }
+    return 0;
+  }
+
   let drift = 0;
+  const agentWrites = [];
   for (const o of objs) {
     if (o.kind === 'rule') {
-      // 渲染 rule 与 agent 卡同一机制：数据 → 渲染 → 逐字节比对；`--apply` 才落盘（手改即红）
       const p = join(REPO_ROOT, o.path);
       if (!existsSync(p)) fail('DanglingBaselineEntry', { name: o.path, path: p });
       const target = readFileSync(p, 'utf8');
       checkEnvironment(Buffer.from(target), 'target', o.path);
-      if (o.name && RENDERED_RULES.includes(o.name)) {
-        if (ruleWrite) {
-          writeRenderedRule(o.name);
-          console.log(`rendered rule 已写入：${o.path}`);
-        } else if (compareBuffers(Buffer.from(renderRenderedRule(o.name), 'utf8'), Buffer.from(target, 'utf8'))) {
-          drift += 1;
-        }
-      }
-    } else {
-      if (!isSeat(o.name)) fail('MissingComponentData', { name: o.name });
+      if (ruleWrite) { writeRenderedRule(o.name); console.log(`rendered rule 已写入：${o.path}`); }
+      else if (RENDERED_RULES.includes(o.name) && compareBuffers(Buffer.from(renderRenderedRule(o.name), 'utf8'), Buffer.from(target, 'utf8'))) drift += 1;
+    } else if (check) {
+      const rendered = Buffer.from(renderText(o), 'utf8');
       const p = join(AGENTS_DIR, `${o.name}.md`);
       if (!existsSync(p)) fail('DanglingBaselineEntry', { name: o.name });
-      const rendered = Buffer.from(renderSeatText(o.name), 'utf8');
       if (compareBuffers(rendered, readFileSync(p))) drift += 1;
+    } else {
+      agentWrites.push({ name: o.name, text: renderText(o) });
     }
   }
+
+  if (agentWrites.length > 0) {
+    assertCleanForFormalWrite(force);
+    for (const w of agentWrites) writeFileAtomic(join(AGENTS_DIR, `${w.name}.md`), w.text);
+    // 正式写盘后清掉对应预览
+    const dir = join(PREVIEW_DIR, 'agents');
+    for (const w of agentWrites) rmSync(join(dir, `${w.name}.md`), { force: true });
+    try { if (readdirSync(dir).length === 0) rmSync(dir, { recursive: true, force: true }); } catch { /* 目录不存在即已清 */ }
+    console.log(`agents 已写入：${agentWrites.length} 席（预览已清）`);
+  }
+
   console.log(`baseline ${BASELINE_RULES.length + agentPaths().length}/${BASELINE_RULES.length + agentPaths().length}`);
   return drift === 0 ? 0 : 1;
 }
@@ -600,8 +647,8 @@ const VALUE = 'value';
 const BOOL = 'bool';
 const REPLACE_FLAGS = { '--kind': VALUE, '--name': VALUE, '--draft': VALUE, '--expect-change': VALUE, '--rejudge': VALUE, '--yes': BOOL, '--new': BOOL };
 const DIFF_FLAGS = { '--kind': VALUE, '--name': VALUE };
-// generate：对 agent 卡只比不写；`--apply` 只授权 `--kind rule --name`（rendered rule）落盘
-const GENERATE_FLAGS = { '--kind': VALUE, '--name': VALUE, '--apply': BOOL };
+// generate：--preview 只写 tmp/preview；--check 只读比对；缺省正式写 agents/（写后清对应预览）
+const GENERATE_FLAGS = { '--kind': VALUE, '--name': VALUE, '--apply': BOOL, '--preview': BOOL, '--check': BOOL, '--force': BOOL };
 // dump：只读子命令，只接受 `--name`（未知旗标 → InvalidArgs exit 2）
 const DUMP_FLAGS = { '--name': VALUE };
 // 只读子命令：只接受 `--dump`（`--write` / `--out` / `--apply` 落到「未知旗标」→ InvalidArgs exit 2）
@@ -662,7 +709,7 @@ export function main(argv) {
     const has = (k) => rest.includes(k);
     if (sub === 'generate') {
       const a = parseArgs(rest, GENERATE_FLAGS, 'generate');
-      return cmdGenerate({ kind: a['--kind'], name: a['--name'], apply: a['--apply'] === true });
+      return cmdGenerate({ kind: a['--kind'], name: a['--name'], apply: a['--apply'] === true, preview: a['--preview'] === true, check: a['--check'] === true, force: a['--force'] === true });
     }
     if (sub === 'gate') return cmdGate();
     if (sub === 'dump') {

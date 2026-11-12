@@ -20,7 +20,7 @@ const EXIT = {
   2: ['UnregisteredHandwritten', 'InvalidBaseline', 'InvalidBaselinePath', 'DanglingBaselineEntry',
     'BaselineDrift', 'EnvironmentEOL', 'InvalidInputPath', 'InvalidOutputPath',
     'MissingComponentData', 'UnsupportedKind', 'StateFileInvalid', 'GoldenSnapshotUnavailable',
-    'EvidenceInvalid', 'InvalidArgs', 'MigrationPhaseClosed'],
+    'EvidenceInvalid', 'InvalidArgs', 'MigrationPhaseClosed', 'DirtyWorkTree'],
   3: ['GeneratedMissing', 'TemplateReadFailed', 'TargetReadFailed', 'WriteFailed', 'DraftNotFound', 'DraftWriteFailed'],
   4: ['NotAuthorized', 'UnapprovedChange'],
 }

@@ -93,6 +93,32 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 - `docs/handoffs/` —— 跨 session 交接词（每个 session 收口的交接事实；**一次性快照，定格不改**）
 - `docs/after/` —— **未完成 / 待决 / 悬置**的事项（活的账本，做完迁走）——书写规范、目录 / 命名 / 生命周期见 `docs-placement`
 
+## 生成 Agent 卡（维护者）
+
+18 张 `agents/*.md` 是**生成视图**，唯一源是 `tools/docgen/models/agents/jsons/<seat>/index.json`（每席一个目录，含 `_baseline.json`）。改模型 → 生成卡 → 复核，用下面这组命令：
+
+| 命令 | 作用 |
+|---|---|
+| `npm run agents:preview` | 全量 18 席渲染到 `tmp/preview/agents/`（不入 git，仅供查看） |
+| `npm run agents:generate` | 全量 18 席**正式写** `agents/*.md`，写完自动清对应预览 |
+| `npm run agents:check` | 只读：重渲染并与现有卡逐字节比对（漂移即 exit 1） |
+| `npm run agents:verify` | `gate`：18 席逐字节 + `baseline 19/19`（只读） |
+| `npm run baseline:check` | 只读：校验 18 份 `_baseline.json` 仍与模型一致 |
+| `npm run baseline:update` | 显式刷新基线（模型语义变更后使用，会写盘） |
+
+单席操作在命令后透传参数，例如：
+
+```powershell
+npm run agents:preview -- --name reviewer-audit
+npm run agents:generate -- --name reviewer-audit
+```
+
+约束：
+
+- **正式写要求工作树干净**：除 `tools/docgen/models/agents/jsons/**`、`agents/**`、`tmp/**` 外有未提交改动会报 `DirtyWorkTree`（exit 2）；先提交或在分支上做，确需越过用 `--force`。
+- `agents/*.md` 禁止手改；任何变更都从模型重生成。
+- 规则（`rules/*.md`）仍走 `generate --kind rule --name <id> --apply`，不在上表。
+
 ## 设计文档
 
 - 体系总图（现役）：`docs/architecture.md`；历史架构与执行顺序：`docs/architecture-history.md`
