@@ -15,7 +15,7 @@
 | reviewer-interaction | ReviewerModel | 76 | 77 | 1592 | 2018 | 8/7 | default | 是 | 有 |
 | reviewer-ui | ReviewerModel | 74 | 75 | 1487 | 1914 | 8/7 | default | 是 | 有 |
 | reviewer-frontend | ReviewerModel | 76 | 77 | 1596 | 2030 | 8/7 | default | 是 | 有 |
-| reviewer-backend | ReviewerModel | 76 | 76 | 1594 | 1984 | 8/7 | default | 是 | 有 |
+| reviewer-backend | ReviewerModel | 75 | 76 | 1549 | 1984 | 8/7 | default | 是 | 有 |
 | reviewer-reader | ReviewerModel | 75 | 76 | 1540 | 1961 | 8/7 | default | 是 | 有 |
 | reviewer-security | ReviewerModel | 75 | 76 | 1540 | 1946 | 8/7 | default | 是 | 有 |
 | reviewer-qa | ReviewerModel | 76 | 79 | 1585 | 2142 | 8/7 | default | 是 | 有 |
@@ -128,7 +128,7 @@
 | reviewer-backend | 一定会 | 文本不同 | -180 |
 | reviewer-backend | 禁止 | 文本不同 | -35 |
 | reviewer-backend | 冲突裁决 | 文本不同 | -25 |
-| reviewer-backend | 本席清单 | 文本不同 | 15 |
+| reviewer-backend | 本席清单 | 文本不同 | -30 |
 | reviewer-backend | 输出格式 | 文本不同 | -194 |
 | reviewer-backend | 权限 | 仅沙箱 | - |
 | reviewer-backend | 边界 | 一致 | 0 |

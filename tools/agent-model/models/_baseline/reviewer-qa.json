@@ -51,43 +51,43 @@
     "items": [
       {
         "no": 1,
-        "seatPrefix": "质检席卡",
+        "seatPrefix": "测试席卡",
         "category": "验收可验证性核对",
         "criterion": "qa.verifiable"
       },
       {
         "no": 2,
-        "seatPrefix": "质检席卡",
+        "seatPrefix": "测试席卡",
         "category": "回归防护核对",
         "criterion": "qa.regression"
       },
       {
         "no": 3,
-        "seatPrefix": "质检席卡",
+        "seatPrefix": "测试席卡",
         "category": "不可重复场景核对",
         "criterion": "qa.nonrepeatable"
       },
       {
         "no": 4,
-        "seatPrefix": "质检席卡",
+        "seatPrefix": "测试席卡",
         "category": "fixture 多样性核对",
         "criterion": "qa.fixture"
       },
       {
         "no": 5,
-        "seatPrefix": "质检席卡",
+        "seatPrefix": "测试席卡",
         "category": "降级验证核对",
         "criterion": "qa.degradation"
       },
       {
         "no": 6,
-        "seatPrefix": "质检席卡",
+        "seatPrefix": "测试席卡",
         "category": "词表覆盖核对",
         "criterion": "qa.vocab"
       },
       {
         "no": 7,
-        "seatPrefix": "质检席卡",
+        "seatPrefix": "测试席卡",
         "category": "误判固化核对",
         "criterion": "qa.falsepositive"
       }

@@ -52,49 +52,43 @@
       {
         "no": 1,
         "seatPrefix": "后端席卡",
-        "category": "接口契约核对",
-        "criterion": "backend.api"
+        "category": "单元职责核对",
+        "criterion": "backend.unit"
       },
       {
         "no": 2,
         "seatPrefix": "后端席卡",
-        "category": "数据一致性核对",
-        "criterion": "backend.data"
+        "category": "边界数据流核对",
+        "criterion": "backend.dataflow"
       },
       {
         "no": 3,
         "seatPrefix": "后端席卡",
-        "category": "事务与并发核对",
-        "criterion": "backend.tx"
+        "category": "外部交互失败核对",
+        "criterion": "backend.failure"
       },
       {
         "no": 4,
         "seatPrefix": "后端席卡",
-        "category": "幂等与重试核对",
-        "criterion": "backend.idempotency"
+        "category": "第二份真相核对",
+        "criterion": "backend.second-truth"
       },
       {
         "no": 5,
         "seatPrefix": "后端席卡",
-        "category": "权限边界核对",
-        "criterion": "backend.authz"
+        "category": "字段生命周期核对",
+        "criterion": "backend.field-lifecycle"
       },
       {
         "no": 6,
         "seatPrefix": "后端席卡",
-        "category": "可观测性核对",
-        "criterion": "backend.observability"
-      },
-      {
-        "no": 7,
-        "seatPrefix": "后端席卡",
-        "category": "迁移与回滚核对",
-        "criterion": "backend.migration"
+        "category": "事务与并发序核对",
+        "criterion": "backend.tx-order"
       }
     ]
   },
   "checkCriteria": {
-    "backend.api": {
+    "backend.unit": {
       "action": "verify",
       "mode": "all",
       "observable": [
@@ -125,7 +119,7 @@
         }
       }
     },
-    "backend.data": {
+    "backend.dataflow": {
       "action": "verify",
       "mode": "all",
       "observable": [
@@ -156,7 +150,7 @@
         }
       }
     },
-    "backend.tx": {
+    "backend.failure": {
       "action": "verify",
       "mode": "all",
       "observable": [
@@ -187,7 +181,7 @@
         }
       }
     },
-    "backend.idempotency": {
+    "backend.second-truth": {
       "action": "verify",
       "mode": "all",
       "observable": [
@@ -218,7 +212,7 @@
         }
       }
     },
-    "backend.authz": {
+    "backend.field-lifecycle": {
       "action": "verify",
       "mode": "all",
       "observable": [
@@ -249,38 +243,7 @@
         }
       }
     },
-    "backend.observability": {
-      "action": "verify",
-      "mode": "all",
-      "observable": [
-        {
-          "op": "fieldNonEmpty",
-          "ofRef": "issueCardFull",
-          "field": "quote"
-        }
-      ],
-      "negative": {
-        "input": {
-          "issueCardFull": {
-            "quote": ""
-          }
-        },
-        "expect": "fail",
-        "failsOn": "issueCardFull.quote"
-      },
-      "residual": {
-        "who": "reviewer-backend",
-        "sample": 3,
-        "fields": [
-          "roundCheck.verdict"
-        ],
-        "objective": {
-          "target": "machine",
-          "reason": "REQUIRES_HUMAN_JUDGMENT"
-        }
-      }
-    },
-    "backend.migration": {
+    "backend.tx-order": {
       "action": "verify",
       "mode": "all",
       "observable": [
