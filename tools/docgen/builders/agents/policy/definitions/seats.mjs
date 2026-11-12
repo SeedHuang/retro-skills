@@ -5,8 +5,8 @@
 export const SEATS = {
   'reviewer-audit': {
     display: '审计',
-    // ⑨ 职责：写入范围含审计表 + 核转录逐字一致（卡级子句，J01 判 `scope:'card'`）
-    clause: '、审计表；你在 `round-check.md` 核转录逐字一致',
+    // ⑨ 职责：产物含交付审计表文件 + 核转录逐字一致（卡级子句，J01 判 `scope:'card'`）
+    clause: '。职责：你在 `round-check.md` 核转录是否逐字一致。',
     escalationWriter: { slug: 'reviewer-audit', artifact: 'round-check.md' },
   },
   'detective-observer': {

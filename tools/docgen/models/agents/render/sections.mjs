@@ -217,7 +217,7 @@ export const sections = {
       out.push(canWrite ? '- 写文件：只限「边界」所列封闭清单（本席无 artifact 级写白名单）' : '- 写文件：不得写任何文件')
     } else out.push(`- 写文件：只许 ${pm.write.allow.map((id) => h.F[id].text).join('、')}`)
     if (!pm.command.allow.length) out.push('- 跑命令：不跑任何命令')
-    else out.push(`- 跑命令：只许跑 ${pm.command.allow.map((id) => h.F[id].text).join('、')}`)
+    else out.push(`- 跑命令：只许跑\n${pm.command.allow.map((id) => `  - ${h.F[id].text}`).join('\n')}`)
     out.push('')
     return ['## 权限', ...out]
   },

@@ -7,7 +7,7 @@ export const writeScopes = {
   'review.ledger': {
     roleKind: '评审席',
     label: '本次评审账本（`.session/reviews/<本次>/`；归档后 `docs/superpowers/reviews/<本次>/`）目录内的产物',
-    hostRule: '不得写 `progress.md`（只由{host}写，段二 / 段三由{host}从责任席的产出转录）',
+    hostRule: '不得写 `progress.md`（只由{host}写，内容由{host}从责任席的产出转录）',
     hostNoun: '议长',
     excludePathItems: [],
   },

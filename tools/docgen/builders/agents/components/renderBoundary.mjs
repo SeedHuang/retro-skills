@@ -102,7 +102,7 @@ function scopeOfSeat(seat) {
   return writeScopes[id];
 }
 function forbiddenPaths(seat) {
-  const base = `${code('pathGroups')}（六组）与一项模式项（spec 与 plan 的两种写法）`;
+  const base = `${code('pathGroups')} 与 spec / plan 的写法项`;
   const scope = scopeOfSeat(seat);
   const exclusions = scope && Array.isArray(scope.excludePathItems) ? scope.excludePathItems : [];
   if (exclusions.length === 0) return base;
@@ -116,7 +116,7 @@ function forbiddenPaths(seat) {
 
 // 槽 11 = 指针句：检测盲区归 `DETECTION_BLIND_SPOTS`
 function detectionPaths() {
-  return code('DETECTION_BLIND_SPOTS');
+  return '被 gitignore 的路径';
 }
 
 // 槽 12 = `commands['git.read'].verbs` 的 status 项（只读引用，不复制）
@@ -143,7 +143,7 @@ function escalationWriter(seat) {
   if (ew === undefined) return '';
   const d = displayOf(ew.slug);
   const a = code(ew.artifact);
-  return ew.slug === seat ? `${d}写 ${a}` : `交${d}在 ${a} 独立复算`;
+  return ew.slug === seat ? `越权者即本席，写 ${a}` : `交${d}在 ${a} 独立复算`;
 }
 
 // 12 槽值（键 = 槽名）。值必须全是字符串：`undefined` / `null` → `TemplateImpure`（片段 = 槽名）
@@ -164,7 +164,11 @@ export function slotValues(seat) {
     SEAT: s.display,
     TIER: tierOfCapabilities(caps) ?? '',
     CAPABILITIES: capTools(caps).join(' / '),
-    ARTIFACTS: slotSource(p, 'artifacts', 'ARTIFACTS', []).map(code).join('、'),
+    // 允许产物为空时不写引导词（senior-sdet 无 artifact 级白名单），避免悬空「：」
+    ARTIFACTS: (() => {
+      const arts = slotSource(p, 'artifacts', 'ARTIFACTS', []);
+      return arts.length ? `允许产物：${arts.map(code).join('、')}` : '';
+    })(),
     SEAT_CLAUSE: slotSource(s, 'clause', 'SEAT_CLAUSE', ''),
     ESCALATION_WRITER: escalationWriter(seat),
     ALLOW_GROUPS: allowGroups(slotSource(p, 'allowGroups', 'ALLOW_GROUPS', [])),
