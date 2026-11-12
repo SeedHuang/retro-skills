@@ -288,7 +288,11 @@
         "senior-sdet",
         "reviewer-ui",
         "reviewer-frontend",
-        "reviewer-backend"
+        "reviewer-backend",
+        "reviewer-reader",
+        "reviewer-security",
+        "reviewer-qa",
+        "reviewer-ops"
       ],
       "slots": [
         {
@@ -319,7 +323,11 @@
         "senior-sdet",
         "reviewer-ui",
         "reviewer-frontend",
-        "reviewer-backend"
+        "reviewer-backend",
+        "reviewer-reader",
+        "reviewer-security",
+        "reviewer-qa",
+        "reviewer-ops"
       ],
       "slots": [
         {
@@ -344,7 +352,11 @@
         "senior-sdet",
         "reviewer-ui",
         "reviewer-frontend",
-        "reviewer-backend"
+        "reviewer-backend",
+        "reviewer-reader",
+        "reviewer-security",
+        "reviewer-qa",
+        "reviewer-ops"
       ],
       "slots": [
         {
@@ -422,7 +434,11 @@
         "senior-sdet",
         "reviewer-ui",
         "reviewer-frontend",
-        "reviewer-backend"
+        "reviewer-backend",
+        "reviewer-reader",
+        "reviewer-security",
+        "reviewer-qa",
+        "reviewer-ops"
       ],
       "slots": [
         {
@@ -452,7 +468,11 @@
         "senior-sdet",
         "reviewer-ui",
         "reviewer-frontend",
-        "reviewer-backend"
+        "reviewer-backend",
+        "reviewer-reader",
+        "reviewer-security",
+        "reviewer-qa",
+        "reviewer-ops"
       ],
       "slots": [
         {
@@ -480,7 +500,11 @@
         "senior-sdet",
         "reviewer-ui",
         "reviewer-frontend",
-        "reviewer-backend"
+        "reviewer-backend",
+        "reviewer-reader",
+        "reviewer-security",
+        "reviewer-qa",
+        "reviewer-ops"
       ],
       "slots": [
         {
@@ -513,7 +537,11 @@
           "senior-sdet",
           "reviewer-ui",
           "reviewer-frontend",
-          "reviewer-backend"
+          "reviewer-backend",
+          "reviewer-reader",
+          "reviewer-security",
+          "reviewer-qa",
+          "reviewer-ops"
         ]
       },
       {
@@ -535,7 +563,11 @@
           "senior-sdet",
           "reviewer-ui",
           "reviewer-frontend",
-          "reviewer-backend"
+          "reviewer-backend",
+          "reviewer-reader",
+          "reviewer-security",
+          "reviewer-qa",
+          "reviewer-ops"
         ]
       },
       {
@@ -557,7 +589,11 @@
           "senior-sdet",
           "reviewer-ui",
           "reviewer-frontend",
-          "reviewer-backend"
+          "reviewer-backend",
+          "reviewer-reader",
+          "reviewer-security",
+          "reviewer-qa",
+          "reviewer-ops"
         ]
       },
       {
@@ -580,7 +616,11 @@
           "senior-sdet",
           "reviewer-ui",
           "reviewer-frontend",
-          "reviewer-backend"
+          "reviewer-backend",
+          "reviewer-reader",
+          "reviewer-security",
+          "reviewer-qa",
+          "reviewer-ops"
         ]
       }
     ],
@@ -600,7 +640,11 @@
           "reviewer-interaction",
           "reviewer-ui",
           "reviewer-frontend",
-          "reviewer-backend"
+          "reviewer-backend",
+          "reviewer-reader",
+          "reviewer-security",
+          "reviewer-qa",
+          "reviewer-ops"
         ]
       },
       {
@@ -635,7 +679,11 @@
           "senior-sdet",
           "reviewer-ui",
           "reviewer-frontend",
-          "reviewer-backend"
+          "reviewer-backend",
+          "reviewer-reader",
+          "reviewer-security",
+          "reviewer-qa",
+          "reviewer-ops"
         ]
       },
       {
@@ -657,7 +705,11 @@
           "senior-sdet",
           "reviewer-ui",
           "reviewer-frontend",
-          "reviewer-backend"
+          "reviewer-backend",
+          "reviewer-reader",
+          "reviewer-security",
+          "reviewer-qa",
+          "reviewer-ops"
         ]
       },
       {
@@ -679,7 +731,11 @@
           "senior-sdet",
           "reviewer-ui",
           "reviewer-frontend",
-          "reviewer-backend"
+          "reviewer-backend",
+          "reviewer-reader",
+          "reviewer-security",
+          "reviewer-qa",
+          "reviewer-ops"
         ]
       }
     ]
@@ -1418,7 +1474,11 @@
     "interaction": "交互视角",
     "ui": "UI 视角",
     "frontend": "前端实现视角",
-    "backend": "后端实现视角"
+    "backend": "后端实现视角",
+    "reader": "阅读视角",
+    "security": "安全视角",
+    "qa": "质检视角",
+    "ops": "运维视角"
   },
   "schedules": {
     "speaker": "议长"

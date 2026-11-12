@@ -16,6 +16,10 @@
 | reviewer-ui | ReviewerModel | 74 | 75 | 1487 | 1914 | 8/7 | default | 是 | 有 |
 | reviewer-frontend | ReviewerModel | 76 | 77 | 1596 | 2030 | 8/7 | default | 是 | 有 |
 | reviewer-backend | ReviewerModel | 76 | 76 | 1594 | 1984 | 8/7 | default | 是 | 有 |
+| reviewer-reader | ReviewerModel | 75 | 76 | 1540 | 1961 | 8/7 | default | 是 | 有 |
+| reviewer-security | ReviewerModel | 75 | 76 | 1540 | 1946 | 8/7 | default | 是 | 有 |
+| reviewer-qa | ReviewerModel | 76 | 79 | 1585 | 2142 | 8/7 | default | 是 | 有 |
+| reviewer-ops | ReviewerModel | 74 | 75 | 1478 | 1908 | 8/7 | default | 是 | 有 |
 | senior-sdet | ReviewerModel | 85 | 86 | 2663 | 3142 | 8/7 | policy | 是 | 有 |
 | speaker | ReviewerModel | 80 | 79 | 2302 | 2282 | 8/7 | policy | 是 | 有 |
 
@@ -128,6 +132,38 @@
 | reviewer-backend | 输出格式 | 文本不同 | -194 |
 | reviewer-backend | 权限 | 仅沙箱 | - |
 | reviewer-backend | 边界 | 一致 | 0 |
+| reviewer-reader | 职责 | 文本不同 | 6 |
+| reviewer-reader | 一定会 | 文本不同 | -180 |
+| reviewer-reader | 禁止 | 文本不同 | -35 |
+| reviewer-reader | 冲突裁决 | 文本不同 | -25 |
+| reviewer-reader | 本席清单 | 文本不同 | -19 |
+| reviewer-reader | 输出格式 | 文本不同 | -194 |
+| reviewer-reader | 权限 | 仅沙箱 | - |
+| reviewer-reader | 边界 | 一致 | 0 |
+| reviewer-security | 职责 | 文本不同 | 16 |
+| reviewer-security | 一定会 | 文本不同 | -180 |
+| reviewer-security | 禁止 | 文本不同 | -35 |
+| reviewer-security | 冲突裁决 | 文本不同 | -25 |
+| reviewer-security | 本席清单 | 文本不同 | -20 |
+| reviewer-security | 输出格式 | 文本不同 | -194 |
+| reviewer-security | 权限 | 仅沙箱 | - |
+| reviewer-security | 边界 | 一致 | 0 |
+| reviewer-qa | 职责 | 文本不同 | 0 |
+| reviewer-qa | 一定会 | 文本不同 | -180 |
+| reviewer-qa | 禁止 | 文本不同 | -35 |
+| reviewer-qa | 冲突裁决 | 文本不同 | -25 |
+| reviewer-qa | 本席清单 | 文本不同 | -146 |
+| reviewer-qa | 输出格式 | 文本不同 | -194 |
+| reviewer-qa | 权限 | 仅沙箱 | - |
+| reviewer-qa | 边界 | 一致 | 0 |
+| reviewer-ops | 职责 | 文本不同 | -4 |
+| reviewer-ops | 一定会 | 文本不同 | -180 |
+| reviewer-ops | 禁止 | 文本不同 | -35 |
+| reviewer-ops | 冲突裁决 | 文本不同 | -25 |
+| reviewer-ops | 本席清单 | 文本不同 | -13 |
+| reviewer-ops | 输出格式 | 文本不同 | -194 |
+| reviewer-ops | 权限 | 仅沙箱 | - |
+| reviewer-ops | 边界 | 一致 | 0 |
 | senior-sdet | 职责 | 文本不同 | -54 |
 | senior-sdet | 一定会 | 文本不同 | -179 |
 | senior-sdet | 禁止 | 文本不同 | -78 |
@@ -162,6 +198,10 @@
 | reviewer-ui | default | 41 | 41 | 是 |
 | reviewer-frontend | default | 41 | 41 | 是 |
 | reviewer-backend | default | 41 | 41 | 是 |
+| reviewer-reader | default | 41 | 41 | 是 |
+| reviewer-security | default | 41 | 41 | 是 |
+| reviewer-qa | default | 41 | 41 | 是 |
+| reviewer-ops | default | 41 | 41 | 是 |
 | senior-sdet | policy | 1080 | 1080 | 是 |
 | speaker | policy | 1087 | 1087 | 是 |
 
