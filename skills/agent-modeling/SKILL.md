@@ -1,6 +1,6 @@
 ---
 name: agent-modeling
-description: 把 agent 卡面 markdown 拆成模型 JSON、再由确定性渲染回卡面的七阶建模流程；产出草稿模型与预览，不写 agents/。当用户要「给某席建模 / 把卡面拆成模型 / 从一句话生成 agent 草稿 / 校验模型等价」时使用。Do not use for 评测席卡质量（走 parliament）、起草规则（走 rule-writer）。
+description: 把 agent 卡面 markdown 拆成模型 JSON、再由确定性渲染回卡面的七阶建模流程；在分支上产出模型改动与预览，不写 agents/。当用户要「给某席建模 / 把卡面拆成模型 / 新增 agent / 校验模型等价」时使用。Do not use for 评测席卡质量（走 parliament）、起草规则（走 rule-writer）。
 ---
 
 # agent-modeling：卡面 ↔ 模型
@@ -11,7 +11,7 @@ description: 把 agent 卡面 markdown 拆成模型 JSON、再由确定性渲染
 
 - 用户给一份卡面/职责描述，要产出或修订模型 JSON。
 - 用户要对某个模型做等价校验（展开后是否与基线一致）或单卡渲染预览。
-- 用户要为 P4 的未建模席先出草稿。
+- 用户要为未建模的新席产出模型（在新分支上做）。
 
 **不触发**：评审席卡写得好不好（走 `parliament`）；写规则文件（走 `rule-writer`）；只改渲染器代码（直接改 `tools/docgen/models/agents/render/`）。
 
@@ -37,27 +37,27 @@ description: 把 agent 卡面 markdown 拆成模型 JSON、再由确定性渲染
 
 ```powershell
 # 以下命令在技能目录（含 scripts/ 的那一层）下执行
-# 校验单个模型：展开 + 类型 + 权限 + 标题；带 --ref 时追加等价比对
-node scripts/verify.mjs <model.json> [--ref <model.json>] [--shared <shared.json>]
+# 校验单个模型：展开 + 类型 + 权限 + 标题；--ref 追加等价比对；--allow-no-baseline 放行无基线草稿
+node scripts/verify.mjs <model.json> [--ref <model.json>] [--shared <shared.json>] [--allow-no-baseline]
 
-# 渲染单卡到 drafts/<seat>.md
+# 渲染单卡到系统临时目录（不入 git）；--out 可覆盖
 node scripts/render.mjs <model.json> [--out <dir>] [--shared <shared.json>]
 ```
 
-状态词：`EQUIVALENT` = 该席有 `_baseline` 且展开后与基线相等；`CHECKS_PASS` = 无基线可比的草稿只过了全部校验码；`FAIL` = 有码。`--shared` 会真正替换共享层参与展开与比对（可用于验证共享层改动的影响）。
+状态词：`EQUIVALENT` = 有 `_baseline` 且展开后与基线相等；`CHECKS_PASS` = 显式 `--allow-no-baseline` 时无基线只过校验码；`FAIL` = 有码。缺基线默认 exit 1（不静默降级）。`--shared` 会真正替换共享层参与展开与比对。
 
 退出码：`verify` 无码且（若给 `--ref`）等价 → 0，否则 1；`render` 成功 → 0，抛错 → 1。逐码含义与复现手法见 `references/checks.md`。
 
 ## 硬约束
 
-1. **只写 `drafts/`**：草稿模型与预览落 `drafts/`（该目录不进 git）；禁止写 `agents/**`。
+1. **变更走 git 分支，不建草稿区**：新建 / 批量新建 agent 一律开分支（如 `agent/<seat>`），在分支上直接改 `jsons/<seat>/index.json` 并登记 `SEAT_ORDER` + `SEAT_POLICY`；`verify` + `gate` + `npm run check` 全绿后合并。禁止写 `agents/**`；不设独立草稿目录。
 2. **不改引擎**：渲染/校验逻辑只有 `tools/docgen/models/agents/` 一份；发现要改，先改引擎再回到本流程。
 3. **不手写派生文本**：`outputFormat.checks[].text`、`checkCriteria.summary` 这类派生文本禁止手写，由 `observable` 派生（否则引擎报 `OUTPUT_TEXT_HANDWRITTEN` / `TitleDrift`）。
 
 ## 做完核对（缺一不合格）
 
 1. 跑 `verify.mjs`，首行含 `EQUIVALENT`，退出码 0。
-2. 跑 `render.mjs`，`drafts/<seat>.md` 生成且 `## ` 段顺序与现役卡一致。
+2. 跑 `render.mjs`，`preview.md` 生成且 `## ` 段顺序与现役卡一致。
 3. 若本席已建模，加 `--ref` 指向现模型，首行含 `REF_EQUIVALENT`。
 
 ## 参考文件

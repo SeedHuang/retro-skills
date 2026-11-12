@@ -27,5 +27,3 @@ tools/docgen-spike/.tmp-test/
 .screenshots/
 tmp/
 
-# ── agent-modeling 运行期草稿（P3）：可随时用 skill 重新生成 ──────────
-skills/agent-modeling/drafts/
