@@ -19,8 +19,8 @@ const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 // 2026-11-08：校验器实现已迁公共 CLI（`scs check observable`），本文件只保留**项目侧契约**
 // （数据 JSON / 规则文档 / 门禁接线 / 词表派生）；机制级用例在 skill-common-script 的 vitest 里。
 const CLI_ARGS = ['check', 'observable']
-const TERMS_FILE = join(REPO, 'tools', 'docgen', 'dsl', 'rules', 'vocab', 'observable-terms.json')
-const EXEMPT_FILE = join(REPO, 'tools', 'docgen', 'dsl', 'rules', 'vocab', 'observable-exempt.json')
+const TERMS_FILE = join(REPO, 'tools', 'docgen', 'models', 'rules', 'vocab', 'observable-terms.json')
+const EXEMPT_FILE = join(REPO, 'tools', 'docgen', 'models', 'rules', 'vocab', 'observable-exempt.json')
 const TC_FILE = join(REPO, 'docs', 'superpowers', 'specs', '2026-10-31-observable-criteria-rollout-design-testcase.md')
 const PRD = join(REPO, 'docs', 'prd', '20261031202331-observable-criteria-rollout', 'index.md')
 const TRIAGE = join(REPO, 'docs', 'reports', '2026-10-31-observable-s1-triage.md')
@@ -176,7 +176,7 @@ function arrayLiteralHits(dir, out = []) {
 
 function assertSingleCopy(paths) {
   assert.strictEqual(paths.length, 1, `同形数组必须恰 1 处，实得 ${paths.length}：${paths.join(' / ')}`)
-  assert.ok(paths[0].endsWith(join('tools', 'docgen', 'dsl', 'rules', 'vocab', 'observable-terms.json')), `唯一一处必须是 observable-terms.json，实得 ${paths[0]}`)
+  assert.ok(paths[0].endsWith(join('tools', 'docgen', 'models', 'rules', 'vocab', 'observable-terms.json')), `唯一一处必须是 observable-terms.json，实得 ${paths[0]}`)
 }
 
 // ── A 组：清单 JSON 约束（C-1～C-6） ─────────────────────────────────────
@@ -368,8 +368,8 @@ test('OCR-S1-TC-E03 package.json 入口值合规格且等价命令 exit 0', () =
 
   // 与门禁 ⑨ 段同源：check-all 必须使用同一组相对路径，避免入口与门禁各写一套
   const allSrc = readText(join(REPO, 'scripts', 'check-all.mjs'))
-  for (const v of ['tools/docgen/builders/rules', 'tools/docgen/dsl/rules',
-    'tools/docgen/dsl/rules/vocab/observable-terms.json']) {
+  for (const v of ['tools/docgen/builders/rules', 'tools/docgen/models/rules',
+    'tools/docgen/models/rules/vocab/observable-terms.json']) {
     assert.ok(crit.includes(v) && allSrc.includes(v), `门禁与入口的路径不一致：${v}`)
   }
   assert.strictEqual(cli(['--check']).status, 0)

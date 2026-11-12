@@ -9,7 +9,7 @@ import { spawnSync } from 'node:child_process'
 import { check, judge } from '../tools/docgen/builders/rules/schema.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const SRC = join(ROOT, 'tools', 'docgen', 'dsl', 'skills')
+const SRC = join(ROOT, 'tools', 'docgen', 'models', 'skills')
 const SCRIPT = join(ROOT, 'scripts', 'check-skill-criteria.mjs')
 const json = (p) => JSON.parse(readFileSync(p, 'utf8'))
 const clone = (x) => JSON.parse(JSON.stringify(x))

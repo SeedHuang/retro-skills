@@ -13,7 +13,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const REPO = resolve(__dirname, '..', '..', '..')          // skills/rule-inspector/scripts → 仓库根
 const TEMPLATE = join(__dirname, '..', 'assets', 'rule-edit-checklist-template.md')
 // 2026-11-09：评分实现已迁公共 CLI（spec R13）；本脚本只组装命令并解析 JSON
-const TERMS = join(REPO, 'tools', 'docgen', 'dsl', 'rules', 'vocab', 'observable-terms.json')
+const TERMS = join(REPO, 'tools', 'docgen', 'models', 'rules', 'vocab', 'observable-terms.json')
 const ANNOTATIONS = join(REPO, 'tools', 'quality', '.inspector-annotations.json')
 const scoreArgs = (repo, ruleName) => ['check', 'rules', '--root', repo, '--terms', TERMS, '--annotations', ANNOTATIONS,
   '--file', join(repo, ruleName), '--json']
@@ -112,7 +112,7 @@ export function renderESections(rules, scores) {
     const head = [
       `### E-${i + 1} · ${r.name}`,
       '',
-      `> 取证命令：\`scs check rules --root . --terms tools/docgen/dsl/rules/vocab/observable-terms.json --annotations tools/quality/.inspector-annotations.json --file ${r.name} --json\`；总分 **${s && !s.error ? `${s.total}/${s.max}（${s.level}）` : '取证失败'}**。`,
+      `> 取证命令：\`scs check rules --root . --terms tools/docgen/models/rules/vocab/observable-terms.json --annotations tools/quality/.inspector-annotations.json --file ${r.name} --json\`；总分 **${s && !s.error ? `${s.total}/${s.max}（${s.level}）` : '取证失败'}**。`,
       '',
       '| # | 检查项 | 判据（scs check rules 机械判定 · criteria 对应组） | 实际输出 | 确认执行 |',
       '|---|---|---|---|---|',

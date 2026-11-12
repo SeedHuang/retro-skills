@@ -47,7 +47,7 @@ test('删 rendered rule → gate DanglingBaselineEntry exit 2', () => {
 test('改数据不重生成 → 红；generate --apply 重生成后绿', () => {
   coldRepo({
     mutate: (copy) => {
-      const dataPath = join(copy, 'tools', 'docgen', 'dsl', 'rules', `${NAME}.json`)
+      const dataPath = join(copy, 'tools', 'docgen', 'models', 'rules', `${NAME}.json`)
       const d = JSON.parse(readFileSync(dataPath, 'utf8'))
       d.title = '改过的标题'
       writeFileSync(dataPath, JSON.stringify(d, null, 2) + '\n', 'utf8')

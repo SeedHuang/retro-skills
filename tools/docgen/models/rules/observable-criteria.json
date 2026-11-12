@@ -15,7 +15,7 @@
       "value": 0
     }
   ],
-  "residual": { "who": "reviewer-audit", "sample": 3, "fields": ["checkObservableExit"], "objectivePath": "已是脚本判定，无残余；词表扩充由 tools/docgen/dsl/rules/vocab/observable-terms.json 单一维护" },
+  "residual": { "who": "reviewer-audit", "sample": 3, "fields": ["checkObservableExit"], "objectivePath": "已是脚本判定，无残余；词表扩充由 tools/docgen/models/rules/vocab/observable-terms.json 单一维护" },
   "refs": ["skills/carrier-conventions/references/observable.md"],
   "landing": "check-observable 输出"
 }

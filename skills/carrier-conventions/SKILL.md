@@ -29,7 +29,7 @@ description: Use when 写或改 rule / skill / agent / references 的正文，�
 
 每个评价都要能被机器用一次退出码判死；判不死就改写成可判形态，或进豁免清单并写明「为什么只能这样写」。执行 = `scs check observable --check`，末行 `check-observable ok` 且 exit 0。
 
-六要素（范围 / 条件 / 动作 / 宾语 / 触发时机 / 验证）、豁免清单结构、正反例，全在 `references/observable.md`；词表与标记表唯一源 = `tools/docgen/dsl/rules/vocab/observable-terms.json`（本技能不复述任何词面）。
+六要素（范围 / 条件 / 动作 / 宾语 / 触发时机 / 验证）、豁免清单结构、正反例，全在 `references/observable.md`；词表与标记表唯一源 = `tools/docgen/models/rules/vocab/observable-terms.json`（本技能不复述任何词面）。
 
 ## 读 reference 必须接产出闭环
 

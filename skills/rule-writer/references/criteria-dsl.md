@@ -1,6 +1,6 @@
 # 判据引擎 rule DSL 细则（写入侧）
 
-> 适用：在 `tools/docgen/dsl/rules/` 下新建或修改 `<id>.json` + `<id>.testcase.json` 时。
+> 适用：在 `tools/docgen/models/rules/` 下新建或修改 `<id>.json` + `<id>.testcase.json` 时。
 > 设计源头：`docs/prd/20261105182104-rule-refactor/prd/stage-2b-spec.md`；本文只给可执行规则，不复制需求论证。
 
 ## 1 字段表

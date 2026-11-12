@@ -52,7 +52,7 @@ flowchart TB
     RI -->|按处方改正文| RW
 
     SI -.->|判据实现| G1[("scripts/check.mjs（①–⑦）<br/>+ carrier-conventions 目录语义")]
-    RI -.->|词表与评分口径| G2[("observable-terms.json<br/>tools/docgen/dsl/rules/vocab")]
+    RI -.->|词表与评分口径| G2[("observable-terms.json<br/>tools/docgen/models/rules/vocab")]
 
     style DW fill:#bbdefb,color:#0d47a1
     style PA fill:#bbdefb,color:#0d47a1
@@ -210,4 +210,4 @@ flowchart TB
 
 - **什么时候用**：要把 `agents/<seat>.md` 拆成模型 JSON、从一句职责描述生成 agent 草稿、或校验模型展开后是否与基线等价时。
 - **做什么**：七阶流程（归位 → 拆解 → 定义 → 判据化 → 重写 → 验证 → 收口）；缺口四元组、四型断点、四态终止；两个脚本：单模型校验与单卡渲染，草稿只写 `drafts/`。
-- **不做什么**：评审席卡质量（走 `parliament`）；起草规则（走 `rule-writer`）；改渲染器实现（直接改 `tools/agent-model/`）。
+- **不做什么**：评审席卡质量（走 `parliament`）；起草规则（走 `rule-writer`）；改渲染器实现（直接改 `tools/docgen/models/agents/`）。

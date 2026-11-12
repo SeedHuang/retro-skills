@@ -9,8 +9,8 @@ import { interpreters } from './interpreters.mjs'
 
 const DIR = dirname(fileURLToPath(import.meta.url))
 const REPO = resolve(DIR, '..', '..', '..', '..') // copy-aware：在副本里跑时 REPO = 副本根
-// 判据数据与构建器分居两地：json 在 dsl/rules（唯一数据源），引擎与投影在 builders/rules
-const DATA_REL_DIR = ['tools', 'docgen', 'dsl', 'rules']
+// 判据数据与构建器分居两地：json 在 models/rules（唯一数据源），引擎与投影在 builders/rules
+const DATA_REL_DIR = ['tools', 'docgen', 'models', 'rules']
 const strip = (t) => t.replace(/^\uFEFF/, '')
 const RULE_PROJECTION = () => interpreters.find((i) => i.id === 'rule')
 

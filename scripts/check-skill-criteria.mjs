@@ -1,5 +1,5 @@
 // skill 判据检查器：复用判据引擎的 schema / judge，不复制判定语义。
-// 数据：tools/docgen/dsl/skills/<skill>.json + <skill>.testcase.json
+// 数据：tools/docgen/models/skills/<skill>.json + <skill>.testcase.json
 // 输出：首行 `skill-criteria N 条 / 绿 M / 红 K`；末行 `skill-criteria ok`；红档 exit 1。
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
@@ -9,7 +9,7 @@ import { check, checkTestcase, judge } from '../tools/docgen/builders/rules/sche
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const SKILLS_DIR = process.env.SKILL_CRITERIA_DIR
   ? resolve(process.env.SKILL_CRITERIA_DIR)
-  : join(ROOT, 'tools', 'docgen', 'dsl', 'skills')
+  : join(ROOT, 'tools', 'docgen', 'models', 'skills')
 const strip = (t) => t.replace(/^\uFEFF/, '')
 const loadJson = (p) => JSON.parse(strip(readFileSync(p, 'utf8')))
 
@@ -21,7 +21,7 @@ let red = 0
 
 if (!existsSync(SKILLS_DIR)) {
   console.log('skill-criteria 0 条 / 绿 0 / 红 0')
-  console.error(`[skill-criteria] tools/docgen/dsl/skills SkillDirMissing：目录不存在：${SKILLS_DIR}`)
+  console.error(`[skill-criteria] tools/docgen/models/skills SkillDirMissing：目录不存在：${SKILLS_DIR}`)
   console.log('skill-criteria fail')
   process.exit(1)
 }

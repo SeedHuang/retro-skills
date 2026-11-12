@@ -8,8 +8,8 @@ import { interpreters } from './interpreters.mjs'
 import { listRuleIds, writeRule } from './rules.mjs'
 
 const DIR = path.dirname(fileURLToPath(import.meta.url))
-// 数据与投影分目录：判据 json 在 dsl/rules（唯一数据源），渲染投影留在构建器目录
-const DATA_DIR = path.join(DIR, '..', '..', 'dsl', 'rules')
+// 数据与投影分目录：判据 json 在 models/rules（唯一数据源），渲染投影留在构建器目录
+const DATA_DIR = path.join(DIR, '..', '..', 'models', 'rules')
 const errors = []
 // PowerShell 5.1 的 UTF8 写文件带 BOM，JSON.parse 会挂——读时剥掉
 const loadJson = (file) => JSON.parse(readFileSync(file, 'utf8').replace(/^\uFEFF/, ''))
