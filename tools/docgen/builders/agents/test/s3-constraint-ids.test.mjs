@@ -273,7 +273,8 @@ test('S3-TC-E01 gate baseline 全绿且无 Mismatch', () => {
   assert.equal(/Mismatch:/.test(r.stdout + r.stderr), false)
 })
 
-test('S3-TC-E02 check 全绿（一次性：套内不递归跑 npm run check）', { skip: true }, () => {})
+// E02（npm run check 全绿）是施工期一次性实跑：套内再跑会自递归，故不设常驻用例——
+// 结论记在 `.session/reviews/2026-11-12-s3-constraint-ids/impact-sheet.md` 与提交说明里。
 
 test('S3-TC-E03 scope-sweep 绿', () => {
   const r = execFileSync('node', ['scripts/scope-sweep.mjs', '--check'], { encoding: 'utf8' })
