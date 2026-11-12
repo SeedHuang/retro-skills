@@ -22,10 +22,15 @@ const SEATS_DIR = 'tools/docgen/dsl/agents/seats'
 const REGISTRY = 'tools/docgen/builders/agents/policy/definitions/constraints.mjs'
 const seatFiles = () => readdirSync(SEATS_DIR).filter((f) => f.endsWith('.json'))
 const seatJSON = (f) => JSON.parse(readFileSync(join(SEATS_DIR, f), 'utf8'))
-const BASE = (() => {
-  if (process.env.S3_BASE) return process.env.S3_BASE
-  return existsSync('.session/s3-base.txt') ? readFileSync('.session/s3-base.txt', 'utf8').trim() : ''
+// 迁移前提交 = 最早引入 `"constraints"` 的提交的父提交（机械推导，不依赖外部环境变量/临时文件）。
+// 这样 A03–A05 永久可跑：即便后续新增提交改了别处，`-S` 仍指向 S3 迁移那一笔。
+const MIG_COMMIT = (() => {
+  try {
+    return execFileSync('git', ['log', '--format=%H', '--reverse', '-S', '"constraints"', '--', SEATS_DIR], { encoding: 'utf8' })
+      .trim().split('\n').filter(Boolean)[0] || ''
+  } catch { return '' }
 })()
+const BASE = MIG_COMMIT ? `${MIG_COMMIT}^` : ''
 const gitShow = (rel) => execFileSync('git', ['show', `${BASE}:${rel}`], { encoding: 'utf8', maxBuffer: 1e8 })
 const sha = (buf) => createHash('sha256').update(buf).digest('hex').toUpperCase()
 // 数据层副本（B01–B03）：只复制 dsl/agents，够 loader 读盘
@@ -73,7 +78,8 @@ test('S3-TC-A02 登记表 id 合规、文本唯一、源码键数一致', () => 
   assert.equal(srcKeys.length, ids.length, '构造前提：源码键数 = 导出键数（正则只作前提，不作判据）')
 })
 
-test('S3-TC-A03 迁移逐字：新文本 = $BASE 旧值（含 @ 展开）', { skip: !BASE }, () => {
+test('S3-TC-A03 迁移逐字：新文本 = $BASE 旧值（含 @ 展开）', () => {
+  assert.ok(BASE, '构造前提：必须能定位 S3 迁移提交')
   const shared = JSON.parse(gitShow('tools/docgen/dsl/agents/shared.json'))
   const bad = []
   for (const f of seatFiles()) {
@@ -88,7 +94,8 @@ test('S3-TC-A03 迁移逐字：新文本 = $BASE 旧值（含 @ 展开）', { sk
   assert.deepEqual(bad, [], '卡面文本必须逐字不变（I-4）')
 })
 
-test('S3-TC-A04 shared.json 键集 = $BASE 键集 − dutyConstraintDefault；席内零引用', { skip: !BASE }, () => {
+test('S3-TC-A04 shared.json 键集 = $BASE 键集 − dutyConstraintDefault；席内零引用', () => {
+  assert.ok(BASE, '构造前提：必须能定位 S3 迁移提交')
   const now = Object.keys(JSON.parse(readFileSync('tools/docgen/dsl/agents/shared.json', 'utf8'))).sort()
   const before = Object.keys(JSON.parse(gitShow('tools/docgen/dsl/agents/shared.json'))).sort()
   assert.deepEqual(now, before.filter((k) => k !== 'dutyConstraintDefault'))
@@ -96,7 +103,8 @@ test('S3-TC-A04 shared.json 键集 = $BASE 键集 − dutyConstraintDefault；�
   assert.deepEqual(refs, [])
 })
 
-test('S3-TC-A05 原默认席恰为 ["duty.default"]；全席 id 可解析', { skip: !BASE }, () => {
+test('S3-TC-A05 原默认席恰为 ["duty.default"]；全席 id 可解析', () => {
+  assert.ok(BASE, '构造前提：必须能定位 S3 迁移提交')
   const bad = []
   for (const f of seatFiles()) {
     const old = String((JSON.parse(gitShow(`${SEATS_DIR}/${f}`)).card.duty || {}).constraint || '')
@@ -196,14 +204,8 @@ test('S3-TC-C01 约束行 = 登记文本按序连接；duty 键集只含派生�
   assert.deepEqual(extra, [])
 })
 
-test('S3-TC-C02 迁移前后 18 卡逐字节相同（一次性施工校验）', { skip: !BASE }, () => {
-  const changed = []
-  for (const f of readdirSync('agents').filter((x) => x.endsWith('.md'))) {
-    const old = execFileSync('git', ['show', `${BASE}:agents/${f}`], { maxBuffer: 1e8 })
-    if (!old.equals(readFileSync(`agents/${f}`))) changed.push(f)
-  }
-  assert.deepEqual(changed, [])
-})
+// C02（迁移前后 18 卡逐字节相同）是**施工期一次性校验**：S3 迁移提交 `292620d` 当次已实跑全等，
+// 证据落在 impact-sheet 与提交说明；不设常驻用例——后续合法改卡会让它长期假红，替代锚是 C03（evidence 哈希）。
 
 test('S3-TC-C03 卡哈希 = evidence.renderSha256', () => {
   const bad = []
