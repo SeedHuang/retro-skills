@@ -7,7 +7,9 @@
     "duty": {
       "trigger": "",
       "action": "对任意交付文档做成本与收益视角评审，逐条给出判定与理由，结论写回问题卡",
-      "constraint": "@dutyConstraintDefault"
+      "constraints": [
+        "duty.default"
+      ]
     },
     "scenes": [],
     "signals": [],

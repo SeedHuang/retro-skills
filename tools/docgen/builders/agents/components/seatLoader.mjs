@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { toolsForSeat, boundaryBySeat } from './patternRegistry.mjs'
 import { CARD_KEYS } from './cardKeys.mjs'
 import { exitCodeFor } from './validateAgentData.mjs'
+import { constraints } from '../policy/definitions/constraints.mjs'
 
 // 席序（= 迁移前 `agentData` 字面的人工策划序；`docs/agents/README.md` 的行序即此序）。本常量只表达**顺序**，
 // 席位名单的唯一源仍是 `data/seats/*.json`：两者在 `loadSeatData` 读盘前双向比对，不等即 `InvalidInputPath`。
@@ -102,6 +103,19 @@ export function loadSeatData(dir = dataDir()) {
     const dc = s.card.duty.categories
     if (Array.isArray(dc) ? dc.length > 0 : !blank(dc)) fail('DutyCategoryMisplaced', { name: raw.name, key: 'duty.categories' })
     s.card.duty.categories = s.card.categories.map((c) => c.label)
+    // S3（2026-11-12 spec §3 S3-D1/D2）：`duty.constraint` 整句退场，席数据只写 id 列表，文本由登记表派生。
+    // 三个拒载条件 → 三个码（唯一发射点 = 本 loader；只进 `EXIT`，不进 `CARD_MODEL_CODES`）：
+    //   · 白名单外子键（含旧字段 `constraint`）→ `CONSTRAINT_NOT_IDS`（§9-G2：两形态并一码）
+    //   · 非数组 / 空数组 → `CONSTRAINT_LIST_EMPTY`
+    //   · id 不在登记表 → `CONSTRAINT_ID_UNKNOWN`
+    // 派生值仍写回 `duty.constraint`：渲染器与散文探针扫描面都不改，卡面因此零字节变化（I-4）。
+    const duty = s.card.duty
+    const dutyExtra = Object.keys(duty).filter((k) => !['trigger', 'categories', 'action', 'constraints'].includes(k))
+    if (dutyExtra.length) fail('CONSTRAINT_NOT_IDS', { name: raw.name, extra: dutyExtra })
+    const dcIds = duty.constraints
+    if (!Array.isArray(dcIds) || dcIds.length === 0) fail('CONSTRAINT_LIST_EMPTY', { name: raw.name })
+    for (const id of dcIds) if (!Object.hasOwn(constraints, id)) fail('CONSTRAINT_ID_UNKNOWN', { name: raw.name, id })
+    duty.constraint = dcIds.map((id) => constraints[id].text).join('；')
     // 席文件 card 的键集：恰等 8 键（= CARD_KEYS 去派生四键）；派生四键写了就拒载（spec §10.2.5 第 6 步）
     // `missing` / `extra` 两个字段必须分开给：TC-014 要点名缺的那个键，TC-015 要点名多出来的那个键
     const keys = Object.keys(s.card || {})

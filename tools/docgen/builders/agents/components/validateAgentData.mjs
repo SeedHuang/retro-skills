@@ -6,6 +6,8 @@ import { patternRegistry, tierOf, toolsForSeat } from './patternRegistry.mjs';
 // S4（spec §10-D12 / :225）：S1 的 36 个脚本码 + 3 个合并码归 exit 1——从 S1 码表**派生**，不抄第二份名单。
 // `WeakReason` 是 manual 码、不在 `CARD_MODEL_CODES`（S1 V-5），故天然不入表（`S4-TC-F10` 正断言「未知错误码」）。
 import { CARD_MODEL_CODES } from '../card-model/validateCardModel.mjs';
+import { WRITE_DENIAL_PHRASES } from '../card-model/vocab/permission-claims.mjs';
+import { constraints } from '../policy/definitions/constraints.mjs';
 import { MERGE_CODES } from '../card-model/merge.mjs';
 
 const S1_EXIT1 = [...Object.keys(CARD_MODEL_CODES), ...Object.values(MERGE_CODES)];
@@ -24,6 +26,9 @@ const EXIT = {
     // S-B `duty.categories` 单源（spec §11.2.4）：唯一发射点 = `components/seatLoader.mjs`（同 S-A 四码）；
     // 只进本表，不进 `CARD_MODEL_CODES`（仍 36 码）。判据不看进程退出码 → 本登记是 `exitCodeFor` 可取值的前提。
     'DutyCategoryMisplaced',
+    // S3 约束登记表四码（2026-11-12 spec §3 S3-D4 / §9-G1）：前三码唯一发射点 = `components/seatLoader.mjs`，
+    // `CONSTRAINT_TEXT_PERMISSION` 在本文件（登记表全表扫）；四码只进本表，不进 `CARD_MODEL_CODES`（仍 36 码）。
+    'CONSTRAINT_NOT_IDS', 'CONSTRAINT_LIST_EMPTY', 'CONSTRAINT_ID_UNKNOWN', 'CONSTRAINT_TEXT_PERMISSION',
     // S6 配置校验五码（spec §7）：唯一发射点 = `components/validatePolicy.mjs`；
     // 第六码 `RenderNotEquivalent` 由施工期断言发出、**不进本表**（CLI 不引入）
     'UnknownPolicyRef', 'LiteralInConfig', 'SeatNameInDefinition', 'ForbiddenGroupGranted',
@@ -49,6 +54,13 @@ function fail(code, fields = {}) { const e = new Error(code); e.code = code; Obj
 const NAME_RE = /^[a-z][a-z0-9-]{0,49}$/;
 
 export function validateAgentData(data, table) {
+  // S3（spec §3 S3-D4 / §9-G5）：登记表是唯一文本面，**全表**扫写权限全称否定——未使用条目也会被将来引用，
+  // 故不按「本席实际引用」缩小扫描面。文本层判据只此一处，登记表新增条目自动纳入。
+  for (const [id, entry] of Object.entries(constraints)) {
+    for (const w of WRITE_DENIAL_PHRASES) {
+      if (String(entry && entry.text ? entry.text : '').includes(w)) fail('CONSTRAINT_TEXT_PERMISSION', { id, phrase: w });
+    }
+  }
   // 断言 1：name 合法 + 唯一
   const seen = new Set();
   for (const a of data) {

@@ -7,7 +7,9 @@
     "duty": {
       "trigger": "",
       "action": "对 rule、skill、agents、含 AI 指令的文档做 AI 工程视角评审，逐条给出判定与理由，结论写回问题卡",
-      "constraint": "@dutyConstraintDefault"
+      "constraints": [
+        "duty.default"
+      ]
     },
     "scenes": [],
     "signals": [],

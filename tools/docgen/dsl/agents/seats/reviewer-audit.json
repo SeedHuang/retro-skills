@@ -7,7 +7,9 @@
     "duty": {
       "trigger": "",
       "action": "对评审过程与交付物做过程标准核对，逐条给出判定与理由，结论写回审计表。",
-      "constraint": "@dutyConstraintDefault"
+      "constraints": [
+        "duty.default"
+      ]
     },
     "scenes": [],
     "signals": [],

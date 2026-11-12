@@ -626,7 +626,8 @@ test('S5-TC-C08 只生成一席草稿 → 旁席 Mismatch 挡住 replace', () =>
     // S4 Task 7：reviewer-audit 的渲染输入已是 `card`（旧 identity/fixedList 已删）→ 漂移必须改 card 字段
     patchFile(dst, 'tools/docgen/dsl/agents/seats/reviewer-audit.json', '结论写回审计表', '结论写回审计表（B）');
     // S4 迁移（Task 5）：detective-observer 的渲染输入已是 `card`（不再读 fixedList）→ 旁席漂移必须改 card 字段
-    patchFile(dst, 'tools/docgen/dsl/agents/seats/detective-observer.json', '只记录不裁决；观察记录原文进最终报告', '只记录不裁决（B）；观察记录原文进最终报告');
+    // S3（2026-11-12）：detective-observer 的约束文本已进登记表，旁席漂移改为改登记条目
+    patchFile(dst, 'tools/docgen/builders/agents/policy/definitions/constraints.mjs', '只记录不裁决；观察记录原文进最终报告', '只记录不裁决（B）；观察记录原文进最终报告');
     assert.equal(runCli(dst, ['draft', '--kind', 'agent', '--name', 'reviewer-audit']).status, 0);
     const draftsDir = join(dst, '.drafts');
     const draftPath = join(draftsDir, readdirSync(draftsDir).find((f) => f.startsWith('reviewer-audit--')));

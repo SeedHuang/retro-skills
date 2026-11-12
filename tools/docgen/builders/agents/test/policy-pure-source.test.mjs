@@ -1111,8 +1111,8 @@ test('S6-TC-E07 定义层单源：policy/ 下无第二份边界/清单常量文�
   assert.equal(ls.status, 0, ls.stderr);
   const files = ls.stdout.trim().split('\n').map((f) => f.replace('tools/docgen/builders/agents/policy/', ''));
   assert.deepEqual(files.sort(), ['definitions/artifacts.mjs','definitions/capabilities.mjs',
-    'definitions/commands.mjs','definitions/paths.mjs','definitions/seats.mjs','definitions/tiers.mjs',
-    'definitions/writeScopes.mjs','seat-policy.mjs']);
+    'definitions/commands.mjs','definitions/constraints.mjs','definitions/paths.mjs','definitions/seats.mjs',
+    'definitions/tiers.mjs','definitions/writeScopes.mjs','seat-policy.mjs']);
   const marks = ['只允许写','逐项点名','命令默认拒绝'];
   for (const f of files) {
     const t = readFileSync(`tools/docgen/builders/agents/policy/${f}`, 'utf8');

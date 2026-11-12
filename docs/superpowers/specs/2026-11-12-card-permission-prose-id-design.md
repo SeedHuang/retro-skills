@@ -74,6 +74,8 @@ export const constraints = {
 约束：<ids.map(id => constraints[id].text).join('；')>
 ```
 
+**施工期裁决（2026-11-12）**：派生点放在 `components/seatLoader.mjs`（与 `duty.trigger` / `duty.categories` 同法）——loader 读 `duty.constraints` 查表、把结果写回 `duty.constraint`；渲染器与散文探针扫描面（`SCAN_FIELDS` 的历史键名 `duty.constraint`）都不改，卡面因此逐字节不变。等价性由 I-1 的判据守住（`S3-TC-C01` 断言「派生文本 = 按序连接」，`C04` 断言多 id 顺序）。
+
 禁止席级拼接模板串、禁止在 `seat` 上再加第二个自由文本槽。`CARD_KEYS`/深校验同步：`duty` 下只允许 `trigger? / action / constraints`。
 
 ### S3-D4 校验码（新增 4 个）

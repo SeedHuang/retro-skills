@@ -676,14 +676,14 @@ test('SC-TC-32 动作行不写三态词：英文与中文都不许（注入即�
   }
 })
 
-test('SC-TC-43 shared.json.hostTerm === 议长（唯一写死处）+ 键数 4 + sa-data 回归', () => {
+test('SC-TC-43 shared.json.hostTerm === 议长（唯一写死处）+ 键数 3 + sa-data 回归', () => {
   const shared = JSON.parse(R(join(REPO, 'tools/docgen/dsl/agents/shared.json')))
   assert.equal(shared.hostTerm, '议长')
-  assert.equal(Object.keys(shared).length, 4)
-  assert.deepEqual(Object.keys(shared).sort(), ['cardRationaleHead', 'cardRationaleTail', 'dutyConstraintDefault', 'hostTerm'])
+  assert.equal(Object.keys(shared).length, 3)
+  assert.deepEqual(Object.keys(shared).sort(), ['cardRationaleHead', 'cardRationaleTail', 'hostTerm'])
   assert.equal(countWord(R(join(REPO, 'tools/docgen/dsl/agents/shared.json')), '议长'), 1, '同文件不得出现第二份字面')
   const sa = runTest(['--test-name-pattern', 'TC-001', 'tools/docgen/builders/agents/test/sa-data-layer.test.mjs'])
-  assert.equal(sa.code, 0, `TC-001（shared.json 键数已改 4）必须绿：${sa.out.slice(-400)}`)
+  assert.equal(sa.code, 0, `TC-001（shared.json 键数已改 3）必须绿：${sa.out.slice(-400)}`)
 })
 
 test('SC-TC-44 席位数据「主持人」字面 0 次（常驻）；${@hostTerm} 18 次（一次性档）', () => {

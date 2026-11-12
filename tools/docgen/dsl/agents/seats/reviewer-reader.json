@@ -7,7 +7,9 @@
     "duty": {
       "trigger": "",
       "action": "对描述性、记录型、任意文档做读者视角评审，逐条给出判定与理由，结论写回问题卡",
-      "constraint": "@dutyConstraintDefault"
+      "constraints": [
+        "duty.default"
+      ]
     },
     "scenes": [],
     "signals": [],

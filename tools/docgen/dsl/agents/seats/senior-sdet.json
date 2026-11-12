@@ -7,7 +7,9 @@
     "duty": {
       "trigger": "",
       "action": "对 PRD、spec 做测试设计并编写用例，逐条给出覆盖与判据，结论写回 testcase 文件",
-      "constraint": "只写本次 spec 同目录的 testcase 与测试设计文档；业务代码、spec、rule、skill、agent 只读；越出边界的动作只记录，不自行处置"
+      "constraints": [
+        "duty.test-design"
+      ]
     },
     "scenes": [],
     "signals": [],

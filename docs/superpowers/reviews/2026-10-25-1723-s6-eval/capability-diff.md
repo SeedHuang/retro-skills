@@ -68,3 +68,9 @@
 | agents/evidence-reader.md | 边界「禁止写」句改由 `{host}` 占位替换（称谓 = 议会程序账本席），并恢复「段二 / 段三由…从责任席的产出转录」半句 | 复核问题 2：席级不再整句复制 `review.ledger.hostRule`，共享句只有一份文本 |
 | agents/speaker.md | `不得填写两张审计表` → `不得替他席填写两张审计表（两张审计表只由责任席填写）` | 复核问题 3：恢复「不得代填」原语义，不再为绕开散文探针 `代填` 而收紧规则 |
 
+## 四、S3 约束登记表：`duty.constraint` → `duty.constraints[]`（2026-11-12；G01 记账位）
+
+| 面 | 差异 | 说明 |
+|---|---|---|
+| agents/ 全席卡 | **卡面 0 变化** | 18 席 `duty.constraint` 改登记 id 列表，文本由 `policy/definitions/constraints.mjs` 查表派生后仍写回 `duty.constraint`；渲染输出逐字节不变——C02 用 `git show $BASE:agents/*.md` 的 Buffer 比对，C03 用 `fixtures/*.evidence.json` 的 `renderSha256` 交叉核对，两侧均全等，故本批**未重出任何卡**。 |
+

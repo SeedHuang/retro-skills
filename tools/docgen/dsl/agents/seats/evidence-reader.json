@@ -7,7 +7,9 @@
     "duty": {
       "trigger": "",
       "action": "对长文（对话记录、评审账、规范原文）做取证通读，逐条给出原文与行号，结论写回事实摘要",
-      "constraint": "取证通读：不出观点、不出问题卡、不参与评审、不判技术对错；只交可核对的原文与行号"
+      "constraints": [
+        "duty.evidence"
+      ]
     },
     "scenes": [],
     "signals": [],

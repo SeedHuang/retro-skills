@@ -7,7 +7,9 @@
     "duty": {
       "trigger": "",
       "action": "对每轮答辩记录做行为核实，逐条写出对象、行为类型与原文引句，结论写回观察记录",
-      "constraint": "只记录不裁决；观察记录原文进最终报告，不得删改；每条记录必须引用真实卡号"
+      "constraints": [
+        "duty.observe"
+      ]
     },
     "scenes": [],
     "signals": [

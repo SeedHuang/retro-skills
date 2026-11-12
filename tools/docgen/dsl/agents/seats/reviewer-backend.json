@@ -7,7 +7,9 @@
     "duty": {
       "trigger": "",
       "action": "对 spec、plan、技术方案做后端视角评审，逐条给出判定与理由，结论写回问题卡",
-      "constraint": "@dutyConstraintDefault"
+      "constraints": [
+        "duty.default"
+      ]
     },
     "scenes": [],
     "signals": [],

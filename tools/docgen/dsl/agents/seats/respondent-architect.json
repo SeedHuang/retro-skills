@@ -7,7 +7,9 @@
     "duty": {
       "trigger": "",
       "action": "按项目技术栈分方向核实问题卡的证据与结论，汇总答辩方各席核实结果成统一口径，逐条写回答辩记录",
-      "constraint": "只核实与汇总，不改代码、不写评审结论；越出边界的动作只记录，不自行处置"
+      "constraints": [
+        "duty.arch-defense"
+      ]
     },
     "scenes": [],
     "signals": [],

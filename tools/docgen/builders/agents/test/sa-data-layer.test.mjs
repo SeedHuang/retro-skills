@@ -45,7 +45,7 @@ test('TC-001 数据源按席拆成 data/seats/<seat>.json（一席一文件）+ 
     .map((d) => d.name.replace(/\.json$/, '')).sort()
   const shared = JSON.parse(readFileSync(`${DATA}/shared.json`, 'utf8'))
   assert.deepEqual(Object.keys(shared).sort(),
-    ['cardRationaleHead', 'cardRationaleTail', 'dutyConstraintDefault', 'hostTerm'], 'shared.json 恰 4 键（S-C 加 hostTerm）')
+    ['cardRationaleHead', 'cardRationaleTail', 'hostTerm'], 'shared.json 恰 3 键（S3 删 dutyConstraintDefault）')
   // 席名与 agentData 逐字相等（旧入口仍在，故可就地比对）；席数一律派生，不写席位数字面量
   // （`dev-workflow-counts.test.mjs` 的 `counterProbes` 会扫 `tools/docgen/builders/agents/test/*.test.mjs` 的 assert 行）
   return import('../components/agentData.mjs').then(({ agentData }) => {
@@ -545,11 +545,11 @@ test('TC-013（REFS 面）shared 侧嵌套 / seat 侧整值+插值混用 → 两
 
 test('TC-016（REFS 面）共享值空串 → EmptySharedValue exit 1 且点名键', () => {
   withRepoCopy((dst) => {
-    rewrite(DATA_OF(dst), 'shared.json', (j) => { j.dutyConstraintDefault = '' })
+    rewrite(DATA_OF(dst), 'shared.json', (j) => { j.cardRationaleTail = '' })
     const r = REFS(dst)
     assert.equal(r.status, 1, `REFS 必须 exit 1（实得 ${r.status}）：${r.stdout}${r.stderr}`)
     assert.match(r.stdout, /EmptySharedValue/, `输出必须点空值码：${r.stdout}`)
-    assert.match(r.stdout, /dutyConstraintDefault/, `输出必须点键名：${r.stdout}`)
+    assert.match(r.stdout, /cardRationaleTail/, `输出必须点键名：${r.stdout}`)
   })
 })
 
