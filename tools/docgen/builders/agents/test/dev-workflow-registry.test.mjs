@@ -6,7 +6,7 @@ import { writeFileSync, mkdtempSync, rmSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
-import { listSeats } from '../../../../agent-model/source.mjs';
+import { listSeats } from '../../../models/agents/source.mjs';
 import { readState } from '../state.mjs';
 import { readAnnotations, checkSemantic } from '../../../../execution-matrix/check-agent.mjs';
 import { listSkillDirs } from '../../../../../scripts/skill-dir.mjs';

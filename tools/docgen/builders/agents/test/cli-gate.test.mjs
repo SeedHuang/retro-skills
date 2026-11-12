@@ -65,8 +65,8 @@ test('字节反例：副本仓注入一字节 → generate 判漂移 exit 1（�
   const dst = mkdtempSync(join(tmpdir(), 'dg-copy-'));
   try {
     cpSync('tools/docgen', join(dst, 'tools/docgen'), { recursive: true });
-    // P5：模型数据源在 tools/agent-model（gate / 渲染 / 席列表都从这里读），副本必须一起带
-    cpSync('tools/agent-model', join(dst, 'tools/agent-model'), { recursive: true });
+    // P5：模型数据源在 tools/docgen/models/agents（gate / 渲染 / 席列表都从这里读）；
+    // 55 行前已 cpSync('tools/docgen')，引擎随该目录一并带过去，不再单独拷贝。
     // cli.mjs 的 replace/diff 依赖 execution-matrix（SEMANTIC_KEYS / checkStruct / readAnnotations），副本要一起带
     cpSync('tools/execution-matrix', join(dst, 'tools/execution-matrix'), { recursive: true });
     cpSync('tools/quality', join(dst, 'tools/quality'), { recursive: true }); // S1 词表单源（vocab/* 在 import 时读）

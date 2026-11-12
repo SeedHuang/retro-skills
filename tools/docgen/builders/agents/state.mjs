@@ -1,7 +1,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { listSeats } from '../../../agent-model/source.mjs';
+import { listSeats } from '../../models/agents/source.mjs';
 import { writeFileAtomic } from './atomicWrite.mjs';
 
 const ROOT = dirname(fileURLToPath(import.meta.url));

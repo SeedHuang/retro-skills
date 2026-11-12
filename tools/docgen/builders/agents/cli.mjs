@@ -6,7 +6,7 @@ import { createHash } from 'node:crypto';
 import { join, resolve, dirname, relative, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
-import { listSeats, isSeat, renderSeatText, modelWithShared, collectModelFindings } from '../../../agent-model/source.mjs';
+import { listSeats, isSeat, renderSeatText, modelWithShared, collectModelFindings } from '../../models/agents/source.mjs';
 import { BASELINE_RULES, agentPaths, renderBaseline } from './components/baseline.mjs';
 import { compareBuffers, checkEnvironment } from './components/compare.mjs';
 import { renderByName } from './components/renderByName.mjs';

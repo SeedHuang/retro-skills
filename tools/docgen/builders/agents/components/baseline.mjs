@@ -4,7 +4,7 @@
 // 阶段 2（2026-11-05）：触发声明 `rules/evidence-before-conclusion.md` 上线，保留集 = 1 条
 // 阶段 2b（2026-11-06）：`anchor-forms` 与 evidence 锚义务重复，已删除现仓判据与发布物，保留集仍 = 1 条
 // （PRD `docs/prd/20261105182104-rule-refactor/prd/stage-2-new-mode-pilot.md` §1 步骤 1–2）
-import { listSeats } from '../../../../agent-model/source.mjs';
+import { listSeats } from '../../../models/agents/source.mjs';
 
 export const BASELINE_RULES = ['rules/evidence-before-conclusion.md', 'rules/title-not-stronger-than-criterion.md'];
 

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { renderBaseline, BASELINE_RULES, agentPaths } from '../components/baseline.mjs';
-import { modelWithShared, renderSeatText } from '../../../../agent-model/source.mjs';
+import { modelWithShared, renderSeatText } from '../../../models/agents/source.mjs';
 
 const CLI = 'tools/docgen/builders/agents/cli.mjs';
 const run = (args) => spawnSync(process.execPath, [CLI, ...args], { encoding: 'utf8', env: { ...process.env, DOCGEN_DRAFTS_DIR: '.tmp-test/drafts' } });

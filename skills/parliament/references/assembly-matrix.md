@@ -28,4 +28,4 @@
 
 ## 自扩展（加席）
 
-复制现有模型数据（`tools/agent-model/models/<席>-model.json` + `_shared-model.json` 的按需共享块），并把新席加入 `tools/agent-model/source.mjs` 的 `SEAT_ORDER` → 跑 `node tools/docgen/builders/agents/cli.mjs generate --kind agent --name <新席>` 产出渲染 → 走草稿 → 确认 → 替换；**禁止手改 `agents/*.md`**。
+复制现有模型数据（`tools/docgen/models/agents/jsons/<席>/index.json` + `jsons/_shared.json` 的按需共享块），并把新席加入 `tools/docgen/models/agents/source.mjs` 的 `SEAT_ORDER` → 跑 `node tools/docgen/builders/agents/cli.mjs generate --kind agent --name <新席>` 产出渲染 → 走草稿 → 确认 → 替换；**禁止手改 `agents/*.md`**。

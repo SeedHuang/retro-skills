@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
-import { listSeats, collectModelFindings } from '../../../../agent-model/source.mjs';
+import { listSeats, collectModelFindings } from '../../../models/agents/source.mjs';
 
 test('check-all.mjs：gate 调用已切到 tools/docgen/builders/agents/cli.mjs gate', () => {
   const src = readFileSync('scripts/check-all.mjs', 'utf8');

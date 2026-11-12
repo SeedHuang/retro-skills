@@ -20,7 +20,7 @@ import { checkAgentFile } from '../tools/execution-matrix/check-agent.mjs'
 // docgen 状态（哪些席已由生成器替换）——A 组检查的覆盖集从这里现算，不写死试点席
 import { readState, statePath } from '../tools/docgen/builders/agents/state.mjs'
 // 名字集来源（C9 的 ⊇ 断言的另一头）：与 baseline / gate / check-agents 同一份模型席列表
-import { listSeats } from '../tools/agent-model/source.mjs'
+import { listSeats } from '../tools/docgen/models/agents/source.mjs'
 import { checkSharedChanges } from '../tools/execution-matrix/shared-changes/check-shared-changes.mjs'
 import { checkPatternTable } from '../tools/execution-matrix/check-pattern-table.mjs'
 import { splitRow, fenceMask } from '../tools/execution-matrix/markdown-rows.mjs'
@@ -28,7 +28,7 @@ import { splitRow, fenceMask } from '../tools/execution-matrix/markdown-rows.mjs
 import { runObservationGate, formatGateLine } from '../tools/observation-check/gate-run.mjs'
 import { EXEMPT_CARDS, EXPIRY_EVENT, EXPIRY_LANDED, disposeCardFindings } from '../tools/observation-check/card-exempt.mjs'
 // 卡面 findings 实算入口（K-8/K-9 接线）：逐席过模型语义校验，本文件不另写一份
-import { collectModelFindings } from '../tools/agent-model/source.mjs'
+import { collectModelFindings } from '../tools/docgen/models/agents/source.mjs'
 import { SKIP_ALLOWLIST } from './test-skip-allowlist.mjs'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -479,7 +479,7 @@ if (bypass) {
 // 计数单源 = 子命令的 `--json`（本段不重算、不解析文本）；本段**不走旁路开关**
 // （旁路只跳 ⑥，见上方 `:51-56`；不得把本段接进旁路分支）。
 // ─────────────────────────────────────────────────────────────────────────────
-const obsRun = spawnSync('scs check observable --check --json --terms tools/docgen/dsl/rules/vocab/observable-terms.json --exempt tools/docgen/dsl/rules/vocab/observable-exempt.json', { cwd: root, encoding: 'utf8', shell: true })
+const obsRun = spawnSync('scs check observable --check --json --terms tools/docgen/models/rules/vocab/observable-terms.json --exempt tools/docgen/models/rules/vocab/observable-exempt.json', { cwd: root, encoding: 'utf8', shell: true })
 if (obsRun.error || obsRun.status === null) {
   failed = true
   console.error(`[observable] 无法执行 scs（${obsRun.error?.code ?? 'status=null'}）：请先全局安装公共 CLI（npm i -g skill-common-script）`)
@@ -526,7 +526,7 @@ if (gateRun.error) {
 // 判据数据与投影分别取 `dsl/rules` 与 `builders/rules`（目录由参数传入，scs 不认识具体仓库布局）。
 // 本段**不走旁路开关**（旁路只跳 ⑥）。
 // ─────────────────────────────────────────────────────────────────────────────
-const ceRun = spawnSync('scs check criteria-engine --engine tools/docgen/builders/rules --data tools/docgen/dsl/rules --projection tools/docgen/builders/rules --terms tools/docgen/dsl/rules/vocab/observable-terms.json --surface skills --surface tools/docgen', { cwd: root, encoding: 'utf8', shell: true })
+const ceRun = spawnSync('scs check criteria-engine --engine tools/docgen/builders/rules --data tools/docgen/models/rules --projection tools/docgen/builders/rules --terms tools/docgen/models/rules/vocab/observable-terms.json --surface skills --surface tools/docgen', { cwd: root, encoding: 'utf8', shell: true })
 if (ceRun.error || ceRun.status === null) {
   failed = true
   console.error(`[criteria-engine] 无法执行 scs（${ceRun.error?.code ?? 'status=null'}）：请先全局安装公共 CLI（npm i -g skill-common-script）`)

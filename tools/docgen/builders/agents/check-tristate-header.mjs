@@ -1,10 +1,10 @@
 // 卡面三态承载守卫（P5 新基线）：逐席从模型渲染，判「本席清单」段表头是否逐字含模型声明的三态取值。
 //
-// 数据源 = `tools/agent-model/models/<seat>-model.json` 的 `verdicts.enum`；不再读旧 `card-model` 常量。
+// 数据源 = `tools/docgen/models/agents/jsons/<seat>/index.json` 的 `verdicts.enum`；不再读旧 `card-model` 常量。
 // 仍只看表头行、不扫整卡：整卡扫会被「输出格式/权限」段的同值文案假通过，负例（删值 / 挪出段）失效。
 //
 // 输出首行固定：`check-tristate-header: seats <N> / ok <k> / bad <n> => ok|fail`；`bad > 0` → exit 1。
-import { listSeats, renderSeatText, modelWithShared } from '../../../agent-model/source.mjs'
+import { listSeats, renderSeatText, modelWithShared } from '../../models/agents/source.mjs'
 
 const seats = listSeats()
 const bad = []

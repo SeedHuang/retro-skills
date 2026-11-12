@@ -1,0 +1,1067 @@
+{
+  "version": 2,
+  "id": "audit-seat",
+  "extends": "_shared.json",
+  "seat": {
+    "id": "reviewer-audit",
+    "display": "审计",
+    "triggers": [
+      {
+        "id": "process-check",
+        "kind": "occasion"
+      },
+      {
+        "id": "round-reconcile",
+        "kind": "occasion"
+      },
+      {
+        "id": "delivery-check",
+        "kind": "occasion"
+      }
+    ],
+    "description": {
+      "template": "当议会评审需要{triggers}",
+      "joiner": "、",
+      "lastJoiner": "或"
+    },
+    "artifacts": [
+      "artifact.roundCheck",
+      "artifact.deliveryAudit"
+    ],
+    "tier": "producer"
+  },
+  "duty": {
+    "trigger": {
+      "from": "seat.description"
+    },
+    "action": {
+      "verb": "核对",
+      "scope": "过程标准",
+      "objects": [
+        "评审过程",
+        "交付物"
+      ],
+      "emit": [
+        "判定",
+        "理由"
+      ],
+      "landingSubject": {
+        "from": "emit",
+        "index": 0
+      },
+      "landing": "outputs.items",
+      "landingJoiner": "与 "
+    }
+  },
+  "timing": {
+    "scene": "deliverable",
+    "moment": "end",
+    "repeat": "per-round"
+  },
+  "defaultLanding": "artifact.roundCheck",
+  "checklist": {
+    "items": [
+      {
+        "no": 1,
+        "seatPrefix": "审计席卡",
+        "category": "卡片合规核对",
+        "criterion": "audit.card"
+      },
+      {
+        "no": 2,
+        "seatPrefix": "审计席卡",
+        "category": "级别匹配核对",
+        "criterion": "audit.level"
+      },
+      {
+        "no": 3,
+        "seatPrefix": "审计席卡",
+        "category": "答辩合规核对",
+        "criterion": "audit.defense"
+      },
+      {
+        "no": 4,
+        "seatPrefix": "审计席卡",
+        "category": "计数一致核对",
+        "criterion": "audit.count"
+      },
+      {
+        "no": 5,
+        "seatPrefix": "审计席卡",
+        "category": "轮际对账核对",
+        "criterion": "audit.round"
+      },
+      {
+        "no": 6,
+        "seatPrefix": "审计席卡",
+        "category": "落点真实核对",
+        "criterion": "audit.spot"
+      },
+      {
+        "no": 7,
+        "seatPrefix": "审计席卡",
+        "category": "证据复算核对",
+        "criterion": "audit.evidence"
+      },
+      {
+        "no": 8,
+        "seatPrefix": "审计席卡",
+        "category": "转录核对",
+        "criterion": "audit.transcript"
+      }
+    ]
+  },
+  "checkCriteria": {
+    "audit.card": {
+      "action": "verify",
+      "mode": "all",
+      "observable": [
+        {
+          "op": "coversAll",
+          "ofRef": "cardField",
+          "field": "id",
+          "required": [
+            "cardNo",
+            "proposer",
+            "dimension",
+            "description",
+            "quote",
+            "location",
+            "purpose",
+            "severity",
+            "suggestion"
+          ]
+        },
+        {
+          "op": "fieldNonEmpty",
+          "ofRef": "issueCard",
+          "field": "suggestion"
+        },
+        {
+          "op": "fieldNonEmpty",
+          "ofRef": "issueCard",
+          "field": "quote"
+        }
+      ],
+      "negative": {
+        "input": {
+          "cardField": [
+            {
+              "id": "suggestion"
+            }
+          ],
+          "issueCard": {
+            "suggestion": "优化一下",
+            "quote": ""
+          }
+        },
+        "expect": "fail",
+        "failsOn": "issueCard.quote"
+      },
+      "residual": {
+        "who": "reviewer-audit",
+        "sample": 3,
+        "fields": [
+          "roundCheck.verdict"
+        ],
+        "objective": {
+          "target": "machine",
+          "reason": "SCHEMA_UNFROZEN"
+        }
+      }
+    },
+    "audit.level": {
+      "action": "verify",
+      "mode": "all",
+      "observable": [
+        {
+          "op": "countGte",
+          "ofRef": "conflictEvidence",
+          "value": 2
+        },
+        {
+          "op": "fieldNonEmpty",
+          "ofRef": "levelProof",
+          "field": "triggerSeq"
+        }
+      ],
+      "negative": {
+        "input": {
+          "conflictEvidence": [
+            {
+              "source": "a.md:1"
+            }
+          ],
+          "levelProof": {
+            "triggerSeq": ""
+          }
+        },
+        "expect": "fail",
+        "failsOn": "levelProof.triggerSeq"
+      },
+      "residual": {
+        "who": "reviewer-audit",
+        "sample": 3,
+        "fields": [
+          "roundCheck.verdict"
+        ],
+        "objective": {
+          "target": "machine",
+          "reason": "RULE_NOT_ENUMERATED"
+        }
+      }
+    },
+    "audit.defense": {
+      "action": "verify",
+      "mode": "all",
+      "observable": [
+        {
+          "op": "fieldNonEmpty",
+          "ofRef": "defense",
+          "field": "verdict"
+        },
+        {
+          "op": "fieldNonEmpty",
+          "ofRef": "defense",
+          "field": "fixLanding"
+        }
+      ],
+      "negative": {
+        "input": {
+          "defense": {
+            "verdict": "成立",
+            "fixLanding": ""
+          }
+        },
+        "expect": "fail",
+        "failsOn": "defense.fixLanding"
+      },
+      "residual": {
+        "who": "reviewer-audit",
+        "sample": 3,
+        "fields": [
+          "roundCheck.verdict"
+        ],
+        "objective": {
+          "target": "machine",
+          "reason": "REQUIRES_HUMAN_JUDGMENT"
+        }
+      }
+    },
+    "audit.count": {
+      "action": "recount",
+      "mode": "all",
+      "observable": [
+        {
+          "op": "fieldsEq",
+          "ofRef": "directionCount",
+          "left": "sum",
+          "right": "cards"
+        }
+      ],
+      "negative": {
+        "input": {
+          "directionCount": {
+            "sum": 4,
+            "cards": 3
+          }
+        },
+        "expect": "fail",
+        "failsOn": "directionCount.sum"
+      },
+      "residual": {
+        "who": "reviewer-audit",
+        "sample": 3,
+        "fields": [
+          "roundCheck.verdict"
+        ],
+        "objective": {
+          "target": "machine",
+          "reason": "NO_MACHINE_OUTPUT"
+        }
+      }
+    },
+    "audit.round": {
+      "action": "verify",
+      "mode": "all",
+      "observable": [
+        {
+          "op": "setSubset",
+          "ofRef": "promise",
+          "field": "text",
+          "within": "roundCheck",
+          "withinField": "item"
+        }
+      ],
+      "negative": {
+        "input": {
+          "promise": [
+            {
+              "text": "修复 X"
+            }
+          ],
+          "roundCheck": [
+            {
+              "item": "其他"
+            }
+          ]
+        },
+        "expect": "fail",
+        "failsOn": "promise.text"
+      },
+      "residual": {
+        "who": "reviewer-audit",
+        "sample": 3,
+        "fields": [
+          "roundCheck.verdict"
+        ],
+        "objective": {
+          "target": "machine",
+          "reason": "RECORD_NOT_STRUCTURED"
+        }
+      }
+    },
+    "audit.spot": {
+      "action": "spotCheck",
+      "mode": "all",
+      "observable": [
+        {
+          "op": "lineExists",
+          "ofRef": "spotCheck",
+          "path": "path",
+          "line": "line"
+        }
+      ],
+      "negative": {
+        "input": {
+          "spotCheck": {
+            "path": "a.md",
+            "line": 9999
+          }
+        },
+        "expect": "fail",
+        "failsOn": "spotCheck.line"
+      },
+      "objective": {
+        "target": "machine",
+        "machineCmd": "scs check landings --ledger"
+      },
+      "residual": {
+        "who": "reviewer-audit",
+        "sample": 3,
+        "fields": [
+          "roundCheck.verdict"
+        ],
+        "objective": {
+          "target": "machine",
+          "machineCmd": "scs check landings --ledger"
+        }
+      }
+    },
+    "audit.evidence": {
+      "action": "replay",
+      "mode": "all",
+      "observable": [
+        {
+          "op": "fieldsEq",
+          "ofRef": "evidenceLine",
+          "left": "expectedFirstLine",
+          "right": "actualFirstLine"
+        }
+      ],
+      "negative": {
+        "input": {
+          "evidenceLine": {
+            "command": "scs time",
+            "expectedFirstLine": "2026-11-10",
+            "actualFirstLine": "2026-11-11"
+          }
+        },
+        "expect": "fail",
+        "failsOn": "evidenceLine.expectedFirstLine"
+      },
+      "residual": {
+        "who": "reviewer-audit",
+        "sample": 3,
+        "fields": [
+          "roundCheck.verdict"
+        ],
+        "objective": {
+          "target": "machine",
+          "reason": "CMD_NOT_WHITELISTED"
+        }
+      }
+    },
+    "audit.transcript": {
+      "action": "compare",
+      "mode": "all",
+      "observable": [
+        {
+          "op": "quoteInLine",
+          "ofRef": "gateRecord",
+          "path": "path",
+          "line": "line",
+          "quote": "quote"
+        }
+      ],
+      "negative": {
+        "input": {
+          "gateRecord": {
+            "path": "gate-record.md",
+            "line": 3,
+            "quote": "与原文不同"
+          }
+        },
+        "expect": "fail",
+        "failsOn": "gateRecord.quote"
+      },
+      "residual": {
+        "who": "reviewer-audit",
+        "sample": 3,
+        "fields": [
+          "roundCheck.verdict"
+        ],
+        "objective": {
+          "target": "machine",
+          "reason": "RECORD_NOT_STRUCTURED"
+        }
+      }
+    }
+  },
+  "templates": {
+    "pl.round-check": {
+      "skill": "parliament-ledger",
+      "label": "轮间核对单",
+      "columns": [
+        "no",
+        "item",
+        "criterion",
+        "kind",
+        "verdict",
+        "reason",
+        "applicability",
+        "evidence"
+      ]
+    },
+    "pl.delivery-audit": {
+      "skill": "parliament-ledger",
+      "label": "交付审计表",
+      "columns": [
+        "no",
+        "item",
+        "criterion",
+        "kind",
+        "verdict",
+        "reason",
+        "applicability",
+        "evidence"
+      ]
+    }
+  },
+  "outputFormat": {
+    "title": "输出格式",
+    "requiredFields": [
+      {
+        "id": "item",
+        "label": "核对项",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "content",
+        "label": "核对内容",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "result",
+        "label": "结果",
+        "type": "enum",
+        "values": [
+          "hit",
+          "miss",
+          "na"
+        ],
+        "required": true
+      },
+      {
+        "id": "evidence",
+        "label": "证据",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "sectionA",
+        "label": "A 节 过程闭环",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "a1",
+        "label": "A1 终态对账",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "a2",
+        "label": "A2 P0P1 清零",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "a3",
+        "label": "A3 落点抽查 ≥3",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "a4",
+        "label": "A4 P2 三态齐",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "a5",
+        "label": "A5 数字一致",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "a6",
+        "label": "A6 升级项终裁",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "sectionB",
+        "label": "B 节 按完成判据逐交付物核对",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "bDeliverable",
+        "label": "B 列 交付物",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "bCriterion",
+        "label": "B 列 完成判据核对",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "bResult",
+        "label": "B 列 结果",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "bEvidence",
+        "label": "B 列 证据",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "conclusion",
+        "label": "结论",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "rejectList",
+        "label": "打回清单",
+        "type": "nonEmpty",
+        "required": true
+      }
+    ],
+    "checks": [
+      {
+        "id": "fields-complete",
+        "observable": {
+          "op": "allExist",
+          "ofRef": "cardField"
+        }
+      },
+      {
+        "id": "count-match",
+        "observable": {
+          "op": "fieldsEq",
+          "ofRef": "directionCount",
+          "left": "sum",
+          "right": "cards"
+        }
+      },
+      {
+        "id": "spot-min",
+        "observable": {
+          "op": "countGte",
+          "ofRef": "spotCheck",
+          "value": 3
+        }
+      },
+      {
+        "id": "transcript-line",
+        "observable": {
+          "op": "lineExists",
+          "ofRef": "gateRecord"
+        }
+      }
+    ]
+  },
+  "outputs": {
+    "items": [
+      {
+        "phase": "每轮",
+        "artifact": "artifact.roundCheck",
+        "template": "pl.round-check",
+        "action": "fill",
+        "mode": "each"
+      },
+      {
+        "phase": "终局",
+        "artifact": "artifact.deliveryAudit",
+        "template": "pl.delivery-audit",
+        "action": "fill",
+        "mode": "whole"
+      }
+    ]
+  },
+  "forms": {
+    "artifact.deliveryAudit": {
+      "text": "`delivery-audit.md`",
+      "kind": "artifact",
+      "path": ".session/reviews/{session}/delivery-audit.md",
+      "requires": "write"
+    },
+    "artifact.escalationReport": {
+      "text": "`progress.md`",
+      "kind": "artifact",
+      "path": ".session/reviews/{session}/progress.md",
+      "requires": "write"
+    },
+    "cmd.scs.ledger.gate": {
+      "text": "`scs ledger gate`",
+      "kind": "command",
+      "prefix": "scs ledger gate",
+      "requires": "exec"
+    },
+    "cmd.scs.ledger.numbers": {
+      "text": "`scs ledger numbers`",
+      "kind": "command",
+      "prefix": "scs ledger numbers",
+      "requires": "exec"
+    },
+    "cmd.scs.ledger.landings": {
+      "text": "`scs check landings --ledger`",
+      "kind": "command",
+      "prefix": "scs check landings --ledger",
+      "requires": "exec"
+    },
+    "cmd.git.show": {
+      "text": "`git --no-optional-locks show`",
+      "kind": "command",
+      "prefix": "git --no-optional-locks show",
+      "requires": "exec"
+    },
+    "cmd.git.reflog": {
+      "text": "`git --no-optional-locks reflog show`",
+      "kind": "command",
+      "prefix": "git --no-optional-locks reflog show",
+      "requires": "exec"
+    },
+    "artifact.roundCheck": {
+      "text": "`round-check.md`",
+      "kind": "artifact",
+      "path": ".session/reviews/{session}/round-check.md"
+    }
+  },
+  "records": {
+    "roundCheck": {
+      "source": {
+        "kind": "path",
+        "template": ".session/reviews/{session}/round-check.md"
+      }
+    },
+    "transcript": {
+      "label": "发言记录",
+      "unit": "一条发言",
+      "source": {
+        "kind": "description",
+        "text": "progress.md 段二"
+      },
+      "shape": [
+        {
+          "id": "speaker",
+          "label": "发言者",
+          "type": "enum",
+          "values": [
+            "reviewer-audit",
+            "detective-observer",
+            "speaker",
+            "user"
+          ],
+          "required": true
+        },
+        {
+          "id": "at",
+          "label": "时刻",
+          "type": "time",
+          "pattern": "^\\d{2}:\\d{2}:\\d{2}$",
+          "required": true
+        },
+        {
+          "id": "quote",
+          "label": "原文",
+          "type": "nonEmpty",
+          "required": true
+        },
+        {
+          "id": "kind",
+          "label": "类型",
+          "type": "enum",
+          "values": [
+            "statement",
+            "verdict",
+            "interrupt"
+          ],
+          "required": true
+        },
+        {
+          "id": "target",
+          "label": "对象",
+          "type": "seatId",
+          "required": false,
+          "when": {
+            "field": "kind",
+            "op": "eq",
+            "value": "verdict"
+          }
+        }
+      ]
+    },
+    "cardField": {
+      "label": "卡片必填字段",
+      "unit": "一个必填字段",
+      "source": {
+        "kind": "description",
+        "text": "问题卡"
+      },
+      "shape": [
+        {
+          "id": "id",
+          "label": "字段",
+          "type": "nonEmpty",
+          "required": true
+        }
+      ]
+    },
+    "conflictEvidence": {
+      "label": "冲突证据",
+      "unit": "一条证据",
+      "source": {
+        "kind": "description",
+        "text": "问题卡"
+      },
+      "shape": [
+        {
+          "id": "source",
+          "label": "来源",
+          "type": "path",
+          "required": true
+        }
+      ]
+    },
+    "levelProof": {
+      "label": "级别证明",
+      "unit": "一份证明",
+      "source": {
+        "kind": "description",
+        "text": "问题卡"
+      },
+      "shape": [
+        {
+          "id": "triggerSeq",
+          "label": "触发序列",
+          "type": "nonEmpty",
+          "required": true
+        }
+      ]
+    },
+    "defense": {
+      "label": "答辩记录",
+      "unit": "一次答辩",
+      "source": {
+        "kind": "description",
+        "text": "答辩记录"
+      },
+      "shape": [
+        {
+          "id": "verdict",
+          "label": "答辩判定",
+          "type": "nonEmpty",
+          "required": true
+        },
+        {
+          "id": "fixLanding",
+          "label": "修法落点",
+          "type": "nonEmpty",
+          "required": true
+        }
+      ]
+    },
+    "directionCount": {
+      "label": "去向计数",
+      "unit": "一组计数",
+      "source": {
+        "kind": "path",
+        "template": "cards.md"
+      },
+      "shape": [
+        {
+          "id": "sum",
+          "label": "求和",
+          "type": "int",
+          "required": true
+        },
+        {
+          "id": "cards",
+          "label": "卡片数",
+          "type": "int",
+          "required": true
+        }
+      ]
+    },
+    "promise": {
+      "label": "上轮承诺",
+      "unit": "一条承诺",
+      "source": {
+        "kind": "description",
+        "text": "上轮开卷清单"
+      },
+      "shape": [
+        {
+          "id": "text",
+          "label": "承诺",
+          "type": "nonEmpty",
+          "required": true
+        }
+      ]
+    },
+    "spotCheck": {
+      "label": "锚点",
+      "unit": "一个锚点",
+      "source": {
+        "kind": "description",
+        "text": "问题卡锚点"
+      },
+      "shape": [
+        {
+          "id": "path",
+          "label": "文件",
+          "type": "path",
+          "required": true
+        },
+        {
+          "id": "line",
+          "label": "行号",
+          "type": "int",
+          "min": 1,
+          "required": true
+        }
+      ],
+      "verify": {
+        "op": "lineExists",
+        "path": "path",
+        "line": "line"
+      }
+    },
+    "evidenceLine": {
+      "label": "证据行",
+      "unit": "一条证据",
+      "source": {
+        "kind": "description",
+        "text": "交付物证据栏"
+      },
+      "shape": [
+        {
+          "id": "command",
+          "label": "命令",
+          "type": "nonEmpty",
+          "required": true
+        },
+        {
+          "id": "expectedFirstLine",
+          "label": "记录输出首行",
+          "type": "nonEmpty",
+          "required": true
+        },
+        {
+          "id": "actualFirstLine",
+          "label": "实际输出首行",
+          "type": "nonEmpty",
+          "required": true
+        }
+      ]
+    },
+    "gateRecord": {
+      "label": "gate-record",
+      "unit": "一行记录",
+      "source": {
+        "kind": "path",
+        "template": "docs/devworkflows/{task}/gate-record.md"
+      },
+      "shape": [
+        {
+          "id": "path",
+          "label": "文件",
+          "type": "path",
+          "required": true
+        },
+        {
+          "id": "line",
+          "label": "行号",
+          "type": "int",
+          "min": 1,
+          "required": true
+        },
+        {
+          "id": "quote",
+          "label": "原文",
+          "type": "nonEmpty",
+          "required": true
+        }
+      ]
+    },
+    "escalationReport": {
+      "label": "越权信息",
+      "unit": "一次越界报告",
+      "source": {
+        "kind": "description",
+        "text": "progress.md 段二"
+      },
+      "shape": [
+        {
+          "id": "file",
+          "label": "文件",
+          "type": "path",
+          "required": true
+        },
+        {
+          "id": "sha256Pair",
+          "label": "改前/改后 sha256",
+          "type": "nonEmpty",
+          "required": true
+        },
+        {
+          "id": "recoverable",
+          "label": "可否复原",
+          "type": "bool",
+          "required": true
+        },
+        {
+          "id": "command",
+          "label": "命令原文",
+          "type": "nonEmpty",
+          "required": true
+        }
+      ]
+    }
+  },
+  "escalation": {
+    "title": "越界处置",
+    "recipients": {
+      "speaker": "议长",
+      "user": "用户"
+    },
+    "report": {
+      "artifact": "artifact.escalationReport",
+      "record": "escalationReport",
+      "fields": [
+        "file",
+        "sha256Pair",
+        "recoverable",
+        "command"
+      ]
+    },
+    "steps": [
+      {
+        "kind": "halt",
+        "text": "停手。"
+      },
+      {
+        "kind": "report",
+        "to": "speaker"
+      },
+      {
+        "kind": "voidRound",
+        "to": "user",
+        "statusField": "round.status",
+        "voidedValue": "voided"
+      }
+    ],
+    "residual": {
+      "who": "reviewer-audit",
+      "sample": 3,
+      "fields": [
+        "escalationReport.file"
+      ],
+      "objective": {
+        "target": "machine",
+        "reason": "NO_MACHINE_OUTPUT"
+      }
+    }
+  },
+  "permissions": {
+    "policy": "denyByDefault",
+    "action": {
+      "allow": [
+        "record"
+      ],
+      "forbid": [
+        "self-disposal",
+        "adjudicate",
+        "interrupt"
+      ]
+    },
+    "write": {
+      "allow": [
+        "artifact.roundCheck",
+        "artifact.deliveryAudit"
+      ],
+      "forbidForms": [
+        "path.parentEscape"
+      ]
+    },
+    "command": {
+      "allow": [
+        "cmd.scs.time",
+        "cmd.scs.ledger.gate",
+        "cmd.scs.ledger.numbers",
+        "cmd.scs.ledger.landings",
+        "cmd.git.status",
+        "cmd.git.diff",
+        "cmd.git.show",
+        "cmd.git.log",
+        "cmd.git.reflog"
+      ],
+      "forbidForms": [
+        "form.fs.output",
+        "form.fs.apply",
+        "form.fs.write",
+        "form.fs.redirect",
+        "form.fs.append",
+        "form.env.export",
+        "form.env.set",
+        "form.env.setx",
+        "form.env.envcmd",
+        "form.env.psenv",
+        "form.env.prefix",
+        "form.env.line"
+      ]
+    }
+  },
+  "boundary": {
+    "kind": "policy"
+  }
+}

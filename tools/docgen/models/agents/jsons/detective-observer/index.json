@@ -1,0 +1,623 @@
+{
+  "version": 2,
+  "id": "detective-observer",
+  "extends": "_shared.json",
+  "seat": {
+    "id": "detective-observer",
+    "display": "侦探",
+    "triggers": [
+      {
+        "id": "behavior-check",
+        "timing": {
+          "scene": "defense",
+          "moment": "end",
+          "repeat": "per-round"
+        },
+        "schedule": "speaker",
+        "action": "behavior-check",
+        "kind": "moment"
+      }
+    ],
+    "description": {
+      "template": "{timing}由{schedule}调度做{action}",
+      "joiner": "、",
+      "lastJoiner": "、"
+    },
+    "artifacts": [
+      "artifact.detective"
+    ],
+    "tier": "producer"
+  },
+  "duty": {
+    "trigger": {
+      "from": "seat.description"
+    },
+    "action": {
+      "verb": "核实",
+      "scope": "行为",
+      "objects": [
+        "每轮答辩记录"
+      ],
+      "emit": [
+        "对象",
+        "行为类型",
+        "原文引句"
+      ],
+      "landingSubject": "结论",
+      "landing": "outputs.items",
+      "landingJoiner": "与 "
+    }
+  },
+  "timing": {
+    "scene": "deliverable",
+    "moment": "end",
+    "repeat": "per-round"
+  },
+  "defaultLanding": "artifact.detective",
+  "must": [
+    {
+      "id": "shared.no-fake-problem",
+      "criterion": "no-fake-problem",
+      "targets": [
+        {
+          "object": "deliverable.body"
+        }
+      ]
+    },
+    {
+      "id": "shared.no-fake-problem",
+      "criterion": "no-fake-problem",
+      "targets": [
+        {
+          "object": "deliverable.appendix"
+        }
+      ],
+      "timing": {
+        "scene": "parliament",
+        "moment": "end",
+        "repeat": "per-round"
+      }
+    }
+  ],
+  "checklist": {
+    "items": [
+      {
+        "no": 1,
+        "seatPrefix": "侦探席卡",
+        "category": "评委刁难核对",
+        "criterion": "detective.harass"
+      },
+      {
+        "no": 2,
+        "seatPrefix": "侦探席卡",
+        "category": "答辩回避核对",
+        "criterion": "detective.evasion"
+      },
+      {
+        "no": 3,
+        "seatPrefix": "侦探席卡",
+        "category": "议长失职核对",
+        "criterion": "detective.chair"
+      },
+      {
+        "no": 4,
+        "seatPrefix": "侦探席卡",
+        "category": "工具越权核对",
+        "criterion": "detective.toolscope"
+      }
+    ]
+  },
+  "checkCriteria": {
+    "detective.harass": {
+      "action": "verify",
+      "mode": "all",
+      "observable": [
+        {
+          "op": "fieldNonEmpty",
+          "ofRef": "observation",
+          "field": "cardNo"
+        },
+        {
+          "op": "fieldNonEmpty",
+          "ofRef": "observation",
+          "field": "quote"
+        }
+      ],
+      "negative": {
+        "input": {
+          "observation": {
+            "cardNo": "Q-1-1",
+            "quote": ""
+          }
+        },
+        "expect": "fail",
+        "failsOn": "observation.quote"
+      },
+      "residual": {
+        "who": "detective-observer",
+        "sample": 3,
+        "fields": [
+          "roundCheck.verdict"
+        ],
+        "objective": {
+          "target": "machine",
+          "reason": "RECORD_NOT_STRUCTURED"
+        }
+      }
+    },
+    "detective.evasion": {
+      "action": "verify",
+      "mode": "all",
+      "observable": [
+        {
+          "op": "fieldNonEmpty",
+          "ofRef": "defense",
+          "field": "verdict"
+        },
+        {
+          "op": "fieldNonEmpty",
+          "ofRef": "defense",
+          "field": "concede"
+        }
+      ],
+      "negative": {
+        "input": {
+          "defense": {
+            "verdict": "回避",
+            "concede": ""
+          }
+        },
+        "expect": "fail",
+        "failsOn": "defense.concede"
+      },
+      "residual": {
+        "who": "detective-observer",
+        "sample": 3,
+        "fields": [
+          "roundCheck.verdict"
+        ],
+        "objective": {
+          "target": "machine",
+          "reason": "REQUIRES_HUMAN_JUDGMENT"
+        }
+      }
+    },
+    "detective.chair": {
+      "action": "recount",
+      "mode": "all",
+      "observable": [
+        {
+          "op": "fieldsEq",
+          "ofRef": "directionCount",
+          "left": "sum",
+          "right": "cards"
+        }
+      ],
+      "negative": {
+        "input": {
+          "directionCount": {
+            "sum": 5,
+            "cards": 4
+          }
+        },
+        "expect": "fail",
+        "failsOn": "directionCount.sum"
+      },
+      "residual": {
+        "who": "detective-observer",
+        "sample": 3,
+        "fields": [
+          "roundCheck.verdict"
+        ],
+        "objective": {
+          "target": "machine",
+          "reason": "NO_MACHINE_OUTPUT"
+        }
+      }
+    },
+    "detective.toolscope": {
+      "action": "compare",
+      "mode": "all",
+      "observable": [
+        {
+          "op": "fieldsEq",
+          "ofRef": "snapshot",
+          "left": "before",
+          "right": "after"
+        }
+      ],
+      "negative": {
+        "input": {
+          "snapshot": {
+            "before": "a",
+            "after": "b"
+          }
+        },
+        "expect": "fail",
+        "failsOn": "snapshot.before"
+      },
+      "residual": {
+        "who": "detective-observer",
+        "sample": 3,
+        "fields": [
+          "roundCheck.verdict"
+        ],
+        "objective": {
+          "target": "machine",
+          "machineCmd": "git --no-optional-locks status --porcelain"
+        }
+      }
+    }
+  },
+  "outputFormat": {
+    "title": "输出格式",
+    "requiredFields": [
+      {
+        "id": "cardNo",
+        "label": "卡号",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "object",
+        "label": "对象",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "behavior",
+        "label": "行为类型",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "basis",
+        "label": "判定依据",
+        "type": "nonEmpty",
+        "required": true
+      },
+      {
+        "id": "suggestion",
+        "label": "处置建议",
+        "type": "nonEmpty",
+        "required": true
+      }
+    ],
+    "checks": [
+      {
+        "id": "card-exists",
+        "observable": {
+          "op": "refExists",
+          "ofRef": "observation",
+          "field": "cardNo"
+        }
+      },
+      {
+        "id": "basis-quoted",
+        "observable": {
+          "op": "quoteInLine",
+          "ofRef": "observation",
+          "path": "path",
+          "line": "line",
+          "quote": "quote"
+        }
+      }
+    ]
+  },
+  "templates": {
+    "pl.detective": {
+      "skill": "parliament-ledger",
+      "label": "观察记录",
+      "columns": [
+        "cardNo",
+        "object",
+        "behavior",
+        "basis",
+        "suggestion"
+      ]
+    }
+  },
+  "outputs": {
+    "items": [
+      {
+        "phase": "每轮",
+        "artifact": "artifact.detective",
+        "template": "pl.detective",
+        "action": "fill",
+        "mode": "each"
+      }
+    ]
+  },
+  "forms": {
+    "artifact.detective": {
+      "text": "`detective.md`",
+      "kind": "artifact",
+      "path": ".session/reviews/{session}/detective.md",
+      "requires": "write"
+    },
+    "artifact.progress": {
+      "text": "`progress.md`",
+      "kind": "artifact",
+      "path": ".session/reviews/{session}/progress.md",
+      "requires": "write"
+    },
+    "artifact.gateRecord": {
+      "text": "`gate-record.md`",
+      "kind": "artifact",
+      "path": "docs/devworkflows/{task}/gate-record.md",
+      "requires": "write"
+    }
+  },
+  "records": {
+    "anchor": {
+      "source": {
+        "kind": "description",
+        "text": "交付物正文"
+      }
+    },
+    "observation": {
+      "label": "观察记录",
+      "unit": "一条记录",
+      "source": {
+        "kind": "path",
+        "template": "detective.md"
+      },
+      "shape": [
+        {
+          "id": "cardNo",
+          "label": "卡号",
+          "type": "nonEmpty",
+          "required": true
+        },
+        {
+          "id": "object",
+          "label": "对象",
+          "type": "nonEmpty",
+          "required": true
+        },
+        {
+          "id": "behavior",
+          "label": "行为类型",
+          "type": "nonEmpty",
+          "required": true
+        },
+        {
+          "id": "path",
+          "label": "文件",
+          "type": "path",
+          "required": true
+        },
+        {
+          "id": "line",
+          "label": "行号",
+          "type": "int",
+          "min": 1,
+          "required": true
+        },
+        {
+          "id": "quote",
+          "label": "原文引句",
+          "type": "nonEmpty",
+          "required": true
+        },
+        {
+          "id": "suggestion",
+          "label": "处置建议",
+          "type": "nonEmpty",
+          "required": true
+        }
+      ]
+    },
+    "defense": {
+      "label": "答辩记录",
+      "unit": "一次答辩",
+      "source": {
+        "kind": "description",
+        "text": "答辩记录"
+      },
+      "shape": [
+        {
+          "id": "verdict",
+          "label": "判定",
+          "type": "nonEmpty",
+          "required": true
+        },
+        {
+          "id": "concede",
+          "label": "改判条件",
+          "type": "nonEmpty",
+          "required": true
+        }
+      ]
+    },
+    "directionCount": {
+      "label": "去向计数",
+      "unit": "一组计数",
+      "source": {
+        "kind": "path",
+        "template": "cards.md"
+      },
+      "shape": [
+        {
+          "id": "sum",
+          "label": "收取",
+          "type": "int",
+          "required": true
+        },
+        {
+          "id": "cards",
+          "label": "关闭",
+          "type": "int",
+          "required": true
+        }
+      ]
+    },
+    "snapshot": {
+      "label": "工作区快照",
+      "unit": "一次比对",
+      "source": {
+        "kind": "path",
+        "template": "detective.md"
+      },
+      "shape": [
+        {
+          "id": "before",
+          "label": "轮初快照",
+          "type": "nonEmpty",
+          "required": true
+        },
+        {
+          "id": "after",
+          "label": "轮末快照",
+          "type": "nonEmpty",
+          "required": true
+        }
+      ]
+    },
+    "escalationReport": {
+      "label": "越权信息",
+      "unit": "一次越界报告",
+      "source": {
+        "kind": "path",
+        "template": "detective.md"
+      },
+      "shape": [
+        {
+          "id": "file",
+          "label": "文件",
+          "type": "path",
+          "required": true
+        },
+        {
+          "id": "sha256Pair",
+          "label": "改前/改后 sha256",
+          "type": "nonEmpty",
+          "required": true
+        },
+        {
+          "id": "recoverable",
+          "label": "可否复原",
+          "type": "bool",
+          "required": true
+        },
+        {
+          "id": "command",
+          "label": "命令原文",
+          "type": "nonEmpty",
+          "required": true
+        }
+      ]
+    }
+  },
+  "escalation": {
+    "title": "越界处置",
+    "recipients": {
+      "speaker": "议长",
+      "user": "用户"
+    },
+    "report": {
+      "artifact": "artifact.detective",
+      "record": "escalationReport",
+      "fields": [
+        "file",
+        "sha256Pair",
+        "recoverable",
+        "command"
+      ]
+    },
+    "steps": [
+      {
+        "kind": "halt",
+        "text": "立即停手。"
+      },
+      {
+        "kind": "report",
+        "to": "speaker"
+      },
+      {
+        "kind": "voidRound",
+        "to": "user",
+        "statusField": "round.status",
+        "voidedValue": "voided"
+      }
+    ],
+    "detectionLimit": {
+      "probe": "git --no-optional-locks status --porcelain",
+      "blindSpots": [
+        {
+          "id": "gitignored",
+          "label": "被 .gitignore 覆盖"
+        },
+        {
+          "id": "outside-repo",
+          "label": "草稿目录在仓库外"
+        },
+        {
+          "id": "committed-write",
+          "label": "已提交的写入"
+        },
+        {
+          "id": "write-then-restore",
+          "label": "写入后又还原"
+        }
+      ]
+    },
+    "residual": {
+      "who": "detective-observer",
+      "sample": 3,
+      "fields": [
+        "escalationReport.file"
+      ],
+      "objective": {
+        "target": "machine",
+        "reason": "NO_MACHINE_OUTPUT"
+      }
+    }
+  },
+  "permissions": {
+    "policy": "denyByDefault",
+    "action": {
+      "allow": [
+        "record"
+      ],
+      "forbid": [
+        "adjudicate",
+        "interrupt",
+        "tamper-original"
+      ]
+    },
+    "write": {
+      "allow": [
+        "artifact.detective"
+      ],
+      "forbidForms": [
+        "path.parentEscape"
+      ]
+    },
+    "command": {
+      "allow": [
+        "cmd.scs.time",
+        "cmd.git.status",
+        "cmd.git.diff",
+        "cmd.git.log"
+      ],
+      "forbidForms": [
+        "form.fs.output",
+        "form.fs.apply",
+        "form.fs.write",
+        "form.fs.redirect",
+        "form.fs.append",
+        "form.env.export",
+        "form.env.set",
+        "form.env.setx",
+        "form.env.envcmd",
+        "form.env.psenv",
+        "form.env.prefix",
+        "form.env.line"
+      ]
+    }
+  },
+  "boundary": {
+    "kind": "policy"
+  }
+}

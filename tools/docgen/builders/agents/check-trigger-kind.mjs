@@ -6,10 +6,10 @@
 //   moment    —— 某个时机之后必做：时机 + 动作
 //   need      —— 当需要某项专门产出时才起：需要 + 产出
 // 判 kind 只看模型声明，不由描述句式推断（spec §11.1 R9）；输出附每席 description 前 12 字，供人工抽核贴切度。
-// 非议会席名单 = `tools/agent-model/source.mjs` 的 `NON_PARL_SEATS`（唯一源）。
+// 非议会席名单 = `tools/docgen/models/agents/source.mjs` 的 `NON_PARL_SEATS`（唯一源）。
 //
 // 输出首行固定：`check-trigger-kind: seats <N> / kinds {...} / bad <n> => ok|fail`；`bad > 0` → exit 1。
-import { listSeats, expandModel, NON_PARL_SEATS } from '../../../agent-model/source.mjs'
+import { listSeats, expandModel, NON_PARL_SEATS } from '../../models/agents/source.mjs'
 
 const KIND_ORDER = ['dispatch', 'occasion', 'moment', 'need']
 const WHEN_HEAD = 12
