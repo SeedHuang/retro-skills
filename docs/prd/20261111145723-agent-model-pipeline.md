@@ -274,7 +274,7 @@ git diff --stat agents/            → 与 sandbox 版本一致，无手改残�
 | 对照 | 现役 `agents/<seat>.md`（A 组） vs 沙箱新产物（B 组） |
 | 盲测 | 文件重命名为 `card-A1.md` / `card-B1.md`，评估者不知道分组；分组表只留主 agent |
 | 重复 | 每维每卡 ≥3 轮，取中位数；报告极差 |
-| 样本 | P2 覆盖全部 7 席；P4 抽测 6 席（每子类 2 席） |
+| 样本 | P2 覆盖全部 7 席；P4 抽测 6 席（三子类全覆盖；`AuditorModel` 只有 `reviewer-audit` 一席，按 1 席全测计） |
 
 ### 7.2 四个维度
 

@@ -10,6 +10,8 @@
       {
         "id": "reader-review",
         "objects": [
+          "descriptive",
+          "record",
           "any-document"
         ],
         "perspective": "reader"
@@ -29,9 +31,9 @@
     },
     "action": {
       "verb": "评审",
-      "scope": "阅读视角",
+      "scope": "读者视角",
       "objects": [
-        "任意交付文档"
+        "描述性、记录型、任意文档"
       ],
       "emit": [
         "判定",

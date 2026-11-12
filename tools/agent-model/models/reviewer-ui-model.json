@@ -10,13 +10,15 @@
       {
         "id": "ui-review",
         "objects": [
-          "any-document"
+          "prd",
+          "spec",
+          "plan"
         ],
         "perspective": "ui"
       }
     ],
     "description": {
-      "template": "当议长调度对{objects}做{perspective}评审",
+      "template": "当议长调度对{objects} 做{perspective}评审",
       "joiner": "、",
       "lastJoiner": "、"
     },
@@ -31,7 +33,7 @@
       "verb": "评审",
       "scope": "UI 视角",
       "objects": [
-        "任意交付文档"
+        "PRD、spec、plan"
       ],
       "emit": [
         "判定",

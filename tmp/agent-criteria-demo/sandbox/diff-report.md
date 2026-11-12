@@ -11,15 +11,15 @@
 | reviewer-actuary | ReviewerModel | 94 | 89 | 2854 | 2968 | 9/7 | policy | 是 | 有 |
 | reviewer-ai | ReviewerModel | 97 | 92 | 3074 | 3198 | 9/7 | policy | 是 | 有 |
 | reviewer-audit | AuditorModel | 109 | 99 | 3667 | 3344 | 10/7 | policy | 是 | 有 |
-| reviewer-product | ReviewerModel | 76 | 77 | 1583 | 2007 | 8/7 | default | 是 | 有 |
-| reviewer-interaction | ReviewerModel | 76 | 77 | 1592 | 2018 | 8/7 | default | 是 | 有 |
-| reviewer-ui | ReviewerModel | 74 | 75 | 1487 | 1914 | 8/7 | default | 是 | 有 |
-| reviewer-frontend | ReviewerModel | 76 | 77 | 1596 | 2030 | 8/7 | default | 是 | 有 |
+| reviewer-product | ReviewerModel | 76 | 77 | 1612 | 2007 | 8/7 | default | 是 | 有 |
+| reviewer-interaction | ReviewerModel | 76 | 77 | 1621 | 2018 | 8/7 | default | 是 | 有 |
+| reviewer-ui | ReviewerModel | 74 | 75 | 1516 | 1914 | 8/7 | default | 是 | 有 |
+| reviewer-frontend | ReviewerModel | 76 | 77 | 1626 | 2030 | 8/7 | default | 是 | 有 |
 | reviewer-backend | ReviewerModel | 75 | 76 | 1573 | 1984 | 8/7 | default | 是 | 有 |
-| reviewer-reader | ReviewerModel | 75 | 76 | 1540 | 1961 | 8/7 | default | 是 | 有 |
-| reviewer-security | ReviewerModel | 75 | 76 | 1540 | 1946 | 8/7 | default | 是 | 有 |
-| reviewer-qa | ReviewerModel | 76 | 79 | 1585 | 2142 | 8/7 | default | 是 | 有 |
-| reviewer-ops | ReviewerModel | 74 | 75 | 1478 | 1908 | 8/7 | default | 是 | 有 |
+| reviewer-reader | ReviewerModel | 75 | 76 | 1562 | 1961 | 8/7 | default | 是 | 有 |
+| reviewer-security | ReviewerModel | 75 | 76 | 1546 | 1946 | 8/7 | default | 是 | 有 |
+| reviewer-qa | ReviewerModel | 76 | 79 | 1615 | 2142 | 8/7 | default | 是 | 有 |
+| reviewer-ops | ReviewerModel | 74 | 75 | 1514 | 1908 | 8/7 | default | 是 | 有 |
 | senior-sdet | ReviewerModel | 85 | 86 | 2663 | 3142 | 8/7 | policy | 是 | 有 |
 | speaker | ReviewerModel | 80 | 79 | 2302 | 2282 | 8/7 | policy | 是 | 有 |
 
@@ -92,7 +92,7 @@
 | reviewer-audit | 权限 | 仅沙箱 | - |
 | reviewer-audit | 越界处置 | 仅沙箱 | - |
 | reviewer-audit | 边界 | 一致 | 0 |
-| reviewer-product | 职责 | 文本不同 | 0 |
+| reviewer-product | 职责 | 文本不同 | 18 |
 | reviewer-product | 一定会 | 文本不同 | -180 |
 | reviewer-product | 禁止 | 文本不同 | -35 |
 | reviewer-product | 冲突裁决 | 文本不同 | -25 |
@@ -100,7 +100,7 @@
 | reviewer-product | 输出格式 | 文本不同 | -194 |
 | reviewer-product | 权限 | 仅沙箱 | - |
 | reviewer-product | 边界 | 一致 | 0 |
-| reviewer-interaction | 职责 | 文本不同 | 0 |
+| reviewer-interaction | 职责 | 文本不同 | 18 |
 | reviewer-interaction | 一定会 | 文本不同 | -180 |
 | reviewer-interaction | 禁止 | 文本不同 | -35 |
 | reviewer-interaction | 冲突裁决 | 文本不同 | -25 |
@@ -108,7 +108,7 @@
 | reviewer-interaction | 输出格式 | 文本不同 | -194 |
 | reviewer-interaction | 权限 | 仅沙箱 | - |
 | reviewer-interaction | 边界 | 一致 | 0 |
-| reviewer-ui | 职责 | 文本不同 | -1 |
+| reviewer-ui | 职责 | 文本不同 | 17 |
 | reviewer-ui | 一定会 | 文本不同 | -180 |
 | reviewer-ui | 禁止 | 文本不同 | -35 |
 | reviewer-ui | 冲突裁决 | 文本不同 | -25 |
@@ -116,7 +116,7 @@
 | reviewer-ui | 输出格式 | 文本不同 | -194 |
 | reviewer-ui | 权限 | 仅沙箱 | - |
 | reviewer-ui | 边界 | 一致 | 0 |
-| reviewer-frontend | 职责 | 文本不同 | 0 |
+| reviewer-frontend | 职责 | 文本不同 | 19 |
 | reviewer-frontend | 一定会 | 文本不同 | -180 |
 | reviewer-frontend | 禁止 | 文本不同 | -35 |
 | reviewer-frontend | 冲突裁决 | 文本不同 | -25 |
@@ -132,7 +132,7 @@
 | reviewer-backend | 输出格式 | 文本不同 | -194 |
 | reviewer-backend | 权限 | 仅沙箱 | - |
 | reviewer-backend | 边界 | 一致 | 0 |
-| reviewer-reader | 职责 | 文本不同 | 6 |
+| reviewer-reader | 职责 | 文本不同 | 20 |
 | reviewer-reader | 一定会 | 文本不同 | -180 |
 | reviewer-reader | 禁止 | 文本不同 | -35 |
 | reviewer-reader | 冲突裁决 | 文本不同 | -25 |
@@ -140,7 +140,7 @@
 | reviewer-reader | 输出格式 | 文本不同 | -194 |
 | reviewer-reader | 权限 | 仅沙箱 | - |
 | reviewer-reader | 边界 | 一致 | 0 |
-| reviewer-security | 职责 | 文本不同 | 16 |
+| reviewer-security | 职责 | 文本不同 | 20 |
 | reviewer-security | 一定会 | 文本不同 | -180 |
 | reviewer-security | 禁止 | 文本不同 | -35 |
 | reviewer-security | 冲突裁决 | 文本不同 | -25 |
@@ -148,7 +148,7 @@
 | reviewer-security | 输出格式 | 文本不同 | -194 |
 | reviewer-security | 权限 | 仅沙箱 | - |
 | reviewer-security | 边界 | 一致 | 0 |
-| reviewer-qa | 职责 | 文本不同 | 0 |
+| reviewer-qa | 职责 | 文本不同 | 19 |
 | reviewer-qa | 一定会 | 文本不同 | -180 |
 | reviewer-qa | 禁止 | 文本不同 | -35 |
 | reviewer-qa | 冲突裁决 | 文本不同 | -25 |
@@ -156,7 +156,7 @@
 | reviewer-qa | 输出格式 | 文本不同 | -194 |
 | reviewer-qa | 权限 | 仅沙箱 | - |
 | reviewer-qa | 边界 | 一致 | 0 |
-| reviewer-ops | 职责 | 文本不同 | -4 |
+| reviewer-ops | 职责 | 文本不同 | 19 |
 | reviewer-ops | 一定会 | 文本不同 | -180 |
 | reviewer-ops | 禁止 | 文本不同 | -35 |
 | reviewer-ops | 冲突裁决 | 文本不同 | -25 |

@@ -10,7 +10,9 @@
       {
         "id": "frontend-review",
         "objects": [
-          "any-document"
+          "spec",
+          "plan",
+          "tech-design"
         ],
         "perspective": "frontend"
       }
@@ -31,7 +33,7 @@
       "verb": "评审",
       "scope": "前端实现视角",
       "objects": [
-        "任意交付文档"
+        "spec、plan、技术方案"
       ],
       "emit": [
         "判定",

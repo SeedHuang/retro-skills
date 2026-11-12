@@ -1469,7 +1469,10 @@
     "any-document": "任意文档",
     "spec": "spec",
     "plan": "plan",
-    "tech-design": "技术方案"
+    "tech-design": "技术方案",
+    "prd": "PRD",
+    "descriptive": "描述性",
+    "record": "记录型"
   },
   "perspectives": {
     "ai-engineering": "AI 工程视角",
@@ -1479,10 +1482,10 @@
     "ui": "UI 视角",
     "frontend": "前端实现视角",
     "backend": "后端视角",
-    "reader": "阅读视角",
-    "security": "安全视角",
-    "qa": "质检视角",
-    "ops": "运维视角"
+    "reader": "读者视角",
+    "security": "安全风险视角",
+    "qa": "测试视角",
+    "ops": "交付运维视角"
   },
   "schedules": {
     "speaker": "议长"

@@ -10,7 +10,9 @@
       {
         "id": "ops-review",
         "objects": [
-          "any-document"
+          "spec",
+          "plan",
+          "tech-design"
         ],
         "perspective": "ops"
       }
@@ -29,9 +31,9 @@
     },
     "action": {
       "verb": "评审",
-      "scope": "运维视角",
+      "scope": "交付运维视角",
       "objects": [
-        "任意交付文档"
+        "spec、plan、技术方案"
       ],
       "emit": [
         "判定",
