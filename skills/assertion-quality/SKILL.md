@@ -62,3 +62,5 @@ description: Use when 要写下或复核一条会影响别人决策的断言（�
 3. 数字类结论附取数命令，复算结果一致。
 
 手册全文见 `references/manual.md`；判例库见 `references/cases.md`（按「先看反例，再看正例」读）。
+
+建模场景另有一条标题约束：给判据 / 清单条目 / 禁令 / 字段起名时，按 `references/title-criterion.md` 执行，读完产出「标题断言词 → 可观测算子」对照（无算子则改标题 / 补算子 / 标 residual，三选一）；缺对照 = 未执行。仅适用于模型与卡面标题，不适用于 skill / PRD 等非判据标题（避免误杀）。
