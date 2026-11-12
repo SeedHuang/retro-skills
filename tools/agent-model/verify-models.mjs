@@ -253,7 +253,7 @@ let failed = false
 if (isMain) {
   const names = process.argv.slice(2).length
     ? process.argv.slice(2)
-    : ['evidence-reader', 'respondent-architect', 'respondent-dev', 'reviewer-actuary', 'reviewer-ai', 'detective-observer', 'reviewer-audit', 'reviewer-product', 'reviewer-interaction', 'reviewer-ui', 'reviewer-frontend', 'senior-sdet', 'speaker']
+    : ['evidence-reader', 'respondent-architect', 'respondent-dev', 'reviewer-actuary', 'reviewer-ai', 'detective-observer', 'reviewer-audit', 'reviewer-product', 'reviewer-interaction', 'reviewer-ui', 'reviewer-frontend', 'reviewer-backend', 'senior-sdet', 'speaker']
 
   for (const n of names) {
     const r = verify(n)

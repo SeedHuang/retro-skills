@@ -287,7 +287,8 @@
         "reviewer-interaction",
         "senior-sdet",
         "reviewer-ui",
-        "reviewer-frontend"
+        "reviewer-frontend",
+        "reviewer-backend"
       ],
       "slots": [
         {
@@ -317,7 +318,8 @@
         "reviewer-interaction",
         "senior-sdet",
         "reviewer-ui",
-        "reviewer-frontend"
+        "reviewer-frontend",
+        "reviewer-backend"
       ],
       "slots": [
         {
@@ -341,7 +343,8 @@
         "reviewer-interaction",
         "senior-sdet",
         "reviewer-ui",
-        "reviewer-frontend"
+        "reviewer-frontend",
+        "reviewer-backend"
       ],
       "slots": [
         {
@@ -418,7 +421,8 @@
         "reviewer-interaction",
         "senior-sdet",
         "reviewer-ui",
-        "reviewer-frontend"
+        "reviewer-frontend",
+        "reviewer-backend"
       ],
       "slots": [
         {
@@ -447,7 +451,8 @@
         "reviewer-interaction",
         "senior-sdet",
         "reviewer-ui",
-        "reviewer-frontend"
+        "reviewer-frontend",
+        "reviewer-backend"
       ],
       "slots": [
         {
@@ -474,7 +479,8 @@
         "reviewer-interaction",
         "senior-sdet",
         "reviewer-ui",
-        "reviewer-frontend"
+        "reviewer-frontend",
+        "reviewer-backend"
       ],
       "slots": [
         {
@@ -506,7 +512,8 @@
           "reviewer-interaction",
           "senior-sdet",
           "reviewer-ui",
-          "reviewer-frontend"
+          "reviewer-frontend",
+          "reviewer-backend"
         ]
       },
       {
@@ -527,7 +534,8 @@
           "reviewer-interaction",
           "senior-sdet",
           "reviewer-ui",
-          "reviewer-frontend"
+          "reviewer-frontend",
+          "reviewer-backend"
         ]
       },
       {
@@ -548,7 +556,8 @@
           "reviewer-interaction",
           "senior-sdet",
           "reviewer-ui",
-          "reviewer-frontend"
+          "reviewer-frontend",
+          "reviewer-backend"
         ]
       },
       {
@@ -570,7 +579,8 @@
           "reviewer-interaction",
           "senior-sdet",
           "reviewer-ui",
-          "reviewer-frontend"
+          "reviewer-frontend",
+          "reviewer-backend"
         ]
       }
     ],
@@ -589,7 +599,8 @@
           "reviewer-product",
           "reviewer-interaction",
           "reviewer-ui",
-          "reviewer-frontend"
+          "reviewer-frontend",
+          "reviewer-backend"
         ]
       },
       {
@@ -623,7 +634,8 @@
           "reviewer-interaction",
           "senior-sdet",
           "reviewer-ui",
-          "reviewer-frontend"
+          "reviewer-frontend",
+          "reviewer-backend"
         ]
       },
       {
@@ -644,7 +656,8 @@
           "reviewer-interaction",
           "senior-sdet",
           "reviewer-ui",
-          "reviewer-frontend"
+          "reviewer-frontend",
+          "reviewer-backend"
         ]
       },
       {
@@ -665,7 +678,8 @@
           "reviewer-interaction",
           "senior-sdet",
           "reviewer-ui",
-          "reviewer-frontend"
+          "reviewer-frontend",
+          "reviewer-backend"
         ]
       }
     ]
@@ -1403,7 +1417,8 @@
     "product": "产品视角",
     "interaction": "交互视角",
     "ui": "UI 视角",
-    "frontend": "前端实现视角"
+    "frontend": "前端实现视角",
+    "backend": "后端实现视角"
   },
   "schedules": {
     "speaker": "议长"
