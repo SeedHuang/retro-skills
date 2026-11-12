@@ -16,6 +16,8 @@ import { renderCard } from '../components/renderCard.mjs'
 import { loadSeatData } from '../components/seatLoader.mjs'
 import { validateAgentData } from '../components/validateAgentData.mjs'
 import { withRepoCopy, runCli, runEsm } from './support/dev-workflow-checks.mjs'
+// E03 用「命中 ≤ 基线」这一可移植判据；清单完整性交给 `npm run check` ⑤ 段
+import { runSweep, readBaseline } from '../../../../../scripts/scope-sweep.mjs'
 
 const ROOT = process.cwd()
 const SEATS_DIR = 'tools/docgen/dsl/agents/seats'
@@ -74,7 +76,7 @@ test('S3-TC-A02 登记表 id 合规、文本唯一、源码键数一致', () => 
   const texts = Object.values(constraints).map((v) => v.text)
   assert.deepEqual([...new Set(texts)].length, texts.length, '不得有两条完全相同文本')
   const src = readFileSync(REGISTRY, 'utf8')
-  const srcKeys = [...src.matchAll(/'(duty\.[a-z0-9.:-]+)'\s*:\s*\{/g)].map((m) => m[1])
+  const srcKeys = [...src.matchAll(/(['"])(duty\.[a-z0-9.:-]+)\1\s*:\s*\{/g)].map((m) => m[2])
   assert.equal(srcKeys.length, ids.length, '构造前提：源码键数 = 导出键数（正则只作前提，不作判据）')
 })
 
@@ -133,7 +135,7 @@ test('S3-TC-A07 rationale 不进卡面，只进 docs 投影', () => {
   assert.deepEqual(docsMiss, [])
 })
 
-test('S3-TC-A08 迁移全或无：登记表在 ⇒ 18 席全改；不在 ⇒ 全部仍是旧字段', () => {
+test('S3-TC-A08 迁移后态：登记表在 ⇒ 全部席已改（无半迁移）', () => {
   const has = existsSync(REGISTRY)
   const rows = seatFiles().map((f) => seatJSON(f).card.duty || {})
   const migrated = rows.filter((d) => Array.isArray(d.constraints) && !Object.hasOwn(d, 'constraint')).length
@@ -142,16 +144,22 @@ test('S3-TC-A08 迁移全或无：登记表在 ⇒ 18 席全改；不在 ⇒ 全
 })
 
 // ── B 组：校验码负例 ───────────────────────────────────────────
-test('S3-TC-B01 旧字段 constraint 并存 → CONSTRAINT_NOT_IDS', () => {
-  withDataCopy((dir) => {
-    const p = join(dir, 'seats', 'reviewer-actuary.json')
-    assert.equal(probeCode(dir), '', '构造前提：基线必须为空')
-    const j = JSON.parse(readFileSync(p, 'utf8'))
-    j.card.duty.constraint = '只记录不裁决'
-    writeFileSync(p, `${JSON.stringify(j, null, 2)}\n`)
-    assert.match(readFileSync(p, 'utf8'), /"constraint"/)
-    assert.equal(probeCode(dir), 'CONSTRAINT_NOT_IDS')
-  })
+test('S3-TC-B01 旧字段 / 白名单外子键 → CONSTRAINT_NOT_IDS', () => {
+  // §9-G2：一个码承接两种形态（旧 `constraint`、`duty` 白名单外子键），两种都要有负例
+  const cases = [
+    ['旧字段 constraint', (duty) => { duty.constraint = '只记录不裁决' }],
+    ['白名单外子键 metrics', (duty) => { duty.metrics = 1 }],
+  ]
+  for (const [label, mutate] of cases) {
+    withDataCopy((dir) => {
+      const p = join(dir, 'seats', 'reviewer-actuary.json')
+      assert.equal(probeCode(dir), '', '构造前提：基线必须为空')
+      const j = JSON.parse(readFileSync(p, 'utf8'))
+      mutate(j.card.duty)
+      writeFileSync(p, `${JSON.stringify(j, null, 2)}\n`)
+      assert.equal(probeCode(dir), 'CONSTRAINT_NOT_IDS', label)
+    })
+  }
 })
 
 test('S3-TC-B02 未知 id → CONSTRAINT_ID_UNKNOWN', () => {
@@ -197,6 +205,7 @@ test('S3-TC-C01 约束行 = 登记文本按序连接；duty 键集只含派生�
     const want = ids.map((id) => constraints[id].text).join('；')
     const line = renderCard(b.card, buildEnv(b.seat, [b.card])).split('\n').find((l) => l.startsWith('约束：')) || ''
     if (line !== `约束：${want}`) bad.push(b.seat)
+    // `constraint` 是 loader 派生键（与 trigger / categories 同法）；席级自由字段由 B01 守，不在此白名单内放宽
     const ek = Object.keys(b.card.duty).filter((k) => !['trigger', 'categories', 'action', 'constraints', 'constraint'].includes(k))
     if (ek.length) extra.push(`${b.seat}:${ek.join(',')}`)
   }
@@ -278,9 +287,16 @@ test('S3-TC-E01 gate baseline 全绿且无 Mismatch', () => {
 // E02（npm run check 全绿）是施工期一次性实跑：套内再跑会自递归，故不设常驻用例——
 // 结论记在 `.session/reviews/2026-11-12-s3-constraint-ids/impact-sheet.md` 与提交说明里。
 
-test('S3-TC-E03 scope-sweep 绿', () => {
-  const r = execFileSync('node', ['scripts/scope-sweep.mjs', '--check'], { encoding: 'utf8' })
-  assert.match(r, /sweep ok/)
+test('S3-TC-E03 口径命中不超基线（环境无关：不依赖当次 impact-sheet）', () => {
+  // 清单完整性（每处有处置）由 `npm run check` 的 ⑤ 段 / 施工期一次性校验负责；
+  // 常驻判据只守「不留新旧说法」这一可移植的部分，否则新克隆上必然假红。
+  const { counts } = runSweep({})
+  const baseline = readBaseline(ROOT)
+  assert.ok(baseline, '基线必须存在（tools/scope-sweep/baseline.json）')
+  const over = Object.entries(counts)
+    .filter(([id, n]) => typeof baseline.counts[id] !== 'number' || n > baseline.counts[id])
+    .map(([id, n]) => `${id}:${n}>${baseline.counts[id] ?? '未登记'}`)
+  assert.deepEqual(over, [], `口径命中超基线：${over.join('、')}`)
 })
 
 test('S3-TC-E04 卡面零变化已记账（锚串「卡面 0 变化」）', () => {
