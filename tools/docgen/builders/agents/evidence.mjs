@@ -6,8 +6,8 @@ import { SEMANTIC_KEYS } from '../../../execution-matrix/check-agent.mjs';
 import { writeFileAtomic } from './atomicWrite.mjs';
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
-export const evidenceDir = () => process.env.DOCGEN_EVIDENCE_DIR || join(ROOT, 'fixtures');
-export const evidencePath = (name) => join(evidenceDir(), `${name}.evidence.json`);
+export const evidenceDir = () => process.env.DOCGEN_EVIDENCE_DIR || join(ROOT, '..', '..', 'models', 'agents', 'jsons');
+export const evidencePath = (name) => join(evidenceDir(), name, '_evidence.json');
 
 const HEX40 = /^[0-9a-f]{40}$/;
 const SHA = /^[0-9A-F]{64}$/;

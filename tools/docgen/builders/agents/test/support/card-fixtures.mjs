@@ -36,7 +36,7 @@ export const coldRepo = ({ mutate = null, args = ['gate'], verify = null, env = 
   const r = runCli(args, copy, {
     DOCGEN_DRAFTS_DIR: join(copy, '.drafts'),
     DOCGEN_STATE_PATH: join(copy, 'tools/docgen/builders/agents/state.json'),
-    DOCGEN_EVIDENCE_DIR: join(copy, 'tools/docgen/builders/agents/fixtures'),
+    DOCGEN_EVIDENCE_DIR: join(copy, 'tools/docgen/models/agents/jsons'),
     ...(env ?? {}),
   })
   try { if (verify) verify(copy, r) } finally { rmSync(copy, { recursive: true, force: true }) }

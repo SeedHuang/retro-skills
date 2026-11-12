@@ -11,7 +11,7 @@
 | P2 | `20261019093443-docgen-agent-generation.md` | **agent 整文件生成**（13 席数据搬家 + senior-sdet 转录 = 14 个）+ description / 触发表 + gen-agents 收编与旧脚本退役（D14）；执行 = 逐 agent 串行巩固（P2-7，§6 逐步迁移方案）；生成物走「草稿 → 确认 → 替换」（参考 rule 草稿机制） | **生成章节被 P5 替代（2026-11-12）**；其余纪律仍有效 | P1 |
 | P3 | `docgen-rule-generation.md` | **rule 整文件生成扩容**：rule 六组合骨架（持续 / 条件触发 / 模式门控 × 义务 / 禁令）+ 其余手写 rule 收编；复用 P2 基建 + 草稿机制 | 暂停（2026-11-12 用户决定：先暂停 rule / skill 文件生成，见 D19） | P2 |
 | P4 | `docgen-skill-generation.md` | **skill 整文件生成**：frontmatter + 正文转录，17 个手写 skill 按需收编（D16）；复用 P2 基建 + 草稿机制 | 暂停（2026-11-12 用户决定：先暂停 rule / skill 文件生成，见 D19） | P2 |
-| P5 | `20261111145723-agent-model-pipeline.md` | **agent 卡模型化**：18 席模型 JSON →（`tools/agent-model`）确定性渲染；旧 `agentData` / `cardPipeline` / `card-model` / `docs/agents` 退场；gate 比对新基线 | **验证通过（用户终签 2026-11-12；账本 `.session/reviews/2026-11-12-1240-p5-close-r2/`）** | P2 |
+| P5 | `20261111145723-agent-model-pipeline.md` | **agent 卡模型化**：18 席模型 JSON →（`tools/docgen/models/agents`）确定性渲染；旧 `agentData` / `cardPipeline` / `card-model` / `docs/agents` 退场；gate 比对新基线 | **验证通过（用户终签 2026-11-12；账本 `.session/reviews/2026-11-12-1240-p5-close-r2/`）** | P2 |
 
 **状态词表**：生效 / 待评审 / 已定稿 / 未创建 / 验证通过 / 暂停。
 
@@ -41,7 +41,7 @@
 | D16 | 存量按需迁移，不追溯 | 用户 2026-10-18 |
 | D17 | 10-16 旧方案（任务 0–6）作废，只吸收审查对账思路 | 用户 2026-10-18 |
 | D18 | **v1 不做 spec 片段生成**；spec 不参与生成 | 用户 2026-10-18（确认原话/轮次待补；曾记为待点头） |
-| D19 | **暂停 rule / skill 文件生成**：P3、P4 不启动，不立 PRD、不产草稿；现有生成链代码零改动、`rules/*.md` 原文冻结；执行边界与重启流程见 `docs/prd/20261112134234-rule-skill-generation-pause.md` | 用户 2026-11-12（原话「先暂停rule和skill的文件生成」）；重启条件：用户另行指示 |
+| D19 | **暂停 rule / skill 文件生成**：P3、P4 不启动，不立 PRD、不产草稿；现有生成链代码零改动、`rules/*.md` 原文冻结；执行边界与重启流程见 `docs/prd/20261112134234-rule-skill-generation-pause.md`。**例外（用户 2026-11-12 批准）**：纯路径改名、行为不变的引用同步（`tools/docgen/builders/rules/{rules,build}.mjs` 的路径常量）不计入「代码改动」 | 用户 2026-11-12（原话「先暂停rule和skill的文件生成」）；重启条件：用户另行指示 |
 
 ## 3 内容分类与唯一源
 

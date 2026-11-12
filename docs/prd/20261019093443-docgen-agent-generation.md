@@ -1,7 +1,7 @@
 # P2：agent 的整文件生成 + description / 触发表 + gen-agents 收编（Docgen 第二份）
 
 > 状态：草稿（待议会评审；第 1 轮修复中，2026-10-19）｜依赖：`docgen-index.md`（共享决策 D1–D18）｜前置：P1 验证通过（2026-10-18，13/13 PASS）
-> **生成章节已被替代（P5，2026-11-12）**：agent 卡改由 `tools/agent-model/models/` 模型 JSON 确定性渲染；本份的 `agentData` / `triggerTable` / `cardPipeline` / 草稿替换链已退场。现行依据 = `docs/prd/20261111145723-agent-model-pipeline.md`（P5）。
+> **生成章节已被替代（P5，2026-11-12）**：agent 卡改由 `tools/docgen/models/agents/jsons/<seat>/index.json` 模型 JSON 确定性渲染；本份的 `agentData` / `triggerTable` / `cardPipeline` / 草稿替换链已退场。现行依据 = `docs/prd/20261111145723-agent-model-pipeline.md`（P5）。
 > 目标：把「组件 → 模板 → 生成 → 守卫」扩到 **agent 一类**生成物：收编 14 个 agent（议会 13 席数据搬家 + senior-sdet 手写转录），落地 description / 触发表，`gen-agents` 全家退役。**本次不做 skill、不做 rule 六骨架**（分别立项 P4 / P3）。
 > 执行节奏：**agent 类统一迁移、逐个巩固**（D11 + 用户 2026-10-18）——同类放一起做，注意力集中；每个 agent 单独走完「生成 → 守卫 → 草稿 → 确认 → 替换 → 巩固」闭环，巩固一个再做下一个。
 > 生成物写入纪律：**任何生成物不直接替换现有 agent**——一律先落草稿箱，用户确认后才替换（参考 rule 草稿机制，见 P2-4）。

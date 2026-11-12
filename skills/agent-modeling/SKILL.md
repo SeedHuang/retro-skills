@@ -5,7 +5,7 @@ description: 把 agent 卡面 markdown 拆成模型 JSON、再由确定性渲染
 
 # agent-modeling：卡面 ↔ 模型
 
-把一张 `agents/<seat>.md`（或用户口述的职责）拆成 `models/<seat>-model.json`，再用引擎渲染回卡面；拆解中的每个缺口都要落到可判字段，落不下就回退改文案。
+把一张 `agents/<seat>.md`（或用户口述的职责）拆成 `jsons/<seat>/index.json`，再用引擎渲染回卡面；拆解中的每个缺口都要落到可判字段，落不下就回退改文案。
 
 ## 触发条件
 
@@ -13,7 +13,7 @@ description: 把 agent 卡面 markdown 拆成模型 JSON、再由确定性渲染
 - 用户要对某个模型做等价校验（展开后是否与基线一致）或单卡渲染预览。
 - 用户要为 P4 的未建模席先出草稿。
 
-**不触发**：评审席卡写得好不好（走 `parliament`）；写规则文件（走 `rule-writer`）；只改渲染器代码（直接改 `tools/agent-model/render/`）。
+**不触发**：评审席卡写得好不好（走 `parliament`）；写规则文件（走 `rule-writer`）；只改渲染器代码（直接改 `tools/docgen/models/agents/render/`）。
 
 ## 七阶流程
 
@@ -33,7 +33,7 @@ description: 把 agent 卡面 markdown 拆成模型 JSON、再由确定性渲染
 
 ## 与引擎的接口
 
-引擎在 `tools/agent-model/`（本 skill 只调用，不复制实现）。
+引擎在 `tools/docgen/models/agents/`（本 skill 只调用，不复制实现）。
 
 ```powershell
 # 以下命令在技能目录（含 scripts/ 的那一层）下执行
@@ -51,7 +51,7 @@ node scripts/render.mjs <model.json> [--out <dir>] [--shared <shared.json>]
 ## 硬约束
 
 1. **只写 `drafts/`**：草稿模型与预览落 `drafts/`（该目录不进 git）；禁止写 `agents/**`。
-2. **不改引擎**：渲染/校验逻辑只有 `tools/agent-model/` 一份；发现要改，先改引擎再回到本流程。
+2. **不改引擎**：渲染/校验逻辑只有 `tools/docgen/models/agents/` 一份；发现要改，先改引擎再回到本流程。
 3. **不手写派生文本**：`outputFormat.checks[].text`、`checkCriteria.summary` 这类派生文本禁止手写，由 `observable` 派生（否则引擎报 `OUTPUT_TEXT_HANDWRITTEN` / `TitleDrift`）。
 
 ## 做完核对（缺一不合格）

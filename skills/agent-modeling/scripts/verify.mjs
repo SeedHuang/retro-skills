@@ -2,10 +2,10 @@ import { readFileSync, existsSync } from 'node:fs'
 import { basename, dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from './args.mjs'
-import { expand, verify, anyError } from '../../../tools/agent-model/verify-models.mjs'
+import { expand, verify, anyError } from '../../../tools/docgen/models/agents/verify-models.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
-const ENGINE = resolve(here, '..', '..', '..', 'tools', 'agent-model')
+const ENGINE = resolve(here, '..', '..', '..', 'tools', 'docgen', 'models', 'agents')
 
 // 位置参数 = 模型文件；--ref <file> 追加等价比对；--shared <file> 覆盖共享层
 const { positional, flags } = parseArgs(process.argv.slice(2), ['ref', 'shared'])
@@ -15,8 +15,9 @@ if (!modelPath) {
   process.exit(1)
 }
 
-const id = basename(modelPath).replace(/-model\.json$/, '')
-const sharedPath = resolve(flags.shared || join(ENGINE, 'models', '_shared-model.json'))
+const base = basename(modelPath)
+const id = base === 'index.json' ? basename(dirname(modelPath)) : base.replace(/-model\.json$/, '')
+const sharedPath = resolve(flags.shared || join(ENGINE, 'jsons', '_shared.json'))
 let shared
 try {
   shared = JSON.parse(readFileSync(sharedPath, 'utf8'))
@@ -25,8 +26,13 @@ try {
   process.exit(1)
 }
 
-// 有基线才做「与基线等价」判定；草稿新席无基线时只判 19 类码，状态词用 CHECKS_PASS，避免把「无码」读成「等价」
-const hasBaseline = existsSync(join(ENGINE, 'models', '_baseline', `${id}.json`))
+// 缺基线默认判失败：不许静默退成「只判 19 类码」；草稿模式须显式 --allow-no-baseline
+const allowNoBaseline = Boolean(flags['allow-no-baseline'])
+const hasBaseline = existsSync(join(ENGINE, 'jsons', id, '_baseline.json'))
+if (!hasBaseline && !allowNoBaseline) {
+  console.error(`缺基线：jsons/${id}/_baseline.json（草稿模式请显式传 --allow-no-baseline）`)
+  process.exit(1)
+}
 const r = verify(id, { modelPath: resolve(modelPath), baseline: hasBaseline, shared })
 const ok = !anyError(r)
 

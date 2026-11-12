@@ -1,12 +1,12 @@
 # 校验码与修法
 
-引擎：`tools/agent-model/verify-models.mjs`（本文件只解释码，不复述实现）。判红 = 码出现即失败，`verify.mjs` 退出码 1。
+引擎：`tools/docgen/models/agents/verify-models.mjs`（本文件只解释码，不复述实现）。判红 = 码出现即失败，`verify.mjs` 退出码 1。
 
 ## 结构类
 
 | 码 | 触发 | 最小修法 |
 |---|---|---|
-| `must` / `never` / `predicates` / `record-lost:<k>` / `record-diff:<k>` | 展开结果与 `models/_baseline/<seat>.json` 不等 | 只允许「等价重构」：行为不变时重跑 baseline 更新脚本并复核差异；有行为变化则回 P2 重写判据 |
+| `must` / `never` / `predicates` / `record-lost:<k>` / `record-diff:<k>` | 展开结果与 `jsons/<seat>/_baseline.json` 不等 | 只允许「等价重构」：行为不变时重跑 baseline 更新脚本并复核差异；有行为变化则回 P2 重写判据 |
 | `TYPE_UNKNOWN` / `TYPE_CONFLICT:<a,b>` | 模型不同时匹配任何 / 多个类型类 | 补齐类型特征键；同席只能属一个类型 |
 | `PATH_UNDEFINED` | `seat.artifacts` 中的 artifact 在 `forms` 里无 `path` | 在 `forms` 补 `path` |
 | `PATH_INVALID` | `forms[].path` 占位符未登记（`SourceUnstructured` / `SourceTextMissing`） | 占位符必须出现在共享 `placeholders`；`records[].source.kind=description` 必须有 `text` |

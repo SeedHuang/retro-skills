@@ -1,7 +1,7 @@
 // 变更段写盘通路单测（spec 2026-10-21）：差异算法 / 触达映射 / machineChecks / evidence 留痕校验 / 参数与阶段边界
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync, rmSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
@@ -9,7 +9,7 @@ import { diffLines, formatDiff, touchedSemanticKeys, machineChecksOf } from '../
 import { readEvidence } from '../evidence.mjs';
 
 const CLI = 'tools/docgen/builders/agents/cli.mjs';
-const FIXTURE = 'tools/docgen/builders/agents/fixtures/senior-sdet.evidence.json';
+const FIXTURE = 'tools/docgen/models/agents/jsons/senior-sdet/_evidence.json';
 const cli = (args, env = {}) => spawnSync(process.execPath, [CLI, ...args], { encoding: 'utf8', env: { ...process.env, ...env } });
 
 // ── 差异算法（spec §3.2） ──
@@ -116,7 +116,8 @@ const withEvidenceDir = (mutate) => {
   const dir = mkdtempSync(join(tmpdir(), 'dg-ev-'));
   const base = JSON.parse(readFileSync(FIXTURE, 'utf8'));
   mutate(base);
-  writeFileSync(join(dir, 'senior-sdet.evidence.json'), `${JSON.stringify(base, null, 2)}\n`);
+  mkdirSync(join(dir, 'senior-sdet'), { recursive: true });
+  writeFileSync(join(dir, 'senior-sdet', '_evidence.json'), `${JSON.stringify(base, null, 2)}\n`);
   return { dir, run: () => readEvidence('senior-sdet'), cleanup: () => rmSync(dir, { recursive: true, force: true }) };
 };
 const prevDir = process.env.DOCGEN_EVIDENCE_DIR;

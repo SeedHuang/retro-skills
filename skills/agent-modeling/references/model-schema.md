@@ -7,7 +7,7 @@
 | 键 | 作用 | 必填 |
 |---|---|---|
 | `version` / `id` | 模型版本与席名 | 是 |
-| `extends` | 共享层文件名（现行统一 `_shared-model.json`） | 是 |
+| `extends` | 共享层文件名（现行统一 `_shared.json`） | 是 |
 | `seat` | `id` / `display` / `triggers[]` / `description` / `artifacts[]` / `tier` | 是 |
 | `duty` | 触发来源、动作三元组（verb / scope / objects / emit）、落点 | 是 |
 | `timing` | 场景 / 时刻 / 频度（覆盖共享默认） | 否 |
@@ -53,7 +53,7 @@
 3. **禁止 `literal`**：手抄卡面散文不可核——散文与模型数据可以各改各的、都不报警，等于用「不可测的散文」换「字节一致」。渲染器保留 `literal` 供历史与副本测试，但模型清单里出现即红。
 4. `policy` 但档位不含 `Write` → `BOUNDARY_POLICY_NONWRITER`；根因通常是 1 的档位没补齐。
 
-判据不靠自觉：`tools/agent-model/test/boundary-source.test.mjs` 四条守卫逐席核「渲染正文 = 声明来源」「有写落点 ⇒ policy 且档位含 Write」「无写落点 ⇒ default 且卡面 = 默认句」「模型不得出现 literal」。写新模型前先跑它，红即改。
+判据不靠自觉：`tools/docgen/models/agents/test/boundary-source.test.mjs` 四条守卫逐席核「渲染正文 = 声明来源」「有写落点 ⇒ policy 且档位含 Write」「无写落点 ⇒ default 且卡面 = 默认句」「模型不得出现 literal」。写新模型前先跑它，红即改。
 
 ## 渲染顺序（段表）
 

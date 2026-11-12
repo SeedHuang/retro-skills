@@ -93,7 +93,7 @@
 ### 4.1 五层管线
 
 ```
-models/<seat>-model.json + _shared-model.json       ① 数据层
+jsons/<seat>/index.json + jsons/_shared.json       ① 数据层
       │  extends 展开（rules 按 appliesWhen 过滤，records/forms 浅合并）
       ▼
 类型判别 + 结构校验 + 语义校验                       ② 校验层
@@ -247,12 +247,12 @@ skill 建模 → verify 全绿 → 渲染 → 与 agents/<seat>.md 段级 diff �
 
 | # | 面 | 动作 | 完成 / 证据锚 |
 |---|---|---|---|
-| 1 | 生成方法 | `cardPipeline` 的入口从 `agentData` 改为 `models/`；保留原函数作为兼容层或删除 | 完成：`models/` 为唯一入口；`tools/agent-model/source.mjs:1-3`（不再经 `agentData` / `triggerTable` / `seatLoader`，旧链已退场） |
-| 2 | 配置文件 | `agentData.mjs` / `triggerTable` / `SHARED_MUST` / `SHARED_NEVER` / `SHARED_USE` 由模型取代 | 完成：旧配置链已删；同锚 `tools/agent-model/source.mjs:1-3` |
+| 1 | 生成方法 | `cardPipeline` 的入口从 `agentData` 改为 `models/`；保留原函数作为兼容层或删除 | 完成：`models/` 为唯一入口；`tools/docgen/models/agents/source.mjs:1-3`（不再经 `agentData` / `triggerTable` / `seatLoader`，旧链已退场） |
+| 2 | 配置文件 | `agentData.mjs` / `triggerTable` / `SHARED_MUST` / `SHARED_NEVER` / `SHARED_USE` 由模型取代 | 完成：旧配置链已删；同锚 `tools/docgen/models/agents/source.mjs:1-3` |
 | 3 | 渲染引擎 | `renderCard.mjs`（P5 后由 `components/renderByName.mjs` 承接，见 `tools/docgen/builders/agents/cli.mjs:12`、`:24`）/ `renderBoundary` 的消费方式改为读模型段 | 完成：`cli.mjs:12`、`:24` 指向 `components/renderByName.mjs` |
 | 4 | 产物 | `agents/*.md` 全部由 `models/` 渲染；`gate` 对 18 席逐字节比对（切换前基线见 `p5-pre-switch` tag = commit `fa67454`；该 tag 仅本地，未推远端） | 完成：`cli.mjs gate` → `agents 18/18` + `baseline 20/20`（主 agent 2026-11-12 12:46 实跑，exit 0） |
 | 5 | 门禁 | `gate` 改为比对新基线；`npm run check` 全绿 | 完成：`npm run check` → `# pass 693` / `# fail 0` / 末行 `check 全部通过`（2026-11-12 12:46 实跑） |
-| 6 | 测试 | 6 + 9 个既有红必须清零或按新基线重写；新增模型/渲染/校验单测（`open-issues.md` C5 范围） | 完成：`tools/agent-model/test/` 现有 7 个测试文件（c5-matrix / source / verify-negatives / types / render-sections / boundary-source / skill-root）；旧红测文件已不在该目录 |
+| 6 | 测试 | 6 + 9 个既有红必须清零或按新基线重写；新增模型/渲染/校验单测（`open-issues.md` C5 范围） | 完成：`tools/docgen/models/agents/test/` 现有 7 个测试文件（c5-matrix / source / verify-negatives / types / render-sections / boundary-source / skill-root）；旧红测文件已不在该目录 |
 | 7 | 文档 | 旧 PRD 的生成章节标注「被本文替代」；`docs/prd/docgen-index.md` 增一行 | 完成：旧 PRD `20261019093443-docgen-agent-generation.md:4`、`:131` 已标「被替代（P5，2026-11-12）」；`docs/prd/docgen-index.md:11` 标「生成章节被 P5 替代」 |
 | 8 | 清理 | 删除 `tmp/agent-criteria-demo/`；**代码/配置面** grep 无 `agent-criteria-demo` 引用（`docs/` 历史记录按 `docs-placement`「历史记录不改」保留） | 完成：代码面 Grep `agent-criteria-demo` → 0 处；`tmp/agent-criteria-demo/` 不存在 |
 
@@ -329,8 +329,8 @@ grep -c '"replaced"' tools/docgen/builders/agents/state.json → 18；gate 逐�
 
 | 词 | 含义 |
 |---|---|
-| 模型 | `models/<seat>-model.json`，卡面唯一真相 |
-| 共享块 | `_shared-model.json`，被 `extends` 引用 |
+| 模型 | `jsons/<seat>/index.json`，卡面唯一真相 |
+| 共享块 | `jsons/_shared.json`，被 `extends` 引用 |
 | `appliesWhen` | 规则下发条件：`"*"` 或席 id 数组 |
 | 段 | 卡面的一个 `##` 级块，由一个段函数产出 |
 | 缺口四元组 | `{path, code, missing, fixTarget}`，code 为闭集 |
@@ -340,13 +340,13 @@ grep -c '"replaced"' tools/docgen/builders/agents/state.json → 18；gate 逐�
 
 ## 11 取证锚
 
-> 本表为 PRD 创建（2026-11-11）时的取证快照。P5 已删除 `tmp/agent-criteria-demo/` 与 `card-model/`：标「P5 前」的锚用 `git show p5-pre-switch:<path>` 或 `git show fa67454:<path>` 复核；现行锚以 `tools/agent-model/` 路径为准。
+> 本表为 PRD 创建（2026-11-11）时的取证快照。P5 已删除 `tmp/agent-criteria-demo/` 与 `card-model/`：标「P5 前」的锚用 `git show p5-pre-switch:<path>` 或 `git show fa67454:<path>` 复核；现行锚以 `tools/docgen/models/agents/` 路径为准。
 
 | 断言 | 锚 |
 |---|---|
-| 7 张卡展开等价 | `node tools/agent-model/verify-models.mjs` → 18 行 `EQUIVALENT`（P5 前为 tmp 下 7 行） |
+| 7 张卡展开等价 | `node tools/docgen/models/agents/verify-models.mjs` → 18 行 `EQUIVALENT`（P5 前为 tmp 下 7 行） |
 | 渲染确定性 | 连跑两次 `node render-all.mjs`，7 文件字节差 0 |
-| `outputFormat` 未渲染 | `models/*-model.json` 中 6 处配置；`output/*.md` 中「## 输出格式」0 处 |
+| `outputFormat` 未渲染 | `jsons/*/index.json` 中 6 处配置（P5 期路径 `models/*-model.json`）；`output/*.md` 中「## 输出格式」0 处 |
 | `tools` 不在模型 | `tmp/agent-criteria-demo/render/sections.mjs:92` |
 | 越界编号硬编码 | `tmp/agent-criteria-demo/render/sections.mjs:201` |
 | 规则全席继承 | `tools/docgen/builders/agents/card-model/vocab/shared-actions.mjs:88-102` |
