@@ -1,6 +1,6 @@
 # agent 模型驱动生成流水线（PRD）
 
-> 状态：P5 已落地（待评审）｜创建：2026-11-11
+> 状态：P5 已收口（用户终签 2026-11-12；验证通过；账本 `.session/reviews/2026-11-12-1240-p5-close-r2/`）｜创建：2026-11-11
 > 替代：`20261019093443-docgen-agent-generation.md`（P2）中「agent 卡怎么生成」这一段；P2 的「草稿 → 确认 → 替换」纪律继续有效
 > 研究材料：`tmp/agent-criteria-demo/`（仅作输入，不直接进正式仓；**P5 已执行删除，下文历史引用保留为记录**）
 > 硬纪律：除 P5 切换阶段（且逐卡确认）外，**任何阶段不得写 `agents/*.md`**
@@ -43,9 +43,11 @@
 
 ### 3.1 真实环境已落地，不能重做
 
+> 以下为 P5 前现状（2026-11-11 盘点）；现行入口以 §11 取证锚与 §6 P5 表末列为准。
+
 | 能力 | 位置 | 说明 |
 |---|---|---|
-| 卡渲染管线 | `tools/docgen/builders/agents/components/cardPipeline.mjs` | 由 `agentData` 内存数据渲染 18 张卡 |
+| 卡渲染管线（P5 后已删） | `tools/docgen/builders/agents/components/cardPipeline.mjs` | 由 `agentData` 内存数据渲染 18 张卡（P5 前现状） |
 | 门禁 | `tools/docgen/builders/agents/cli.mjs`（`gate` / `diff` / `draft`） | 重渲染比对 `agents/*.md` |
 | 策略三键 | `tools/docgen/builders/agents/policy/seat-policy.mjs` | `capabilities` / `allowGroups` / `artifacts` |
 | 产物归属 | `tools/docgen/builders/agents/policy/definitions/artifacts.mjs` | 7 项（本轮新增 3 项） |
@@ -234,7 +236,7 @@ skill 建模 → verify 全绿 → 渲染 → 与 agents/<seat>.md 段级 diff �
 ```
 18 张全 EQUIVALENT
 逐席沙箱产物 vs 现役卡：无「未解释差异」（每处差异在 diff 报告中归类为「改进」并给出依据）
-四维抽测：至少覆盖 6 席（每子类 2 席）
+四维抽测：至少覆盖 6 席（Reviewer ≥2 / Respondent ≥2；`AuditorModel` 全测——本仓仅 `reviewer-audit` 1 席）；抽测口径以 §7.1 为唯一源
 ```
 
 **边界**：仍不写 `agents/`。
@@ -243,27 +245,27 @@ skill 建模 → verify 全绿 → 渲染 → 与 agents/<seat>.md 段级 diff �
 
 **替换面（缺一即不算干净）**：
 
-| # | 面 | 动作 |
-|---|---|---|
-| 1 | 生成方法 | `cardPipeline` 的入口从 `agentData` 改为 `models/`；保留原函数作为兼容层或删除 |
-| 2 | 配置文件 | `agentData.mjs` / `triggerTable` / `SHARED_MUST` / `SHARED_NEVER` / `SHARED_USE` 由模型取代 |
-| 3 | 渲染引擎 | `renderCard.mjs` / `renderBoundary` 的消费方式改为读模型段 |
-| 4 | 产物 | `agents/*.md` 全部由新管线生成，逐字节等于 `sandbox/` 版本 |
-| 5 | 门禁 | `gate` 改为比对新基线；`npm run check` 全绿 |
-| 6 | 测试 | 6 + 9 个既有红必须清零或按新基线重写；新增模型/渲染/校验单测（`open-issues.md` C5 范围） |
-| 7 | 文档 | 旧 PRD 的生成章节标注「被本文替代」；`docs/prd/docgen-index.md` 增一行 |
-| 8 | 清理 | 删除 `tmp/agent-criteria-demo/`；**代码/配置面** grep 无 `agent-criteria-demo` 引用（`docs/` 历史记录按 `docs-placement`「历史记录不改」保留） |
+| # | 面 | 动作 | 完成 / 证据锚 |
+|---|---|---|---|
+| 1 | 生成方法 | `cardPipeline` 的入口从 `agentData` 改为 `models/`；保留原函数作为兼容层或删除 | 完成：`models/` 为唯一入口；`tools/agent-model/source.mjs:1-3`（不再经 `agentData` / `triggerTable` / `seatLoader`，旧链已退场） |
+| 2 | 配置文件 | `agentData.mjs` / `triggerTable` / `SHARED_MUST` / `SHARED_NEVER` / `SHARED_USE` 由模型取代 | 完成：旧配置链已删；同锚 `tools/agent-model/source.mjs:1-3` |
+| 3 | 渲染引擎 | `renderCard.mjs`（P5 后由 `components/renderByName.mjs` 承接，见 `tools/docgen/builders/agents/cli.mjs:12`、`:24`）/ `renderBoundary` 的消费方式改为读模型段 | 完成：`cli.mjs:12`、`:24` 指向 `components/renderByName.mjs` |
+| 4 | 产物 | `agents/*.md` 全部由 `models/` 渲染；`gate` 对 18 席逐字节比对（切换前基线见 `p5-pre-switch` tag = commit `fa67454`；该 tag 仅本地，未推远端） | 完成：`cli.mjs gate` → `agents 18/18` + `baseline 20/20`（主 agent 2026-11-12 12:46 实跑，exit 0） |
+| 5 | 门禁 | `gate` 改为比对新基线；`npm run check` 全绿 | 完成：`npm run check` → `# pass 693` / `# fail 0` / 末行 `check 全部通过`（2026-11-12 12:46 实跑） |
+| 6 | 测试 | 6 + 9 个既有红必须清零或按新基线重写；新增模型/渲染/校验单测（`open-issues.md` C5 范围） | 完成：`tools/agent-model/test/` 现有 7 个测试文件（c5-matrix / source / verify-negatives / types / render-sections / boundary-source / skill-root）；旧红测文件已不在该目录 |
+| 7 | 文档 | 旧 PRD 的生成章节标注「被本文替代」；`docs/prd/docgen-index.md` 增一行 | 完成：旧 PRD `20261019093443-docgen-agent-generation.md:4`、`:131` 已标「被替代（P5，2026-11-12）」；`docs/prd/docgen-index.md:11` 标「生成章节被 P5 替代」 |
+| 8 | 清理 | 删除 `tmp/agent-criteria-demo/`；**代码/配置面** grep 无 `agent-criteria-demo` 引用（`docs/` 历史记录按 `docs-placement`「历史记录不改」保留） | 完成：代码面 Grep `agent-criteria-demo` → 0 处；`tmp/agent-criteria-demo/` 不存在 |
 
 **验收**：
 
 ```
 npm run check                      → 全绿（exit 0）
-node tools/docgen/.../cli.mjs gate → 18/18，exit 0
+node tools/docgen/builders/agents/cli.mjs gate → agents 18/18，exit 0
 grep -r "agent-criteria-demo" tools scripts skills rules agents → 0 处（docs/ 历史记录按 docs-placement 不改）
-git diff --stat agents/            → 与 sandbox 版本一致，无手改残留
+grep -c '"replaced"' tools/docgen/builders/agents/state.json → 18；gate 逐字节比对 18 席全等，无手改残留
 ```
 
-**回滚**：切换前打 tag；回滚 = 恢复 tag + 还原 `agentData` 入口。
+**回滚**：切换前打 tag（`p5-pre-switch` = commit `fa67454`；仅本地，未推远端）；回滚 = 恢复 tag + 还原 `agentData` 入口。
 
 ## 7 四维评估协议
 
@@ -299,6 +301,9 @@ git diff --stat agents/            → 与 sandbox 版本一致，无手改残�
 | 四维全部达线 | 进入下一阶段 |
 | 任一维退化 >10% | 回 P1 调优（定位到段/规则），调完重跑本阶段 |
 | 理解或执行力退化 | 优先查「边界段是否缺失」「规则是否错发」，不得用文字润色掩盖 |
+| 某维关键指标缺测（如任务时延未打点） | 该维判「未判定」，不得计入「四维全部达线」；须补测或用户书面豁免，并在报告标注 |
+
+> 已知缺测：任务时延（subagent wall-clock）自 P2 起未打点，性能维只到渲染侧；按本表不得宣称「四维全部达线」。
 
 ## 8 风险
 
@@ -307,7 +312,7 @@ git diff --stat agents/            → 与 sandbox 版本一致，无手改残�
 | R1 | 边界段（15 槽）接入方式与现役不一致 | 切换后 gate 全红 | P1 先把该段做成「逐字节对齐」验收项 |
 | R2 | 18 席里 11 席未建模，拆解中可能发现新语法缺口 | P4 延期 | 每席先出缺口四元组，攒到 3 条同类再扩 schema |
 | R3 | 现役 6 + 9 个已知红测试 | P5 无法判定「切换成功」 | 切换前先清零或按新基线重写，作为 P5 前置门 |
-| R4 | 模型体积增长导致 token 反超 | 四维之一退化 | 共享块 + `appliesWhen` 已压 −42%；P2 用实测数据决定是否继续瘦身 |
+| R4 | 模型体积增长导致 token 反超 | 四维之一退化 | 共享块 + `appliesWhen` 已压缩（幅度未复核；原数字无推导记录，2026-11-12 复核判定不可复算）；P2 用实测数据决定是否继续瘦身 |
 | R5 | skill 产出模型质量不稳定 | P4 逐席返工 | skill 内置固定校验码；不通过即不出草稿 |
 
 ## 9 已定
@@ -330,16 +335,20 @@ git diff --stat agents/            → 与 sandbox 版本一致，无手改残�
 | 段 | 卡面的一个 `##` 级块，由一个段函数产出 |
 | 缺口四元组 | `{path, code, missing, fixTarget}`，code 为闭集 |
 | 沙箱 | `tmp/agent-criteria-demo/sandbox/`，P1–P4 的产物落点 |
+| fixture | 固定测试输入件；本协议为「1 张含缺陷问题卡 / 1 份答辩记录 / 1 次越界写盘」三件 |
+| token | 模型分词计量单位；本协议按字符数 / 4 估算 + 分词器复核（见 §7.2） |
 
 ## 11 取证锚
 
+> 本表为 PRD 创建（2026-11-11）时的取证快照。P5 已删除 `tmp/agent-criteria-demo/` 与 `card-model/`：标「P5 前」的锚用 `git show p5-pre-switch:<path>` 或 `git show fa67454:<path>` 复核；现行锚以 `tools/agent-model/` 路径为准。
+
 | 断言 | 锚 |
 |---|---|
-| 7 张卡展开等价 | `node verify-models.mjs` → 7 行 `EQUIVALENT` |
+| 7 张卡展开等价 | `node tools/agent-model/verify-models.mjs` → 18 行 `EQUIVALENT`（P5 前为 tmp 下 7 行） |
 | 渲染确定性 | 连跑两次 `node render-all.mjs`，7 文件字节差 0 |
 | `outputFormat` 未渲染 | `models/*-model.json` 中 6 处配置；`output/*.md` 中「## 输出格式」0 处 |
 | `tools` 不在模型 | `tmp/agent-criteria-demo/render/sections.mjs:92` |
 | 越界编号硬编码 | `tmp/agent-criteria-demo/render/sections.mjs:201` |
 | 规则全席继承 | `tools/docgen/builders/agents/card-model/vocab/shared-actions.mjs:88-102` |
-| 现役卡自相矛盾 | `agents/evidence-reader.md:12`、`:66` |
+| 现役卡自相矛盾 | `agents/evidence-reader.md:12`、`:66`（P5 前；现行对应 `:25`） |
 | 既有红灯 | `node --test tools/docgen/builders/agents/test/policy-pure-source.test.mjs` → 6 红；`tool-tiers.test.mjs` → 9 红（改动前既有） |

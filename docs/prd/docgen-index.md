@@ -1,6 +1,6 @@
 # Docgen PRD 索引
 
-> 状态：生效（活索引，按 §6 变更）｜更新：2026-10-18｜作用：只放共享决策、PRD 清单与状态、依赖关系；不写实现细节。
+> 状态：生效（活索引，按 §6 变更）｜更新：2026-11-12｜作用：只放共享决策、PRD 清单与状态、依赖关系；不写实现细节。
 
 ## 1 PRD 清单
 
@@ -11,7 +11,7 @@
 | P2 | `20261019093443-docgen-agent-generation.md` | **agent 整文件生成**（13 席数据搬家 + senior-sdet 转录 = 14 个）+ description / 触发表 + gen-agents 收编与旧脚本退役（D14）；执行 = 逐 agent 串行巩固（P2-7，§6 逐步迁移方案）；生成物走「草稿 → 确认 → 替换」（参考 rule 草稿机制） | **生成章节被 P5 替代（2026-11-12）**；其余纪律仍有效 | P1 |
 | P3 | `docgen-rule-generation.md` | **rule 整文件生成扩容**：rule 六组合骨架（持续 / 条件触发 / 模式门控 × 义务 / 禁令）+ 其余手写 rule 收编；复用 P2 基建 + 草稿机制 | 未创建 | P2 |
 | P4 | `docgen-skill-generation.md` | **skill 整文件生成**：frontmatter + 正文转录，17 个手写 skill 按需收编（D16）；复用 P2 基建 + 草稿机制 | 未创建 | P2 |
-| P5 | `20261111145723-agent-model-pipeline.md` | **agent 卡模型化**：18 席模型 JSON →（`tools/agent-model`）确定性渲染；旧 `agentData` / `cardPipeline` / `card-model` / `docs/agents` 退场；gate 比对新基线 | **已落地（P5 切换完成，2026-11-12）** | P2 |
+| P5 | `20261111145723-agent-model-pipeline.md` | **agent 卡模型化**：18 席模型 JSON →（`tools/agent-model`）确定性渲染；旧 `agentData` / `cardPipeline` / `card-model` / `docs/agents` 退场；gate 比对新基线 | **验证通过（用户终签 2026-11-12；账本 `.session/reviews/2026-11-12-1240-p5-close-r2/`）** | P2 |
 
 **状态词表**：生效 / 待评审 / 已定稿 / 未创建 / 验证通过。
 
@@ -78,3 +78,4 @@
 - 改共享决策：改本索引 + 记录日期 / 出处；受影响 PRD 标「需重审」。
 - 改单个 PRD：只审该 PRD + 本索引。
 - 已通过 PRD 冻结；被取代时原文保留（历史记录）。
+- 2026-11-12：P5 用户终签通过（状态改「验证通过」）；账本见 `.session/reviews/2026-11-12-1240-p5-close-r2/`。
