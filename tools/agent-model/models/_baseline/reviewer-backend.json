@@ -10,7 +10,9 @@
       {
         "id": "backend-review",
         "objects": [
-          "any-document"
+          "spec",
+          "plan",
+          "tech-design"
         ],
         "perspective": "backend"
       }
@@ -29,9 +31,9 @@
     },
     "action": {
       "verb": "评审",
-      "scope": "后端实现视角",
+      "scope": "后端视角",
       "objects": [
-        "任意交付文档"
+        "spec、plan、技术方案"
       ],
       "emit": [
         "判定",

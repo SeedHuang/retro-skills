@@ -611,6 +611,7 @@
           "reviewer-audit",
           "reviewer-actuary",
           "reviewer-ai",
+          "evidence-reader",
           "reviewer-product",
           "reviewer-interaction",
           "senior-sdet",
@@ -1465,7 +1466,10 @@
     "ai-doc": "含 AI 指令的文档",
     "issue-card": "问题卡",
     "issue-card-behavior": "问题卡所述行为",
-    "any-document": "任意文档"
+    "any-document": "任意文档",
+    "spec": "spec",
+    "plan": "plan",
+    "tech-design": "技术方案"
   },
   "perspectives": {
     "ai-engineering": "AI 工程视角",
@@ -1474,7 +1478,7 @@
     "interaction": "交互视角",
     "ui": "UI 视角",
     "frontend": "前端实现视角",
-    "backend": "后端实现视角",
+    "backend": "后端视角",
     "reader": "阅读视角",
     "security": "安全视角",
     "qa": "质检视角",

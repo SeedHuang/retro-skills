@@ -5,7 +5,7 @@
 | 席 | 类型 | 沙箱行数 | 现役行数 | 沙箱字符 | 现役字符 | 段数（沙箱/现役） | 边界形态 | 边界一致 | 输出格式 |
 |---|---|---|---|---|---|---|---|---|---|
 | detective-observer | RespondentModel | 89 | 81 | 2861 | 2806 | 10/7 | policy | 是 | 有 |
-| evidence-reader | RespondentModel | 82 | 81 | 2581 | 2824 | 9/7 | policy | 是 | 有 |
+| evidence-reader | RespondentModel | 84 | 81 | 2669 | 2824 | 9/7 | policy | 是 | 有 |
 | respondent-architect | RespondentModel | 78 | 77 | 2324 | 2299 | 8/7 | policy | 是 | 有 |
 | respondent-dev | RespondentModel | 78 | 77 | 2441 | 2317 | 8/7 | policy | 是 | 有 |
 | reviewer-actuary | ReviewerModel | 94 | 89 | 2854 | 2968 | 9/7 | policy | 是 | 有 |
@@ -15,7 +15,7 @@
 | reviewer-interaction | ReviewerModel | 76 | 77 | 1592 | 2018 | 8/7 | default | 是 | 有 |
 | reviewer-ui | ReviewerModel | 74 | 75 | 1487 | 1914 | 8/7 | default | 是 | 有 |
 | reviewer-frontend | ReviewerModel | 76 | 77 | 1596 | 2030 | 8/7 | default | 是 | 有 |
-| reviewer-backend | ReviewerModel | 75 | 76 | 1549 | 1984 | 8/7 | default | 是 | 有 |
+| reviewer-backend | ReviewerModel | 75 | 76 | 1573 | 1984 | 8/7 | default | 是 | 有 |
 | reviewer-reader | ReviewerModel | 75 | 76 | 1540 | 1961 | 8/7 | default | 是 | 有 |
 | reviewer-security | ReviewerModel | 75 | 76 | 1540 | 1946 | 8/7 | default | 是 | 有 |
 | reviewer-qa | ReviewerModel | 76 | 79 | 1585 | 2142 | 8/7 | default | 是 | 有 |
@@ -38,7 +38,7 @@
 | detective-observer | 越界处置 | 仅沙箱 | - |
 | detective-observer | 边界 | 一致 | 0 |
 | evidence-reader | 职责 | 文本不同 | 10 |
-| evidence-reader | 一定会 | 文本不同 | -265 |
+| evidence-reader | 一定会 | 文本不同 | -177 |
 | evidence-reader | 禁止 | 文本不同 | -78 |
 | evidence-reader | 冲突裁决 | 文本不同 | -25 |
 | evidence-reader | 本席清单 | 文本不同 | 24 |
@@ -124,7 +124,7 @@
 | reviewer-frontend | 输出格式 | 文本不同 | -194 |
 | reviewer-frontend | 权限 | 仅沙箱 | - |
 | reviewer-frontend | 边界 | 一致 | 0 |
-| reviewer-backend | 职责 | 文本不同 | 4 |
+| reviewer-backend | 职责 | 文本不同 | 19 |
 | reviewer-backend | 一定会 | 文本不同 | -180 |
 | reviewer-backend | 禁止 | 文本不同 | -35 |
 | reviewer-backend | 冲突裁决 | 文本不同 | -25 |

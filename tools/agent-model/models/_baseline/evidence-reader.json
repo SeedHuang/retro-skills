@@ -1087,6 +1087,18 @@
           "object": "deliverable.body"
         }
       ]
+    },
+    {
+      "id": "shared.no-fake-problem",
+      "criterion": "no-fake-problem",
+      "targets": [
+        {
+          "object": "deliverable.body"
+        },
+        {
+          "object": "deliverable.appendix"
+        }
+      ]
     }
   ],
   "never": [
