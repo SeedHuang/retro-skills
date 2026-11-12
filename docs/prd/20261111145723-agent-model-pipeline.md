@@ -34,7 +34,7 @@
 
 **非目标**
 
-- 不改 `agents/` 之外的产物类型（rule / skill 正文生成另行立项）
+- 不改 `agents/` 之外的产物类型（rule / skill 正文生成另行立项；2026-11-12 用户决定**暂停**，见 `docs/prd/docgen-index.md` D19）
 - 不在本期实现「判据求值器全量」（负例只做结构检查，`tmp/agent-criteria-demo/open-issues.md` C4）
 - 不改 `pathGroups` / `commandGroups` / `capabilities` 的内容（只被引用，不被重定义）
 - 不做多语言、不做 agent 运行时框架
