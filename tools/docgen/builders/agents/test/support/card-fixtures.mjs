@@ -53,7 +53,10 @@ export const coldRepo = ({ mutate = null, args = ['gate'], verify = null, env = 
     if (!existsSync(src)) continue
     const dst = join(copy, f)
     mkdirSync(dirname(dst), { recursive: true })
-    cpSync(src, dst)
+    // 清单快照 → 逐文件复制之间，并发用例可能删/重建文件（本仓 `tmp/**` 被 force-add 后仍会被其它用例清理）：
+    // 快照语义 = 「复制时刻仍存在的文件」，故 ENOENT 与上面 existsSync 跳过同义，不算失败。
+    // 复现：全量 check 下 S3-TC-F02 偶发 `ENOENT … tmp/agent-criteria-demo/sandbox/*.md`（2026-11-12）。
+    try { cpSync(src, dst) } catch (e) { if (e && e.code === 'ENOENT') continue; throw e }
   }
   if (existsSync(DOC_AGENTS_DIR)) cpSync(DOC_AGENTS_DIR, join(copy, 'docs', 'agents'), { recursive: true })
   if (mutate) mutate(copy)
@@ -64,6 +67,9 @@ export const coldRepo = ({ mutate = null, args = ['gate'], verify = null, env = 
     DOCGEN_EVIDENCE_DIR: join(copy, 'tools/docgen/builders/agents/fixtures'),
     ...(env ?? {}),
   })
+  // #region debug-point s3-f02
+  dbgLog({ evt: 'done', skipped, gateStatus: r.status })
+  // #endregion
   try { if (verify) verify(copy, r) } finally { rmSync(copy, { recursive: true, force: true }) }
   return r
 }
