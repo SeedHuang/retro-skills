@@ -10,7 +10,7 @@
 | 项 | 暂停（不做） | 仍照常（不受影响） |
 |---|---|---|
 | P3 rule 整文件生成扩容 | 不立项、不写 PRD、不产 rule 草稿、不扩 rule 六组合骨架 | 生成链照常服役：`tools/docgen/builders/rules` 与 `components/renderedAssets.mjs` 不删不改；`rules/*.md` 原文冻结（不重生成、不手改），gate 继续逐字节比对 |
-| P4 skill 整文件生成 | 不立项、不写 PRD、不产 skill 草稿、不新增 skill 生成能力 | 没有可停的正文生成：`tools/docgen/builders/skills/` 仅 `.gitkeep`；`tools/docgen/dsl/skills/docs-placement.json` 属**判据检查**（`scripts/check-skill-criteria.mjs`），不是生成，照常 |
+| P4 skill 整文件生成 | 不立项、不写 PRD、不产 skill 草稿、不新增 skill 生成能力 | 没有可停的正文生成：skill 生成器从未实现（原 `tools/docgen/builders/skills/` 仅有 `.gitkeep` 占位，2026-11-12 已随空目录清理删除）；`tools/docgen/dsl/skills/docs-placement.json` 属**判据检查**（`scripts/check-skill-criteria.mjs`），不是生成，照常 |
 | agent 侧 | — | 不受本决定影响：18 席由 `tools/agent-model` 模型确定性渲染（P5 已切换），gate `agents 18/18` + `baseline 20/20` |
 | 立项动作 | 不创建 `docs/prd/docgen-rule-generation.md`、`docs/prd/docgen-skill-generation.md` | — |
 
@@ -26,7 +26,7 @@ docs/prd/docgen-index.md             → P3 / P4 状态列均为「暂停」
 
 ```
 node tools/docgen/builders/agents/cli.mjs gate → agents 18/18 + baseline 20/20，exit 0
-git ls-files tools/docgen/builders/skills      → 仅 .gitkeep（无 skill 正文生成实现）
+git ls-files tools/docgen/builders/skills      → 空（占位目录已于 2026-11-12 清理）
 git ls-files tools/docgen/builders/agent-model → 空（0 文件；新模型代码在顶层 tools/agent-model/）
 ```
 
@@ -68,7 +68,7 @@ baseline 20 = 18 张 agent 卡 + 2 条 rule（`components/baseline.mjs:9`）：`
 | 口径确认 | 用户 2026-11-12：「按这个口径更新文档」（skill 无生成可停 / rule 冻结不重生成 / agent 已用新模型与新渲染引擎） |
 | 状态与决策 | `docs/prd/docgen-index.md` P3 / P4 行、D19、§6 变更记录 |
 | 生成链仍在服役 | `node tools/docgen/builders/agents/cli.mjs gate` → `agents 18/18` + `baseline 20/20`，exit 0（2026-11-12 实跑） |
-| skill 无正文生成 | `git ls-files tools/docgen/builders/skills` → 仅 `.gitkeep` |
+| skill 无正文生成 | `git ls-files tools/docgen/builders/skills` → 空（2026-11-12 清理前仅 `.gitkeep`，无生成器代码） |
 | agent 已切新链 | `tools/docgen/builders/agents/cli.mjs:9` import `../../../agent-model/source.mjs`；`tools/agent-model/source.mjs:1-3`（旧 `agentData` / `triggerTable` / `seatLoader` 已退场） |
 | 两份 PRD 未创建 | `Glob docs/prd/*.md` → 仅 `docgen-index.md`、`20261018214426-…`、`20261019093443-…`、`20261026205821-…`、`20261111145723-…` 与本文件 |
 | 非目标一致 | `docs/prd/20261111145723-agent-model-pipeline.md:37`（rule / skill 正文生成「另行立项」已补「暂停」注） |
