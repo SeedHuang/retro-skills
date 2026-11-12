@@ -19,7 +19,7 @@ test('index.json 输入：席名取父目录，判 EQUIVALENT', () => {
   assert.match(r.stdout, /^reviewer-actuary .*EQUIVALENT/)
 })
 
-test('草稿 -model.json：席名按后缀剥离，仍判 EQUIVALENT', () => {
+test('-model.json 后缀：席名按后缀剥离，仍判 EQUIVALENT', () => {
   const dir = mkdtempSync(join(tmpdir(), 'sv-'))
   try {
     const p = join(dir, 'reviewer-actuary-model.json')
@@ -33,7 +33,7 @@ test('草稿 -model.json：席名按后缀剥离，仍判 EQUIVALENT', () => {
 test('缺基线：默认 exit 1（不得静默 CHECKS_PASS）', () => {
   const dir = mkdtempSync(join(tmpdir(), 'sv-'))
   try {
-    const p = join(dir, 'zzz-draft-model.json')
+    const p = join(dir, 'zzz-ghost-model.json')
     writeFileSync(p, readFileSync(IDX, 'utf8'))
     const r = run([p])
     assert.equal(r.status, 1)
@@ -45,7 +45,7 @@ test('缺基线：默认 exit 1（不得静默 CHECKS_PASS）', () => {
 test('缺基线 + --allow-no-baseline：不再报「缺基线」', () => {
   const dir = mkdtempSync(join(tmpdir(), 'sv-'))
   try {
-    const p = join(dir, 'zzz-draft-model.json')
+    const p = join(dir, 'zzz-ghost-model.json')
     writeFileSync(p, readFileSync(IDX, 'utf8'))
     const r = run([p, '--allow-no-baseline'])
     assert.doesNotMatch(r.stderr, /缺基线/)

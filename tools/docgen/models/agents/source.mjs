@@ -1,5 +1,5 @@
 // 模型数据源适配层（P5）：18 席 `jsons/<seat>/index.json` → 确定性渲染文本 / 校验 findings / trigger.kind。
-// 唯一读盘点：docgen 的 gate / generate / diff / draft / replace 与两守卫都从这里取席名与渲染结果，
+// 唯一读盘点：docgen 的 gate / generate / diff 与两守卫都从这里取席名与渲染结果，
 // 不再经 `agentData` / `triggerTable` / `seatLoader`（旧链已退场）。
 import { readFileSync, readdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'

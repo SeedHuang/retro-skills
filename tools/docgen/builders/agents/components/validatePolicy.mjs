@@ -177,8 +177,7 @@ export function validatePolicy() {
   }
 
   // ---- 不变量 8：席级组内容合法（方向② 撞禁止 → `:verb`；方向① 越出允许集 → `:not-allowed`）----
-  // 撞禁止的判定：**已登记的允许 verb 直接放行**（否则 `draft`（生成）这类单 token 禁令会误伤
-  // 允许组里的 `draft ls`、`node scripts/*` 等 8 条命令，token `node` 来自 `node -e`）；
+  // 撞禁止的判定：**已登记的允许 verb 直接放行**（否则单 token 禁令会误伤允许组里含该 token 的整条命令）；
   // 其余按「禁止 verb 的 token 序列」做**连续子序列**匹配——`git commit` 撞 `commit`、`x node -e y` 撞 `node -e`
   // 口径偏离（已知，待回流 spec §3.5 #8「token 交集为空」）：允许清单优先于 token 交集，否则误伤不可解；
   // 代价是「允许组若误收危险命令」时席级组不再兜，靠允许组本身受审（本条不设第二道网）。

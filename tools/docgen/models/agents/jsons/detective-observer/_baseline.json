@@ -14,7 +14,8 @@
           "repeat": "per-round"
         },
         "schedule": "speaker",
-        "action": "behavior-check"
+        "action": "behavior-check",
+        "kind": "moment"
       }
     ],
     "description": {
@@ -24,7 +25,8 @@
     },
     "artifacts": [
       "artifact.detective"
-    ]
+    ],
+    "tier": "producer"
   },
   "duty": {
     "trigger": {
@@ -1133,10 +1135,6 @@
           "label": "被 .gitignore 覆盖"
         },
         {
-          "id": "outside-repo",
-          "label": "草稿目录在仓库外"
-        },
-        {
           "id": "committed-write",
           "label": "已提交的写入"
         },
@@ -1200,6 +1198,9 @@
         "form.env.line"
       ]
     }
+  },
+  "boundary": {
+    "kind": "policy"
   },
   "never": [
     {

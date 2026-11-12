@@ -17,9 +17,7 @@ import { BASELINE_RULES, agentPaths } from '../tools/docgen/builders/agents/comp
 // （判据单源在 tools/execution-matrix/，本文件只调用不内联）
 import { checkBuckets } from '../tools/execution-matrix/check-buckets.mjs'
 import { checkAgentFile } from '../tools/execution-matrix/check-agent.mjs'
-// docgen 状态（哪些席已由生成器替换）——A 组检查的覆盖集从这里现算，不写死试点席
-import { readState, statePath } from '../tools/docgen/builders/agents/state.mjs'
-// 名字集来源（C9 的 ⊇ 断言的另一头）：与 baseline / gate / check-agents 同一份模型席列表
+// 名字集来源（A 组检查覆盖集）：与 baseline / gate / check-agents 同一份模型席列表
 import { listSeats } from '../tools/docgen/models/agents/source.mjs'
 import { checkSharedChanges } from '../tools/execution-matrix/shared-changes/check-shared-changes.mjs'
 import { checkPatternTable } from '../tools/execution-matrix/check-pattern-table.mjs'
@@ -195,44 +193,14 @@ if (!bucketRes.ok) {
   failed = true
   console.error(`[execution-matrix] 归桶守卫失败：${JSON.stringify(bucketRes.findings)}`)
 }
-// A 组 + 十键检查覆盖每个已被 docgen 替换的席（覆盖集从 state 现算：只挂试点席会让新增席静默漏检）
-let replacedSeats = []
-let stateRead = true
-let stateAgents = {}
-try {
-  stateAgents = readState().agents
-  replacedSeats = Object.entries(stateAgents)
-    .filter(([, st]) => st === 'replaced')
-    .map(([name]) => name)
-    .sort()
-} catch (e) {
-  // readState 抛 StateFileInvalid（state.json 损坏 / 键不在 agentData）：按本文件统一出口收敛，
-  // 不让整个 check 以未捕获堆栈中止、把后面的共享项闸门与 markdown 检查一起丢掉
-  stateRead = false
+// A 组 + 十键检查覆盖每个模型席（覆盖集直接取 listSeats：18 席全量，不写死试点席）
+const seats = listSeats().sort()
+if (seats.length === 0) {
   failed = true
-  console.error(`[execution-matrix] state 读取失败：${e.code ?? e.name}（A 组检查未执行）`)
+  console.error('[execution-matrix] 模型席列表为空，A 组检查未实际执行')
 }
-// C9（spec §7.1）：state 覆盖集 ⊇ agentData 名字集，fail-closed——缺一条键、或整个 state 文件缺失都报红。
-// 为什么不放进 readState()：state 缺失返回空表是既有语义（pilot-gate.test.mjs 依赖），下沉会改语义并波及多个测试。
-// 缺键的后果是静默的：A 组与十键检查的覆盖集从 state 现算，漏登记的席不会被检查，也不会有任何红灯。
-if (!existsSync(statePath())) {
-  failed = true
-  console.error(`[execution-matrix] state 文件缺失：${statePath()}（C9 fail-closed：不得按「全量 registered」放行）`)
-} else if (stateRead) {
-  const missing = listSeats().filter((n) => !(n in stateAgents))
-  if (missing.length > 0) {
-    failed = true
-    console.error(`[execution-matrix] state 覆盖不全：缺 ${missing.join(', ')}（漏登记 state 的席会被 A 组静默跳过）`)
-  }
-}
-if (stateRead && replacedSeats.length === 0) {
-  failed = true
-  console.error('[execution-matrix] state 中没有任何 replaced 席，A 组检查未实际执行')
-}
-if (replacedSeats.length > 0) {
-  console.log(`[execution-matrix] A 组+十键检查已覆盖 ${replacedSeats.length} 席：${replacedSeats.join(', ')}`)
-}
-for (const seat of replacedSeats) {
+console.log(`[execution-matrix] A 组+十键检查已覆盖 ${seats.length} 席：${seats.join(', ')}`)
+for (const seat of seats) {
   const agentRes = checkAgentFile(seat)
   if (!agentRes.ok) {
     failed = true

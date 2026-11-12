@@ -6,7 +6,7 @@ const EXIT = {
     'TemplateHardcoded', 'ImpureRender', 'Mismatch', 'DuplicateAgentName', 'InvalidName',
     'FrontmatterFieldMissing', 'ToolsViolation', 'WhenFormatViolation',
     'DescriptionDerivation', 'TriggerMissingRoute', 'TriggerConflict', 'DuplicateWhen',
-    'InvalidOutputKind', 'MissingWhen', 'DraftDrift', 'DraftNameConflict', 'TargetDrift',
+    'InvalidOutputKind', 'MissingWhen',
     'TriggerFieldMisplaced',
     'DanglingSharedRef', 'EmptySharedValue', 'NestedSharedRef', 'CardKeySetMismatch',
     'DutyCategoryMisplaced',
@@ -19,9 +19,8 @@ const EXIT = {
     'SubjectiveLabel', 'UnverifiableOutput'],
   2: ['UnregisteredHandwritten', 'InvalidBaseline', 'InvalidBaselinePath', 'DanglingBaselineEntry',
     'BaselineDrift', 'EnvironmentEOL', 'InvalidInputPath', 'InvalidOutputPath',
-    'MissingComponentData', 'UnsupportedKind', 'StateFileInvalid', 'GoldenSnapshotUnavailable',
-    'EvidenceInvalid', 'InvalidArgs', 'MigrationPhaseClosed', 'DirtyWorkTree'],
-  3: ['GeneratedMissing', 'TemplateReadFailed', 'TargetReadFailed', 'WriteFailed', 'DraftNotFound', 'DraftWriteFailed'],
+    'MissingComponentData', 'UnsupportedKind', 'InvalidArgs', 'DirtyWorkTree'],
+  3: ['GeneratedMissing', 'TemplateReadFailed', 'TargetReadFailed', 'WriteFailed'],
   4: ['NotAuthorized', 'UnapprovedChange'],
 }
 

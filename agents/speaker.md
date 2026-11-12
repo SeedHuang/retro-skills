@@ -72,8 +72,8 @@ tools: Read, Glob, Grep, Write, Edit, RunCommand
 
 **命令默认拒绝**：只跑本席策略 `commandGroups` 的 `git.read` / `tool.time` / `audit.lookup` 白名单组，其余一律不跑（逐条命令不在本卡重复）。
 
-**禁止**：策略源 `forbiddenGroups` 的全部命令组；**任何形式的环境变量赋值**（该组内的 env 形态项；`DOCGEN_*` 只是举例）。其中 `draft`（生成）只指生成动作；白名单里 `draft` 带子命令的那条只读形态不在此列。
+**禁止**：策略源 `forbiddenGroups` 的全部命令组；**任何形式的环境变量赋值**（该组内的 env 形态项；`DOCGEN_*` 只是举例）。
 
 **越界后果与限度**：越界写 = 越权：立即停手；越权清单（文件 + 改前/改后 sha256 + 是否可复原 + 命令原文）**由越权者写进本人产物**（② 段限定的产物`progress.md`）。
 
-**复算由独立于越权者的核验席完成**，结论记入核签行；可复原（tracked）→ 复原命令由你给出、用户执行（禁 agent 自跑 `checkout` / `restore`）；不可复原（gitignored）→ 以轮初快照为基线，能比对就比对，不能就明写「不可复原 + 缺失基线」；本轮结论作废并直接报用户。**检测限度**：`git --no-optional-locks status --porcelain` 只能看 tracked 工作区；`DETECTION_BLIND_SPOTS` 被 gitignore、草稿目录在仓外、已提交写与写后还原都看不见——检测门强化归 S5-B。
+**复算由独立于越权者的核验席完成**，结论记入核签行；可复原（tracked）→ 复原命令由你给出、用户执行（禁 agent 自跑 `checkout` / `restore`）；不可复原（gitignored）→ 以轮初快照为基线，能比对就比对，不能就明写「不可复原 + 缺失基线」；本轮结论作废并直接报用户。**检测限度**：`git --no-optional-locks status --porcelain` 只能看 tracked 工作区；`DETECTION_BLIND_SPOTS` 被 gitignore、已提交写与写后还原都看不见——检测门强化归 S5-B。

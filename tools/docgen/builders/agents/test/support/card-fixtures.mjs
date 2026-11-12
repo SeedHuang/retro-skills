@@ -32,13 +32,7 @@ export const coldRepo = ({ mutate = null, args = ['gate'], verify = null, env = 
     try { cpSync(src, dst) } catch (e) { if (e && e.code === 'ENOENT') continue; throw e }
   }
   if (mutate) mutate(copy)
-  mkdirSync(join(copy, '.drafts'), { recursive: true })
-  const r = runCli(args, copy, {
-    DOCGEN_DRAFTS_DIR: join(copy, '.drafts'),
-    DOCGEN_STATE_PATH: join(copy, 'tools/docgen/builders/agents/state.json'),
-    DOCGEN_EVIDENCE_DIR: join(copy, 'tools/docgen/models/agents/jsons'),
-    ...(env ?? {}),
-  })
+  const r = runCli(args, copy, env ?? null)
   try { if (verify) verify(copy, r) } finally { rmSync(copy, { recursive: true, force: true }) }
   return r
 }

@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-// docgen CLI（R1）：六子命令统一入口。本任务实现 generate + gate；draft/replace/check-agents/baseline 由 Task 5/6 扩展。
-import { readFileSync, existsSync, realpathSync, mkdirSync, writeFileSync, readdirSync, rmSync, renameSync } from 'node:fs';
+// docgen CLI：generate / gate / dump / policy / check-agents / baseline / diff 统一入口。
+// agent 卡唯一写盘路径 = `generate --kind agent`（无 --preview）；diff 只读比对渲染与现卡。
+import { readFileSync, existsSync, realpathSync, mkdirSync, writeFileSync, readdirSync, rmSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { join, resolve, dirname, relative, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { homedir } from 'node:os';
 import { listSeats, isSeat, renderSeatText, modelWithShared, collectModelFindings } from '../../models/agents/source.mjs';
 import { BASELINE_RULES, agentPaths, renderBaseline } from './components/baseline.mjs';
 import { compareBuffers, checkEnvironment } from './components/compare.mjs';
@@ -14,12 +14,7 @@ import { RENDERED_RULES, renderedRuleAssets, writeRenderedRule, renderRenderedRu
 import { validatePolicy } from './components/validatePolicy.mjs';
 import { exitCodeFor } from './components/exitCodes.mjs';
 import { dumpPolicy } from './components/dumpPolicy.mjs';
-import { readState, writeState, setAgentState, statePath } from './state.mjs';
-import { readEvidence, writeEvidence, evidencePath } from './evidence.mjs';
 import { writeFileAtomic } from './atomicWrite.mjs';
-// 结构层与语义键来自 check-agent；渲染器已抽到 renderByName.mjs，故 check-agent 不再 import 本文件（无环）
-import { checkStruct, readAnnotations, SEMANTIC_KEYS } from '../../../execution-matrix/check-agent.mjs';
-import { fenceMask } from '../../../execution-matrix/markdown-rows.mjs';
 
 // 对外仍从 cli 导出（既有测试/调用方按 cli.mjs 取渲染器）；实现已移入 components/renderByName.mjs
 export { renderByName };
@@ -40,7 +35,7 @@ function assertCleanForFormalWrite(force) {
   });
   if (bad.length > 0) fail('DirtyWorkTree', { message: `DirtyWorkTree: 工作树有与生成无关的改动（${bad.slice(0, 3).join(' | ')}）；先提交/清理，或用 --force` });
 }
-// baseline 清单路径可用 DOCGEN_BASELINE_PATH 重定向（与 state / evidence / drafts 同款测试隔离位）：
+// baseline 清单路径可用 DOCGEN_BASELINE_PATH 重定向（测试隔离位）：
 // 测试写的是临时文件，不再与非同进程的 gate 抢同一个共享文件（并发 truncate 窗口会让 gate 误报 BaselineDrift）
 const baselinePath = () => process.env.DOCGEN_BASELINE_PATH || join(dirname(fileURLToPath(import.meta.url)), 'baseline.json');
 // 阶段 1（2026-11-05）：唯一生成规则（已退役，留档 `docs/bak/rules/spec-testcase-gate.md`）已下沉，生成/比对分支同步裁停
@@ -132,7 +127,7 @@ export function cmdGenerate(args) {
   return drift === 0 ? 0 : 1;
 }
 
-// collectGate：收集漂移清单（不抛）——cmdReplace 判别子与 gateChecks 共用（Task 7）
+// collectGate：收集漂移清单（不抛）——gateChecks 与 check-agents 共用
 export function collectGate() {
   const drifts = [];
   const onDisk = readFileSync(baselinePath(), 'utf8');
@@ -153,18 +148,7 @@ export function collectGate() {
       drifts.push({ code: 'Mismatch', path: a.path });
     }
   }
-  let state;
-  try { state = readState(); }
-  catch (e) { drifts.push({ code: e.code ?? 'StateFileInvalid', path: statePath() }); state = { agents: {} }; }
-  state.agents = state.agents && typeof state.agents === 'object' ? state.agents : {};
   for (const seat of listSeats()) {
-    // 接管完整性（spec §7④）：state 键集必须与模型席集双向相等（删一席即红并点名）
-    if (!Object.prototype.hasOwnProperty.call(state.agents, seat)) {
-      drifts.push({ code: 'Mismatch', path: 'state.json', message: `state.json 缺席 ${seat}（接管完整性，spec §7④）` });
-      continue;
-    }
-    // 只对 replaced 席做逐字节比对；suspended 保持旧豁免（spec TC-050/TC-055 回退收敛路径）
-    if (state.agents[seat] !== 'replaced') continue;
     const p = join(AGENTS_DIR, `${seat}.md`);
     if (!existsSync(p)) { drifts.push({ code: 'DanglingBaselineEntry', path: `agents/${seat}.md` }); continue; }
     let rendered;
@@ -187,7 +171,7 @@ export function collectGate() {
   return drifts;
 }
 
-const BASELINE_CLASS = new Set(['BaselineDrift', 'UnregisteredHandwritten', 'DanglingBaselineEntry', 'StateFileInvalid', 'EnvironmentEOL', 'InvalidBaseline', 'InvalidBaselinePath']);
+const BASELINE_CLASS = new Set(['BaselineDrift', 'UnregisteredHandwritten', 'DanglingBaselineEntry', 'EnvironmentEOL', 'InvalidBaseline', 'InvalidBaselinePath']);
 const PRIORITY = (d) => (BASELINE_CLASS.has(d.code) ? 0 : 1);
 
 export function gateChecks() {
@@ -204,7 +188,7 @@ export function gateChecks() {
   if (drifts.length === 0) return;
   const first = [...drifts].sort((a, b) => PRIORITY(a) - PRIORITY(b))[0];
   // spec §7②/③ 要求「exit 1 且点名该路径」：drift 无自有 message 时补上 path（消息内不得重复码，stderr 契约只许出现一次码）。
-  // 路径一律转仓内相对路径——`BaselineDrift` / `StateFileInvalid` 的 path 是绝对路径，直接拼接会把本机路径写进用户可见 stderr。
+  // 路径一律转仓内相对路径——`BaselineDrift` 的 path 是绝对路径，直接拼接会把本机路径写进用户可见 stderr。
   const rel = isAbsolute(first.path) ? relative(REPO_ROOT, first.path).replace(/\\/g, '/') : first.path;
   const shown = rel.startsWith('..') ? first.path : rel; // 仓外路径没有有意义的相对形式 → 保留原值
   fail(first.code, first.message ? first : { ...first, message: `产物漂移 ${shown}` });
@@ -234,35 +218,23 @@ export function cmdDump(args) {
 }
 
 export function cmdCheckAgents() {
-  const state = readState();
-  let replaced = 0;
-  let unconsolidated = 0;
   for (const seat of listSeats()) {
     const p = join(AGENTS_DIR, `${seat}.md`);
     if (!existsSync(p)) fail('DanglingBaselineEntry', { name: seat, path: p });
-    const s = state.agents[seat];
-    if (s === 'replaced') {
-      replaced += 1;
-      const rendered = Buffer.from(renderByName(seat), 'utf8');
-      if (compareBuffers(rendered, readFileSync(p))) fail('Mismatch', { name: seat, path: p });
-    } else {
-      unconsolidated += 1;
-    }
+    const rendered = Buffer.from(renderByName(seat), 'utf8');
+    if (compareBuffers(rendered, readFileSync(p))) fail('Mismatch', { name: seat, path: p });
   }
-  console.log(`OK：${listSeats().length} 个 agent 已检查（已接管 ${replaced}，未迁移 ${unconsolidated}）`);
+  console.log(`OK：${listSeats().length} 个 agent 已检查（全部由模型渲染）`);
   return 0;
 }
 
 export function cmdBaselineWrite() {
   // 原子写：`writeFileSync` 先截断后写入，并发读方（另一个进程的 gate）会在窗口里看到空文件 → 误报 BaselineDrift。
-  // 实现单源 = atomicWrite.mjs（与 state / evidence 共用）。
+  // 实现单源 = atomicWrite.mjs。
   writeFileAtomic(baselinePath(), renderBaseline());
   console.log(`baseline.json 已写入（${BASELINE_RULES.length + agentPaths().length} 条）`);
   return 0;
 }
-
-const DRAFTS_DIR = () => process.env.DOCGEN_DRAFTS_DIR || join(homedir(), '.retro-skills', 'docgen-drafts');
-const ts = () => { const d = new Date(); const p = (n, w = 2) => String(n).padStart(w, '0'); return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`; };
 
 export function assertAgentName(name) { if (!/^[a-z][a-z0-9-]{0,49}$/.test(name)) fail('InvalidName', { name }); }
 
@@ -299,93 +271,15 @@ export function formatDiff(name, oldText, newText) {
     `新 渲染            sha256=${newSha}（${d.rowsNew} 行）`,
   ];
   if (oldSha === newSha) {
-    out.push('差异 - 0 / + 0（盘上 == 渲染，幂等，无需凭证）');
+    out.push('差异 - 0 / + 0（盘上 == 渲染，无需写盘）');
     return out;
   }
   out.push(`差异 - ${d.minus.length} / + ${d.plus.length}（首处第 ${d.k} 行）`);
   for (const line of d.minus) out.push(`- ${line}`);
   for (const line of d.plus) out.push(`+ ${line}`);
-  out.push(`凭证 --expect-change ${newSha}`);
   return out;
 }
 
-// 逐行所属节（跳过代码围栏内的伪标题，与 check-agent 的 splitSections 同口径）
-function sectionOf(text) {
-  const lines = text.split('\n');
-  const { mask } = fenceMask(lines);
-  const out = new Array(lines.length).fill('');
-  let cur = '';
-  for (let i = 0; i < lines.length; i += 1) {
-    if (!mask[i]) {
-      const m = /^#{1,6}\s+(.*)$/.exec(lines[i]);
-      if (m) cur = m[1].trim();
-    }
-    out[i] = cur;
-  }
-  return out;
-}
-
-// 重判触达映射（spec §3.6 表 A，下限）：两侧差异行号取并集后再按位置求键集。
-// 只按新侧定位会漏「整节删除」——那时新侧没有行可查，`--rejudge none` 会被放行。
-// 表 B（A3–A7）不进 `--rejudge`：它们没有注解位，改由 machineChecks 承接。
-export function touchedSemanticKeys(oldText, newText) {
-  const oldLines = oldText.split('\n');
-  const newLines = newText.split('\n');
-  const oldSec = sectionOf(oldText);
-  const newSec = sectionOf(newText);
-  const keys = new Set();
-  const n = Math.max(oldLines.length, newLines.length);
-  for (let i = 0; i < n; i += 1) {
-    if (oldLines[i] === newLines[i]) continue;
-    for (const [lines, secs] of [[oldLines, oldSec], [newLines, newSec]]) {
-      const line = lines[i];
-      if (line === undefined) continue;
-      if (/^description: /.test(line)) { keys.add('A2'); continue; }
-      // S4（spec §10-D11 / :224）：A1 的判定对象从「你是谁」段迁到新卡的「职责」段；过渡期三形态兼容
-      const heading = secs[i] ?? '';
-      if (heading.includes('职责') || heading.includes('你是谁') || heading.includes('身份')) keys.add('A1');
-    }
-  }
-  return [...keys].sort();
-}
-
-// 机器结构项复检（spec §3.4：每次变更必填五键，由 checkStruct 对渲染产物重跑）
-export function machineChecksOf(renderedText) {
-  const failed = new Set(checkStruct(renderedText).findings.map((f) => f.code));
-  const out = {};
-  for (const key of ['A3', 'A4', 'A5', 'A6', 'A7']) out[key] = failed.has(key) ? 'fail' : 'pass';
-  return out;
-}
-
-// 重判落账（spec §3.4 / §6-6）：`--rejudge` 只给键名，verdict 只能取自重判者写回的 annotations。
-// 报过但 annotations 不是 pass/fail = 重判没做完 → 不许写盘（把「报」升级成「判」）。
-// 判者身份必须显式给出：缺省编一个占位名（如 'annotations-writer'）会让「谁判的」变成假值，
-// 并把 evidence 校验与独立性断言一并空转（2026-10-21 代码审查问题 3）。故无默认值，缺则拒写盘。
-function judgeId(name) {
-  const id = (process.env.DOCGEN_JUDGED_BY || '').trim();
-  if (!id) {
-    fail('UnapprovedChange', {
-      message: `缺少判者标识：--rejudge ${name} 非空时必须用 DOCGEN_JUDGED_BY 给出重判子代理实例（例：DOCGEN_JUDGED_BY=reviewer-ai-2026-10-21-a2-rejudge node tools/docgen/builders/agents/cli.mjs replace …），否则 changes[].judgedBy 无法落账；本次未写盘`,
-    });
-  }
-  return id;
-}
-function buildJudged(name, keys) {
-  const ann = readAnnotations();
-  return keys.map((key) => {
-    const raw = ann[`${name}:${key}`];
-    const v = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
-    const verdict = v === 'pass' ? 'pass' : v.startsWith('fail') ? 'fail' : null;
-    if (!verdict) {
-      fail('UnapprovedChange', {
-        message: `${name}:${key} 报为重判键，但 tools/quality/.inspector-annotations.json 的值是 ${raw === undefined ? '缺失' : JSON.stringify(raw)}（非 pass/fail）——重判未完成，先让独立子代理判完并写回，再运行 node tools/docgen/builders/agents/cli.mjs diff --kind agent --name ${name}`,
-      });
-    }
-    return { key, verdict, basis: `tools/execution-matrix/criteria.md ${key} + 渲染产物；重判写回 tools/quality/.inspector-annotations.json ${name}:${key} = ${raw}（replace 机械转录）` };
-  });
-}
-
-// 只读 diff：打印旧/新哈希与差异块，并给出可直接复制的凭证；不写任何文件（含 evidence）
 export function cmdDiff(args) {
   if (args.kind !== 'agent') {
     fail('UnsupportedKind', { kind: args.kind, sub: 'diff', message: `UnsupportedKind: sub=diff kind=${args.kind}（diff 只支持 --kind agent）` });
@@ -401,251 +295,11 @@ export function cmdDiff(args) {
   return 0;
 }
 
-export function cmdDraft(args, argv) {
-  const sub = args.sub;
-  const dir = args.drafts ? resolve(args.drafts) : DRAFTS_DIR();
-  if (sub === 'ensure') { mkdirSync(dir, { recursive: true }); return 0; }
-  if (sub === 'ls') {
-    const files = existsSync(dir) ? readdirSync(dir).filter((f) => !args.name || f.startsWith(`${args.name}--`)) : [];
-    for (const f of files.sort().reverse()) console.log(f);
-    return 0;
-  }
-  if (sub === 'rm') {
-    if (!args.name && !argv.includes('--yes')) fail('NotAuthorized', {});
-    const files = existsSync(dir) ? readdirSync(dir).filter((f) => !args.name || f.startsWith(`${args.name}--`)) : [];
-    for (const f of files) rmSync(join(dir, f), { force: true });
-    return 0;
-  }
-  // sub === 'draft'（生成）：渲染前先过策略校验（spec §3.2）
-  validatePolicy();
-  const name = args.name;
-  assertAgentName(name);
-  if (args.kind !== 'agent') fail('UnsupportedKind', { kind: args.kind });
-  if (!isSeat(name)) fail('MissingComponentData', { name });
-  const existing = existsSync(dir) ? readdirSync(dir).filter((f) => f.startsWith(`${name}--`)) : [];
-  if (existing.length > 0) fail('DraftNameConflict', { name, existing: existing.join(', ') });
-  const file = `${name}--${ts()}.md`;
-  const content = renderByName(name); // registered 席在此抛 MissingComponentData，此时尚未建箱目录（J4 fix）
-  mkdirSync(dir, { recursive: true });
-  try { writeFileSync(join(dir, file), content, { flag: 'wx' }); }
-  catch (e) {
-    if (e.code === 'EEXIST') fail('DraftNameConflict', { name, existing: file });
-    fail('DraftWriteFailed', { path: join(dir, file) });
-  }
-  console.log(`草稿已落：${join(dir, file)}`);
-  return 0;
-}
-
-export function cmdReplace(args) {
-  // S3（spec §3.2）：写盘前先过策略校验，非法配置不得靠 replace 落卡
-  validatePolicy();
-  if (args.kind !== 'agent') {
-    fail('UnsupportedKind', { kind: args.kind, sub: 'replace', message: `UnsupportedKind: sub=replace kind=${args.kind}（replace 只支持 --kind agent）` });
-  }
-  assertAgentName(args.name);
-  if (!args.yes) fail('NotAuthorized', {});
-  const name = args.name;
-  if (!isSeat(name)) fail('MissingComponentData', { name });
-
-  // R1 分派：以 state 为唯一键。`suspended` 与「无此席」一律落迁移段（§8 不提供 suspended 变更通路）
-  const st = readState();
-  const phase = st.agents[name] === 'replaced' ? 'change' : 'migration';
-  if (phase === 'migration' && (args.expectChange !== undefined || args.rejudge !== undefined)) {
-    fail('InvalidArgs', {
-      message: `InvalidArgs: ${name} 尚在迁移段（state=${st.agents[name] ?? '未登记'}），不接受 --expect-change / --rejudge；迁移完成后改内容才走变更段`,
-    });
-  }
-
-  // ── S3-A §6 D-1：新席出生分支（早于 DraftNotFound 与 collectGate）──
-  // 显式前置：卡不存在；或卡已存在但逐字节 = 渲染且 evidence 缺失（崩溃收敛）。其余「卡已存在」→ InvalidArgs。
-  // --new 不得带 --expect-change / --rejudge（出生不是变更，无旧哈希可凭、无触达键可重判）。
-  if (args.new) {
-    if (args.expectChange !== undefined || args.rejudge !== undefined) {
-      fail('InvalidArgs', { message: `InvalidArgs: --new 不得与 --expect-change / --rejudge 同用（${name}）` });
-    }
-    const birthTarget = join(AGENTS_DIR, `${name}.md`);
-    if (existsSync(birthTarget)) {
-      // 崩溃收敛只可能发生在 state 已置 replaced 之后（写盘次序：rename → setAgentState → writeEvidence）；
-      // 迁移段 / suspended 的席不满足该前置 → 不得补写 evidence 并假装收敛成功
-      if (phase !== 'change') {
-        fail('InvalidArgs', {
-          message: `InvalidArgs: --new 的崩溃收敛只用于已接管席（${name} state=${st.agents[name] ?? '未登记'}）`,
-        });
-      }
-      const renderedNow = Buffer.from(renderByName(name), 'utf8');
-      const evMissing = !existsSync(evidencePath(name));
-      if (!readFileSync(birthTarget).equals(renderedNow) || !evMissing) {
-        fail('InvalidArgs', { message: `InvalidArgs: --new 只用于卡不存在的席（agents/${name}.md 已存在，或 evidence 已在）` });
-      }
-      // 崩溃收敛：卡已 rename、草稿已被清、evidence 未写 → 以渲染字节自算哈希补写 evidence 后返回 0
-      const sha = sha256Hex(renderedNow);
-      writeEvidence(name, birthEvidence(name, sha));
-      console.log(`已替换（崩溃收敛）：${birthTarget}`);
-      return 0;
-    }
-  }
-
-  if (!args.draft || !existsSync(args.draft)) fail('DraftNotFound', { draft: args.draft });
-
-  // 启动清理：上次崩溃残留的 .part 临时文件（在读取目标之前）
-  for (const f of readdirSync(AGENTS_DIR).filter((x) => x.startsWith(`.tmp-${name}-`) && x.endsWith('.part'))) {
-    rmSync(join(AGENTS_DIR, f), { force: true });
-  }
-
-  const draftBytes = readFileSync(args.draft);
-  const rendered = Buffer.from(renderByName(name), 'utf8'); // registered 未拆槽席在此抛 MissingComponentData
-  if (!draftBytes.equals(rendered)) fail('DraftDrift', { name });
-  // 出生不读旧 evidence（文件本就不存在；读了即 EvidenceInvalid）；变更 / 迁移段照旧读
-  const evidence = args.new ? null : readEvidence(name);
-  // 迁移段四道证明（§3.1 左列）：变更段不读这三项，改读凭证；出生段逐行跳过（§6）
-  if (phase === 'migration' && !args.new) {
-    if (evidence.renderSha256 !== sha256Hex(rendered)) {
-      fail('EvidenceInvalid', { name, reason: 'renderSha256 与草稿不等，须重跑步 4' });
-    }
-    if (evidence.goldenAssertion !== 'pass') {
-      fail('EvidenceInvalid', { name, reason: '黄金断言未通过（W2-② 未过不得替换）' });
-    }
-    // 双闸门之二：diffSet 差异集须为空（golden-assert 通过但仍有残余差异 = 步 4 未真正过）
-    if (evidence.compareResult !== null) {
-      fail('EvidenceInvalid', { name, reason: 'compareResult 非 null（差异集未清空，步 4 未过不得替换）' });
-    }
-  }
-
-  const drifts = collectGate();
-  const allowed = (d) => {
-    if (d.path === `agents/${name}.md`) return true;
-    const m = /^agents\/([a-z0-9-]+)\.md$/.exec(d.path);
-    if (!m) return false;
-    const other = m[1];
-    if (st.agents[other] !== 'replaced') return false;
-    const box = DRAFTS_DIR();
-    if (!existsSync(box)) return false;
-    const f = readdirSync(box).find((x) => x.startsWith(`${other}--`));
-    if (!f) return false;
-    return readFileSync(join(box, f)).equals(Buffer.from(renderByName(other), 'utf8'));
-  };
-  const blocked = drifts.filter((d) => !allowed(d));
-  if (blocked.length > 0) {
-    const first = [...blocked].sort((a, b) => PRIORITY(a) - PRIORITY(b))[0];
-    fail(first.code, first);
-  }
-
-  const target = join(AGENTS_DIR, `${name}.md`);
-  const newSha = sha256Hex(rendered);
-  let targetBytes = null;
-  let oldSha = null;
-  // 出生段：目标卡本就不存在 → 跳过「硬读目标 / 幂等分支 / TargetDrift / 凭证与重判」五段（§6）
-  if (!args.new) {
-    // #6：target 缺失须在 collectGate 判别子放行（allowed 对 target 无条件 return true）后、硬读之前捕获，
-    // 否则 readFileSync 抛 ENOENT 被兜底成 exit 2，掩盖 DanglingBaselineEntry 的可读语义
-    if (!existsSync(target)) fail('DanglingBaselineEntry', { name, path: `agents/${name}.md` });
-    targetBytes = readFileSync(target);
-    oldSha = sha256Hex(targetBytes);
-
-    // 幂等判定排在 TargetDrift 之前：崩溃窗口（文件已 rename、evidence 未写）重跑时盘上哈希已不等于
-    // lastWrittenHash，先判 TargetDrift 就永远收敛不了。幂等分支不写盘、不追加留痕、不校验凭证（§3.1 末行）。
-    if (phase === 'change' && targetBytes.equals(rendered)) {
-      evidence.renderSha256 = newSha;
-      evidence.lastWrittenHash = newSha;
-      writeEvidence(name, evidence);
-      clearDrafts(name);
-      console.log(`已替换（幂等恢复）：${target}`);
-      return 0;
-    }
-
-    if (oldSha !== evidence.lastWrittenHash) fail('TargetDrift', { name, path: target });
-  }
-
-  // 变更段：凭证 + 重判触达（必须排在 TargetDrift 之后，否则 S2 的 exit 1 会变成 exit 4）
-  let rejudged = [];
-  let judged = [];
-  let judgedBy = null;
-  let machineChecks = null;
-  if (phase === 'change' && !args.new) {
-    const nextStep = `下一步运行 node tools/docgen/builders/agents/cli.mjs diff --kind agent --name ${name}`;
-    if (args.expectChange === undefined) {
-      fail('UnapprovedChange', { message: `盘上=${oldSha} 渲染=${newSha} 缺 --expect-change；${nextStep}` });
-    }
-    if (args.expectChange.toUpperCase() !== newSha) {
-      fail('UnapprovedChange', {
-        message: `盘上=${oldSha} 渲染=${newSha} --expect-change=${args.expectChange.toUpperCase()} ≠ 渲染哈希（凭证须是即将写盘字节的 sha256，旧凭证一律失效）；${nextStep}`,
-      });
-    }
-    const need = touchedSemanticKeys(targetBytes.toString('utf8'), rendered.toString('utf8'));
-    rejudged = parseRejudgeKeys(args.rejudge);
-    const missing = need.filter((k) => !rejudged.includes(k));
-    if (missing.length > 0) {
-      fail('UnapprovedChange', {
-        message: `盘上=${oldSha} 渲染=${newSha} --rejudge 漏报触达键 ${missing.join(',')}（差异落在这些键的判定对象上，改过的判定对象不能沿用旧判定）；${nextStep}`,
-      });
-    }
-    judged = buildJudged(name, rejudged); // 重判未完成（annotations 非 pass/fail）→ 此处即拒，绝不写盘
-    if (rejudged.length) judgedBy = judgeId(name); // 判者标识同样在写盘前取：缺则拒，避免写完才发现无法落账
-    machineChecks = machineChecksOf(rendered.toString('utf8'));
-  }
-
-  // state 置位次序（§3.5）：rename 成功后才置 replaced；写失败时 state 保持写盘前原样
-  const tmp = join(AGENTS_DIR, `.tmp-${name}-${process.pid}.part`);
-  try {
-    writeFileSync(tmp, draftBytes);
-    renameSync(tmp, target);
-  } catch {
-    rmSync(tmp, { force: true });
-    fail('WriteFailed', { path: target });
-  }
-  setAgentState(name, 'replaced');
-  clearDrafts(name);
-  // 出生：写盘后新建 evidence（不读旧件、不追加 changes；goldenAssertion = pending，未跑黄金断言不得写 pass）
-  if (args.new) {
-    writeEvidence(name, birthEvidence(name, newSha));
-    console.log(`已替换：${target}`);
-    return 0;
-  }
-  evidence.renderSha256 = newSha;
-  evidence.lastWrittenHash = newSha;
-  if (phase === 'change') {
-    const entry = { from: oldSha, to: newSha, at: new Date().toISOString(), rejudged, judgeMode: rejudged.length ? 'subagent' : 'none' };
-    if (rejudged.length) entry.judgedBy = judgedBy;
-    entry.judged = judged;
-    entry.machineChecks = machineChecks;
-    evidence.changes = [...(Array.isArray(evidence.changes) ? evidence.changes : []), entry];
-  }
-  writeEvidence(name, evidence);
-  console.log(`已替换：${target}`);
-  return 0;
-}
-
-function clearDrafts(name) {
-  const dir = DRAFTS_DIR();
-  if (!existsSync(dir)) return;
-  for (const f of readdirSync(dir).filter((x) => x.startsWith(`${name}--`))) rmSync(join(dir, f), { force: true });
-}
-
-// 出生 evidence（§6）：commit / blob / hashObject 走 git（40 位小写），sha256 / renderSha256 / lastWrittenHash
-// 取写盘字节的 sha256（64 位大写）；goldenAssertion = pending、compareResult = null、changes = []。
-function birthEvidence(name, sha) {
-  const rel = `agents/${name}.md`;
-  const commit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: REPO_ROOT, encoding: 'utf8' }).trim();
-  const hashObject = execFileSync('git', ['hash-object', '--no-filters', rel], { cwd: REPO_ROOT, encoding: 'utf8' }).trim();
-  return {
-    commit,
-    blob: hashObject,
-    sha256: sha,
-    hashObject,
-    goldenAssertion: 'pending',
-    compareResult: null,
-    renderSha256: sha,
-    lastWrittenHash: sha,
-    changes: [],
-  };
-}
-
 // ── 参数白名单（spec §3.3 末条）：指定 sub 下只接受本文列出的旗标 ──
-// 宽松的 flag()/has() 会静默丢弃未知旗标，让「迁移段出现 --expect-change → InvalidArgs」根本落不了地，
-// 拼错一个字母也会变成静默放行。故 replace / diff 走严格解析：白名单外的 `--xxx` 一律 InvalidArgs。
+// 宽松的 flag()/has() 会静默丢弃未知旗标，拼错一个字母也会变成静默放行。
+// 故所有带旗标的子命令走严格解析：白名单外的 `--xxx` 一律 InvalidArgs。
 const VALUE = 'value';
 const BOOL = 'bool';
-const REPLACE_FLAGS = { '--kind': VALUE, '--name': VALUE, '--draft': VALUE, '--expect-change': VALUE, '--rejudge': VALUE, '--yes': BOOL, '--new': BOOL };
 const DIFF_FLAGS = { '--kind': VALUE, '--name': VALUE };
 // generate：--preview 只写 tmp/preview；--check 只读比对；缺省正式写 agents/（写后清对应预览）
 const GENERATE_FLAGS = { '--kind': VALUE, '--name': VALUE, '--apply': BOOL, '--preview': BOOL, '--check': BOOL, '--force': BOOL };
@@ -663,7 +317,7 @@ function parseArgs(rest, spec, sub) {
     if (!kind) fail('InvalidArgs', { sub, message: `InvalidArgs: sub=${sub} 未知旗标 ${tok}（允许：${Object.keys(spec).join(' ')}）` });
     if (kind === BOOL) { out[tok] = true; continue; }
     const value = rest[i + 1];
-    // `--expect-change --yes` 这类「下一个 token 还是旗标」视为缺值，不许把 --yes 当哈希
+    // `--kind --name` 这类「下一个 token 还是旗标」视为缺值，不许把旗标当值
     if (value === undefined || value.startsWith('--')) {
       fail('InvalidArgs', { sub, message: `InvalidArgs: sub=${sub} ${tok} 缺值` });
     }
@@ -673,40 +327,10 @@ function parseArgs(rest, spec, sub) {
   return out;
 }
 
-// `--rejudge none` → []（禁记 ["none"]）；值里出现 10 个语义键之外的键 → InvalidArgs 并列出合法键
-function parseRejudgeKeys(raw) {
-  if (raw === undefined) return [];
-  const parts = raw.split(',').map((s) => s.trim()).filter(Boolean);
-  if (parts.length === 0) fail('InvalidArgs', { message: 'InvalidArgs: --rejudge 为空值' });
-  if (parts.includes('none')) {
-    if (parts.length > 1) fail('InvalidArgs', { message: `InvalidArgs: --rejudge none 不能与其它键混用（收到 ${raw}）` });
-    return [];
-  }
-  return [...new Set(parts)];
-}
-
-function validateReplaceArgs(a) {
-  const ec = a['--expect-change'];
-  if (ec !== undefined && !/^[0-9a-fA-F]{64}$/.test(ec)) {
-    fail('InvalidArgs', { message: `InvalidArgs: --expect-change 须为 64 位十六进制 sha256（收到 ${JSON.stringify(ec)}）` });
-  }
-  const raw = a['--rejudge'];
-  if (raw === undefined) return;
-  const keys = parseRejudgeKeys(raw);
-  const bad = keys.filter((k) => !SEMANTIC_KEYS.includes(k));
-  if (bad.length > 0) {
-    fail('InvalidArgs', {
-      message: `InvalidArgs: --rejudge 含非法键 ${bad.join(',')}（收到 ${raw}）；A3–A7 是机器结构项、不进 --rejudge（由 machineChecks 承接）；合法键：${SEMANTIC_KEYS.join(' ')}`,
-    });
-  }
-}
-
 export function main(argv) {
   try {
     const sub = argv[0];
     const rest = argv.slice(1);
-    const flag = (k, d) => { const i = rest.indexOf(k); return i >= 0 ? rest[i + 1] ?? d : d; };
-    const has = (k) => rest.includes(k);
     if (sub === 'generate') {
       const a = parseArgs(rest, GENERATE_FLAGS, 'generate');
       return cmdGenerate({ kind: a['--kind'], name: a['--name'], apply: a['--apply'] === true, preview: a['--preview'] === true, check: a['--check'] === true, force: a['--force'] === true });
@@ -715,25 +339,6 @@ export function main(argv) {
     if (sub === 'dump') {
       const a = parseArgs(rest, DUMP_FLAGS, 'dump');
       return cmdDump({ name: a['--name'] });
-    }
-    if (sub === 'draft' || sub === 'draft ls' || sub === 'draft rm' || sub === 'draft ensure') {
-      const parts = argv[0] === 'draft' && ['ls', 'rm', 'ensure'].includes(argv[1]) ? ['draft', argv[1], ...argv.slice(2)] : argv;
-      // 健康 sub 归一再传：仅 ls/rm/ensure 是真正的子命令，其余（如 --name）都应视为生成 draft，避免 `draft --name x` 时 sub 携带错误值
-      const healthySub = ['ls', 'rm', 'ensure'].includes(parts[1]) ? parts[1] : 'draft';
-      return cmdDraft({ sub: healthySub, kind: flag('--kind', 'agent'), name: flag('--name', undefined), drafts: flag('--drafts', undefined) }, parts);
-    }
-    if (sub === 'replace') {
-      const a = parseArgs(rest, REPLACE_FLAGS, 'replace');
-      validateReplaceArgs(a);
-      return cmdReplace({
-        kind: a['--kind'] ?? 'agent',
-        name: a['--name'],
-        draft: a['--draft'],
-        yes: a['--yes'] === true,
-        expectChange: a['--expect-change'],
-        rejudge: a['--rejudge'],
-        new: a['--new'] === true,
-      });
     }
     if (sub === 'diff') {
       const a = parseArgs(rest, DIFF_FLAGS, 'diff');

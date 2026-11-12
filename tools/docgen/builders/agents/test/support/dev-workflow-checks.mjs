@@ -215,7 +215,7 @@ export function runCli(dir, args, env = {}) {
   const r = spawnSync(process.execPath, ['tools/docgen/builders/agents/cli.mjs', ...args], {
     cwd: dir,
     encoding: 'utf8',
-    env: { ...process.env, DOCGEN_DRAFTS_DIR: join(dir, '.drafts'), ...env },
+    env: { ...process.env, ...env },
   });
   return normalizeSpawn(r, dir, args);
 }

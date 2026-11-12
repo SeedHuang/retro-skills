@@ -10,12 +10,12 @@ test('F-01 五组 layer 合法且一组一层', () => {
   for (const [g, v] of Object.entries(commandGroups)) assert.ok(LAYERS.includes(v.layer), `${g}: ${v.layer}`)
 })
 
-test('F-01 五组 verb 条数 4 / 1 / 3 / 5 / 4，总数 17，无 check.local', () => {
+test('F-01 五组 verb 条数 4 / 1 / 3 / 5 / 3，总数 16，无 check.local', () => {
   assert.deepEqual(
     ['repo.check', 'tool.time', 'audit.lookup', 'git.read', 'docgen.read'].map((g) => commandGroups[g].verbs.length),
-    [4, 1, 3, 5, 4],
+    [4, 1, 3, 5, 3],
   )
-  assert.equal(Object.values(commandGroups).reduce((n, g) => n + g.verbs.length, 0), 17) // counter-probe: off 本字面量是允许命令总数（17 条），不是席位数
+  assert.equal(Object.values(commandGroups).reduce((n, g) => n + g.verbs.length, 0), 16) // counter-probe: off 本字面量是允许命令总数（16 条），不是席位数
   assert.equal(commandGroups['check.local'], undefined)
 })
 

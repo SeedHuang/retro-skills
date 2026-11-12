@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 
 const CLI = 'tools/docgen/builders/agents/cli.mjs';
-const run = (args, env = {}) => spawnSync(process.execPath, [CLI, ...args], { encoding: 'utf8', env: { ...process.env, DOCGEN_DRAFTS_DIR: mkdtempSync(join(tmpdir(), 'dg-g-')), ...env } });
+const run = (args, env = {}) => spawnSync(process.execPath, [CLI, ...args], { encoding: 'utf8', env: { ...process.env, ...env } });
 
 test('gate：清单外新增 rules 文件 → UnregisteredHandwritten（exit 2）', () => {
   // 测试隔离：扫描目录重定向到临时目录（DOCGEN_RULES_DIR），不碰真实 rules/（防并行测试竞态）

@@ -9,7 +9,7 @@ import { BASELINE_RULES, agentPaths } from '../components/baseline.mjs';
 const CLI = 'tools/docgen/builders/agents/cli.mjs';
 // gate 打印的 baseline N/N 从两清单派生：正则由常量拼，只改字面量的写法下次加席必红
 const N = BASELINE_RULES.length + agentPaths().length;
-const run = (args, env = {}) => spawnSync(process.execPath, [CLI, ...args], { encoding: 'utf8', env: { ...process.env, DOCGEN_DRAFTS_DIR: mkdtempSync(join(tmpdir(), 'dg-draft-')), ...env } });
+const run = (args, env = {}) => spawnSync(process.execPath, [CLI, ...args], { encoding: 'utf8', env: { ...process.env, ...env } });
 
 test('generate --check 缺省 = rule + agent 两清单全遍历（NF-2）：全部席已拆槽且渲染 == 现卡 → exit 0 + baseline N/N', () => {
   const r = run(['generate', '--check']);
@@ -65,16 +65,13 @@ test('字节反例：副本仓注入一字节 → generate 判漂移 exit 1（�
   const dst = mkdtempSync(join(tmpdir(), 'dg-copy-'));
   try {
     cpSync('tools/docgen', join(dst, 'tools/docgen'), { recursive: true });
-    // P5：模型数据源在 tools/docgen/models/agents（gate / 渲染 / 席列表都从这里读）；
-    // 55 行前已 cpSync('tools/docgen')，引擎随该目录一并带过去，不再单独拷贝。
-    // cli.mjs 的 replace/diff 依赖 execution-matrix（SEMANTIC_KEYS / checkStruct / readAnnotations），副本要一起带
-    cpSync('tools/execution-matrix', join(dst, 'tools/execution-matrix'), { recursive: true });
-    cpSync('tools/quality', join(dst, 'tools/quality'), { recursive: true }); // S1 词表单源（vocab/* 在 import 时读）
+    // P5：模型数据源在 tools/docgen/models/agents（gate / 渲染 / 席列表都从这里读），随该目录一并带过去；
+    // cli.mjs 的 import 闭包只落在 tools/docgen 内，不需要再拷 execution-matrix / quality。
     cpSync('agents', join(dst, 'agents'), { recursive: true });
     const target = join(dst, 'agents', 'reviewer-qa.md');
     appendFileSync(target, ' ');
     const r = spawnSync(process.execPath, ['tools/docgen/builders/agents/cli.mjs', 'generate', '--kind', 'agent', '--name', 'reviewer-qa', '--check'], {
-      cwd: dst, encoding: 'utf8', env: { ...process.env, DOCGEN_DRAFTS_DIR: join(dst, '.drafts') },
+      cwd: dst, encoding: 'utf8', env: { ...process.env },
     });
     assert.equal(r.status, 1, r.stdout + r.stderr);
     assert.match(r.stdout, new RegExp(`baseline ${N}\\/${N}`));
@@ -85,12 +82,10 @@ test('字节反例：副本仓注入一字节 → generate 判漂移 exit 1（�
 
 test('generate --preview 写 tmp/preview/agents；正式写后清预览（副本仓）', () => {
   const dst = mkdtempSync(join(tmpdir(), 'dg-preview-'));
-  const env = { ...process.env, DOCGEN_DRAFTS_DIR: join(dst, '.drafts') };
+  const env = { ...process.env };
   const runIn = (args) => spawnSync(process.execPath, [CLI, ...args], { cwd: dst, encoding: 'utf8', env });
   try {
     cpSync('tools/docgen', join(dst, 'tools/docgen'), { recursive: true });
-    cpSync('tools/execution-matrix', join(dst, 'tools/execution-matrix'), { recursive: true });
-    cpSync('tools/quality', join(dst, 'tools/quality'), { recursive: true });
     cpSync('agents', join(dst, 'agents'), { recursive: true });
 
     const p = runIn(['generate', '--kind', 'agent', '--name', 'reviewer-audit', '--preview']);

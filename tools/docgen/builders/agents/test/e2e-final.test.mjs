@@ -6,7 +6,7 @@ import { renderBaseline, BASELINE_RULES, agentPaths } from '../components/baseli
 import { modelWithShared, renderSeatText } from '../../../models/agents/source.mjs';
 
 const CLI = 'tools/docgen/builders/agents/cli.mjs';
-const run = (args) => spawnSync(process.execPath, [CLI, ...args], { encoding: 'utf8', env: { ...process.env, DOCGEN_DRAFTS_DIR: '.tmp-test/drafts' } });
+const run = (args) => spawnSync(process.execPath, [CLI, ...args], { encoding: 'utf8' });
 const descriptionOf = (seat) => /^description:\s*(.+)$/m.exec(readFileSync(`agents/${seat}.md`, 'utf8'))?.[1]?.trim();
 
 test('W4：锚点席 description 形态（P5 后 = 模型 description 渲染直出）', () => {

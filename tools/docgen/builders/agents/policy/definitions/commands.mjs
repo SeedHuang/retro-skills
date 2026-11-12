@@ -36,25 +36,20 @@ export const commandGroups = {
   },
   'docgen.read': {
     layer: 'build',
-    purpose: 'docgen 只读子命令（gate / check-agents / diff / draft ls）',
+    purpose: 'docgen 只读子命令（gate / check-agents / diff）',
     verbs: [
       'node tools/docgen/builders/agents/cli.mjs gate',
       'node tools/docgen/builders/agents/cli.mjs check-agents',
       'node tools/docgen/builders/agents/cli.mjs diff --kind agent --name <席>',
-      'node tools/docgen/builders/agents/cli.mjs draft ls',
     ],
   },
 };
 
 export const forbiddenGroups = {
   'docgen.write': {
-    purpose: '生成 / 删除 / 替换类写操作：draft 生成与删除、baseline 写盘、replace 改卡（不是只读）',
+    purpose: '写操作：baseline 写盘（不是只读）',
     verbs: [
-      'draft',
-      'draft rm',
-      'draft ensure',
       'baseline --write',
-      'replace',
     ],
   },
   'git.write': {

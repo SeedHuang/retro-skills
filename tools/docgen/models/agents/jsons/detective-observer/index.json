@@ -549,10 +549,6 @@
           "label": "被 .gitignore 覆盖"
         },
         {
-          "id": "outside-repo",
-          "label": "草稿目录在仓库外"
-        },
-        {
           "id": "committed-write",
           "label": "已提交的写入"
         },
