@@ -67,9 +67,6 @@ export const coldRepo = ({ mutate = null, args = ['gate'], verify = null, env = 
     DOCGEN_EVIDENCE_DIR: join(copy, 'tools/docgen/builders/agents/fixtures'),
     ...(env ?? {}),
   })
-  // #region debug-point s3-f02
-  dbgLog({ evt: 'done', skipped, gateStatus: r.status })
-  // #endregion
   try { if (verify) verify(copy, r) } finally { rmSync(copy, { recursive: true, force: true }) }
   return r
 }
