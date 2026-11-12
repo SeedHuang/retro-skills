@@ -14,7 +14,8 @@
           "record",
           "any-document"
         ],
-        "perspective": "reader"
+        "perspective": "reader",
+        "kind": "dispatch"
       }
     ],
     "description": {

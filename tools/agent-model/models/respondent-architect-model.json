@@ -12,7 +12,8 @@
           "issue-card"
         ],
         "scope": "按项目技术栈",
-        "action": "verify"
+        "action": "verify",
+        "kind": "need"
       }
     ],
     "description": {

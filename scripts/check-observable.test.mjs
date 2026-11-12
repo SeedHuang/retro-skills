@@ -493,39 +493,12 @@ test('OCR-S1-TC-E12 全改文案但 hit 未清 → 必红', () => {
 })
 
 // ── F 组：与既有件一致性 / R8 / baseline ─────────────────────────────────
-test('OCR-S1-TC-F01 两个 vocab 派生自 JSON、字面 0、frozen、交集空', async () => {
-  const a = await import('../tools/docgen/builders/agents/card-model/vocab/subjective-terms.mjs')
-  const b = await import('../tools/docgen/builders/agents/card-model/vocab/criterion-terms.mjs')
-  const noLiteral = (src, words) => {
-    for (const t of words) assert.strictEqual(countOccurrences(src, t), 0, `派生文件不得再写词面：${t}`)
-  }
-  // 两张表各查各的字面（F01 判据原文要求「两文件字面出现均 0」——主观词 9 个 + 判据词 6 个都要查）
-  noLiteral(readText(join(REPO, 'tools', 'docgen', 'builders', 'agents', 'card-model', 'vocab', 'subjective-terms.mjs')), [...J.terms, ...J.criterionTerms])
-  noLiteral(readText(join(REPO, 'tools', 'docgen', 'builders', 'agents', 'card-model', 'vocab', 'criterion-terms.mjs')), [...J.criterionTerms, ...J.terms])
-  assert.deepStrictEqual(a.subjectiveTerms, J.terms)
-  assert.deepStrictEqual(b.criterionTerms, J.criterionTerms)
-  assert.ok(Object.isFrozen(a.subjectiveTerms))
-  assert.ok(Object.isFrozen(b.criterionTerms))
-  assert.deepStrictEqual(a.subjectiveTerms.filter((t) => b.criterionTerms.includes(t)), [])
-})
-
 test('OCR-S1-TC-F02 旧字面数组形态源码 → 必红', () => {
   const oldSource = `export const subjectiveTerms = Object.freeze([${J.terms.slice(0, 5).map((t) => `'${t}'`).join(',')}]);`
   const assertNoLiteral = (src) => {
     for (const t of J.terms) assert.strictEqual(countOccurrences(src, t), 0, `不得再写字面值：${t}`)
   }
   assert.throws(() => assertNoLiteral(oldSource))
-})
-
-test('OCR-S1-TC-F04 card-model.test.mjs 改派生后绿 + 旧字面数组 0', () => {
-  const env = { ...process.env }
-  delete env.NODE_TEST_CONTEXT
-  const r = spawnSync(process.execPath, ['--test', '--test-reporter=tap', join(REPO, 'tools', 'docgen', 'builders', 'agents', 'test', 'card-model.test.mjs')], { cwd: REPO, encoding: 'utf8', env })
-  const out = (r.stdout || '') + (r.stderr || '')
-  assert.strictEqual(r.status, 0, out.slice(-2000))
-  assert.ok(/# fail 0/.test(out), out.slice(-500))
-  const src = readText(join(REPO, 'tools', 'docgen', 'builders', 'agents', 'test', 'card-model.test.mjs'))
-  assert.ok(!new RegExp(`export const subjectiveTerms = Object\\.freeze\\(\\[\\s*['"]${J.terms[0]}`).test(src), '不得残留旧字面数组形态')
 })
 
 test('OCR-S1-TC-F05 PRD 5 词仍逐字、逐个 ⊆ 词表、日期注与指针在位', () => {

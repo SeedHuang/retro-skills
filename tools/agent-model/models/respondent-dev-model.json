@@ -12,7 +12,8 @@
           "issue-card-behavior"
         ],
         "scope": "用命令",
-        "action": "reproduce"
+        "action": "reproduce",
+        "kind": "need"
       }
     ],
     "description": {

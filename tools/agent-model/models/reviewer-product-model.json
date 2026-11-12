@@ -14,7 +14,8 @@
           "spec",
           "plan"
         ],
-        "perspective": "product"
+        "perspective": "product",
+        "kind": "dispatch"
       }
     ],
     "description": {

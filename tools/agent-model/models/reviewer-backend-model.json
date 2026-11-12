@@ -14,7 +14,8 @@
           "plan",
           "tech-design"
         ],
-        "perspective": "backend"
+        "perspective": "backend",
+        "kind": "dispatch"
       }
     ],
     "description": {

@@ -28,6 +28,22 @@ test('generate --name ghost → MissingComponentData（exit 2）', () => {
   assert.match(r.stdout + r.stderr, /MissingComponentData/);
 });
 
+test('generate --kind agent --apply → InvalidArgs（agent 卡只比不写，写盘走 draft→replace）', () => {
+  const r = run(['generate', '--kind', 'agent', '--apply']);
+  assert.equal(r.status, 2, r.stdout + r.stderr);
+  assert.match(r.stderr, /^InvalidArgs: /m);
+});
+
+test('dump：输出 = 合并后全量模型（含共享层 verdicts / vocab / globalRules）', () => {
+  const r = run(['dump', '--name', 'reviewer-audit']);
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  const j = JSON.parse(r.stdout);
+  for (const k of ['verdicts', 'vocab', 'globalRules', 'permissions', 'must', 'never', 'seat']) {
+    assert.ok(k in j, `dump 缺共享层键 ${k}`);
+  }
+  assert.equal(j.verdicts.enum.length, 3);
+});
+
 test('gate：两清单基线 + 全量重建比对 + W4 派生断言 + baseline N/N', () => {
   const r = run(['gate']);
   assert.equal(r.status, 0, r.stdout + r.stderr);
@@ -49,6 +65,8 @@ test('字节反例：副本仓注入一字节 → generate 判漂移 exit 1（�
   const dst = mkdtempSync(join(tmpdir(), 'dg-copy-'));
   try {
     cpSync('tools/docgen', join(dst, 'tools/docgen'), { recursive: true });
+    // P5：模型数据源在 tools/agent-model（gate / 渲染 / 席列表都从这里读），副本必须一起带
+    cpSync('tools/agent-model', join(dst, 'tools/agent-model'), { recursive: true });
     // cli.mjs 的 replace/diff 依赖 execution-matrix（SEMANTIC_KEYS / checkStruct / readAnnotations），副本要一起带
     cpSync('tools/execution-matrix', join(dst, 'tools/execution-matrix'), { recursive: true });
     cpSync('tools/quality', join(dst, 'tools/quality'), { recursive: true }); // S1 词表单源（vocab/* 在 import 时读）

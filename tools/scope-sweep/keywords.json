@@ -4,7 +4,11 @@
     {
       "id": "I1",
       "title": "卡面文字不要求一致",
-      "words": ["卡面字节不变", "要求卡面字节", "逐字节"],
+      "words": [
+        "卡面字节不变",
+        "要求卡面字节",
+        "逐字节"
+      ],
       "scope": [
         "docs/prd/20261024073606-dev-workflow-mainline/index.md",
         "docs/superpowers/specs/2026-10-25-docgen-policy-single-source-design.md",
@@ -14,7 +18,11 @@
     {
       "id": "I2",
       "title": "路径三数（数组 21 / 点名 22 / 卡面 23）",
-      "words": ["21 个数组元素", "卡面成员", "= 23 项"],
+      "words": [
+        "21 个数组元素",
+        "卡面成员",
+        "= 23 项"
+      ],
       "scope": [
         "docs/superpowers/specs/2026-10-25-docgen-policy-single-source-design.md",
         "docs/superpowers/specs/2026-10-25-docgen-policy-single-source-design-testcase.md"
@@ -23,7 +31,10 @@
     {
       "id": "I3",
       "title": "expanded 槽序 = 表行序",
-      "words": ["expanded[", "第 12 位"],
+      "words": [
+        "expanded[",
+        "第 12 位"
+      ],
       "scope": [
         "docs/superpowers/specs/2026-10-25-docgen-policy-single-source-design.md",
         "docs/superpowers/specs/2026-10-25-docgen-policy-single-source-design-testcase.md"
@@ -32,18 +43,22 @@
     {
       "id": "I4",
       "title": "档位四档（含 command）",
-      "words": ["TIERS", "四档"],
+      "words": [
+        "TIERS",
+        "四档"
+      ],
       "scope": [
         "docs/superpowers/specs/2026-10-25-docgen-policy-single-source-design.md",
         "docs/superpowers/specs/2026-10-25-docgen-policy-single-source-design-testcase.md",
-        "tools/docgen/builders/agents/components/patternRegistry.mjs",
-        "tools/docgen/builders/agents/test/tool-tiers.test.mjs"
+        "tools/docgen/builders/agents/components/patternRegistry.mjs"
       ]
     },
     {
       "id": "I5",
       "title": "network.verbs 恰三项",
-      "words": ["下载类命令"],
+      "words": [
+        "下载类命令"
+      ],
       "scope": [
         "docs/superpowers/specs/2026-10-25-docgen-policy-single-source-design.md",
         "docs/superpowers/specs/2026-10-25-docgen-policy-single-source-design-testcase.md"
@@ -52,7 +67,10 @@
     {
       "id": "I6",
       "title": "SEATS 契约（display / clause / escalationWriter）",
-      "words": ["escalationWriter", "clause"],
+      "words": [
+        "escalationWriter",
+        "clause"
+      ],
       "scope": [
         "docs/superpowers/specs/2026-10-25-docgen-policy-single-source-design.md",
         "docs/superpowers/specs/2026-10-25-docgen-policy-single-source-design-testcase.md"
@@ -61,7 +79,10 @@
     {
       "id": "I7",
       "title": "错误码后缀与读取失败口径",
-      "words": ["not-allowed", "TemplateReadFailed"],
+      "words": [
+        "not-allowed",
+        "TemplateReadFailed"
+      ],
       "scope": [
         "docs/superpowers/specs/2026-10-25-docgen-policy-single-source-design.md",
         "docs/superpowers/specs/2026-10-25-docgen-policy-single-source-design-testcase.md"
@@ -70,7 +91,10 @@
     {
       "id": "I9",
       "title": "未登记席 / 保留键",
-      "words": ["__default__", "SEAT_NAMES"],
+      "words": [
+        "__default__",
+        "SEAT_NAMES"
+      ],
       "scope": [
         "docs/superpowers/specs/2026-10-25-docgen-policy-single-source-design.md",
         "docs/superpowers/specs/2026-10-25-docgen-policy-single-source-design-testcase.md"
@@ -79,7 +103,10 @@
     {
       "id": "I10",
       "title": "纯结构行四类（含渲染器固定骨架行）",
-      "words": ["围栏行）不可作证据", "围栏行）→ 红"],
+      "words": [
+        "围栏行）不可作证据",
+        "围栏行）→ 红"
+      ],
       "scope": [
         "docs/prd/20261026205821-agent-card-contract.md",
         "docs/superpowers/specs/2026-10-27-s2-observation-check-design-testcase.md"
@@ -88,7 +115,9 @@
     {
       "id": "I11",
       "title": "验收命令写法（仓根 + 带引号 glob，禁裸 glob 与无 cwd 的 cd 写法）",
-      "words": ["node --test *.test.mjs"],
+      "words": [
+        "node --test *.test.mjs"
+      ],
       "scope": [
         "docs/prd/20261026205821-agent-card-contract.md",
         "docs/superpowers/specs/2026-10-27-s2-observation-check-design.md",
@@ -103,7 +132,9 @@
     {
       "id": "I12",
       "title": "计划门验收命令写法（`coverage` 必带 `--stage`）",
-      "words": ["check-plan.mjs coverage --plan"],
+      "words": [
+        "check-plan.mjs coverage --plan"
+      ],
       "scope": [
         "skills/dev-workflow/references/stage-2b-plan-gate.md",
         "skills/dev-workflow/references/stage-2-tech-design.md",
@@ -114,7 +145,9 @@
     {
       "id": "I13",
       "title": "`preScript` 不再是通过条件（字段保留、条件撤除）",
-      "words": ["preScript"],
+      "words": [
+        "preScript"
+      ],
       "scope": [
         "skills/dev-workflow/references/stage-2b-plan-gate.md",
         "skills/dev-workflow/references/stage-2-tech-design.md",
@@ -125,7 +158,9 @@
     {
       "id": "I14",
       "title": "用例落盘载体（`### TC-*` 或 `#### <ID>` 任一，不再只认 `### TC-`）",
-      "words": ["按 `### TC-` 落盘"],
+      "words": [
+        "按 `### TC-` 落盘"
+      ],
       "scope": [
         "skills/dev-workflow/references/stage-2b-plan-gate.md",
         "skills/dev-workflow/references/stage-2-tech-design.md",
@@ -136,7 +171,11 @@
     {
       "id": "I15",
       "title": "S4-TC-A02 的「12 键逐键删除全被拒」（改为 6 非结构键被拒 + 6 结构键由派生 / 合并值恢复）",
-      "words": ["12 键逐键删除", "12 次均", "十二键逐键"],
+      "words": [
+        "12 键逐键删除",
+        "12 次均",
+        "十二键逐键"
+      ],
       "scope": [
         "docs/superpowers/specs/2026-10-29-agent-card-s4-render-design-testcase.md",
         "docs/superpowers/plans/2026-10-30-agent-card-s4-render.md",
@@ -146,7 +185,10 @@
     {
       "id": "I16",
       "title": "S4-TC-E01 的「判据 id 裸子串计数 = 1」（改为 `criterion:` 字段赋值计数 = 1）",
-      "words": ["判据 id 在", "共享判据 id"],
+      "words": [
+        "判据 id 在",
+        "共享判据 id"
+      ],
       "scope": [
         "docs/superpowers/specs/2026-10-29-agent-card-s4-render-design-testcase.md",
         "docs/superpowers/plans/2026-10-30-agent-card-s4-render.md"
@@ -155,7 +197,9 @@
     {
       "id": "I17",
       "title": "S4-TC-F04 的「缺一份 README → exit 1」（改为 exit 2，沿用 DanglingBaselineEntry 映射）",
-      "words": ["缺一份 README 必须 gate exit 1"],
+      "words": [
+        "缺一份 README 必须 gate exit 1"
+      ],
       "scope": [
         "docs/superpowers/specs/2026-10-29-agent-card-s4-render-design-testcase.md"
       ]
@@ -163,7 +207,10 @@
     {
       "id": "I18",
       "title": "S4-TC-K01 的「PRD §3.7 段表 = 8 行（表头 + 7 段）」（改为 9 行，含 front matter 行）",
-      "words": ["表头 + 7 段 = 8 行", "断行数 = **8**"],
+      "words": [
+        "表头 + 7 段 = 8 行",
+        "断行数 = **8**"
+      ],
       "scope": [
         "docs/superpowers/specs/2026-10-29-agent-card-s4-render-design-testcase.md"
       ]
@@ -171,7 +218,9 @@
     {
       "id": "I19",
       "title": "S4-TC-I02 的「零接触 = `git diff --quiet HEAD` 无差异」（改为整文件 SHA256 内容锚）",
-      "words": ["git diff --quiet HEAD"],
+      "words": [
+        "git diff --quiet HEAD"
+      ],
       "scope": [
         "docs/superpowers/specs/2026-10-29-agent-card-s4-render-design-testcase.md",
         "docs/superpowers/plans/2026-10-30-agent-card-s4-render.md"
@@ -180,7 +229,9 @@
     {
       "id": "I20",
       "title": "A3 必答清单存在（旧说法 = 只认表格列头；S2 D17 起只加不删 + 允许「一定会」bullet 形态）",
-      "words": ["卡内任一含「必答/必问」列头的表格"],
+      "words": [
+        "卡内任一含「必答/必问」列头的表格"
+      ],
       "scope": [
         "tools/execution-matrix/criteria.md",
         "tools/execution-matrix/check-agent.mjs",
@@ -191,7 +242,9 @@
     {
       "id": "I21",
       "title": "A1 契约枚举扫描面（旧说法 = 全仓扫 tools/ + scripts/ + agents/；S2 D18 起收窄为卡面渲染链并排除 *.test.mjs）",
-      "words": ["全仓扫 `tools/`"],
+      "words": [
+        "全仓扫 `tools/`"
+      ],
       "scope": [
         "docs/superpowers/specs/2026-11-01-s2-card-rewrite-design.md",
         "docs/superpowers/specs/2026-11-01-s2-card-rewrite-design-testcase.md",
@@ -201,7 +254,11 @@
     {
       "id": "I22",
       "title": "计数口径：检查点总数 24→25、执行力度 8→9 项、组满分 5/5→6/6",
-      "words": ["24 检查点", "执行力度 8 项", "5/5"],
+      "words": [
+        "24 检查点",
+        "执行力度 8 项",
+        "5/5"
+      ],
       "scope": [
         "skills/rule-inspector/references/criteria.md",
         "skills/rule-inspector/SKILL.md",
@@ -214,20 +271,13 @@
     {
       "id": "I23",
       "title": "⑨ 判据可观察的判定口径：不用 evaluateText 的 verdict，改判「验证节内 ≥1 行命中 markers」",
-      "words": ["evaluateText"],
+      "words": [
+        "evaluateText"
+      ],
       "scope": [
         "skills/rule-inspector/references/criteria.md",
         "skills/rule-inspector/references/recipes.md",
         "skills/rule-inspector/SKILL.md"
-      ]
-    },
-    {
-      "id": "I24",
-      "title": "subjectiveHit 判定口径：token 全等 → substring（单实现点 = vocab/subjective-terms.mjs）",
-      "words": ["token 全等"],
-      "scope": [
-        "tools/docgen/builders/agents/card-model/vocab/subjective-terms.mjs",
-        "tools/docgen/builders/agents/card-model/validateCardModel.mjs"
       ]
     },
     {
@@ -244,58 +294,38 @@
         "代他人填写其本人应填的表"
       ],
       "scope": [
-        "tools/docgen/builders/agents/card-model/vocab/predicates.mjs",
-        "tools/execution-matrix/criteria.md",
-        "tools/docgen/builders/agents/test/pilot-render.test.mjs",
-        "tools/docgen/builders/agents/test/evidence-reader.test.mjs"
-      ]
-    },
-    {
-      "id": "I26",
-      "title": "S6-TC-G01 卡面差异记账面（旧 = 只认 `-s6-eval/capability-diff.md` 的逐文件命中；S3 起受理当次 impact-sheet 的批级说明）",
-      "words": ["capability-diff.md"],
-      "scope": [
-        "tools/docgen/builders/agents/test/policy-pure-source.test.mjs"
-      ]
-    },
-    {
-      "id": "I27",
-      "title": "S5-TC-B07 变更段重判（旧 = 任何卡面变更都必须带 B3；S3 起按「是否触达语义键」分两路）",
-      "words": ["rejudged.includes", "judgeMode"],
-      "scope": [
-        "tools/docgen/builders/agents/test/tool-tiers.test.mjs"
+        "tools/execution-matrix/criteria.md"
       ]
     },
     {
       "id": "I28",
       "title": "计数探针扫描面（旧 = 扫全部 `*.test.mjs`；S3 起排除 s3-predicates.test.mjs —— 其 35/36 是表变量名与码表规模）",
-      "words": ["readCounterFiles", "counterProbes"],
+      "words": [
+        "readCounterFiles",
+        "counterProbes"
+      ],
       "scope": [
-        "tools/docgen/builders/agents/test/support/dev-workflow-checks.mjs",
-        "tools/docgen/builders/agents/test/dev-workflow-counts.test.mjs"
-      ]
-    },
-    {
-      "id": "I29",
-      "title": "S2 本批判据的比对区间（旧 = `base..HEAD` / 现行 blob；S3 起收窄为 `base..S2 落地提交`）",
-      "words": ["base..HEAD"],
-      "scope": [
-        "tools/docgen/builders/agents/test/s2-card-rewrite.test.mjs"
+        "tools/docgen/builders/agents/test/support/dev-workflow-checks.mjs"
       ]
     },
     {
       "id": "I30",
       "title": "S3 遗留 P2-1：`no-fake-problem` 的 observable 旧写法（未点名「结论」列，D-23 已改为按载体列钉死；旧说法复活即红）",
-      "words": ["findings 集合为空时正文含"],
+      "words": [
+        "findings 集合为空时正文含"
+      ],
       "scope": [
-        "docs/superpowers/specs/2026-11-02-observable-s3-predicates-reuse-design.md",
-        "tools/docgen/builders/agents/card-model/vocab/predicates.mjs"
+        "docs/superpowers/specs/2026-11-02-observable-s3-predicates-reuse-design.md"
       ]
     },
     {
       "id": "I31",
       "title": "S-A 计划门 P0-1：把「12 键恰等」挂在 loader / `agentData[i].card` 上的旧口径（实测该对象恒 8 键，12 键只在 `cardPipeline.buildOne` 派生；改判后 12 键断言落 `buildCards()` 产物，loader 只判 8 键 + 派生四键拒载）",
-      "words": ["12 键齐", "12 键恰等", "恰等 12 键"],
+      "words": [
+        "12 键齐",
+        "12 键恰等",
+        "恰等 12 键"
+      ],
       "scope": [
         "docs/prd/20261102212627-card-data-contract-and-proof/index.md",
         "docs/superpowers/specs/2026-11-03-s-a-data-layer-design.md",
@@ -306,7 +336,10 @@
     {
       "id": "I32",
       "title": "S-A 计划门 P1-3：`@` 混用规则的旧写法（旧 = 「整值字符串内出现 `${`」——该判定在实现里不可达；改判后 = 「以 `@` 开头但不整体匹配 `^@key$`」+「整值展开结果仍含 `@` / `${`」）",
-      "words": ["两种形态混用", "整值字符串内出现"],
+      "words": [
+        "两种形态混用",
+        "整值字符串内出现"
+      ],
       "scope": [
         "docs/superpowers/specs/2026-11-03-s-a-data-layer-design.md",
         "docs/superpowers/specs/2026-11-03-s-a-data-layer-design-testcase.md",
@@ -316,7 +349,9 @@
     {
       "id": "I33",
       "title": "S-A 计划门 P1-6：PRD §8 S-A 验收列的旧写「V10（`kind` 四值）」（四值校验归 S-C，本段只落字段位；PRD `:119` 与 `:137` 旧说法自相矛盾）",
-      "words": ["V10（`kind` 四值）"],
+      "words": [
+        "V10（`kind` 四值）"
+      ],
       "scope": [
         "docs/prd/20261102212627-card-data-contract-and-proof/index.md",
         "docs/superpowers/specs/2026-11-03-s-a-data-layer-design.md",
@@ -326,18 +361,25 @@
     {
       "id": "I34",
       "title": "V9 人设词面的旧口径（旧 = 「`资深` + `20 年`」两词面；S-E 批 2026-11-04 加严为 `资深` + `20 年` + `十年` 三词面，并在 spec §11.4 `:108` / §11.8 `:151` 与 testcase 同步）",
-      "words": ["两个词面", "三条并列判据", "只判两词面"],
+      "words": [
+        "两个词面",
+        "三条并列判据",
+        "只判两词面"
+      ],
       "scope": [
         "docs/superpowers/specs/2026-11-03-s-c-card-shape-design.md",
-        "docs/superpowers/specs/2026-11-03-s-c-card-shape-design-testcase.md",
-        "tools/docgen/builders/agents/test/sc-card-shape.test.mjs",
-        "tools/docgen/dsl/agents/seats/senior-sdet.json"
+        "docs/superpowers/specs/2026-11-03-s-c-card-shape-design-testcase.md"
       ]
     },
     {
       "id": "I35",
       "title": "S6-B 结构收敛的旧口径（旧 = 槽集 12 / 路径三数（数组元素 21·定义层点名 22·卡面成员 23，Q8 前值）；现行 = 槽集 15 / 19·20·20，见 S6-B spec §3.8）",
-      "words": ["槽集 12 个", "恰 12 槽", "12 个槽", "数组元素 21"],
+      "words": [
+        "槽集 12 个",
+        "恰 12 槽",
+        "12 个槽",
+        "数组元素 21"
+      ],
       "scope": [
         "docs/superpowers/specs/2026-11-04-s6-b-boundary-convergence-design.md",
         "docs/superpowers/specs/2026-11-04-s6-b-boundary-convergence-design-testcase.md"

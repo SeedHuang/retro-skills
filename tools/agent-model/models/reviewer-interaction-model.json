@@ -14,7 +14,8 @@
           "spec",
           "plan"
         ],
-        "perspective": "interaction"
+        "perspective": "interaction",
+        "kind": "dispatch"
       }
     ],
     "description": {

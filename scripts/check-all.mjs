@@ -19,16 +19,16 @@ import { checkBuckets } from '../tools/execution-matrix/check-buckets.mjs'
 import { checkAgentFile } from '../tools/execution-matrix/check-agent.mjs'
 // docgen 状态（哪些席已由生成器替换）——A 组检查的覆盖集从这里现算，不写死试点席
 import { readState, statePath } from '../tools/docgen/builders/agents/state.mjs'
-// 名字集来源（C9 的 ⊇ 断言的另一头）：与 baseline / gate / check-agents 同一份 agentData
-import { agentData } from '../tools/docgen/builders/agents/components/agentData.mjs'
+// 名字集来源（C9 的 ⊇ 断言的另一头）：与 baseline / gate / check-agents 同一份模型席列表
+import { listSeats } from '../tools/agent-model/source.mjs'
 import { checkSharedChanges } from '../tools/execution-matrix/shared-changes/check-shared-changes.mjs'
 import { checkPatternTable } from '../tools/execution-matrix/check-pattern-table.mjs'
 import { splitRow, fenceMask } from '../tools/execution-matrix/markdown-rows.mjs'
 // ⑥ 段（观察产物门禁）与 ② 段 skip 守卫的判据单源：本文件只调用，不内联文案
 import { runObservationGate, formatGateLine } from '../tools/observation-check/gate-run.mjs'
 import { EXEMPT_CARDS, EXPIRY_EVENT, EXPIRY_LANDED, disposeCardFindings } from '../tools/observation-check/card-exempt.mjs'
-// 卡面 findings 实算入口（K-8/K-9 接线）：逐席过装配 + S1 入口，本文件不另写一份
-import { collectCardFindings } from '../tools/docgen/builders/agents/components/cardPipeline.mjs'
+// 卡面 findings 实算入口（K-8/K-9 接线）：逐席过模型语义校验，本文件不另写一份
+import { collectModelFindings } from '../tools/agent-model/source.mjs'
 import { SKIP_ALLOWLIST } from './test-skip-allowlist.mjs'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -219,7 +219,7 @@ if (!existsSync(statePath())) {
   failed = true
   console.error(`[execution-matrix] state 文件缺失：${statePath()}（C9 fail-closed：不得按「全量 registered」放行）`)
 } else if (stateRead) {
-  const missing = agentData.map((a) => a.name).filter((n) => !(n in stateAgents))
+  const missing = listSeats().filter((n) => !(n in stateAgents))
   if (missing.length > 0) {
     failed = true
     console.error(`[execution-matrix] state 覆盖不全：缺 ${missing.join(', ')}（漏登记 state 的席会被 A 组静默跳过）`)
@@ -465,7 +465,7 @@ if (bypass) {
   if (gateRes.findings.length > 0) failed = true
   // 卡面 findings 源在 S1（K-8/K-9 接线）：n/w/b 全部取自实跑值，不写字面量；
   // 阻断非空 → check 变红（否则「阻断」计数只是装饰，仍是假绿）。
-  const cardFindings = collectCardFindings()
+  const cardFindings = collectModelFindings()
   const disposed = disposeCardFindings(cardFindings)
   for (const f of disposed.blockers) console.error(`[卡面] ${f.file} ${f.code}: ${f.message ?? ''}`)
   if (disposed.blockers.length > 0) failed = true

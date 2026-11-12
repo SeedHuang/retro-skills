@@ -14,7 +14,8 @@
           "repeat": "per-round"
         },
         "schedule": "speaker",
-        "action": "behavior-check"
+        "action": "behavior-check",
+        "kind": "moment"
       }
     ],
     "description": {

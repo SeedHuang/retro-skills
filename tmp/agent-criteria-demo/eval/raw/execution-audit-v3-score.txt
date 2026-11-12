@@ -1,5 +1,0 @@
-﻿1	card-B7	reviewer-audit	沙箱	E1=1(f10/14)	E2=1	E3=1	E4=1	total=4/4
-2	card-B7	reviewer-audit	沙箱	E1=1(f14/14)	E2=1	E3=1	E4=1	total=4/4
-3	card-B7	reviewer-audit	沙箱	E1=1(f14/14)	E2=1	E3=1	E4=1	total=4/4
----
-reviewer-audit|沙箱	n=3	medTotal=4	medE1=1	medE2=1	medE3=1	medE4=1	vals=4,4,4

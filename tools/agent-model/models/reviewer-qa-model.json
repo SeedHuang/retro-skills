@@ -14,7 +14,8 @@
           "plan",
           "tech-design"
         ],
-        "perspective": "qa"
+        "perspective": "qa",
+        "kind": "dispatch"
       }
     ],
     "description": {

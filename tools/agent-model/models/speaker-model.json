@@ -8,7 +8,8 @@
     "display": "议长",
     "triggers": [
       {
-        "id": "speaker-round"
+        "id": "speaker-round",
+        "kind": "dispatch"
       }
     ],
     "description": {

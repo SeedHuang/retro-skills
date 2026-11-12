@@ -1,9 +1,8 @@
-// S1 测试支撑（纯函数 + 最小仓副本）：把「文本 / 数据 → 结论」的判据写成函数，
+// S1 测试支撑（纯函数）：把「文本 / 数据 → 结论」的判据写成函数，
 // 负例只需换输入文本，不必为每条负例复制整仓。
 // 文件名不带 .test.mjs，故不进 node --test；也不在 skills/ 下，不进 check-all 的语法扫描。
-import { readFileSync, readdirSync, cpSync, mkdtempSync, rmSync, existsSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
-import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
@@ -212,81 +211,6 @@ export function bareReaderRefs(text) {
   return [...text.matchAll(/(?<!evidence-)(?<!reviewer-)reader/g)].map((m) => m.index);
 }
 
-// 文本剥离的单源口径（E03/E04 与 counterProbes 共用，禁止第二套实现）：
-// stripComments 只剥行注释（用于「必须看见标题串」的判据）；stripCommentsAndStrings 连单/双引号串一起剥
-export const stripComments = (l) => l.replace(/\/\/.*$/, '');
-export const stripCommentsAndStrings = (l) => stripComments(l)
-  .replace(/'(?:[^'\\]|\\.)*'/g, '').replace(/"(?:[^"\\]|\\.)*"/g, '');
-// 档位计数判据：用剥注释、保留字符串的文本（标题是字符串，剥串会让标题里的计数逃检）；「退出码 N 档」显式排除
-export const isTierCountLine = (l) => /[四五六]档/.test(stripComments(l)) && !/退出码/.test(stripComments(l));
-
-// TC-C05~C08 / C11 / E09：12 处硬编码计数的三条探针（纯文本，供正常态与构造态共用）
-export function counterProbes(files) {
-  const baseline = [];   // 剥注释与引号串后仍出现 35/36/37
-  const seatAssert = []; // assert.* 行内出现 14/15
-  for (const [file, text] of Object.entries(files)) {
-    text.split(/\r?\n/).forEach((line, i) => {
-      // 行级豁免：`// counter-probe: off` 标注的行自身不参与探针（标注行必须在**同一行**写理由，
-      // 避免整文件按名排除——按名排除会随新文件增长成一串补丁，正是本探针要防的形态）
-      if (line.includes('counter-probe: off')) return;
-      if (/(?<![0-9])(35|36|37)(?![0-9])/.test(stripCommentsAndStrings(line))) baseline.push(`${file}:${i + 1}`);
-      // 边界用「非词字符」而非「非数字」：`diff14` 这类标识符里的数字不是席位计数（假阳性）
-      // 先剥引号串：负例夹具把「违规写法」当字符串写在用例里，不剥会把夹具本身判成违规
-      if (/(?<![\w])assert\.(equal|strictEqual|deepEqual|match|ok)\([^\r\n]*(?<![\w])(14|15|17|18)(?![\w])/.test(stripCommentsAndStrings(line))) seatAssert.push(`${file}:${i + 1}`);
-    });
-  }
-  return { baseline, seatAssert };
-}
-
-export function readCounterFiles() {
-  const dir = join(ROOT, 'tools', 'docgen', 'builders', 'agents', 'test');
-  const out = {};
-  for (const f of readdirSync(dir).filter((x) => x.endsWith('.test.mjs'))) {
-    out[f] = readFileSync(join(dir, f), 'utf8');
-  }
-  return out;
-}
-
-// 最小仓副本：gate 的 REPO_ROOT 由 cli 位置决定，故复制 tools + rules + agents 即可跑 gate
-export function withRepoCopy(fn) {
-  const dst = mkdtempSync(join(tmpdir(), 'dw-copy-'));
-  // `docs/agents/**` 也是 gate 的比对面（S4 spec §7③）：副本缺它会把正常态误报 DanglingBaselineEntry
-  // `tools/docgen/dsl/rules/vocab/**` 是 S1 词表单源（`card-model/vocab/*` 在 import 时读它）：
-  // 复制 `tools/docgen` 已覆盖；`tools/quality/**` 仍需保留 annotations。
-  const copyAll = () => {
-    for (const rel of ['tools/docgen', 'tools/execution-matrix', 'tools/quality', 'rules', 'agents', 'docs/agents']) {
-      if (!existsSync(join(ROOT, rel))) continue;
-      cpSync(join(ROOT, rel), join(dst, rel), { recursive: true });
-    }
-  };
-  try {
-    // S-A-Q-4（2026-11-03 用户裁定升必修）：`S2-TC-E09` 在真实仓跑 `generate --readme --apply`，
-    // `writeAll` 先在 `docs/agents/` 同目录写 `X.md.tmp-<pid>` 再 rename；`node --test` 多文件并行时，
-    // 本函数可能正 `cpSync` 该目录、枚举到已消失的目录项 → 偶发 `cpSync … ENOENT`（复跑即绿）。
-    // 选「失败一次后清空 dst 整轮重复制一次、两次都失败才抛」：这个复制根被 S-A / S4 / S5 / S6
-    // 多条用例复用，改成逐文件容错或改写清单会同时动到那些用例的比对面。
-    try {
-      copyAll();
-    } catch (err) {
-      // 只对「竞争类」ENOENT 重试；权限 / 磁盘满 / 语法类错误重试一次也会死，直接抛才能留住真因
-      if (err && err.code !== 'ENOENT') throw err;
-      // 重试成功也要留痕：否则共享复制根长期带病重试，没人看得出这条分支被触发过
-      process.emitWarning(`withRepoCopy: cpSync 竞争失败（${err.code}: ${err.message}），清空副本后重试一次`);
-      rmSync(dst, { recursive: true, force: true });
-      try {
-        copyAll();
-      } catch (err2) {
-        // 二次失败时把首错的现场挂到 cause，别让「第一次到底撞了什么」丢在静默 catch 里
-        err2.cause = err;
-        throw err2;
-      }
-    }
-    return fn(dst);
-  } finally {
-    rmSync(dst, { recursive: true, force: true });
-  }
-}
-
 export function runCli(dir, args, env = {}) {
   const r = spawnSync(process.execPath, ['tools/docgen/builders/agents/cli.mjs', ...args], {
     cwd: dir,
@@ -294,12 +218,6 @@ export function runCli(dir, args, env = {}) {
     env: { ...process.env, DOCGEN_DRAFTS_DIR: join(dir, '.drafts'), ...env },
   });
   return normalizeSpawn(r, dir, args);
-}
-
-// 在副本里跑一段 ESM 片段（用于 collectGate 明细、validateAgentData 注入等）
-export function runEsm(dir, code) {
-  const r = spawnSync(process.execPath, ['--input-type=module', '-e', code], { cwd: dir, encoding: 'utf8', env: { ...process.env } });
-  return normalizeSpawn(r, dir, ['--input-type=module']);
 }
 
 // 子进程启动失败时 status/stdout/stderr 全为 null，调用方只会看到 'nullnull' 这类无信息断言差。

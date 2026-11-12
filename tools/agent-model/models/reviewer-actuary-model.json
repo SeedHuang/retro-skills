@@ -11,7 +11,8 @@
         "objects": [
           "any-document"
         ],
-        "perspective": "cost-benefit"
+        "perspective": "cost-benefit",
+        "kind": "dispatch"
       }
     ],
     "description": {

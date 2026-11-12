@@ -6,7 +6,7 @@ import { writeFileSync, mkdtempSync, rmSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
-import { agentData } from '../components/agentData.mjs';
+import { listSeats } from '../../../../agent-model/source.mjs';
 import { readState } from '../state.mjs';
 import { readAnnotations, checkSemantic } from '../../../../execution-matrix/check-agent.mjs';
 import { listSkillDirs } from '../../../../../scripts/skill-dir.mjs';
@@ -24,8 +24,8 @@ test('TC-B06 state 登记 replaced，check-agents 报全量已接管 / 未迁移
   delete env.DOCGEN_STATE_PATH;
   const r = spawnSync(process.execPath, ['tools/docgen/builders/agents/cli.mjs', 'check-agents'], { cwd: ROOT, encoding: 'utf8', env });
   assert.equal(r.status, 0, r.stdout + r.stderr);
-  assert.ok(r.stdout.includes(`${agentData.length} 个 agent`), r.stdout);
-  assert.match(r.stdout, new RegExp(`已接管 ${agentData.length}，未迁移 0`));
+  assert.ok(r.stdout.includes(`${listSeats().length} 个 agent`), r.stdout);
+  assert.match(r.stdout, new RegExp(`已接管 ${listSeats().length}，未迁移 0`));
 });
 
 test('TC-B07 annotations 十键全为 pass，checkSemantic 零 findings', () => {
@@ -34,14 +34,14 @@ test('TC-B07 annotations 十键全为 pass，checkSemantic 零 findings', () => 
   assert.deepEqual(checkSemantic(ann, 'evidence-reader'), []);
 });
 
-test('TC-C10 C9 断言在位：check-all 同时读到 readState 与 agentData，且 state 覆盖全部席', () => {
+test('TC-C10 C9 断言在位：check-all 同时读到 readState 与 listSeats，且 state 覆盖全部席', () => {
   const src = readRepo('scripts/check-all.mjs');
   assert.match(src, /readState\(\)/);
-  assert.ok(src.includes('agentData'), 'check-all 必须取到 agentData 的名字集');
+  assert.ok(src.includes('listSeats'), 'check-all 必须取到模型席列表的名字集');
   assert.ok(src.includes('state 覆盖不全'), 'C9 的缺键报错必须写在 check-all.mjs（不得下沉 readState）');
 
   const agents = JSON.parse(readRepo('tools/docgen/builders/agents/state.json')).agents;
-  assert.deepEqual(agentData.map((a) => a.name).filter((n) => !(n in agents)), []);
+  assert.deepEqual(listSeats().filter((n) => !(n in agents)), []);
 });
 
 test('TC-E06 state 缺一条键 / 整文件缺失 → 缺键集中点名 evidence-reader（C9 的 fail-closed 两条形态）', () => {
@@ -50,7 +50,7 @@ test('TC-E06 state 缺一条键 / 整文件缺失 → 缺键集中点名 evidenc
   const src = readRepo('scripts/check-all.mjs');
   assert.ok(src.includes('state 覆盖不全'), '缺键形态的报错必须存在');
   assert.ok(src.includes('state 文件缺失'), '整文件缺失形态的报错必须存在');
-  assert.match(src, /agentData\.map\(\(a\) => a\.name\)\.filter/, '必须真的比名字集，不是只打印');
+  assert.match(src, /listSeats\(\)\.filter/, '必须真的比名字集，不是只打印');
 
   const dir = mkdtempSync(join(tmpdir(), 'dw-state-'));
   const saved = process.env.DOCGEN_STATE_PATH;
@@ -60,12 +60,12 @@ test('TC-E06 state 缺一条键 / 整文件缺失 → 缺键集中点名 evidenc
     const p = join(dir, 'state-missing-key.json');
     writeFileSync(p, `${JSON.stringify(state, null, 2)}\n`);
     process.env.DOCGEN_STATE_PATH = p;
-    const missing = agentData.map((a) => a.name).filter((n) => !(n in readState().agents));
+    const missing = listSeats().filter((n) => !(n in readState().agents));
     assert.deepEqual(missing, ['evidence-reader'], '缺键必须被点名');
 
     process.env.DOCGEN_STATE_PATH = join(dir, 'not-exist.json');
-    const absent = agentData.map((a) => a.name).filter((n) => !(n in readState().agents));
-    assert.equal(absent.length, agentData.length, '整文件缺失必须全量报缺（不得按 registered 放行）');
+    const absent = listSeats().filter((n) => !(n in readState().agents));
+    assert.equal(absent.length, listSeats().length, '整文件缺失必须全量报缺（不得按 registered 放行）');
   } finally {
     if (saved === undefined) delete process.env.DOCGEN_STATE_PATH;
     else process.env.DOCGEN_STATE_PATH = saved;

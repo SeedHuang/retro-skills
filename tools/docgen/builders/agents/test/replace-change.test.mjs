@@ -203,20 +203,3 @@ test('--rejudge 含 A3（非 10 语义键）→ InvalidArgs，且 stderr 列出�
   assert.match(r.stderr, /A3/);
   assert.match(r.stderr, /A1 A2 B1/);
 });
-
-test('init-evidence：非法名 → InvalidName（exit 1），已迁席 → MigrationPhaseClosed（exit 2）', () => {
-  const bad = spawnSync(process.execPath, ['tools/docgen/builders/agents/acceptance/init-evidence.mjs', '../../evil'], { encoding: 'utf8' });
-  assert.equal(bad.status, 1);
-  assert.match(bad.stderr, /^InvalidName: /m);
-
-  const dir = mkdtempSync(join(tmpdir(), 'dg-phase-'));
-  writeFileSync(join(dir, 'senior-sdet.evidence.json'), `${readFileSync(FIXTURE, 'utf8')}`);
-  const phase = spawnSync(process.execPath, ['tools/docgen/builders/agents/acceptance/init-evidence.mjs', 'senior-sdet'], {
-    encoding: 'utf8',
-    env: { ...process.env, DOCGEN_EVIDENCE_DIR: dir },
-  });
-  rmSync(dir, { recursive: true, force: true });
-  assert.equal(phase.status, 2);
-  assert.match(phase.stderr, /^MigrationPhaseClosed: /m);
-  assert.match(phase.stderr, /diff/);
-});

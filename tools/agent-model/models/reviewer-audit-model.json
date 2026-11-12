@@ -7,13 +7,16 @@
     "display": "审计",
     "triggers": [
       {
-        "id": "process-check"
+        "id": "process-check",
+        "kind": "occasion"
       },
       {
-        "id": "round-reconcile"
+        "id": "round-reconcile",
+        "kind": "occasion"
       },
       {
-        "id": "delivery-check"
+        "id": "delivery-check",
+        "kind": "occasion"
       }
     ],
     "description": {

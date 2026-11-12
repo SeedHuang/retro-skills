@@ -7,10 +7,12 @@
     "display": "取证",
     "triggers": [
       {
-        "id": "handoff"
+        "id": "handoff",
+        "kind": "need"
       },
       {
-        "id": "fact-baseline"
+        "id": "fact-baseline",
+        "kind": "need"
       }
     ],
     "description": {

@@ -2,7 +2,7 @@
 
 > 状态：待评审｜创建：2026-11-11
 > 替代：`20261019093443-docgen-agent-generation.md`（P2）中「agent 卡怎么生成」这一段；P2 的「草稿 → 确认 → 替换」纪律继续有效
-> 研究材料：`tmp/agent-criteria-demo/`（仅作输入，不直接进正式仓；P5 完成后删除）
+> 研究材料：`tmp/agent-criteria-demo/`（仅作输入，不直接进正式仓；**P5 已执行删除，下文历史引用保留为记录**）
 > 硬纪律：除 P5 切换阶段（且逐卡确认）外，**任何阶段不得写 `agents/*.md`**
 
 ## 1 背景
@@ -252,14 +252,14 @@ skill 建模 → verify 全绿 → 渲染 → 与 agents/<seat>.md 段级 diff �
 | 5 | 门禁 | `gate` 改为比对新基线；`npm run check` 全绿 |
 | 6 | 测试 | 6 + 9 个既有红必须清零或按新基线重写；新增模型/渲染/校验单测（`open-issues.md` C5 范围） |
 | 7 | 文档 | 旧 PRD 的生成章节标注「被本文替代」；`docs/prd/docgen-index.md` 增一行 |
-| 8 | 清理 | 删除 `tmp/agent-criteria-demo/`；全仓 grep 无 `agent-criteria-demo` 引用 |
+| 8 | 清理 | 删除 `tmp/agent-criteria-demo/`；**代码/配置面** grep 无 `agent-criteria-demo` 引用（`docs/` 历史记录按 `docs-placement`「历史记录不改」保留） |
 
 **验收**：
 
 ```
 npm run check                      → 全绿（exit 0）
 node tools/docgen/.../cli.mjs gate → 18/18，exit 0
-grep -r "agent-criteria-demo" .    → 0 处（排除已删目录本身）
+grep -r "agent-criteria-demo" tools scripts skills rules agents → 0 处（docs/ 历史记录按 docs-placement 不改）
 git diff --stat agents/            → 与 sandbox 版本一致，无手改残留
 ```
 

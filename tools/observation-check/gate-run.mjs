@@ -35,6 +35,26 @@ const countPairs = (files) =>
 const UNTRACKED_MSG = '归档件未进 git 索引（迁移步骤 1 属预期，下一步 `git add`）';
 const DIRTY_MSG = '归档件与 git 索引不一致（归档后被手改）';
 
+// P5 退役路径：旧卡管线已删除，归档件（docs/superpowers/reviews/**）里的历史证据允许指向这些不再存在的文件。
+// 只对归档侧生效；过程侧（.session/reviews）与 write 校验仍要求证据可解析（新产物不得引用退役路径）。
+const RETIRED_ARCHIVE_PREFIXES = [
+  'tools/docgen/builders/agents/card-model/',
+  'tools/docgen/builders/agents/components/agentData.mjs',
+  'tools/docgen/builders/agents/components/seatLoader.mjs',
+  'tools/docgen/builders/agents/components/cardPipeline.mjs',
+  'tools/docgen/builders/agents/components/renderCard.mjs',
+  'tools/docgen/builders/agents/components/renderReadme.mjs',
+  'tools/docgen/dsl/agents/',
+];
+const MISSING_PREFIX = '文件不存在：';
+const isRetiredArchiveEvidence = (e) => {
+  if (e.code !== 'EvidenceNotFound') return false;
+  const msg = String(e.message || '');
+  if (!msg.startsWith(MISSING_PREFIX)) return false;
+  const p = msg.slice(MISSING_PREFIX.length).replace(/\\/g, '/');
+  return RETIRED_ARCHIVE_PREFIXES.some((prefix) => p === prefix.replace(/\/$/, '') || p.startsWith(prefix));
+};
+
 // git 三条命令一律带 cwd 与 timeout（R5）
 const runGit = (root, args) => spawnSync('git', args, { cwd: root, encoding: 'utf8', timeout: 30000 });
 
@@ -104,7 +124,10 @@ export function runObservationGate() {
     for (const anchor of anchors) {
       const relPath = `${archiveRel(dirName)}${anchor}`;
       const v = validateArtifact(join(scanRoot, dirName, anchor), { registeredIds: REGISTERED_IDS });
-      for (const e of v.errors) findings.push({ code: e.code, path: relPath, message: e.message });
+      for (const e of v.errors) {
+        if (isRetiredArchiveEvidence(e)) continue;
+        findings.push({ code: e.code, path: relPath, message: e.message });
+      }
     }
     const orphanMd = topLevel.filter((f) => f.endsWith('.md') && ARTIFACT_RE.test(f)
       && !files.includes(f.replace(/\.md$/, '.json')));

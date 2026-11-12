@@ -8,11 +8,12 @@
     "display": "测试",
     "triggers": [
       {
-        "id": "testcase-design"
+        "id": "testcase-design",
+        "kind": "need"
       }
     ],
     "description": {
-      "template": "{triggers}",
+      "template": "{triggers}；不用于：修改业务代码、写实现方案、或只读的议会评审（那走 reviewer-qa）",
       "joiner": "、",
       "lastJoiner": "、"
     },

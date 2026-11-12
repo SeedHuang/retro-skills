@@ -3,7 +3,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { LAYERS, commandGroups, validateCommandLayers } from '../policy/definitions/commands.mjs'
-import { exitCodeFor } from '../components/validateAgentData.mjs'
+import { exitCodeFor } from '../components/exitCodes.mjs'
 
 test('F-01 五组 layer 合法且一组一层', () => {
   assert.deepEqual(Object.keys(commandGroups).sort(), ['audit.lookup', 'docgen.read', 'git.read', 'repo.check', 'tool.time'])

@@ -12,7 +12,8 @@
         "objects": [
           "any-document"
         ],
-        "perspective": "security"
+        "perspective": "security",
+        "kind": "dispatch"
       }
     ],
     "description": {

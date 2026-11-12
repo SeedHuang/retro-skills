@@ -1,12 +1,12 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { agentData } from './components/agentData.mjs';
+import { listSeats } from '../../../agent-model/source.mjs';
 import { writeFileAtomic } from './atomicWrite.mjs';
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 export const statePath = () => process.env.DOCGEN_STATE_PATH || join(ROOT, 'state.json');
-const NAMES = new Set(agentData.map((a) => a.name));
+const NAMES = new Set(listSeats());
 const VALUES = new Set(['replaced', 'suspended']);
 
 function fail(code, fields = {}) {
