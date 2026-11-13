@@ -4,15 +4,23 @@
 // 阶段 2b：md / rule 共用同一份 §4.1 模板；都不渲染来源与残余
 // 2026-11-07：inject 投影无运行时消费者，已删除（解释器只剩 md / rule）
 import { renderTrigger, renderObligation } from './schema.mjs'
+import { h1, para, notes, blank, renderBlocks } from '../../render/index.mjs'
 
 /** §4.1 模板：标题 → 触发 → 编号义务 → 另见（可选）→ 落点 */
 function renderDoc(rule) {
-  const lines = [`# ${rule.title}`, '', `> 触发：${renderTrigger(rule)}`, '', '义务（全部成立才合规；缺一件 = 不合格）：']
-  rule.assert.forEach((a, i) => lines.push(renderObligation(a, i)))
-  lines.push('')
-  if (Array.isArray(rule.refs) && rule.refs.length > 0) lines.push(`另见：${rule.refs.join('、')}`)
-  lines.push(`落点：${rule.landing}`)
-  return lines.join('\n') + '\n'
+  const blocks = [
+    h1(rule.title),
+    blank(),
+    notes(`触发：${renderTrigger(rule)}`),
+    blank(),
+    para('义务（全部成立才合规；缺一件 = 不合格）：'),
+  ]
+  // renderObligation 自带 `${index+1}. ` 与续行；必须用 para 原样承载，不能再包 ordered
+  rule.assert.forEach((a, i) => blocks.push(para(renderObligation(a, i))))
+  blocks.push(blank())
+  if (Array.isArray(rule.refs) && rule.refs.length > 0) blocks.push(para(`另见：${rule.refs.join('、')}`))
+  blocks.push(para(`落点：${rule.landing}`))
+  return renderBlocks(blocks) + '\n'
 }
 
 export const interpreters = [
