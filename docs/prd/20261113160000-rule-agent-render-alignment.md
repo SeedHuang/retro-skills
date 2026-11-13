@@ -1,16 +1,26 @@
 # rule 与 agent 文档体系拉齐（PRD）
 
-> 状态：草案 v0.5（2026-11-13），已按第四轮 3 组 P1 修订，待用户确认
-> 来源：本次会话讨论 + 2026-11-13 三方评审（第 1 轮五项开放问题、第 2 轮增量、第 3 轮增量）；现状证据见 §1、§10
+> 状态：草案 v0.5.1（2026-11-13），gate 补 §0 四栏 + 流程图 + 非目标假设，不改 F 集合
+> 来源：本次会话讨论 + 2026-11-13 三方评审（第 1 轮五项开放问题、第 2 轮增量、第 3 轮增量、第 4 轮增量）；现状证据见 §1、§10
 > 关联：rule-inspector 判据 `skills/rule-inspector/references/criteria.md`；agent 渲染 `tools/docgen/models/agents/render/`
 
 ## 0 谁、什么场景、什么价值
 
 | 项 | 内容 |
 |---|---|
-| 谁 | 维护 `rules/` 与 `agents/` 的维护者；评审 rule / agent 产物的 reviewer-audit 与 senior-sdet |
+| 问题 | 两套文档体系（agent 卡 / rule 正文）各有一套渲染、CLI、基线与质量度量；改一处要改两处，rule 缺共享 IR 与非 registered `--check`，质量分数无改造前后对照 |
+| 用户 | 维护 `rules/` 与 `agents/` 的维护者；评审 rule / agent 产物的 reviewer-audit 与 senior-sdet |
+| 依据 | 现状证据见 §1、§10；暂停决策见 `docs/prd/docgen-index.md:44`；四轮评审结论见 `docs/devworkflows/20261113161413-rule-agent-render-alignment/gate-record.md` |
+| 边界 | 非目标见 §3：不合并领域语义、不改评分口径、不激活休眠 rule、不做四维、不改文案；F5 首期不做 |
 | 场景 | 改 rule 或 agent 模型后重生成正文；新增 rule / 新增席；判断两套文档体系是否已同源 |
 | 价值 | ① 一套渲染引擎、一套 CLI、一套基线，减少两套实现的漂移；② rule 已有 preview / registered check / gate，本 PRD 把覆盖扩到 5 个 model 并补类式类型校验；③ rule 质量分数在改造前后可对照，不靠感觉 |
+
+## 0.1 交付流程（F 节点）
+
+```text
+[F1 共享 IR / 渲染引擎] → [F2 RuleModel 校验] → [F3 CLI / gate] → [F4 基线 / golden] → [F6 质量门]
+        └──────────────→ [F5 共享外壳（候选，首期不做）]
+```
 
 ## 1 背景：两套体系的五个代差
 
@@ -35,14 +45,14 @@
 
 ## 3 非目标
 
-- 不合并 `AgentModel` 与 `RuleModel` 的领域语义；不做一份「万能模型」。
-- 不改 rule 评分维度与满分口径（17 + X/M 仍由 rule-inspector 定义）。
-- 不改 agent 四维评估协议；本 PRD 不重跑理解 / 执行 / token / 性能。
-- 不在本 PRD 内改 rule 文案内容；第一阶段要求渲染逐字节不变，文案变更另走 rule-inspector 硬闸门。
-- 不强行激活 `rules.json` 之外的 4 个 rule 模型；激活属独立决策，见 §9。
-- 不做 rule 的四维评分；若需要，另立 PRD 与协议。
-- 不提升 rule 的质量分数；本 PRD 只做结构拉齐，现有 57% 基线作为已知债登记。
-- 首期不做 F5 共享外壳；触发条件见 §9.2。
+- 不合并 `AgentModel` 与 `RuleModel` 的领域语义；不做一份「万能模型」。（假设：共享层只做块渲染，领域字段各留各的；合并会引入第二真相）
+- 不改 rule 评分维度与满分口径（17 + X/M 仍由 rule-inspector 定义）。（假设：17+X/M 仍是 rule 质量的唯一硬门）
+- 不改 agent 四维评估协议；本 PRD 不重跑理解 / 执行 / token / 性能。（假设：本 PRD 只做结构拉齐，四维另立）
+- 不在本 PRD 内改 rule 文案内容；第一阶段要求渲染逐字节不变，文案变更另走 rule-inspector 硬闸门。（假设：逐字节 golden 能锁住文案）
+- 不强行激活 `rules.json` 之外的 4 个 rule 模型；激活属独立决策，见 §9。（假设：休眠 model 未验证，激活会扩大回归面）
+- 不做 rule 的四维评分；若需要，另立 PRD 与协议。（假设：四维协议未定义，先不引入）
+- 不要求提升 rule 的质量分数；本 PRD 只做结构拉齐，现有 57% 基线作为已知债登记。（假设：结构改造不应掩盖质量债）
+- 首期不做 F5 共享外壳；触发条件见 §9.2。（假设：无第二消费者，提前抽象会漂移）
 
 ## 4 适用范围
 
