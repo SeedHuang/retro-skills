@@ -432,30 +432,12 @@
     "pl.round-check": {
       "skill": "parliament-ledger",
       "label": "轮间核对单",
-      "columns": [
-        "no",
-        "item",
-        "criterion",
-        "kind",
-        "verdict",
-        "reason",
-        "applicability",
-        "evidence"
-      ]
+      "kind": "round-check"
     },
     "pl.delivery-audit": {
       "skill": "parliament-ledger",
       "label": "交付审计表",
-      "columns": [
-        "no",
-        "item",
-        "criterion",
-        "kind",
-        "verdict",
-        "reason",
-        "applicability",
-        "evidence"
-      ]
+      "kind": "delivery-audit"
     }
   },
   "outputFormat": {

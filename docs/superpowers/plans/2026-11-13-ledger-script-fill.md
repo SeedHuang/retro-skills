@@ -73,10 +73,10 @@ T1 → T5 → T6
 ## 7 进度
 
 - [x] T0.1 kind 注册表
-- [ ] T0.2 席位 templates 去 columns
-- [ ] T0.3 ledger.mjs 列来源、行不预置
-- [ ] T0.4 check-all 两条断言
-- [ ] T0.5 三源一致校验
+- [x] T0.2 席位 templates 去 columns
+- [x] T0.3 ledger.mjs 列来源、行不预置
+- [x] T0.4 check-all 两条断言
+- [x] T0.5 三源一致校验
 - [ ] T1 解析库
 - [ ] T2 填充器
 - [ ] T3 定位器

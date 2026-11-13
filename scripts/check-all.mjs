@@ -18,7 +18,10 @@ import { BASELINE_RULES, agentPaths } from '../tools/docgen/builders/agents/comp
 import { checkBuckets } from '../tools/execution-matrix/check-buckets.mjs'
 import { checkAgentFile } from '../tools/execution-matrix/check-agent.mjs'
 // 名字集来源（A 组检查覆盖集）：与 baseline / gate / check-agents 同一份模型席列表
-import { listSeats } from '../tools/docgen/models/agents/source.mjs'
+import { listSeats, modelPathOf } from '../tools/docgen/models/agents/source.mjs'
+// 账本 kind 注册表与生成物清单：②.56 两条断言（assets 表头 == kind labels / 席位 kind 可解析）
+import { collectDocs, kindOf, columnsOf, OUT as LEDGER_OUT } from '../tools/docgen/builders/agents/ledger.mjs'
+import { kinds } from '../tools/docgen/builders/agents/components/outputFormats.mjs'
 import { checkSharedChanges } from '../tools/execution-matrix/shared-changes/check-shared-changes.mjs'
 import { checkPatternTable } from '../tools/execution-matrix/check-pattern-table.mjs'
 import { splitRow, fenceMask } from '../tools/execution-matrix/markdown-rows.mjs'
@@ -185,6 +188,9 @@ if (ledgerRun.error) {
   if (ledgerRun.stdout) console.log(ledgerRun.stdout.trim())
   if (ledgerRun.status !== 0) failed = true
 }
+
+// ②.56 账本 kind 绑定：assets 表头 == kind labels；席位 templates.kind 可解析（spec §3 同步改动）
+// 实现放在 ④ 之后：表头解析复用 ④ 段的 TABLE_ROW_RE / isDelim（同一口径，不另写一份）。
 
 // ②.6 执行力度矩阵：归桶守卫 + A 组检查 + 共享项变更硬闸门（R7）+ 模式表守卫
 // （对齐既有 gate 模式：failed=true 统一出口）
@@ -374,6 +380,51 @@ else if (mdFindings.length > 0) {
   failed = true
   console.error(`[markdown] ${mdFindings.length} 处问题`)
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ②.56 账本 kind 绑定（spec §3 同步改动）：assets 表头 == kind labels；席位 templates.kind 可解析。
+// 位置在 ④ 之后：表头识别复用 ④ 段的 TABLE_ROW_RE / isDelim（同一口径，不另写一份）。
+// 表头按文档顺序逐张比对；`table.kind` 覆盖文档默认 kind（issue-card.md 的观察记录表属 detective）。
+// ─────────────────────────────────────────────────────────────────────────────
+const kindFindings = []
+for (const doc of collectDocs()) {
+  const expected = []
+  for (const b of doc.blocks || []) {
+    if (!b.table) continue
+    try {
+      expected.push(columnsOf(kindOf(b.table, doc.kind)).map((c) => c.label))
+    } catch (e) {
+      kindFindings.push(`${doc.file}: ${e.message}`)
+    }
+  }
+  const lines = readFileSync(join(LEDGER_OUT, doc.file), 'utf8').replace(/^\uFEFF/, '').split(/\r?\n/)
+  const { mask } = fenceMask(lines)
+  const actual = []
+  for (let i = 0; i + 1 < lines.length; i++) {
+    if (mask[i] || mask[i + 1]) continue
+    if (!TABLE_ROW_RE.test(lines[i]) || !TABLE_ROW_RE.test(lines[i + 1])) continue
+    const head = splitRow(lines[i])
+    const delim = splitRow(lines[i + 1])
+    if (!isDelim(delim) || delim.length !== head.length) continue
+    actual.push(head)
+  }
+  if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+    kindFindings.push(`${doc.file}: 表头 ${JSON.stringify(actual)} ≠ kind labels ${JSON.stringify(expected)}`)
+  }
+}
+let kindBindings = 0
+for (const seat of listSeats()) {
+  const m = JSON.parse(readFileSync(modelPathOf(seat), 'utf8'))
+  for (const [id, t] of Object.entries(m.templates || {})) {
+    kindBindings += 1
+    if (typeof t.kind !== 'string' || !kinds[t.kind]) {
+      kindFindings.push(`${seat}: templates.${id}.kind 不可解析（${t.kind}）`)
+    }
+  }
+}
+for (const f of kindFindings) console.error(`[ledger-kinds] ${f}`)
+if (kindFindings.length > 0) failed = true
+else console.log(`[ledger-kinds] assets ${collectDocs().length} 份表头对齐 / 席位模板 ${kindBindings} 条 kind 可解析`)
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ⑤ .session 结构守卫（只查形状与临时件，不查内容）

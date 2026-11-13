@@ -372,17 +372,7 @@
     "pl.issue-card": {
       "skill": "parliament-ledger",
       "label": "问题卡",
-      "columns": [
-        "cardNo",
-        "proposer",
-        "dimension",
-        "description",
-        "quote",
-        "location",
-        "purpose",
-        "severity",
-        "suggestion"
-      ]
+      "kind": "issue-card"
     }
   },
   "outputs": {

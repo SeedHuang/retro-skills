@@ -94,3 +94,14 @@ test('L-TC-12 真实数据与磁盘逐字节一致（生成物漂移即红）', 
     assert.equal(readFileSync(p, 'utf8').replace(/^\uFEFF/, ''), text, `${file} 与数据不一致（手改或改源未重生成）`)
   }
 })
+
+test('L-TC-13 生产文档必须由 kind 取列：缺 kind / 表块自带 columns / kind 未注册均抛错', () => {
+  const ok = { file: 'x.md', kind: 'round-check', blocks: [{ table: {} }] }
+  assert.doesNotThrow(() => collectDocs({ a: { docs: [ok] } }))
+  assert.throws(() => collectDocs({ a: { docs: [{ ...ok, kind: undefined }] } }), /缺合法 kind/)
+  assert.throws(
+    () => collectDocs({ a: { docs: [{ ...ok, blocks: [{ table: { columns: ['a'], rows: [] } }] }] } }),
+    /不得自带 columns\/rows/,
+  )
+  assert.throws(() => collectDocs({ a: { docs: [{ ...ok, blocks: [{ table: { kind: 'nope' } }] }] } }), /kind 未注册/)
+})

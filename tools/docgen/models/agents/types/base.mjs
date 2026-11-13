@@ -25,7 +25,7 @@ export const VALUE_CHECKS = {
   Source: (o, p) => (!('kind' in o) ? [`MISSING:${p}.kind`] : []),
   Form: (o, p) =>
     req(o, ['text', 'kind'], p).concat(['path', 'prefix', 'match'].some((k) => k in o) ? [] : [`MISSING:${p}.(path|prefix|match)`]),
-  Template: (o, p) => req(o, ['skill', 'label', 'columns'], p),
+  Template: (o, p) => req(o, ['skill', 'label', 'kind'], p),
   Outputs: (o, p) => req(o, ['items'], p).concat((o.items || []).flatMap((x, i) => req(x, ['phase', 'artifact', 'template', 'action', 'mode'], `${p}.items[${i}]`))),
   Permissions: (o, p) => req(o, ['policy', 'action', 'write', 'command'], p),
   Rule: (o, p) => req(o, ['id', 'criterion', 'targets'], p),

@@ -339,11 +339,7 @@
     "pl.fact-summary": {
       "skill": "parliament-ledger",
       "label": "事实摘要",
-      "columns": [
-        "quote",
-        "location",
-        "purpose"
-      ]
+      "kind": "fact-summary"
     }
   },
   "outputs": {

@@ -308,13 +308,7 @@
     "pl.detective": {
       "skill": "parliament-ledger",
       "label": "观察记录",
-      "columns": [
-        "cardNo",
-        "object",
-        "behavior",
-        "basis",
-        "suggestion"
-      ]
+      "kind": "detective"
     }
   },
   "outputs": {

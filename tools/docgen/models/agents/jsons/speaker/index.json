@@ -294,16 +294,7 @@
     "pl.progress": {
       "skill": "parliament-ledger",
       "label": "进度记录",
-      "columns": [
-        "round",
-        "span",
-        "seats",
-        "count",
-        "dropReason",
-        "lineup",
-        "endBasis",
-        "path"
-      ]
+      "kind": "progress"
     }
   },
   "outputs": {

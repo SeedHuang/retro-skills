@@ -354,14 +354,7 @@
     "pl.defense-record": {
       "skill": "parliament-ledger",
       "label": "答辩记录",
-      "columns": [
-        "cardNo",
-        "verdict",
-        "evidence",
-        "stance",
-        "fixLanding",
-        "signer"
-      ]
+      "kind": "defense-record"
     }
   },
   "outputs": {

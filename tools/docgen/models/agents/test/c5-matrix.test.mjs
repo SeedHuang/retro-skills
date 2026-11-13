@@ -31,7 +31,7 @@ const P = {
   Field: { id: 'f', label: 'F', type: 'string', required: true },
   Source: { kind: 'description' },
   Form: { text: 'x', kind: 'artifact', path: 'x' },
-  Template: { skill: 'x', label: 'x', columns: ['a'] },
+  Template: { skill: 'x', label: 'x', kind: 'issue-card' },
   Outputs: { items: [{ phase: 'p', artifact: 'a', template: 't', action: 'append', mode: 'whole' }] },
   Permissions: { policy: {}, action: {}, write: {}, command: {} },
   Rule: { id: 'r', criterion: 'c', targets: [] },

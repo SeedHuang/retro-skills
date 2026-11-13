@@ -4,7 +4,7 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
-import { outputFormats } from './components/outputFormats.mjs'
+import { outputFormats, kinds } from './components/outputFormats.mjs'
 
 const DIR = path.dirname(fileURLToPath(import.meta.url))
 export const ROOT = path.resolve(DIR, '..', '..', '..', '..')
@@ -24,6 +24,25 @@ function blockKeyOf(b, file, i) {
   return hit[0]
 }
 
+/** 表块取 kind：表块自带的 kind 覆盖文档 kind（issue-card 的观察记录表属 detective） */
+export function kindOf(t, defaultKind) {
+  return t.kind ?? defaultKind
+}
+
+/** kind → 列；未注册即抛错（列的唯一真相在 kinds 注册表） */
+export function columnsOf(kind) {
+  const columns = kinds[kind]?.columns
+  if (!columns) throw new Error(`表块 kind 未注册：${kind}`)
+  return columns
+}
+
+/** 表块取列：给出 kind 时表头渲 kind 的 label，且不预置数据行（行由填充器按 checklist 生成） */
+function tableOf(t, defaultKind) {
+  const kind = kindOf(t, defaultKind)
+  if (!kind) return t
+  return { columns: columnsOf(kind).map((c) => c.label), rows: [] }
+}
+
 export function renderTemplate(tpl) {
   if (!tpl || !Array.isArray(tpl.blocks)) throw new Error(`${tpl?.file ?? '(未命名)'} 缺 blocks 数组`)
   const out = []
@@ -39,7 +58,7 @@ export function renderTemplate(tpl) {
       for (const x of b.bullets) out.push(`- ${x}`)
       out.push('')
     } else {
-      const t = b.table
+      const t = tableOf(b.table, tpl.kind)
       out.push(`| ${t.columns.map(cell).join(' | ')} |`)
       out.push(`|${t.columns.map(() => '---').join('|')}|`)
       for (const r of t.rows) out.push(`| ${r.map(cell).join(' | ')} |`)
@@ -57,6 +76,17 @@ export function collectDocs(formats = outputFormats) {
     if (typeof d.file !== 'string' || d.file.trim() === '') throw new Error('docs 条目缺 file')
     if (seen.has(d.file)) throw new Error(`docs 文件名重复：${d.file}`)
     seen.add(d.file)
+  }
+  // file 检查通过后再验 kind：生产文档必须由 kind 取列取行，表块不得自带第二份 columns/rows
+  for (const d of docs) {
+    if (typeof d.kind !== 'string' || !kinds[d.kind]) throw new Error(`${d.file} 缺合法 kind：${d.kind}`)
+    for (const b of d.blocks ?? []) {
+      if (!b.table) continue
+      if ('columns' in b.table || 'rows' in b.table) {
+        throw new Error(`${d.file} 表块不得自带 columns/rows（列取 kind，行由 checklist 生成）`)
+      }
+      if (!kinds[kindOf(b.table, d.kind)]) throw new Error(`${d.file} 表块 kind 未注册：${kindOf(b.table, d.kind)}`)
+    }
   }
   return docs
 }
