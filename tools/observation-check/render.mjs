@@ -93,8 +93,8 @@ export function renderCard(seat) {
       return `- ${oneLine(a.text)}`;
     }),
     '',
-    '## 边界',
-    `档位：${seat.permissions.tier}；可写产物：${seat.permissions.artifacts.join('、')}；允许组：${seat.permissions.allowGroups.join('、')}。（demo 从简）`,
+    '## 权限',
+    `档位：${seat.permissions.tier}；可写产物：${seat.permissions.artifacts.join('、')}；允许组：${seat.permissions.allowGroups.join('、')}。`,
     '',
   ];
   return lines.join('\n');
