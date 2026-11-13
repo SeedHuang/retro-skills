@@ -43,6 +43,32 @@ function headerAt(lines, mask, k) {
   return { head }
 }
 
+/** 扫描全部表格：返回有效表（含表头/分隔/结束的 0-based 下标）与结构损坏的表 */
+function scan(text) {
+  const lines = normalizeText(text).split('\n')
+  const { mask, unclosedLine } = fenceMask(lines)
+  const tables = []
+  const badTables = []
+  for (let i = 0; i < lines.length; i++) {
+    const h = headerAt(lines, mask, i)
+    if (!h) continue
+    if (h.bad) { badTables.push(h.bad); continue }
+    let j = i + 2
+    for (; j < lines.length; j++) {
+      if (mask[j] || !TABLE_ROW_RE.test(lines[j])) break
+      if (headerAt(lines, mask, j)) break // 相邻表：新表头归下一轮，不能当数据行吞掉
+    }
+    tables.push({ head: h.head, headerIndex: i, delimIndex: i + 1, endIndex: j })
+    i = j - 1 // 跳过本表，避免把数据行误判成新表头
+  }
+  return { lines, mask, unclosedLine, tables, badTables }
+}
+
+/** 全部有效表格（按出现顺序）；`endIndex` 为表格后第一行的 0-based 下标（不含） */
+export function findTables(text) {
+  return scan(text).tables
+}
+
 /**
  * 解析账本文本中的全部 markdown 表格数据行。
  * @returns {{
@@ -59,29 +85,19 @@ function headerAt(lines, mask, k) {
  * parseFailed = 有坏行 / 坏表 / 未闭合围栏；调用方必须用它区分「0 命中」与「解析失败」。
  */
 export function parseLedger(text) {
-  const lines = normalizeText(text).split('\n')
-  const { mask, unclosedLine } = fenceMask(lines)
+  const { lines, unclosedLine, tables, badTables } = scan(text)
   const rows = []
   const badLines = []
-  const badTables = []
 
-  for (let i = 0; i < lines.length; i++) {
-    const h = headerAt(lines, mask, i)
-    if (!h) continue
-    if (h.bad) { badTables.push(h.bad); continue }
-    const head = h.head
-    let j = i + 2
-    for (; j < lines.length; j++) {
-      if (mask[j] || !TABLE_ROW_RE.test(lines[j])) break
-      if (headerAt(lines, mask, j)) break // 相邻表：新表头归下一轮，不能当数据行吞掉
+  for (const t of tables) {
+    for (let j = t.delimIndex + 1; j < t.endIndex; j++) {
       const cells = splitRow(lines[j])
-      if (cells.length !== head.length) {
-        badLines.push({ line: j + 1, expected: head.length, actual: cells.length })
+      if (cells.length !== t.head.length) {
+        badLines.push({ line: j + 1, expected: t.head.length, actual: cells.length })
         continue
       }
       rows.push({ line: j + 1, cells })
     }
-    i = j - 1 // 跳过本表，避免把数据行误判成新表头
   }
 
   return {
