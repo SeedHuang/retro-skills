@@ -1,6 +1,6 @@
 # rule / agent 文档体系拉齐 Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** 把 rule 与 agent 两套文档投影收敛到一套共享块渲染、一套 RuleModel 校验、一套 CLI/基线，同时保持 18 席卡与 5 份 rule 投影逐字节不变。
 
@@ -61,15 +61,15 @@
 - Consumes: 无
 - Produces: 是否允许执行 Task 2 起的布尔判断
 
-- [ ] **Step 1: 读授权节**
+- [x] **Step 1: 读授权节**
 
 Run: `Select-String -Path docs/devworkflows/20261113161413-rule-agent-render-alignment/gate-record.md -Pattern "## D19 授权" -Context 0,6`
 
-- [ ] **Step 2: 判定**
+- [x] **Step 2: 判定**
 
 期望：节内同时有「用户原话」「日期」「M0b 前后 sha256」三项。缺任一项 → **停止**，只做 Task 1（M0a），Task 2 起全部不执行，并告知用户需要重启 D19。
 
-- [ ] **Step 3: 记录**
+- [x] **Step 3: 记录**
 
 在 `gate-record.md` 的 `## D19 授权` 节补一行：`- 执行许可：<日期> 读取到用户原话「…」；本 plan Task 2+ 开始执行。`
 
@@ -90,7 +90,7 @@ Run: `Select-String -Path docs/devworkflows/20261113161413-rule-agent-render-ali
   - `export function buildManifest({gitSha, rules, builders, env}) -> object`
   - CLI：`node scripts/rule-baseline.mjs --check-only --out <dir>`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 Create `scripts/rule-baseline.test.mjs`:
 
@@ -134,12 +134,12 @@ test('buildManifest：三数组 + env', () => {
 })
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 Run: `node --test scripts/rule-baseline.test.mjs`
 Expected: FAIL，`Cannot find module ... rule-baseline.mjs`
 
-- [ ] **Step 3: 写最小实现**
+- [x] **Step 3: 写最小实现**
 
 Create `scripts/rule-baseline.mjs`:
 
@@ -231,22 +231,22 @@ const isMain = (() => {
 if (isMain) process.exit(main())
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 Run: `node --test scripts/rule-baseline.test.mjs`
 Expected: `# fail 0`、`# pass 2`
 
-- [ ] **Step 5: 跑 M0a**
+- [x] **Step 5: 跑 M0a**
 
 Run: `node scripts/rule-baseline.mjs --check-only --out docs/reports/2026-11-13-rule-baseline`
 Expected: 首行 `baseline 1 条；rules 1 份；builders 5 份`
 
-- [ ] **Step 6: 核对产物**
+- [x] **Step 6: 核对产物**
 
 Run: `node --input-type=module -e "import {readFileSync} from 'node:fs'; const b=JSON.parse(readFileSync('docs/reports/2026-11-13-rule-baseline/baseline.json','utf8')); const m=JSON.parse(readFileSync('docs/reports/2026-11-13-rule-baseline/manifest.json','utf8')); console.log(b.length, Object.keys(b[0]).sort().join(',')); console.log(m.rulesSha256.length, m.buildersSha256.length, Boolean(m.gitSha))"`
 Expected: `1 annotationsSha256,exitCode,level,max,nodeVersion,rate,reds,ruleId,score,scsVersion` 与 `1 5 true`
 
-- [ ] **Step 7: 提交**
+- [x] **Step 7: 提交**
 
 ```bash
 git add scripts/rule-baseline.mjs scripts/rule-baseline.test.mjs docs/reports/2026-11-13-rule-baseline
@@ -265,7 +265,7 @@ git commit -m "feat: add read-only rule baseline report (M0a)"
 - Consumes: 无
 - Produces: `h1/h2/h3/para/notes/bullets/ordered/blank/raw(block 构造器)`、`renderBlocks(blocks) -> string`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 Create `tools/docgen/render/render.test.mjs`:
 
@@ -300,12 +300,12 @@ test('5 份 rule 投影逐字节相等', () => {
 })
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 Run: `node --test tools/docgen/render/render.test.mjs`
 Expected: FAIL，`Cannot find module .../render/index.mjs`
 
-- [ ] **Step 3: 写最小实现**
+- [x] **Step 3: 写最小实现**
 
 Create `tools/docgen/render/index.mjs`:
 
@@ -346,12 +346,12 @@ export function renderBlocks(blocks) {
 }
 ```
 
-- [ ] **Step 4: 运行测试**
+- [x] **Step 4: 运行测试**
 
 Run: `node --test tools/docgen/render/render.test.mjs`
 Expected: `# fail 0`、`# pass 3`
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add tools/docgen/render/index.mjs tools/docgen/render/render.test.mjs
@@ -370,7 +370,7 @@ git commit -m "feat: add shared block renderer"
 - Consumes: `h1/para/notes/blank/renderBlocks`（Task 2）
 - Produces: `renderDoc(rule) -> string`，输出与现状逐字节相同
 
-- [ ] **Step 1: 替换 `renderDoc`**
+- [x] **Step 1: 替换 `renderDoc`**
 
 ```js
 import { h1, para, notes, blank, renderBlocks } from '../../render/index.mjs'
@@ -394,22 +394,22 @@ function renderDoc(rule) {
 }
 ```
 
-- [ ] **Step 2: 跑 rule 逐字节测试**
+- [x] **Step 2: 跑 rule 逐字节测试**
 
 Run: `node --test tools/docgen/render/render.test.mjs`
 Expected: `# fail 0`；5 份 rule 逐字节相等
 
-- [ ] **Step 3: 跑构建**
+- [x] **Step 3: 跑构建**
 
 Run: `node tools/docgen/builders/rules/build.mjs`
 Expected: 末行 `rule-dsl ok`
 
-- [ ] **Step 4: 确认 `renderDoc` 已无第二份实现**
+- [x] **Step 4: 确认 `renderDoc` 已无第二份实现**
 
 Run: `rg -n "renderDoc" tools/docgen --glob "*.mjs" --glob "!*.test.mjs"`
 Expected: 只命中 `interpreters.mjs` 的定义与两处 `render: renderDoc`
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add tools/docgen/builders/rules/interpreters.mjs
@@ -429,7 +429,7 @@ git commit -m "refactor: render rule docs through shared block renderer"
 - Consumes: `raw/renderBlocks/para/notes/bullets/h1/h2/blank`（Task 2）
 - Produces: `renderModel(...) -> { type, text, lines }`，`text` 与现状逐字节相同
 
-- [ ] **Step 1: 写字节断言测试**
+- [x] **Step 1: 写字节断言测试**
 
 在 `render-sections.test.mjs` 现有 import 之后追加一个用例（`MODELS_DIR`、`listSeats` 已在第 5 行导入）：
 
@@ -443,12 +443,12 @@ test('render/index：18 席渲染 = 盘上 agents/<seat>.md', () => {
 })
 ```
 
-- [ ] **Step 2: 运行确认基线**
+- [x] **Step 2: 运行确认基线**
 
 Run: `node --test tools/docgen/models/agents/test/render-sections.test.mjs`
 Expected: `# fail 0`。当前 `renderModel` 直接 `lines.join('\n')`，该断言应已通过；它是 Step 3 重构后的逐字节护栏，不是「先红后绿」用例。
 
-- [ ] **Step 3: 改 `renderModel` 为块装配**
+- [x] **Step 3: 改 `renderModel` 为块装配**
 
 ```js
 import { raw, renderBlocks } from '../../../render/index.mjs'
@@ -475,12 +475,12 @@ export function renderModel(ownPath, shared) {
 
 路径核对：`tools/docgen/models/agents/render/index.mjs` → `../../../render/index.mjs` = `tools/docgen/render/index.mjs`。
 
-- [ ] **Step 4: 跑 18 席逐字节**
+- [x] **Step 4: 跑 18 席逐字节**
 
 Run: `node --test tools/docgen/models/agents/test/render-sections.test.mjs`
 Expected: `# fail 0`；18 席全部相等
 
-- [ ] **Step 5: 迁 `frontmatter`**
+- [x] **Step 5: 迁 `frontmatter`**
 
 把 `sections.frontmatter` 改为返回块：
 
@@ -501,12 +501,12 @@ frontmatter(M, shared, h) {
 
 在 `BLOCK_SECTIONS` 加 `'frontmatter'`；在 `sections.mjs` 顶部 import `{ h1, para, blank, raw }`。
 
-- [ ] **Step 6: 跑一次回归**
+- [x] **Step 6: 跑一次回归**
 
 Run: `node --test tools/docgen/models/agents/test/render-sections.test.mjs`
 Expected: 18 席仍全等
 
-- [ ] **Step 7: 迁 `duty`**
+- [x] **Step 7: 迁 `duty`**
 
 ```js
 duty(M, shared, h) {
@@ -531,7 +531,7 @@ duty(M, shared, h) {
 
 在 `BLOCK_SECTIONS` 加 `'duty'`；import 补 `h2`。
 
-- [ ] **Step 8: 迁 `must`**
+- [x] **Step 8: 迁 `must`**
 
 ```js
 must(M, shared, h) {
@@ -557,7 +557,7 @@ must(M, shared, h) {
 
 在 `BLOCK_SECTIONS` 加 `'must'`；import 补 `notes`、`bullets`。
 
-- [ ] **Step 9: 迁 `never`**
+- [x] **Step 9: 迁 `never`**
 
 ```js
 never(M, shared, h) {
@@ -576,12 +576,12 @@ never(M, shared, h) {
 
 在 `BLOCK_SECTIONS` 加 `'never'`。
 
-- [ ] **Step 10: 全量回归**
+- [x] **Step 10: 全量回归**
 
 Run: `npm run check`
 Expected: `check 全部通过`；`agents 18/18`
 
-- [ ] **Step 11: 提交**
+- [x] **Step 11: 提交**
 
 ```bash
 git add tools/docgen/models/agents/render/index.mjs tools/docgen/models/agents/render/sections.mjs tools/docgen/models/agents/test/render-sections.test.mjs
@@ -600,7 +600,7 @@ git commit -m "refactor: route agent cards through shared block renderer"
 - Consumes: `check`、`checkTestcase`（同文件）
 - Produces: `validate(rule, { testcase, ruleIds } = {}) -> Finding[]`；`RuleModel = { typeName, fields, validate }`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 Create `tools/docgen/builders/rules/schema.test.mjs`:
 
@@ -670,12 +670,12 @@ test('RuleModel 导出形状', () => {
 })
 ```
 
-- [ ] **Step 2: 运行确认失败**
+- [x] **Step 2: 运行确认失败**
 
 Run: `node --test tools/docgen/builders/rules/schema.test.mjs`
 Expected: FAIL，`validate is not a function`
 
-- [ ] **Step 3: 实现 `validate`**
+- [x] **Step 3: 实现 `validate`**
 
 在 `schema.mjs` 末尾追加：
 
@@ -705,12 +705,12 @@ export const RuleModel = {
 }
 ```
 
-- [ ] **Step 4: 运行测试**
+- [x] **Step 4: 运行测试**
 
 Run: `node --test tools/docgen/builders/rules/schema.test.mjs`
 Expected: `# fail 0`、`# pass 8`
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add tools/docgen/builders/rules/schema.mjs tools/docgen/builders/rules/schema.test.mjs
@@ -736,7 +736,7 @@ git commit -m "feat: add RuleModel.validate facade"
   - `writeRule(id, { dataDir = DEFAULT_DATA_DIR, rulesDir = DEFAULT_RULES_DIR } = {})`
   - `build.mjs --data-dir/--out-dir/--rules-dir`（env 兜底）
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 Create `tools/docgen/builders/rules/build-dirs.test.mjs`:
 
@@ -806,12 +806,12 @@ test('三目录：自动建 out/rules，只写临时目录', () => {
 })
 ```
 
-- [ ] **Step 2: 运行确认失败**
+- [x] **Step 2: 运行确认失败**
 
 Run: `node --test tools/docgen/builders/rules/build-dirs.test.mjs`
 Expected: FAIL（`--data-dir` 未被识别，仍写仓内或报错）
 
-- [ ] **Step 3: 改 `rules.mjs`**
+- [x] **Step 3: 改 `rules.mjs`**
 
 ```js
 import { readFileSync, existsSync, writeFileSync } from 'node:fs'
@@ -853,7 +853,7 @@ export function writeRule(id, { dataDir = DEFAULT_DATA_DIR, rulesDir = DEFAULT_R
 }
 ```
 
-- [ ] **Step 4: 改 `build.mjs` 顶部与写盘**
+- [x] **Step 4: 改 `build.mjs` 顶部与写盘**
 
 替换 `build.mjs` 第 10–20 行与环境准备段：
 
@@ -908,17 +908,17 @@ if (errors.length === 0) {
 console.log(`rule 正文投影 ${listRuleIds(DATA_DIR).length} 份（${RULES_DIR}）`)
 ```
 
-- [ ] **Step 5: 跑新测试**
+- [x] **Step 5: 跑新测试**
 
 Run: `node --test tools/docgen/builders/rules/build-dirs.test.mjs`
 Expected: `# fail 0`、`# pass 4`
 
-- [ ] **Step 6: 跑默认路径回归**
+- [x] **Step 6: 跑默认路径回归**
 
 Run: `node tools/docgen/builders/rules/build.mjs`
 Expected: `rule-dsl ok`，且 `git status --porcelain` 无 `builders/rules` / `rules` 改动
 
-- [ ] **Step 7: 提交**
+- [x] **Step 7: 提交**
 
 ```bash
 git add tools/docgen/builders/rules/rules.mjs tools/docgen/builders/rules/build.mjs tools/docgen/builders/rules/build-dirs.test.mjs
@@ -937,7 +937,7 @@ git commit -m "feat: parameterize rule build dirs and argv"
 - Consumes: `renderRenderedRule`、`compareBuffers`
 - Produces: 非 registered `--check` 走 `builders/rules/<id>.md`；漂移/缺件写 stderr
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 在 `rule-render.test.mjs` 追加：
 
@@ -973,12 +973,12 @@ test('dormant rule --check：删 builders/rules → DanglingBaselineEntry + exit
 import { readFileSync, writeFileSync, rmSync, appendFileSync } from 'node:fs'
 ```
 
-- [ ] **Step 2: 运行确认失败**
+- [x] **Step 2: 运行确认失败**
 
 Run: `node --test tools/docgen/builders/agents/test/rule-render.test.mjs`
 Expected: FAIL（dormant 仍先查 `rules/import-guard.md` 或报 `MissingComponentData`）
 
-- [ ] **Step 3: 加分流分支**
+- [x] **Step 3: 加分流分支**
 
 在 `cmdGenerate` 的 `const objs = ...` 之前插入：
 
@@ -996,7 +996,7 @@ if (check && kind === 'rule' && typeof name === 'string' && !RENDERED_RULES.incl
 }
 ```
 
-- [ ] **Step 4: 修 registered 漂移与缺件的 stderr**
+- [x] **Step 4: 修 registered 漂移与缺件的 stderr**
 
 把 `if (!existsSync(p)) fail('DanglingBaselineEntry', { name: o.path, path: p })` 改为：
 
@@ -1017,17 +1017,17 @@ else if (RENDERED_RULES.includes(o.name)) {
 
 `fail` 的统一输出已是 `${code}: ${message}`，因此 `message` 传路径即可得到 `Mismatch: rules/<id>.md`。
 
-- [ ] **Step 5: 跑测试**
+- [x] **Step 5: 跑测试**
 
 Run: `node --test tools/docgen/builders/agents/test/rule-render.test.mjs`
 Expected: `# fail 0`
 
-- [ ] **Step 6: 跑 gate**
+- [x] **Step 6: 跑 gate**
 
 Run: `node tools/docgen/builders/agents/cli.mjs gate`
 Expected: `baseline 19/19`；exit 0
 
-- [ ] **Step 7: 提交**
+- [x] **Step 7: 提交**
 
 ```bash
 git add tools/docgen/builders/agents/cli.mjs tools/docgen/builders/agents/test/rule-render.test.mjs
@@ -1047,7 +1047,7 @@ git commit -m "feat: check dormant rules against builders projections"
 - Consumes: `listRuleIds`
 - Produces: `BASELINE_RULES` 只由 `rules.json` 派生
 
-- [ ] **Step 1: 改 `baseline.mjs`**
+- [x] **Step 1: 改 `baseline.mjs`**
 
 ```js
 import { listSeats } from '../../../models/agents/source.mjs';
@@ -1056,7 +1056,7 @@ import { listRuleIds } from '../../rules/rules.mjs';
 export const BASELINE_RULES = listRuleIds().map((id) => `rules/${id}.md`);
 ```
 
-- [ ] **Step 2: 改 F09**
+- [x] **Step 2: 改 F09**
 
 在 `check-observable.test.mjs` 顶部加：
 
@@ -1074,17 +1074,17 @@ assert.deepStrictEqual(BASELINE_RULES, ids.map((i) => `rules/${i}.md`), 'BASELIN
 assert.strictEqual(BASELINE_RULES.length, ids.length, 'BASELINE_RULES 条数必须等于 rules.json.rules.length')
 ```
 
-- [ ] **Step 3: 跑 F09**
+- [x] **Step 3: 跑 F09**
 
 Run: `node --test --test-name-pattern "F09" scripts/check-observable.test.mjs`
 Expected: `# fail 0`
 
-- [ ] **Step 4: 负例自检**
+- [x] **Step 4: 负例自检**
 
 Run: `node --test --test-name-pattern "F09" scripts/check-observable.test.mjs`（在临时副本里把 `rules.json` 改成 `{"rules":[]}`、删 `rules/evidence-before-conclusion.md`、`cli.mjs baseline --write` 后重跑）
 Expected: F09 not ok，失败信息含 `非空`
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add tools/docgen/builders/agents/components/baseline.mjs scripts/check-observable.test.mjs
@@ -1104,7 +1104,7 @@ git commit -m "refactor: derive BASELINE_RULES from rules.json"
 - Consumes: 无
 - Produces: `coldRepo({ keepGit = false, ... })`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```js
 import test from 'node:test'
@@ -1122,12 +1122,12 @@ test('coldRepo 默认不含 .git', () => {
 })
 ```
 
-- [ ] **Step 2: 运行确认失败**
+- [x] **Step 2: 运行确认失败**
 
 Run: `node --test tools/docgen/builders/agents/test/support/card-fixtures.test.mjs`
 Expected: FAIL（`.git/HEAD` 不存在）
 
-- [ ] **Step 3: 加 `keepGit`**
+- [x] **Step 3: 加 `keepGit`**
 
 ```js
 export const coldRepo = ({ mutate = null, args = ['gate'], verify = null, env = null, keepGit = false } = {}) => {
@@ -1138,7 +1138,7 @@ export const coldRepo = ({ mutate = null, args = ['gate'], verify = null, env = 
 }
 ```
 
-- [ ] **Step 4: 补 `check-all.mjs` env 清洗**
+- [x] **Step 4: 补 `check-all.mjs` env 清洗**
 
 把第 89 行改为：
 
@@ -1146,12 +1146,12 @@ export const coldRepo = ({ mutate = null, args = ['gate'], verify = null, env = 
 for (const key of ['DOCGEN_TMP_ROOT', 'DOCGEN_RULES_DIR', 'DOCGEN_AGENTS_DIR', 'DOCGEN_BASELINE_PATH', 'DOCGEN_BUILD_DATA_DIR', 'DOCGEN_BUILD_OUT_DIR', 'DOCGEN_BUILD_RULES_DIR', 'DOCGEN_TEST_MODE', 'DOCGEN_NESTED', 'NODE_TEST_CONTEXT']) delete testEnv[key]
 ```
 
-- [ ] **Step 5: 跑测试**
+- [x] **Step 5: 跑测试**
 
 Run: `node --test tools/docgen/builders/agents/test/support/card-fixtures.test.mjs`
 Expected: `# fail 0`、`# pass 2`
 
-- [ ] **Step 6: 提交**
+- [x] **Step 6: 提交**
 
 ```bash
 git add tools/docgen/builders/agents/test/support/card-fixtures.mjs tools/docgen/builders/agents/test/support/card-fixtures.test.mjs scripts/check-all.mjs
@@ -1169,37 +1169,37 @@ git commit -m "test: add keepGit cold repo fixture and env cleanup"
 - Consumes: Task 2–9
 - Produces: ⑥ 组证据
 
-- [ ] **Step 1: 5 份 rule 逐字节**
+- [x] **Step 1: 5 份 rule 逐字节**
 
 Run: `node --input-type=module -e "import {readFileSync} from 'node:fs'; import {renderRule} from './tools/docgen/builders/rules/rules.mjs'; const ids=['evidence-before-conclusion','observable-criteria','import-guard','no-git-write','no-unverified-number']; for (const id of ids) console.log(id, renderRule(id)===readFileSync('tools/docgen/builders/rules/'+id+'.md','utf8'))"`
 Expected: 5 行 `true`
 
-- [ ] **Step 2: 18 席逐字节**
+- [x] **Step 2: 18 席逐字节**
 
 Run: `node tools/docgen/builders/agents/cli.mjs gate`
 Expected: `agents 18/18`、`baseline 19/19`
 
-- [ ] **Step 3: 引擎被消费 + `renderDoc` 0 命中**
+- [x] **Step 3: 引擎被消费 + `renderDoc` 0 命中**
 
 Run: `rg -n "render/index.mjs" tools/docgen/models/agents/render/index.mjs tools/docgen/builders/rules/interpreters.mjs`；`rg -n "renderDoc" tools/docgen --glob "*.mjs" --glob "!*.test.mjs"`
 Expected: 前者 2 文件各 ≥1；后者只 3 处（定义 + 两次 `render:`）
 
-- [ ] **Step 4: 全量检查**
+- [x] **Step 4: 全量检查**
 
 Run: `npm run check`
 Expected: `check 全部通过`；`agents 18/18`；`baseline 19/19`；`判据 5 条 / 绿 34 / 红 0`
 
-- [ ] **Step 5: 删引擎负例（冷仓副本）**
+- [x] **Step 5: 删引擎负例（冷仓副本）**
 
 在 `tmp/` 副本内删 `tools/docgen/render/index.mjs` 后跑 `node scripts/check-all.mjs`：
 Expected: 退出码非 0，输出含 `ERR_MODULE_NOT_FOUND` 或 `Cannot find module` 且点名 `render`；复原后退出码 0。
 
-- [ ] **Step 6: 质量不降**
+- [x] **Step 6: 质量不降**
 
 Run: `scs check rules --root . --terms tools/docgen/models/rules/vocab/observable-terms.json --annotations tools/quality/.inspector-annotations.json`
 Expected: 首行仍为 `共 1 文件 / 13 行 / 205 字符，平均得分率 57%（不及格）`；与 M0a 的 `baseline.json`（`score 13 / max 23`）逐字段相等。降 ≥1 分或新增红点即按 spec §6 回滚。
 
-- [ ] **Step 7: 写 gate 证据**
+- [x] **Step 7: 写 gate 证据**
 
 在 `gate-record.md` 追加 ③ 行：上述三条命令的输出首行 + `docs/superpowers/specs/...design.md` 的 TC 区间映射。
 
@@ -1217,17 +1217,17 @@ Expected: 首行仍为 `共 1 文件 / 13 行 / 205 字符，平均得分率 57%
 - Consumes: Task 10 全绿；`## D19 授权` 已填
 - Produces: 入口文档与代码同口径；M0b 前后 sha256 证据
 
-- [ ] **Step 1: 重跑 M0a 脚本记录写盘前 sha256**
+- [x] **Step 1: 重跑 M0a 脚本记录写盘前 sha256**
 
 Run: `node scripts/rule-baseline.mjs --check-only --out docs/reports/2026-11-13-rule-baseline-after`
 Expected: `baseline 1 条；rules 1 份；builders 5 份`
 
-- [ ] **Step 2: 对比前后 sha256**
+- [x] **Step 2: 对比前后 sha256**
 
 Run: `node --input-type=module -e "import {readFileSync} from 'node:fs'; const a=JSON.parse(readFileSync('docs/reports/2026-11-13-rule-baseline/manifest.json','utf8')); const b=JSON.parse(readFileSync('docs/reports/2026-11-13-rule-baseline-after/manifest.json','utf8')); console.log(JSON.stringify(a.rulesSha256)===JSON.stringify(b.rulesSha256), JSON.stringify(a.buildersSha256)===JSON.stringify(b.buildersSha256))"`
 Expected: `true true`
 
-- [ ] **Step 3: 同步 `docgen-index.md`**
+- [x] **Step 3: 同步 `docgen-index.md`**
 
 把第 44 行 D19 的「**暂停 rule / skill 文件生成**…」改为：
 
@@ -1235,7 +1235,7 @@ Expected: `true true`
 | D19 | **rule / skill 文件生成恢复（2026-11-13 用户批准）**：P3、P4 启动范围限于 `docs/superpowers/plans/2026-11-13-rule-agent-render-alignment.md` 的 M0a–M3；`rules/*.md` 仍由判据 json 渲染，手改即红；M4 四维另立 PRD | 用户 2026-11-13（原话见 `docs/devworkflows/20261113161413-rule-agent-render-alignment/gate-record.md` 的 `## D19 授权`） |
 ```
 
-- [ ] **Step 4: 同步 README**
+- [x] **Step 4: 同步 README**
 
 把 `README.md:129` 的 `baseline 19/19` 改为：
 
@@ -1243,7 +1243,7 @@ Expected: `true true`
 | `npm run agents:verify` | `gate`：18 席逐字节 + `baseline N/N`（N 由 `rules.json` 派生，不写死；只读） |
 ```
 
-- [ ] **Step 5: 同步 criteria-dsl**
+- [x] **Step 5: 同步 criteria-dsl**
 
 在 `skills/rule-writer/references/criteria-dsl.md:134` 后补一行：
 
@@ -1251,7 +1251,7 @@ Expected: `true true`
 - `--data-dir` 必须是平铺数据目录（同目录含 `<id>.json` 与 `rules.json`）；`--out-dir` 写解释器投影，`--rules-dir` 写 `rules/<id>.md`；三者缺目录会自动创建，缺 `rules.json` 即 `InvalidInputPath` exit 2。
 ```
 
-- [ ] **Step 6: 提交**
+- [x] **Step 6: 提交**
 
 ```bash
 git add docs/prd/docgen-index.md README.md skills/rule-writer/references/criteria-dsl.md docs/reports/2026-11-13-rule-baseline-after docs/devworkflows/20261113161413-rule-agent-render-alignment/gate-record.md
