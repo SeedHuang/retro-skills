@@ -6,8 +6,10 @@
 // 2026-11-12：`title-not-stronger-than-criterion` 迁入 `skills/assertion-quality/references/`（建模场景专用），保留集仍 = 1 条
 // （PRD `docs/prd/20261105182104-rule-refactor/prd/stage-2-new-mode-pilot.md` §1 步骤 1–2）
 import { listSeats } from '../../../models/agents/source.mjs';
+import { listRuleIds } from '../../rules/rules.mjs';
 
-export const BASELINE_RULES = ['rules/evidence-before-conclusion.md'];
+// rule 清单不再写死：条数与内容一律由 rules.json 派生（新增 = 在 rules.json 加 id，代码零改动）
+export const BASELINE_RULES = listRuleIds().map((id) => `rules/${id}.md`);
 
 // 单席角色卡路径的唯一派生式（`agentPaths()` 与 `collectCardFindings` 的 `finding.file` 共用；
 // 形态与 `observation-check/card-exempt.mjs` 的 `EXEMPT_CARDS` 同域——改路径方案只改这一处）。

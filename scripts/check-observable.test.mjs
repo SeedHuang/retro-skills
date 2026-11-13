@@ -14,6 +14,7 @@ import { join, dirname, resolve } from 'node:path'
 import { tmpdir } from 'node:os'
 import { spawnSync, execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
+import { BASELINE_RULES } from '../tools/docgen/builders/agents/components/baseline.mjs'
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 // 2026-11-08：校验器实现已迁公共 CLI（`scs check observable`），本文件只保留**项目侧契约**
@@ -571,8 +572,11 @@ test('OCR-S1-TC-F09 gate baseline N/N 与 baseline.json 同源（阶段 1：规�
   const g = spawnSync(process.execPath, [join(REPO, 'tools', 'docgen', 'builders', 'agents', 'cli.mjs'), 'gate'], { cwd: REPO, encoding: 'utf8' })
   const bj = JSON.parse(readText(join(REPO, 'tools', 'docgen', 'builders', 'agents', 'baseline.json')))
   assert.ok(new RegExp(`baseline ${bj.length}\\/${bj.length}`).test(g.stdout || ''), (g.stdout || '').slice(0, 300))
-  const bm = readText(join(REPO, 'tools', 'docgen', 'builders', 'agents', 'components', 'baseline.mjs'))
-  assert.ok(/export const BASELINE_RULES = \[/.test(bm), '清单仍是单一来源常量（条数从它派生）')
+  const rulesJson = JSON.parse(readText(join(REPO, 'tools', 'docgen', 'models', 'rules', 'rules.json')).replace(/^\uFEFF/, ''))
+  const ids = rulesJson.rules ?? []
+  assert.ok(BASELINE_RULES.length >= 1, 'BASELINE_RULES 必须非空（由 rules.json 派生）')
+  assert.deepStrictEqual(BASELINE_RULES, ids.map((i) => `rules/${i}.md`), 'BASELINE_RULES 必须由 rules.json 派生')
+  assert.strictEqual(BASELINE_RULES.length, ids.length, 'BASELINE_RULES 条数必须等于 rules.json.rules.length')
 })
 
 test('OCR-S1-TC-F10 九词字面数组全仓恰 1 处（JSON 自身）；副本 >1 必红', () => {
