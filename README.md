@@ -126,7 +126,7 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 | `npm run agents:preview` | 全量 18 席渲染到 `tmp/preview/agents/`（不入 git，仅供查看） |
 | `npm run agents:generate` | 全量 18 席**正式写** `agents/*.md`，写完自动清对应预览 |
 | `npm run agents:check` | 只读：重渲染并与现有卡逐字节比对（漂移即 exit 1） |
-| `npm run agents:verify` | `gate`：18 席逐字节 + `baseline 19/19`（只读） |
+| `npm run agents:verify` | `gate`：18 席逐字节 + `baseline N/N`（N 由 `rules.json` 派生，不写死；只读） |
 | `npm run baseline:check` | 只读：校验 18 份 `_baseline.json` 仍与模型一致 |
 | `npm run baseline:update` | 显式刷新基线（模型语义变更后使用，会写盘） |
 

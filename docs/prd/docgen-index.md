@@ -41,7 +41,7 @@
 | D16 | 存量按需迁移，不追溯 | 用户 2026-10-18 |
 | D17 | 10-16 旧方案（任务 0–6）作废，只吸收审查对账思路 | 用户 2026-10-18 |
 | D18 | **v1 不做 spec 片段生成**；spec 不参与生成 | 用户 2026-10-18（确认原话/轮次待补；曾记为待点头） |
-| D19 | **暂停 rule / skill 文件生成**：P3、P4 不启动，不立 PRD、不产草稿；现有生成链代码零改动、`rules/*.md` 原文冻结；执行边界与重启流程见 `docs/prd/20261112134234-rule-skill-generation-pause.md`。**例外（用户 2026-11-12 批准）**：纯路径改名、行为不变的引用同步（`tools/docgen/builders/rules/{rules,build}.mjs` 的路径常量）不计入「代码改动」 | 用户 2026-11-12（原话「先暂停rule和skill的文件生成」）；重启条件：用户另行指示 |
+| D19 | **rule / skill 文件生成恢复（2026-11-13 用户批准）**：P3、P4 启动范围限于 `docs/superpowers/plans/2026-11-13-rule-agent-render-alignment.md` 的 M0a–M3；`rules/*.md` 仍由判据 json 渲染，手改即红；M4 四维另立 PRD | 用户 2026-11-13（原话见 `docs/devworkflows/20261113161413-rule-agent-render-alignment/gate-record.md` 的 `## D19 授权`） |
 
 ## 3 内容分类与唯一源
 

@@ -132,3 +132,4 @@ npm run check:criteria
 - 前者末行 `rule-dsl ok`、逐条输出 `N 条样例已判`；
 - 后者首行 `判据 N 条 / 绿 M / 红 K`、末行 `criteria-engine ok`；
 - 只有 `rules.json` 登记的 id 才额外产出 `rules/<id>.md`；正文手改即红，改 json 后重跑 `build.mjs`。
+- `--data-dir` 必须是平铺数据目录（同目录含 `<id>.json` 与 `rules.json`）；`--out-dir` 写解释器投影，`--rules-dir` 写 `rules/<id>.md`；三者缺目录会自动创建，缺 `rules.json` 即 `InvalidInputPath` exit 2。

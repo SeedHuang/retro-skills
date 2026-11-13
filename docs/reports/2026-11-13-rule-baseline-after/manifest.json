@@ -1,0 +1,40 @@
+{
+  "gitSha": "2304a24244e71de1bdc1d731e2a810cba49ef815",
+  "rulesSha256": [
+    {
+      "path": "rules/evidence-before-conclusion.md",
+      "sha": "93182AD85357EFE3ABA6CE224844FDF182456C6C944E8A0280EFB16652105CD6"
+    }
+  ],
+  "buildersSha256": [
+    {
+      "path": "tools/docgen/builders/rules/evidence-before-conclusion.md",
+      "sha": "93182AD85357EFE3ABA6CE224844FDF182456C6C944E8A0280EFB16652105CD6"
+    },
+    {
+      "path": "tools/docgen/builders/rules/import-guard.md",
+      "sha": "41BC5BFD62106CDE6307C27BFA70AD8747504473F242DCE4DB9CEC5111509FF4"
+    },
+    {
+      "path": "tools/docgen/builders/rules/no-git-write.md",
+      "sha": "5E55B482D06B65B2B1DBB4C6C2BF877DE66DCC3239233CAF3EF35C4D4A413438"
+    },
+    {
+      "path": "tools/docgen/builders/rules/no-unverified-number.md",
+      "sha": "837BFBFE38289F596E132682633F516E35B46F627E345923F837AFF28A2E9A24"
+    },
+    {
+      "path": "tools/docgen/builders/rules/observable-criteria.md",
+      "sha": "83123B0CD2692C89C68083F8134C050596E52139CEA6219AC638DEC7F571D988"
+    }
+  ],
+  "env": {
+    "DOCGEN_RULES_DIR": "",
+    "DOCGEN_AGENTS_DIR": "",
+    "DOCGEN_BASELINE_PATH": "",
+    "DOCGEN_TMP_ROOT": "",
+    "DOCGEN_BUILD_DATA_DIR": "",
+    "DOCGEN_BUILD_OUT_DIR": "",
+    "DOCGEN_BUILD_RULES_DIR": ""
+  }
+}
