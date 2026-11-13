@@ -1,7 +1,5 @@
 # 模板 / 模型 / 解释器：三层职责判据
 
-> 来源：`docs/superpowers/specs/2026-11-13-boundary-logic-interpreter-design.md` D1/D2/D3；本文件只给判据与反例，不复述实现。
-
 ## 一句话判据
 
 | 层 | 装什么 | 判据 | 反例 |
