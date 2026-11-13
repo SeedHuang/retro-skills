@@ -86,7 +86,7 @@ if (!failed) console.log('① 语法检查通过')
 // glob 覆盖全仓（不只 skills/，否则 skilldependencies/ 等目录下的测试会漏跑）；node_modules 由 Node 自身默认排除
 // maxBuffer 要给足：下面要回读 "# tests N" 判定测试是否真跑，输出被截断会误报成「解析不出用例总数」
 const testEnv = { ...process.env, DOCGEN_CHECK_ACTIVE: '1' }
-for (const key of ['DOCGEN_TMP_ROOT', 'DOCGEN_RULES_DIR', 'DOCGEN_BASELINE_PATH', 'DOCGEN_TEST_MODE', 'DOCGEN_NESTED', 'NODE_TEST_CONTEXT']) delete testEnv[key]
+for (const key of ['DOCGEN_TMP_ROOT', 'DOCGEN_RULES_DIR', 'DOCGEN_AGENTS_DIR', 'DOCGEN_BASELINE_PATH', 'DOCGEN_BUILD_DATA_DIR', 'DOCGEN_BUILD_OUT_DIR', 'DOCGEN_BUILD_RULES_DIR', 'DOCGEN_TEST_MODE', 'DOCGEN_NESTED', 'NODE_TEST_CONTEXT']) delete testEnv[key]
 const t = spawnSync(process.execPath, ['--test', '--test-reporter=tap', '**/*.test.mjs'], { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, env: testEnv })
 // ② 段输出：默认只打失败块 + 汇总（全量 TAP 上千行会刷屏）；CHECK_VERBOSE=1 打全量。
 // 解析（# tests / skip / todo 守卫）仍读完整 t.stdout，与是否打印无关。

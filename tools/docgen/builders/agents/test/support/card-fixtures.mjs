@@ -18,7 +18,7 @@ export const runNode = (args, cwd = REPO, env = null) => {
 export const runCli = (args, cwd = REPO, env = null) => runNode(['tools/docgen/builders/agents/cli.mjs', ...args], cwd, env)
 
 // 临时副本（同 `tools/docgen/builders/agents/acceptance/cold-run.mjs` 的做法）：已跟踪 + 未跟踪未忽略文件一起复制。
-export const coldRepo = ({ mutate = null, args = ['gate'], verify = null, env = null } = {}) => {
+export const coldRepo = ({ mutate = null, args = ['gate'], verify = null, env = null, keepGit = false } = {}) => {
   const copy = mkdtempSync(join(tmpdir(), 's2-tc-'))
   const list = (argv) => execFileSync('git', ['-c', 'core.quotePath=false', ...argv], { cwd: REPO, encoding: 'utf8' })
     .trim().split(/\r?\n/).filter((f) => f && !f.startsWith('.git/'))
@@ -31,6 +31,7 @@ export const coldRepo = ({ mutate = null, args = ['gate'], verify = null, env = 
     // 清单快照 → 逐文件复制之间，并发用例可能删/重建文件；快照语义 = 「复制时刻仍存在的文件」。
     try { cpSync(src, dst) } catch (e) { if (e && e.code === 'ENOENT') continue; throw e }
   }
+  if (keepGit) cpSync(join(REPO, '.git'), join(copy, '.git'), { recursive: true })
   if (mutate) mutate(copy)
   const r = runCli(args, copy, env ?? null)
   try { if (verify) verify(copy, r) } finally { rmSync(copy, { recursive: true, force: true }) }
