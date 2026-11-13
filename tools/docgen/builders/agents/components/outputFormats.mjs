@@ -210,3 +210,88 @@ export const outputFormats = {
     ],
   },
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// kind 注册表（spec §3「配置归属」）
+// 列的唯一真相在 kind 级：产物表头渲 `label`，脚本校验按 `id` 对齐。
+// `blocks` 为表正文块（标题 / 说明 / 取数命令节），由 `ledger.mjs` 生成 assets。
+// ─────────────────────────────────────────────────────────────────────────────
+
+// 账本型 kind 的 8 列（spec §3 对照表定版）；其它 kind 各用自己的列。
+const LEDGER_COLUMNS = [
+  { id: 'no', label: '项' },
+  { id: 'item', label: '核对内容' },
+  { id: 'criterion', label: '判据' },
+  { id: 'kind', label: '类型' },
+  { id: 'verdict', label: '结果' },
+  { id: 'reason', label: '理由' },
+  { id: 'applicability', label: '适用性' },
+  { id: 'evidence', label: '证据' },
+]
+
+export const kinds = {
+  'round-check': {
+    columns: LEDGER_COLUMNS,
+    blocks: outputFormats.audit.docs[0].blocks,
+  },
+  'delivery-audit': {
+    columns: LEDGER_COLUMNS,
+    blocks: outputFormats.audit.docs[1].blocks,
+  },
+  'issue-card': {
+    columns: [
+      { id: 'cardNo', label: '编号（Q-轮-序）' },
+      { id: 'proposer', label: '提出角色' },
+      { id: 'dimension', label: '归属维度' },
+      { id: 'description', label: '问题描述' },
+      { id: 'quote', label: '原文摘句' },
+      { id: 'location', label: '文件 + 行号' },
+      { id: 'purpose', label: '用途' },
+      { id: 'severity', label: '严重级别' },
+      { id: 'suggestion', label: '建议解法' },
+    ],
+    blocks: outputFormats['issue-card'].docs[0].blocks,
+  },
+  'defense-record': {
+    columns: [
+      { id: 'cardNo', label: '卡号' },
+      { id: 'verdict', label: '核实结论' },
+      { id: 'evidence', label: '证据' },
+      { id: 'stance', label: '立场' },
+      { id: 'fixLanding', label: '修法落点' },
+      { id: 'signer', label: '署名席' },
+    ],
+    blocks: [],
+  },
+  detective: {
+    columns: [
+      { id: 'cardNo', label: '卡号' },
+      { id: 'object', label: '对象' },
+      { id: 'behavior', label: '行为类型' },
+      { id: 'basis', label: '判定依据' },
+      { id: 'suggestion', label: '处置建议' },
+    ],
+    blocks: [],
+  },
+  'fact-summary': {
+    columns: [
+      { id: 'quote', label: '原文摘句' },
+      { id: 'location', label: '文件 + 行号' },
+      { id: 'purpose', label: '用途' },
+    ],
+    blocks: [],
+  },
+  progress: {
+    columns: [
+      { id: 'round', label: '轮次号' },
+      { id: 'span', label: '起止（HH:MM:SS）' },
+      { id: 'seats', label: '席位' },
+      { id: 'count', label: '收卡数' },
+      { id: 'dropReason', label: '丢卡与压卡及理由' },
+      { id: 'lineup', label: '点名' },
+      { id: 'endBasis', label: '判结束依据' },
+      { id: 'path', label: '落盘路径' },
+    ],
+    blocks: [],
+  },
+}

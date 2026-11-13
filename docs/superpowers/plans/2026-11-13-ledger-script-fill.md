@@ -72,7 +72,7 @@ T1 → T5 → T6
 
 ## 7 进度
 
-- [ ] T0.1 kind 注册表
+- [x] T0.1 kind 注册表
 - [ ] T0.2 席位 templates 去 columns
 - [ ] T0.3 ledger.mjs 列来源、行不预置
 - [ ] T0.4 check-all 两条断言
