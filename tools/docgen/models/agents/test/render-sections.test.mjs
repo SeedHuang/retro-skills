@@ -68,3 +68,11 @@ test('render/index：显式非法 modelType → 抛 MODELTYPE_UNKNOWN', () => {
     rmSync(dir, { recursive: true, force: true })
   }
 })
+
+test('render/index：18 席渲染 = 盘上 agents/<seat>.md', () => {
+  const REPO = join(MODELS_DIR, '..', '..', '..', '..', '..') // jsons → agents → models → docgen → tools → 仓根
+  for (const seat of listSeats()) {
+    const onDisk = readFileSync(join(REPO, 'agents', `${seat}.md`), 'utf8')
+    assert.equal(renderModel(join(MODELS_DIR, seat, 'index.json'), shared).text, onDisk, `DIFF ${seat}`)
+  }
+})

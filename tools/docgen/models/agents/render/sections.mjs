@@ -3,6 +3,7 @@ import { SEATS } from '../../../builders/agents/policy/definitions/seats.mjs'
 import { writeScopes } from '../../../builders/agents/policy/definitions/writeScopes.mjs'
 import { renderAuthority, renderBan, renderAftermath } from '../../../builders/agents/components/renderBoundary.mjs'
 import { DEFAULT_BOUNDARY } from '../../../builders/agents/components/patternRegistry.mjs'
+import { h1, h2, para, notes, bullets, blank, raw } from '../../../render/index.mjs'
 
 const cn = (a, b) => (/[A-Za-z0-9)]$/.test(a) ? a + ' ' + b : a + b)
 
@@ -106,7 +107,16 @@ export function makeHelpers(M, shared) {
 
 export const sections = {
   frontmatter(M, shared, h) {
-    return ['---', `name: ${M.seat.id}`, `description: ${h.seatDesc}`, `tools: ${h.tools.join(', ')}`, '---', '', `# 角色卡：${M.seat.id}`, '']
+    return [
+      raw(['---']),
+      para(`name: ${M.seat.id}`),
+      para(`description: ${h.seatDesc}`),
+      para(`tools: ${h.tools.join(', ')}`),
+      raw(['---']),
+      blank(),
+      h1(`角色卡：${M.seat.id}`),
+      blank(),
+    ]
   },
 
   duty(M, shared, h) {
@@ -121,45 +131,45 @@ export const sections = {
     const allow = pm.action.allow.map((x) => shared.actions[x]).join('、')
     const forbids = pm.action.forbid.map((x) => '不' + (M.permissionGroups[x]?.label || shared.actions[x] || x)).join('，')
     return [
-      '## 职责',
-      `触发：${h.seatDesc}`,
-      `动作：对${a.objects.join('与')}做${a.scope}${a.verb}，逐条给出${a.emit.join('与')}，${subject}写回 ${landingText}。`,
-      `约束：只${allow}，${forbids}。`,
-      '',
+      h2('职责'),
+      para(`触发：${h.seatDesc}`),
+      para(`动作：对${a.objects.join('与')}做${a.scope}${a.verb}，逐条给出${a.emit.join('与')}，${subject}写回 ${landingText}。`),
+      para(`约束：只${allow}，${forbids}。`),
+      blank(),
     ]
   },
 
   must(M, shared, h) {
     if (!M.must?.length) return []
-    const out = ['## 一定会', `> 时机：${h.timingText}。`]
-    for (const g of M.globalRules) out.push(`> ${g.text}`)
+    const blocks = [h2('一定会'), notes(`时机：${h.timingText}。`)]
+    for (const g of M.globalRules) blocks.push(notes(g.text))
     const land = landingOf(M, h)
-    out.push(land.kind === 'ledger'
-      ? '> 判定只记入本轮评审账本，不写盘。'
-      : `> 判定写回 ${land.text}。`, '')
+    blocks.push(notes(land.kind === 'ledger'
+      ? '判定只记入本轮评审账本，不写盘。'
+      : `判定写回 ${land.text}。`), blank())
+    const items = []
     let n = 0
     for (const rule of M.must) {
       for (const target of rule.targets) {
-        n++
-        out.push(`- ${n}｜${M.vocab.object[target.object]}｜${h.renderRule({ ...rule, targets: [target] }, true)}。`)
+        n += 1
+        items.push(`${n}｜${M.vocab.object[target.object]}｜${h.renderRule({ ...rule, targets: [target] }, true)}。`)
       }
     }
-    out.push('')
-    return out
+    blocks.push(bullets(items), blank())
+    return blocks
   },
 
   never(M, shared, h) {
     if (!M.never?.length) return []
-    const out = ['## 禁止']
+    const items = []
     let n = 0
     for (const rule of M.never) {
       for (const target of rule.targets) {
-        n++
-        out.push(`- ${n}｜${h.renderRule({ ...rule, targets: [target] }, false)}（针对${M.vocab.object[target.object]}）；出现即违反。`)
+        n += 1
+        items.push(`${n}｜${h.renderRule({ ...rule, targets: [target] }, false)}（针对${M.vocab.object[target.object]}）；出现即违反。`)
       }
     }
-    out.push('')
-    return out
+    return [h2('禁止'), bullets(items), blank()]
   },
 
   conflict(M, shared, h) {

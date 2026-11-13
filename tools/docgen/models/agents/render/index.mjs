@@ -1,6 +1,7 @@
 import { expand } from '../verify-models.mjs'
 import { ReviewerModel, AuditorModel, RespondentModel } from '../types/derived.mjs'
 import { makeHelpers, sections } from './sections.mjs'
+import { raw, renderBlocks } from '../../../render/index.mjs'
 
 const CLASSES = [ReviewerModel, AuditorModel, RespondentModel]
 
@@ -19,6 +20,9 @@ export function typeOf(m) {
   return hit.length === 1 ? hit[0].typeName : null
 }
 
+// 已迁到 Block[] 的段；未迁的段整体走 raw 垫片
+const BLOCK_SECTIONS = new Set(['frontmatter', 'duty', 'must', 'never'])
+
 export function renderModel(ownPath, shared) {
   const M = { ...shared, ...expand(ownPath) }
   const h = makeHelpers(M, shared)
@@ -26,7 +30,12 @@ export function renderModel(ownPath, shared) {
   // 显式写了非法类型时不得静默兜底：与 verify 的 TYPE_UNKNOWN 保持一致
   if (!t && M.modelType) throw new Error('MODELTYPE_UNKNOWN:' + M.modelType)
   const type = t || 'RespondentModel'
-  const lines = []
-  for (const k of TYPE_SECTIONS[type]) lines.push(...sections[k](M, shared, h))
-  return { type, text: lines.join('\n'), lines: lines.length }
+  const blocks = []
+  for (const k of TYPE_SECTIONS[type]) {
+    const out = sections[k](M, shared, h)
+    if (BLOCK_SECTIONS.has(k)) blocks.push(...out)
+    else blocks.push(raw(out))
+  }
+  const text = renderBlocks(blocks)
+  return { type, text, lines: text.split('\n').length }
 }
