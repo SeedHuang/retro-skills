@@ -351,3 +351,27 @@ export function checkTestcase(tc, file, ruleIds, errors) {
     if (!['pass', 'fail'].includes(c.expect)) errors.push(`${file}: cases[${i}].expect 只许 pass/fail`)
   }
 }
+
+/**
+ * 门面：schema 判定 + testcase 校验，统一返回 Finding[]，不抛。
+ * checkTestcase 产字符串，这里包成 {code:'Testcase'}；无 testcase 追加 MissingTestcase。
+ */
+export function validate(rule, { testcase, ruleIds } = {}) {
+  const findings = []
+  const name = rule?.id ?? 'rule'
+  check(rule, name, findings)
+  if (!testcase || Object.keys(testcase).length === 0) {
+    findings.push({ code: 'MissingTestcase', message: `缺 testcase：${name}.testcase.json` })
+    return findings
+  }
+  const raw = []
+  checkTestcase(testcase, name, ruleIds ?? new Set([rule.id]), raw)
+  for (const message of raw) findings.push({ code: 'Testcase', message })
+  return findings
+}
+
+export const RuleModel = {
+  typeName: 'RuleModel',
+  fields: ['id', 'impl', 'type', 'scope', 'title', 'when', 'assert', 'residual', 'refs', 'landing'],
+  validate,
+}
