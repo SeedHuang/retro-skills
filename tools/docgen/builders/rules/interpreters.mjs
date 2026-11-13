@@ -7,7 +7,7 @@ import { renderTrigger, renderObligation } from './schema.mjs'
 import { h1, para, notes, blank, renderBlocks } from '../../render/index.mjs'
 
 /** §4.1 模板：标题 → 触发 → 编号义务 → 另见（可选）→ 落点 */
-function renderDoc(rule) {
+function renderBody(rule) {
   const blocks = [
     h1(rule.title),
     blank(),
@@ -28,12 +28,12 @@ export const interpreters = [
     id: 'md',
     ext: 'md',
     describe: 'rule 正文（AI 每轮读到的完整形态）',
-    render: renderDoc,
+    render: renderBody,
   },
   {
     id: 'rule',
     ext: null,
     describe: 'rule 正文投影（= rules/<id>.md，仍由判据 json 渲染；散文只是投影，不是数据）',
-    render: renderDoc,
+    render: renderBody,
   },
 ]
