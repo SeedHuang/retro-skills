@@ -66,4 +66,5 @@ node scripts/render.mjs <model.json> [--out <dir>] [--shared <shared.json>]
 - `references/checks.md`：校验码全集与每码的最小复现。校验失败时按码定位，产出「码 → 修法」对照。
 - `references/model-schema.md`：模型键与展开规则。写新模型前按它列键，产出完整键表。
 - `references/permissions.md`：权限三维与 `permissionGroups`。动权限前按它核对三维，产出与 `seat.artifacts` 一致的写清单。
+- `references/tpl-model-interpreter.md`：模板 / 模型 / 解释器的分层判据。改模板或往渲染层加逻辑前，按它对每句判「骨架 / 判定 / 数据」，产出「句子 → 层」对照；判不出的句子删掉，不得留自由字符串。
 - 标题 / 判据词约束（建模场景）：见 `assertion-quality`（跨技能只引用技能名）；给判据、清单条目、禁令、字段起名时按它的标题约束执行，产出「标题断言词 → 可观测算子」对照。本节不复制正文。
