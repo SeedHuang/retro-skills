@@ -2,7 +2,7 @@
 // 不写盘、不读 CLI 参数（写盘类 flag 的拒绝归 CLI，T4-2）。
 // 形状写死：`{ capabilities, tiers, commands, seatGroups, paths:{groups,patterns:{specPlan}}, detectionBlindSpots, artifacts, seats }`；
 // `commands` = 允许 3 组 ∪ 禁止 5 组 ∪ `seatGroups`；`seats` = 3 席 + `__default__`，每席 `{display, expanded}`，
-// `expanded` = 12 个槽值（顺序 = spec §3.4 表行序）。
+// `expanded` = 15 个槽值（顺序 = spec §3.4 表行序）。
 import * as CAP from '../policy/definitions/capabilities.mjs';
 import { TIERS } from '../policy/definitions/tiers.mjs';
 import * as CMD from '../policy/definitions/commands.mjs';

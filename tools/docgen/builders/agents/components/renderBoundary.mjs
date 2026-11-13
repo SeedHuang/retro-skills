@@ -12,6 +12,7 @@ import * as ART from '../policy/definitions/artifacts.mjs';
 import * as SEATS from '../policy/definitions/seats.mjs';
 import { writeScopes } from '../policy/definitions/writeScopes.mjs';
 import { SEAT_POLICY } from '../policy/seat-policy.mjs';
+import { boundaryFacts, commandGroupsOfModel } from '../policy/boundaryInterpreter.mjs';
 import { ignoredArtifacts } from './ignoredPaths.mjs';
 
 const TPL_REL = 'tools/docgen/builders/agents/templates/boundary.md.tpl';
@@ -23,11 +24,14 @@ const TPL = readFileSync(TPL_PATH, 'utf8').replace(/\r\n/g, '\n').replace(/\n+$/
 const PART_RE = /^<!--part:(authority|ban|aftermath)-->\r?\n?/gm;
 const PART_NAMES = ['authority', 'ban', 'aftermath'];
 
-// 14 槽，顺序 = spec §3.4 表行序；2026-11-12 起 `ARTIFACTS` / `SEAT_CLAUSE` / `WRITE_SCOPE` 由「权限」段直接消费，不再进边界模板
+// 15 槽，顺序 = spec §3.4 表行序；2026-11-12 起 `ARTIFACTS` / `SEAT_CLAUSE` / `WRITE_SCOPE` 由「权限」段直接消费，不再进边界模板
 // 2026-11-13：+ WRITE_FORBID / WRITE_FALLBACK（签字账禁写与 .gitignore 兜底改由策略层渲染）
-export const SLOTS = ['SEAT', 'TIER', 'CAPABILITIES', 'ESCALATION_WRITER',
-  'ALLOW_GROUPS', 'DENY_GROUPS', 'ENV_FORMS', 'FORBIDDEN_PATHS', 'DETECTION_PATHS', 'DETECTION_CMD',
-  'ROLE_KIND', 'HOST_RULE', 'WRITE_FORBID', 'WRITE_FALLBACK'];
+// 2026-11-13：逻辑句改由 `boundaryRules` + 解释器产出 → + ACTION_FORBID / WRITE_DEFAULT /
+//   ESCALATION_OBLIGATIONS / DETECTION_LIMIT；FORBIDDEN_PATHS / ESCALATION_WRITER / DETECTION_PATHS 并入随句槽
+export const SLOTS = ['SEAT', 'TIER', 'CAPABILITIES', 'ACTION_FORBID',
+  'ALLOW_GROUPS', 'DENY_GROUPS', 'ENV_FORMS', 'DETECTION_CMD',
+  'ROLE_KIND', 'HOST_RULE', 'WRITE_FORBID', 'WRITE_DEFAULT', 'WRITE_FALLBACK',
+  'ESCALATION_OBLIGATIONS', 'DETECTION_LIMIT'];
 
 // 结构性文本白名单（§3.4 纯度规则 3）：只登记**非清单类**成员；登记清单类成员本身即违规（不变量 6）
 // S-B §11.2.3：4 个策略符号名（指针句里出现的反引号项）不是定义层单点成员，必须登记；
@@ -35,9 +39,7 @@ export const SLOTS = ['SEAT', 'TIER', 'CAPABILITIES', 'ESCALATION_WRITER',
 export const TEMPLATE_ALLOWED_LITERALS = new Set([
   '.gitignore',
   'DOCGEN_*',
-  'sha256',
   '检测限度',
-  '越权清单',
   'pathGroups',
   'commandGroups',
   'forbiddenGroups',
@@ -59,7 +61,6 @@ const hasOwn = (o, k) => Object.hasOwn(o, k);
 // 读配置侧一律 `Object.hasOwn`（spec:131）：`__proto__` / `constructor` 回落 `__default__`
 const policyOf = (seat) => (hasOwn(SEAT_POLICY, seat) ? SEAT_POLICY[seat] : SEAT_POLICY.__default__);
 const seatOf = (seat) => (hasOwn(SEATS.SEATS, seat) ? SEATS.SEATS[seat] : SEATS.SEATS.__default__);
-const displayOf = (slug) => (hasOwn(SEATS.SEATS, slug) ? SEATS.SEATS[slug].display : SEATS.SEATS.__default__.display);
 const code = (v) => `\`${v}\``;
 
 // 渲染是**全函数**（spec：不校验、不抛错）：未登记的 capability / 组一律按原样渲染，
@@ -85,24 +86,8 @@ export function allowGroups(groups) {
 }
 
 // 单源（2026-11-13）：允许组由模型 `permissions.command.allow` 反推，不再直接读 `SEAT_POLICY.allowGroups`。
-// 组内 verb 可带参数（`scs ledger gate <评审目录>/progress.md`），与模型 form.prefix 比对时先截掉参数段。
-function verbPrefix(v) {
-  return String(v).split(/\s+</)[0].trim();
-}
-export function commandGroupsOfModel(M) {
-  const ids = M?.permissions?.command?.allow;
-  if (!Array.isArray(ids)) return null;
-  const forms = M.forms ?? {};
-  const hit = new Set();
-  for (const id of ids) {
-    const prefix = forms[id]?.prefix;
-    if (typeof prefix !== 'string' || prefix === '') continue;
-    for (const [g, def] of Object.entries(CMD.commandGroups)) {
-      if ((def.verbs || []).some((v) => v === prefix || verbPrefix(v) === prefix)) hit.add(g);
-    }
-  }
-  return Object.keys(CMD.commandGroups).filter((g) => hit.has(g));
-}
+// 反推实现归解释器（`commandGroupsOfModel`），本文件只做展示排序，视图与判定共用一份。
+export { commandGroupsOfModel };
 // 展示顺序优先沿用策略清单顺序（保持既有卡面稳定），策略未列出的组按定义层顺序补在后面。
 function allowGroupsFor(seat, M) {
   const derived = commandGroupsOfModel(M);
@@ -125,34 +110,13 @@ function envForms() {
   return '该组内的 env 形态项';
 }
 
-// 槽 10 = 指针句：禁写集合 = `pathGroups` 六组 + 一项模式项（`spec / plan` 两种写法，卡面不加反引号）。
-// S6-B §3.5：按席写作用域有排除项时，在**基准句整句之后**追加排除注（不插进原句内部）。
-const PATH_ITEM_TEXT = new Map(
-  Object.values(PTH.pathGroups).flat().map((item) => [item.id, item.text]),
-);
+// 槽 10 / 槽 11 的禁写集合与检测盲区句由解释器 `boundaryFacts` 产出（2026-11-13）：本文件不再持句
 function scopeOfSeat(seat) {
   const s = seatOf(seat);
   const id = hasOwn(s, 'writeScope') ? s.writeScope : 'review.ledger';
   // 渲染层是全函数：未知 / 空 / 非字符串 scope 取 null（槽值渲染空串），判红与发码归 validatePolicy
   if (typeof id !== 'string' || id === '' || !hasOwn(writeScopes, id)) return null;
   return writeScopes[id];
-}
-function forbiddenPaths(seat) {
-  const base = `${code('pathGroups')} 与 spec / plan 的写法项`;
-  const scope = scopeOfSeat(seat);
-  const exclusions = scope && Array.isArray(scope.excludePathItems) ? scope.excludePathItems : [];
-  if (exclusions.length === 0) return base;
-  const texts = exclusions
-    .map((id) => PATH_ITEM_TEXT.get(id))
-    .filter((t) => typeof t === 'string' && t !== '')
-    .map((t) => `「${t}」`)
-    .join('、');
-  return texts === '' ? base : `${base}（本席按写作用域排除${texts}）`;
-}
-
-// 槽 11 = 指针句：检测盲区归 `DETECTION_BLIND_SPOTS`
-function detectionPaths() {
-  return '被 gitignore 的路径';
 }
 
 // 槽 12 = 检测手段：只有本席**真被授权** `git status` 时才写该命令；
@@ -190,17 +154,7 @@ function slotSource(obj, key, slot, fallback) {
   return v;
 }
 
-// 槽 6 两形态（spec:85）：本席自写 = `<display>写 <artifact>`；他席写 = `交<display>在 <artifact> 独立复算`
-function escalationWriter(seat) {
-  // 未登记 → 可选槽「缺省未声明」→ 空串（显式 `undefined` / `null` 已在 slotSource 里判 TemplateImpure）
-  const ew = slotSource(seatOf(seat), 'escalationWriter', 'ESCALATION_WRITER', undefined);
-  if (ew === undefined) return '';
-  const d = displayOf(ew.slug);
-  const a = code(ew.artifact);
-  return ew.slug === seat ? `越权者即本席，写 ${a}。` : `交${d}在 ${a} 独立复算。`;
-}
-
-// 12 槽值（键 = 槽名）。值必须全是字符串：`undefined` / `null` → `TemplateImpure`（片段 = 槽名）
+// 15 槽值（键 = 槽名）。值必须全是字符串：`undefined` / `null` → `TemplateImpure`（片段 = 槽名）
 // M = 展开后的模型（可省略）：给了就按模型命令白名单反推组与检测手段，确保与「权限」段同源。
 export function slotValues(seat, M = null) {
   const p = policyOf(seat);
@@ -215,24 +169,26 @@ export function slotValues(seat, M = null) {
   const hostRule = (scopeOfSeat(seat)?.hostRule ?? '').replaceAll('{host}', hostNoun);
   // 作用域写了 `{host}` 却没登记 hostNoun → 卡面会渲出字面占位，按模板不纯判红
   if (hostRule.includes('{host}')) impure('HOST_RULE:hostNoun-missing');
+  // 逻辑句（固定禁令 / 写默认拒绝 / 越权处置 / 检测限度）统一由定义层规则 + 解释器产出
+  const facts = boundaryFacts(seat, M);
   const values = {
     SEAT: s.display,
     TIER: tierOfCapabilities(caps) ?? '',
     CAPABILITIES: capTools(caps).join(' / '),
-    // 允许产物与核转录职责由「权限」段直接消费（2026-11-12 事实归属），不再走边界槽
-    ESCALATION_WRITER: escalationWriter(seat),
+    ACTION_FORBID: facts.ACTION_FORBID,
     ALLOW_GROUPS: allowGroupsFor(seat, M),
     DENY_GROUPS: denyGroups(),
     ENV_FORMS: envForms(),
-    FORBIDDEN_PATHS: forbiddenPaths(seat),
-    DETECTION_PATHS: detectionPaths(),
     DETECTION_CMD: detectionCmd(seat, M),
     // 角色名词默认随写作用域（「评审席」「程序主持」）；答辩方 / 取证席不是评审席，由席级 `roleKind` 覆盖
     ROLE_KIND: slotSource(s, 'roleKind', 'ROLE_KIND', scopeOfSeat(seat)?.roleKind ?? ''),
     // 禁止写句 = 写作用域的 hostRule（`{host}` 已替换成主持席称谓），席级不再整句覆盖
     HOST_RULE: hostRule,
     WRITE_FORBID: writeForbid(),
+    WRITE_DEFAULT: facts.WRITE_DEFAULT,
     WRITE_FALLBACK: writeFallback(M),
+    ESCALATION_OBLIGATIONS: facts.ESCALATION_OBLIGATIONS,
+    DETECTION_LIMIT: facts.DETECTION_LIMIT,
   };
   for (const k of SLOTS) if (values[k] === undefined || values[k] === null) impure(k);
   return values;
