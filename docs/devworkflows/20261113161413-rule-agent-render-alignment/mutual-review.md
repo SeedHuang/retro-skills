@@ -16,18 +16,18 @@
 
 ### spec 作者审 testcase
 
-- **一致**：D1–D12 的 spec 决议与 testcase 主体覆盖方向一致；F1–F4/F6、D19、非目标均有对应 TC。
+- **一致**：TD1–TD12 的 spec 决议与 testcase 主体覆盖方向一致；F1–F4/F6、D19、非目标均有对应 TC。
 - **不一致（已改）**：
-  1. TC-27 用 dormant `import-guard` 跑 preview，期望 0；与 spec D6「preview 只对 registered」冲突。
-  2. TC-16 用 `validate(rule)` 单参并期望 `[]`；spec D3 要求 `validate(rule,{testcase,ruleIds})`，无 testcase 返回 `MissingTestcase`。
-  3. TC-02/22/29/34 写死 `baseline 19/19`；spec D7 要求 `N = 18 + BASELINE_RULES.length`。
+  1. TC-27 用 dormant `import-guard` 跑 preview，期望 0；与 spec §2-D6「preview 只对 registered」冲突。
+  2. TC-16 用 `validate(rule)` 单参并期望 `[]`；spec §12-DQ3 要求 `validate(rule,{testcase,ruleIds})`，无 testcase 返回 `MissingTestcase`。
+  3. TC-02/22/29/34 写死 `baseline 19/19`；spec §12-DQ7 要求 `N = 18 + BASELINE_RULES.length`。
   4. TC-24 的「现状不满足」应改为「改造后应满足；现状不满足属 M3 实现项」。
 - **已落地、无需改**：TC-04/21/43 的 3 处命令修正已在第 1 轮前落盘。
 
 ### testcase 作者审 spec
 
-- **同意**：D1、D2、D3、D4、D5、D6、D7、D9、D10、D11、D12。
-- **部分**：D8 的 gate 计数——spec 要求派生，但 TC-02/TC-34 仍写 19；已按 spec 改为派生。
+- **同意**：TD1、TD2、TD3、TD4、TD5、TD6、TD7、TD9、TD10、TD11、TD12。
+- **部分**：TD8 的 gate 计数——spec 要求派生，但 TC-02/TC-34 仍写 19；已按 spec 改为派生。
 - **真实冲突**：TC-27 preview、TC-16 签名/ MissingTestcase；已改。
 - **过期判断**：TC-04/21/43 的 3 处修正已在文件中，作者第 1 轮引用改前文本；第 2 轮以当前文件复核。
 
