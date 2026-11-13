@@ -12,7 +12,7 @@
           "issue-card-behavior"
         ],
         "scope": "用只读命令与文件证据",
-        "action": "reproduce",
+        "action": "recheck",
         "kind": "need"
       }
     ],
