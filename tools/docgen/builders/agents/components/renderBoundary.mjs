@@ -19,6 +19,10 @@ const TPL_PATH = join(dirname(fileURLToPath(import.meta.url)), '..', 'templates'
 // 导入期读取（spec:195）：读取失败 = 未捕获异常，不承诺任何错误码 / 退出码；换行统一 `\n`、去掉末尾空行
 const TPL = readFileSync(TPL_PATH, 'utf8').replace(/\r\n/g, '\n').replace(/\n+$/, '');
 
+// 三段标记（2026-11-13）：模板唯一分段点，各独占一行；`renderBoundary` 剥离标记后必须与改造前逐字节相同
+const PART_RE = /^<!--part:(authority|ban|aftermath)-->\r?\n?/gm;
+const PART_NAMES = ['authority', 'ban', 'aftermath'];
+
 // 14 槽，顺序 = spec §3.4 表行序；2026-11-12 起 `ARTIFACTS` / `SEAT_CLAUSE` / `WRITE_SCOPE` 由「权限」段直接消费，不再进边界模板
 // 2026-11-13：+ WRITE_FORBID / WRITE_FALLBACK（签字账禁写与 .gitignore 兜底改由策略层渲染）
 export const SLOTS = ['SEAT', 'TIER', 'CAPABILITIES', 'ESCALATION_WRITER',
@@ -274,7 +278,8 @@ export function assertTemplatePure(tpl = TPL) {
   for (const w of TEMPLATE_ALLOWED_LITERALS) if (listClass.has(w)) impure(`ALLOWED_LITERALS:${w}`);
 }
 
-export function renderBoundary(seat, M = null) {
+// 原始渲染：保留三段标记（供 `boundaryParts` 切分）；对外输出一律走 `renderBoundary`
+export function renderRaw(seat, M = null) {
   // 模板纯度**不在此校验**：唯一发射点是 `validatePolicy`（它已调 `assertTemplatePure`），
   // 否则本函数在 `patternRegistry` 导入期被调用，模板非法会先崩、CLI 发不出 `TemplateImpure` 码
   const values = slotValues(seat, M);
@@ -282,4 +287,42 @@ export function renderBoundary(seat, M = null) {
     if (!Object.hasOwn(values, k)) impure(k);     // 未声明槽不得静默保留（C07）
     return values[k];
   });
+}
+
+// 按标记切三段：必须恰好三个、顺序固定；缺 / 多 / 乱序一律 `TemplateImpure`（片段 = `part:<name>`）
+export function boundaryParts(seat, M = null) {
+  const raw = renderRaw(seat, M);
+  const hits = [...raw.matchAll(PART_RE)];
+  for (const name of PART_NAMES) {
+    if (hits.filter((h) => h[1] === name).length !== 1) impure(`part:${name}`);
+  }
+  for (let i = 0; i < PART_NAMES.length; i += 1) {
+    if (hits[i][1] !== PART_NAMES[i]) impure(`part:${hits[i][1]}`);
+  }
+  const parts = {};
+  hits.forEach((h, i) => {
+    const start = h.index + h[0].length;
+    const end = i + 1 < hits.length ? hits[i + 1].index : raw.length;
+    parts[h[1]] = raw.slice(start, end).trim();
+  });
+  return parts;
+}
+
+export function renderAuthority(seat, M = null) {
+  return boundaryParts(seat, M).authority;
+}
+
+export function renderBan(seat, M = null) {
+  return boundaryParts(seat, M).ban;
+}
+
+export function renderAftermath(seat, M = null) {
+  return boundaryParts(seat, M).aftermath;
+}
+
+// 对外输出 = 原始渲染去掉三行标记（连同行尾换行）——与改造前逐字节相同（golden 冻结）
+// 先过 `boundaryParts` 的标记校验：缺 / 多 / 乱序与 `boundaryParts` 同口径报 `TemplateImpure`
+export function renderBoundary(seat, M = null) {
+  boundaryParts(seat, M);
+  return renderRaw(seat, M).replace(PART_RE, '');
 }

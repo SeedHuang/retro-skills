@@ -1,7 +1,7 @@
 import { TIERS } from '../../../builders/agents/policy/definitions/tiers.mjs'
 import { SEATS } from '../../../builders/agents/policy/definitions/seats.mjs'
 import { writeScopes } from '../../../builders/agents/policy/definitions/writeScopes.mjs'
-import { renderBoundary } from '../../../builders/agents/components/renderBoundary.mjs'
+import { renderAuthority, renderBan, renderAftermath } from '../../../builders/agents/components/renderBoundary.mjs'
 import { DEFAULT_BOUNDARY } from '../../../builders/agents/components/patternRegistry.mjs'
 
 const cn = (a, b) => (/[A-Za-z0-9)]$/.test(a) ? a + ' ' + b : a + b)
@@ -215,6 +215,8 @@ export const sections = {
     const meta = SEATS[M.seat.id] ?? {}
     const scope = writeScopes[meta.writeScope ?? 'review.ledger'] ?? {}
     const out = []
+    // 三段化（2026-11-13）：policy 席的身份 / 档位 / 平台限制归「权限」段首
+    if (M.boundary?.kind === 'policy') out.push(...renderAuthority(M.seat.id, M).split('\n'), '')
     if (!pm.write.allow.length) {
       // 档位含 Write 但无 artifact 级白名单 = 写作用域由本席 writeScope 约束，≠ 不能写
       const canWrite = (TIERS[M.seat.tier] || []).includes('Write')
@@ -227,24 +229,32 @@ export const sections = {
     return ['## 权限', ...out]
   },
 
+  ban(M) {
+    if (M.boundary?.kind !== 'policy') return []
+    return ['## 禁止事项', renderBan(M.seat.id, M), '']
+  },
+
   escalation(M, shared, h) {
+    // 三段化（2026-11-13）：policy 恒出「越界处置」= 模型步骤（有则加）+ 边界后处理正文
+    if (M.boundary?.kind !== 'policy') return []
     const esc = M.escalation
-    if (!esc) return []
-    const out = [`## ${esc.title}`]
-    for (const [i, s] of esc.steps.entries()) {
-      const n = i + 1
-      if (s.kind === 'halt') out.push(`${n}. ${s.text}`)
-      if (s.kind === 'report') out.push(`${n}. 越权信息报${esc.recipients[s.to]}：${esc.report.fields.map((f) => h.R[esc.report.record].shape.find((x) => x.id === f).label).join('、')}。`)
-      if (s.kind === 'voidRound') out.push(`${n}. 本轮结论作废，报${esc.recipients[s.to]}。`)
+    const out = ['## 越界处置']
+    if (esc) {
+      for (const [i, s] of esc.steps.entries()) {
+        const n = i + 1
+        if (s.kind === 'halt') out.push(`${n}. ${s.text}`)
+        if (s.kind === 'report') out.push(`${n}. 越权信息报${esc.recipients[s.to]}：${esc.report.fields.map((f) => h.R[esc.report.record].shape.find((x) => x.id === f).label).join('、')}。`)
+        if (s.kind === 'voidRound') out.push(`${n}. 本轮结论作废，报${esc.recipients[s.to]}。`)
+      }
     }
-    out.push('')
+    out.push(renderAftermath(M.seat.id, M), '')
     return out
   },
   boundary(M) {
     const b = M.boundary || {}
+    if (b.kind === 'policy') return []
     const body =
-      b.kind === 'policy' ? renderBoundary(M.seat.id, M)
-      : b.kind === 'literal' ? b.text
+      b.kind === 'literal' ? b.text
       : b.kind === 'default' ? DEFAULT_BOUNDARY
       : (() => { throw new Error('BOUNDARY_KIND_UNKNOWN ' + b.kind) })()
     return ['## 边界', body, '']

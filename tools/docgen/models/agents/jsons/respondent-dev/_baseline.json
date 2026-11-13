@@ -11,8 +11,9 @@
         "objects": [
           "issue-card-behavior"
         ],
-        "scope": "用命令",
-        "action": "reproduce"
+        "scope": "用只读命令与文件证据",
+        "action": "reproduce",
+        "kind": "need"
       }
     ],
     "description": {
@@ -30,8 +31,8 @@
       "from": "seat.description"
     },
     "action": {
-      "verb": "复现",
-      "scope": "按项目技术栈",
+      "verb": "复核",
+      "scope": "按项目事实",
       "objects": [
         "问题卡所述行为"
       ],

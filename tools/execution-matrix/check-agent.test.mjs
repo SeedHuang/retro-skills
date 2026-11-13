@@ -245,6 +245,7 @@ test('A6/A7：围栏外有真实节 + 围栏内也有示例标题 → 判通过�
     '# 角色：X', '',
     '## 固定必问清单', '| # | 必问 | 回答 |', '|---|---|---|', '| 1 | 你的判据 | 待答 |', '',
     '缺答 = 不合格。证据可复算。', '',
+    '## 权限', '只读。', '',
     '## 边界', '不做什么。', '',
     '## 输出格式', '表格。', '',
     '```markdown', '## 边界', '示例。', '```', '',
@@ -252,6 +253,55 @@ test('A6/A7：围栏外有真实节 + 围栏内也有示例标题 → 判通过�
   const { findings } = checkAgentFromText(card);
   assert.ok(!findings.some((f) => f.code === 'A6'));
   assert.ok(!findings.some((f) => f.code === 'A7'));
+});
+
+// —— A6 三段化（2026-11-13）：两种形态**恰好一种**成立 ——
+const a6Card = (lines) => ['---', 'name: x', '---', '', '# 角色：X', '', ...lines, ''].join('\n');
+const a6Red = (card) => checkAgentFromText(card).findings.some((f) => f.code === 'A6');
+
+test('A6 正例：只读两段（## 权限 + ## 边界）→ 过', () => {
+  const card = a6Card(['## 权限', '- 写文件：不得写任何文件', '', '## 边界', '你是只读评审角色。']);
+  assert.equal(a6Red(card), false);
+});
+
+test('A6 正例：写权限三段（## 权限 / ## 禁止事项 / ## 越界处置）→ 过', () => {
+  const card = a6Card(['## 权限', '- 写文件：只许账本', '', '## 禁止事项', '**禁止写**：不得写其他文件。', '', '## 越界处置', '**越权记录与复算**：记录。']);
+  assert.equal(a6Red(card), false);
+});
+
+test('A6 反例：policy 卡保留 ## 边界 → 红', () => {
+  const card = a6Card(['## 权限', '- 写文件：只许账本', '', '## 禁止事项', '禁止写。', '', '## 越界处置', '记录。', '', '## 边界', '旧边界。']);
+  assert.equal(a6Red(card), true);
+});
+
+test('A6 反例：只读卡出现 ## 禁止事项 → 红', () => {
+  const card = a6Card(['## 权限', '- 写文件：不得写任何文件', '', '## 禁止事项', '禁止写。', '', '## 边界', '只读。']);
+  assert.equal(a6Red(card), true);
+});
+
+test('A6 反例：### 权限（三级标题）→ 红', () => {
+  const card = a6Card(['### 权限', '- 写文件：不得写任何文件', '', '## 边界', '只读。']);
+  assert.equal(a6Red(card), true);
+});
+
+test('A6 反例：空 ## 越界处置 → 红', () => {
+  const card = a6Card(['## 权限', '- 写文件：只许账本', '', '## 禁止事项', '禁止写。', '', '## 越界处置', '', '']);
+  assert.equal(a6Red(card), true);
+});
+
+test('A6 反例：围栏内伪标题 → 红', () => {
+  const card = a6Card(['## 权限', '- 写文件：不得写任何文件', '', '```markdown', '## 边界', '示例。', '```']);
+  assert.equal(a6Red(card), true);
+});
+
+test('A6 反例：越界处置只含空围栏 → 红', () => {
+  const card = a6Card(['## 权限', '- 写文件：只许账本', '', '## 禁止事项', '禁止写。', '', '## 越界处置', '```', '```']);
+  assert.equal(a6Red(card), true);
+});
+
+test('A6 反例：权限只含 HTML 注释 → 红', () => {
+  const card = a6Card(['## 权限', '<!-- 占位 -->', '', '## 边界', '只读。']);
+  assert.equal(a6Red(card), true);
 });
 
 test('splitSections 跳过围栏内的伪标题（围栏内 ## 不产生节）', () => {

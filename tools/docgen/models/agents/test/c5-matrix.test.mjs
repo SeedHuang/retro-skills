@@ -89,17 +89,22 @@ test('C5 render/sections：renderRule ok / bad / guard 三态', () => {
   assert.match(h2.renderRule({ criterion: 'zz', targets: [] }, false), /^不得不得Y——/)
 })
 
-test('C5 render/sections：9+ 段函数均返回数组且必填段非空', () => {
+test('C5 render/sections：9+ 段函数均返回数组且必填段按 kind 非空', () => {
   for (const key of Object.keys(sections)) {
     const out = sections[key](M, shared, h)
     assert.ok(Array.isArray(out), `${key} 必须返回数组`)
-    assert.ok(out.length > 0, `${key} 在 reviewer-audit 上不得为空`)
+    if (key === 'boundary') assert.deepEqual(out, [], 'policy 席不再输出「边界」段')
+    else assert.ok(out.length > 0, `${key} 在 reviewer-audit（policy）上不得为空`)
   }
+  const Md = modelWithShared('reviewer-product')
+  const hd = makeHelpers(Md, shared)
+  assert.deepEqual(sections.ban(Md, shared, hd), [], 'default 席不得输出「禁止事项」段')
+  assert.ok(sections.boundary(Md, shared, hd).length > 0, 'default 席必须保留「边界」段')
 })
 
 test('C5 render/index：段装配顺序', () => {
   const text = renderModel(join(MODELS_DIR, 'reviewer-audit', 'index.json'), shared).text
-  const order = ['## 职责', '## 一定会', '## 禁止', '## 冲突裁决', '## 本席清单', '## 权限', '## 边界']
+  const order = ['## 职责', '## 一定会', '## 禁止', '## 冲突裁决', '## 本席清单', '## 权限', '## 禁止事项', '## 越界处置']
   const idx = order.map((x) => text.indexOf(x))
   assert.ok(idx.every((i) => i >= 0), `缺段：${order.filter((x, i) => idx[i] < 0).join(',')}`)
   assert.deepEqual(idx, [...idx].sort((a, b) => a - b), '段顺序必须按 TYPE_SECTIONS')

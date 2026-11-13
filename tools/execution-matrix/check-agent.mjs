@@ -135,8 +135,31 @@ export function checkStruct(card) {
     findings.push({ code: 'A5' });
   }
 
-  // A6 边界声明 / A7 输出格式指定（节名存在性，两模板一致）
-  if (!sections.some((s) => s.heading.startsWith('边界'))) findings.push({ code: 'A6' });
+  // A6 边界声明（2026-11-13 三段化）：两种形态**恰好一种**成立
+  //   只读 = 1 个 `## 权限` + 1 个 `## 边界`（无禁止事项 / 越界处置）；写权限 = 权限 / 禁止事项 / 越界处置各 1、顺序固定、无边界
+  // 标题判定用二级 + 全等（不用 startsWith）；围栏内伪标题由 `splitSections` 跳过
+  const atHeading = (name) => sections.filter((s) => s.level === 2 && s.heading.trim() === name)
+  const exactlyOne = (name) => atHeading(name).length === 1
+  // 正文非空 = 去掉代码围栏与单行 HTML 注释后仍有内容（防「空围栏 / 只有注释」假通过）
+  const visibleBody = (lines) => {
+    let inFence = false
+    return lines.filter((l) => {
+      if (/^\s*```/.test(l)) { inFence = !inFence; return false }
+      if (inFence) return false
+      return !/^\s*<!--.*-->\s*$/.test(l)
+    }).join('\n').trim()
+  }
+  const bodyNonEmpty = (name) => atHeading(name).every((s) => visibleBody(s.lines) !== '')
+  const readOnlyForm = exactlyOne('权限') && exactlyOne('边界')
+    && atHeading('禁止事项').length === 0 && atHeading('越界处置').length === 0
+    && bodyNonEmpty('权限') && bodyNonEmpty('边界')
+  const writeOrder = ['权限', '禁止事项', '越界处置']
+  const writeIdx = writeOrder.map((name) => sections.findIndex((s) => s.level === 2 && s.heading.trim() === name))
+  const writeForm = writeOrder.every(exactlyOne) && atHeading('边界').length === 0
+    && writeOrder.every(bodyNonEmpty) && writeIdx[0] < writeIdx[1] && writeIdx[1] < writeIdx[2]
+  if (readOnlyForm === writeForm) findings.push({ code: 'A6' })
+
+  // A7 输出格式指定（节名存在性，两模板一致）
   if (!sections.some((s) => s.heading.startsWith('输出格式'))) findings.push({ code: 'A7' });
 
   return { findings, notes };

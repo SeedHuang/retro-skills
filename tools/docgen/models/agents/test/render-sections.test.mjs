@@ -34,6 +34,16 @@ test('render/sections：空段一律返回 []（不留空标题）', () => {
   assert.deepEqual(sections.escalation({ escalation: null }, shared, {}), [])
 })
 
+test('render/sections：escalation 按 boundary.kind 分型（default + null → []，policy + null → 越界处置）', () => {
+  assert.deepEqual(sections.escalation({ escalation: null, boundary: { kind: 'default' } }, shared, {}), [])
+  const out = sections.escalation({
+    escalation: null,
+    boundary: { kind: 'policy' },
+    seat: { id: 'reviewer-audit' },
+  }, shared, {})
+  assert.equal(out[0], '## 越界处置')
+})
+
 test('render/sections：本席清单表头逐字含模型声明的三态取值', () => {
   for (const seat of listSeats()) {
     const M = modelWithShared(seat)

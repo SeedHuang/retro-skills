@@ -239,8 +239,12 @@ export function verify(name, opts = {}) {
   const landingBad = lm !== undefined && lm !== 'file' ? `LANDINGMODE_UNKNOWN:${lm}`
     : lm === 'file' && !exp.duty.action.landingLabel ? 'LANDING_LABEL_MISSING'
     : ''
+  // 三段化（2026-11-13）：越界处置标题由渲染器硬编码，模型 title 必须与之一致，否则字段被静默忽略
+  const escalationTitleBad = exp.escalation && exp.escalation.title !== '越界处置'
+    ? `ESCALATION_TITLE_MISMATCH:${exp.escalation.title}`
+    : ''
 
-  return { name, tier, tierBad, boundaryBad, modelType, typeErr, landingBad, writeTierBad, must: exp.must.length, never: exp.never.length, pred: Object.keys(exp.predicates).length, rec: Object.keys(exp.records).length, errs, ownFail, policyDiff, modelFiles, policyFiles, pathUndefined, actionConflict, unknownAction, permOrphan, permUnobservable, titleDrifts, pathBad, skillBad, triggerBad, actionBad, outputTextHandwritten, writeScopeBad, outputUnwritable, cardRuleLeak }
+  return { name, tier, tierBad, boundaryBad, escalationTitleBad, modelType, typeErr, landingBad, writeTierBad, must: exp.must.length, never: exp.never.length, pred: Object.keys(exp.predicates).length, rec: Object.keys(exp.records).length, errs, ownFail, policyDiff, modelFiles, policyFiles, pathUndefined, actionConflict, unknownAction, permOrphan, permUnobservable, titleDrifts, pathBad, skillBad, triggerBad, actionBad, outputTextHandwritten, writeScopeBad, outputUnwritable, cardRuleLeak }
 }
 
 const isMain = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]
@@ -248,7 +252,7 @@ export const anyError = (r) => r.errs.length || r.ownFail.length || r.policyDiff
   r.actionConflict.length || r.unknownAction.length || r.permOrphan.length || r.permUnobservable.length ||
   r.titleDrifts.length || r.pathBad.length || r.skillBad.length || r.triggerBad.length || r.actionBad.length ||
   r.outputTextHandwritten.length || r.typeErr || r.writeScopeBad || r.outputUnwritable.length || r.cardRuleLeak.length ||
-  r.tierBad || r.boundaryBad || r.landingBad || r.writeTierBad
+  r.tierBad || r.boundaryBad || r.escalationTitleBad || r.landingBad || r.writeTierBad
 let failed = false
 if (isMain) {
   const names = process.argv.slice(2).length

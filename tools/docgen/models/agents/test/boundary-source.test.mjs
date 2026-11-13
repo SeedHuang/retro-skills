@@ -3,26 +3,30 @@ import assert from 'node:assert/strict'
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { renderModel } from '../render/index.mjs'
-import { renderBoundary } from '../../../builders/agents/components/renderBoundary.mjs'
 import { modelWithShared } from '../source.mjs'
+import { renderBan, renderAftermath } from '../../../builders/agents/components/renderBoundary.mjs'
 import { DEFAULT_BOUNDARY } from '../../../builders/agents/components/patternRegistry.mjs'
 import { TIERS } from '../../../builders/agents/policy/definitions/tiers.mjs'
+import { splitSections } from '../../../../execution-matrix/check-agent.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..', '..', '..', '..', '..')
 const MODELS = join(ROOT, 'tools', 'docgen', 'models', 'agents', 'jsons')
 const shared = JSON.parse(readFileSync(join(MODELS, '_shared.json'), 'utf8'))
 const seats = readdirSync(MODELS, { withFileTypes: true }).filter((e) => e.isDirectory() && !e.name.startsWith('_')).map((e) => e.name)
-const bodyOf = (text) => {
-  const i = text.indexOf('\n## 边界\n')
-  return i < 0 ? '' : text.slice(i + '\n## 边界\n'.length).trim()
-}
-const cardBoundary = (seat) => {
+
+function cardSections(seat) {
   const p = join(ROOT, 'agents', `${seat}.md`)
   assert.ok(existsSync(p), `缺卡：agents/${seat}.md（先落卡再建模）`)
-  return bodyOf(readFileSync(p, 'utf8'))
+  return splitSections(readFileSync(p, 'utf8'))
 }
+function headingSection(secs, name) {
+  const hit = secs.filter((s) => s.level === 2 && s.heading.trim() === name)
+  assert.equal(hit.length, 1, `「${name}」节必须恰好 1 个`)
+  return hit[0]
+}
+const bodyText = (s) => s.lines.join('\n').trim()
+
 // 写落点 = 模型自己声明要写盘（artifact / 写白名单 / 默认落点 / 真写盘模式），与 SEAT_POLICY 的 capability 无关
 const writes = (m) =>
   (m.seat.artifacts || []).length > 0 ||
@@ -31,14 +35,30 @@ const writes = (m) =>
   m.duty?.action?.landingMode === 'file'
 const models = seats.map((f) => ({ f, m: JSON.parse(readFileSync(join(MODELS, f, 'index.json'), 'utf8')) }))
 
-test('边界三形态：渲染正文必须等于声明来源（policy→renderBoundary / literal→text / default→DEFAULT_BOUNDARY）', () => {
-  for (const { f, m } of models) {
+test('边界来源（policy）：卡面「禁止事项」== renderBan，「越界处置」== 模型步骤 + renderAftermath，且无「边界」节', () => {
+  for (const { m } of models) {
+    if (m.boundary.kind !== 'policy') continue
     const seat = m.seat.id
-    const rendered = bodyOf(renderModel(join(MODELS, f, 'index.json'), shared).text)
-    const expected = m.boundary.kind === 'policy'
-      ? renderBoundary(seat, modelWithShared(seat))
-      : m.boundary.kind === 'literal' ? m.boundary.text : DEFAULT_BOUNDARY
-    assert.equal(rendered, expected.trim(), seat)
+    const secs = cardSections(seat)
+    assert.equal(secs.filter((s) => s.level === 2 && s.heading.trim() === '边界').length, 0, `${seat}: policy 卡不得保留「边界」节`)
+    assert.equal(bodyText(headingSection(secs, '禁止事项')), renderBan(seat, modelWithShared(seat)), seat)
+    const esc = headingSection(secs, '越界处置')
+    const steps = m.escalation?.steps?.length ?? 0
+    for (let i = 0; i < steps; i += 1) assert.match(esc.lines[i], /^\d+\. /, `${seat}: 第 ${i + 1} 步缺失`)
+    assert.equal(esc.lines.slice(steps).join('\n').trim(), renderAftermath(seat, modelWithShared(seat)), seat)
+  }
+})
+
+test('边界来源（default / literal）：卡面「边界」正文 == 声明来源，且无「禁止事项」/「越界处置」节', () => {
+  for (const { m } of models) {
+    const kind = m.boundary.kind
+    if (kind !== 'default' && kind !== 'literal') continue
+    const seat = m.seat.id
+    const secs = cardSections(seat)
+    const expected = kind === 'literal' ? m.boundary.text.trim() : DEFAULT_BOUNDARY
+    assert.equal(bodyText(headingSection(secs, '边界')), expected, seat)
+    assert.equal(secs.filter((s) => s.level === 2 && s.heading.trim() === '禁止事项').length, 0, seat)
+    assert.equal(secs.filter((s) => s.level === 2 && s.heading.trim() === '越界处置').length, 0, seat)
   }
 })
 
@@ -54,7 +74,7 @@ test('无写落点的席必须 default，且卡面边界恰为 DEFAULT_BOUNDARY'
   for (const { m } of models) {
     if (writes(m)) continue
     assert.equal(m.boundary.kind, 'default', `${m.seat.id} 无写落点，边界必须 default（只能由常量派生）`)
-    assert.equal(cardBoundary(m.seat.id), DEFAULT_BOUNDARY, m.seat.id)
+    assert.equal(bodyText(headingSection(cardSections(m.seat.id), '边界')), DEFAULT_BOUNDARY, m.seat.id)
   }
 })
 

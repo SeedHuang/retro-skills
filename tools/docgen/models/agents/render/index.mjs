@@ -6,9 +6,9 @@ const CLASSES = [ReviewerModel, AuditorModel, RespondentModel]
 
 // 段的出现顺序；空段由 section 自己返回 [] 跳过
 const TYPE_SECTIONS = {
-  ReviewerModel: ['frontmatter', 'duty', 'must', 'never', 'conflict', 'checklist', 'outputFormat', 'outputs', 'permissions', 'escalation', 'boundary'],
-  AuditorModel: ['frontmatter', 'duty', 'must', 'never', 'conflict', 'checklist', 'outputFormat', 'outputs', 'permissions', 'escalation', 'boundary'],
-  RespondentModel: ['frontmatter', 'duty', 'must', 'never', 'conflict', 'checklist', 'outputFormat', 'outputs', 'permissions', 'escalation', 'boundary'],
+  ReviewerModel: ['frontmatter', 'duty', 'must', 'never', 'conflict', 'checklist', 'outputFormat', 'outputs', 'permissions', 'ban', 'escalation', 'boundary'],
+  AuditorModel: ['frontmatter', 'duty', 'must', 'never', 'conflict', 'checklist', 'outputFormat', 'outputs', 'permissions', 'ban', 'escalation', 'boundary'],
+  RespondentModel: ['frontmatter', 'duty', 'must', 'never', 'conflict', 'checklist', 'outputFormat', 'outputs', 'permissions', 'ban', 'escalation', 'boundary'],
 }
 
 const TYPE_NAMES = new Set(CLASSES.map((C) => C.typeName))
