@@ -67,7 +67,7 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 
 | 定论 | 简报 | 详情 |
 |---|---|---|
-| 四维 agent 评估（P2 / P4） | 理解 / 执行 / token 三维达线；性能维任务时延未判定。P4 原始样本未入库，按「结论可读、数据不可复算」引用；P2 评分链路可复现（基线 `d678028` / 样本 `fa67454`）。 | [P2 留档](docs/reports/2026-11-12-agent-model-p2-eval/README.md)、[P4 留档](docs/reports/2026-11-12-agent-model-p4-eval/README.md) |
+| 四维 agent 评估（P2 / P4） | 理解 / 执行 / token 三维达线；性能维任务时延未判定。P4 原始样本未入库，按「结论可读、数据不可复算」引用；P2 评分链路可复现（基线 `d678028` / 样本 `fa67454`）。 | [P2 留档](docs/reports/2026-11-12-agent-model-p2-eval/README.md)、[P4 留档](docs/reports/2026-11-12-agent-model-p4-eval/README.md)、[P2 报告](docs/reports/2026-11-12-agent-model-p2-eval/report-p2-v2.md)、[P4 报告](docs/reports/2026-11-12-agent-model-p4-eval/report-round2.md) |
 | 账本脚本填充 + 行定位（T0–T8） | 长账本定位 3 行：134 行 3662 字符 → 1486 字符（-59.4%）；固定 `--fields` + `--context 0` → 536 字符（-85.4%）。按 4 字符 ≈ 1 token 估算，单次约省 544 / 782 token。短账本默认输出反而更贵，需收窄字段。写侧脚本代写表头 / 8 行骨架 / 机算证据，AI 只补待判格。 | [观测](docs/reports/2026-11-13-ledger-script-fill-pilot/observe.md)、[试点后](docs/reports/2026-11-13-ledger-script-fill-pilot/after.md)、[基线](docs/reports/2026-11-13-ledger-script-fill-pilot/baseline.md)、[交接](docs/handoffs/2026-11-13-ledger-script-fill-t8.md) |
 
 - token 数是「字符数 / 4」的估算，不是实测分词；短账本（32 行）默认 3 行查询 1608 字符 vs 全文 1402 字符，建议直接读或加 `--fields` + `--context 0`。
@@ -79,6 +79,11 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 - 账本效率定论：[measure-token-efficiency.mjs](tools/review-ledger/scripts/measure-token-efficiency.mjs) — `npm run measure:ledger`（打印）/ `npm run measure:ledger:check`（比对）；回归守卫 [measure.test.mjs](tools/review-ledger/test/measure.test.mjs)
 - 四维评分链路：[reproduce-p2-eval.mjs](docs/reports/2026-11-12-agent-model-p2-eval/raw/reproduce-p2-eval.mjs) — `npm run reproduce:p2-eval`；回归守卫 [reproduce-p2-eval.test.mjs](docs/reports/2026-11-12-agent-model-p2-eval/raw/reproduce-p2-eval.test.mjs)
 - 账本全量测试：`node --test "tools/review-ledger/test/*.test.mjs"`
+
+**测试脚本（回归守卫）**
+
+- [measure.test.mjs](tools/review-ledger/test/measure.test.mjs) — 断言 `measure-token-efficiency.mjs --check` 通过，且 `--json` 数值与 README 定论一致；随 `npm run check` 执行。
+- [reproduce-p2-eval.test.mjs](docs/reports/2026-11-12-agent-model-p2-eval/raw/reproduce-p2-eval.test.mjs) — 断言 P2 评分链路能从 `d678028` + `fa67454` 复现 `aggregate-v2.csv`；随 `npm run check` 执行。
 
 ## 错题集 KB（数据在哪、长什么样）
 
