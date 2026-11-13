@@ -61,6 +61,25 @@ npx skills add SeedHuang/retro-skills --agent trae-cn -g
 4. **归置**：按决策树判定为 Step 1a（既有规则触发面未覆盖 → 扩既有），用户裁决扩写全局规则 `import-guard.md`——新增"硬规则 4：编辑确认只信磁盘读回，不信工具回执"（带 provenance：来源 L-019；旧版先备份进 KB）；账本改 `landed(→rule(全局))`
 5. **自动生效**：规则源在活链上 → 当天新对话即带上硬规则 4，并在同日一次疑似回显异常中按此纪律拦住（只信磁盘读回，未造成数据问题）——**闭环完成，教训不再依赖任何人记得**
 
+## 定论（实测简报）
+
+> 结论先行；数字、口径与复跑命令都在「详情」页，引用时以详情页为准。
+
+| 定论 | 简报 | 详情 |
+|---|---|---|
+| 四维 agent 评估（P2 / P4） | 理解 / 执行 / token 三维达线；性能维任务时延未判定。P4 原始样本未入库，按「结论可读、数据不可复算」引用；P2 评分链路可复现（基线 `d678028` / 样本 `fa67454`）。 | [P2 留档](docs/reports/2026-11-12-agent-model-p2-eval/README.md)、[P4 留档](docs/reports/2026-11-12-agent-model-p4-eval/README.md) |
+| 账本脚本填充 + 行定位（T0–T8） | 长账本定位 3 行：134 行 3662 字符 → 1486 字符（-59.4%）；固定 `--fields` + `--context 0` → 536 字符（-85.4%）。按 4 字符 ≈ 1 token 估算，单次约省 544 / 782 token。短账本默认输出反而更贵，需收窄字段。写侧脚本代写表头 / 8 行骨架 / 机算证据，AI 只补待判格。 | [观测](docs/reports/2026-11-13-ledger-script-fill-pilot/observe.md)、[试点后](docs/reports/2026-11-13-ledger-script-fill-pilot/after.md)、[基线](docs/reports/2026-11-13-ledger-script-fill-pilot/baseline.md)、[交接](docs/handoffs/2026-11-13-ledger-script-fill-t8.md) |
+
+- token 数是「字符数 / 4」的估算，不是实测分词；短账本（32 行）默认 3 行查询 1608 字符 vs 全文 1402 字符，建议直接读或加 `--fields` + `--context 0`。
+- 账本试点基线 `M=0`：历史 4 列账本会被 fill fail-closed 拒绝，round1..3 为 8 列重建夹具，未复现「错填 >0 → 0」的对照；调用次数基线为估算值。
+
+**复跑脚本**
+
+- 账本试点：[run-pilot.mjs](tools/review-ledger/scripts/run-pilot.mjs) — `node tools/review-ledger/scripts/run-pilot.mjs`
+- 账本效率定论：[measure-token-efficiency.mjs](tools/review-ledger/scripts/measure-token-efficiency.mjs) — `npm run measure:ledger`（打印）/ `npm run measure:ledger:check`（比对）；回归守卫 [measure.test.mjs](tools/review-ledger/test/measure.test.mjs)
+- 四维评分链路：[reproduce-p2-eval.mjs](docs/reports/2026-11-12-agent-model-p2-eval/raw/reproduce-p2-eval.mjs) — `npm run reproduce:p2-eval`；回归守卫 [reproduce-p2-eval.test.mjs](docs/reports/2026-11-12-agent-model-p2-eval/raw/reproduce-p2-eval.test.mjs)
+- 账本全量测试：`node --test "tools/review-ledger/test/*.test.mjs"`
+
 ## 错题集 KB（数据在哪、长什么样）
 
 - **位置**：由用户指定，指针在 `~/.agents/lessons.config.json`；**本仓库不含任何个人数据，KB 绝不进本仓库**（2026-10-07 起 KB 可自建**私有** git 仓库作备份，但不得被套进本仓库或其它仓库——`resolve` 会拦）。

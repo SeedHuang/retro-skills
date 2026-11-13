@@ -16,7 +16,10 @@
     "agents:preview": "node tools/docgen/builders/agents/cli.mjs generate --kind agent --preview",
     "agents:generate": "node tools/docgen/builders/agents/cli.mjs generate --kind agent",
     "baseline:check": "node tools/docgen/models/agents/scripts/update-baseline.mjs --check --all",
-    "baseline:update": "node tools/docgen/models/agents/scripts/update-baseline.mjs --all"
+    "baseline:update": "node tools/docgen/models/agents/scripts/update-baseline.mjs --all",
+    "measure:ledger": "node tools/review-ledger/scripts/measure-token-efficiency.mjs",
+    "measure:ledger:check": "node tools/review-ledger/scripts/measure-token-efficiency.mjs --check",
+    "reproduce:p2-eval": "node docs/reports/2026-11-12-agent-model-p2-eval/raw/reproduce-p2-eval.mjs"
   },
   "engines": {
     "node": ">=22"
