@@ -63,6 +63,18 @@ export function cmdGenerate(args) {
   }
   if (args.apply && (preview || check)) fail('InvalidArgs', { message: 'InvalidArgs: --apply 不能与 --preview / --check 同用' });
   if (name !== undefined && !/^[a-z][a-z0-9-]{0,49}$/.test(name)) fail('InvalidName', { name });
+  // 非 registered 的 rule --check：基准是 builders/rules/<id>.md，不走 rules/<id>.md 存在性检查
+  if (check && kind === 'rule' && typeof name === 'string' && !RENDERED_RULES.includes(name)) {
+    const rel = `builders/rules/${name}.md`
+    // rel 是对外展示的相对路径（tools/docgen 下）；实际文件在 tools/docgen/ 内
+    const p = join(REPO_ROOT, 'tools', 'docgen', rel)
+    if (!existsSync(p)) fail('DanglingBaselineEntry', { message: rel, path: rel })
+    let rendered
+    try { rendered = renderRenderedRule(name) } catch (e) { fail('MissingComponentData', { message: `${name}: ${e.message}` }) }
+    if (compareBuffers(Buffer.from(rendered, 'utf8'), readFileSync(p))) fail('Mismatch', { message: rel, path: rel })
+    console.log(`baseline ${BASELINE_RULES.length + agentPaths().length}/${BASELINE_RULES.length + agentPaths().length}`)
+    return 0
+  }
   const objs = name
     ? [{ kind: kind === 'all' ? 'agent' : kind, name, path: `${kind === 'rule' ? 'rules' : 'agents'}/${name}.md` }]
     : kind === 'all'
@@ -98,11 +110,16 @@ export function cmdGenerate(args) {
   for (const o of objs) {
     if (o.kind === 'rule') {
       const p = join(REPO_ROOT, o.path);
-      if (!existsSync(p)) fail('DanglingBaselineEntry', { name: o.path, path: p });
+      if (!existsSync(p)) fail('DanglingBaselineEntry', { message: o.path, path: o.path });
       const target = readFileSync(p, 'utf8');
       checkEnvironment(Buffer.from(target), 'target', o.path);
       if (ruleWrite) { writeRenderedRule(o.name); console.log(`rendered rule 已写入：${o.path}`); }
-      else if (RENDERED_RULES.includes(o.name) && compareBuffers(Buffer.from(renderRenderedRule(o.name), 'utf8'), Buffer.from(target, 'utf8'))) drift += 1;
+      else if (RENDERED_RULES.includes(o.name)) {
+        if (compareBuffers(Buffer.from(renderRenderedRule(o.name), 'utf8'), Buffer.from(target, 'utf8'))) {
+          drift += 1;
+          process.stderr.write(`Mismatch: ${o.path}\n`);
+        }
+      }
     } else if (check) {
       const rendered = Buffer.from(renderText(o), 'utf8');
       const p = join(AGENTS_DIR, `${o.name}.md`);

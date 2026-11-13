@@ -3,7 +3,7 @@
 //      改数据不重生成 → 红；`generate --kind rule --name <名> --apply` 重生成后绿。
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { readFileSync, writeFileSync, rmSync } from 'node:fs'
+import { readFileSync, writeFileSync, rmSync, appendFileSync } from 'node:fs'
 import { join, resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { coldRepo, runCli } from './support/card-fixtures.mjs'
@@ -66,4 +66,28 @@ test('改数据不重生成 → 红；generate --apply 重生成后绿', () => {
 test('注册表与渲染物清单一致（新增 rule 只加名字 + data）', () => {
   assert.deepEqual(renderedRuleAssets().map((a) => a.name), RENDERED_RULES)
   assert.equal(RENDERED_RULES.includes(NAME), true)
+})
+
+test('dormant rule --check：与 builders/rules 逐字节一致 → exit 0', () => {
+  const r = runCli(['generate', '--kind', 'rule', '--name', 'import-guard', '--check'])
+  assert.equal(r.code, 0, r.out)
+  assert.doesNotMatch(r.out, /Mismatch/)
+})
+
+test('dormant rule --check：手改 builders/rules → stderr Mismatch + exit 1', () => {
+  const r = coldRepo({
+    mutate: (c) => appendFileSync(join(c, 'tools', 'docgen', 'builders', 'rules', 'import-guard.md'), '手改一行\n'),
+    args: ['generate', '--kind', 'rule', '--name', 'import-guard', '--check'],
+  })
+  assert.equal(r.code, 1)
+  assert.match(r.out, /Mismatch: builders\/rules\/import-guard\.md/)
+})
+
+test('dormant rule --check：删 builders/rules → DanglingBaselineEntry + exit 2', () => {
+  const r = coldRepo({
+    mutate: (c) => rmSync(join(c, 'tools', 'docgen', 'builders', 'rules', 'import-guard.md')),
+    args: ['generate', '--kind', 'rule', '--name', 'import-guard', '--check'],
+  })
+  assert.equal(r.code, 2)
+  assert.match(r.out, /DanglingBaselineEntry: builders\/rules\/import-guard\.md/)
 })
