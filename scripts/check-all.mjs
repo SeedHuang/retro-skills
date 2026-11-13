@@ -257,8 +257,9 @@ if (c.error) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 // 扫描范围 = 仓库内受版本管理的文档面；跳过 .git 与 .gitignore 里的过程目录
-// （.superpowers/ .session/ lessons/ .trae/ 是一次性工作区与个人数据，坏了也不进仓库，不该由本检查拦）
-const MD_SKIP_DIRS = new Set(['.git', '.superpowers', '.session', 'lessons', '.trae', 'node_modules'])
+// （.superpowers/ .session/ tmp/ lessons/ .trae/ 是一次性工作区与个人数据，坏了也不进仓库，不该由本检查拦）
+// tmp/ 额外含 T5 故意损坏的账本夹具（坏行 / BOM / CRLF），被本段判红会与夹具用途自相矛盾
+const MD_SKIP_DIRS = new Set(['.git', '.superpowers', '.session', 'lessons', '.trae', 'node_modules', 'tmp'])
 
 function collectMd(dir, out = []) {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {

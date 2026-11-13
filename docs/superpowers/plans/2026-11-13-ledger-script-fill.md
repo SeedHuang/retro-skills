@@ -23,9 +23,9 @@
 | T3 | 定位器 `query.mjs`：`index` / `show`、行号 1-based、`--context N`、`skipped` 与 exit 语义、只读 | T0、T1 | `tools/review-ledger/query.mjs` | 单测 + 夹具：固定 3 键行号一致；0 命中 exit 0；坏行 exit≠0；前后 sha256 相同 | TC-06/07/13/14/15/19/20/21/23/25 |
 | T4 | 校验器 `verify.mjs`：表头/行集合/待判/空值/机算/red code 封闭集 | T2、T3 | `tools/review-ledger/verify.mjs` | 单测：6 类判红各有 code；无误时 `reds:[]` 且 exit 0 | TC-05/11/12/18/22/24 |
 | T5 | 夹具集 | T1 | `tmp/fixtures/ledger-fill/{clean,round1..3,long,bad-row,dup-key,fenced,crlf,bom,escaped-pipe}` | 夹具清单与 sha256 冻结记录 | TC-09/10/16（作为输入） |
-| T6 | 单测与集成测试 | T2、T3、T4、T5 | `tools/review-ledger/test/*.test.mjs` | `node --test tools/review-ledger/test` 全绿；`npm run check` 含入 | TC-01..25（可自动化部分） |
-| T7 | 试点：reviewer-audit `round-check` 3 轮 | T6 | 记录落 `docs/reports/2026-11-13-ledger-script-fill-pilot/`（`baseline.md` / `after.md` / `observe.md`）；夹具副本仍在 `tmp/fixtures/ledger-fill/` | 基线/试点后各 3 轮 `errors=0`；观测项出数 | TC-09/10/16/17 |
-| T8 | 收口 | T7 | 交接 `docs/handoffs/`（新文件，不改旧交接）；签字 `docs/devworkflows/20261113-ledger-script-fill/gate-record.md`；plan 勾选 | `npm run check` 全绿；工作树 clean | — |
+| T6 | 单测与集成测试 | T2、T3、T4、T5 | `tools/review-ledger/test/*.test.mjs` | `node --test "tools/review-ledger/test/*.test.mjs"` 全绿（Node 24 不支持目录形式）；`npm run check` 含入 | TC-01..25（可自动化部分） |
+| T7 | 试点：reviewer-audit `round-check` 3 轮 | T6 | 记录落 `docs/reports/2026-11-13-ledger-script-fill-pilot/`（`baseline.md` / `after.md` / `observe.md`）；夹具副本在 `tmp/fixtures/ledger-fill-pilot/`（与冻结集 `ledger-fill/` 分离） | 基线/试点后各 3 轮 `errors=0`；观测项出数 | TC-09/10/16/17 |
+| T8 | 收口 | T7 | 交接 `docs/handoffs/2026-11-13-ledger-script-fill-t8.md`；签字 `docs/devworkflows/20261113133400-ledger-script-fill/gate-record.md`；plan 勾选 | `npm run check` 全绿；工作树 clean（提交待用户） | — |
 
 ## 3 依赖与无环
 
@@ -79,9 +79,9 @@ T1 → T5 → T6
 - [x] T0.5 三源一致校验
 - [x] T1 解析库
 - [x] T2 填充器
-- [ ] T3 定位器
-- [ ] T4 校验器
-- [ ] T5 夹具集
-- [ ] T6 单测与集成
-- [ ] T7 试点 3 轮
+- [x] T3 定位器
+- [x] T4 校验器
+- [x] T5 夹具集
+- [x] T6 单测与集成
+- [x] T7 试点 3 轮
 - [ ] T8 收口

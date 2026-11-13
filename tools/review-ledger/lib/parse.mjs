@@ -25,6 +25,14 @@ export function triStateOf(cell) {
   return m ? m[1] : null
 }
 
+/** 行键归一：`第 1 项` / `1` → `1`；其它原样返回 */
+export function normalizeKey(value) {
+  const s = String(value ?? '').trim()
+  const m = /^第\s*(\d+)\s*项/.exec(s)
+  if (m) return String(Number(m[1]))
+  return /^\d+$/.test(s) ? String(Number(s)) : s
+}
+
 const isDelim = (cells) => cells.length > 0 && cells.every((c) => DELIM_CELL.test(c))
 
 /**
