@@ -10,18 +10,19 @@ import { interpreters } from './interpreters.mjs'
 const DIR = dirname(fileURLToPath(import.meta.url))
 const REPO = resolve(DIR, '..', '..', '..', '..') // copy-aware：在副本里跑时 REPO = 副本根
 // 判据数据与构建器分居两地：json 在 models/rules（唯一数据源），引擎与投影在 builders/rules
-const DATA_REL_DIR = ['tools', 'docgen', 'models', 'rules']
+export const DEFAULT_DATA_DIR = join(REPO, 'tools', 'docgen', 'models', 'rules')
+export const DEFAULT_RULES_DIR = join(REPO, 'rules')
 const strip = (t) => t.replace(/^\uFEFF/, '')
 const RULE_PROJECTION = () => interpreters.find((i) => i.id === 'rule')
 
-export function listRuleIds() {
-  const p = join(REPO, ...DATA_REL_DIR, 'rules.json')
+export function listRuleIds(dataDir = DEFAULT_DATA_DIR) {
+  const p = join(dataDir, 'rules.json')
   if (!existsSync(p)) return []
   return JSON.parse(strip(readFileSync(p, 'utf8'))).rules ?? []
 }
 
-export function loadRule(id, root = REPO) {
-  return JSON.parse(strip(readFileSync(join(root, ...DATA_REL_DIR, `${id}.json`), 'utf8')))
+export function loadRule(id, dataDir = DEFAULT_DATA_DIR) {
+  return JSON.parse(strip(readFileSync(join(dataDir, `${id}.json`), 'utf8')))
 }
 
 /** 纯渲染（入参已加载的判据数据；校验器在 `--root` 临时根里必须用这一版） */
@@ -31,12 +32,12 @@ export function renderRuleData(rule) {
   return it.render(rule)
 }
 
-export function renderRule(id, root = REPO) {
-  return renderRuleData(loadRule(id, root))
+export function renderRule(id, dataDir = DEFAULT_DATA_DIR) {
+  return renderRuleData(loadRule(id, dataDir))
 }
 
-export function writeRule(id, root = REPO) {
-  const p = join(root, 'rules', `${id}.md`)
-  writeFileSync(p, renderRule(id, root), 'utf8')
+export function writeRule(id, { dataDir = DEFAULT_DATA_DIR, rulesDir = DEFAULT_RULES_DIR } = {}) {
+  const p = join(rulesDir, `${id}.md`)
+  writeFileSync(p, renderRule(id, dataDir), 'utf8')
   return p
 }
