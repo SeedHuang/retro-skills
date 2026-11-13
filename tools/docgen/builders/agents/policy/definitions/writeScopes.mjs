@@ -7,6 +7,7 @@ export const writeScopes = {
   'review.ledger': {
     roleKind: '评审席',
     label: '本次评审账本（`.session/reviews/<本次>/`；归档后 `docs/superpowers/reviews/<本次>/`）目录内的产物',
+    location: '本轮评审账本目录，归档后为 `docs/superpowers/reviews/<本次>/`',
     hostRule: '不得写 `progress.md`（只由{host}写，内容由{host}从责任席的产出转录）',
     hostNoun: '议长',
     excludePathItems: [],
@@ -14,6 +15,7 @@ export const writeScopes = {
   'spec.testcase': {
     roleKind: '测试设计',
     label: '本次 spec 同目录的 `-testcase.md` 与同目录由你负责的测试设计文档',
+    location: '本次 spec 同目录',
     hostRule: '不得写 `progress.md`（只由主 agent 写）',
     excludePathItems: ['code.test'],
   },
@@ -23,6 +25,7 @@ export const writeScopes = {
   'review.host': {
     roleKind: '程序主持',
     label: '本次议会程序账本（`.session/reviews/<本次>/` 目录）',
+    location: '本次议会程序账本目录',
     hostRule: '不得替他席填写两张审计表（两张审计表只由责任席填写）',
     excludePathItems: [],
   },

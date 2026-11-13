@@ -12,22 +12,23 @@ import * as ART from '../policy/definitions/artifacts.mjs';
 import * as SEATS from '../policy/definitions/seats.mjs';
 import { writeScopes } from '../policy/definitions/writeScopes.mjs';
 import { SEAT_POLICY } from '../policy/seat-policy.mjs';
+import { ignoredArtifacts } from './ignoredPaths.mjs';
 
 const TPL_REL = 'tools/docgen/builders/agents/templates/boundary.md.tpl';
 const TPL_PATH = join(dirname(fileURLToPath(import.meta.url)), '..', 'templates', 'boundary.md.tpl');
 // 导入期读取（spec:195）：读取失败 = 未捕获异常，不承诺任何错误码 / 退出码；换行统一 `\n`、去掉末尾空行
 const TPL = readFileSync(TPL_PATH, 'utf8').replace(/\r\n/g, '\n').replace(/\n+$/, '');
 
-// 15 槽，顺序 = spec §3.4 表行序（不是卡面首次出现顺序）；旧 12 槽位置不动，`ROLE_KIND` / `WRITE_SCOPE` / `HOST_RULE` 追加末位
-export const SLOTS = ['SEAT', 'TIER', 'CAPABILITIES', 'ARTIFACTS', 'SEAT_CLAUSE', 'ESCALATION_WRITER',
+// 14 槽，顺序 = spec §3.4 表行序；2026-11-12 起 `ARTIFACTS` / `SEAT_CLAUSE` / `WRITE_SCOPE` 由「权限」段直接消费，不再进边界模板
+// 2026-11-13：+ WRITE_FORBID / WRITE_FALLBACK（签字账禁写与 .gitignore 兜底改由策略层渲染）
+export const SLOTS = ['SEAT', 'TIER', 'CAPABILITIES', 'ESCALATION_WRITER',
   'ALLOW_GROUPS', 'DENY_GROUPS', 'ENV_FORMS', 'FORBIDDEN_PATHS', 'DETECTION_PATHS', 'DETECTION_CMD',
-  'ROLE_KIND', 'WRITE_SCOPE', 'HOST_RULE'];
+  'ROLE_KIND', 'HOST_RULE', 'WRITE_FORBID', 'WRITE_FALLBACK'];
 
 // 结构性文本白名单（§3.4 纯度规则 3）：只登记**非清单类**成员；登记清单类成员本身即违规（不变量 6）
 // S-B §11.2.3：4 个策略符号名（指针句里出现的反引号项）不是定义层单点成员，必须登记；
 // 它们都不是清单类成员（组 ID / verb / 路径项），故不触发末尾的 `ALLOWED_LITERALS:` 自检。
 export const TEMPLATE_ALLOWED_LITERALS = new Set([
-  'docs/devworkflows/**/gate-record.md',
   '.gitignore',
   'DOCGEN_*',
   'sha256',
@@ -79,6 +80,37 @@ export function allowGroups(groups) {
   return `${code('commandGroups')} 的 ${run.map(code).join(' / ')} 白名单组`;
 }
 
+// 单源（2026-11-13）：允许组由模型 `permissions.command.allow` 反推，不再直接读 `SEAT_POLICY.allowGroups`。
+// 组内 verb 可带参数（`scs ledger gate <评审目录>/progress.md`），与模型 form.prefix 比对时先截掉参数段。
+function verbPrefix(v) {
+  return String(v).split(/\s+</)[0].trim();
+}
+export function commandGroupsOfModel(M) {
+  const ids = M?.permissions?.command?.allow;
+  if (!Array.isArray(ids)) return null;
+  const forms = M.forms ?? {};
+  const hit = new Set();
+  for (const id of ids) {
+    const prefix = forms[id]?.prefix;
+    if (typeof prefix !== 'string' || prefix === '') continue;
+    for (const [g, def] of Object.entries(CMD.commandGroups)) {
+      if ((def.verbs || []).some((v) => v === prefix || verbPrefix(v) === prefix)) hit.add(g);
+    }
+  }
+  return Object.keys(CMD.commandGroups).filter((g) => hit.has(g));
+}
+// 展示顺序优先沿用策略清单顺序（保持既有卡面稳定），策略未列出的组按定义层顺序补在后面。
+function allowGroupsFor(seat, M) {
+  const derived = commandGroupsOfModel(M);
+  if (derived === null) return allowGroups(slotSource(policyOf(seat), 'allowGroups', 'ALLOW_GROUPS', []));
+  const policyOrder = Array.isArray(policyOf(seat).allowGroups) ? policyOf(seat).allowGroups : [];
+  const ordered = [
+    ...policyOrder.filter((g) => derived.includes(g)),
+    ...Object.keys(CMD.commandGroups).filter((g) => derived.includes(g) && !policyOrder.includes(g)),
+  ];
+  return allowGroups(ordered);
+}
+
 // 槽 8 = 指针句：禁止命令不再逐条落卡（清单归定义层 `forbiddenGroups`）
 function denyGroups() {
   return `${code('forbiddenGroups')} 的全部命令组`;
@@ -119,11 +151,29 @@ function detectionPaths() {
   return '被 gitignore 的路径';
 }
 
-// 槽 12 = `commands['git.read'].verbs` 的 status 项（只读引用，不复制）
-function detectionCmd() {
+// 槽 12 = 检测手段：只有本席**真被授权** `git status` 时才写该命令；
+// 无命令席不得引用未授权命令（2026-11-13 修：senior-sdet / evidence-reader / speaker 曾被塞入无权限的 git status）。
+function hasGitStatus(seat, M) {
+  if (M) return (M.permissions?.command?.allow ?? []).includes('cmd.git.status');
+  const groups = policyOf(seat).allowGroups;
+  return Array.isArray(groups) && groups.includes('git.read');
+}
+function detectionCmd(seat, M) {
+  if (!hasGitStatus(seat, M)) return '本席未授任何命令，无法读取 tracked 工作区。';
   const v = CMD.commandGroups['git.read'].verbs.find((x) => /status/.test(x));
   if (!v) impure('DETECTION_CMD:missing');
-  return v;
+  return `${code(v)} 只能看 tracked 工作区。`;
+}
+
+// 槽 13 = 签字账禁写（路径与理由均来自策略定义层，模板不再持有该字面量）
+function writeForbid() {
+  const t = PTH.SIGNOFF_LEDGER;
+  return `不得写 ${code(t.template)}（${t.reason}）。`;
+}
+// 槽 14 = .gitignore 兜底：本席允许产物若真被 gitignore 覆盖，才追加例外，避免规则自相矛盾
+function writeFallback(M) {
+  const base = '兜底：凡 `.gitignore` 覆盖的路径一律视为禁止写入';
+  return ignoredArtifacts(M).length > 0 ? `${base}（「权限」段允许的产物除外）。` : `${base}。`;
 }
 
 // 槽值来源守卫（spec:57 / spec:93）：先 `Object.hasOwn` 判**是否登记**——
@@ -143,11 +193,12 @@ function escalationWriter(seat) {
   if (ew === undefined) return '';
   const d = displayOf(ew.slug);
   const a = code(ew.artifact);
-  return ew.slug === seat ? `越权者即本席，写 ${a}` : `交${d}在 ${a} 独立复算`;
+  return ew.slug === seat ? `越权者即本席，写 ${a}。` : `交${d}在 ${a} 独立复算。`;
 }
 
 // 12 槽值（键 = 槽名）。值必须全是字符串：`undefined` / `null` → `TemplateImpure`（片段 = 槽名）
-export function slotValues(seat) {
+// M = 展开后的模型（可省略）：给了就按模型命令白名单反推组与检测手段，确保与「权限」段同源。
+export function slotValues(seat, M = null) {
   const p = policyOf(seat);
   const s = seatOf(seat);
   const rawCaps = slotSource(p, 'capabilities', 'CAPABILITIES', []);
@@ -164,24 +215,20 @@ export function slotValues(seat) {
     SEAT: s.display,
     TIER: tierOfCapabilities(caps) ?? '',
     CAPABILITIES: capTools(caps).join(' / '),
-    // 允许产物为空时不写引导词（senior-sdet 无 artifact 级白名单），避免悬空「：」
-    ARTIFACTS: (() => {
-      const arts = slotSource(p, 'artifacts', 'ARTIFACTS', []);
-      return arts.length ? `允许产物：${arts.map(code).join('、')}` : '';
-    })(),
-    SEAT_CLAUSE: slotSource(s, 'clause', 'SEAT_CLAUSE', ''),
+    // 允许产物与核转录职责由「权限」段直接消费（2026-11-12 事实归属），不再走边界槽
     ESCALATION_WRITER: escalationWriter(seat),
-    ALLOW_GROUPS: allowGroups(slotSource(p, 'allowGroups', 'ALLOW_GROUPS', [])),
+    ALLOW_GROUPS: allowGroupsFor(seat, M),
     DENY_GROUPS: denyGroups(),
     ENV_FORMS: envForms(),
     FORBIDDEN_PATHS: forbiddenPaths(seat),
     DETECTION_PATHS: detectionPaths(),
-    DETECTION_CMD: detectionCmd(),
+    DETECTION_CMD: detectionCmd(seat, M),
     // 角色名词默认随写作用域（「评审席」「程序主持」）；答辩方 / 取证席不是评审席，由席级 `roleKind` 覆盖
     ROLE_KIND: slotSource(s, 'roleKind', 'ROLE_KIND', scopeOfSeat(seat)?.roleKind ?? ''),
-    WRITE_SCOPE: scopeOfSeat(seat)?.label ?? '',
     // 禁止写句 = 写作用域的 hostRule（`{host}` 已替换成主持席称谓），席级不再整句覆盖
     HOST_RULE: hostRule,
+    WRITE_FORBID: writeForbid(),
+    WRITE_FALLBACK: writeFallback(M),
   };
   for (const k of SLOTS) if (values[k] === undefined || values[k] === null) impure(k);
   return values;
@@ -227,10 +274,10 @@ export function assertTemplatePure(tpl = TPL) {
   for (const w of TEMPLATE_ALLOWED_LITERALS) if (listClass.has(w)) impure(`ALLOWED_LITERALS:${w}`);
 }
 
-export function renderBoundary(seat) {
+export function renderBoundary(seat, M = null) {
   // 模板纯度**不在此校验**：唯一发射点是 `validatePolicy`（它已调 `assertTemplatePure`），
   // 否则本函数在 `patternRegistry` 导入期被调用，模板非法会先崩、CLI 发不出 `TemplateImpure` 码
-  const values = slotValues(seat);
+  const values = slotValues(seat, M);
   return TPL.replace(/\{\{([A-Z_]+)\}\}/g, (_, k) => {
     if (!Object.hasOwn(values, k)) impure(k);     // 未声明槽不得静默保留（C07）
     return values[k];

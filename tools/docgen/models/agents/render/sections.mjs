@@ -1,4 +1,6 @@
 import { TIERS } from '../../../builders/agents/policy/definitions/tiers.mjs'
+import { SEATS } from '../../../builders/agents/policy/definitions/seats.mjs'
+import { writeScopes } from '../../../builders/agents/policy/definitions/writeScopes.mjs'
 import { renderBoundary } from '../../../builders/agents/components/renderBoundary.mjs'
 import { DEFAULT_BOUNDARY } from '../../../builders/agents/components/patternRegistry.mjs'
 
@@ -209,13 +211,16 @@ export const sections = {
 
   permissions(M, shared, h) {
     const pm = M.permissions
-    // 职责动作与禁止项已由 duty 段完整渲染，此处只保留落点与命令，避免重复占 token
+    // 事实归属（2026-11-12）：允许写什么、允许跑什么只在「权限」段展开；边界段只给指针。
+    const meta = SEATS[M.seat.id] ?? {}
+    const scope = writeScopes[meta.writeScope ?? 'review.ledger'] ?? {}
     const out = []
     if (!pm.write.allow.length) {
-      // 档位含 Write 但无 artifact 级白名单 = 写作用域由边界段（封闭清单）约束，≠ 不能写
+      // 档位含 Write 但无 artifact 级白名单 = 写作用域由本席 writeScope 约束，≠ 不能写
       const canWrite = (TIERS[M.seat.tier] || []).includes('Write')
-      out.push(canWrite ? '- 写文件：只限「边界」所列封闭清单（本席无 artifact 级写白名单）' : '- 写文件：不得写任何文件')
-    } else out.push(`- 写文件：只许 ${pm.write.allow.map((id) => h.F[id].text).join('、')}`)
+      out.push(canWrite ? `- 写文件：只限${scope.location ?? '本轮账本目录'}` : '- 写文件：不得写任何文件')
+    } else out.push(`- 写文件：只许 ${pm.write.allow.map((id) => h.F[id].text).join('、')}（落点：${scope.location ?? '本轮账本目录'}）`)
+    if (typeof meta.clause === 'string' && meta.clause.trim() !== '') out.push(`- 职责：${meta.clause.trim()}`)
     if (!pm.command.allow.length) out.push('- 跑命令：不跑任何命令')
     else out.push(`- 跑命令：只许跑\n${pm.command.allow.map((id) => `  - ${h.F[id].text}`).join('\n')}`)
     out.push('')
@@ -238,7 +243,7 @@ export const sections = {
   boundary(M) {
     const b = M.boundary || {}
     const body =
-      b.kind === 'policy' ? renderBoundary(M.seat.id)
+      b.kind === 'policy' ? renderBoundary(M.seat.id, M)
       : b.kind === 'literal' ? b.text
       : b.kind === 'default' ? DEFAULT_BOUNDARY
       : (() => { throw new Error('BOUNDARY_KIND_UNKNOWN ' + b.kind) })()

@@ -5,6 +5,7 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { renderModel } from '../render/index.mjs'
 import { renderBoundary } from '../../../builders/agents/components/renderBoundary.mjs'
+import { modelWithShared } from '../source.mjs'
 import { DEFAULT_BOUNDARY } from '../../../builders/agents/components/patternRegistry.mjs'
 import { TIERS } from '../../../builders/agents/policy/definitions/tiers.mjs'
 
@@ -35,7 +36,7 @@ test('边界三形态：渲染正文必须等于声明来源（policy→renderBo
     const seat = m.seat.id
     const rendered = bodyOf(renderModel(join(MODELS, f, 'index.json'), shared).text)
     const expected = m.boundary.kind === 'policy'
-      ? renderBoundary(seat)
+      ? renderBoundary(seat, modelWithShared(seat))
       : m.boundary.kind === 'literal' ? m.boundary.text : DEFAULT_BOUNDARY
     assert.equal(rendered, expected.trim(), seat)
   }

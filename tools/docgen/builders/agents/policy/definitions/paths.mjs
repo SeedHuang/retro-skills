@@ -43,3 +43,12 @@ export const FORBIDDEN_SPEC_PLAN = { pattern: /spec\s*\/\s*plan/ };
 
 // 检测盲区（≠ 禁写清单）：由检测限度段单独注入。
 export const DETECTION_BLIND_SPOTS = ['.session/', '.superpowers/', 'lessons/'];
+
+// 签字账（全局禁写）：路径规则属策略定义层，不进模型 JSON；卡面由 renderBoundary 的 WRITE_FORBID 槽渲染。
+// 2026-11-13：从模板字面量移入本层，使「禁写签字账」可被静态校验（允许写路径 ∩ 本模板 = ∅）。
+export const SIGNOFF_LEDGER = {
+  id: 'signoffLedger',
+  template: 'docs/devworkflows/**/gate-record.md',
+  label: '签字账',
+  reason: '签字原文由申报人转录',
+};

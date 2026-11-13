@@ -290,7 +290,7 @@ export function validatePolicy() {
   // ---- 不变量 6：模板违反 §3.4 纯度三条 / 白名单登记清单类成员 → TemplateImpure ----
   assertTemplatePure();
 
-  // ---- 不变量 7：槽集恰合（模板槽集 = 渲染器消费的槽集 = §3.4 表的 12 个；每槽至少被引用一次）----
+  // ---- 不变量 7：槽集恰合（模板槽集 = 渲染器消费的槽集 = §3.4 表；每槽至少被引用一次）----
   const impure = (fragment) => {
     const e = new Error(`TemplateImpure: ${TPL_REL}:${fragment}`);
     e.code = 'TemplateImpure';

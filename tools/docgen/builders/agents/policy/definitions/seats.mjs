@@ -6,20 +6,20 @@ export const SEATS = {
   'reviewer-audit': {
     display: '审计',
     // ⑨ 职责：产物含交付审计表文件 + 核转录逐字一致（卡级子句，J01 判 `scope:'card'`）
-    clause: '。职责：你在 `round-check.md` 核转录是否逐字一致。',
+    clause: '你在 `round-check.md` 核转录是否逐字一致。',
     escalationWriter: { slug: 'reviewer-audit', artifact: 'round-check.md' },
   },
   'detective-observer': {
     display: '侦探',
     // ⑩ 职责：产物形态 + 本席不核签（卡级子句，J02 判 `scope:'card'`）
-    clause: '（轮初 / 轮末快照原文、观察记录、比对结论），且本席不核签',
+    clause: '轮初 / 轮末快照原文、观察记录、比对结论；本席不核签。',
     escalationWriter: { slug: 'reviewer-audit', artifact: 'round-check.md' },
   },
   'senior-sdet': {
     display: '测试开发',
     // S6-B（2026-11-05）：写作用域 + 旧专用句第三段（不改别人的判定）落 clause；边界句由渲染器产出
     writeScope: 'spec.testcase',
-    clause: '不改别人的判定：spec 或实现有问题，写进「给开发的建议」，不代改、不参与议会裁决',
+    clause: '不改别人的判定：spec 或实现有问题，写进「给开发的建议」，不代改、不参与议会裁决。',
   },
   'speaker': {
     display: '议长',
